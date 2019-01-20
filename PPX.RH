@@ -1,0 +1,577 @@
+//-----------------------------------------------------------------------------
+//	Paper Plane xUI		共通リソースヘッダ / Window ID 定義
+//-----------------------------------------------------------------------------
+//-------------------------------------------------------------- その他情報
+#define Copyright		"Copyright (c)1997-" ReleaseYear " TORO"
+#define TCopyright		T("Copyright (c)1997-") T(ReleaseYear) T(" TORO")
+#define P_ProductName	"PaperPlaneXUI"
+#define P_Description	"PaperPlaneXUI FileUtl"
+#define P_Comments		"toro.d.dooo.jp/"
+#define P_Company_NAME	"TOROid"
+#define P_Copyright		Copyright
+#ifndef _WIN64
+#define P_Processor		"x86"
+#else
+#define P_Processor		"AMD64"
+#endif
+#define TOOLBARIMAGE	9
+
+										// PPx の FileName
+#ifndef WINEGCC
+#ifdef UNICODE // Windows UNICODE
+	#define PPBEXE		"PPBW.EXE"
+	#define PPCEXE		"PPCW.EXE"
+	#define PPVEXE		"PPVW.EXE"
+	#define PPCUSTEXE	"PPCUSTW.EXE"
+	#define PPTRAYEXE	"PPTRAYW.EXE"
+	#define PPFFIXEXE	"PPFFIXW.EXE"
+	#ifdef _WIN64
+		#define PPCOMMONDLL	"PPLIB64W.DLL"
+	#else
+		#define PPCOMMONDLL	"PPLIB32W.DLL"
+	#endif
+#else // Windows MultiByte
+	#define PPBEXE		"PPB.EXE"
+	#define PPCEXE		"PPC.EXE"
+	#define PPVEXE		"PPV.EXE"
+	#define PPCUSTEXE	"PPCUST.EXE"
+	#define PPTRAYEXE	"PPTRAY.EXE"
+	#define PPFFIXEXE	"PPFFIX.EXE"
+	#define PPCOMMONDLL	"PPLIB32.DLL"
+#endif
+#else
+#ifdef UNICODE // Wine UNICODE
+	#define PPBEXE		"ppbw"
+	#define PPCEXE		"ppcw"
+	#define PPVEXE		"ppvw"
+	#define PPCUSTEXE	"ppcustw"
+	#define PPTRAYEXE	"pptrayw"
+	#define PPFFIXEXE	"ppffixw"
+	#ifdef _WIN64
+		#define PPCOMMONDLL	"pplib64w.dll"
+	#else
+		#define PPCOMMONDLL	"pplib32w.dll"
+	#endif
+#else // Wine MultiByte
+	#define PPBEXE		"ppb"
+	#define PPCEXE		"ppc"
+	#define PPVEXE		"ppv"
+	#define PPCUSTEXE	"ppcust"
+	#define PPTRAYEXE	"pptray"
+	#define PPFFIXEXE	"ppffix"
+	#define PPCOMMONDLL	"pplib32"
+#endif
+#endif
+//-------------------------------------------------------------- バージョン情報
+#define DLL_Version 67	// PPXLIB.DLL用 ※実際に使うときは DLL_VersionValue
+
+//-------------------------------------------------------------- クラス名
+#define PPXSTATICCLASS	"PPX_static"
+#define PPXKEYCLASS		"PPX_key"
+//------------------------------------------------------------------ Window ID
+// 0x1000～0x3fff	ウィンドウハンドル用
+#define IDW_CONTROLMIN	0x1000
+#define IDW_CONTROLMAX	0x3f00
+#define IDW_GENTOOLBAR	0x3f01 // 一般ツールバー(B_xxx)
+// 0x4000～0x4fff	メニューコマンド用
+#define IDW_MENU		0x4000
+#define IDW_MENUMAX		0x4fff
+#define IDW_MENU_EX		0x4ffe
+#define IDW_MENU_POSFIX	0x4ffe
+#define IDW_MENU_REGPJUMP	0x4fff
+// 0x7000～0x7fff	ダイアログコントロール用
+// 0x8000～0xbfff KeyCommand(K_m)
+// 0xc000～0xefff 内部用
+#define IDW_INTERNALMIN	0xc000
+#define IDW_INTERNALMAX	0xefff
+
+// 0xf000～0xffff	WM_SYSCOMMAND のシステムメニューと重複
+//======================================================= COMMON 70xx,77xx,7fxx
+#define IDQ_GETDIALOGID	0x7fff	// ヘルプ表示に使用するDialogIDを返す
+#define IDM_CONTINUE	0x7ffe	// 待機jobを開始させる
+#define IDD_NULL		0x7ffd	// 空
+#define IDD_NULLMIN		0x7ffc	// 空
+
+#define IDB_APPLY		0x77ff	// "変更"
+#define IDB_SAVE		0x77fe	// 保存
+#define IDB_REF			0x77fd	// 参照
+//-------------------------------------- 汎用入力窓
+#define IDE_INPUT_LINE_STYLE (ES_LEFT | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP | ES_AUTOHSCROLL | WS_VSCROLL | ES_NOHIDESEL) // 一行編集
+#define IDE_INPUT_LINE_MULTI_STYLE (ES_LEFT | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP | WS_VSCROLL | ES_MULTILINE | ES_NOHIDESEL) // 複数行表示一行編集
+#define IDD_INPUT		0x7000	// ID
+#define IDD_INPUTREF	0x7001	// ID(参照窓付き)
+#define IDD_INPUT_OPT	0x7002	// ID(追加ボタン付き)
+#define IDE_INPUT_LINE	0x7003	// 入力用エディットボックス
+#define IDE_INPUT_REF	0x7004	// 参照用エディットボックス
+#define IDB_INPUT_EXT	0x7005	// 拡張子用エディットボックス有効化
+#define IDE_INPUT_EXT	0x7006	// 拡張子用エディットボックス
+#define IDB_INPUT_OPT	0x7007	// 追加ボタン
+//-------------------------------------- 待ち
+//#define IDD_WAIT		0x7010	// ID 1.23廃止
+#define IDD_WAITPPB		0x7011	// ID
+#define IDS_WAITPPB		0x7012
+#define IDB_WAITPPB_NOPPB	0x7013
+#define IDB_WAITPPB_NEWPPB	0x7014
+//-------------------------------------- ログイン
+#define IDD_LOGIN		0x7018
+#define IDS_LOGINDRIVE	0x7019
+#define IDS_LOGINPATH	0x701a
+#define IDE_LOGINUSER	0x701b
+#define IDE_LOGINPASS	0x701c
+#define IDX_LOGINRE		0x701d
+#define IDS_LOGINUSER	0x701e
+#define IDS_LOGINPASS	0x701f
+//-------------------------------------- File Operation 702x - 707x
+#define IDD_FOP			0x7020	// ID
+								// 共通コントロール -----
+#define IDB_FOP_GENERAL	0x705e	// 一般タブ
+#define IDB_FOP_RENAME	0x705c	// 名前タブ
+#define IDB_FOP_OPTION	0x705a	// オプションタブ
+#define IDC_FOP_ACTION	0x703a	// 処理方法テンプレート簡易ドロップボックス
+#define IDC_FOP_MODE	0x7033	// 処理方法切り替え簡易ドロップボックス
+
+#define IDS_FOP_PROGRESS	0x703b	// 処理経過表示
+#define IDS_FOP_SRCNAME		0x703c	// 処理経過表示
+#define IDS_FOP_SRCINFO		0x703d	// 処理元情報
+#define IDS_FOP_DESTINFO	0x703e	// 処理先情報
+#define IDE_FOP_LOG			0x7046	// ログ
+#define IDS_FOP_SRCPATH		0x7073	//
+#define IDS_FOP_SRCTITLE	0x7056	//
+#define IDS_FOP_DESTTITLE	0x7057	//
+#define IDS_FOP_ATTRLABEL	0x7058	//
+//
+#define IDD_FOP_GENERAL	0x705f	// ID-一般シート -----
+#define IDS_FOP_DEST	0x7042
+#define IDC_FOP_DESTDIR	0x7021	// 処理先コンボボックス /dest:
+
+#define IDG_FOP_SAME	0x703f
+#define IDR_FOP_NEWDATE	0x7022	// 新しいファイルのみ FOPSAME_NEWDATE
+#define IDR_FOP_RENAME	0x7023	// 名前変更 FOPSAME_RENAME
+#define IDR_FOP_OVER	0x7024	// 上書き FOPSAME_OVERWRITE
+#define IDR_FOP_SKIP	0x7025	// 処理せず FOPSAME_SKIP
+#define IDR_FOP_ARC		0x7026	// アーカイブ FOPSAME_ARCHIVE
+#define IDR_FOP_ADDNUM	0x7027	// 数字追加 FOPSAME_ADDNUMBER
+#define IDR_FOP_APPEND	0x7028	// 追加 FOPSAME_APPEND
+
+#define IDR_FOP_SIZE	0x7064	// サイズ FOPSAME_SIZE
+// 0x7065,0x7066,0x7067 はラジオボタン用に予約
+
+#define IDX_FOP_SAME	0x7029 // 同名ファイル対処を指定 sameSW
+#define IDX_FOP_ADDNUMDEST	0x7068 // 上書き先を名前変更 VFSFOP_OPTFLAG_ADDNUMDEST
+
+#define IDX_FOP_BURST	0x7049	// バーストモード useburst
+#define IDX_FOP_FLAT	0x704a	// VFSFOP_OPTFLAG_FLATMODE
+#define IDX_FOP_SCOPY	0x7034	// セキュリティのコピー VFSFOP_OPTFLAG_SECURITY
+#define IDX_FOP_SACL	0x7047	// SACL(監査情報)のコピー VFSFOP_OPTFLAG_SACL
+#define IDX_FOP_KEEPDIR	0x704b	// 階層を再現する VFSFOP_OPTFLAG_KEEPDIR
+
+#define IDX_FOP_AALL	0x7036	// 勝手に"All"をチェック aall
+
+#define IDD_FOP_RENAME	0x705d	// ID-名前変更シート -----
+#define IDS_FOP_RENAME	0x7043	// 名前入力欄
+#define IDE_FOP_RENAME	0x7037	// 名前入力欄 rename /name:
+#define IDS_FOP_RENUM	0x7045
+#define IDE_FOP_RENUM	0x7038	// 番号 renum /snum:
+#define IDS_FOP_DIV		0x7044
+#define IDE_FOP_DIV		0x7039	// 分割大きさ divide
+
+#define IDG_FOP_NAME	0x7040
+#define IDX_FOP_UPPER	0x702a	// 大文字化 chrcase=1
+#define IDX_FOP_LOWER	0x702b	// 小文字化 chrcase=2
+#define IDX_FOP_SFN		0x702c	// 8.3 sfn
+#define IDX_FOP_DELSPC	0x702d	// 空白等を削除 delspc
+#define IDX_FOP_DELNUM	0x702e	// 追加数字等を削除 VFSFOP_FILTER_DELNUM
+#define IDX_FOP_EXTRACTNAME	0x704e // マクロ展開 VFSFOP_FILTER_EXTRACTNAME
+//
+#define IDG_FOP_ATTR	0x7041
+#define IDX_FOP_RONLY	0x702f	// ReadOnly
+#define IDX_FOP_ARC		0x7030	// Archive
+#define IDX_FOP_HIDE	0x7031	// Hidden
+#define IDX_FOP_SYSTEM	0x7032	// System
+#define IDX_FOP_DIR		0x7048	// Directory ※PPcのフィルタで使用 fopは未使用
+#define IDX_FOP_AROFF	0x704f	// Auto Readonly off VFSFOP_OPTFLAG_AUTOROFF
+
+#define IDX_FOP_JOINBATCH	0x7072	// VFSFOP_OPTFLAG_JOINBATCH
+#define IDX_FOP_FILEFIX		0x7052	// VFSFOP_FILTER_NOFILEFILTER
+#define IDX_FOP_DIRFIX		0x7053	// VFSFOP_FILTER_NODIRFILTER
+#define IDX_FOP_1STSHEET	0x7051	// firstsheet
+//
+#define IDD_FOP_OPTION		0x705b	// ID-オプションシート -----
+#define IDX_FOP_NOWCREATEDIR 0x7054	// VFSFOP_OPTFLAG_NOWCREATEDIR
+#define IDX_FOP_SKIP		0x7035		// VFSFOP_OPTFLAG_SKIPERROR
+#define IDX_FOP_LOGRWAIT	0x7059	// VFSFOP_OPTFLAG_LOGRWAIT
+#define IDX_FOP_BACKUPOLD	0x7050	// VFSFOP_OPTFLAG_BACKUPOLD
+#define IDX_FOP_USELOGWINDOW 0x704c	// VFSFOP_OPTFLAG_LOGWINDOW
+#define IDX_FOP_UNDOLOG		0x704d		// VFSFOP_OPTFLAG_UNDOLOG
+#define IDX_FOP_LOWPRI		0x7055		// VFSFOP_OPTFLAG_LOWPRI
+#define IDX_FOP_PREVENTSLEEP 0x7070	// VFSFOP_OPTFLAG_PREVENTSLEEP
+#define IDX_FOP_ALLOWDECRYPT 0x7071	// VFSFOP_OPTFLAG_ALLOWDECRYPT
+#define IDX_FOP_COUNTSIZE	0x7074	// !VFSFOP_OPTFLAG_NOCOUNT
+#define IDX_FOP_CHECKEXISTFIRST 0x7075	// !VFSFOP_OPTFLAG_NOFIRSTEXIST
+#define IDX_FOP_SERIALIZE	0x7076	// !VFSFOP_OPTFLAG_QSTART
+#define IDX_FOP_WAITCLOSE	0x7077	// !VFSFOP_OPTFLAG_WAIT_CLOSE
+
+//-------------------------------------- Query Delay 1.11 廃止
+//#define IDD_QDELAY		0x7060	// ID
+//#define IDS_QDINFO		0x7061
+//-------------------------------------- Message Button
+#define IDX_QDALL		0x7062
+#define IDB_QDADDLIST	0x7063
+
+//============================================================== CUST 74xx-77xx
+//									74xx
+#define IDB_TEST		0x7400
+#define IDB_INSMAC		0x7401
+//#define IDD_BLANK		0x7402
+#define IDD_CMDTREE		0x7402
+//-------------------------------------- list
+#define DEFKEYLIST		0x740e	// CUSTKEY.CFG
+#define DEFCUSTLIST		0x740f	// CUSTLIST.CFG
+//------------------------------------------------------------- File tab
+#define IDD_INFO		0x7410
+#define IDD_INFOE		0x7420
+#define IDG_cust		0x7411
+#define IDB_CS			0x7412
+#define IDB_CA			0x7413
+#define IDB_CU			0x7414
+#define IDB_CD			0x7415
+#define IDB_CINIT		0x7416
+#define IDG_hist		0x7417
+#define IDB_HD			0x7418
+#define IDB_HINIT		0x7419
+#define IDB_TESTKEY		0x741a
+#define IDS_INFO		0x741b
+#define IDB_REGPPC		0x741c
+#define IDB_UNREGPPC	0x741d
+#define IDB_REGOPEN		0x741e
+#define IDX_CONSOLE		0x741f
+#define IDB_TEXTCUST	0x7421
+
+//------------------------------ File tab - text cust
+#define IDD_TEXTCUST	0x7428
+#define IDD_TEXTCUSTE	0x7429
+#define IDE_CUSTEDIT	0x742a
+#define IDE_CUSTLOG		0x742b
+#define IDX_APPEND		0x742c
+
+//------------------------------------------------------------- General
+#define IDD_GENERAL		0x74F0
+#define IDD_GENERALE	0x74F8
+#define IDT_GENERAL		0x74F1
+#define IDT_GENERALITEM	0x74F2
+#define IDE_FLOAT		0x74ff
+#define IDB_FLOAT		0x74fe
+#define IDE_FIND		0x74fd
+#define IDB_FIND		0x74fc
+
+//------------------------------------------------------------- Ext,Key等共通
+//#define IDR_ALCKEY		0x74e0	// キー割当てラジオ
+//#define IDR_ALCCMD		0x74e1	// コマンドラジオ
+#define IDB_ALCSET		0x74e2	// 設定
+#define IDB_ALCDEL		0x74e3	// 削除
+#define IDB_ALCKEY		0x7464	// 割当先キー
+#define IDB_ALCNEW		0x74e4	// 新規設定
+
+//#define IDE_ALCKEY		0x74e5	// キー割当て
+#define IDE_ALCKEYNAME	0x7467	// 割当て名称
+#define IDC_ALCKEYG		0x74e7	// キー割当て-グループ
+#define IDC_ALCKEYS		0x74e8	// キー割当て-サブグループ
+
+#define IDG_ALCCMD		0x74e6
+#define IDE_ALCCMD		0x74e9	// コマンドライン
+#define IDB_ALCCMDI		0x74ea	// よく使うマクロ文字挿入
+
+#define IDE_ALCCMT		0x74eb	// コメント
+#define IDB_ALCCMT		0x74ec	// コメント
+#define IDB_ALCCMDLIST	0x74ed	// コマンド一覧
+
+#define IDC_ALCMOUSEB	0x7468	// マウスのボタンの種類
+#define IDC_ALCMOUSET	0x7469	// マウスの場所の種類
+#define IDB_ALCMOUSEL	0x746a	// マウスジェスチャー←
+#define IDB_ALCMOUSEU	0x746b	// マウスジェスチャー↑
+#define IDB_ALCMOUSED	0x746c	// マウスジェスチャー↓
+#define IDB_ALCMOUSER	0x746d	// マウスジェスチャー→
+
+#define IDX_ALCEXLIST	0x746e	// 既定の割当ても一覧に表示
+#define IDV_ALCLIST		0x746f	// 割当て一覧
+//------------------------------------------------------------- Ext
+#define IDD_EXT			0x7450
+#define IDD_EXTE		0x7456
+#define IDE_EXTYPE		0x7451
+#define IDV_EXTYPE		0x7452
+#define IDS_EXTYPE		0x7457
+#define IDE_EXITEM		0x7453
+#define IDL_EXITEM		0x7454
+#define IDS_EXITEM		0x7455
+#define IDS_EXITEML		0x7458
+//------------------------------------------------------------- Key/Mouse/Bar
+#define IDD_KEYD		0x7460
+#define IDD_KEYDE		0x7463
+#define IDD_MOUSED		0x7461
+#define IDD_MOUSEDE		0x7464
+#define IDD_BARD		0x7462
+#define IDD_BARDE		0x7465
+//------------------------------------------------------------- Menu
+#define IDD_MENUD		0x7490
+#define IDD_MENUDE		0x749a
+#define IDB_MEUP		0x7491
+#define IDB_MEDW		0x7492
+#define IDB_MEKEY		0x7493
+#define IDB_MESEP		0x7494
+#define IDB_MECKEYS		0x7495	// 区切り文字挿入
+#define IDB_HMCHARC		0x7496
+#define IDB_HMBACKC		0x7497
+#define IDB_BREF		0x7498
+#define IDL_BLIST		0x7499
+#define IDX_BNOBMP		0x749b
+//------------------------------------------------------------- Color
+#define IDD_COLOR		0x7430
+#define IDD_COLORE		0x743d
+#define IDS_GCTYPE		0x7431
+#define IDL_GCTYPE		0x7432
+#define IDS_GCITEM		0x7433
+#define IDL_GCITEM		0x7434
+#define IDE_GCEDIT		0x7435
+#define IDB_GCADD		0x7436
+#define IDB_GCDEL		0x7437
+#define IDS_GCOLOR		0x7439
+#define IDL_GCOLOR		0x743a
+#define IDB_GCSEL		0x743b
+#define IDX_GCULINE		0x743c
+#define IDB_GCSORTN		0x743e
+#define IDB_GCSORTC		0x743f
+//------------------------------------------------------------- Addon
+#define IDD_ADDON		0x7470
+#define IDD_ADDONE		0x7476
+#define IDL_AOSUSIE		0x7471
+#define IDE_AOSINFO		0x7472
+#define IDX_AOSUSE		0x7473
+#define IDB_AOSSETTING	0x7474
+#define IDE_AOSMASK		0x7475
+#define IDB_ADDDEFEXT	0x7477
+#define IDX_AOSDETECT	0x7478
+//------------------------------------------------------------- Etc
+#define IDD_ETCTREE		0x7480
+#define IDS_ETCLIST		0x7481
+#define IDD_ETCTREEE	0x7482
+
+//====================================== Cust ポップアップダイアログ 76xx
+//-------------------------------------- key
+#define IDD_KEYINPUT	0x7600
+#define IDP_KEYINPUT_W	0x7601
+#define IDX_KEYINPUT_C	0x7602
+#define IDD_KEYINPUTE	0x7603
+//-------------------------------------- color
+#define IDD_SCOLOR		0x7608
+//-------------------------------------- highlight
+#define IDD_HIGHLIGHT	0x760c
+#define IDX_HL_TOP		0x760d
+#define IDX_HL_BOTTOM	0x760e
+//-------------------------------------- Entry Display Format
+#define IDD_DISPFOMAT	0x7610
+#define IDD_DISPFOMATE	0x761b
+#define IDL_DFOMAT		0x7611
+#define IDL_DFLIST		0x7612
+#define IDS_DFPARAM1	0x7613
+#define IDC_DFPARAM1	0x7614
+#define IDS_DFPARAM2	0x7615
+#define IDC_DFPARAM2	0x7616
+#define IDX_COMMENTHID	0x7617
+#define IDX_FIXFRAME	0x7618
+#define IDX_FIXLENGTH	0x7619
+#define IDE_FIXMAX		0x761a
+
+//=============================================================== PPC 78xx-7bxx
+#define ID_PPC			0x7bff
+//-------------------------------------- Attribute
+#define IDD_ATR			0x7800
+					// 変更する属性
+#define IDX_ATR_ATR		0x7801
+#define IDX_ATR_C		0x7802
+#define IDX_ATR_W		0x7803
+#define IDX_ATR_A		0x7804
+#define IDS_ATR_CLBL	0x7805
+#define IDS_ATR_WLBL	0x7806
+#define IDS_ATR_ALBL	0x7807
+#define IDX_ATR_OLD		0x7808
+#define IDX_ATR_NEW		0x7809
+#define IDX_ATR_MDIR	0x780a
+#define IDX_ATR_DETAIL	0x780b
+// ※ 782x は、IDX_ATR_Nx と一対一で使用するので _Ox 以外使用禁止
+					// Atr/new
+#define IDX_ATR_NR		0x780c
+#define IDX_ATR_NH		0x780d
+#define IDX_ATR_NS		0x780e
+#define IDX_ATR_NA		0x780f
+#define IDX_ATR_NP		0x7810
+#define IDX_ATR_NY		0x7811
+#define IDX_ATR_NI		0x7813
+#define IDX_ATR_NT		0x7814
+#define IDX_ATR_NO		0x7815
+#define IDX_ATR_SUBD	0x7812
+					// Date/old
+#define IDE_ATR_OC		0x7817
+#define IDE_ATR_OW		0x7818
+#define IDE_ATR_OA		0x7819
+					// Date/new
+#define IDE_ATR_NCD		0x781a
+#define IDE_ATR_NWD		0x781b
+#define IDE_ATR_NAD		0x781c
+#define IDE_ATR_NCT		0x781d
+#define IDE_ATR_NWT		0x781e
+#define IDE_ATR_NAT		0x781f
+					// Atr/old
+#define IDX_ATR_OR		0x7820
+#define IDX_ATR_OH		0x7821
+#define IDX_ATR_OS		0x7822
+#define IDX_ATR_OA		0x7823
+#define IDX_ATR_OP		0x7824
+#define IDX_ATR_OY		0x7825
+#define IDX_ATR_OI		0x7827
+
+//-------------------------------------- Disk information
+#define IDD_DSKI		0x7840
+#define IDS_DSKI_DN		0x7851	// Drive name
+#define IDE_DSKI_VN		0x7852	// Volume
+#define IDS_DSKI_DT		0x7853	// Disk type
+#define IDS_DSKI_SN		0x7854	// Serial#
+#define IDS_DSKI_FS		0x7855	// File System
+						// Bytes
+#define IDS_DSKI_NUS	0x7856	// Used space
+#define IDS_DSKI_NFS	0x7857	// Free space
+#define IDS_DSKI_NRF	0x7858	// Free space(real)
+#define IDS_DSKI_NTS	0x7859	// Total space
+#define IDS_DSKI_NBS	0x785a	// Bytes/Sec
+#define IDS_DSKI_NBC	0x785b	// Bytes/Clu
+						// Clusters
+#define IDS_DSKI_CUS	0x785c	// Used
+#define IDS_DSKI_CFS	0x785d	// Free
+#define IDS_DSKI_CTS	0x785e	// Total
+
+#define IDS_DSKI_MF		0x785f	// MaxFileLength
+						// flags
+#define IDS_DSKI_FCP	0x7860	// Case is pre
+#define IDS_DSKI_FCS	0x7861	// Case sen
+#define IDS_DSKI_FUS	0x7862	// UNC store
+#define IDS_DSKI_FPA	0x7863	// Per. ACLS
+#define IDS_DSKI_FFC	0x7864	// F. Compress
+#define IDS_DSKI_FVC	0x7865	// V. compress
+#define IDS_DSKI_FNS	0x7866	// Named strams
+#define IDS_DSKI_FQT	0x7867	// Quotas
+#define IDS_DSKI_FSP	0x7868	// Sparse
+#define IDS_DSKI_FRP	0x7869	// Reparse
+#define IDS_DSKI_FRE	0x786a	// Remote
+#define IDS_DSKI_FOI	0x786b	// Object IDS
+#define IDS_DSKI_FEC	0x786c	// Encryption
+#define IDS_DSKI_READONLY		0x786d
+#define IDS_DSKI_SEQWRITEONCE	0x786e
+#define IDS_DSKI_TRANSACTIONS	0x786f
+#define IDS_DSKI_HARD_LINKS		0x7870
+#define IDS_DSKI_EXT_ATTRIBUTES	0x7871
+#define IDS_DSKI_OPENBY_FILEID	0x7872
+#define IDS_DSKI_USN_JOURNAL	0x7873
+#define IDS_DSKI_INTEGRITY_STREAMS	0x7874
+#define IDS_DSKI_BLOCK_REFCOUNTING	0x7875
+#define IDS_DSKI_SPARSE_VDL			0x7876
+#define IDS_DSKI_DAX_VOLUME			0x7877
+
+//-------------------------------------- FileMask
+#define IDD_MASK		0x7880
+#define IDX_MASK_DIR	0x7881
+#define IDX_MASK_RTM	0x7882
+#define IDX_MASK_MODE	0x7883
+#define IDB_WILDFORMAT	0x7884
+#define IDX_MASK_WORDMATCH	0x7885
+//#define IDX_MASK_THIS	0x7885
+//#define IDX_MASK_CMT	0x7885
+//-------------------------------------- FileJump
+#define IDD_EJUMP		0x78c0
+#define IDB_PREV		0x78c2
+#define IDB_NEXT		0x78c3
+#define IDB_MARK		0x78c4
+#define IDX_FRONT		0x78c5
+#define IDX_MODE		0x78c6
+#define IDB_FINDTYPE	0x78c7
+//-------------------------------------- Window
+#define IDD_CWINDOW		0x78d0
+#define IDX_CWIN_DBL	0x78d1
+#define IDX_CWIN_CLO	0x78d2
+#define IDX_CWIN_DAC	0x78d3
+#define IDG_CWIN_J		0x78d4
+#define IDX_CWIN_JLR	0x78d5
+#define IDX_CWIN_JUD	0x78d6
+#define IDX_CWIN_JP		0x78d7
+#define IDX_CWIN_JF		0x78d8
+#define IDG_CWIN_F		0x78d9
+#define IDX_CWIN_FP		0x78da
+#define IDX_CWIN_FUD	0x78db
+#define IDX_CWIN_CMB	0x78dc
+//-------------------------------------- Sort
+#define IDD_SORT		0x78e0
+#define IDC_SORT_TYPE1	0x78e1
+#define IDX_SORT_CASE	0x78e2
+#define IDX_SORT_KANA	0x78e3
+#define IDX_SORT_SPACE	0x78e4
+#define IDX_SORT_SYM	0x78e5
+#define IDX_SORT_WIDE	0x78e6
+#define IDX_SORT_SS		0x78e7
+#define IDX_SORT_NUM	0x78e8
+#define IDC_SORT_TYPE2	0x78e9
+#define IDC_SORT_TYPE3	0x78ea
+#define IDC_SORT_TYPE4	0x78eb
+#define IDX_SORT_LE		0x78ec
+//-------------------------------------- Whereis
+#define IDD_WHERE		0x78f0
+#define IDS_WHERE_SRC	0x78f1
+#define IDC_WHERE_SRC	0x78f2
+#define IDS_WHERE_F1	0x78f3
+#define IDC_WHERE_F1	0x78f4
+#define IDS_WHERE_F2	0x78f5
+#define IDC_WHERE_F2	0x78f6
+#define IDC_WHERE_STR	0x78f7
+#define IDC_WHERE_DAY	0x78f8
+#define IDC_WHERE_SIZE	0x78f9
+#define IDX_WHERE_MARK	0x78fa
+#define IDX_WHERE_DIR	0x78fb
+#define IDX_WHERE_SDIR	0x78fc
+#define IDX_WHERE_VFS	0x78fd
+#define IDS_WHERE_STR	0x78fe
+//-------------------------------------- Compare mark
+#define IDD_CMARK		0x7900
+#define IDC_TYPE		0x7901
+//-------------------------------------- Property General Page
+#define IDD_PROPGENERAL	0x7910
+#define IDS_ICON		0x7911
+#define IDE_FILENAME	0x7912
+#define IDE_FILETYPE	0x7913
+#define IDE_PASSOC		0x7914
+#define IDE_PPATH		0x7915
+#define IDE_PSIZE		0x7916
+#define IDE_PALLOCSIZE	0x7917
+#define IDE_PCREATETIME	0x7918
+#define IDE_PMODIFYTIME	0x7919
+#define IDE_PACCESSTIME	0x791a
+#define IDX_PREADATTR	0x791b
+#define IDX_PHIDEATTR	0x791c
+
+//================================================================= PPV 7cxx
+#define IDD_PASTETYPE	0x7c00
+#define IDL_PT_LIST		0x7c01
+
+#define IDD_PRINTDLG	0x7c08
+#define IDD_MULTIPRINTDLG	0x7c09
+#define IDS_PRINTDLGTXT	0x7c0a
+
+//================================================================= HELP 80xx
+#define IDH_CUST_ABOUT	0x8001
+#define IDH_PPB			0x8002
+#define IDH_PPC			0x8003
+#define IDH_PPV			0x8004
+
+//====================================================================== SDK
+#ifndef IDHELP
+#define IDHELP 9
+#endif
+#ifndef RCDATA
+#define RCDATA 10
+#endif

@@ -1,0 +1,75 @@
+//-----------------------------------------------------------------------------
+// Paper Plane Tray	リソース
+//-----------------------------------------------------------------------------
+#include "PPXVER.H"
+#include "PPX.RH"
+#include "PPTRAY.RH"
+
+IDI_TRAY ICON DISCARDABLE "resource/PPTRAY.ICO"
+//-------------------------------------------------------------- バージョン情報
+#ifndef WINDRES
+#ifndef WINEGCC
+1 VERSIONINFO LOADONCALL MOVEABLE
+FILEVERSION	Q_Version
+PRODUCTVERSION	Q_Version
+FILEOS		VOS__WINDOWS32
+FILETYPE	VFT_APP
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+	BLOCK "041103A4" // 言語=日本語(0x0411) およびキャラクタセット=SJIS(0x03a4)
+	BEGIN
+	  VALUE "Comments",		P_Comments "\0"
+	  VALUE "CompanyName",	P_Company_NAME "\0"
+	  VALUE "FileDescription",	"Paper Plane Tray\0"
+	  VALUE "FileVersion",	FileProp_Version "\0"
+	  VALUE "InternalName",	"PPTRAY\0"
+	  VALUE "LegalCopyright",	P_Copyright "\0"
+	  VALUE "OriginalFilename", PPTRAYEXE "\0"
+	  VALUE "ProductName", "Paper Plane xUI\0"
+	  VALUE "ProductVersion",	FileProp_Version "\0"
+	END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN                               //  Language    |    Translation
+	VALUE "Translation", 0x0411, 932  // Japanese     | Shift-JIS X-0208
+  END
+END
+#endif
+#endif
+//---------------------------------------------- アプリケーションのマニフェスト
+1 24
+{
+"<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>"
+"<assembly xmlns=""urn:schemas-microsoft-com:asm.v1"" manifestVersion=""1.0"">"
+"<assemblyIdentity processorArchitecture=""" P_Processor """"
+	" name=""" P_Company_NAME "." P_ProductName """"
+	" version=""" X_Version """ type=""win32""/>"
+"<description>" P_Description "</description>"
+"<dependency><dependentAssembly><assemblyIdentity"
+	" type=""win32"" name=""Microsoft.Windows.Common-Controls"""
+	" version=""6.0.0.0"" language=""*"""
+	" publicKeyToken=""6595b64144ccf1df"""
+	" processorArchitecture=""" P_Processor """/>"
+"</dependentAssembly></dependency>"
+"<asmv3:application xmlns:asmv3=""urn:schemas-microsoft-com:asm.v3"">"
+	"<asmv3:windowsSettings xmlns=""http://schemas.microsoft.com/SMI/2005/WindowsSettings"">"
+		"<dpiAware>True/PM</dpiAware>"
+	"</asmv3:windowsSettings>"
+"</asmv3:application>"
+"<application xmlns=""urn:schemas-microsoft-com:asm.v3"">"
+	"<windowsSettings xmlns:ws2=""http://schemas.microsoft.com/SMI/2016/WindowsSettings"">"
+	"<ws2:longPathAware>true</ws2:longPathAware>"
+	"<ws2:dpiAwareness>PerMonitorV2, PerMonitor</ws2:dpiAwareness>"
+	"</windowsSettings>"
+"</application>"
+"<compatibility xmlns=""urn:schemas-microsoft-com:compatibility.v1"">"
+"<application>"
+"<supportedOS Id=""{e2011457-1546-43c5-a5fe-008deee3d3f0}""/>" // Vista
+"<supportedOS Id=""{35138b9a-5d96-4fbd-8e2d-a2440225f93a}""/>" // 7
+"<supportedOS Id=""{4a2f28e3-53b9-4441-ba9c-d69d4a4a6e38}""/>" // 8
+"<supportedOS Id=""{1f676c76-80e1-4239-95bb-83d0f6d0da78}""/>" // 8.1
+"<supportedOS Id=""{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}""/>" // 10
+"</application></compatibility>"
+"</assembly>"
+}

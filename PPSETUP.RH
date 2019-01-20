@@ -1,0 +1,124 @@
+//-----------------------------------------------------------------------------
+//	Paper Plane xUI	setup	リソースヘッダ
+//-----------------------------------------------------------------------------
+#define IC_SETUP	1
+
+#define IDD_GUIDE	100
+#define IDD_SETTYPE	101
+#define IDD_UN_EXEC	102
+#define IDD_DEST	103
+#define IDD_REG		104
+#define IDD_PPCW	105
+#define IDD_KEY		106
+#define IDD_APP		107
+#define IDD_LINK	108
+#define IDD_READY	109
+#define IDD_COPY	110
+#define IDC_EDIT1	101
+#define IDD_UP		111
+
+#define IDD_GUIDEE	120
+#define IDD_SETTYPEE	121
+#define IDD_UN_EXECE	122
+#define IDD_DESTE	123
+#define IDD_REGE		124
+#define IDD_PPCWE	125
+#define IDD_KEYE		126
+#define IDD_APPE		127
+#define IDD_LINKE	128
+#define IDD_READYE	129
+#define IDD_COPYE	130
+#define IDC_EDIT1E	121
+#define IDD_UPE		131
+
+// SETTYPE --------------------------------------------------------------------
+#define IDR_AUTOINST	10001
+#define IDR_CUSTINST	10002
+#define IDR_UPDATE		10003
+#define IDR_CHECKUPDATE	10004
+#define IDR_UNINST		10005
+#define IDS_INSTEDPPX	10010
+#define IDB_SELINSTPPX	10011
+
+// UN_EXEC --------------------------------------------------------------------
+#define IDR_UNINSTMES	10201
+
+// DEST -----------------------------------------------------------------------
+#define IDR_PROGRAMS	10301
+#define IDR_NOCOPY		10302
+#define IDR_SELCOPY		10303
+#define IDE_SELCOPY		10304
+#define IDB_SELCOPY		10305
+
+// REG ------------------------------------------------------------------------
+#define IDR_USEREG	10401
+#define IDR_UUSEREG	10402
+
+// PPCW -----------------------------------------------------------------------
+#define IDR_PPC_1WINDOW	10501
+#define IDR_PPC_COMBO	10502
+#define IDR_PPC_JOINT	10503
+
+#define IDX_PPC_TREE	10504
+
+#define IDR_PPC_1PANE	10505
+#define IDR_PPC_2PANE_H	10506
+#define IDR_PPC_2PANE_V	10507
+
+#define IDS_PPC_SEP		10508
+
+#define IDR_PPC_TAB_NO		10509
+#define IDR_PPC_TAB_FULLSEPARATE	10510
+#define IDR_PPC_TAB_SEMISEPARATE	10511
+#define IDR_PPC_TAB_SHARE	10512
+
+#define IDR_PPC_JOIN_H	10513
+#define IDR_PPC_JOIN_V	10514
+#define IDR_PPC_JOIN_P	10515
+
+// UI -------------------------------------------------------------------------
+#define IDR_PPXKEY	10601
+#define IDR_XPRKEY	10602
+#define IDR_KLKEY	10603
+#define IDR_FMKEY	10604
+#define IDX_DIAKEY	10606
+#define IDX_EMENU	10607
+#define IDX_DOSC	10608
+
+// APP ------------------------------------------------------------------------
+#define IDE_TEXTEDIT	10701
+#define IDB_TEXTEDIT	10702
+#define IDE_UNIVIEW		10703
+#define IDB_UNIVIEW		10704
+#define IDC_UNARC		10705
+#define IDE_SUSIEDIR	10706
+#define IDB_SUSIEDIR	10707
+
+// LINK -----------------------------------------------------------------------
+#define IDX_MENU	10801
+#define IDX_BOOT	10802
+#define IDX_DESK	10803
+#define IDX_CMENU	10804
+#define IDX_APP		10805
+#define IDE_LINKSMP	10806
+
+// UP -------------------------------------------------------------------------
+#define IDE_UPSRC	10901
+#define IDB_UPSRC	10902
+#define IDS_UPDEST	10903
+
+// COPY -----------------------------------------------------------------------
+#define IDE_RESULT		11001
+#define IDX_STARTPPC	11002
+
+// File -----------------------------------------------------------------------
+#define IF_PPXDEL	20001
+#define IF_DEFPPX	20002
+#define IF_DEFXPR	20003
+#define IF_DEFKL	20004
+#define IF_DEFFM	20005
+#define IF_DEFDIA	20006
+#define IF_DEFJPN	20007
+#define IF_DEFWIN	20008
+#define IF_DEFXPJ	20009
+#define IF_DEFLOW	20010

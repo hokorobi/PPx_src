@@ -1,0 +1,409 @@
+#=======================================
+# Paper Plane xUI Makefile
+#=======================================
+# nmake を用いる場合、$.→$@、$&→*に書き換え、@&&|～|ブロックの対処が必要
+
+UseDebug = 1	# 1 なら debug指定
+!ifndef UseBCC
+UseBCC = 1	# 1 なら BCC32 , 0 なら CL
+!endif
+UseIlink = 0	# 1 なら ilink32(BCC 5.5以降) を使用 ※UseDebug=1だと多数の警告
+WineMode = 0	# 1 なら wine版
+!ifndef VCTOOLKIT
+VCTOOLKIT = 0	# VC TOOL KIT を使うなら1に、VS2008なら0に
+!endif
+!ifndef X64
+X64 = 0		# 1 なら x64版(常にUNICODE版)
+SSEOPT = /arch:SSE2
+!endif
+!ifndef UseUnicode
+UseUnicode = 0	# 1 なら UNICODE版
+!endif
+
+!ifdef RELEASE
+RTAIL = R
+UseDebug = 0
+DebugCopt = /DRELEASE
+!endif
+
+!ifdef USEDIRECTX
+EXTAIL = DX
+Dxopt = /DUSEDIRECTX $(SSEOPT)
+LIBDX = dxguid.lib d3d9.lib d3dx9.lib msimg32.lib
+!endif
+!ifdef USEDIRECTWRITE
+EXTAIL = DW
+Dxopt = /DUSEDIRECTX /DUSEDIRECTWRITE $(SSEOPT)
+LIBDX =
+!endif
+#=======================================
+closeall = -@if exist $(PPXLIB).DLL PPB$(W) /c *closeppx
+
+!if $(X64)
+UseBCC	= 0
+UseUnicode	= 1
+!endif
+
+!if $(UseUnicode)
+!if $(X64)
+PPXLIB	= PPLIB64W
+!else
+PPXLIB	= PPLIB32W
+!endif
+UnicodeCopt	= /DUNICODE
+W	= W
+!else
+PPXLIB	= PPLIB32
+!endif
+#=======================================
+!if $(WineMode)
+WineCopt	= -DWINEMODE
+!endif
+#=============================================================== Borland 用設定
+# プリコンパイルヘッダがある場合、そのディレクトリを環境変数CSMに指定すること
+!if $(UseBCC)
+.autodepend
+!if $(UseDebug)
+  DebugCopt	= -R -v -DDEBUG	# 追加 C コンパイルオプション
+  DebugLopt	= -v
+#  DebugCopt	= -R -v -vG -DDEBUG	# code guard
+#  DebugLib	= CG32.LIB		# 追加ライブラリ
+!endif
+#-------------------------------------- コンパイラ
+cc	= @BCC32 -ps -4 -c -C -d -H -Hc -w -O -O1 -RT- -x- -DWINVER=0x400 $(bc56opt) $(DebugCopt) $(UnicodeCopt) $(WineCopt)
+#-------------------------------------- リンカ共通指定
+!if $(UseIlink)
+ bc56opt = -Oc -q -a4
+ linkopt = @ilink32 -c -m -P -V4.0 -Gn -q $(DebugLopt)
+!else
+ linkopt = @tlink32 -c -m -P -V4.0 $(DebugLopt)
+!endif
+  C0CON	= C0X32
+  C0GUI	= C0W32
+  C0DLL	= C0D32X
+#-------------------------------------- リンカ(GUI)
+linkexe	= $(linkopt) -Tpe -aa
+#-------------------------------------- リンカ(CONSOLE)
+linkcon	= $(linkopt) -Tpe -ap
+#-------------------------------------- リンカ(DLL)
+linkdll	= $(linkopt) -Tpd -aa
+
+#-------------------------------------- インポート
+implib  = @implib
+#-------------------------------------- リソースコンパイラ
+rc	= @Brc32 -r $(UnicodeCopt) -dLEGACYICON
+#-------------------------------------- 暗黙の指定
+.C.OBJ:
+  $(cc) -o$@ $<
+
+.CPP.OBJ:
+  $(cc) -o$@ $<
+
+.RC.RES:
+  $(rc) -fo$@ $<
+#============================================================= Microsoft 用設定
+!else
+!if $(X64)
+!if $(VCTOOLKIT)
+LIB64	= bufferoverflowu.lib
+RC64	= /d_WIN64 /dLEGACYICON
+!else
+RC64	= /d_WIN64
+!endif
+LINK64	= /MACHINE:AMD64
+X64Copt	= /wd4244 /wd4267
+# ↑サイズ違い警告を消す(※できるだけこの指定を使わないこと)
+!endif
+!if $(UseDebug)
+  DebugCopt	= /Od /Zi /GS #/analyze
+  DebugLopt	= /DEBUG
+ # 4099:pdbファイルが見つからない
+!else
+!ifdef RELEASE
+    DebugCopt	= /O2 /Os /Oy /DRELEASE
+!else
+    DebugCopt	= /O2 /Os /Oy
+!endif
+!endif
+#-------------------------------------- コンパイラ
+cc	= @"cl" /Gz /GF /nologo /c /DWINVER=0x400 $(Dxopt) $(DebugCopt) $(UnicodeCopt) $(WineCopt) /W3 $(X64Copt) /wd4068 /wd4996
+# 4068:不明な #pragma	4996:古い関数を使用した	/Wp64:64bit移植性チェック
+
+#-------------------------------------- リンカ共通指定
+linkopt = @"link" /NOLOGO /INCREMENTAL:NO /MAP $(DebugLopt) $(LINK64)
+linkout = /OUT:
+C0DLL	= Kernel32.Lib AdvAPI32.Lib Ole32.Lib oleaut32.lib Imm32.Lib Gdi32.Lib\
+	  Shell32.Lib User32.Lib comctl32.lib Comdlg32.lib Version.lib $(LIB64)
+C0GUI	= $(C0DLL) $(LIBDX) $(PPXLIB).lib
+C0CON	= $(C0DLL) $(PPXLIB).lib
+#-------------------------------------- リンカ(GUI)
+linkexe	= $(linkopt) /SUBSYSTEM:WINDOWS
+#-------------------------------------- リンカ(CONSOLE)
+linkcon	= $(linkopt) /SUBSYSTEM:CONSOLE
+#-------------------------------------- リンカ(DLL)
+linkdll	= $(linkopt) /DLL
+#-------------------------------------- リソースコンパイラ
+rc	= @%COMSPEC% /C RC $(RC64) $(UnicodeCopt)
+
+#-------------------------------------- 暗黙の指定
+.C.OBJ:
+  $(cc) /Fo$@ $<
+
+.CPP.OBJ:
+  $(cc) /Fo$@ $<
+
+.RC.RES:
+  $(rc) $<
+!endif
+
+#------------------------------------------------------------------------------
+allFiles:	$(PPXLIB)$(RTAIL)$(EXTAIL).OBJ	$(PPXLIB).DLL	SETUP.EXE\
+		PPCUST$(W).EXE	PPB$(W).EXE	PPC$(W).EXE	PPV$(W).EXE\
+		PPTRAY$(W).EXE	PPFFIX$(W).EXE	PPX.HLP
+
+PPXH	= PPX.H PPX.RH PPCOMMON.H CHRTYPE.H TOROWIN.H TKEY.H
+COMMON	= MAKEFILE PPCOMMON.H VFS.H
+#------------------------------------------------------ PPX.OBJ(code体系切換用)
+$(PPXLIB)$(RTAIL)$(EXTAIL).OBJ:
+  -@del *.obj 2> nul
+  -@del *.res 2> nul
+  -@if exist %CSM% del %CSM%\*.CSM
+  @copy nul $(PPXLIB)$(RTAIL)$(EXTAIL).OBJ > nul
+#--------------------------------------------------------------------- PPCOMMON
+PPDH	= $(PPXH) PPCOMMON.RH PPD_DEF.H
+VFSH	= $(PPXH) VFS.H VFS_STRU.H
+PPDOBJ	=	TMEM.OBJ	PPCOMMON.OBJ	PPD_MDL.OBJ	PPD_CMDC.OBJ\
+		PPD_CMD.OBJ	PPD_MENU.OBJ\
+		PPD_WILD.OBJ	PPD_STR.OBJ	PPD_CCMD.OBJ	PPD_CMDL.OBJ\
+		PPD_CODE.OBJ	PPD_EDL.OBJ	PPD_EDLC.OBJ	PPD_EDLL.OBJ\
+		PPD_EDLM.OBJ	PPD_EDLS.OBJ	PPD_EXEC.OBJ	PPD_EXTL.OBJ\
+		PPD_FALT.OBJ	PPD_HIST.OBJ	PPD_SUB.OBJ	PPD_TASK.OBJ\
+		PPD_CSCD.OBJ	PPD_CUST.OBJ	PPD_PPE.OBJ	PPD_UI.OBJ\
+		PPD_DLG.OBJ\
+		PPD_SUBP.OBJ	CHRTYPE.OBJ	CALC.OBJ	PPX_64.OBJ\
+		VFS_FCHK.OBJ	VFS_MAIN.OBJ	VFS_ARCD.OBJ	VFS_TREE.OBJ\
+		VFS_LAPI.OBJ\
+		VFS_FF.OBJ	VFS_PATH.OBJ	VFS_SHN.OBJ	VFS_SHNP.OBJ\
+		VFS_ODLG.OBJ	VFS_FOP.OBJ	FATTIME.OBJ	VFS_OCF.OBJ\
+		VFS_OCD.OBJ	VFS_OFLT.OBJ	VFS_OIMG.OBJ	VFS_ODEL.OBJ\
+		VFS_OLNK.OBJ	VFS_OSUB.OBJ\
+		VFS_FFP.OBJ	VFS_FMY.OBJ	VFS_LF.OBJ	VFS_FFSH.OBJ\
+		VFS_HTTP.OBJ	VFS_FTP.OBJ	VFS_CD.OBJ	VFS_FAT.OBJ\
+		PPD_CSTD.OBJ	BMP.OBJ
+
+$(PPXLIB).DLL:	MAKEFILE	$(PPDOBJ)	PPCOMMON.RES
+  -@WINCLOSE PaperPlaneCombo
+  -@WINCLOSE PaperPlaneCUI$(W)
+  $(closeall)
+  $(linkdll) @&&|
+	$(C0DLL) $(PPDOBJ)
+	$(linkout)$.
+!if $(UseBCC)
+	$&,$(DebugLib) NOEH32 IMPORT32 CW32,
+!endif
+	PPCOMMON.RES
+|
+!if $(UseBCC)
+  $(implib) $& $.
+!endif
+
+CHRTYPE.OBJ:	CHRTYPE.C	$(PPXH)
+PPCOMMON.RES:	PPCOMMON.RC	PPXVER.H PPX.RH PPCOMMON.RH resource/DEFCUST.CFG resource/TOOLBAR.BMP
+PPCOMMON.OBJ:	PPCOMMON.C	$(PPDH) PPD_GVAR.C
+PPX_64.OBJ:	PPX_64.C	PPX_64.H
+PPD_CMD.OBJ:	PPD_CMD.C	$(PPDH) PPXCMDS.C
+PPD_CMDC.OBJ:	PPD_CMDC.C	$(PPDH) PPXCMDS.C
+PPD_CCMD.OBJ:	PPD_CCMD.C	$(PPDH)
+PPD_CMDL.OBJ:	PPD_CMDL.C	$(PPDH)
+PPD_CUST.OBJ:	PPD_CUST.C	$(PPDH) PPC_DISP.H
+PPD_CSCD.OBJ:	PPD_CSCD.C	$(PPDH) PPC_DISP.H
+PPD_CSTD.OBJ:	PPD_CSTD.C	$(PPDH)
+PPD_CODE.OBJ:	PPD_CODE.C	$(PPDH)
+PPD_EDL.OBJ:	PPD_EDL.C	$(PPDH)
+PPD_EXEC.OBJ:	PPD_EXEC.C	$(PPDH)
+PPD_EXTL.OBJ:	PPD_EXTL.C	$(PPDH)
+PPD_FALT.OBJ:	PPD_FALT.C	$(PPDH)
+PPD_HIST.OBJ:	PPD_HIST.C	$(PPDH)
+PPD_PPE.OBJ:	PPD_PPE.C	$(PPDH)
+PPD_STR.OBJ:	PPD_STR.C	$(PPDH)
+PPD_SUB.OBJ:	PPD_SUB.C	$(PPDH)
+PPD_TASK.OBJ:	PPD_TASK.C	$(PPDH)
+PPD_UI.OBJ:	PPD_UI.C	$(PPDH)
+PPD_WILD.OBJ:	PPD_WILD.C	$(PPDH)
+VFS_FCHK.OBJ:	VFS_FCHK.C	$(VFSH)
+VFS_FF.OBJ:	VFS_FF.C	$(VFSH)
+VFS_MAIN.OBJ:	VFS_MAIN.C	$(VFSH)
+VFS_PATH.OBJ:	VFS_PATH.C	$(VFSH)
+VFS_SHN.OBJ:	VFS_SHN.C	$(VFSH)
+VFS_TREE.OBJ:	VFS_TREE.C	$(VFSH)
+PPXCMDS.C:	ppxcmds.pl
+ -@perl ppxcmds.pl
+#-------------------------------------------------------------------------- PPC
+PPCH	=	$(PPXH) PPCUI.RH PPX_DRAW.H PPX_CV.H PPX_DOCK.H PPC_STRU.H\
+		PPC_GVAR.C PPC_FUNC.H PPC_DISP.H
+PPCOBJ	=	PPCUI.OBJ	PPC_MAIN.OBJ	PPC_CELL.OBJ	PPC_COM.OBJ\
+		PPC_COM2.OBJ	PPC_WIND.OBJ	PPC_DIRA.OBJ	PPC_DIR.OBJ\
+		PPC_DISP.OBJ	PPC_PAIN.OBJ	PPX_DRAW.OBJ\
+		PPC_SUB.OBJ	PPC_CINF.OBJ	PPC_CR.OBJ	PPC_FINF.OBJ\
+		PPC_DRPC.OBJ	PPC_DROP.OBJ	PPC_DRAG.OBJ	IDATAOBJ.OBJ\
+		IDROPSRC.OBJ	IENUMFE.OBJ	RENDRDAT.OBJ\
+		PPC_SUBP.OBJ	PPC_SUBT.OBJ	PPC_SUBI.OBJ\
+		PPC_FSIZ.OBJ	PPC_ADD.OBJ	PPC_DATR.OBJ	PPC_FOP.OBJ\
+		PPC_ARCH.OBJ	PPC_DLG.OBJ	FATTIME.OBJ	PPC_CCMP.OBJ\
+		PPC_INIT.OBJ	PPC_WHER.OBJ	PPC_INCS.OBJ\
+		TM_MEM.OBJ	CHRTYPE.OBJ	MD5.OBJ\
+		sha.obj		sha224-256.obj\
+		PPX_CV.OBJ	PPX_DOCK.OBJ	PPCOMBOB.OBJ	PPCOMBOP.OBJ\
+		PPCOMBO.OBJ	PPCOMBOS.OBJ
+
+PPC$(W).EXE:	$(COMMON)	$(PPCOBJ)	PPCUI.RES
+  -@WINCLOSE PaperPlaneCombo
+  -@WINCLOSE PaperPlaneCUI$(W)
+  $(linkexe) @&&|
+	$(C0GUI) $(PPCOBJ)
+	$(linkout)$.
+!if $(UseBCC)
+	$&,$(DebugLib) NOEH32 $(PPXLIB) IMPORT32 OLE2W32 CW32,
+!else
+	OLEACC.LIB
+!endif
+	PPCUI.RES
+|
+PPCUI.OBJ:	PPCUI.C		$(PPCH)
+PPC_MAIN.OBJ:	PPC_MAIN.C	$(PPCH)
+PPC_CCMP.OBJ:	PPC_CCMP.C	$(PPCH)
+PPC_CELL.OBJ:	PPC_CELL.C	$(PPCH)
+PPC_COM.OBJ:	PPC_COM.C	$(PPCH)
+PPC_COM2.OBJ:	PPC_COM2.C	$(PPCH)
+PPC_CR.OBJ:	PPC_CR.C	$(PPCH)
+PPC_DATR.OBJ:	PPC_DATR.C	$(PPCH)
+PPC_DD.OBJ:	PPC_DD.CPP	$(PPCH)
+PPC_DIR.OBJ:	PPC_DIR.C	$(PPCH)
+PPC_DIRA.OBJ:	PPC_DIRA.C	$(PPCH)
+PPC_DISP.OBJ:	PPC_DISP.C	$(PPCH)
+PPC_DLG.OBJ:	PPC_DLG.C	$(PPCH)
+PPC_DRAG.OBJ:	PPC_DRAG.CPP	$(PPCH)
+PPC_DROP.OBJ:	PPC_DROP.CPP	$(PPCH)
+PPC_DRPC.OBJ:	PPC_DRPC.CPP	$(PPCH)
+PPC_FSIZ.OBJ:	PPC_FSIZ.C	$(PPCH)
+PPC_INIT.OBJ:	PPC_INIT.C	$(PPCH)
+PPC_PAIN.OBJ:	PPC_PAIN.C	$(PPCH)
+PPC_SUB.OBJ:	PPC_SUB.C	$(PPCH)
+PPC_SUBI.OBJ:	PPC_SUBI.C	$(PPCH)
+PPC_SUBP.OBJ:	PPC_SUBP.CPP	$(PPCH)
+PPC_SUBT.OBJ:	PPC_SUBT.C	$(PPCH)
+PPC_WIND.OBJ:	PPC_WIND.C	$(PPCH)
+TM_MEM.OBJ:	TM_MEM.C	TM_MEM.H
+PPX_DRAW.OBJ:	PPX_DRAW.CPP	$(PPCH)
+PPX_CV.OBJ:	PPX_CV.C PPX.H VFS.H PPX_DRAW.H PPX_CV.H
+PPCUI.RES:	PPXVER.H PPCUI.RH PPX.RH PPCUI.RC
+PPC_DISP.H:	ppcdisp.pl
+ -@perl ppcdisp.pl
+#-------------------------------------------------------------------------- PPV
+PPVH	=	$(PPXH) PPVUI.RH PPV_STRU.H PPV_GVAR.C PPV_FUNC.H PPX_DRAW.H PPX_CV.H
+PPVOBJ	=	PPVUI.OBJ	PPV_COM.OBJ	PPV_IMG.OBJ	PPV_OPEN.OBJ\
+		PPV_PAIN.OBJ	PPV_PAIT.OBJ	PPV_TEXT.OBJ	CHRTYPE.OBJ\
+		PPV_INIT.OBJ	PPV_PRIN.OBJ	PPV_DOAS.OBJ	PPV_CP.OBJ\
+		PPV_CLIP.OBJ	PPV_PSTE.OBJ	PPV_SUB.OBJ\
+		TM_MEM.OBJ	PPX_CV.OBJ	PPX_64.OBJ	PPV_SUBP.OBJ\
+		PPX_DRAW.OBJ
+
+PPV$(W).EXE:	$(COMMON)	$(PPVOBJ)	PPVUI.RES
+  -@WINCLOSE PaperPlaneVUI$(W)
+  $(linkexe) @&&|
+	$(C0GUI) $(PPVOBJ)
+	$(linkout)$.
+!if $(UseBCC)
+	$&,$(DebugLib) NOEH32 $(PPXLIB) IMPORT32 CW32,
+!endif
+	PPVUI.RES
+|
+PPVUI.OBJ:	PPVUI.C		$(PPVH)
+PPV_CLIP.OBJ:	PPV_CLIP.C	$(PPVH)
+PPV_COM.OBJ:	PPV_COM.C	$(PPVH)
+PPV_CP.OBJ:	PPV_CP.C	$(PPVH)
+PPV_DOAS.OBJ:	PPV_DOAS.C	$(PPVH)
+PPV_IMG.OBJ:	PPV_IMG.C	$(PPVH)
+PPV_INIT.OBJ:	PPV_INIT.C	$(PPVH)
+PPV_OPEN.OBJ:	PPV_OPEN.C	$(PPVH)
+PPV_PAIN.OBJ:	PPV_PAIN.C	$(PPVH)
+PPV_PAIT.OBJ:	PPV_PAIT.C	$(PPVH)
+PPV_PRIN.OBJ:	PPV_PRIN.C	$(PPVH)
+PPV_PSTE.OBJ:	PPV_PSTE.C	$(PPVH)
+PPV_SUB.OBJ:	PPV_SUB.C	$(PPVH)
+PPV_SUBP.OBJ:	PPV_SUBP.CPP	$(PPVH)
+PPV_TEXT.OBJ:	PPV_TEXT.C	$(PPVH)
+PPVUI.RES:	PPXVER.H PPVUI.RH PPX.RH PPVUI.RC
+#-------------------------------------------------------------------------- PPB
+PPBOBJ	=	PPBUI.OBJ	PPB_SUB.OBJ	TCONSOLE.OBJ	TCINPUT.OBJ\
+		CHRTYPE.OBJ
+PPB$(W).EXE:	$(COMMON)	$(PPBOBJ)	PPBUI.RES
+  $(linkcon) @&&|
+	$(C0CON) $(PPBOBJ)
+	$(linkout)$.
+!if $(UseBCC)
+	$&,$(DebugLib) NOEH32 $(PPXLIB) IMPORT32 CW32,
+!endif
+	PPBUI.RES
+|
+PPBUI.OBJ:	PPBUI.C		$(PPXH)		PPB_SUB.C
+#----------------------------------------------------------------------- PPCUST
+PPCUSTOBJ =	PPCUST.OBJ	PPCST_G.OBJ	PPCST_FI.OBJ	PPCST_GR.OBJ\
+		PPCST_TB.OBJ	PPCST_GC.OBJ	PPCST_AO.OBJ	PPCST_ET.OBJ\
+		PPCST_ED.OBJ	CHRTYPE.OBJ
+PPCUST$(W).EXE:	$(COMMON)	$(PPCUSTOBJ)	PPCUST.RES
+  $(linkcon) @&&|
+	$(C0CON) $(PPCUSTOBJ)
+	$(linkout)$.
+!if $(UseBCC)
+	$&,$(DebugLib) NOEH32 $(PPXLIB) IMPORT32 CW32,
+!endif
+	PPCUST.RES
+|
+PPCUST.OBJ:	PPCUST.C	$(PPXH)
+PPCUST.RES:	PPXVER.H PPX.RH PPCUST.RC resource/CUSTLIST.CFG resource/CUSTKEY.CFG
+#----------------------------------------------------------------------- PPTRAY
+PPTRAY$(W).EXE:	$(COMMON)	PPTRAY.RES	PPTRAY.OBJ
+  -@WINCLOSE PPtray$(W)
+  $(linkexe) @&&|
+	$(C0GUI) PPTRAY.OBJ
+	$(linkout)$.
+!if $(UseBCC)
+	$&,$(DebugLib) NOEH32 $(PPXLIB) IMPORT32 CW32,
+!endif
+	PPTRAY.RES
+|
+PPTRAY.OBJ:	PPTRAY.C	$(PPXH)
+PPTRAY.RES:	PPXVER.H	PPTRAY.RC
+#----------------------------------------------------------------------- PPFFIX
+PPFFIX$(W).EXE:	$(COMMON)	PPFFIX.RES	PPFFIX.OBJ
+  $(linkexe) @&&|
+	$(C0GUI) PPFFIX.OBJ
+	$(linkout)$.
+!if $(UseBCC)
+	$&,$(DebugLib) NOEH32 $(PPXLIB) import32 cw32,
+!endif
+	PPFFIX.RES
+|
+PPFFIX.OBJ :	PPFFIX.C	$(PPXH)
+PPFFIX.RES :	PPXVER.H	PPX.RH		PPFFIX.RC
+#----------------------------------------------------------------------- SETUP
+PPSETUPOBJ =	PPSETUP.OBJ	PPSET_S.OBJ	PPSET_DG.OBJ	PPSET_IN.OBJ\
+		PPSET_UN.OBJ	CHRTYPE.OBJ
+SETUP.EXE:	$(COMMON)	$(PPSETUPOBJ)	PPSETUP.RES
+  $(linkexe) @&&|
+	$(C0GUI) $(PPSETUPOBJ)
+	$(linkout)$.
+!if $(UseBCC)
+	$&,$(DebugLib) NOEH32 import32 cw32,
+!endif
+	PPSETUP.RES
+|
+PPSETUP.OBJ :	PPSETUP.C	$(PPXH)	PPSET_IN.C PPSET_DG.C
+PPSETUP.RES :	PPXVER.H	PPX.RH	PPSETUP.RC
+
+#--------------------------------------------------------------------- PPX.HLP
+PPX.HLP:	XHELP.TXT
+ -@perl ppxhelp.pl 0
+ -@perl ppxhelp.pl 1
+ -@del ppxtemp.rtf

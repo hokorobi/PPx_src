@@ -1,0 +1,105 @@
+//-----------------------------------------------------------------------------
+// Paper Plane vUI リソース
+//-----------------------------------------------------------------------------
+#include "PPXVER.H"
+#include "PPX.RH"
+#include "PPVUI.RH"
+#ifdef WINEGCC
+#include "PPCOMMON.RC"
+#endif
+//-------------------------------------------------------------------- アイコン
+Ic_PPV ICON DISCARDABLE "resource/PPVUI.ICO"
+
+//------------------------------------------------------------------ ダイアログ
+//-------------------------------------- 印刷(1file)
+IDD_PRINTDLG DIALOG 40, 40, 64, 29
+STYLE WS_POPUP | WS_CAPTION | WS_VISIBLE
+{
+ CONTROL "Now Printing...", IDS_PRINTDLGTXT, "STATIC", SS_CENTER | WS_CHILD | WS_VISIBLE | WS_GROUP, 4, 3, 56, 10
+ CONTROL "Cancel", IDCANCEL, "BUTTON", BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_GROUP | WS_TABSTOP, 15, 15, 32, 12
+}
+//-------------------------------------- 印刷(multi file)
+IDD_MULTIPRINTDLG DIALOG 40, 40, 200, 100
+STYLE WS_POPUP | WS_CAPTION | WS_VISIBLE
+{
+ CONTROL "Now Printing...", IDS_PRINTDLGTXT, "STATIC", SS_CENTER | WS_CHILD | WS_VISIBLE | WS_GROUP, 2, 2, 196, 9
+ CONTROL "Cancel", IDCANCEL, "BUTTON", BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_GROUP | WS_TABSTOP, 83, 88, 32, 12
+ CONTROL "", IDL_PT_LIST, "listbox", LBS_STANDARD | WS_CHILD | WS_VISIBLE | WS_HSCROLL | WS_VSCROLL | WS_TABSTOP, 2, 12, 196, 75, WS_EX_RIGHT
+}
+//-------------------------------------- クリップボード/コードページ形式一覧
+IDD_PASTETYPE DIALOG 40, 40, 200, 106
+EXSTYLE WS_EX_DLGMODALFRAME
+STYLE DS_MODALFRAME | DS_3DLOOK | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Select Paste Type"
+{
+ CONTROL "", IDL_PT_LIST, "listbox", LBS_NOTIFY | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP, 2, 0, 196, 92
+ CONTROL "Ok", IDOK, "BUTTON", BS_DEFPUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_GROUP | WS_TABSTOP, 60, 92, 32, 11
+ CONTROL "Cancel", IDCANCEL, "BUTTON", BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_GROUP | WS_TABSTOP, 108, 92, 32, 11
+}
+//-------------------------------------------------------------- バージョン情報
+#ifndef WINDRES
+#ifndef WINEGCC
+1 VERSIONINFO LOADONCALL MOVEABLE
+FILEVERSION	VUI_ver
+PRODUCTVERSION	VUI_ver
+FILEOS		VOS__WINDOWS32
+FILETYPE	VFT_APP
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+	BLOCK "041103A4" // 言語=日本語(0x0411) およびキャラクタセット=SJIS(0x03a4)
+	BEGIN
+	  VALUE "Comments",		P_Comments "\0"
+	  VALUE "CompanyName",	P_Company_NAME "\0"
+	  VALUE "FileDescription",	"Paper Plane vUI\0"
+	  VALUE "FileVersion",	FileProp_Version "\0"
+	  VALUE "InternalName",	"PPVUI\0"
+	  VALUE "LegalCopyright",	P_Copyright "\0"
+	  VALUE "OriginalFilename", PPVEXE "\0"
+	  VALUE "ProductName", "Paper Plane xUI\0"
+	  VALUE "ProductVersion",	FileProp_Version "\0"
+	END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN                               //  Language    |    Translation
+	VALUE "Translation", 0x0411, 932  // Japanese     | Shift-JIS X-0208
+  END
+END
+#endif
+#endif
+//---------------------------------------------- アプリケーションのマニフェスト
+1 24
+{
+"<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>"
+"<assembly xmlns=""urn:schemas-microsoft-com:asm.v1"" manifestVersion=""1.0"">"
+"<assemblyIdentity processorArchitecture=""" P_Processor """"
+	" name=""" P_Company_NAME "." P_ProductName """"
+	" version=""" X_Version """ type=""win32""/>"
+"<description>" P_Description "</description>"
+"<dependency><dependentAssembly><assemblyIdentity"
+	" type=""win32"" name=""Microsoft.Windows.Common-Controls"""
+	" version=""6.0.0.0"" language=""*"""
+	" publicKeyToken=""6595b64144ccf1df"""
+	" processorArchitecture=""" P_Processor """/>"
+"</dependentAssembly></dependency>"
+"<asmv3:application xmlns:asmv3=""urn:schemas-microsoft-com:asm.v3"">"
+	"<asmv3:windowsSettings xmlns=""http://schemas.microsoft.com/SMI/2005/WindowsSettings"">"
+		"<dpiAware>True/PM</dpiAware>"
+	"</asmv3:windowsSettings>"
+"</asmv3:application>"
+"<application xmlns=""urn:schemas-microsoft-com:asm.v3"">"
+	"<windowsSettings xmlns:ws2=""http://schemas.microsoft.com/SMI/2016/WindowsSettings"">"
+	"<ws2:longPathAware>true</ws2:longPathAware>"
+	"<ws2:dpiAwareness>PerMonitorV2, PerMonitor</ws2:dpiAwareness>"
+	"</windowsSettings>"
+"</application>"
+"<compatibility xmlns=""urn:schemas-microsoft-com:compatibility.v1"">"
+"<application>"
+"<supportedOS Id=""{e2011457-1546-43c5-a5fe-008deee3d3f0}""/>" // Vista
+"<supportedOS Id=""{35138b9a-5d96-4fbd-8e2d-a2440225f93a}""/>" // 7
+"<supportedOS Id=""{4a2f28e3-53b9-4441-ba9c-d69d4a4a6e38}""/>" // 8
+"<supportedOS Id=""{1f676c76-80e1-4239-95bb-83d0f6d0da78}""/>" // 8.1
+"<supportedOS Id=""{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}""/>" // 10
+"</application></compatibility>"
+"</assembly>"
+}

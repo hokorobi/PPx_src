@@ -1,0 +1,1 @@
+@MAKE -DUseUnicode=1 %*

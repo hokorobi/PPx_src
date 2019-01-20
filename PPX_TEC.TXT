@@ -1,0 +1,290 @@
+●パスの書式
+[[mode]drivename][dirctoryname][filename][option]
+[mode]
+	無し				auto(できるだけ UNC を使う)
+	+				force PIDL			※
+	-				force GNC/UNC			※
+[drivename]
+	:				Drive list			※
+	:aliasname			Alias(M_pjump)			※
+	::{clsid}			PIDL
+	#(folder number):		PIDL SpecialFolder		※
+	(driveletter):			GNC
+	#(driveletter):			GNC/direct access
+	\\(computername)\(sharename)	UNC
+	\\(unc name)			PIDL(unc参照)			※
+	\\				network root			※
+	\\+				network root(extra)		※
+	http://[user[:pass]@]host[:port]/dir	http url		※
+	ftp://[user[:pass]@]host[:port]/dir	ftp url			※
+	mailto://			pop3 address			※
+	file://drivename:/dir		local drive
+	file://computername/sharename	unc drive
+	shell://pidlname		PIDL SpecialFolder
+	aux:[user:pass]@aux name\path	Auxiliary Operation Path	※
+	aux://[user:pass]@aux name/path	Auxiliary Operation Path	※
+	\\.\Harddisk(n)Partition(n)
+	\\.\HarddiskVolumeShadowCopy(n)
+	\\.\HarddiskVolume(n)
+参考
+	\\.\Volume{uid}
+	\\.\TAPE(n)			Device名
+	\\.\CdRom(n)			Device名
+	\\.\COM(nn)  			Device名(nnは２桁以上)
+	\\.\PhysicalDisk(n)		物理ドライブアクセス
+	\\.\PhysicalDrive(n)		物理ドライブアクセス
+	\\.\(driveletter):		driveパーティションアクセス
+	CONIN$ CONOUT$			console
+	\\?\(driveletter):		(UNICODE only),解析無し,MAXPATH→0x8000
+	\\?\UNC\(computername)\(sharename) (UNICODE only),解析無し,MAXPATHover
+	\\.\pipe
+	\\.\mailslot
+	con prn aux nul			console,printer,aux(com),null
+	com1-com9,lpt1-lpt9
+[directoryname]
+	[\][filename][\]...
+	:				virtual drive ( A:\path\:path )
+[filename]
+	name[.extname][:steamname...]
+[option]
+	::cd				cd/dvd image
+	::disk				disk image
+	::stream			stream list
+	::listfile			Listfile
+	::DLLName			use DLL(undll / susie / xxxFLDR.DLL)
+
+[comment]
+	:<comment>path			Listfile の履歴用
+	(driveletter):>comment		ドライブリスト用
+	:(M_pjump name)\tpath		ドライブリスト用
+
+[wildcard]
+[注]
+	末尾「.」は許されていない
+
+●レジストリ
+※基本設定
+	HKEY_CURRENT_USER\Software\TOROid\PPX 内に保存される
+
+	アンインストール用に
+	HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\
+							Uninstall\PPX\
+	Displayname "Paper Plane"
+	UninstallString "command"
+	を用意する。
+
+●メッセージ(TKEY.H を参照)
+・menu(Track指定)
+
+・menu(WM_COMMAND 指定,B0-15のみ使用)
+・menu(WM_SYSCOMMAND 指定,B0-31まで使用)
+	0000		無効
+	0001-7fff	MenuItem への予約(1-6fff:context 7000-7fff:ppx item)
+	8000-ffff	Key Code(WM_COMMAND)
+	f000-f7ff	WM_SYSCOMMAND用
+
+・PPx間通信用メッセージ
+WM_PPXCOMMAND	wParam/LOWORD:key wParam/HIWORD & lParam:パラメータ
+WM_SYSCOMMAND	wParam:Control-message
+		lParam/LOWORD:X		lParam/HIWORD:Y
+WM_COMMAND	wParam/HIWORD:Control-message,Key-1,Menu-0
+		wParam/LOWORD:ID	lParam:Control
+WM_COPYDATA	dwData/LOWORD:key dwData/HIWORD:パラメータ
+	dwData(L)
+	'='	指定のディレクトリで表示,lpData=ディレクトリ名
+	'O'	ファイル比較,lpData=比較対照ファイルへのポインタ,dwData(H)=種類
+
+%
+0	Get PPx Path
+1	Get Current Path	!	Edit macro value
+2	Get Pair Path		"	Set Title
+3	[Get virtual cur.Path]	#	Enumerate entry
+4	[Get virtual cur.Path]	$	Edit macro value with cache
+5				%	Escape '%'
+6				&	Continue if succeeded
+7				'	Get Env/Alias
+8				(
+9				)
+:	Command Separator	*	Function module
+;	Escape ';'		{	Set Select start
+				|	Set Cursor mark
+\	Add path separator	}	Set Select end & Edit
+@	Get Response filename	~	Pair window macro
+A				a	Get Response filename without '@'
+B				b
+C	Get entryname		c
+D	Get PPx directory	d
+E	Get Edit strings	e	Set Edit dialog mode
+F	Get format entry	f
+G	get localized text	g	get alias with extract
+H	Get general history	h	Get ppc path history
+I	info msgbox		i
+J	Jump path		j	Jump directory
+K	key macro		k	key emulate
+L	Get PPv view l.line	l	Get PPv view v.line
+M	Insert menu		m	memo text
+N	Get ppx hwnd		n	Get ppx ID str
+O	Set options		o
+P	Get Edit path		p
+Q	yes/no msgbox		q
+R	Get entryname on csr	r
+S	Get string width dir	s	String variable
+T	Get entry ext 		t	Get entry ext on csr
+U				u	Execute Unxxx
+V				v	PPv
+W	Get Window title	w
+X	Get entry filename	x
+Y	Get entry filename on C	y
+Z	Shell execute		z	Shell context menu
+
+
+WildCard
+
+1)normal
+	wildcards[,wiledcards,[...]]]	※ , は ; も使用可
+	※!(not) と &(and) 使用可ただし正しい組み合わせのみ
+ wildcard
+	* , ?
+	(\x:special)
+	a[ttributes]:r+s+h+a+d+
+	d[ate]:<,>,<=,>= dates or year-month-day
+	s[ize]:<,>,<=,>=
+	r[oma]:[^]strings
+	p[ath]:pattern /pattern/
+	o[ption]:
+		d	ディレクトリも対象
+		x	拡張子分離をしない
+		e	エラー報告ダイアログを表示しない
+		w	単語指定
+	i: 拡張子分離をしない
+2)regexp
+	/pattern/
+
+未実装
+{groupitem:#%r{\i [type]}::マーク時のみ列挙}
+
+%# と基本的に同じですが、マークがある時だけ展開して、マークがないときは何も展開しません。)
+
+{groupitem:#%A::%C/%@}
+
+マークがないときは %C、マークがある時は %@ の動作をします。
+
+
+;ListFile
+;Base=path
+
+Thread用途一覧
+	常時#1	Main thread
+	常時#2	Sub Thread(アイコン取得、更新通知取得)
+	常時#3	OLE2 Thread(Drop監視用、OLE2.DLLが自動生成)
+	(逐次)	Async dir read thread
+	(逐次)	PPc file operation thread
+	(逐次)	PPc D&D Thread(Auto D&D用)
+	(逐次)	PPc count Thread
+	(逐次)	PPc http Thread
+	(逐次)	PPc Comments Thread
+	(逐次)	PPc Fit Prop Thread(連動プロパティシート)
+	(逐次)	Enum PC name(network PC名 列挙用 PPLIB.DLL)
+	(逐次)	RestartSubthread(アイコン取得時に落ちたSub Threadを再起動させる
+	(逐次)	FillList thread (一行編集 補完一覧作成)
+	(逐次)	PPxUnhandledExceptionFilterMain(異常終了報告 thread)
+	(逐次)	PPxSendReportThread(報告送信 thread)
+	(逐次)	Joblist thread(経過表示)
+	(逐次)	TreeBuild thread(ツリー作成)
+	(逐次)	TreeSetPath thread(ツリー選択)
+	(逐次)	ExpandTree thread(ツリー下層展開)
+	(逐次)	Execute Thread(ファイル実行時にShell32.dll?が自動生成)
+	(逐次)	File Thread(エクスプローラ互換コピーなどでdllが自動生成)
+
+●help file
+索引用キーワード <key:keyword>	K{\footnote <name>}	<a name=>
+索引タイトル	<tk:keyword>	K{\footnote}+太字	<a name><b></b></a>
+ページ		 		+{\footnote <name>}
+強調(青色)	 <blue>		{\cf8			<b>
+強調(太字)	 <b>		{\b			<b>
+下線		 <u>		{\ul			<u>
+斜体(例示)	 <i>		{\i			<i>
+&		 &		&			&amp;
+"		 "		"			&quot;
+<		 "< "		<			&lt;
+>		 " >"		>			&gt;
+新しい章	.n=title[=id]	※idはアンカー兼用
+アンカー	<a:keyword>	#{\footnote <name>}	<a name=keyword>
+アンカー+索引タイトル <atk:keyword> #K{\footnote}+太字	<a name><b></b></a>
+アンカーへのリンク <jmpa:keyword> {\uldb}{\v}		<a href>
+アンカーへのリンク <jmpa:表示名:keyword> {\uldb}{\v}		<a href>
+PPxからのジャンプ <hid:helpID>				<a name=
+一覧開始	<tb:n>					<dl>
+一覧終了	<tb:0>
+等幅フォント	<pre>					<pre>
+httpリンク	<http:>
+mailリンク	<mailto:>
+copyright	<copyright:>
+
+・グループ関連
+グループ一覧の次に書く内容
+		<grouptitlememo>
+グループ一覧に使う名称
+		<grouptitle:title>
+グループの各項目(name=左に書く項目名 title=項目の１行説明 anc=アンカー)
+		<group:name::title>	#nameだと索引に登録
+		<group:title>		#titleだと索引に登録
+		<groupa:name::title::anc>
+		<groupa:title::anc>
+グループを書出	<group:dump>
+
+
+// 各エントリに追加データを関連づけさせる例
+
+DWORD ExtDataID = 0; // 追加データのID。１プロセス内で一意なのでグローバルで保存すること。
+
+void SetTest(const TCHAR *text)
+{
+    BYTE data[0x1000];
+    ENTRYEXTDATASTRUCT *eeds = (ENTRYEXTDATASTRUCT *)&data;
+
+    if ( ExtDataID == 0 ) {
+        PPXAPPINFOUNION up;
+        cinfo->info.Function(info,PPXCMDID_ENTRYEXTDATA_GETID,&up);
+        ExtDataID = up.num;
+    }
+    eeds->id = ExtDataID;
+    tstrcpy(eeds->data,text); // 例では文字列だが、文字列以外でもかまわない
+    eeds->size = (tstrlen(eeds->data) + 1) * sizeof(TCHAR);
+    eeds->entry = cellN; // 記憶させるエントリ
+    info->Function(&cinfo->info,PPXCMDID_ENTRYEXTDATA_SETDATA,(PPXAPPINFOUNION *)eeds);
+}
+
+void GetTest(const TCHAR *text)
+{
+    BYTE data[0x1000];
+    ENTRYEXTDATASTRUCT *eeds = (ENTRYEXTDATASTRUCT *)&data;
+
+    if ( ExtDataID == 0 ) {
+        PPXAPPINFOUNION up;
+        cinfo->info.Function(info,PPXCMDID_ENTRYEXTDATA_GETID,&up);
+        ExtDataID = up.num;
+    }
+    eeds->id = ExtDataID;
+    eeds->size = 0x1000; // 保存先の大きさ
+    eeds->entry = cellN; // 取得するエントリ
+    if ( cinfo->info.Function(info,PPXCMDID_ENTRYEXTDATA_GETDATA,(PPXAPPINFOUNION *)eeds) ){
+        Message(eeds->data); // 取得成功
+    }else{
+        Message("失敗");
+    }
+}
+
+
+_Path に保存される 一体化窓のタブの記憶書式
+
+CBx = abSTRINGS
+x : 一体化窓のID
+a : 現在窓のID(A-Z)
+b : 右側窓(反対窓で左端から移動するときに対象となる窓)のID(A-Z)
+STRINGS : タブ並び
+ ID $ show -
+ ID : PPcのID。Zの場合 sub ID が付く  例)Zabc
+ $ : ロック中を示す
+ show : 表示されているペインの場合、そのペイン番号を示す
+ - : ペイン毎にタブ内容が独立しているとき、ペイン区切りを示す

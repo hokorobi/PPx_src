@@ -1,0 +1,446 @@
+//-----------------------------------------------------------------------------
+// Paper Plane xUI	Setup	リソース
+//-----------------------------------------------------------------------------
+#include "PPXVER.H"
+#include "PPX.RH"
+#include "PPSETUP.RH"
+
+#ifdef _WIN64
+  #define SETUPTITLE "PPx Setup Wizard(64bit)"
+  #define SETUPTITLEE "PPx Setup Wizard(64bit)"
+#else
+  #ifdef UNICODE
+	#define SETUPTITLE "PPx Setup Wizard(32bit UNICODE)"
+	#define SETUPTITLEE "PPx Setup Wizard(32bit UNICODE)"
+  #else
+	#define SETUPTITLE "PPx Setup Wizard(32bit MultiByte)"
+	#define SETUPTITLEE "PPx Setup Wizard(32bit MultiByte)"
+  #endif
+#endif
+
+//-------------------------------------------------------------------- アイコン
+IC_SETUP ICON "resource/PPSETUP.ICO"
+
+//-----------------------------------------------------------------------------
+IDD_GUIDE DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION SETUPTITLE
+FONT 10, "ＭＳ ゴシック"
+{
+ CONTROL "#1", 1, "static", SS_ICON | WS_CHILD | WS_VISIBLE, 0, 0, 16, 16, 0
+ CONTROL "Paper Plane xUI Setup wizard", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 24, 2, 200, 12
+ CONTROL "Paper Plane xUI(PPx)は、ファイラPPc、ビューアPPv、コンソールPPb等で構成されるファイル操作用のツール集です。このセットアップウィザードによって、PPxをインストール／アンインストールすることができます。\n\n※ PPxは、このセットアップを用いなくても使用可能ですが、初期カスタマイズが一般向けではありません。初めての人はこのまま続行することをお薦めします。\n\n※ ポータブル用のインストールをするには、次のページでカスタムインストールを選択してください。", -1, "static", SS_LEFT | SS_SUNKEN | WS_CHILD | WS_VISIBLE, 10, 26, 232, 112, 0
+}
+IDD_GUIDEE DIALOG 0, 0, 340, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION SETUPTITLEE
+FONT 8, "MS Sans Serif"
+{
+ CONTROL "#1", 1, "static", SS_ICON | WS_CHILD | WS_VISIBLE, 0, 0, 16, 16, 0
+ CONTROL "Press Next button to start Paper Plane xUI setup.", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 24, 2, 200, 12
+ CONTROL "", -1, "static", SS_LEFT | SS_SUNKEN | WS_CHILD | WS_VISIBLE, 10, 26, 232, 112, 0
+}
+//-----------------------------------------------------------------------------
+IDD_SETTYPE DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION SETUPTITLE
+FONT 12, "ＭＳ ゴシック"
+{
+ CONTROL "セットアップ種別を選択してください。", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 200, 12
+ CONTROL "おまかせインストール(&S)", IDR_AUTOINST, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 20, 200, 12, 0
+ CONTROL "カスタムインストール(&C)", IDR_CUSTINST, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 34, 200, 12, 0
+ CONTROL "入手済み書庫を使ってアップデート(&P)", IDR_UPDATE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 48, 200, 12, 0
+ CONTROL "最新版の確認・入手とアップデート(&H)", IDR_CHECKUPDATE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 62, 200, 12, 0
+ CONTROL "アンインストール(&U)", IDR_UNINST, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 76, 200, 12, 0
+ CONTROL "検出PPx", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 116, 30, 12, 0
+ CONTROL "", IDS_INSTEDPPX, "static", SS_LEFT | SS_SUNKEN | WS_CHILD | WS_VISIBLE, 30, 115, 170, 12
+ CONTROL "手動指定(&T)", IDB_SELINSTPPX, "button", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 202, 114, 50, 14, 0
+}
+IDD_SETTYPEE DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION SETUPTITLEE
+FONT 10, "MS Sans Serif"
+{
+ CONTROL "Select setup action.", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 200, 12
+ CONTROL "&Simple install", IDR_AUTOINST, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 20, 200, 12, 0
+ CONTROL "&Custom install", IDR_CUSTINST, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 34, 200, 12, 0
+ CONTROL "U&Pdate with archive file", IDR_UPDATE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 48, 200, 12, 0
+ CONTROL "C&Heck release,and update", IDR_CHECKUPDATE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 62, 200, 12, 0
+ CONTROL "&Uninstall", IDR_UNINST, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 76, 200, 12, 0
+ CONTROL "found PPx path", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 116, 30, 12, 0
+ CONTROL "", IDS_INSTEDPPX, "static", SS_LEFT | SS_SUNKEN | WS_CHILD | WS_VISIBLE, 30, 115, 170, 12
+ CONTROL "browse(&T)", IDB_SELINSTPPX, "button", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 202, 114, 50, 14, 0
+}
+//-----------------------------------------------------------------------------
+IDD_UN_EXEC DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "PPx Setup Wizard - アンインストール開始"
+FONT 12, "ＭＳ ゴシック"
+{
+ CONTROL "アンインストールを開始します。「次へ」を押してください。\n\n※MultiByte版、UNICODE版の両方をまとめて削除します。\n※ファイルの削除はコンソール(DOS窓)で行います。\n  また、削除完了後、自動で終了します。", IDR_UNINSTMES, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 20, 232, 60, 0
+}
+IDD_UN_EXECE DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "PPx Setup Wizard - uninstall"
+FONT 10, "MS Sans Serif"
+{
+ CONTROL "Start uninstall", IDR_UNINSTMES, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 40, 232, 60, 0
+}
+//-----------------------------------------------------------------------------
+IDD_DEST DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "PPx Setup Wizard - インストール先の選択"
+FONT 12, "ＭＳ ゴシック"
+{
+ CONTROL "PPxのインストール先を選択してください。", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 250, 12
+ CONTROL "", IDR_PROGRAMS, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 20, 250, 12, 0
+ CONTROL "", IDR_NOCOPY, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 34, 250, 12, 0
+ CONTROL "次の場所にインストール(&S)", IDR_SELCOPY, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 48, 250, 12, 0
+ CONTROL "", IDE_SELCOPY, "edit", ES_LEFT | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP | ES_AUTOHSCROLL, 10, 62, 190, 12, 0
+ CONTROL "参照(&V)", IDB_SELCOPY, "button", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 202, 61, 50, 14, 0
+}
+IDD_DESTE DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "PPx Setup Wizard - install path"
+FONT 10, "MS Sans Serif"
+{
+ CONTROL "select install path", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 250, 12
+ CONTROL "", IDR_PROGRAMS, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 20, 250, 12, 0
+ CONTROL "", IDR_NOCOPY, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 34, 250, 12, 0
+ CONTROL "in&Stall to:", IDR_SELCOPY, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 48, 250, 12, 0
+ CONTROL "", IDE_SELCOPY, "edit", ES_LEFT | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP | ES_AUTOHSCROLL, 10, 62, 190, 12, 0
+ CONTROL "ref(&V)", IDB_SELCOPY, "button", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 202, 61, 50, 14, 0
+}
+//-----------------------------------------------------------------------------
+IDD_REG DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "PPx Setup Wizard - カスタマイズ内容の保存方法の選択"
+FONT 12, "ＭＳ ゴシック"
+{
+ CONTROL "カスタマイズ内容の保存先を選択してください。", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 200, 12
+ CONTROL "Application Data(%APPDATA%,推奨)(&S)", IDR_USEREG, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 16, 20, 200, 12, 0
+ CONTROL "PPx.EXEと同じ場所(ポータブル用)(&U)", IDR_UUSEREG, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 16, 32, 200, 12, 0
+ CONTROL "PPxはカスタマイズした設定内容をファイルに保存しますが、その保存先が指定できます。ユーザ別に用意されるApplication DataがPPxの設定内容の保存先として最適です。\n　また、リムーバブルディスク上で運用したり、１ディレクトリにまとめたい人向けの設定もあります。ただし、この設定はマルチユーザ(runasやリモートデスクトップを含む)で同時使用すると動作異常を起こすため、推奨しません。", -1, "static", SS_LEFT | SS_SUNKEN | WS_CHILD | WS_VISIBLE, 0, 52, 252, 70
+}
+IDD_REGE DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "PPx Setup Wizard - setting file directory"
+FONT 10, "MS Sans Serif"
+{
+ CONTROL "Select path for setting file.", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 200, 12
+ CONTROL "Application Data directory(%APPDATA%,&S)", IDR_USEREG, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 16, 20, 200, 12, 0
+ CONTROL "PPx.EXE directory(&U)", IDR_UUSEREG, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 16, 32, 200, 12, 0
+ CONTROL "Application Data directory (recommend): use %APPDATA% ,for multi user.\nPPx.EXE directory: for portable.", -1, "static", SS_LEFT | SS_SUNKEN | WS_CHILD | WS_VISIBLE, 0, 52, 252, 70
+}
+//-----------------------------------------------------------------------------
+IDD_PPCW DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "PPx Setup Wizard - PPc の画面構成設定"
+FONT 12, "ＭＳ ゴシック"
+{
+ CONTROL "ファイラ「PPc」の画面構成を指定してください。", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 200, 12, 0
+
+ CONTROL "独立１枚起動(&1)", IDR_PPC_1WINDOW, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_GROUP, 16, 16, 200, 12, 0
+ CONTROL "一体化(マルチペイン/２画面/タブ表示)(&C)", IDR_PPC_COMBO, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 16, 28, 200, 12, 0
+ CONTROL "２枚連結(&J)", IDR_PPC_JOINT, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 16, 40, 200, 12, 0
+
+ CONTROL "", -1, "static", SS_ETCHEDFRAME | WS_CHILD | WS_VISIBLE, 2, 55, 250, 1, 0
+
+ CONTROL "常時ツリー表示(&T)", IDX_PPC_TREE, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_GROUP, 20, 58, 200, 12, 0
+
+ CONTROL "", -1, "static", SS_ETCHEDFRAME | WS_CHILD | WS_VISIBLE, 2, 72, 250, 1, 0
+
+ CONTROL "１画面(&O)", IDR_PPC_1PANE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_GROUP, 20, 75, 70, 12, 0
+ CONTROL "２画面 左右(&H)", IDR_PPC_2PANE_H, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 100, 75, 70, 12, 0
+ CONTROL "２画面 上下(&V)", IDR_PPC_2PANE_V, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 180, 75, 70, 12, 0
+
+ CONTROL "左右連結(&H)", IDR_PPC_JOIN_H, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_GROUP, 20, 75, 70, 12, 0
+ CONTROL "上下連結(&V)", IDR_PPC_JOIN_V, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 100, 75, 70, 12, 0
+ CONTROL "重ねる(&P)", IDR_PPC_JOIN_P, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 180, 75, 70, 12, 0
+
+ CONTROL "", IDS_PPC_SEP, "static", SS_ETCHEDFRAME | WS_CHILD | WS_VISIBLE, 2, 88, 250, 1, 0
+
+ CONTROL "タブなし(&N)", IDR_PPC_TAB_NO, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_GROUP, 20, 92, 116, 12, 0
+ CONTROL "ペイン別タブ、項目独立(&S)", IDR_PPC_TAB_FULLSEPARATE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 138, 92, 116, 12, 0
+ CONTROL "ペイン間共有タブ(&G)", IDR_PPC_TAB_SHARE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 20, 104, 116, 12, 0
+ CONTROL "ペイン別タブ、項目共有(&P)", IDR_PPC_TAB_SEMISEPARATE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 138, 104, 116, 12, 0
+}
+
+IDD_PPCWE DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "PPx Setup Wizard - PPc layout"
+FONT 10, "MS Sans Serif"
+{
+ CONTROL "Select PPc(file manager) layout", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 200, 12, 0
+
+ CONTROL "One window(&1)", IDR_PPC_1WINDOW, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_GROUP, 16, 16, 200, 12, 0
+ CONTROL "Multi pains(2 pain,tab...)(&C)", IDR_PPC_COMBO, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 16, 28, 200, 12, 0
+ CONTROL "Two windows with jointed(&J)", IDR_PPC_JOINT, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 16, 40, 200, 12, 0
+
+ CONTROL "", -1, "static", SS_ETCHEDFRAME | WS_CHILD | WS_VISIBLE, 2, 55, 250, 1, 0
+
+ CONTROL "Tree view(&T)", IDX_PPC_TREE, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_GROUP, 20, 58, 200, 12, 0
+
+ CONTROL "", -1, "static", SS_ETCHEDFRAME | WS_CHILD | WS_VISIBLE, 2, 72, 250, 1, 0
+
+ CONTROL "one pane(&O)", IDR_PPC_1PANE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_GROUP, 20, 75, 70, 12, 0
+ CONTROL "two panes(&Horizontal)", IDR_PPC_2PANE_H, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 100, 75, 70, 12, 0
+ CONTROL "two panes(&Vertical)", IDR_PPC_2PANE_V, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 180, 75, 70, 12, 0
+
+ CONTROL "Horizontal joint(&H)", IDR_PPC_JOIN_H, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_GROUP, 20, 75, 70, 12, 0
+ CONTROL "Vertical joint(&V)", IDR_PPC_JOIN_V, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 100, 75, 70, 12, 0
+ CONTROL "Piled joint(&P)", IDR_PPC_JOIN_P, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 180, 75, 70, 12, 0
+
+ CONTROL "", IDS_PPC_SEP, "static", SS_ETCHEDFRAME | WS_CHILD | WS_VISIBLE, 2, 88, 250, 1, 0
+
+ CONTROL "No tab(&N)", IDR_PPC_TAB_NO, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_GROUP, 20, 92, 116, 12, 0
+ CONTROL "each panes,each tab items(&S)", IDR_PPC_TAB_FULLSEPARATE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 138, 92, 116, 12, 0
+ CONTROL "share tab(&G)", IDR_PPC_TAB_SHARE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 20, 104, 116, 12, 0
+ CONTROL "each pane,share tab items(&P)", IDR_PPC_TAB_SEMISEPARATE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 138, 104, 116, 12, 0
+}
+//-----------------------------------------------------------------------------
+IDD_KEY DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "PPx Setup Wizard - UI設定"
+FONT 12, "ＭＳ ゴシック"
+{
+ CONTROL "機能割り当て、表記、配色を指定してください。", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 200, 10, 0
+ CONTROL "PPx オリジナル(&O)", IDR_PPXKEY, "button", BS_AUTORADIOBUTTON | BS_MULTILINE | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 12, 88, 26, 0
+ CONTROL "拙作MS-DOS用ファイラ「K-Launcher」のキー割り当てをWindows向けにアレンジしています。(^X,^C,^Vでクリップボード操作など)", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 88, 12, 166, 26
+ CONTROL "エクスプローラ(&E)", IDR_XPRKEY, "button", BS_AUTORADIOBUTTON | BS_MULTILINE | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 38, 88, 18, 0
+ CONTROL "アイコン付詳細表示、インクリメンタルサーチ重視設定です。", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 88, 38, 166, 18
+ CONTROL "K-Launcher/FD風(&K)", IDR_KLKEY, "button", BS_AUTORADIOBUTTON | BS_MULTILINE | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 56, 88, 18, 0
+ CONTROL "拙作MS-DOS用ファイラ「K-Launcher」と、FD(出射 厚氏作)風のキー割り当てです。", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 88, 56, 166, 18
+ CONTROL "FILMTN風(&F)", IDR_FMKEY, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 74, 88, 9, 0
+ CONTROL "FILMTN(K.Ishida氏作)風キー割り当てです。", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 88, 74, 166, 9
+ CONTROL "", -1, "static", SS_ETCHEDFRAME | WS_CHILD | WS_VISIBLE, 0, 88, 290, 1, 0
+ CONTROL "ダイアモンドカーソルを使用(&C)", IDX_DIAKEY, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 92, 240, 12, 0
+ CONTROL "英語表記メニューを使用(&J)", IDX_EMENU, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 104, 240, 12, 0
+ CONTROL "DOS風配色(&D,背景色が黒となる配色です)", IDX_DOSC, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 116, 240, 12, 0
+}
+IDD_KEYE DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "PPx Setup Wizard - UI"
+FONT 10, "MS Sans Serif"
+{
+ CONTROL "Select UI mapping,color layout.", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 200, 10, 0
+ CONTROL "PPx mapping(&O)", IDR_PPXKEY, "button", BS_AUTORADIOBUTTON | BS_MULTILINE | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 12, 88, 26, 0
+ CONTROL "", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 88, 12, 166, 26
+ CONTROL "Explorer mapping(&E)", IDR_XPRKEY, "button", BS_AUTORADIOBUTTON | BS_MULTILINE | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 38, 88, 18, 0
+ CONTROL "Explorer like key,mouse mapping", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 88, 38, 166, 18
+ CONTROL "K-Launcher/FD(&K)", IDR_KLKEY, "button", BS_AUTORADIOBUTTON | BS_MULTILINE | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 56, 88, 18, 0
+ CONTROL "", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 88, 56, 166, 18
+ CONTROL "FILMTN(&F)", IDR_FMKEY, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 74, 88, 9, 0
+ CONTROL "", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 88, 74, 166, 9
+ CONTROL "", -1, "static", SS_ETCHEDFRAME | WS_CHILD | WS_VISIBLE, 0, 88, 290, 1, 0
+ CONTROL "Use diamond cursor key(&C)", IDX_DIAKEY, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 92, 240, 12, 0
+ CONTROL "Use english menu(&J)", IDX_EMENU, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 104, 240, 12, 0
+ CONTROL "black background(&D)", IDX_DOSC, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 116, 240, 12, 0
+}
+//-----------------------------------------------------------------------------
+IDD_APP DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "PPx Setup Wizard - 外部ソフトの設定確認"
+FONT 12, "ＭＳ ゴシック"
+{
+ CONTROL "PPxで利用するソフトを確認してください。", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 200, 12, 0
+ CONTROL "テキストエディタ", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0,20, 67, 12
+ CONTROL "", IDE_TEXTEDIT, "edit", ES_LEFT | ES_AUTOHSCROLL | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP, 70, 19, 140, 12
+ CONTROL "変更(&E)", IDB_TEXTEDIT, "button", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 214,18,34, 14
+ CONTROL "汎用ビューア", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 40, 67, 12
+ CONTROL "", IDE_UNIVIEW, "edit", ES_LEFT | ES_AUTOHSCROLL | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP, 70, 39, 140, 12
+ CONTROL "変更(&V)", IDB_UNIVIEW, "button", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 214,38,34, 14
+ CONTROL "検出書庫操作DLL", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 60, 67, 12
+ CONTROL "", IDC_UNARC, "combobox", CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP, 70, 59, 140, 120
+ CONTROL "Susie Plug-in", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 80, 67, 12
+ CONTROL "", IDE_SUSIEDIR, "edit", ES_LEFT | ES_AUTOHSCROLL | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP, 70,79,140,12
+ CONTROL "変更(&V)", IDB_SUSIEDIR, "button", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 214,78,34, 14
+}
+IDD_APPE DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "PPx Setup Wizard - Default applications"
+FONT 10, "MS Sans Serif"
+{
+ CONTROL "Check default applications.", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 200, 12, 0
+ CONTROL "Text editor", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0,20, 64, 12
+ CONTROL "", IDE_TEXTEDIT, "edit", ES_LEFT | ES_AUTOHSCROLL | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP, 70, 19, 140, 12
+ CONTROL "browes(&E)", IDB_TEXTEDIT, "button", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 214,18,34, 14
+ CONTROL "Pager", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 40, 64, 12
+ CONTROL "", IDE_UNIVIEW, "edit", ES_LEFT | ES_AUTOHSCROLL | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP, 70, 39, 140, 12
+ CONTROL "browes(&V)", IDB_UNIVIEW, "button", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 214,38,34, 14
+ CONTROL "UNLHA32.DLL", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 60, 64, 12
+ CONTROL "", IDC_UNARC, "combobox", CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP, 70, 59, 140, 120
+ CONTROL "Susie Plug-in", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 80, 64, 12
+ CONTROL "", IDE_SUSIEDIR, "edit", ES_LEFT | ES_AUTOHSCROLL | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP, 70,79,140,12
+ CONTROL "browes(&V)", IDB_SUSIEDIR, "button", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 214,78,34, 14
+}
+//-----------------------------------------------------------------------------
+IDD_LINK DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "PPx Setup Wizard - ショートカットの登録"
+FONT 12, "ＭＳ ゴシック"
+{
+ CONTROL "ショートカットの登録先等を確認してください。", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 200, 12, 0
+ CONTROL "スタートメニューに登録(&S)", IDX_MENU, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 12, 20, 200, 12, 0
+ CONTROL "PPcをスタートアップに登録(&M)", IDX_BOOT, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 12, 32, 200, 12, 0
+ CONTROL "デスクトップに登録(&D)", IDX_DESK, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 12, 44, 200, 12, 0
+ CONTROL "アプリケーションの追加と削除に登録(&A)", IDX_APP, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 12, 56, 200, 12, 0
+ CONTROL "共用のスタートメニューに登録(&C)", IDX_CMENU, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 12, 68, 200, 12, 0
+ CONTROL "登録例", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 92, 24, 12, 0
+ CONTROL "", IDE_LINKSMP, "edit", ES_LEFT | ES_READONLY | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP | ES_AUTOHSCROLL, 40, 90, 200, 12, 0
+}
+IDD_LINKE DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "PPx Setup Wizard - Shortcuts"
+FONT 10, "MS Sans Serif"
+{
+ CONTROL "", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 200, 12, 0
+ CONTROL "Use start menu(&S)", IDX_MENU, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 12, 20, 200, 12, 0
+ CONTROL "Use start-up(&M)", IDX_BOOT, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 12, 32, 200, 12, 0
+ CONTROL "on desktop(&D)", IDX_DESK, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 12, 44, 200, 12, 0
+ CONTROL "programs(&A)", IDX_APP, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 12, 56, 200, 12, 0
+ CONTROL "common start menu(&C)", IDX_CMENU, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 12, 68, 200, 12, 0
+ CONTROL "ex", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 92, 24, 12, 0
+ CONTROL "", IDE_LINKSMP, "edit", ES_LEFT | ES_READONLY | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP | ES_AUTOHSCROLL, 40, 90, 200, 12, 0
+}
+//-----------------------------------------------------------------------------
+IDD_READY DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "PPx Setup Wizard - 作業開始の確認"
+FONT 12, "ＭＳ ゴシック"
+{
+ CONTROL "作業を開始します。「次へ」を押してください。", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 240, 12, 0
+}
+IDD_READYE DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "PPx Setup Wizard - install start"
+FONT 10, "MS Sans Serif"
+{
+ CONTROL "start copy and registration", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 240, 12, 0
+}
+//-----------------------------------------------------------------------------
+IDD_COPY DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "PPx Setup Wizard - 経過報告"
+FONT 12, "ＭＳ ゴシック"
+{
+ CONTROL "PPcを起動する(&X)", IDX_STARTPPC, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 100, 100, 12, 0
+ CONTROL "", IDE_RESULT, "edit", ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_READONLY | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP, 0, 0, 232, 100, WS_EX_STATICEDGE
+}
+IDD_COPYE DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "PPx Setup Wizard - result"
+FONT 10, "MS Sans Serif"
+{
+ CONTROL "boot PPc(&X)", IDX_STARTPPC, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 100, 100, 12, 0
+ CONTROL "", IDE_RESULT, "edit", ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_READONLY | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP, 0, 0, 232, 100, WS_EX_STATICEDGE
+}
+//-----------------------------------------------------------------------------
+IDD_UP DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "PPx Setup Wizard - アップデート"
+FONT 12, "ＭＳ ゴシック"
+{
+ CONTROL "以下の内容でアップデートを開始します。「次へ」を押してください。", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 200, 24, 0
+ CONTROL "アップデート元", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0,40, 64, 12
+ CONTROL "", IDE_UPSRC, "edit", ES_LEFT | ES_AUTOHSCROLL | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP | ES_AUTOHSCROLL, 66, 39, 148, 12
+ CONTROL "変更(&S)", IDB_UPSRC, "button", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 218,38,34, 14
+ CONTROL "アップデート先", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 60, 64, 12
+ CONTROL "", IDS_UPDEST, "static", SS_LEFT | SS_SUNKEN | WS_CHILD | WS_VISIBLE, 66,59,148,12
+ CONTROL "※全てのPPxを終了してからアップデートを行いますが、終了に失敗し、アクセスできない旨のエラーが出ることがあります。その場合は手動で終了してから「再試行」を押してください。", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 4, 80, 232, 36
+}
+IDD_UPE DIALOG 0, 0, 290, 194
+STYLE WS_POPUP | WS_CAPTION
+CAPTION "PPx Setup Wizard - update"
+FONT 10, "MS Sans Serif"
+{
+ CONTROL "Start update", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 200, 24, 0
+ CONTROL "from", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0,40, 64, 12
+ CONTROL "", IDE_UPSRC, "edit", ES_LEFT | ES_AUTOHSCROLL | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP | ES_AUTOHSCROLL, 66, 39, 148, 12
+ CONTROL "browes(&S)", IDB_UPSRC, "button", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 218,38,34, 14
+ CONTROL "to", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 60, 64, 12
+ CONTROL "", IDS_UPDEST, "static", SS_LEFT | SS_SUNKEN | WS_CHILD | WS_VISIBLE, 66,59,148,12
+ CONTROL "", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 4, 80, 232, 36
+}
+//------------------------------------------------------------------ ユーザ定義
+IF_PPXDEL RCDATA "resource/PPXDEL.BAT"
+IF_DEFLOW RCDATA "resource/DEFLOWSP.CFG"
+IF_DEFPPX RCDATA "resource/DEFPPX.CFG"
+IF_DEFXPR RCDATA "resource/DEFXPR.CFG"
+IF_DEFXPJ RCDATA "resource/DEFXPRJP.CFG"
+IF_DEFKL  RCDATA "resource/DEFKL.CFG"
+IF_DEFFM  RCDATA "resource/DEFFM.CFG"
+IF_DEFDIA RCDATA "resource/DEFDIA.CFG"
+IF_DEFJPN RCDATA "resource/DEFJPN.CFG"
+IF_DEFWIN RCDATA "resource/DEFWIN.CFG"
+//-------------------------------------------------------------- バージョン情報
+#ifndef WINDRES
+#ifndef WINEGCC
+1 VERSIONINFO LOADONCALL MOVEABLE
+FILEVERSION	COM_ver
+PRODUCTVERSION	COM_ver
+FILEOS		VOS__WINDOWS32
+FILETYPE	VFT_APP
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+	BLOCK "041103A4" // 言語=日本語(0x0411) およびキャラクタセット=SJIS(0x03a4)
+	BEGIN
+	  VALUE "Comments",		P_Comments "\0"
+	  VALUE "CompanyName",	P_Company_NAME "\0"
+	  VALUE "FileDescription",	"Paper Plane xUI SETUP\0"
+	  VALUE "FileVersion",	FileProp_Version "\0"
+	  VALUE "InternalName",	"SETUP\0"
+	  VALUE "LegalCopyright",	P_Copyright "\0"
+	  VALUE "OriginalFilename", "SETUP.EXE\0"
+	  VALUE "ProductName", "Paper Plane xUI\0"
+	  VALUE "ProductVersion",	FileProp_Version "\0"
+	END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+	VALUE "Translation", 0x0411,932  // Japanese
+  END
+END
+#endif
+#endif
+//-------------------------------------------------------------- XP UI 指定
+1 24
+{
+"<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>"
+"<assembly xmlns=""urn:schemas-microsoft-com:asm.v1"" manifestVersion=""1.0"">"
+"<assemblyIdentity processorArchitecture=""" P_Processor """"
+	" name=""" P_Company_NAME "." P_ProductName """"
+	" version=""" X_Version """ type=""win32""/>"
+"<description>" P_Description "</description>"
+"<dependency><dependentAssembly><assemblyIdentity"
+	" type=""win32"" name=""Microsoft.Windows.Common-Controls"""
+	" version=""6.0.0.0"" language=""*"""
+	" publicKeyToken=""6595b64144ccf1df"""
+	" processorArchitecture=""" P_Processor """/>"
+"</dependentAssembly></dependency>"
+"<asmv3:application xmlns:asmv3=""urn:schemas-microsoft-com:asm.v3"">"
+	"<asmv3:windowsSettings xmlns=""http://schemas.microsoft.com/SMI/2005/WindowsSettings"">"
+		"<dpiAware>True/PM</dpiAware>"
+	"</asmv3:windowsSettings>"
+"</asmv3:application>"
+"<application xmlns=""urn:schemas-microsoft-com:asm.v3"">"
+	"<windowsSettings xmlns:ws2=""http://schemas.microsoft.com/SMI/2016/WindowsSettings"">"
+	"<ws2:longPathAware>true</ws2:longPathAware>"
+	"<ws2:dpiAwareness>PerMonitorV2, PerMonitor</ws2:dpiAwareness>"
+	"</windowsSettings>"
+"</application>"
+"<compatibility xmlns=""urn:schemas-microsoft-com:compatibility.v1"">"
+"<trustInfo xmlns=""urn:schemas-microsoft-com:asm.v3"">"
+"<security><requestedPrivileges>"
+"<requestedExecutionLevel level=""highestAvailable"" uiAccess=""false""/>"
+"</requestedPrivileges></security></trustInfo>"
+"<application>"
+"<supportedOS Id=""{e2011457-1546-43c5-a5fe-008deee3d3f0}""/>" // Vista
+"<supportedOS Id=""{35138b9a-5d96-4fbd-8e2d-a2440225f93a}""/>" // 7
+"<supportedOS Id=""{4a2f28e3-53b9-4441-ba9c-d69d4a4a6e38}""/>" // 8
+"<supportedOS Id=""{1f676c76-80e1-4239-95bb-83d0f6d0da78}""/>" // 8.1
+"<supportedOS Id=""{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}""/>" // 10
+"</application></compatibility>"
+"</assembly>"
+}
