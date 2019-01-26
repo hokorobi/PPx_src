@@ -151,10 +151,16 @@ case K_s | 'E':
 		}
 	}
 	break;
+//----------------------------------------------- High Lightt
+case K_c | K_s | 'F':
+case K_s | 'F':
+	SetHighlight(vinfo);
+	break;
 //----------------------------------------------- Find Foward
 case K_c | 'F':
 case 'F':
 	if ( FindInputBox(hWnd,T("Find forward")) == FALSE ) return ERROR_CANCELLED;
+	// case K_F3 へ
 //----------------------------------------------- Find Foward
 case K_F3:
 case ']':				// []]
@@ -235,7 +241,7 @@ case ';':
 //----------------------------------------------- Reload
 case K_F5:
 case '.':
-	PPvReload(hWnd);
+	PPvReload(vinfo);
 	break;
 //----------------------------------------------- Open
 case K_c | 'O':
@@ -245,7 +251,7 @@ case K_c | 'O':
 	}
 	if ( buf[0] == '\0' ) return ERROR_CANCELLED;
 	VFSFixPath(NULL,buf,NULL,VFSFIX_PATH);
-	OpenAndFollowViewObject(hWnd,buf,NULL,NULL,0);
+	OpenAndFollowViewObject(vinfo, buf, NULL, NULL, 0);
 	break;
 //----------------------------------------------- Save
 case K_c | 'S':
@@ -368,7 +374,7 @@ case 'Z':
 case '^':
 	X_win ^= XWIN_MENUBAR;
 	SetCustTable(T("X_win"),T("V"),&X_win,sizeof(X_win));
-	SetMenu(hMainWnd, (X_win & XWIN_MENUBAR) ? DynamicMenu.hMenuBarMenu : NULL);
+	SetMenu(vinfo->info.hWnd, (X_win & XWIN_MENUBAR) ? DynamicMenu.hMenuBarMenu : NULL);
 	break;
 //----------------------------------------------- Help
 case K_F1:
@@ -407,12 +413,12 @@ case 'D':
 	break;
 
 case K_c | 'D':
-	return SaveBookmarkMenu(hWnd);
+	return SaveBookmarkMenu(vinfo);
 
 case 'G':
 	if ( Bookmark[BookmarkID_1st].pos.x >= 0 ){
-		if ( GotoBookmark(hWnd,BookmarkID_1st) == FALSE ){
-			GotoBookmark(hWnd,BookmarkID_undo);
+		if ( GotoBookmark(vinfo,BookmarkID_1st) == FALSE ){
+			GotoBookmark(vinfo,BookmarkID_undo);
 		}else{
 			SetPopMsg(POPMSG_NOLOGMSG,T("Goto position #1"));
 		}
@@ -420,7 +426,7 @@ case 'G':
 	break;
 
 case K_c | 'G':
-	return GotoBookmarkMenu(hWnd);
+	return GotoBookmarkMenu(vinfo);
 //----------------------------------------------- Rotate Left(K) Right(L)
 case 'K':
 	Rotate(hWnd,-1);
@@ -481,7 +487,7 @@ case '_':
 	break;
 //-----------------------------------------------
 case '/':
-	ReadSizeChange(hWnd);
+	ReadSizeChange(vinfo);
 	break;
 case '>':
 	DivChange(1);
@@ -570,7 +576,7 @@ case K_c | K_s | K_Pup:
 	if ( !(FileDividePointer.LowPart | FileDividePointer.HighPart) ) break;
 	// 分割ページのトップ
 	FileDividePointer.LowPart = FileDividePointer.HighPart = 0;
-	PPvReload(hMainWnd);
+	PPvReload(vinfo);
 	break;
 //----------------------------------------------- last page
 case K_c | K_s | K_Pdw:
@@ -582,7 +588,7 @@ case K_c | K_s | K_Pdw:
 	}
 	// 分割ページの末尾
 	GetDivMax(&FileDividePointer);
-	PPvReload(hMainWnd);
+	PPvReload(vinfo);
 	break;
 //----------------------------------------------- &\[↑] size
 case K_s | K_a | K_up:
@@ -610,7 +616,7 @@ case K_a | K_F6:
 	break;
 //----------------------------------------------- Memu
 case K_F10:
-	if (X_win & XWIN_MENUBAR) return ERROR_INVALID_FUNCTION;
+	if ( X_win & XWIN_MENUBAR ) return ERROR_INVALID_FUNCTION;
 //	break; なし
 //----------------------------------------------- System Memu
 case K_a | K_space:
@@ -623,7 +629,7 @@ case K_a | K_space:
 case K_apps:
 case K_s | K_F10:
 case K_c | K_cr:
-	PPvContextMenu(hWnd);
+	PPvContextMenu(vinfo);
 	break;
 //----------------------------------------------- ShellContextMenu
 case K_s | K_apps:
@@ -687,9 +693,9 @@ case K_Lcust:
 		hStatusLine = CreateSolidBrush(C_line);
 
 		DeleteFonts();
-		hDC = GetDC(hMainWnd);
+		hDC = GetDC(vinfo->info.hWnd);
 		MakeFonts(hDC,X_textmag);
-		ReleaseDC(hMainWnd,hDC);
+		ReleaseDC(vinfo->info.hWnd,hDC);
 	}
 	UnloadWallpaper(&BackScreen);
 	LoadWallpaper(&BackScreen,hWnd,RegCID);
@@ -742,7 +748,7 @@ default:
 //----------------------------------------------- Menu
 	if ( !(X_win & XWIN_MENUBAR) && !(key & K_v) &&
 				((key & (K_e | K_s | K_c | K_a)) == (K_a)) ){
-		SystemDynamicMenu(&DynamicMenu,&PPvInfo.info,key);
+		SystemDynamicMenu(&DynamicMenu,&vinfo->info,key);
 		break;
 	}
 	return ERROR_INVALID_FUNCTION;

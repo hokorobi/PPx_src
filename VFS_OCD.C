@@ -430,7 +430,7 @@ ERRORCODE DlgCopyDir(FOPSTRUCT *FS,const TCHAR *src,TCHAR *dst,DWORD srcattr)
 		}
 		HeapFree(DLLheap,0,delay_dest);
 	}
-	if ( (FS->testmode == FALSE) && !FS->renamemode ){
+	if ( (FS->testmode == FALSE) && (FS->renamemode == FALSE) ){
 		if ( (result == NO_ERROR) && (FS->opt.security != SECURITY_FLAG_NONE)){
 			result = CopySecurity(FS,src,dst);
 		}
@@ -442,8 +442,12 @@ ERRORCODE DlgCopyDir(FOPSTRUCT *FS,const TCHAR *src,TCHAR *dst,DWORD srcattr)
 			if ( RemoveDirectoryL(src) == FALSE ){
 				if ( delay_dest == NULL ){
 					if ( FS->opt.fop.flags & VFSFOP_OPTFLAG_SKIPERROR ){
-						FS->progs.info.LEskips++;
-						FWriteErrorLogs(FS,src,T("Deldir"),PPERROR_GETLASTERROR);
+						ERRORCODE delerr = GetLastError();
+
+						if ( delerr != ERROR_DIR_NOT_EMPTY ){
+							FS->progs.info.LEskips++;
+							FWriteErrorLogs(FS,src,T("Deldir"),PPERROR_GETLASTERROR);
+						}
 					}else{
 						result = GetLastError();
 					}

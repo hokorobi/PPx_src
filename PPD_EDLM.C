@@ -83,7 +83,7 @@ BOOL FileSave(PPxEDSTRUCT *PES,int mode)
 		tstrcpy(name,PES->filename);
 	}else{
 		if ( PES->flag & PPXEDIT_TEXTEDIT ){
-			GetWindowText(GetParentBox(PES->hWnd),name,TSIZEOF(name));
+			GetWindowText(GetParentCaptionWindow(PES->hWnd),name,TSIZEOF(name));
 			if ( name[0] == ' ' ) tstrcpy(name,T("EDITTEXT.TXT"));
 		}else{
 			tstrcpy(name,T("EDITTEXT.TXT"));
@@ -126,8 +126,12 @@ BOOL FileSave(PPxEDSTRUCT *PES,int mode)
 		tstrcpy(PES->filename,name);
 										// 書き込み準備(各種コード変換)
 		#ifdef UNICODE	// UNICODE版は個別に処理する
-		if ( (PES->CharCode == VTYPE_UNICODE) || (PES->CharCode == CP__UTF16L) ||
-			 (PES->CharCode == VTYPE_UTF8) || (PES->CharCode == CP_UTF8) ){
+		if ( (PES->CharCode == VTYPE_UTF8) ||
+			 (PES->CharCode == CP_UTF8) ||
+			 (PES->CharCode == VTYPE_UNICODE) ||
+			 (PES->CharCode == CP__UTF16L) ||
+			 (PES->CharCode == VTYPE_UNICODEB) ||
+			 (PES->CharCode == CP__UTF16B) ){
 			int offset;
 
 			size = GetWindowTextLengthW(PES->hWnd) + 1; // BOM分を加算
@@ -137,10 +141,12 @@ BOOL FileSave(PPxEDSTRUCT *PES,int mode)
 				return FALSE;
 			}
 			// BOM なし
-			if ( (PES->CharCode == CP__UTF16L) || (PES->CharCode == CP_UTF8) ){
+			if ( (PES->CharCode == CP_UTF8) ||
+				 (PES->CharCode == CP__UTF16L) ||
+				 (PES->CharCode == CP__UTF16B) ){
 				offset = 0;
 				size--; // BOM分
-			}else{ // VTYPE_UNICODE / VTYPE_UTF8 は BOM あり
+			}else{ // VTYPE_UNICODE / VTYPE_UNICODEB / VTYPE_UTF8 は BOM あり
 				*(WCHAR *)text = 0xfeff; // UCF2HEADER
 				offset = 1;
 			}
@@ -163,9 +169,8 @@ BOOL FileSave(PPxEDSTRUCT *PES,int mode)
 				}
 				size = dst - (WCHAR *)text;
 			}
-			if ( (PES->CharCode == VTYPE_UNICODE) || (PES->CharCode == CP__UTF16L) ){
-				size *= sizeof(WCHAR);
-			}else{ // UCS-2 → UTF-8 変換
+			// CP_UTF8 / VTYPE_UTF8 UCS-2 → UTF-8 変換
+			if ( (PES->CharCode == CP_UTF8) || (PES->CharCode == VTYPE_UTF8) ){
 				int newsize;
 				char *newtext;
 
@@ -179,6 +184,19 @@ BOOL FileSave(PPxEDSTRUCT *PES,int mode)
 				size = WideCharToMultiByteU8(CP_UTF8,0,(WCHAR *)text,size,newtext,newsize,NULL,NULL);
 				HeapFree(ProcHeap,0,text);
 				text = newtext;
+			}else{ // CP__UTF16L / VTYPE_UNICODE / CP__UTF16B / VTYPE_UNICODEB
+				size *= sizeof(WCHAR);
+				if ( (PES->CharCode == VTYPE_UNICODEB) || (PES->CharCode == CP__UTF16B) ){
+					// バイトオーダ変換
+					WCHAR *uptr;
+					uptr = (WCHAR *)text;
+					while ( *uptr ){
+						WCHAR lc;
+
+						lc = *uptr;
+						*uptr++ = (WCHAR)((lc >> 8) | (lc << 8));
+					}
+				}
 			}
 		}else{
 			if ( PES->CharCode == VTYPE_SYSTEMCP ){
@@ -267,7 +285,9 @@ BOOL FileSave(PPxEDSTRUCT *PES,int mode)
 			if ( newtext != NULL ){
 				int offset;
 
-				if ( (PES->CharCode == VTYPE_UNICODE) || (PES->CharCode == VTYPE_UTF8) ){
+				if ( (PES->CharCode == VTYPE_UTF8) ||
+					 (PES->CharCode == VTYPE_UNICODE) ||
+					 (PES->CharCode == VTYPE_UNICODEB) ){
 					*newtext = 0xfeff; // UCF2HEADER
 					offset = 1;
 				}else{
@@ -279,7 +299,19 @@ BOOL FileSave(PPxEDSTRUCT *PES,int mode)
 				text = (char *)newtext;
 				if ( size ) size--; // '\0'除去
 			}
-			if ( cp == CP__UTF16L ){ // UNICODE の時は、そのまま
+			if ( (cp == CP__UTF16L) || (cp == CP__UTF16B) ){ // UNICODE の時は、そのまま
+				if ( cp == CP__UTF16B ){ // バイトオーダ変換
+					WCHAR *uptr;
+					DWORD left;
+					uptr = (WCHAR *)text;
+					left = size;
+					while ( left-- ){
+						WCHAR lc;
+
+						lc = *uptr;
+						*uptr++ = (WCHAR)((lc >> 8) | (lc << 8));
+					}
+				}
 				size *= sizeof(WCHAR);
 			}else{ // UNICODE から該当 codepage へ
 				int newsize;
@@ -309,24 +341,22 @@ BOOL FileSave(PPxEDSTRUCT *PES,int mode)
 			PPErrorBox(PES->hWnd,T("File write error"),PPERROR_GETLASTERROR);
 		}else{
 			result = TRUE;
-			SendMessage(PES->hWnd,EM_SETMODIFY,FALSE,0);
+			XEditClearModify(PES);
 		}
 		CloseHandle(hFile);
 
 		HeapFree(ProcHeap,0,text);
 		if ( PES->flag & PPXEDIT_TEXTEDIT ){
-			SetWindowText(GetParentBox(PES->hWnd),name);
+			SetWindowText(GetParentCaptionWindow(PES->hWnd),name);
 		}
 		if ( IsTrue(result) ) break;
 	}
 	return result;
 }
-/*-----------------------------------------------------------------------------
-	mode	0:update 1:insert
------------------------------------------------------------------------------*/
-void OpenMainFromMem(PPxEDSTRUCT *PES,int openmode,const TCHAR *filename,const TCHAR *textimage,DWORD memsize,int usecp)
+
+void OpenMainFromMem(PPxEDSTRUCT *PES, int openmode, const TCHAR *filename, const TCHAR *textimage, DWORD memsize, int usecp)
 {
-	int crcode = VTYPE_CRLF,charcode;
+	int crcode = VTYPE_CRLF, charcode;
 	TCHAR *text;
 
 	charcode = FixTextImage((const char *)textimage,memsize,&text,usecp);
@@ -353,7 +383,7 @@ void OpenMainFromMem(PPxEDSTRUCT *PES,int openmode,const TCHAR *filename,const T
 		if ( filename != NULL ){
 			tstrcpy(PES->filename,filename);
 			if ( PES->flag & PPXEDIT_TEXTEDIT ){
-				SetWindowText(GetParentBox(PES->hWnd),filename);
+				SetWindowText(GetParentCaptionWindow(PES->hWnd),filename);
 			}
 		}
 	}
@@ -396,7 +426,7 @@ void OpenMainFromMem(PPxEDSTRUCT *PES,int openmode,const TCHAR *filename,const T
 /*-----------------------------------------------------------------------------
 	ファイルを開く処理
 -----------------------------------------------------------------------------*/
-BOOL OpenFromFile(PPxEDSTRUCT *PES,int openmode,const TCHAR *fname)
+BOOL OpenFromFile(PPxEDSTRUCT *PES, int openmode, const TCHAR *fname)
 {
 	BOOL newmode = FALSE;
 	DWORD memsize;
@@ -474,20 +504,24 @@ BOOL OpenFromFile(PPxEDSTRUCT *PES,int openmode,const TCHAR *fname)
 		}
 	}
 	if ( (textimage == NULL) && (openmode != PPE_OPEN_MODE_INSERT) ){
-		textimage = HeapAlloc(DLLheap,HEAP_ZERO_MEMORY,4);
+		textimage = HeapAlloc(ProcHeap, HEAP_ZERO_MEMORY, 4);
 	}
 	SendMessage(PES->hWnd,WM_SETREDRAW,FALSE,0);
 										// 文字コード判別＆変換
 	if ( textimage != NULL ){
-		OpenMainFromMem(PES,openmode,filename,textimage,memsize,ems.codepage);
-		HeapFree(DLLheap,0,textimage);
+		OpenMainFromMem(PES, openmode, filename, textimage, memsize, ems.codepage);
+		HeapFree(ProcHeap, 0, textimage);
 	}
 	// 設定初期化2
 	PPeSetTab(PES,ems.tabwidth);
 	if ( ems.crcode >= 0 ) PES->CrCode = ems.crcode;
 
 	SendMessage(PES->hWnd,EM_SCROLLCARET,0,0);
-	SendMessage(PES->hWnd,EM_SETMODIFY,(openmode == PPE_OPEN_MODE_INSERT),0);
+	if ( openmode == PPE_OPEN_MODE_INSERT ){
+		XEditSetModify(PES);
+	}else{
+		XEditClearModify(PES);
+	}
 	SendMessage(PES->hWnd,WM_SETREDRAW,TRUE,0);
 	InvalidateRect(PES->hWnd,NULL,TRUE);
 

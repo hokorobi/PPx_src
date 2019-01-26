@@ -764,7 +764,7 @@ void SetTabInfoData(int setinfo,int showindex,HWND hItemWnd)
 	baseindex = GetComboBaseIndex(hItemWnd);
 	if ( (baseindex >= 0) && ((cinfo = Combo.base[baseindex].cinfo) != NULL) ){
 		lock = cinfo->ChdirLock;
-		wsprintf(base,T("[%c]"),cinfo->RegCID[1]);
+		wsprintf(base,T("[%s]"),cinfo->RegSubCID + 1);
 
 		if ( (cinfo->e.Dtype.mode == VFSDT_LFILE) &&
 			 (cinfo->e.Dtype.BasePath[0] != '\0') ){
@@ -780,7 +780,7 @@ void SetTabInfoData(int setinfo,int showindex,HWND hItemWnd)
 	}else{
 		cinfo = NULL;
 		path = tstrchr(caption,']');
-		if ( (path == NULL) || ((path - caption) > 5) ){
+		if ( (path == NULL) || ((path - caption) > 10) ){
 			base[0] = '\0';
 			path = caption;
 		}else{
@@ -1878,7 +1878,7 @@ void CreatePane(int baseindex)
 {
 	COMBOPANES *ncs;
 
-	if ( Combo.ShowCount >= Combo_Max_Base ) return;
+	if ( Combo.ShowCount >= Combo_Max_Show ) return;
 	if ( (ncs = HeapReAlloc( hProcessHeap,0,Combo.show,sizeof(COMBOPANES) * (Combo.ShowCount + 2) )) == NULL ){ // +2... 増加する+1 と、予備兼処理簡略化用+1
 		return; // ペインを確保する余裕がない
 	}

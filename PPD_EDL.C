@@ -19,14 +19,15 @@
 
 const TCHAR PPxED[] = T("PPxExEdit");
 const TCHAR COMDLG32[] = T("COMDLG32.DLL");
+const TCHAR StrReload[] = T("Reload text ?");
 
 #ifndef UNICODE
 int xpbug = 0;		// XP で EM_?ETSEL が WIDE に必ずなる bug なら負
 #endif
 int USEFASTCALL PPeFill1(PPxEDSTRUCT *PES);
-int USEFASTCALL PPeFill2(PPxEDSTRUCT *PES);
 int USEFASTCALL PPeDefaultMenu(PPxEDSTRUCT *PES);
-int PPedExtCommand(PPxEDSTRUCT *PES,PPECOMMANDPARAM *param,const TCHAR *command);
+ERRORCODE PPedCommand(PPxEDSTRUCT *PES,PPECOMMANDPARAM *param);
+ERRORCODE PPedExtCommand(PPxEDSTRUCT *PES,PPECOMMANDPARAM *param,const TCHAR *command);
 const TCHAR FINDMSGSTRINGstr[] = FINDMSGSTRING;
 UINT ReplaceDialogMessage = 0xff77ff77;
 
@@ -107,6 +108,80 @@ void PPeReplaceStr(PPxEDSTRUCT *PES)
 //	SendMessage(hWnd,EM_REPLACESEL,0,(LPARAM)T("\"\""));
 }
 
+typedef struct {
+	HWND hParentWnd;
+	RECT boxEdit, boxDialog, boxDesk;
+	int delta;
+} WindowExpandInfoStruct;
+
+BOOL CALLBACK EnumChildExpandProc(HWND hWnd, LPARAM lParam)
+{
+	RECT box;
+	POINT pos;
+
+	GetWindowRect(hWnd,&box);
+	if ( (box.top > ((WindowExpandInfoStruct *)lParam)->boxEdit.top) &&
+		 (GetParent(hWnd) == ((WindowExpandInfoStruct *)lParam)->hParentWnd) ){
+		pos.x = box.left;
+		pos.y = box.top;
+		ScreenToClient( ((WindowExpandInfoStruct *)lParam)->hParentWnd, &pos);
+
+		SetWindowPos(hWnd, NULL,
+				pos.x, pos.y + ((WindowExpandInfoStruct *)lParam)->delta,
+				0,0,
+				SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOREDRAW);
+	}
+	return TRUE;
+}
+
+void EditBoxExpand(PPxEDSTRUCT *PES, WindowExpandInfoStruct *eis)
+{
+	int oldflags = PES->flag;
+
+	/* ウィンドウ調整中に、再調整が発生しないよう、一時的に停止。
+		※ DeferWindowPos は、親子関係のウィンドウ変更をまとめて行えない模様 */
+	resetflag(PES->flag, PPXEDIT_LINE_MULTI);
+
+	// ダイアログが下にはみ出すときは、上に移動させる
+	if ( (eis->boxDialog.bottom + eis->delta) >= eis->boxDesk.bottom ){
+		int diff = eis->boxDialog.bottom + eis->delta - eis->boxDesk.bottom;
+
+		if ( (eis->boxDialog.top >= eis->boxDesk.top) && ((eis->boxDialog.top - diff) < eis->boxDesk.top) ){
+			diff = eis->boxDialog.top - eis->boxDesk.top;
+		}
+		if ( diff <= 0 ) return;
+		eis->boxDialog.top -= diff;
+		eis->boxDialog.bottom -= diff;
+
+		SetWindowPos(eis->hParentWnd, NULL,
+				eis->boxDialog.left, eis->boxDialog.top, 0,0,
+				SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOREDRAW);
+	}
+
+	// IDE_INPUT_LINE edit box
+	SetWindowPos(PES->hWnd, NULL, 0,0,
+			eis->boxEdit.right - eis->boxEdit.left,
+			eis->boxEdit.bottom,
+			SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOREDRAW);
+
+	// IDE_INPUT_LINE より下のコントロールを修正
+	EnumChildWindows(eis->hParentWnd, EnumChildExpandProc,(LPARAM)eis);
+
+	// Dialog box
+	SetWindowPos(eis->hParentWnd, NULL, 0,0,
+			eis->boxDialog.right - eis->boxDialog.left,
+			eis->boxDialog.bottom - eis->boxDialog.top + eis->delta,
+			SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOREDRAW);
+
+	if ( PES->FloatBar.hWnd != NULL ){
+		SetWindowPos(PES->FloatBar.hWnd, NULL,
+				eis->boxEdit.left, eis->boxEdit.top + eis->boxEdit.bottom,
+				0,0,
+				SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE);
+	}
+	PES->flag = oldflags;
+}
+
 void ChangeFontSize(PPxEDSTRUCT *PES,int delta)
 {
 	HWND hWnd = PES->hWnd;
@@ -114,9 +189,13 @@ void ChangeFontSize(PPxEDSTRUCT *PES,int delta)
 	HFONT hNewFont;
 	LOGFONT lfont;
 	LONG oldheight;
+	BOOL firstcreate = FALSE;
 
 	GetObject(hFont, sizeof(LOGFONT), &lfont);
-	if ( PES->OrgFontY == 0 ) PES->OrgFontY = lfont.lfHeight;
+	if ( PES->OrgFontY == 0 ){
+		PES->OrgFontY = lfont.lfHeight;
+		firstcreate = TRUE;
+	}
 	oldheight = lfont.lfHeight;
 	if ( delta == -9 ){
 		lfont.lfHeight = PES->OrgFontY;
@@ -131,24 +210,21 @@ void ChangeFontSize(PPxEDSTRUCT *PES,int delta)
 	}
 	hNewFont = CreateFontIndirect(&lfont);
 	SendMessage(hWnd,WM_SETFONT,(WPARAM)hNewFont,0);
-	DeleteObject(hFont);
+	if ( !firstcreate ) DeleteObject(hFont);
 
-	if ( PES->flag & PPXEDIT_LINEEDIT ) { // Window 調整(●仮。別のコントロールの調整や複数行の時の調整をしていない)
-		RECT box;
+	if ( PES->flag & PPXEDIT_LINEEDIT ) {
+		WindowExpandInfoStruct eis;
 
-		oldheight = lfont.lfHeight - oldheight;
-		if ( lfont.lfHeight < 0 ) oldheight = -oldheight;
+		eis.delta = lfont.lfHeight - oldheight;
+		if ( lfont.lfHeight < 0 ) eis.delta = -eis.delta;
 
-		GetWindowRect(hWnd,&box);
-		SetWindowPos(hWnd,NULL,0,0,box.right - box.left,
-				box.bottom - box.top + oldheight,
-				SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOREDRAW | SWP_NOZORDER);
-
-		hWnd = GetParent(hWnd);
-		GetWindowRect(hWnd,&box);
-		SetWindowPos(hWnd,NULL,0,0,box.right - box.left,
-				box.bottom - box.top + oldheight,
-				SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOREDRAW | SWP_NOZORDER);
+		eis.hParentWnd = GetParent(hWnd);
+		GetDesktopRect(hWnd,&eis.boxDesk);
+		GetWindowRect(hWnd,&eis.boxEdit);
+		GetWindowRect(eis.hParentWnd,&eis.boxDialog);
+		eis.boxEdit.bottom += -eis.boxEdit.top + eis.delta;
+		EditBoxExpand(PES, &eis);
+		hWnd = eis.hParentWnd;
 	}
 	InvalidateRect(hWnd,NULL,TRUE);
 }
@@ -297,13 +373,15 @@ PPXINMENU returnmenu[] = {
 const TCHAR charmenustr_lcp[] = T("&local codepage");
 const TCHAR charmenustr_other[] = T("&other...");
 
-#define charmenu_items 9
-#define charmenu_other 6
 PPXINMENU charmenu[charmenu_items] = {
+	{ CP__US,			T("US(&A)")},
+	{ CP__LATIN1,		T("&Latin1")},
 	{ VTYPE_SYSTEMCP,	T("&Shift_JIS")},
 	{ VTYPE_EUCJP,		T("&EUC-JP")},
-	{ CP__UTF16L,		T("UNICODE(UTF-1&6)")},
-	{ VTYPE_UNICODE,	T("&UNICODE(UTF-16LE,BOM)")},
+	{ CP__UTF16L,		T("UTF-1&6")},
+	{ VTYPE_UNICODE,	T("&UTF-16LE(BOM)")},
+	{ CP__UTF16B,		T("UTF-1&6BE")},
+	{ VTYPE_UNICODEB,	T("UTF-1&6BE(BOM)")},
 	{ CP_UTF8,			T("UTF-&8")},
 	{ VTYPE_UTF8,		T("UTF-8(&BOM)")},
 	{ 0,NULL }, //	{ VTYPE_SYSTEM/CP_UTF8,	charmenustr_lcp},
@@ -339,8 +417,6 @@ LOADWINAPISTRUCT SHLWAPIDLL[] = {
 	LOADWINAPI1(SHAutoComplete),
 	{NULL,NULL}
 };
-int PPedCommand(PPxEDSTRUCT *PES,PPECOMMANDPARAM *param);
-
 #define FloatBarID 12266
 const TCHAR FloatClassStr[] = T("PPxFloatBar");
 const TCHAR FloatBarNameMouseStr[] = T("B_flm");
@@ -352,12 +428,15 @@ LRESULT CALLBACK FloatProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 	PPxEDSTRUCT *PES;
 
 	PES = (PPxEDSTRUCT *)GetWindowLongPtr(hWnd,GWLP_USERDATA);
-	switch (message){
-		case WM_CREATE:	//============================================ 初期化
+	if ( PES == NULL ){
+		if ( message == WM_CREATE ){
 			PES = (PPxEDSTRUCT *)(((CREATESTRUCT *)lParam)->lpCreateParams);
 			SetWindowLongPtr(hWnd,GWLP_USERDATA,(LONG_PTR)PES);
 			return 0;
-
+		}
+		return DefWindowProc(hWnd, message, wParam, lParam);
+	}
+	switch (message){
 		case WM_COMMAND:
 			if ( (HWND)lParam == PES->FloatBar.hToolBarWnd ){
 				const TCHAR *ptr;
@@ -400,19 +479,21 @@ LRESULT CALLBACK FloatProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
+#define BARSPACE 2
 void InitFloatBar(PPxEDSTRUCT *PES,int posX)
 {
 	WNDCLASS FloatClass;
 	UINT ID = FloatBarID;
-	RECT box,editbox;
+	RECT box, editbox;
 	LPARAM pointtype = GetMessageExtraInfo();
 	const TCHAR *FloatBarNamePtr;
-	int minheight;
+	int minheight, posY;
+	HWND hParentWnd;
 
 	if ( PES->FloatBar.Cmd.size == 1 ) return;
 
 	if ( (pointtype & POINTTYPE_SIG_MASK) == POINTTYPE_TOUCH ){
-		minheight = 32;
+		minheight = 32 - BARSPACE;
 		FloatBarNamePtr = FloatBarNameTouchStr;
 		if ( (pointtype & POINTTYPE_TOUCH_MASK) == POINTTYPE_TOUCH_PEN ){ //pen
 			if ( (X_pmc[X_pmc_pen] & TOUCH_EDIT_COMMAND_BAR) ){ // 負論理注意
@@ -434,7 +515,7 @@ void InitFloatBar(PPxEDSTRUCT *PES,int posX)
 			return;
 		}
 
-		minheight = 16;
+		minheight = 16 - BARSPACE;
 		FloatBarNamePtr = FloatBarNameMouseStr;
 	}
 
@@ -471,19 +552,31 @@ void InitFloatBar(PPxEDSTRUCT *PES,int posX)
 		SendMessage(PES->FloatBar.hToolBarWnd,TB_BUTTONCOUNT,0,0) - 1,
 		(LPARAM)(RECT *)&box);
 
-	minheight = (minheight * GetMonitorDPI(PES->hWnd)) / 96;
+	minheight = (minheight * GetMonitorDPI(PES->hWnd)) / DEFAULT_WIN_DPI;
 	if ( box.bottom < minheight ){
 		box.bottom = minheight;
 		SendMessage(PES->FloatBar.hToolBarWnd,TB_SETBUTTONSIZE,0,TMAKELPARAM(minheight,minheight));
 	}
+	box.bottom += BARSPACE;
 
 	GetWindowRect(PES->hWnd,&editbox);
 
 	posX = editbox.left + posX - box.right / 2;
 	if ( posX < editbox.left ) posX = editbox.left;
+	posY = editbox.bottom; // 通常の場所: EDIT の直下
+	hParentWnd = GetParentCaptionWindow(PES->hWnd);
+	if ( hParentWnd != PES->hWnd ){
+		RECT tmpbox;
+
+		GetWindowRect(hParentWnd, &tmpbox);
+		if ( (tmpbox.bottom - posY) < (int)PES->fontY * 3 ) posY = tmpbox.bottom - 4;
+		if ( PES->flag & PPXEDIT_COMBOBOX ){
+			posY = editbox.top - box.bottom;
+		}
+	}
 
 	SetWindowPos(PES->FloatBar.hWnd,NULL,
-			posX ,editbox.bottom, box.right,box.bottom ,
+			posX,posY,  box.right,box.bottom,
 			SWP_NOREDRAW | SWP_NOACTIVATE | SWP_NOZORDER);
 
 	ShowWindow(PES->FloatBar.hWnd,SW_SHOWNOACTIVATE);
@@ -525,7 +618,7 @@ void PPeRunas(PPxEDSTRUCT *PES,TCHAR *cmdline)
 	GetLineParam(&ptr,exefile);
 	if ( PPxShellExecute(PES->hWnd,T("RUNAS"),exefile,ptr,path,0,cmdline) != NULL ){
 		WriteHistory(PPXH_COMMAND,cmdline,0,NULL);
-		PostMessage(GetParentBox(PES->hWnd),WM_CLOSE,0,0);
+		PostMessage(GetParentCaptionWindow(PES->hWnd),WM_CLOSE,0,0);
 	}else{
 		if ( GetLastError() != ERROR_CANCELLED ){
 			XMessage(PES->hWnd,NULL,XM_GrERRld,cmdline);
@@ -539,7 +632,7 @@ void WideWindowByKey(PPxEDSTRUCT *PES,int offset)
 	HWND hWnd;
 
 	if ( !(PES->flag & PPXEDIT_LINEEDIT) ) return;
-	hWnd = GetParentBox(PES->hWnd);
+	hWnd = GetParentCaptionWindow(PES->hWnd);
 	GetWindowRect(hWnd,&box);
 	box.right -= box.left;
 	if ( (offset > 0) || (box.right > 64) ){
@@ -676,10 +769,14 @@ BOOL EditModeParam(EDITMODESTRUCT *ems,const TCHAR *param,const TCHAR *more)
 	// codepage
 	if ( tstrcmp(param,T("SYSTEM")) == 0 ){
 		ems->codepage = VTYPE_SYSTEMCP;
-	}else if ( tstrcmp(param,T("UNICODE")) == 0 ){
+	}else if ( (tstrcmp(param,T("UNICODE")) == 0) || (tstrcmp(param,T("UTF16")) == 0) ){
 		ems->codepage = CP__UTF16L;
+	}else if ( (tstrcmp(param,T("UNICODEB")) == 0) || (tstrcmp(param,T("UTF16BE")) == 0) ){
+		ems->codepage = CP__UTF16B;
 	}else if ( tstrcmp(param,T("UNICODEBOM")) == 0 ){
 		ems->codepage = VTYPE_UNICODE;
+	}else if ( tstrcmp(param,T("UNICODEBBOM")) == 0 ){
+		ems->codepage = VTYPE_UNICODEB;
 	}else if ( tstrcmp(param,T("EUC")) == 0 ){
 		ems->codepage = VTYPE_EUCJP;
 	}else if ( tstrcmp(param,T("UTF8")) == 0 ){
@@ -688,9 +785,9 @@ BOOL EditModeParam(EDITMODESTRUCT *ems,const TCHAR *param,const TCHAR *more)
 		ems->codepage = VTYPE_UTF8;
 	}else if ( tstrcmp(param,T("SJIS")) == 0 ){
 		ems->codepage = (GetACP() == CP__SJIS) ? VTYPE_SYSTEMCP : CP__SJIS;
-	}else if ( tstrcmp(param,T("IBM")) == 0 ){
+	}else if ( (tstrcmp(param,T("IBM")) == 0) || (tstrcmp(param,T("US")) == 0) ){
 		ems->codepage = CP__US;
-	}else if ( tstrcmp(param,T("ANSI")) == 0 ){
+	}else if ( (tstrcmp(param,T("ANSI")) == 0) || (tstrcmp(param,T("LATIN1")) == 0)){
 		ems->codepage = CP__LATIN1;
 	}else if ( tstrcmp(param,T("CODEPAGE")) == 0 ){
 		ems->codepage = GetNumber((const TCHAR **)&more);
@@ -710,19 +807,19 @@ BOOL EditModeParam(EDITMODESTRUCT *ems,const TCHAR *param,const TCHAR *more)
 	return TRUE;
 }
 
-void EditSetModeCommand(PPxEDSTRUCT *PES,const TCHAR *param)
+void EditSetModeCommand(PPxEDSTRUCT *PES, const TCHAR *param)
 {
 	TINPUT_EDIT_OPTIONS options;
-	TCHAR buf[CMDLINESIZE],code,*more;
+	TCHAR buf[CMDLINESIZE], code, *more;
 	EDITMODESTRUCT ems = {EDITMODESTRUCT_DEFAULT};
 
 	for ( ;; ){
-		code = GetOptionParameter(&param,buf,&more);
+		code = GetOptionParameter(&param, buf, &more);
 		if ( code == '\0' ) break;
 		if ( code == '-' ){
-			if ( IsTrue(EditModeParam(&ems,buf + 1,more)) ){
-				if ( ems.codepage > 0 )  PES->CharCode = ems.codepage;
-				if ( ems.crcode >= 0 )   PES->CrCode = ems.crcode;
+			if ( IsTrue(EditModeParam(&ems, buf + 1, more)) ){
+				if ( ems.codepage > 0 ) PES->CharCode = ems.codepage;
+				if ( ems.crcode >= 0 ) PES->CrCode = ems.crcode;
 				if ( ems.tabwidth >= 0 ){
 					PPeSetTab(PES,ems.tabwidth);
 					ems.tabwidth = -1;
@@ -731,7 +828,7 @@ void EditSetModeCommand(PPxEDSTRUCT *PES,const TCHAR *param)
 			continue;
 		}
 		more = buf;
-		if ( IsTrue(GetEditMode((const TCHAR **)&more,&options)) ){
+		if ( IsTrue(GetEditMode((const TCHAR **)&more, &options)) ){
 			PES->list.RhistID = options.hist_readflags;
 			PES->list.WhistID = HistWriteTypeflag[options.hist_writetype];
 			PES->flag = (PES->flag & ~(TIEX_REFTREE | TIEX_SINGLEREF)) |
@@ -1016,22 +1113,24 @@ int USEFASTCALL PPePPcList(PPxEDSTRUCT *PES)
 	int id;
 	DWORD id2 = 1;
 	POINT pos;
-	TCHAR path[VFPS + 4];
+	TCHAR path[VFPS + 8];
 
 	hMenu = CreatePopupMenu();
-	GetPPxList(hMenu,GetPPcList_Path,NULL,NULL,&id2);
+	GetPPxList(hMenu, GetPPcList_Path, NULL, &id2);
 
 	GetPPePopupPositon(PES,&pos);
 	id = TrackPopupMenu(hMenu,TPM_TDEFAULT,pos.x,pos.y,0,PES->hWnd,NULL);
 	if ( id ){
 		TCHAR *sep;
+
+		path[0] = '\0';
 		GetMenuString(hMenu,id,path,TSIZEOF(path),MF_BYCOMMAND);
 		if ( PES->flag & PPXEDIT_SINGLEREF ){
 			SendMessage(PES->hWnd,EM_SETSEL,0,EC_LAST);
 		}
-		sep = tstrchr(path,'\t');
+		sep = tstrchr(path,':'); // "&A: path"
 		if ( sep != NULL ){
-			SendMessage(PES->hWnd,EM_REPLACESEL,0,(LPARAM)(sep + 1));
+			SendMessage(PES->hWnd,EM_REPLACESEL,0,(LPARAM)(sep + 2));
 		}
 	}
 	DestroyMenu(hMenu);
@@ -1041,21 +1140,21 @@ int USEFASTCALL PPePPcList(PPxEDSTRUCT *PES)
 			// ESC-A
 int USEFASTCALL PPeAppendFile(PPxEDSTRUCT *PES)
 {
-	FileSave(PES,EDL_FILEMODE_APPEND);
+	FileSave(PES, EDL_FILEMODE_APPEND);
 	return 0;
 }
 
 			// ^O ,ESC-O
 int USEFASTCALL PPeOpenFileCmd(PPxEDSTRUCT *PES)
 {
-	FileOpen(PES,PPE_OPEN_MODE_OPEN);
+	FileOpen(PES, PPE_OPEN_MODE_OPEN);
 	return 0;
 }
 
 // ESC-I
 int USEFASTCALL PPeInsertFile(PPxEDSTRUCT *PES)
 {
-	FileOpen(PES,PPE_OPEN_MODE_INSERT);
+	FileOpen(PES, PPE_OPEN_MODE_INSERT);
 	return 0;
 }
 
@@ -1066,7 +1165,7 @@ int USEFASTCALL PPeCloseFile(PPxEDSTRUCT *PES)
 
 	if ( EdPPxWmCommand(PES,hWnd,KE_closecheck,0) ){
 		SendMessage(hWnd,EM_SETMODIFY,FALSE,0);
-		PostMessage(GetParentBox(hWnd),WM_CLOSE,0,0);
+		PostMessage(GetParentCaptionWindow(hWnd),WM_CLOSE,0,0);
 	}
 	return 0;
 }
@@ -1074,11 +1173,11 @@ int USEFASTCALL PPeCloseFile(PPxEDSTRUCT *PES)
 int USEFASTCALL PPeFillMain(PPxEDSTRUCT *PES,HWND hWnd)
 {
 	ECURSOR cursor;
-	TCHAR *p;
+	TCHAR *ptr;
 	TCHAR buf[0x800];
 	DWORD mode;
 
-	mode = PES->ED.cmdsearch & CMDSEARCH_FLOAT;
+	mode = PES->ED.cmdsearch & (CMDSEARCH_FLOAT | CMDSEARCH_ROMA);
 												// サイズチェック
 	buf[0] = '\0';
 	if ( (DWORD)SendMessage(hWnd,WM_GETTEXT,TSIZEOF(buf),(LPARAM)&buf) >=
@@ -1098,19 +1197,19 @@ int USEFASTCALL PPeFillMain(PPxEDSTRUCT *PES,HWND hWnd)
 		setflag(mode,CMDSEARCH_DIRECTORY);
 	}
 
-	p = SearchFileIned(&PES->ED,buf,&cursor,mode);
-	if ( p != NULL ){
+	ptr = SearchFileIned(&PES->ED,buf,&cursor,mode);
+	if ( ptr != NULL ){
 		size_t len;
 
 		SendMessage(hWnd,EM_SETSEL,cursor.start,cursor.end);
 								// ※↑SearchFileIned 内で加工済み
-		SendMessage(hWnd,EM_REPLACESEL,0,(LPARAM)p);
+		SendMessage(hWnd,EM_REPLACESEL,0,(LPARAM)ptr);
 		SendMessage(hWnd,EM_SETSEL,0,0);	// 表示開始桁を補正させる
 
-		len = tstrlen(p);
-		if ( len && (*(p + len - 1) == '\"') ) len--;
+		len = tstrlen(ptr);
+		if ( len && (*(ptr + len - 1) == '\"') ) len--;
 #ifndef UNICODE
-		if ( xpbug < 0 ) CaretFixToW(p,(DWORD *)&len);
+		if ( xpbug < 0 ) CaretFixToW(ptr,(DWORD *)&len);
 #endif
 		SendMessage(hWnd,EM_SETSEL,cursor.start + len,cursor.start + len);
 		SendMessage(hWnd,WM_SETREDRAW,TRUE,0);
@@ -1143,35 +1242,53 @@ int USEFASTCALL PPeFill1(PPxEDSTRUCT *PES)
 	return PPeFillInit(PES);
 }
 
-/*
-int USEFASTCALL PPeFill2(PPxEDSTRUCT *PES)
+int USEFASTCALL PPeTabChar(PPxEDSTRUCT *PES)
 {
-	setflag(PES->ED.cmdsearch,CMDSEARCH_FLOAT);
-	return PPeFillInit(PES);
+	if ( !(PES->flag & PPXEDIT_TABCOMP) ) return 1; // TAB割当て機能無効
+	return 0;
 }
-*/
+
+int USEFASTCALL PPeShiftTab(PPxEDSTRUCT *PES)
+{
+	if ( PES->flag & PPXEDIT_TEXTEDIT ) return 1;	// マルチなら本来のTAB
+	if ( !(PES->flag & PPXEDIT_TABCOMP) ){
+		HWND hWnd = PES->hWnd;
+
+		if ( PES->flag & PPXEDIT_LINE_MULTI ) return 1; // 複数行一行編集のとき
+		SetFocus(GetNextDlgTabItem(GetParentCaptionWindow(hWnd), hWnd, GW_HWNDPREV));
+		return 0;
+	}
+	if ( (PES->list.hWnd != NULL) && (PES->list.ListWindow == LISTU_FOCUSMAIN) ){
+		PES->oldkey2 = 1;
+		ListUpDown(PES->hWnd, PES, (PES->list.direction >= 0) ? -1 : 1, 0);
+	}
+	return 0;
+}
 
 int USEFASTCALL PPeTab(PPxEDSTRUCT *PES)
 {
 	DWORD mode;
-	HWND hWnd = PES->hWnd;
 
 	if ( PES->flag & PPXEDIT_TEXTEDIT ) return 1;	// マルチなら本来のTAB
 	if ( !(PES->flag & PPXEDIT_TABCOMP) ){
+		HWND hWnd = PES->hWnd;
+
 		if ( PES->flag & PPXEDIT_LINE_MULTI ) return 1; // 複数行一行編集のとき
-		SetFocus(GetNextDlgTabItem(GetParentBox(hWnd),hWnd,GW_HWNDNEXT));
+		SetFocus(GetNextDlgTabItem(GetParentCaptionWindow(hWnd), hWnd, GW_HWNDNEXT));
 		return 0;
 	}
 	// 補完
-	mode = GetCustDword(T("X_ltab"),0);
+	mode = GetCustDword(T("X_ltab"), 0);
 	if ( mode >= 2 ){
-		setflag(PES->ED.cmdsearch,CMDSEARCH_FLOAT);
+		setflag(PES->ED.cmdsearch, CMDSEARCH_FLOAT);
 		if ( mode == 3 ){
-			setflag(PES->flag,CMDSEARCHI_SELECTPART | PPXEDIT_LISTCOMP);
+			setflag(PES->flag, CMDSEARCHI_SELECTPART | PPXEDIT_LISTCOMP);
 			if ( X_flst[0] == 0 ) X_flst[0] = 1;
+		}else if ( mode == 4 ){
+			setflag(PES->ED.cmdsearch, CMDSEARCH_ROMA);
 		}
 	}else{
-		resetflag(PES->ED.cmdsearch,CMDSEARCH_FLOAT);
+		resetflag(PES->ED.cmdsearch, CMDSEARCH_FLOAT);
 	}
 	return PPeFillInit(PES);
 }
@@ -1210,14 +1327,14 @@ int USEFASTCALL PPeDelete(PPxEDSTRUCT *PES)
 		if ( (PES->list.mode >= LIST_FILL) ||
 			 ((X_flst[0] >= 3) && !(PES->flag & PPXEDIT_NOINCLIST) &&
 				  (PES->list.hWnd == NULL)) ){
-			KeyStepFill(PES,FALSE);
+			KeyStepFill(PES, FALSE);
 		}
 		// Combo box list のインクリメンタルサーチ
 		if ( PES->style & WS_VSCROLL ){
 			int len;
 
 			len = SendMessage(PES->hWnd,WM_GETTEXTLENGTH,0,0);
-			ListSearch(PES->hWnd,PES,len);
+			ListSearch(PES->hWnd, PES, len);
 		}
 	}
 	return result;
@@ -1466,9 +1583,9 @@ int USEFASTCALL PPeUnSelect(PPxEDSTRUCT *PES)
 	BYTE states[256];
 	int oldshift;
 
-	SendMessage(hWnd,WM_SETREDRAW,FALSE,0);
 	SendMessage(hWnd,EM_GETSEL,(WPARAM)&lPos,(LPARAM)&rPos);
 	if ( lPos == rPos ) return 0; // 選択していない
+	SendMessage(hWnd,WM_SETREDRAW,FALSE,0);
 
 	oldshift = GetAsyncKeyState(VK_SHIFT);
 	if ( !(oldshift & KEYSTATE_PUSH) ){
@@ -1522,9 +1639,11 @@ const KEYCOMMANDS ppecommands[] = {
 	{KE_defmenu,		PPeDefaultMenu},
 
 	{K_tab,				PPeTab},
+	{K_s | K_tab,		PPeShiftTab},
 	{K_ins,				PPeFill1},
-//	{K_c | 'I',			PPeFill2},
 //	{K_s | ' ',			PPeFill},	0.35 廃止
+	{'\t',				PPeTabChar},
+	{K_s | '\t',		PPeTabChar},
 
 	{K_bs,				PPeBackSpace},
 	{K_del,				PPeDelete},
@@ -1539,8 +1658,21 @@ const KEYCOMMANDS ppecommands[] = {
 
 	{K_F2,				PPeSelectExtension},
 	{K_F12,				PPeSaveAsFile},
+	{K_c | K_s | 'S',	PPeSaveAsFile},
 	{0,NULL}
 };
+
+void XEditSetModify(PPxEDSTRUCT *PES)
+{
+	SendMessage(PES->hWnd, EM_SETMODIFY, TRUE, 0);
+	SendMessage(GetParent(PES->hWnd), WM_COMMAND, TMAKEWPARAM(0,EN_UPDATE), 0);
+}
+
+void XEditClearModify(PPxEDSTRUCT *PES)
+{
+	SendMessage(PES->hWnd, EM_SETMODIFY, FALSE, 0);
+	SendMessage(GetParent(PES->hWnd), WM_PPXCOMMAND, KE_clearmodify, 0);
+}
 
 void InsertTime(PPxEDSTRUCT *PES,WORD key)
 {
@@ -1611,10 +1743,10 @@ void PPeSetCharCode(PPxEDSTRUCT *PES)
 
 	InitEditCharCode(PES);
 
-	GetPPePopupPositon(PES,&pos);
-	memcpy(menus,charmenu,sizeof(charmenu));
+	GetPPePopupPositon(PES, &pos);
+	memcpy(menus, charmenu, sizeof(charmenu));
 	if ( GetACP() != CP__SJIS ){
-		menus[0].key = CP__SJIS;
+		menus[charmenu_sjis].key = CP__SJIS;
 		menus[oof].key = VTYPE_SYSTEMCP;
 		menus[oof].str = charmenustr_lcp;
 		oof++;
@@ -1640,6 +1772,20 @@ void PPeSetCharCode(PPxEDSTRUCT *PES)
 			if ( index == 0 ) return;
 		}
 		PES->CharCode = index;
+		if ( (PES->filename[0] != '\0') && (SendMessage(PES->hWnd,EM_GETMODIFY,0,0) == FALSE) && (PMessageBox(PES->hWnd,StrReload,T("PPe"),MB_ICONQUESTION | MB_YESNO | MB_DEFBUTTON1) == IDYES) ){ // 指定した文字コードで再読み込み
+			DWORD memsize;
+			TCHAR *textimage = NULL;
+
+			if ( NO_ERROR == LoadFileImage(PES->filename,0x40,(char **)&textimage,&memsize,NULL) ){
+				SendMessage(PES->hWnd,WM_SETREDRAW,FALSE,0);
+				OpenMainFromMem(PES, PPE_OPEN_MODE_OPEN, NULL, textimage, memsize, PES->CharCode);
+				HeapFree(ProcHeap, 0, textimage);
+				SendMessage(PES->hWnd,WM_SETREDRAW,TRUE,0);
+				InvalidateRect(PES->hWnd,NULL,TRUE);
+			}
+		}else{
+			XEditSetModify(PES);
+		}
 	}
 }
 
@@ -1653,7 +1799,10 @@ void PPeSetReturnCode(PPxEDSTRUCT *PES)
 	hMenu = MakePopupMenus(returnmenu,PES->CrCode + 1);
 	index = TrackPopupMenu(hMenu,TPM_TDEFAULT,pos.x,pos.y,0,PES->hWnd,NULL);
 	DestroyMenu(hMenu);
-	if ( index ) PES->CrCode = index - 1;
+	if ( index ){
+		PES->CrCode = index - 1;
+		XEditSetModify(PES);
+	}
 }
 
 void PPeSetTab(PPxEDSTRUCT *PES,int usetab)
@@ -1731,39 +1880,6 @@ int CloseLineList(PPxEDSTRUCT *PES)
 	}
 	return result;
 }
-/*-----------------------------------------------------------------------------
-	拡張エディットボックスコマンド処理部
------------------------------------------------------------------------------*/
-int PPedExtCommand(PPxEDSTRUCT *PES,PPECOMMANDPARAM *param,const TCHAR *command)
-{
-	const WORD *ptr;
-
-	if ( (UTCHAR)command[0] == EXTCMD_CMD ){
-		EditExtractMacro(PES,command + 1,NULL,0);
-		return 0;
-	}
-	ptr = (WORD *)(((UTCHAR)command[0] == EXTCMD_KEY) ? (command + 1) : command);
-	param->key = *ptr;
-	if ( param->key == 0 ) return 0;
-	for( ; *(++ptr) ; param->key = *ptr ){
-		if ( PES->AKey != NULL ){
-			if ( SendMessage(GetParent(PES->hWnd),WM_PPXCOMMAND,param->key,0) == NO_ERROR ){
-				continue;
-			}
-		}
-		PPedCommand(PES,param);
-	}
-	if ( PES->AKey != NULL ){
-		if ( SendMessage(GetParent(PES->hWnd),WM_PPXCOMMAND,param->key,0) == NO_ERROR ){
-			return 0;
-		}
-	}
-	if ( !(param->key & K_raw) ){
-		return PPedCommand(PES,param);
-	}
-	return -1;
-}
-
 void USEFASTCALL EnterFix(PPxEDSTRUCT *PES)
 {
 	TCHAR buf[CMDLINESIZE];
@@ -1771,6 +1887,43 @@ void USEFASTCALL EnterFix(PPxEDSTRUCT *PES)
 	GetWindowText(PES->hWnd,buf,TSIZEOF(buf));
 	WriteHistory(PES->list.WhistID,buf,0,NULL);
 	CloseLineList(PES);
+}
+
+/*-----------------------------------------------------------------------------
+	拡張エディットボックスコマンド処理部
+-----------------------------------------------------------------------------*/
+ERRORCODE PPedExtCommand(PPxEDSTRUCT *PES,PPECOMMANDPARAM *param,const TCHAR *command)
+{
+	const WORD *ptr;
+
+	if ( param->key == K_cr ) EnterFix(PES);
+	// コマンド実行
+	if ( (UTCHAR)command[0] == EXTCMD_CMD ){
+		return EditExtractMacro(PES,command + 1,NULL,0);
+	}
+
+	// キー実行
+	ptr = (WORD *)(((UTCHAR)command[0] == EXTCMD_KEY) ? (command + 1) : command);
+	param->key = *ptr;
+	if ( param->key == 0 ) return NO_ERROR;
+
+	for( ; *(++ptr) ; param->key = *ptr ){ // 最後以外のキーを実行
+		if ( PES->AKey != NULL ){
+			if ( SendMessage(GetParent(PES->hWnd),WM_PPXCOMMAND,param->key,0) == ERROR_SEEK ){
+				continue;
+			}
+		}
+		EdPPxWmCommand(PES,PES->hWnd,param->key,0);
+//		PPedCommand(PES,param);
+	}
+	// 最後のキーを実行
+	if ( PES->AKey != NULL ){
+		if ( SendMessage(GetParent(PES->hWnd),WM_PPXCOMMAND,param->key,0) == ERROR_SEEK ){
+			return NO_ERROR;
+		}
+	}
+	EdPPxWmCommand(PES,PES->hWnd,param->key,0);
+	return NO_ERROR;
 }
 
 BOOL USEFASTCALL CtrlESCFix(PPxEDSTRUCT *PES)
@@ -1790,27 +1943,22 @@ BOOL USEFASTCALL CtrlESCFix(PPxEDSTRUCT *PES)
 	return FALSE;
 }
 
-// 未実行=1,実行有り=0
-int PPedCommand(PPxEDSTRUCT *PES,PPECOMMANDPARAM *param)
+// 未実行=ERROR_INVALID_FUNCTION ,実行有り=NO_ERROR
+ERRORCODE PPedCommand(PPxEDSTRUCT *PES, PPECOMMANDPARAM *param)
 {
 	TCHAR buf[CMDLINESIZE];
 
 	PES->oldkey = PES->oldkey2;
-	PES->oldkey2 = 0;
 	if ( !(param->key & K_raw) ){
-		PutKeyCode(buf,param->key);
-		if ( (PES->AKey != NULL) && (NO_ERROR == GetCustTable(PES->AKey,buf,buf,sizeof(buf))) ){
-			int result;
-
-			if ( param->key == K_cr ) EnterFix(PES);
-			result = PPedExtCommand(PES,param,buf);
-			if ( result != -1 ) return result;
-		}else if ( NO_ERROR == GetCustTable(T("K_edit"),buf,buf,sizeof(buf)) ){
-			int result = PPedExtCommand(PES,param,buf);
-			if ( result != -1 ) return result;
+		PutKeyCode(buf, param->key);
+		if ( (PES->AKey != NULL) && (NO_ERROR == GetCustTable(PES->AKey, buf, buf, sizeof(buf))) ){
+			return PPedExtCommand(PES, param, buf);
+		}else if ( NO_ERROR == GetCustTable(T("K_edit"), buf, buf, sizeof(buf)) ){
+			return PPedExtCommand(PES, param, buf);
 		}
 	}
-	resetflag(param->key,K_raw);	// エイリアスビットを無効にする
+	PES->oldkey2 = 0;
+	resetflag(param->key, K_raw);	// エイリアスビットを無効にする
 	{
 		const KEYCOMMANDS *cms = ppecommands;
 
@@ -1820,13 +1968,25 @@ int PPedCommand(PPxEDSTRUCT *PES,PPECOMMANDPARAM *param)
 		}
 	}
 
-	switch(param->key){
+	switch (param->key) {
 case K_c | 'M':			// ^[M]
 	if ( PES->flag & PPXEDIT_TEXTEDIT ){
 		SendMessage(PES->hWnd,EM_REPLACESEL,0,(LPARAM)T("\r\n"));
 	}else{
-		PostMessage(GetParentBox(PES->hWnd),WM_COMMAND,TMAKELPARAM(IDOK,BN_CLICKED),0);
+		PostMessage(GetParentCaptionWindow(PES->hWnd),WM_COMMAND,TMAKELPARAM(IDOK,BN_CLICKED),0);
 	}
+	break;
+//-----------------------------------------------
+case K_c | 'W':			// ^[W]
+	if ( PES->flag & PPXEDIT_TEXTEDIT ){
+		PPeCloseFile(PES);
+		break;
+	}else{
+		return ERROR_INVALID_FUNCTION;
+	}
+//-----------------------------------------------
+case K_c | K_s | 'N':			// ^\[N]
+	EditExtractMacro(PES,T("*ppe"),NULL,0);
 	break;
 //-----------------------------------------------
 case K_c | 'N':			// ^[N]
@@ -1888,19 +2048,19 @@ case K_c | 'A':			// ^[A] すべてを選択
 	break;
 //-----------------------------------------------
 case K_s | K_up:		// \[↑]
-	if ( !(PES->flag & PPXEDIT_NOINCLIST) ) return 1;
+	if ( !(PES->flag & PPXEDIT_NOINCLIST) ) return ERROR_INVALID_FUNCTION;
 	// K_up へ
 case K_up:				// [↑]
 	PES->oldkey2 = 1;
-	if ( ListUpDown(PES->hWnd,PES,-1,param->repeat) == FALSE ) return 1;
+	if ( ListUpDown(PES->hWnd,PES,-1,param->repeat) == FALSE ) return ERROR_INVALID_FUNCTION;
 	break;
 //-----------------------------------------------
 case K_s | K_dw:		// \[↓]
-	if ( !(PES->flag & PPXEDIT_NOINCLIST) ) return 1;
+	if ( !(PES->flag & PPXEDIT_NOINCLIST) ) return ERROR_INVALID_FUNCTION;
 	// K_dw へ
 case K_dw:				// [↓]
 	PES->oldkey2 = 1;
-	if ( ListUpDown(PES->hWnd,PES,1,param->repeat) == FALSE ) return 1;
+	if ( ListUpDown(PES->hWnd,PES,1,param->repeat) == FALSE ) return ERROR_INVALID_FUNCTION;
 	break;
 //-----------------------------------------------
 case K_F3:
@@ -1928,44 +2088,44 @@ case K_s | K_F7:
 //-----------------------------------------------
 case K_s | K_Pup:		// \[PgUp]
 case K_Pup:				// [PgUp]
-	return ListPageUpDown(PES,-1);
+	return ListPageUpDown(PES, -1);
 //-----------------------------------------------
 case K_s | K_Pdw:		// \[PgDw]
 case K_Pdw:				// [PgDw]
-	return ListPageUpDown(PES,1);
+	return ListPageUpDown(PES, 1);
 //-----------------------------------------------
 case K_a | K_up:			// &[↑]
-	MoveWindowByKey(GetParentBox(PES->hWnd),0,-1);
+	MoveWindowByKey(GetParentCaptionWindow(PES->hWnd), 0, -1);
 	break;
 case K_a | K_dw:			// &[↓]
-	MoveWindowByKey(GetParentBox(PES->hWnd),0,1);
+	MoveWindowByKey(GetParentCaptionWindow(PES->hWnd), 0, 1);
 	break;
 case K_a | K_lf:			// &[←]
-	MoveWindowByKey(GetParentBox(PES->hWnd),-1,0);
+	MoveWindowByKey(GetParentCaptionWindow(PES->hWnd), -1, 0);
 	break;
 case K_a | K_ri:			// &[→]
-	MoveWindowByKey(GetParentBox(PES->hWnd),1,0);
+	MoveWindowByKey(GetParentCaptionWindow(PES->hWnd), 1, 0);
 	break;
 case K_a | K_s | K_lf:			// &\[←]
-	WideWindowByKey(PES,-1);
+	WideWindowByKey(PES, -1);
 	break;
 case K_a | K_s | K_ri:			// &\[→]
-	WideWindowByKey(PES,1);
+	WideWindowByKey(PES, 1);
 	break;
 //-----------------------------------------------
 case K_s | K_esc:	// \[ESC]
 	if ( PES->flag & PPXEDIT_TEXTEDIT ){
 		HWND hPWnd;
 
-		hPWnd = GetParentBox(PES->hWnd);
-		ShowWindow(hPWnd,SW_MINIMIZE);
-		PostMessage(hPWnd,WM_LBUTTONUP,0,MAX32);
-		PostMessage(hPWnd,WM_RBUTTONUP,0,MAX32);
+		hPWnd = GetParentCaptionWindow(PES->hWnd);
+		ShowWindow(hPWnd, SW_MINIMIZE);
+		PostMessage(hPWnd, WM_LBUTTONUP,0,MAX32);
+		PostMessage(hPWnd, WM_RBUTTONUP,0,MAX32);
 	}
 	break;
 case K_F4:
-	if ( PES->flag & PPXEDIT_TEXTEDIT ) return 1;
-	if ( !(PES->style & WS_VSCROLL) ) return 1;
+	if ( PES->flag & PPXEDIT_TEXTEDIT ) return ERROR_INVALID_FUNCTION;
+	if ( !(PES->style & WS_VSCROLL) ) return ERROR_INVALID_FUNCTION;
 	if ( PES->list.ListWindow != LISTU_NOLIST ){
 		CloseLineList(PES);
 		break;
@@ -1976,12 +2136,12 @@ case K_F4:
 			FloatList(PES,1);
 		}
 	}
-	return 0;
+	return NO_ERROR;
 //------------------------------------
 /*
 case K_esc:			// [ESC]
 	if ( CloseLineList(PES) != CLOSELIST_NONE ) break;
-	return 1;	// デフォルト処理を行わせる
+	return ERROR_INVALID_FUNCTION;	// デフォルト処理を行わせる
 */
 case K_c | ']':		// ^[]]
 case K_F1:			// [F1]
@@ -2027,7 +2187,7 @@ case KE_er:					// ESC-Run as admin
 //------------------------------------
 case KE_eq:		// ESC-Quit
 //case KE_ex:		// ESC-X CloseAll
-	PostMessage(GetParentBox(PES->hWnd),WM_CLOSE,0,0);
+	PostMessage(GetParentCaptionWindow(PES->hWnd), WM_CLOSE, 0, 0);
 	break;
 //-----------------------------------------------
 case KE_qj:		// ^Q-J Jump to Line
@@ -2047,7 +2207,7 @@ case KE_qj:		// ^Q-J Jump to Line
 	break;
 //------------------------------------
 case K_home:
-	if ( !(PES->flag & PPXEDIT_LINE_MULTI) ) return 1;
+	if ( !(PES->flag & PPXEDIT_LINE_MULTI) ) return ERROR_INVALID_FUNCTION;
 	// K_c | K_Pup へ
 case K_c | K_Pup:	// Top of file
 	SendMessage(PES->hWnd,EM_SETSEL,0,0);
@@ -2056,7 +2216,7 @@ case K_c | K_Pup:	// Top of file
 
 //-----------------------------------------------
 case K_end:
-	if ( !(PES->flag & PPXEDIT_LINE_MULTI) ) return 1;
+	if ( !(PES->flag & PPXEDIT_LINE_MULTI) ) return ERROR_INVALID_FUNCTION;
 	// K_c | K_Pdw へ
 case K_c | K_Pdw:	// End of file
 	SendMessage(PES->hWnd,EM_SETSEL,EC_LAST,EC_LAST);
@@ -2170,10 +2330,10 @@ case K_cr:		//
 	// default へ
 //-----------------------------------------------
 default:
-	return 1; // 何も実行しなかった
+	return ERROR_INVALID_FUNCTION; // 何も実行しなかった
 //-----------------------------------------------
 	}
-	return 0; // 実行済み
+	return NO_ERROR; // 実行済み
 }
 
 // LineMulti 時は、スクロールバーをそのまま借用できないので、WM_NCLBUTTONDOWN で処理する
@@ -2208,78 +2368,31 @@ void SkipAltLetterKeyDef(HWND hWnd)
 	}
 }
 
-typedef struct {
-	RECT boxEdit,boxDialog,boxDesk;
-	HWND hParentWnd;
-	int delta;
-} ExpandInfoStruct;
-
-BOOL CALLBACK EnumChildExpandProc(HWND hWnd,LPARAM lParam)
-{
-	RECT box;
-	POINT pos;
-
-	GetWindowRect(hWnd,&box);
-	if ( (box.top > ((ExpandInfoStruct *)lParam)->boxEdit.top) &&
-		 (GetParent(hWnd) == ((ExpandInfoStruct *)lParam)->hParentWnd) ){
-		pos.x = box.left;
-		pos.y = box.top;
-		ScreenToClient( ((ExpandInfoStruct *)lParam)->hParentWnd,&pos);
-
-		SetWindowPos(hWnd,NULL,
-				pos.x, pos.y + ((ExpandInfoStruct *)lParam)->delta,
-				0,0,SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE);
-	}
-	return TRUE;
-}
-
 void LineExpand(HWND hWnd,PPxEDSTRUCT *PES)
 {
 	DWORD line;
-	ExpandInfoStruct eis;
+	WindowExpandInfoStruct eis;
 
 	line = CallWindowProc(PES->hOldED,PES->hWnd,EM_GETLINECOUNT,0,0);
 	if ( PES->caretLY == line ) return;
 
+	eis.hParentWnd = GetParent(hWnd);
 	GetDesktopRect(hWnd,&eis.boxDesk);
 	GetWindowRect(hWnd,&eis.boxEdit);
-	eis.hParentWnd = GetParent(hWnd);
 	GetWindowRect(eis.hParentWnd,&eis.boxDialog);
 
 	eis.delta = (line - PES->caretLY) * PES->fontY;
 	eis.boxEdit.bottom += -eis.boxEdit.top + eis.delta;
-	if ( (eis.boxEdit.bottom < (int)PES->fontY) ||
-		 (((eis.boxDialog.bottom - eis.boxDialog.top) + eis.delta) >= (eis.boxDesk.bottom - eis.boxDesk.top)) ){
-		return; // １行未満 or 画面からはみ出すので中止
-	}
-	// IDE_INPUT_LINE を修正
+	if ( eis.boxEdit.bottom < (int)PES->fontY ) return; // １行未満なので中止
+
 	PES->caretLY = line;
-	SetWindowPos(hWnd,NULL,0,0,
-			eis.boxEdit.right - eis.boxEdit.left,
-			eis.boxEdit.bottom,
-			SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOMOVE);
-
-	// IDE_INPUT_LINE より下のコントロールを修正
-	EnumChildWindows(eis.hParentWnd,EnumChildExpandProc,(LPARAM)&eis);
-
-	// dialog window を修正
-	SetWindowPos(eis.hParentWnd,NULL,0,0,
-			eis.boxDialog.right - eis.boxDialog.left,
-			eis.boxDialog.bottom - eis.boxDialog.top + eis.delta,
-			SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOMOVE);
+	EditBoxExpand(PES, &eis);
 	InvalidateRect(eis.hParentWnd,NULL,TRUE);
-
-	if ( PES->FloatBar.hWnd != NULL ){
-		SetWindowPos(PES->FloatBar.hWnd,NULL,
-				eis.boxEdit.left, eis.boxEdit.top + eis.boxEdit.bottom,
-				0,0,
-				SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE);
-	}
 }
 
 LRESULT CharProc(PPxEDSTRUCT *PES,HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
 {
-	if ( !( PES->flag & PPXEDIT_TEXTEDIT ) ){
+	if ( !(PES->flag & PPXEDIT_TEXTEDIT) ){ // 一行編集特有
 		// X_flst[0]=3,4の自動補完機能付きの一覧表示
 		if ( ( (wParam != '\t') && (wParam != '\xd') && (wParam != '\x1b')) && // TAB/CR/ESCでない
 				((PES->list.mode >= LIST_FILL) ||
@@ -2292,15 +2405,15 @@ LRESULT CharProc(PPxEDSTRUCT *PES,HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lPara
 			KeyStepFill(PES,FALSE);
 			return lr;
 		}
-		// Combo box list のインクリメンタルサーチ
+		// インクリメンタルサーチ
 		if ( PES->style & WS_VSCROLL ){
 			int len;
 			LRESULT lr;
 
 			if ( wParam == '\t' ) return 1;
-			len = SendMessage(hWnd,WM_GETTEXTLENGTH,0,0);
-			lr = CallWindowProc(PES->hOldED,hWnd,iMsg,wParam,lParam);
-			ListSearch(hWnd,PES,len);
+			len = SendMessage(hWnd, WM_GETTEXTLENGTH, 0, 0);
+			lr = CallWindowProc(PES->hOldED, hWnd, iMsg, wParam, lParam);
+			ListSearch(hWnd, PES, len);
 			return lr;
 		}
 	}
@@ -2415,7 +2528,7 @@ LRESULT CALLBACK EDsHell(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
 					return 0;
 				}
 			}
-			if ( PPedCommand(PES,&cparam) != 1 ){
+			if ( PPedCommand(PES,&cparam) != ERROR_INVALID_FUNCTION ){
 				if ( (cparam.key & K_a) && (T_CHRTYPE[(unsigned char)
 						(cparam.key)] & (T_IS_DIG | T_IS_UPP)) ){
 					SkipAltLetterKeyDef(hWnd);
@@ -2457,7 +2570,7 @@ LRESULT CALLBACK EDsHell(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
 						return 0;
 					}
 				}
-				if ( PPedCommand(PES,&cparam) != 1 ) return 0;
+				if ( PPedCommand(PES,&cparam) != ERROR_INVALID_FUNCTION ) return 0;
 			}
 			return CharProc(PES,hWnd,iMsg,wParam,lParam);
 
@@ -2468,7 +2581,7 @@ LRESULT CALLBACK EDsHell(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
 			if ( PES->list.ListWindow != LISTU_NOLIST ) CloseLineList(PES);
 			FreeBackupText(PES);
 
-			if ( PES->ED.hF != NULL ) FindClose(PES->ED.hF);
+			SearchFileIned(&PES->ED, NilStrNC, NULL, 0);
 			hOldED = PES->hOldED;
 			if ( PES->list.filltext_user.mem != NULL ){
 				HeapFree(ProcHeap,0,PES->list.filltext_user.mem);
@@ -2479,10 +2592,10 @@ LRESULT CALLBACK EDsHell(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
 			if ( PES->FloatBar.hWnd != NULL ){
 				DestroyWindow(PES->FloatBar.hWnd);
 			}
-			SetWindowLongPtr(hWnd,GWLP_WNDPROC,(LONG_PTR)hOldED );
-			RemoveProp(hWnd,PPxED);
-			HeapFree(DLLheap,0,PES);
-			return CallWindowProc(hOldED,hWnd,iMsg,wParam,lParam);
+			SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)hOldED );
+			RemoveProp(hWnd, PPxED);
+			HeapFree(DLLheap, 0, PES);
+			return CallWindowProc(hOldED, hWnd, iMsg, wParam, lParam);
 		}
 
 		case WM_SETFONT:
@@ -2492,27 +2605,26 @@ LRESULT CALLBACK EDsHell(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
 		case WM_GETDLGCODE:
 			if ( PES->list.ListWindow != LISTU_NOLIST ) return DLGC_WANTALLKEYS;
 			if ( !(PES->flag & PPXEDIT_TABCOMP) ) break;
-			return CallWindowProc(PES->hOldED,hWnd,iMsg,wParam,lParam) |
-						DLGC_WANTTAB;
+			return CallWindowProc(PES->hOldED, hWnd, iMsg, wParam, lParam) | DLGC_WANTTAB;
 
 		case WM_VSCROLL:
 			if ( PES->flag & PPXEDIT_TEXTEDIT ) break;
 			SetFocus(hWnd);
-			switch ( GET_WM_HSCROLL_CODE(wParam,lParam) ){
+			switch ( GET_WM_HSCROLL_CODE(wParam, lParam) ){
 				case SB_LINEUP:
 					if ( X_flst[0] >= 4 ){
 						if ( PES->list.ListWindow != LISTU_NOLIST ){
 							CloseLineList(PES);
 						}else{
-							KeyStepFill(PES,TRUE);
+							KeyStepFill(PES, TRUE);
 						}
 					}else{
-						FloatList(PES,-1);
+						FloatList(PES, -1);
 					}
 					break;
 
 				case SB_LINEDOWN:
-					FloatList(PES,1);
+					FloatList(PES, 1);
 					break;
 
 				// default:
@@ -2590,13 +2702,14 @@ LRESULT CALLBACK EDsHell(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
 }
 
 // 戻り値が MAX32 のときは、何もしなかった扱いになる。→ラインカーソル処理有り
-LRESULT EdPPxWmCommand(PPxEDSTRUCT *PES,HWND hWnd,WPARAM wParam,LPARAM lParam)
+LRESULT EdPPxWmCommand(PPxEDSTRUCT *PES, HWND hWnd, WPARAM wParam, LPARAM lParam)
 {
 	switch ( LOWORD(wParam) ){
+/*
 		case K_cr:
 			CloseLineList(PES);
 			break;
-
+*/
 		case KE_insert:
 			SendMessage(hWnd,EM_REPLACESEL,0,lParam);
 			break;
@@ -2641,7 +2754,7 @@ LRESULT EdPPxWmCommand(PPxEDSTRUCT *PES,HWND hWnd,WPARAM wParam,LPARAM lParam)
 		case KE__FREE: {
 			WNDPROC hOldED;
 
-			if ( PES->ED.hF != NULL ) FindClose(PES->ED.hF);
+			SearchFileIned(&PES->ED, NilStrNC, NULL, 0);
 			hOldED = PES->hOldED;
 			RemoveProp(hWnd,PPxED);
 			HeapFree(DLLheap,0,PES);
@@ -2694,11 +2807,17 @@ LRESULT EdPPxWmCommand(PPxEDSTRUCT *PES,HWND hWnd,WPARAM wParam,LPARAM lParam)
 
 		default: {
 			PPECOMMANDPARAM param;
+			ERRORCODE result;
 
 			param.key = (WORD)wParam;
 			param.repeat = 0;
 			PES->mousepos = FALSE;
-			return PPedCommand(PES,&param);
+			result = PPedCommand(PES,&param);
+			if ( (result == ERROR_INVALID_FUNCTION) && ((wParam & (K_v | K_ex | K_internal)) == K_v) ) { // 未実行の仮想キー？
+				CallWindowProc(PES->hOldED, hWnd, WM_KEYDOWN, wParam & 0xff, 0);
+				CallWindowProc(PES->hOldED, hWnd, WM_KEYUP, wParam & 0xff, B30);
+			}
+			return result;
 		}
 	}
 	return MAX32;
@@ -2794,14 +2913,12 @@ int CALLBACK LineEditWordBreakProcW(LPWSTR lpch,int ichCurrent,int cch,int actio
 
 void InitExEdit(PPxEDSTRUCT *PES)
 {
-	PES->ED.hF	= NULL;
-	PES->ED.info= PES->info;
 	PES->tab	= 8 * 4;
 	PES->CrCode	= VTYPE_CRLF;
 	PES->CharCode = 0; // InitEditCharCode() で初期化される
 
-	PES->style = GetWindowLong(PES->hWnd,GWL_STYLE);
-	PES->exstyle = GetWindowLong(PES->hWnd,GWL_EXSTYLE);
+	PES->style = GetWindowLong(PES->hWnd, GWL_STYLE);
+	PES->exstyle = GetWindowLong(PES->hWnd, GWL_EXSTYLE);
 	PES->list.hWnd = NULL;
 	PES->list.hSubWnd = NULL;
 
@@ -2809,7 +2926,7 @@ void InitExEdit(PPxEDSTRUCT *PES)
 		if ( PES->flag & PPXEDIT_LINE_MULTI ){
 			PES->caretLY = 1;
 			if ( WinType >= WINTYPE_VISTA ){
-				SendMessage(PES->hWnd,EM_SETWORDBREAKPROC,0,(LPARAM)LineEditWordBreakProcW);
+				SendMessage(PES->hWnd, EM_SETWORDBREAKPROC, 0, (LPARAM)LineEditWordBreakProcW);
 			}
 		}else{
 			setflag(PES->flag,PPXEDIT_TEXTEDIT);
@@ -2817,7 +2934,7 @@ void InitExEdit(PPxEDSTRUCT *PES)
 				setflag(PES->flag,PPXEDIT_LINECSR);
 			}
 			if ( (WinType >= WINTYPE_VISTA) && (PES->flag & PPXEDIT_NOWORDBREAK) ){
-				SendMessage(PES->hWnd,EM_SETWORDBREAKPROC,0,(LPARAM)LineEditWordBreakProcW);
+				SendMessage(PES->hWnd, EM_SETWORDBREAKPROC, 0, (LPARAM)LineEditWordBreakProcW);
 			}
 		}
 	}
@@ -2833,8 +2950,10 @@ PPXDLL HWND PPXAPI PPxRegistExEdit(PPXAPPINFO *info,HWND hEditWnd,int maxlen,con
 {
 	PPxEDSTRUCT *PES;
 	HWND hRealED;
+	DWORD X_ltab;
 
-	if ( GetCustDword(T("X_ltab"),0) ) setflag(flags,PPXEDIT_TABCOMP);
+	X_ltab = GetCustDword(T("X_ltab"),0);
+	if ( X_ltab ) setflag(flags,PPXEDIT_TABCOMP);
 	GetCustData(T("X_flst"),&X_flst,sizeof(X_flst));
 	if ( X_flst[0] != 0 ) setflag(flags,PPXEDIT_LISTCOMP);
 
@@ -2877,10 +2996,12 @@ PPXDLL HWND PPXAPI PPxRegistExEdit(PPXAPPINFO *info,HWND hEditWnd,int maxlen,con
 //		PES->KeyHookEntry = NULL;
 //		PES->filename[0] = '\0';
 //		PES->findstring[0] = '\0';
+		PES->ED.hF = NULL;
+		if ( X_ltab == 4 ) PES->ED.cmdsearch = CMDSEARCH_ROMA;
 	}	// PES != NULL ... 登録済み→設定の変更のみ行う
-										// プロージャを設定 -------------------
 
-	PES->info = (info != NULL) ? info : PPxDefInfo;
+										// プロージャを設定 -------------------
+	PES->info = PES->ED.info = (info != NULL) ? info : PPxDefInfo;
 //	PES->list.index = 0;
 	PES->list.WhistID = wHist;
 	PES->list.RhistID = rHist;

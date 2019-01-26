@@ -80,7 +80,7 @@ typedef struct tagPPxEDSTRUCT {
 					// GUI情報
 	DWORD	style;		// Window style
 	DWORD	exstyle;	// Window exstyle
-	DWORD	fontY,OrgFontY;	// 文字高さ,初期文字高さ
+	DWORD	fontY, OrgFontY;	// 文字高さ,初期文字高さ
 	int		caretY;		// カレットのY
 	DWORD	caretLY;	// カレットの行数Y
 	int		tab;		// TAB 幅(ダイアログ単位)
@@ -125,7 +125,6 @@ enum { TEXTSEL_ALL = 0,TEXTSEL_CHAR = 1,TEXTSEL_BACK,TEXTSEL_WORD,TEXTSEL_BEFORE
 //--------------------------------------------------------------- PPD_EDL.C
 extern int xpbug;
 
-extern int PPedCommand(PPxEDSTRUCT *PES,PPECOMMANDPARAM *param);
 LRESULT CALLBACK EDsHell(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam);
 extern void InitExEdit(PPxEDSTRUCT *PES);
 extern const TCHAR PPxED[];
@@ -146,12 +145,19 @@ typedef struct {
 
 extern void PPeSetTab(PPxEDSTRUCT *PES,int usetab);
 extern BOOL EditModeParam(EDITMODESTRUCT *ems,const TCHAR *param,const TCHAR *more);
+extern void XEditSetModify(PPxEDSTRUCT *PES);
+extern void XEditClearModify(PPxEDSTRUCT *PES);
 
+#define charmenu_items 13
+#define charmenu_other 10
+#define charmenu_sjis 2
+extern PPXINMENU returnmenu[];
+extern PPXINMENU charmenu[charmenu_items];
 //--------------------------------------------------------------- PPD_EDLC.C
 extern void FreeBackupText(PPxEDSTRUCT *PES);
 extern void FloatList(PPxEDSTRUCT *PES,int direction/*,const TCHAR *text*/);
 extern BOOL ListUpDown(HWND hWnd,PPxEDSTRUCT *PES,int offset,int repeat);
-extern int ListPageUpDown(PPxEDSTRUCT *PES,int offset);
+extern ERRORCODE ListPageUpDown(PPxEDSTRUCT *PES,int offset);
 extern void ListSearch(HWND hWnd,PPxEDSTRUCT *PES,int len);
 extern void KeyStepFill(PPxEDSTRUCT *PES,BOOL histmode);
 extern void FixListPosition(PPxEDSTRUCT *PES,HWND hWnd);

@@ -346,7 +346,7 @@ void InitPNG(GETPAGESTRUCT *gpage)
 	if ( frames ){
 		if ( vo_.bitmap.page.max == 0 ){
 			if ( vo_.bitmap.page.animate ){
-				SetTimer(hMainWnd,TIMERID_ANIMATE,
+				SetTimer(vinfo.info.hWnd,TIMERID_ANIMATE,
 						timer ? timer : 10,AnimateProc);
 			}else{
 				SetPopMsg(POPMSG_NOLOGMSG,MES_IANI);
@@ -477,7 +477,7 @@ void InitGIF(GETPAGESTRUCT *gpage)
 	if ( imagecount > 1 ){
 		if ( vo_.bitmap.page.max == 0 ){
 			if ( vo_.bitmap.page.animate ){
-				SetTimer(hMainWnd,TIMERID_ANIMATE,
+				SetTimer(vinfo.info.hWnd,TIMERID_ANIMATE,
 						firsttimer ? firsttimer : 1000,AnimateProc);
 			}else{
 				SetPopMsg(POPMSG_NOLOGMSG,MES_IANI);
@@ -533,43 +533,39 @@ GetDWORDfunc InitTIFF(GETPAGESTRUCT *gpage)
 	return GetDword;
 }
 
-BOOL LoadHighlight(const TCHAR *filename,const TCHAR *ext)
+HILIGHTKEYWORD *LoadDefaultHighlight(ThSTRUCT *mem, const TCHAR *filename, const TCHAR *ext)
 {
 	TCHAR tmp[0x400];
 	const TCHAR *tmpp;
 	HILIGHTKEYWORD *hks = NULL;
-	ThSTRUCT mem;
 	int count = 0;
 	int check = 0;
 
-	while( EnumCustTable(count,T("CV_hkey"),tmp,NULL,0) >= 0 ){
+	while( EnumCustTable(count, T("CV_hkey"), tmp, NULL, 0) >= 0 ){
 		FN_REGEXP fn;
 
 		if ( *tmp == '/' ){
 			if ( filename != NULL ){
-				MakeFN_REGEXP(&fn,tmp + 1);
-				check = FilenameRegularExpression(filename,&fn);
+				MakeFN_REGEXP(&fn, tmp + 1);
+				check = FilenameRegularExpression(filename, &fn);
 				FreeFN_REGEXP(&fn);
 			}
 		}else{
-			check = (tstricmp(ext,tmp) == 0);
+			check = (tstricmp(ext, tmp) == 0);
 		}
 		if ( check ) break;
 		count++;
 	}
-	if ( check == 0 ) return FALSE; // 該当無し
+	if ( check == 0 ) return NULL; // 該当無し
 
 	tmp[0] = '\0';
-	EnumCustTable(count,T("CV_hkey"),tmp,tmp,sizeof(tmp));
-	if ( tmp[0] == '\0' ) return FALSE; // 中身無し
+	EnumCustTable(count, T("CV_hkey"), tmp, tmp, sizeof(tmp));
+	if ( tmp[0] == '\0' ) return NULL; // 中身無し
 
-	if ( X_hkey != NULL ) HeapFree(PPvHeap,0,X_hkey);
-	X_hkey = NULL;
-	ThInit(&mem);
 	tmpp = tmp;
 	for ( ;; ){
 		TCHAR *nextp;
-		int sizeA,sizeW,size,color,extend;
+		int sizeA, sizeW, size, color, extend;
 #ifdef UNICODE
 		#define strA bufA
 		#define strW tmpp
@@ -579,7 +575,7 @@ BOOL LoadHighlight(const TCHAR *filename,const TCHAR *ext)
 		#define strW bufW
 		WCHAR bufW[100];
 #endif
-		nextp = tstrchr(tmpp,'\n');
+		nextp = tstrchr(tmpp, '\n');
 		if ( nextp != NULL ) *nextp++ = '\0';
 		if ( *tmpp == '\0' ) break;
 
@@ -588,43 +584,115 @@ BOOL LoadHighlight(const TCHAR *filename,const TCHAR *ext)
 			tmpp++;
 			extend = HILIGHTKEYWORD_T;
 		}
-		if ( SkipSpace(&tmpp) == '>' ){
+		if ( *tmpp == '>' ){
 			tmpp++;
 			extend |= HILIGHTKEYWORD_B;
 		}
+		if ( *tmpp == '~' ){
+			tmpp++;
+			extend |= HILIGHTKEYWORD_R;
+		}
 		if ( SkipSpace(&tmpp) == ',' ) tmpp++;
 									// 色を取得
-		color = GetColor(&tmpp,TRUE);
+		color = GetColor(&tmpp, TRUE);
 		if ( SkipSpace(&tmpp) == ',' ) tmpp++;
 									// キーワードを取得 & 文字コードを２つ用意
 #ifdef UNICODE
-		UnicodeToAnsi(tmpp,bufA,100);
+		UnicodeToAnsi(tmpp, bufA, 100);
 		sizeA = strlen32(bufA) + 1;
 		sizeW = (strlenW32(tmpp) + 1) * sizeof(WCHAR);
 #else
-		AnsiToUnicode(tmpp,bufW,100);
+		AnsiToUnicode(tmpp, bufW, 100);
 		sizeA = strlen(tmpp) + 1;
 		sizeW = (strlenW(bufW) + 1) * sizeof(WCHAR);
 #endif
 									// 保存する
 		size = sizeof(HILIGHTKEYWORD) + sizeW +((sizeA + 1) & 0xfffe);
-		ThSize(&mem,size);
-		hks = (HILIGHTKEYWORD *)ThLast(&mem);
+		ThSize(mem, size);
+		hks = (HILIGHTKEYWORD *)ThLast(mem);
 		hks->color = color;
 		hks->next = (HILIGHTKEYWORD *)(BYTE *)size;
 		hks->ascii = (const char *)(size_t)(sizeW);
 		hks->extend = extend;
-		memcpy((char *)(hks + 1) + sizeW,strA,sizeA);
-		memcpy((char *)(hks + 1),strW,sizeW);
-		mem.top += size;
+		memcpy((char *)(hks + 1) + sizeW, strA, sizeA);
+		memcpy((char *)(hks + 1), strW, sizeW);
+		mem->top += size;
 
 		if ( nextp == NULL ) break;
 		tmpp = nextp;
 	}
+	return hks;
+#undef strA
+#undef strW
+}
+
+void LoadHighlight(VFSFILETYPE *vft)
+{
+	const TCHAR *fname, *ext, *textp;
+	ThSTRUCT mem;
+	HILIGHTKEYWORD *hks;
+	TCHAR buf[CMDLINESIZE];
+	int colorcount = 0;
+
+	if ( X_hkey != NULL ) HeapFree( PPvHeap, 0, X_hkey );
+	X_hkey = NULL;
+	ThInit(&mem);
+
+	// デフォルトのハイライト設定を取得
+	fname = VFSFindLastEntry(vo_.file.name);
+	ext = fname + FindExtSeparator(fname);
+	if ( *ext == '.' ) ext++;
+
+	if ( (hks = LoadDefaultHighlight(&mem, fname,ext)) == NULL ){
+		if ( (vft->type[0] == '\0') || ((hks = LoadDefaultHighlight(&mem, NULL,vft->type)) == NULL) ){
+			hks = LoadDefaultHighlight(&mem, NULL,T("*"));
+		}
+	}
+
+	// 一時ハイライト設定を取得
+	textp = ThGetString(NULL, T("Highlight"), NULL, 0);
+	if ( textp != NULL ) while ( GetLineParam(&textp, buf) >= ' ' ){
+		int sizeA, sizeW, size, color;
+#ifdef UNICODE
+		#define strA bufA
+		#define strW buf
+		char bufA[100];
+#else
+		#define strA buf
+		#define strW bufW
+		WCHAR bufW[100];
+#endif
+									// キーワードを取得 & 文字コードを２つ用意
+#ifdef UNICODE
+		UnicodeToAnsi(buf, bufA, 100);
+		sizeA = strlen32(bufA) + 1;
+		sizeW = (strlenW32(buf) + 1) * sizeof(WCHAR);
+#else
+		AnsiToUnicode(buf, bufW, 100);
+		sizeA = strlen(buf) + 1;
+		sizeW = (strlenW(bufW) + 1) * sizeof(WCHAR);
+#endif
+		color = CV_hili[colorcount + 1];
+		colorcount = (colorcount + 1) & 7;
+									// 保存する
+		size = sizeof(HILIGHTKEYWORD) + sizeW +((sizeA + 1) & 0xfffe);
+		ThSize(&mem, size);
+		hks = (HILIGHTKEYWORD *)ThLast(&mem);
+		hks->color = color;
+		hks->next = (HILIGHTKEYWORD *)(BYTE *)size;
+		hks->ascii = (const char *)(size_t)(sizeW);
+		hks->extend = HILIGHTKEYWORD_R;
+		memcpy((char *)(hks + 1) + sizeW, strA, sizeA);
+		memcpy((char *)(hks + 1), strW, sizeW);
+		mem.top += size;
+	}
 	if ( hks != NULL ) hks->next = NULL;
 
-	{								// ポインタを正規化する
+	X_hkey = (HILIGHTKEYWORD *)mem.bottom;
+	if ( X_hkey != NULL ){
+									// ポインタを正規化する
 		char *bottom;
+		HILIGHTKEYWORD *hks;
 
 		bottom = mem.bottom;
 		X_hkey = hks = (HILIGHTKEYWORD *)bottom;
@@ -636,7 +704,20 @@ BOOL LoadHighlight(const TCHAR *filename,const TCHAR *ext)
 			hks = hks->next;
 		}
 	}
-	return TRUE;
+}
+
+void SetHighlight(PPV_APPINFO *vinfo)
+{
+	VFSFILETYPE vft;
+
+	if ( PP_ExtractMacro(vinfo->info.hWnd, &vinfo->info, NULL, T("%\"") MES_THIL T("\"*string i,Highlight=%{%s\"Highlight\"%}"), NULL, 0) != NO_ERROR ) return;
+
+	vft.flags = VFSFT_TYPE;
+	if ( VFSGetFileType(vo_.file.name, (char *)vo_.file.image, vo_.file.size.l, &vft) != NO_ERROR ){
+		vft.type[0] = '\0';
+	}
+	LoadHighlight(&vft);
+	InvalidateRect(vinfo->info.hWnd, NULL, TRUE);
 }
 
 // テキストインデックスの補正
@@ -862,7 +943,7 @@ void CALLBACK BackReaderProc(HWND hWnd,UINT uMsg,UINT_PTR idEvent,DWORD dwTime)
 	}
 	// ファイル読み込みが終了したとき、指定行へジャンプする
 	if ( (VOi->reading == FALSE) && (ReadingStream == READ_NONE) ){
-		KillTimer(hMainWnd,TIMERID_READLINE);
+		KillTimer(vinfo.info.hWnd,TIMERID_READLINE);
 		BackReader = FALSE;
 		mtinfo.PresetPos = 0;
 		MoveCsr(0,mtinfo.PresetY - VOi->offY,FALSE);
@@ -1287,7 +1368,7 @@ BOOL ReadFileBreakCheck(void)
 	if ( (msgdata.message == WM_RBUTTONUP) ||
 		 ((msgdata.message == WM_KEYDOWN) &&
 		  (((int)msgdata.wParam == VK_ESCAPE)||((int)msgdata.wParam == VK_PAUSE))) ){
-		if ( PMessageBox(hMainWnd,MES_QABO,T("Break check"),
+		if ( PMessageBox(vinfo.info.hWnd,MES_QABO,T("Break check"),
 					MB_APPLMODAL | MB_OKCANCEL | MB_DEFBUTTON1 |
 					MB_ICONQUESTION) == IDOK){
 			return TRUE;
@@ -1432,7 +1513,7 @@ BOOL OpenViewFile(const TCHAR *filename,int flags)
 	}
 
 	if ( (*wp != '\0') &&
-		 !((*wp == '\\') && (*(wp+1) == '\0')) ){
+		 !((*wp == '\\') && (*(wp + 1) == '\0')) ){
 		TCHAR arcfile[VFPS];
 		DWORD result;
 		HWND hDWnd;
@@ -1441,7 +1522,7 @@ BOOL OpenViewFile(const TCHAR *filename,int flags)
 		tstrcpy(arcfile,filename);
 		arcfile[wp - filename] = '\0';
 		GetCustData(T("X_llsiz"),&X_llsiz,sizeof(X_llsiz));
-		hDWnd = hMainWnd;
+		hDWnd = vinfo.info.hWnd;
 		if ( (X_llsiz == 1) || (FileDivideMode == FDM_FORCENODIV) ){
 			X_llsiz = 1;
 			hDWnd = (HWND)LFI_ALWAYSLIMITLESS;
@@ -1511,10 +1592,10 @@ BOOL OpenViewFile(const TCHAR *filename,int flags)
 			}
 			if ( result == 0 ){
 				hOldFocusWnd = GetForegroundWindow();
-				ForceSetForegroundWindow(hMainWnd);
-				result = PMessageBox(hMainWnd,MES_QOSL,T("Warning"),
+				ForceSetForegroundWindow(vinfo.info.hWnd);
+				result = PMessageBox(vinfo.info.hWnd,MES_QOSL,T("Warning"),
 						MB_ICONEXCLAMATION | MB_YESNOCANCEL);
-				if ( hOldFocusWnd != hMainWnd ){
+				if ( hOldFocusWnd != vinfo.info.hWnd ){
 					ForceSetForegroundWindow(hOldFocusWnd);
 				}
 			}
@@ -1688,7 +1769,7 @@ void SetOpts(VIEWOPTIONS *viewopts)
 	if ( (viewopts->I_animate >= 0) && (vo_.bitmap.page.animate != viewopts->I_animate) ){
 		vo_.bitmap.page.animate = viewopts->I_animate;
 		if ( vo_.bitmap.page.animate == FALSE ){
-			KillTimer(hMainWnd,TIMERID_ANIMATE);
+			KillTimer(vinfo.info.hWnd,TIMERID_ANIMATE);
 		}
 	}
 	if ( viewopts->tailflags >= 0 ){
@@ -1918,7 +1999,7 @@ void InitViewObject(VIEWOPTIONS *viewopts,TCHAR *type)
 
 	if ( (ReadingStream != READ_NONE) ||
 		 ( (vo_.DModeBit & VO_dmode_ENABLEBACKREAD) && (VOi->reading != FALSE) ) ){
-		SetTimer(hMainWnd,TIMERID_READLINE,TIMER_READLINE,BackReaderProc);
+		SetTimer(vinfo.info.hWnd,TIMERID_READLINE,TIMER_READLINE,BackReaderProc);
 		BackReader = TRUE;
 	}else{
 		mtinfo.OpenFlags = 0;
@@ -1942,7 +2023,7 @@ void SetTitle(const TCHAR *title,const TCHAR *ext)
 		tstrcat(buf,extbuf);
 		tstrcat(vo_.file.name,extbuf);
 	}
-	SetWindowText(hMainWnd,buf);
+	SetWindowText(vinfo.info.hWnd,buf);
 }
 BOOL USEFASTCALL FixOpenBmp(BITMAPINFOHEADER *bih,VIEWOPTIONS *viewopt,DWORD bits_size)
 {
@@ -2003,7 +2084,7 @@ BOOL USEFASTCALL FixOpenBmp(BITMAPINFOHEADER *bih,VIEWOPTIONS *viewopt,DWORD bit
 	InitViewObject(viewopt,NULL);
 
 	if ( (viewopt != NULL) ? (viewopt->I_CheckeredPattern == 1) : (viewopt_def.I_CheckeredPattern == 1) ){
-		if ( vo_.bitmap.transcolor >= 0 ) ModifyAlpha(hMainWnd);
+		if ( vo_.bitmap.transcolor >= 0 ) ModifyAlpha(vinfo.info.hWnd);
 	}
 	return TRUE;
 }
@@ -2233,10 +2314,10 @@ BOOL OpenViewObject(const TCHAR *filename,HGLOBAL memblock,VIEWOPTIONS *viewopt,
 	}
 
 	tstrcpy(vo_.file.name,filename);
-	if ( X_tray & X_tray_PPv ) ShowWindow(hMainWnd,SW_RESTORE);
-	HideCaret(hMainWnd);
-	InvalidateRect(hMainWnd,&BoxStatus,TRUE);	// 更新指定
-	UpdateWindow_Part(hMainWnd);
+	if ( X_tray & X_tray_PPv ) ShowWindow(vinfo.info.hWnd,SW_RESTORE);
+	HideCaret(vinfo.info.hWnd);
+	InvalidateRect(vinfo.info.hWnd,&BoxStatus,TRUE);	// 更新指定
+	UpdateWindow_Part(vinfo.info.hWnd);
 
 	//--------------------------------------
 	if ( !memcmp(vo_.file.image,T("HTTP/1."),7) ){
@@ -2246,7 +2327,7 @@ BOOL OpenViewObject(const TCHAR *filename,HGLOBAL memblock,VIEWOPTIONS *viewopt,
 		max = vo_.file.image + vo_.file.size.l;
 		for ( ; p < max ; p++ ){
 			if ( !memcmp( p,"\r\n\r\n",4) ){
-				if ( IDOK != PMessageBox(hMainWnd,T("HTTP decode?"),T("open"),
+				if ( IDOK != PMessageBox(vinfo.info.hWnd,T("HTTP decode?"),T("open"),
 						MB_OKCANCEL | MB_SETFOREGROUND | MB_DEFBUTTON1 |
 							MB_ICONQUESTION) ){
 					 break;
@@ -2305,7 +2386,7 @@ BOOL OpenViewObject(const TCHAR *filename,HGLOBAL memblock,VIEWOPTIONS *viewopt,
 	}
 										// 判別 -------------------------------
 	if ( !(flags & PPV_HEADVIEW) ){
-										// susie plag-in 判別
+										// susie plug-in 判別
 		int rr = VFSGetDibDelay(vo_.file.name,vo_.file.image,vo_.file.size.l,
 				vo_.file.typeinfo,
 				&vo_.bitmap.info_hlocal,&vo_.bitmap.bits.mapH,ReadAll);
@@ -2367,14 +2448,14 @@ success:
 	if ( (vo_.DModeBit & DOCMODE_BMP) && vo_.bitmap.rotate ){ // 回転有り
 		switch (vo_.bitmap.rotate){
 			case 1:
-				Rotate(hMainWnd,10);
+				Rotate(vinfo.info.hWnd,10);
 				break;
 			case 2:
-				Rotate(hMainWnd,10);
-				Rotate(hMainWnd,10);
+				Rotate(vinfo.info.hWnd,10);
+				Rotate(vinfo.info.hWnd,10);
 				break;
 			case 3:
-				Rotate(hMainWnd,-10);
+				Rotate(vinfo.info.hWnd,-10);
 				break;
 		}
 	}
@@ -2393,7 +2474,7 @@ void LoadEvent(void)
 	if ( BackReader ) return; //読込/行数計算中
 
 	if ( FirstCommand != NULL ){
-		PostMessage(hMainWnd,WM_PPXCOMMAND,K_FIRSTCMD,0);
+		PostMessage(vinfo.info.hWnd,WM_PPXCOMMAND,K_FIRSTCMD,0);
 	}
 
 	if ( vo_.DModeBit & VO_dmode_IMAGE ){
@@ -2403,7 +2484,7 @@ void LoadEvent(void)
 	}
 	if ( IsExistCustTable(extname,T("LOADEVENT")) ||
 		 IsExistCustTable(T("KV_main"),T("LOADEVENT")) ){
-		PostMessage(hMainWnd,WM_PPXCOMMAND,K_E_LOAD,0);
+		PostMessage(vinfo.info.hWnd,WM_PPXCOMMAND,K_E_LOAD,0);
 	}
 }
 
@@ -2445,7 +2526,7 @@ void CheckType(void)
 	VOi->img = NULL;
 				VOi->width = newwidth;
 				mtinfo.PresetY = VOi->offY; // 読み込み完了後の表示位置を指定(●1.2x暫定)
-				FixChangeMode(hMainWnd);
+				FixChangeMode(vinfo.info.hWnd);
 
 
 			}
@@ -2457,6 +2538,43 @@ void CheckType(void)
 				vo_.SupportTypeFlags = VO_type_ALLTEXT;
 			}
 		}
+#if 0
+		if ( tstrcmp(vft.type,T(":DOCX")) == 0 ){
+			TCHAR arcfile[VFPS],fname[VFPS];
+			DWORD result, sizeL, sizeH;
+			HWND hDWnd;
+			HANDLE hFile;
+			HANDLE mapH;
+			BYTE *image;
+
+			tstrcpy(arcfile,vo_.file.name);
+			tstrcpy(fname,T("\\word\\document.xml"));
+			hDWnd = vinfo.info.hWnd;
+			hFile = CreateFileL(arcfile,GENERIC_READ,
+						FILE_SHARE_WRITE | FILE_SHARE_READ,NULL,
+						OPEN_EXISTING,
+						FILE_FLAG_SEQUENTIAL_SCAN,
+						NULL);
+			result = VFSGetArchivefileImage(hDWnd, hFile, arcfile, fname,
+				&sizeL, &sizeH, &mapH, &image);
+			if ( result == NO_ERROR ){
+				vo_.SupportTypeFlags = VO_type_ALLDOCUMENT;
+				SetAllTextCode(VTYPE_UTF8);
+				vo_.text.document.ptr = mtinfo.img = VOi->img = image;
+				vo_.text.document.mapH = mapH;
+				mtinfo.MemSize = sizeL;
+				VO_Ttag = 2;
+				vft.dtype = DISPT_DOCUMENT;
+				MakeIndexTable(MIT_FIRST,MIT_PARAM_DOCUMENT);
+/*
+				vo_.file.size.l = sizeL;
+				vo_.file.size.h = sizeH;
+				vo_.file.mapH = mapH;
+				vo_.file.image = image;
+*/
+			}
+		}
+#endif
 		PPVGetHist();
 		InitViewObject(VO_opt,vft.type);
 
@@ -2464,46 +2582,29 @@ void CheckType(void)
 			ThCatString(&vo_.memo,vft.info);
 			HeapFree(PPvHeap,0,vft.info);
 		}
-		goto hicheck;
-	}
-
-	vo_.SupportTypeFlags = VO_type_ALLTEXT;
-	if ( vo_.DModeType != DISPT_HEX ){
-		vo_.DModeType = DISPT_TEXT;
-		VOi = &VO_I[DISPT_TEXT];
-	}
-	tstrcpy(vo_.file.typeinfo,T("Unknown"));
-	PPVGetHist();
-	InitViewObject(VO_opt,T("*"));
-	vft.type[0] = '\0';
-hicheck:
-	if ( vo_.DModeBit & VO_dmode_TEXTLIKE ){
-		const TCHAR *fname,*ext;
-
-		if ( X_hkey != NULL ) HeapFree( PPvHeap,0,X_hkey );
-		X_hkey = NULL;
-
-		fname = VFSFindLastEntry(vo_.file.name);
-		ext = fname + FindExtSeparator(fname);
-		if ( *ext == '.' ) ext++;
-
-		if ( LoadHighlight(fname,ext) == FALSE ){
-			if ( vft.type[0] || (LoadHighlight(NULL,vft.type) == FALSE) ){
-				LoadHighlight(NULL,T("*"));
-			}
+	}else{		// 不明テキスト
+		vo_.SupportTypeFlags = VO_type_ALLTEXT;
+		if ( vo_.DModeType != DISPT_HEX ){
+			vo_.DModeType = DISPT_TEXT;
+			VOi = &VO_I[DISPT_TEXT];
 		}
+		tstrcpy(vo_.file.typeinfo,T("Unknown"));
+		PPVGetHist();
+		InitViewObject(VO_opt,T("*"));
+		vft.type[0] = '\0';
 	}
+	if ( vo_.DModeBit & VO_dmode_TEXTLIKE ) LoadHighlight(&vft);
 }
 
-void FollowOpenView(HWND hWnd)
+void FollowOpenView(PPV_APPINFO *vinfo)
 {
 	OpenEntryNow = 1;
 	if ( X_tray & X_tray_PPv ){
-		SetWindowLongPtr(hWnd,GWL_STYLE,GetWindowLongPtr(hWnd,GWL_STYLE) & ~WS_MINIMIZE);
-		ShowWindow(hWnd,SW_SHOW);
+		SetWindowLongPtr(vinfo->info.hWnd,GWL_STYLE,GetWindowLongPtr(vinfo->info.hWnd,GWL_STYLE) & ~WS_MINIMIZE);
+		ShowWindow(vinfo->info.hWnd,SW_SHOW);
 	}
-	if ( IsIconic(hWnd) || !IsWindowVisible(hWnd) ){
-		PostMessage(hWnd,WM_SYSCOMMAND,SC_RESTORE,0xffff0000);
+	if ( IsIconic(vinfo->info.hWnd) || !IsWindowVisible(vinfo->info.hWnd) ){
+		PostMessage(vinfo->info.hWnd,WM_SYSCOMMAND,SC_RESTORE,0xffff0000);
 	}
 
 	if ( TailModeFlags ){
@@ -2514,16 +2615,16 @@ void FollowOpenView(HWND hWnd)
 		}
 	}
 
-	InvalidateRect(hWnd,NULL,TRUE);
+	InvalidateRect(vinfo->info.hWnd,NULL,TRUE);
 	SetScrollBar();
 	DxSetMotion(DxDraw,DXMOTION_NewWindow);
 	if ( XV.img.imgD[0] <= IMGD_FIXWINDOWSIZE ){ // IMGD_FIXWINDOWSIZE/IMGD_AUTOFIXWINDOWSIZE
 		// 最小化とかしていたら窓表示が戻るまで待つ
-		if ( IsIconic(hWnd) || !IsWindowVisible(hWnd) ){
+		if ( IsIconic(vinfo->info.hWnd) || !IsWindowVisible(vinfo->info.hWnd) ){
 			MSG msgdata;
 			DWORD tick = GetTickCount();
 
-			while ( PeekMessage(&msgdata,hWnd,0,0,PM_REMOVE) ){
+			while ( PeekMessage(&msgdata,vinfo->info.hWnd,0,0,PM_REMOVE) ){
 				if ( msgdata.message == WM_QUIT ) break;
 				TranslateMessage(&msgdata);
 				DispatchMessage(&msgdata);
@@ -2533,9 +2634,9 @@ void FollowOpenView(HWND hWnd)
 		}
 
 		if ( vo_.DModeBit & VO_dmode_IMAGE ){
-			FixWindowSize(hWnd,0,0); // 画像に合わせて調節
+			FixWindowSize(vinfo->info.hWnd,0,0); // 画像に合わせて調節
 		}else{ // テキスト用の大きさに調節
-			SetWindowPos(hWnd,NULL,0,0,
+			SetWindowPos(vinfo->info.hWnd,NULL,0,0,
 					WinPos.pos.right - WinPos.pos.left,
 					WinPos.pos.bottom - WinPos.pos.top,
 					SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOMOVE | SWP_NOZORDER);
@@ -2543,17 +2644,17 @@ void FollowOpenView(HWND hWnd)
 	}
 
 	if ( XV_tmod && (vo_.DModeBit & VO_dmode_SELECTABLE) ){
-		InitCursorMode(hWnd);
+		InitCursorMode(vinfo->info.hWnd);
 	}else{
-		HideCaret(hWnd);
+		HideCaret(vinfo->info.hWnd);
 	}
 	OpenEntryNow = 0;
 }
 
-void OpenAndFollowViewObject(HWND hWnd,const TCHAR *filename,HGLOBAL mem,VIEWOPTIONS *viewopt,int flags)
+void OpenAndFollowViewObject(PPV_APPINFO *vinfo,const TCHAR *filename,HGLOBAL mem,VIEWOPTIONS *viewopt,int flags)
 {
 	OpenViewObject(filename,mem,viewopt,flags);
-	FollowOpenView(hWnd);
+	FollowOpenView(vinfo);
 }
 
 #if NODLL
@@ -2632,7 +2733,7 @@ void ChangePage(int delta)
 	BOOL nosupport = FALSE;
 	int newpage;
 
-	KillTimer(hMainWnd,TIMERID_ANIMATE);
+	KillTimer(vinfo.info.hWnd,TIMERID_ANIMATE);
 
 	if ( (vo_.DModeBit != DOCMODE_BMP) || (vo_.bitmap.page.max == 0) ) return;
 
@@ -3075,12 +3176,12 @@ void ChangePage(int delta)
 
 		vo_.SupportTypeFlags = VO_type_ALLIMAGE;
 		vo_.DModeType = DISPT_IMAGE;
-		FixChangeMode(hMainWnd);
+		FixChangeMode(vinfo.info.hWnd);
 
 		vo_.bitmap.page.current = gpage.page;
 		if ( vo_.bitmap.page.animate ){
 			if ( gpage.timer == 0 ) gpage.timer = 10;
-			SetTimer(hMainWnd,TIMERID_ANIMATE,gpage.timer,AnimateProc);
+			SetTimer(vinfo.info.hWnd,TIMERID_ANIMATE,gpage.timer,AnimateProc);
 		}
 		if ( nosupport ){
 			SetPopMsg(POPMSG_NOLOGMSG,T("this frame not full support"));

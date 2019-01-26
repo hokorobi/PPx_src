@@ -118,7 +118,7 @@ BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 				len = 8;
 				if ( *line == ',' ){
 					line++;
-					len = (BYTE)GetNumber((const TCHAR **)&line);
+					len = (BYTE)GetDigitNumber((const TCHAR **)&line);
 				}
 				*p++ = len;
 				break;
@@ -142,7 +142,7 @@ BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 				len = 255;
 				if ( *line == ',' ){
 					line++;
-					ws += len = (BYTE)GetNumber((const TCHAR **)&line);
+					ws += len = (BYTE)GetDigitNumber((const TCHAR **)&line);
 				}
 				*p++ = len;
 				break;
@@ -217,12 +217,12 @@ BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 				continue;
 
 			case 'u':
-				*p++ = DE_MEMOEX;
-				*(p + 1) = GetNumberWith((const TCHAR **)&line, 1, 255); // ID
+				*p = DE_MEMOEX;
+				*(p + 2) = GetNumberWith((const TCHAR **)&line, 1, 255); // ID
 				SkipSPC(line);
 				if ( *line == ',' ) line++;
-				ws += *p = GetNumberWith((const TCHAR **)&line, 8, 255); // ïù
-				p += 2;
+				ws += *(p + 1) = GetNumberWith((const TCHAR **)&line, 8, 255); // ïù
+				p += DE_MEMOEX_SIZE;
 				break;
 
 			case 'L':
@@ -572,7 +572,7 @@ BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 				lines = 1;
 				if ( *line == ',' ){
 					line++;
-					lines = (BYTE)GetNumber((const TCHAR **)&line);
+					lines = (BYTE)GetDigitNumber((const TCHAR **)&line);
 				}
 				*(p + 1) = lines;
 				p += 4 + 8 + 2 + 1;

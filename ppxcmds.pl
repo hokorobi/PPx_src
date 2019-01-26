@@ -117,3 +117,5 @@ checksignature
 cpu
 clearauth
 if
+nextitem
+return

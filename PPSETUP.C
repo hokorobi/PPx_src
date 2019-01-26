@@ -218,7 +218,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		MessageStr = MessageJpn;
 		XX_emenu = FALSE;
 	}
-#if !defined(_WIN64) && (defined(UNICODEBINARY) || defined(UNICODE))
+#if !defined(_WIN64) && defined(UNICODE)
 	if ( OSver.dwPlatformId != VER_PLATFORM_WIN32_NT ){
 		SMessage(MessageStr[MSG_UNICODE]);
 		return EXIT_FAILURE;

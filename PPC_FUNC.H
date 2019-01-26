@@ -33,6 +33,7 @@ extern void USEFASTCALL PPCuiWithPathForLock(PPC_APPINFO *cinfo,const TCHAR *pat
 extern void SendCallPPc(COPYDATASTRUCT *copydata);
 extern BOOL CreatePPcWindow(PPCSTARTPARAM *psp,MAINWINDOWSTRUCT *mws);
 extern BOOL FixPPcWindowList(MAINWINDOWSTRUCT *mws,BOOL final);
+extern int GetPPcSubID(const TCHAR *idstr, TCHAR *dest);
 
 //------------------------------------------------------------------ ppc_add.c
 #define AUTODD_COM B3

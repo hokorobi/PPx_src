@@ -144,7 +144,7 @@ void WarningItemMes(PPCUSTSTRUCT *PCS,const TCHAR *mes,const TCHAR *kword,const 
 	}
 }
 //================================================================ カスタマイズ
-PPXDLL int PPXAPI CheckRegistKey(const TCHAR *src,TCHAR *dest,const TCHAR *type)
+PPXDLL int PPXAPI CheckRegistKey(const TCHAR *src, TCHAR *dest, const TCHAR *custid)
 {
 	int key;
 
@@ -154,16 +154,16 @@ PPXDLL int PPXAPI CheckRegistKey(const TCHAR *src,TCHAR *dest,const TCHAR *type)
 
 										// キーのチェック
 	// KC_main / KV_main / KV_page / KV_crt / KV_img
-	if ( ((*(type + 1) == 'C') && (*(type + 3) == 'm')) ||
-		 (*(type + 1) == 'V') ){
+	if ( ((*(custid + 1) == 'C') && (*(custid + 3) == 'm')) ||
+		 (*(custid + 1) == 'V') ){
 		// ' '/\' 'は SPACE/\SPACE に変換
 		if ( (key == ' ') || (key == (K_s | ' ')) ){
 			setflag(key,K_v);
 		}
 	}else{
-		// K_edit/KB_edit でSPACE/\SPACEは ' '/\' ' に変換
-		if ( ( (key == K_space) || (key == (K_s | K_space)) ) &&
-			 ( (*(type + 2) == 'e') || (*(type + 3) == 'e') ) ){
+		// EDITCONTROL系+PPbでSPACE/\SPACEは ' '/\' ' に変換
+		if ( ((key == K_space) || (key == (K_s | K_space))) &&
+			 (!tstrcmp(custid,T("K_edit")) || !tstrcmp(custid,T("K_lied")) || !tstrcmp(custid,T("K_ppe")) || !tstrcmp(custid,T("KB_edit"))) ){
 			resetflag(key,K_v);
 		}
 	}
@@ -175,15 +175,15 @@ PPXDLL int PPXAPI CheckRegistKey(const TCHAR *src,TCHAR *dest,const TCHAR *type)
 	// ^J ^\J 等は 仮想キーコードに変換(^Enter が ^J も出力するため)KB_edit除く
 	// ^ScrollLock で ^C になるが、これはチェック省略中
 	if ( ((key & ~(K_s | K_e)) == (K_c | 'J')) &&
-		 (*(type + 1) != 'B') ){
+		 (*(custid + 1) != 'B') ){
 		setflag(key,K_v);
 	}
 
 	PutKeyCode(dest,key);
 
-	// K_edit で \Enter , ^Enter は機能しないので警告
-	if ( ((key == (K_s | K_cr)) || (key == (K_c | K_cr)) ) &&
-		 (*(type + 2) == 'e') ){
+	// EDITCONTROL系でK_edit で \Enter, ^Enter は機能しないので警告
+	if ( ((key == (K_s | K_cr)) || (key == (K_c | K_cr))) &&
+		 (!tstrcmp(custid,T("K_edit")) || !tstrcmp(custid,T("K_lied")) || !tstrcmp(custid,T("K_ppe"))) ){
 		return CHECKREGISTKEY_WARNKEY;
 	}
 	// 数字キーは、Shift→記号 Ctrl→仮想キー になるので警告する
@@ -289,13 +289,13 @@ int CheckPrecode(const TCHAR *ptr,TCHAR command,TCHAR **keyword,const TCHAR *CVe
 	return (tstrcmp(ver,CVer) ^ ab) | 1;
 }
 
-BYTE GetNumberWith(const TCHAR **line,BYTE def,DWORD max)
+BYTE GetNumberWith(const TCHAR **line,BYTE def,DWORD maxnum)
 {
 	if ( Isdigit(**line) ){
 		DWORD num;
 
-		num = GetDwordNumber(line);
-		if ( num > max ) num = max;
+		num = (DWORD)GetDigitNumber(line);
+		if ( num > maxnum ) num = maxnum;
 		return (BYTE)num;
 	}else{
 		return def;
@@ -485,7 +485,7 @@ case 'S': {
 	*(TCHAR *)((TCHAR *)destp + linelen) = '\0';
 
 	if ( mode == 'D' ){
-		tstrreplace( (TCHAR *)destp,T("\""),T(""));
+		tstrreplace( (TCHAR *)destp,T("\""),NilStr);
 		if ( (*line == '%') && (*(line + 1) == '0') ){
 			int dellen = 2;
 

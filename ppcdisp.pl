@@ -23,6 +23,12 @@
 	}
 	$max = $cnt - 1;
 	print OUT "// max ID:$max";
+
+# --------- サイズ
+	print OUT "\n\n//各サイズ\n";
+	for ( 0 .. ($cnt - 1) ){
+		print OUT "#define $list[$_][1]_SIZE $list[$_][2]\n";
+	}
 # --------- ID順にソート
 	for ( 0 .. ($cnt - 1) ){
 		push(@sortkey,$list[$_][0]);

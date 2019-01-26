@@ -119,7 +119,7 @@ void SendExtract(HWND hTargetWnd,const TCHAR *src,TCHAR *destbuf)
 	SendMessageTimeout(hTargetWnd,WM_PPXCOMMAND,K_EXTRACT,(LPARAM)hSendMap,SMTO_NORMAL,10000,&result);
 	CloseHandle(hSendMap);
 
-	tstrcpy(destbuf,param);
+	tstrcpy(destbuf, param);
 	UnmapViewOfFile(param);
 	CloseHandle(hMap);
 }
@@ -526,7 +526,7 @@ BYTE *EntryExtData_GetDATAptr(PPC_APPINFO *cinfo,WORD id,ENTRYCELL *cell)
 	return result;
 }
 
-void USEFASTCALL CommentFunction(PPC_APPINFO *cinfo,PPXAPPINFOUNION *uptr)
+void USEFASTCALL CommentFunction(PPC_APPINFO *cinfo, PPXAPPINFOUNION *uptr)
 {
 	DWORD CommentOffset;
 	int CommentID;
@@ -537,7 +537,7 @@ void USEFASTCALL CommentFunction(PPC_APPINFO *cinfo,PPXAPPINFOUNION *uptr)
 	if ( CommentID <= 0 ){
 		CommentOffset = CEL(cinfo->e.cellN).comment;
 		if ( CommentOffset != EC_NOCOMMENT ){
-			tstrlimcpy(uptr->funcparam.dest,ThPointerT(&cinfo->EntryComments,CommentOffset),VFPS);
+			tstrlimcpy(uptr->funcparam.dest, ThPointerT(&cinfo->EntryComments, CommentOffset), VFPS);
 		}else{
 			uptr->funcparam.dest[0] = '\0';
 		}
@@ -548,7 +548,7 @@ void USEFASTCALL CommentFunction(PPC_APPINFO *cinfo,PPXAPPINFOUNION *uptr)
 		eeds.id = (DWORD)(DFC_COMMENTEX_MAX - (CommentID - 1) );
 		eeds.size = VFPS * sizeof(TCHAR);
 		eeds.data = (BYTE *)uptr->funcparam.dest;
-		EntryExtData_GetDATA(cinfo,&eeds,&CEL(cinfo->e.cellN));
+		EntryExtData_GetDATA(cinfo, &eeds, &CEL(cinfo->e.cellN));
 	}
 }
 
@@ -942,7 +942,7 @@ int GetStringCommand(const TCHAR **param,const TCHAR *commands)
 
 int PPcGetSite(PPC_APPINFO *cinfo)
 {
-	int site = 0;
+	int site = PPCSITE_SINGLE;
 
 	if ( cinfo->combo ){
 		return (int)SendMessage(cinfo->hComboWnd,WM_PPXCOMMAND,
@@ -1031,9 +1031,97 @@ void PPcHighlight(PPC_APPINFO *cinfo,const TCHAR *param) // ●1.1x試作品
 	}
 }
 
+// 改行使用可能なパラメータ取得
+void GetAdvGetParam(const TCHAR **param, TCHAR *dest, DWORD destlength)
+{
+	const TCHAR *src = *param;
+
+	SkipSpace(&src);
+	for (;;){
+		TCHAR c;
+
+		c = *src;
+		if ( c == '\0' ) break;
+		if ( c != '\"' ){
+			if ( ((UTCHAR)c <= ' ') || (c == ',') ){
+				break;
+			}
+			if ( destlength ){
+				*dest++ = c;
+				destlength--;
+			}
+			src++;
+			continue;
+		}
+		// " 処理
+		src++;
+		for (;;){
+			c = *src;
+			if ( c == '\0' ) goto end;
+			if ( c == '\"' ){
+				if ( *(src + 1) != '\"' ){ // 末尾？
+					src++;
+					break;
+				}
+				src++; // "" ... " 自身
+			}
+			if ( destlength ){
+				*dest++ = c;
+				destlength--;
+			}
+			src++;
+			continue;
+		}
+	}
+end:
+	*param = src;
+	*dest = '\0';
+}
+
+void PPcEntryTip(PPC_APPINFO *cinfo,const TCHAR *param)
+{
+	TCHAR buf[CMDLINESIZE], *more;
+	int mode = -1;
+
+	for (;;){
+		TCHAR chr;
+
+		chr = SkipSpace(&param);
+		if ( chr == '\0' ) break;
+		if ( chr == '\"' ){
+			GetAdvGetParam(&param, buf, TSIZEOF(buf));
+			ThSetString(&cinfo->StringVariable,T("TipText"),buf);
+			mode = stip_mode_text;
+		}
+		GetOptionParameter(&param, buf, &more);
+		if ( tstrcmp(buf, T("filename") ) == 0 ) mode = stip_mode_filename;
+		if ( tstrcmp(buf, T("fileinfo") ) == 0 ) mode = stip_mode_fileinfo;
+		if ( tstrcmp(buf, T("comment") ) == 0 ) mode = stip_mode_comment;
+		if ( tstrcmp(buf, T("hover") ) == 0 ){
+			cinfo->X_stip_hover = 1;
+			return;
+		}
+		if ( tstrcmp(buf, T("close") ) == 0 ){
+			HideFileNameTip(cinfo);
+			return;
+		}
+	}
+	if ( mode < 0 ){
+		cinfo->X_stip_mode--;
+		if ( cinfo->X_stip_mode < 0 ){
+			cinfo->X_stip_mode = stip_mode_fileinfo;
+		}
+	}else{
+		cinfo->X_stip_mode = mode;
+	}
+
+	setflag(X_stip, STIP_NOW);
+	RefleshCell(cinfo, cinfo->e.cellN);
+}
+
 void SetEntryImage(PPC_APPINFO *cinfo,const TCHAR *param)
 {
-	TCHAR buf[CMDLINESIZE];
+	TCHAR buf[CMDLINESIZE], *more;
 	int offset;
 
 	GetLineParam(&param,buf);
@@ -1052,9 +1140,10 @@ void SetEntryImage(PPC_APPINFO *cinfo,const TCHAR *param)
 		SetPopMsg(cinfo,POPMSG_MSG,T("no image mode"));
 		return;
 	}
-	GetLineParam(&param,buf);
-	if ( (tstrcmp(buf,T("/save")) == 0) && (CEL(cinfo->e.cellN).icon >= 0) ){
-		VFSFullPath(buf,CEL(cinfo->e.cellN).f.cFileName,cinfo->RealPath);
+	if ( (GetOptionParameter(&param, buf, &more) == '-') &&
+		 (tstrcmp(buf + 1,T("SAVE")) == 0) &&
+		 (CEL(cinfo->e.cellN).icon >= 0) ){
+		VFSFullPath(buf, CEL(cinfo->e.cellN).f.cFileName, cinfo->RealPath);
 		if ( LoadImageSaveAPI() != FALSE ){
 			LPVOID lpBits;
 			BITMAPINFOHEADER bmiHeader;
@@ -1129,7 +1218,7 @@ void PPcDockCommand(PPC_APPINFO *cinfo,const TCHAR *param)
 		if ( mode == dock_menu ){
 			PostMessage(cinfo->hComboWnd,WM_PPXCOMMAND,TMAKELPARAM(KCW_dock,buf[0]),(LPARAM)&pos);
 		}else{
-			tstrcpy(buf + 1,param);
+			tstrcpy(buf + 1, param);
 			SendMessage(cinfo->hComboWnd,WM_PPXCOMMAND,TMAKELPARAM(KCW_dock,buf[0] | (mode * 0x100) ),(LPARAM)(buf + 1));
 		}
 	}else{
@@ -1140,9 +1229,9 @@ void PPcDockCommand(PPC_APPINFO *cinfo,const TCHAR *param)
 			DockModifyMenu(cinfo->info.hWnd,dock,&pos);
 			WmWindowPosChanged(cinfo);
 		}else if ( mode == dock_drop ){
-			DockDropBar(cinfo,dock,param);
+			DockDropBar(cinfo,dock, param);
 		}else{
-			tstrcpy(buf,param);
+			tstrcpy(buf, param);
 			DockCommands(cinfo->info.hWnd,dock,mode,buf);
 			if ( redraw ) WmWindowPosChanged(cinfo);
 		}
@@ -1168,21 +1257,24 @@ void MakeListFileCommand(PPC_APPINFO *cinfo,const TCHAR *param)
 void PPvOptionCommand(PPC_APPINFO *cinfo,const TCHAR *param)
 {
 	TCHAR buf[CMDLINESIZE];
+	BOOL setsync;
 
 	GetLineParam(&param,buf);
 	NextParameter(&param);
+	setsync = (tstrcmp(buf,T("setsync")) == 0) ? TRUE : FALSE;
 
-	if ( (tstrcmp(buf,T("sync")) == 0) || (tstrcmp(buf,T("setsync")) == 0) ){
-		if ( tstrcmp(param,T("on")) == 0 ){
+	if ( (tstrcmp(buf,T("sync")) == 0) || setsync ){
+		GetLineParam(&param,buf);
+		if ( tstrcmp(buf,T("on")) == 0 ){
 			SetSyncView(cinfo,1);
-		}else if ( tstrcmp(param,T("off")) == 0 ){
+		}else if ( tstrcmp(buf,T("off")) == 0 ){
 			SetSyncView(cinfo,0);
-		}else if ( Isalpha(*param) ){
-			SetSyncView(cinfo,*param);
+		}else if ( Isalpha(buf[0]) ){
+			SetSyncView(cinfo,buf[0]);
 		}else{
 			PPcCommand(cinfo,K_raw | K_s | 'Y');
 		}
-		if ( tstrcmp(buf,T("setsync")) == 0 ){
+		if ( setsync ){
 			buf[0] = '\0';
 			if ( cinfo->SyncViewFlag & PPV_BOOTID ){
 				buf[0] = (TCHAR)(cinfo->SyncViewFlag >> 24);
@@ -1270,7 +1362,7 @@ void PairRateCommand(PPC_APPINFO *cinfo,const TCHAR *param) // *pairrate
 	rate = GetIntNumber(&param);
 	if ( site ){
 		// 反対窓が対象なら、入れ替えを行う
-		if ( (PPcGetSite(cinfo) > 1) ? (site < 0) : (site > 0) ){
+		if ( (PPcGetSite(cinfo) >= PPCSITE_RIGHT) ? (site < 0) : (site > 0) ){
 			if ( mode == FPS_RATE  ){
 				rate = 100 - rate;
 			}else{
@@ -1437,12 +1529,12 @@ ERRORCODE AutoDragDropCommand(PPC_APPINFO *cinfo,const TCHAR *param)
 	HWND hWnd;
 	DWORD droptype = AUTODD_HOOK | AUTODD_LEFT;
 
-	if ( ('\0' == GetCommandParameter(&param,paramtmp,TSIZEOF(paramtmp))) || (paramtmp[0] == '\0') ){
+	if ( ('\0' == GetCommandParameter(&param, paramtmp,TSIZEOF(paramtmp))) || (paramtmp[0] == '\0') ){
 		hWnd = NULL;
 	}else{
 		CCIPSTRUCT ccip;
 
-		hWnd = GetWindowHandleByText(&cinfo->info,paramtmp);
+		hWnd = GetWindowHandleByText(&cinfo->info, paramtmp);
 		if ( *param == ',' ) param++;
 		ccip.id = GetNumber(&param);
 
@@ -1458,7 +1550,7 @@ ERRORCODE AutoDragDropCommand(PPC_APPINFO *cinfo,const TCHAR *param)
 			droptype = AUTODD_HOOK | AUTODD_RIGHT;
 		}
 		if ( IsTrue(NextParameter(&param)) ){
-			GetCommandParameter(&param,paramtmp,TSIZEOF(paramtmp));
+			GetCommandParameter(&param, paramtmp,TSIZEOF(paramtmp));
 			if ( paramtmp[0] != '\0' ) src = paramtmp;
 		}
 	}
@@ -1510,10 +1602,10 @@ ERRORCODE CaptureWindowCommand(PPC_APPINFO *cinfo,const TCHAR *param)
 
 	hWnd = NULL;
 	for ( ;; ){
-		code = GetOptionParameter(&param,paramtmp,&more);
+		code = GetOptionParameter(&param, paramtmp, &more);
 		if ( code == '\0' ) break;
 		if ( code != '-' ){
-			hWnd = GetWindowHandleByText(&cinfo->info,paramtmp);
+			hWnd = GetWindowHandleByText(&cinfo->info, paramtmp);
 		}else{
 			if ( tstrcmp(paramtmp + 1,T("NOACTIVE")) == 0 ){
 				setflag(command,KCW_entry_NOACTIVE);
@@ -1543,7 +1635,7 @@ ERRORCODE CaptureWindowCommand(PPC_APPINFO *cinfo,const TCHAR *param)
 					}
 				}
 			}else{
-				XMessage(NULL,NULL,XM_GrERRld,StrBadOption,paramtmp);
+				XMessage(NULL,NULL,XM_GrERRld,StrBadOption, paramtmp);
 			}
 		}
 	}
@@ -2152,7 +2244,7 @@ ERRORCODE PPcGetIInfo_Command(PPC_APPINFO *cinfo,PPXAPPINFOUNION *uptr)
 	param = uptr->str + tstrlen(uptr->str) + 1;
 	if ( *uptr->str <= 'M' ){ //------------------------------------------- A-M
 		if ( !tstrcmp(uptr->str,T("AUTODRAGDROP")) ){
-			return AutoDragDropCommand(cinfo,param);
+			return AutoDragDropCommand(cinfo, param);
 /*
 		}else if ( !tstrcmp(uptr->str,T("AUX")) ){
 			int mode = GetStringCommand((const TCHAR **)&param,T("OFF\0") T("ON\0") );
@@ -2164,19 +2256,19 @@ ERRORCODE PPcGetIInfo_Command(PPC_APPINFO *cinfo,PPXAPPINFOUNION *uptr)
 			}
 */
 		}else if ( !tstrcmp(uptr->str,T("CAPTUREWINDOW")) ){
-			return CaptureWindowCommand(cinfo,param);
+			return CaptureWindowCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("CACHE")) ){
-			CacheCommand(cinfo,param);
+			CacheCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("CHECKOFFMARK")) ){
 			return CheckOffScreenMarkCommand(cinfo);
 		}else if ( !tstrcmp(uptr->str,T("COLOR")) ){
-			return SetTempColor(cinfo,param);
+			return SetTempColor(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("COMMENT")) ){
-			return Comments(cinfo,param);
+			return Comments(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("CLEARCHANGE")) ){
 			ClearChangeState(cinfo);
 		}else if ( !tstrcmp(uptr->str,T("COMPAREMARK")) ){
-			return CompareMarkEntry(cinfo,param);
+			return CompareMarkEntry(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("COUNTSIZE")) ){
 			if ( *param == '-' ) param++;
 			if ( tstrcmp(param,T("clear")) == 0 ){
@@ -2185,51 +2277,53 @@ ERRORCODE PPcGetIInfo_Command(PPC_APPINFO *cinfo,PPXAPPINFOUNION *uptr)
 				CountMarkSize(cinfo);
 			}
 		}else if ( !tstrcmp(uptr->str,T("CLIPENTRY")) ){
-			PPcClipEntry(cinfo,param,DROPEFFECT_COPY | DROPEFFECT_LINK);
+			PPcClipEntry(cinfo, param,DROPEFFECT_COPY | DROPEFFECT_LINK);
 		}else if ( !tstrcmp(uptr->str,T("CUTENTRY")) ){
-			PPcClipEntry(cinfo,param,DROPEFFECT_MOVE);
+			PPcClipEntry(cinfo, param,DROPEFFECT_MOVE);
 		}else if ( !tstrcmp(uptr->str,T("DIROPTION")) ){
-			return PPcDirOptionCommand(cinfo,param);
+			return PPcDirOptionCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("DOCK")) ){
-			PPcDockCommand(cinfo,param);
+			PPcDockCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("EXECINARC")) ){
 			if ( cinfo->UnpackFix == FALSE ) OnArcPathMode(cinfo);
+		}else if ( !tstrcmp(uptr->str,T("ENTRYTIP")) ){
+			PPcEntryTip(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("HIGHLIGHT")) ){
-			PPcHighlight(cinfo,param);
+			PPcHighlight(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("INSERTDIR")) ){
-			PPcInsertDir(cinfo,param);
+			PPcInsertDir(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("JUMPPATH")) ){
-			PPcJumpPathCommand(cinfo,param);
+			PPcJumpPathCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("LAYOUT")) ){
-			PPcLayoutCommand(cinfo,param);
+			PPcLayoutCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("LOGWINDOW")) ){
 			LogwindowCommand(param);
 		}else if ( !tstrcmp(uptr->str,T("MAKELISTFILE")) ){
-			MakeListFileCommand(cinfo,param);
+			MakeListFileCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("MASKPATH")) ){
-			MaskPathCommand(cinfo,param);
+			MaskPathCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("MASKENTRY")) ){
-			return MaskEntryCommand(cinfo,param,DSMD_TEMP);
+			return MaskEntryCommand(cinfo, param,DSMD_TEMP);
 		}else if ( !tstrcmp(uptr->str,T("MARKENTRY")) ){
-			return PPC_FindMark(cinfo,param,1);
+			return PPC_FindMark(cinfo, param,1);
 		}else{
 			return ERROR_INVALID_FUNCTION;
 		}
 	}else{ //-------------------------------------------------------------- N-Z
 		if ( !tstrcmp(uptr->str,T("PAIRRATE")) ){
-			PairRateCommand(cinfo,param);
+			PairRateCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("PANE")) ){
 			if ( cinfo->combo ){
 				return SendMessage(cinfo->hComboWnd,WM_PPXCOMMAND,TMAKEWPARAM(KCW_panecommand,GetComboBaseIndex(cinfo->info.hWnd)),(LPARAM)param);
 			}
 		}else if ( !tstrcmp(uptr->str,T("PPCFILE")) ){
-			PPcFileCommand(cinfo,param);
+			PPcFileCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("PPVOPTION")) ){
-			PPvOptionCommand(cinfo,param);
+			PPvOptionCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("PREVIEW")) ){ // ●1.1x試作品
 			PreviewWindowCommand(cinfo);
 		/*
-			if ( PreviewCommand(&cinfo->bg,param,cinfo->RealPath) ){
+			if ( PreviewCommand(&cinfo->bg, param,cinfo->RealPath) ){
 				cinfo->FullDraw = X_fles | 1;
 			}else{
 				cinfo->FullDraw = X_fles;
@@ -2237,29 +2331,29 @@ ERRORCODE PPcGetIInfo_Command(PPC_APPINFO *cinfo,PPXAPPINFOUNION *uptr)
 			InvalidateRect(cinfo->info.hWnd,NULL,TRUE);
 		*/
 		}else if ( !tstrcmp(uptr->str,T("SENDTO")) ){
-			ExecSendTo(cinfo,param);
+			ExecSendTo(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("SETMASKENTRY")) ){
-			return MaskEntryCommand(cinfo,param,DSMD_REGID);
+			return MaskEntryCommand(cinfo, param,DSMD_REGID);
 		}else if ( !tstrcmp(uptr->str,T("SETSORTENTRY")) ){
-			return SortEntryCommand(cinfo,param,DSMD_REGID);
+			return SortEntryCommand(cinfo, param,DSMD_REGID);
 		}else if ( !tstrcmp(uptr->str,T("SORTENTRY")) ){
-			return SortEntryCommand(cinfo,param,DSMD_TEMP);
+			return SortEntryCommand(cinfo, param,DSMD_TEMP);
 		}else if ( !tstrcmp(uptr->str,T("SYNCPROP")) ){
-			PPcSyncProperties(cinfo,param);
+			PPcSyncProperties(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("SETENTRYIMAGE")) ){
-			SetEntryImage(cinfo,param);
+			SetEntryImage(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("TREE")) ){
-			PPcTreeCommand(cinfo,param);
+			PPcTreeCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("UNPACK")) ){
-			return UnpackCommand(cinfo,param);
+			return UnpackCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("UNMARKENTRY")) ){
-			return PPC_FindMark(cinfo,param,0);
+			return PPC_FindMark(cinfo, param,0);
 		}else if ( !tstrcmp(uptr->str,T("VIEWSTYLE")) ){
-			return ViewStyleCommand(cinfo,param);
+			return ViewStyleCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("WHEREIS")) ){
-			return WhereIsCommand(cinfo,param,FALSE);
+			return WhereIsCommand(cinfo, param,FALSE);
 		}else if ( !tstrcmp(uptr->str,T("WHERE")) ){
-			return WhereIsCommand(cinfo,param,TRUE);
+			return WhereIsCommand(cinfo, param,TRUE);
 		}else{
 			return ERROR_INVALID_FUNCTION;
 		}

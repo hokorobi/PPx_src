@@ -5,7 +5,8 @@
 extern "C" {
 #endif
 
-#define Combo_Max_Base 100 // 一体化窓に登録可能な最大数(最大はTCM_FIRST (0x1300) )
+#define Combo_Max_Base 200 // 一体化窓に登録可能な最大数(最大は TCM_FIRST (0x1300) )
+#define Combo_Max_Show 32 // 一体化窓の最大ペイン数(最大は Combo_Max_Base)
 
 #define ComboFrameID 0x4000
 #define ComboCommandIDFirst 0x4001 // コントロールIDの割当て先頭
@@ -194,7 +195,7 @@ extern void KCW_FocusFix(HWND hWnd,HWND hTargetWnd);
 // PPCOMBOS.C
 extern void ResetR(TCHAR *buf);
 extern void CheckComboTable(const TCHAR *p1);
-extern void WmComboDestroy(HWND hWnd,BOOL EndSession);
+extern void WmComboDestroy(BOOL EndSession);
 extern ERRORCODE PaneCommand(const TCHAR *param,int targetbaseindex);
 extern void SetComboAddresBar(const TCHAR *path);
 extern void EnterAddressBar(void);

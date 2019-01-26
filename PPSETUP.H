@@ -1,12 +1,22 @@
 /*-----------------------------------------------------------------------------
 	Paper Plane xUI	 setup wizard
 -----------------------------------------------------------------------------*/
+#include "WINAPI.H"
+#include <windowsx.h>
+#include <commctrl.h>
+#include <shlobj.h>
+#include "PPX.H"
+#include "VFS.H"
+#include "PPSETUP.RH"
+
+#ifndef BIF_USENEWUI
+#define BIF_USENEWUI 0x50
+#endif
+
 #define LOWSETTINGMEM_MB 384	// 低スペック用設定にするメモリ
 								// (MB,指定値以下は低スペック設定になる)
 
 #ifdef UNICODE			// PPSETUP は、現在 MultiByte のみなので、細工する
-//	#undef UNICODE
-//	#define UNICODEBINARY
 	#define XNAME	"PPW"
 	#ifdef _WIN64
 		#define COMMONDLL "PPLIB64W.DLL"
@@ -14,7 +24,7 @@
 	#else
 		#define COMMONDLL "PPLIB32W.DLL"
 		#define OLDCOMMONDLL "PPXLIB32.DLL"
-		#define ARCNAME "./ppw1"
+		#define ARCNAME "./ppw"
 	#endif
 	#define CEXE	"PPCW.EXE"
 	#define CSEXE	"PPCUSTW.EXE"
@@ -24,76 +34,11 @@
 	#define XNAME	"PPX"
 	#define COMMONDLL "PPLIB32.DLL"
 	#define OLDCOMMONDLL "PPCOMMON.DLL"
-	#define ARCNAME "./ppx1"
+	#define ARCNAME "./ppx"
 	#define CEXE	"PPC.EXE"
 	#define CSEXE	"PPCUST.EXE"
 	#define CustID	"TC1"
 	#define HistoryID "TH1"
-#endif
-
-#include "WINAPI.H"
-#include <windowsx.h>
-#include <commctrl.h>
-#include <shlobj.h>
-#include "PPX.H"
-#include "VFS.H"
-#include "PPSETUP.RH"
-
-#ifdef UNICODEBINARY
-	#define TTRSTR(string)	L##string
-	#define TT(string)	TTRSTR(string)
-	typedef WCHAR		TTCHAR;
-	typedef WCHAR		UTTCHAR;
-	typedef const WCHAR	CTTCHAR;
-	#define TTAPITAIL	"W"
-
-	#define ttstrcat	wcscat
-	#define ttstrchr	wcschr
-	#define ttstrcmp	wcscmp
-	#define ttstrcpy	wcscpy
-	#define ttstricmp	_wcsicmp
-	#define ttstrlen	wcslen
-	#define ttstrrchr	wcsrchr
-	#define ttstrstr	wcsstr
-	#define ttstrupr	_wcsupr
-	#define TTSTRSIZE(string)	((ttstrlen(string) + 1) * sizeof(WCHAR))
-	#define TTSTRLENGTH(string)	(ttstrlen(string) * sizeof(WCHAR))
-	#define TTSTROFF(size)	((size) * sizeof(WCHAR))
-	#define TTSIZE(size)	(sizeof(size) / sizeof(WCHAR))
-	#define CF_TTTEXT	CF_UNICODETEXT
-#else
-	#define TT(string)	T(string)
-	#ifdef UNICODE
-		typedef WCHAR TTCHAR;
-		typedef WCHAR UTTCHAR;
-		typedef const WCHAR CTTCHAR;
-		#define TTAPITAIL	"W"
-	#else
-		typedef char TTCHAR;
-		typedef unsigned char UTTCHAR;
-		typedef const char CTTCHAR;
-		#define TTAPITAIL	"A"
-	#endif
-
-
-	#define ttstrcat	tstrcat
-	#define ttstrchr	tstrchr
-	#define ttstrcmp	tstrcmp
-	#define ttstrcpy	tstrcpy
-	#define ttstricmp	tstricmp
-	#define ttstrlen	tstrlen
-	#define ttstrrchr	tstrrchr
-	#define ttstrstr	tstrstr
-	#define ttstrupr	tstrupr
-	#define TTSTRSIZE(string)	((tstrlen(string) + 1) * sizeof(TCHAR))
-	#define TTSTRLENGTH(string)	tstrlen(string)
-	#define TTSTROFF(size)	((size) * sizeof(TCHAR))
-	#define TTSIZE(size)	(sizeof(size) / sizeof(TCHAR))
-	#define CF_TTTEXT	CF_TEXT
-#endif
-
-#ifndef BIF_USENEWUI
-#define BIF_USENEWUI 0x50
 #endif
 
 #define PROPTYPE	1		// 0:prop 1:wizard
@@ -159,13 +104,13 @@ extern BOOL XX_doscolor;				// DOS配色
 extern TCHAR XX_editor[VFPS];			// テキストエディタ
 extern TCHAR XX_viewer[VFPS];			// 汎用ビューア
 extern TCHAR XX_susie[VFPS];			// Susie plug-in
-extern BOOL	XX_usesusie;				// Susie plug-in の設定を使用する
-extern BOOL	XX_resultquiet;				// エラーがなければ結果画面を省略
-extern int	XX_link_menu;				// スタートメニューに登録
-extern int	XX_link_cmenu;				// 共用スタートメニューに登録
-extern int	XX_link_boot;				// スタートアップに登録
-extern int	XX_link_desk;				// デスクトップに登録
-extern int	XX_link_app;				// 追加と削除に登録
+extern BOOL XX_usesusie;				// Susie plug-in の設定を使用する
+extern BOOL XX_resultquiet;				// エラーがなければ結果画面を省略
+extern int XX_link_menu;				// スタートメニューに登録
+extern int XX_link_cmenu;				// 共用スタートメニューに登録
+extern int XX_link_boot;				// スタートアップに登録
+extern int XX_link_desk;				// デスクトップに登録
+extern int XX_link_app;				// 追加と削除に登録
 
 extern const TCHAR *UNARCS[];
 

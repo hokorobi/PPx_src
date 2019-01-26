@@ -18,7 +18,6 @@ const int DialogID[] = {IDD_FOP_GENERAL,IDD_FOP_RENAME,IDD_FOP_OPTION};
 
 void InitControlData(FOPSTRUCT *FS,int id);
 
-
 typedef struct {
 	int ID;
 	DWORD flags;
@@ -28,8 +27,23 @@ const FIXDIALOGCONTROLS SizeFixFopID[] = {
 	{IDS_FOP_SRCNAME,0},{IDS_FOP_PROGRESS,0},{IDE_FOP_LOG,0},
 	{IDC_FOP_DESTDIR,0},{IDB_REF,1},
 	{IDE_FOP_RENAME,0},
-	{0}
+	{0,0}
 };
+
+void GetDivideSize(const TCHAR *param, VFSFOP_OPTIONS *fop)
+{
+	const TCHAR *oldp;
+
+	oldp = param;
+	fop->divide_num = (DWORD)GetNumber(&param);
+	if ( oldp == param ){
+		fop->divide_num = 0;
+		fop->divide_unit = '\0';
+		return;
+	}else{
+		fop->divide_unit = (BYTE)*param;
+	}
+}
 
 void FixDialogControlsSize(HWND hDlg,const FIXDIALOGCONTROLS *fdc,int RefID)
 {
@@ -339,7 +353,7 @@ BOOL GetFopOptions(const TCHAR *param,FOPSTRUCT *FS)
 		}
 
 		if ( !tstrcmp( buf + 1,T("BURST")) ){
-			fop->useburst = (short)CheckParamOnOff(&more);
+			fop->useburst = (char)CheckParamOnOff(&more);
 			continue;
 		}
 
@@ -385,7 +399,7 @@ BOOL GetFopOptions(const TCHAR *param,FOPSTRUCT *FS)
 		}
 
 		if ( !tstrcmp( buf + 1,T("DIV")) ){
-			GetSizeNumber(&more,&fop->divide,NULL);
+			GetDivideSize(more, fop);
 			continue;
 		}
 
@@ -785,17 +799,18 @@ BOOL LoadOption(FOPSTRUCT *FS,const TCHAR *action,const TCHAR *option)
 	FOP->chrcase	= 0;
 	FOP->sfn		= 0;
 	FOP->delspc		= 0;
+	FOP->filter		= 0;
 
 	FOP->AtrMask	= 0x1f;		// And 指定用
 	FOP->AtrFlag	= 0x20;		// Or 指定用
 
 	FOP->mode		= FOPMODE_COPY;
-	FOP->useburst	= 0;
 	FOP->flags		= VFSFOP_OPTFLAG_SKIPERROR;
 	FOP->aall		= 1;
 	FOP->firstsheet	= 0;
-	FOP->divide		= 0;
-
+	FOP->useburst	= 0;
+	FOP->divide_unit = '\0';
+	FOP->divide_num	= 0;
 	memcpy(FOP->str,optstr,sizeof optstr);
 
 	FS->Cancel		= FALSE;
@@ -822,7 +837,7 @@ BOOL LoadOption(FOPSTRUCT *FS,const TCHAR *action,const TCHAR *option)
 		}else{
 			tstrcpy(FS->opt.action,NilStr);
 		}
-		if ( FS->opt.action[0] ){
+		if ( FS->opt.action[0] != '\0' ){
 			SetCustTable(T("X_fopt"),FS->opt.action,FOP,sizeof(VFSFOP_OPTIONS));
 			XMessage(NULL,STR_FOP,XM_NsERRd,T("Saved default setting."));
 		}
@@ -956,7 +971,7 @@ void LoadControlData(FOPSTRUCT *FS)
 			CheckMask(hDlg,IDX_FOP_SYSTEM,FILE_ATTRIBUTE_SYSTEM,FOP);
 			CheckDlgButton(hDlg,IDX_FOP_AROFF,FOP->flags & VFSFOP_OPTFLAG_AUTOROFF);
 			// 一行編集-分割サイズ
-			wsprintf(buf,T("%u"),FOP->divide);
+			wsprintf(buf,T("%u%c"), FOP->divide_num, FOP->divide_unit);
 			SendDlgItemMessage(hDlg,IDE_FOP_DIV,CB_RESETCONTENT,0,0);
 
 			UsePPx();
@@ -968,7 +983,7 @@ void LoadControlData(FOPSTRUCT *FS)
 					histptr = EnumHistory(PPXH_NUMBER,index++);
 					if ( histptr == NULL ) break;
 					#ifdef UNICODE
-						if (ALIGNMENT_BITS(histptr) & 1 ){
+						if ( ALIGNMENT_BITS(histptr) & 1 ){
 							SendUTextMessage_U(GetDlgItem(hDlg,IDE_FOP_DIV),CB_ADDSTRING,0,histptr);
 						}else
 					#endif
@@ -1059,16 +1074,12 @@ void SaveControlData(FOPSTRUCT *FS)
 			break;
 		}
 
-		case FOPTAB_RENAME: {	// 名前シート
-			const TCHAR *p;
-
+		case FOPTAB_RENAME:	// 名前シート
 			// 分割
 			GetDlgItemText(hDlg,IDE_FOP_DIV,buf,TSIZEOF(buf));
-			FS->opt.fop.divide = 0;
-			p = buf;
-			GetSizeNumber(&p,&FS->opt.fop.divide,NULL);
-			if ( FS->opt.fop.divide && !(FS->opt.fopflags & VFSFOP_AUTOSTART)){
-				WriteHistory(PPXH_NUMBER,buf,0,NULL);
+			GetDivideSize(buf, &FS->opt.fop);
+			if ( FS->opt.fop.divide_num && !(FS->opt.fopflags & VFSFOP_AUTOSTART)){
+				WriteHistory(PPXH_NUMBER, buf, 0, NULL);
 			}
 			// 名前
 			GetDlgItemText(hDlg,IDE_FOP_RENAME,buf,TSIZEOF(FS->opt.rename));
@@ -1087,7 +1098,7 @@ void SaveControlData(FOPSTRUCT *FS)
 				}
 			}
 			break;
-		}
+
 		case FOPTAB_OPTION:	// その他シート
 			break;
 	}
@@ -1417,7 +1428,7 @@ void FopDialogInit(HWND hDlg,FILEOPERATIONDLGBOXINITPARAMS *fopip)
 
 	if ( (FS->opt.fop.firstsheet == FOPTAB_GENERAL) ||
 		 (FS->opt.fop.firstsheet == FOPTAB_RENAME) ){
-		if ( IsExistCustTable(T("K_edit"),T("FIRSTEVENT")) ){
+		if ( IsExistCustTable(T("K_lied"),T("FIRSTEVENT")) || IsExistCustTable(T("K_edit"),T("FIRSTEVENT")) ){
 			SendMessage(GetDlgItem(hDlg,
 				(FS->opt.fop.firstsheet == FOPTAB_GENERAL) ?
 				IDC_FOP_DESTDIR : IDE_FOP_RENAME),WM_PPXCOMMAND,K_E_FIRST,0);
@@ -1433,8 +1444,8 @@ void FopDialogInit(HWND hDlg,FILEOPERATIONDLGBOXINITPARAMS *fopip)
 		DWORD X_rtree;
 
 		X_rtree = GetCustDword(T("X_rtree"),0);
-		if ( X_rtree == 1) X_rtree = !GetWindowTextLength(FS->hDstED);
-		if ( X_rtree ){
+		if ( X_rtree == 1 ) X_rtree = !GetWindowTextLength(FS->hDstED);
+		if ( X_rtree != 0 ){
 			PostMessage(FS->hDstED,WM_PPXCOMMAND,K_raw | K_s | K_c | 'I',0);
 		}
 	}
@@ -1709,7 +1720,7 @@ void FopCommands(HWND hDlg,WPARAM wParam,LPARAM lParam)
 
 		// 各種チェックボックス
 		case IDX_FOP_BURST:
-			FS->opt.fop.useburst = (short)IsControlChecked(lParam);
+			FS->opt.fop.useburst = (char)IsControlChecked(lParam);
 			break;
 
 		case IDX_FOP_FLAT:

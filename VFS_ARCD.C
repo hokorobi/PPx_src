@@ -345,7 +345,7 @@ VFSDLL void PPXAPI VFSOff(void)
 }
 
 // Susie Plug-in が使えるか調べる。必要に応じて SPI を読む。-------------------
-BOOL CheckAndLoadSusiePlugin(SUSIE_DLL *sudll,TCHAR *filename,THREADSTRUCT *ts,DWORD mode)
+BOOL CheckAndLoadSusiePlugin(SUSIE_DLL *sudll, const TCHAR *filename, THREADSTRUCT *ts, DWORD mode)
 {
 	TCHAR dir[MAX_PATH];
 	TCHAR *p;
@@ -412,7 +412,7 @@ BOOL CheckAndLoadSusiePlugin(SUSIE_DLL *sudll,TCHAR *filename,THREADSTRUCT *ts,D
 	X_susie.flags = sudll->flags & ~(VFSSUSIE_BMP | VFSSUSIE_ARC);
 	if ( (inf[2] == 'I') && (inf[3] == 'N' )) X_susie.flags |= VFSSUSIE_BMP;
 	if ( (inf[2] == 'A') && (inf[3] == 'M' )) X_susie.flags |= VFSSUSIE_ARC;
-	if ( !X_susie.flags ){
+	if ( X_susie.flags == 0 ){
 		XMessage(NULL,NULL,XM_NiERRld,T("SPI error:%s(%s)"),dir,inf);
 	}
 	if ( X_susie.flags != sudll->flags ){

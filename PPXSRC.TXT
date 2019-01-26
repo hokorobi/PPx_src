@@ -1,0 +1,142 @@
+ ------------------------------------------------------------------------------
+	Paper Plane xUI  Source archive		Copyright (c)1997-2018 TORO
+ ------------------------------------------------------------------------------
+
+	Paper Plane xUI を構築するために必要なファイル一式です。
+	配布用の実行形式ファイルには次のものを使用しています。
+
+	Borland C++	Version 5.0
+	Turbo Assembler	Version 5.3
+	Turbo Link	Version 1.6.72.0
+	Borland MAKE	Version 5.2
+	HcRtf		Version 4.01.0951
+	Turbo Resource Compiler	Version 5.01
+	Microsoft Visual Studio 2008 Version 9.0.30729.1 SP
+
+	help ファイルなどを生成するために Perl を使用しています。
+
+	Link 前に拙作 WINCLOSE を使っています。これは、Link 前に Link
+	対象を終わらせるために用いるものですので、無くても問題ありません。
+
+	Turbo Assembler は PPX_64.C で使用していますが、PPX_64.H で定義
+	している USETASM を 0 にすることで Turbo Assembler を使わずに
+	済むようになります。インラインアセンブラが使えない場合も0にし
+	て下さい。
+
+
+・BCC 5.5
+
+	BCC 5.5 で構築できることを確認しています。
+	MAKEFILE 内の UseIlinkを 1 に変更してください。
+	初期に配布された BCC 5.5 では一部のヘッダファイルが
+	不足しているため、Win32 SDK を入れる必要があります。
+	また、UseDebug = 1 のときは大量の警告が出る場合があります。
+
+
+・Visual C++
+
+	MAKEFILE内のUseBCCを 0 にすることで、CLを使って構築できます。
+	以下の構成で確認しました。
+
+	Borland MAKE	Version 5.2
+	Microsoft 32-bit C/C++ Optimizing Compiler Version 13.10.3052 for 80x86
+	Microsoft Incremental Linker Version 7.10.3052
+	Microsoft Platform SDK for Windows Server 2003 SP1
+
+	また、添付 PPx.sln を使って Visual Studio 2008/2015 上でもビルドが
+	可能です。
+
+
+・64bit
+
+	MAKEFILE内 X64 = 1 で x64 UNICODE版を構築できます。
+
+	・Visual Studio 2008 + Borland MAKE の場合は、
+	「vcvarsall.bat amd64」を実行した後、Borland MAKE を実行します。
+
+	・以下の VC Tool Kit + Platform SDK 2003 の場合、SDK 内の
+	SetEnv.Cmd を「SetEnv.Cmd /XP64 /RETAIL」で実行した後、
+	makefile 内の VCTOOLKIT を 1 に設定した上で Borland MAKE を
+	実行します。
+
+	Borland MAKE	Version 5.2
+	Microsoft (R) C/C++ Optimizing Compiler
+		Version 14.00.40310.41 for AMD64
+	Microsoft Incremental Linker Version 8.00.40310.39
+	Microsoft Platform SDK for Windows Server 2003 SP1
+
+
+・ARM
+
+	試験的に添付 PPx.sln を使って Visual Studio 2015 上で ARM 版 PPx の
+	ビルドができるようにしてあります。
+	gdi32.lib が見つからない旨のエラーが出る場合は、以下のファイルに
+	%LOCALAPPDATA%\Microsoft\MSBuild\v4.0\Microsoft.Cpp.ARM.user.props
+	次の例のように、ライブラリのパス指定を追加する必要があります。
+  <PropertyGroup Label="Configuration">
+    <LibraryPath>$(VC_LibraryPath_ARM);$(WindowsSDK_LibraryPath_ARM);$(NETFXKitsDir)Lib\um\arm;C:\Program Files (x86)\Windows Kits\10\Lib\10.0.10586.0\um\arm</LibraryPath>
+  </PropertyGroup>
+
+
+・MinGW
+
+	GNUmakefile を使って MinGW 上で make(mingw32-make) ができます。
+	古いMinGW(2005年頃)の場合、BCC の BRC32.EXE を併用する必要があります。
+
+
+・Wine
+
+	ubuntu 16.04 上の Wine 1.6 の Winelib を使って部分的に Linux に
+	ネイティブ対応する PPc,PPv,PPb,PPcust が構築可能なのを確認しています。
+
+	※ Wine のヘッダ・ライブラリが存在する必要があります。
+	  (wine と wine-devがインストール済み:
+		sudo apt-get install wine wine-dev 若しくは make install-lib )
+	※ CPPファイルのコンパイルができないときはg++のインストールが必要です。
+	  ( sudo apt-get install g++ )
+	※ PPb で ncurses を使用しています。
+	  ( sudo apt-get install ncurses-dev )
+
+	尚、Wine 上での PPx の動作はまだ完全ではありません。
+	・32bit版(UNICODE,MultiBye)の開発をしています。64bit版は未検証です。
+	・PPb はターミナルからのログの取得ができません。仕様です。
+	・ディレクトリの更新をすると属性がおかしくなることがあります。
+	・窓間のフォーカス制御をおこなうことができないときは、
+	  winecfg の画面-Allow the window manager to control the windows
+	  のチェックを解除する必要があります。しかし、ウィンドウマネージャの
+	  管理から外れるので使いにくいかもしれません。
+	・文字コードは UTF-8 専用です。EUC,S-JIS 等の切り替え処理はありません。
+	・画像の表示は Windows 版と同様に Susie Plug-in が必要です。
+	・書庫操作は Windows 版と同様に 各種DLL / Susie Plug-in が必要です。
+	・各種ダイアログが表示されない場合、PPD_DLG.C 中の PPxDialogBoxParam
+	  内の #if 1 を #if 0 に変えてみてください。また、X_mled = 0 に
+	  して下さい。
+
+	Wine版は次のネイティブ処理を加えています。
+	・Zドライブが / に割り当ててあることを前提としており、Zドライブを
+	　・ディレクトリ一覧をネイティブ読み込み(opendir,readdirを使用)
+	　・属性表示を rwx… で表示
+	・ファイルの実行で、EXEファイルでなければネイティブ実行(systemを使用)
+	　・ネイティブ実行時は、実行内容中の「z:\～」は「/～」に変換する
+
+
+・その他
+
+	ソースは以下の処理系依存の部分があります。
+	・「'漢字'」形式の定数定義を行っている。
+	・リトルエンディアンを前提に処理している部分がある。
+	・C ソースで「//」形式のコメントアウトを行っている
+	・コメントアウトのネストを有効にしている。
+	・アライメントは、BCC の初期設定に依存
+
+	配布している実行ファイルには拙作 tfilesign を用いた簡易署名が
+	されていますので、本ソースから一式作成しても同一のバイナリに
+	なりません。
+
+	このソース一式の再配布は原則として禁止とします。
+
+-------------------------------------------------------------------------------
+●連絡先／一次配布先						TORO／高橋 良和
+
+E-mail	toroid.jp@gmail.com	ghe00667@nifty.com
+WWW	http://toro.d.dooo.jp/index.html

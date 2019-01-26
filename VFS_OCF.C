@@ -16,6 +16,10 @@
 #define COPY_FILE_NO_BUFFERING 0x1000 // Ver6.0
 #endif
 
+//#define SubDW(dstL,dstH,srcL) {DWORD I_; I_ = (dstL); (dstL) -= (srcL); if ( (dstL) > I_ ) (dstH)--;}
+#define AddLIDW(dst,srcL) {(dst.u.LowPart) += (srcL); if ( (dst.u.LowPart) < (srcL)) (dst.u.HighPart)++;}
+#define SubLIDW(dst,srcL) {DWORD I_; I_ = (dst.u.LowPart); (dst.u.LowPart) -= (srcL); if ( (dst.u.LowPart) > I_ ) (dst.u.HighPart)--;}
+
 typedef enum { DONE_NO = 0,DONE_OK,DONE_DIV,DONE_SKIP } DONEENUM;
 
 const TCHAR Str_DiskFill[] = MES_QSPW;
@@ -83,8 +87,7 @@ ERRORCODE DiskFillAction(FOPSTRUCT *FS,BY_HANDLE_FILE_INFORMATION *srcfinfo,TCHA
 					MB_ICONEXCLAMATION | MB_YESNO) ){
 				return ERROR_CANCELLED;
 			}
-			FS->opt.fop.divide = 0x7fff8000; // 2G - 32k
-			return NO_ERROR;
+			return ERROR_NOT_SUPPORTED; // 2G制限で行う
 		}
 	}
 	if ( IDYES == FopOperationMsgBox(FS,Str_DiskFill,STR_FOPWARN,
@@ -271,22 +274,29 @@ BOOL USEFASTCALL FixIOSize(DWORD *iostep)
 	file → file へのコピールーチン
 	src,dst:	コピー元/先（fullpath）
 -----------------------------------------------------------------------------*/
-ERRORCODE DlgCopyFile(FOPSTRUCT *FS,const TCHAR *src,TCHAR *dst,DWORD srcattr)
+ERRORCODE DlgCopyFile(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD srcattr)
 {
 	HWND hDlg;
-	BY_HANDLE_FILE_INFORMATION srcfinfo,dstfinfo;	// ファイル情報
-	HANDLE srcH,dstH;	// ファイルハンドル
+	BY_HANDLE_FILE_INFORMATION srcfinfo, dstfinfo;	// ファイル情報
+	HANDLE srcH, dstH;	// ファイルハンドル
 															// コピー用バッファ
-	BYTE filebuffer[filebuffersize * 2],*filebuf,*filebufp;
-	DWORD readsize,writesize;					// バッファを読み書きした量
+	BYTE filebuffer[filebuffersize * 2], *filebuf, *filebufp;
+	DWORD readsize, writesize;					// バッファを読み書きした量
 	DWORD buffersize;							// 読み書き大きさ
-	LARGE_INTEGER TotalTransSize,TotalSize;
-	DWORD nextdiv,divcount = 0;				// 分割残り&分割番号
+	LARGE_INTEGER TotalTransSize, TotalSize;
+
+	struct {
+		ULARGE_INTEGER divsize; // 分割サイズ
+		ULARGE_INTEGER leftsize; // 残サイズ
+		BOOL use; // true...分割有り
+		DWORD count;	// 分割番号
+	} div;
+
 	TCHAR *dsttail;
 	DWORD dstatr;								// 書き込み時の属性
 
 	DWORD oldtick;			// 書き込み間隔調整用tickカウンタ
-	DWORD readstep,writestep;	// １度に読み書きする大きさ(ドライブ占有防止用)
+	DWORD readstep, writestep;	// １度に読み書きする大きさ(ドライブ占有防止用)
 
 	int dst1st = 1;	// (分割時の)最初のファイル書き込みなら !0
 	ERRORCODE error = NO_ERROR;	// エラー発生時は NO_ERROR 以外
@@ -315,7 +325,7 @@ ERRORCODE DlgCopyFile(FOPSTRUCT *FS,const TCHAR *src,TCHAR *dst,DWORD srcattr)
 	if ( !(FS->maskFnFlags & REGEXPF_BLANK) ){
 		ERRORCODE erc;
 
-		erc = CheckEntryMask(FS,src,srcattr);
+		erc = CheckEntryMask(FS, src, srcattr);
 		if ( erc != ERROR_ALREADY_EXISTS ) return erc;
 	}
 
@@ -344,7 +354,7 @@ ERRORCODE DlgCopyFile(FOPSTRUCT *FS,const TCHAR *src,TCHAR *dst,DWORD srcattr)
 		tstrcpy(p,StrShortcutExt);
 	}
 	// 移動を試みる -----------------------------------------------------------
-	while ( CheckSaveDrive(opt,src,dst) && !opt->fop.divide ){
+	while ( CheckSaveDrive(opt, src, dst) && (opt->fop.divide_num == 0) ){
 		ERRORCODE tryresult;
 
 		if ( IsTrue(FS->renamemode) &&
@@ -502,7 +512,7 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 			result = SameNameAction(FS,dstH,&srcfinfo,&dstfinfo,src,dst);
 			switch( result ){
 				case ACTION_RETRY:
-					if ( CheckSaveDrive(opt,src,dst) && !opt->fop.divide ){
+					if ( CheckSaveDrive(opt,src,dst) && (opt->fop.divide_num == 0) ){
 						if ( srcH != INVALID_HANDLE_VALUE ){
 							CloseHandle(srcH);
 							srcH = INVALID_HANDLE_VALUE;
@@ -543,7 +553,7 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 					}
 					return result;
 			}
-			if ( CheckSaveDrive(opt,src,dst) && !opt->fop.divide ){
+			if ( CheckSaveDrive(opt,src,dst) && (opt->fop.divide_num == 0) ){
 				if ( srcH != INVALID_HANDLE_VALUE ){
 					CloseHandle(srcH);
 					srcH = INVALID_HANDLE_VALUE;
@@ -568,10 +578,21 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 		break;
 	}
 
-	nextdiv = opt->fop.divide;
-	if ( nextdiv ){
-		if ( srcfinfo.nFileSizeHigh || (srcfinfo.nFileSizeLow > nextdiv) ){
-			divcount++;
+	div.count = 0;
+	if ( opt->fop.divide_num == 0 ){ // 分割しない
+		div.use = FALSE;
+	}else{
+		const TCHAR *ptr;
+
+		wsprintf((TCHAR *)filebuffer, T("%u%c"), opt->fop.divide_num, opt->fop.divide_unit);
+		ptr = (const TCHAR *)filebuffer;
+		GetSizeNumber( &ptr, &div.divsize.u.LowPart, &div.divsize.u.HighPart);
+		div.use = TRUE;
+		div.leftsize = div.divsize;
+		if ( (srcfinfo.nFileSizeHigh > div.leftsize.u.HighPart) ||
+			 ((srcfinfo.nFileSizeHigh == div.leftsize.u.HighPart) &&
+			  (srcfinfo.nFileSizeLow > div.leftsize.u.LowPart)) ){
+			div.count++;
 		}
 	}
 	readsize = 0;
@@ -598,20 +619,20 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 	if ( WinType != WINTYPE_9x )
 	#endif
 	{
-		while ( (error == NO_ERROR) && !divcount && !append && !FS->opt.burst){
+		while ( (error == NO_ERROR) && !div.count && !append && !FS->opt.burst){
 			DWORD flags = 0;
 
 			FS->Cancel = FALSE;
 			if ( FS->opt.fop.flags & VFSFOP_OPTFLAG_ALLOWDECRYPT ){
 				setflag(flags,COPY_FILE_ALLOW_DECRYPTED_DESTINATION);
 			}
-			if ( (WinType >= WINTYPE_VISTA) && ((srcfinfo.nFileSizeHigh !=0) ||
+			if ( (WinType >= WINTYPE_VISTA) && ((srcfinfo.nFileSizeHigh != 0) ||
 				  (srcfinfo.nFileSizeLow >= (64 * MB)) ) ){
 				setflag(flags,COPY_FILE_NO_BUFFERING);
 			}
 
-			if ( IsTrue(CopyFileExL(src,dst,(LPPROGRESS_ROUTINE)CopyProgress,
-					&FS->progs,&FS->Cancel,flags)) ){
+			if ( IsTrue(CopyFileExL(src, dst, (LPPROGRESS_ROUTINE)CopyProgress,
+					&FS->progs, &FS->Cancel, flags)) ){
 				SetFileAttributesL(dst,dstatr);
 				if ( opt->security != SECURITY_FLAG_NONE ){
 					error = CopySecurity(FS,src,dst);
@@ -625,30 +646,42 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 				error = GetLastError();
 				if ( error == 0 ) error = ERROR_ACCESS_DENIED;
 				if ( error == ERROR_ACCESS_DENIED ){
-					DWORD attr;
+					if ( IsTrue(FS->Cancel) ){
+						error = ERROR_CANCELLED;
+					}else{
+						DWORD attr;
 
-					attr = GetFileAttributesL(dst);
-							// ディレクトリに対してコピーしようとした
-					if ( (attr != BADATTR) && (attr & FILE_ATTRIBUTE_DIRECTORY) ){
-						if( FS->opt.fop.flags & VFSFOP_OPTFLAG_SKIPERROR ){
-							FS->progs.info.LEskips++;
-							FWriteErrorLogs(FS,src,T("Dest"),ERROR_DIRECTORY);
-							error = NO_ERROR;
-							done = DONE_SKIP;
-							break;
+
+						attr = GetFileAttributesL(dst);
+								// ディレクトリに対してコピーしようとした
+						if ( (attr != BADATTR) && (attr & FILE_ATTRIBUTE_DIRECTORY) ){
+							if( FS->opt.fop.flags & VFSFOP_OPTFLAG_SKIPERROR ){
+								FS->progs.info.LEskips++;
+								FWriteErrorLogs(FS,src,T("Dest"),ERROR_DIRECTORY);
+								error = NO_ERROR;
+								done = DONE_SKIP;
+								break;
+							}
 						}
 					}
 				}else if ( (error == ERROR_DISK_FULL) ||
 						((error == ERROR_INVALID_PARAMETER) && (srcfinfo.nFileSizeHigh || (srcfinfo.nFileSizeLow >= 0x80000000))) ){
 					error = DiskFillAction(FS,&srcfinfo,dst); //分割確認
-					if ( error == NO_ERROR ){
-						nextdiv = opt->fop.divide;
-						if ( nextdiv ){
-							if ( srcfinfo.nFileSizeHigh ||
-									(srcfinfo.nFileSizeLow > nextdiv) ){
-								divcount++;
+					if ( error != ERROR_CANCELLED ){ // 分割指示有り
+						if ( error == ERROR_NOT_SUPPORTED ){ // 2G 制限
+							div.divsize.u.LowPart = 0x7fff8000; // 2G - 32k
+							div.divsize.u.HighPart = 0;
+						}
+						if ( div.divsize.u.LowPart | div.divsize.u.HighPart ){
+							div.use = TRUE;
+							div.leftsize = div.divsize;
+							if ( (srcfinfo.nFileSizeHigh > div.leftsize.u.HighPart) ||
+								 ((srcfinfo.nFileSizeHigh == div.leftsize.u.HighPart) &&
+								  (srcfinfo.nFileSizeLow > div.leftsize.u.LowPart)) ){
+								div.count++;
 							}
 						}
+						error = NO_ERROR;
 					}
 					break;
 				}
@@ -662,15 +695,15 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 					break;
 				}
 
-				if ( (error != ERROR_CANCELLED) && (error != ERROR_REQUEST_ABORTED) && errorretrycount ){
+				if ( (error != ERROR_CANCELLED) && (error != ERROR_REQUEST_ABORTED) && errorretrycount && (FS->Cancel == FALSE) ){
 					errorretrycount--;
-					FWriteErrorLogs(FS,dst,T("Dest AutoRetry"),error);
+					FWriteErrorLogs(FS, dst, T("Dest AutoRetry"), error);
 					Sleep(RETRYWAIT);
 					error = NO_ERROR;
 					FS->NoAutoClose = OldNoAutoClose;
 					continue;
 				}
-				result = ErrorActionMsgBox(FS,error,dst,TRUE);
+				result = ErrorActionMsgBox(FS, error, dst, TRUE);
 				if ( FS->opt.erroraction == 0 ){
 					FS->NoAutoClose = OldNoAutoClose;
 				}
@@ -732,9 +765,9 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 
 	avtry = FS->opt.errorretrycount;
 	while ( (error == NO_ERROR) && (done == DONE_NO) ){
-		DWORD CopyLeftLow,CopyLeftHigh;
+		ULARGE_INTEGER CopyLeft; // 残サイズ
 
-		if ( divcount ) wsprintf(dsttail,T(".%03d"),divcount - 1);
+		if ( div.count ) wsprintf(dsttail, T(".%03d"), div.count - 1);
 		dstH = CreateFileL(dst,GENERIC_READ | GENERIC_WRITE,0,NULL,
 				dst1st ? (append ? OPEN_ALWAYS : CREATE_ALWAYS) : CREATE_NEW,
 				dstatr | FILE_FLAG_SEQUENTIAL_SCAN | filemode,
@@ -758,12 +791,12 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 			break;
 		}
 		if ( dst1st ){ // ファイルコピー開始時の処理(分割2ファイル目は実行無し)
-			DWORD hs,ls,nhs,nls;
+			ULARGE_INTEGER nowpos;
+			ULARGE_INTEGER curpos;
 
-			CopyLeftLow = TotalSize.u.LowPart = srcfinfo.nFileSizeLow;
-			CopyLeftHigh = TotalSize.u.HighPart = srcfinfo.nFileSizeHigh;
-			TotalTransSize.u.LowPart = 0;
-			TotalTransSize.u.HighPart = 0;
+			CopyLeft.u.LowPart = TotalSize.u.LowPart = srcfinfo.nFileSizeLow;
+			CopyLeft.u.HighPart = TotalSize.u.HighPart = srcfinfo.nFileSizeHigh;
+			TotalTransSize.u.LowPart = TotalTransSize.u.HighPart = 0;
 
 			if ( append ){			// 追加なら末尾へ
 				LONG sizetmp;
@@ -772,36 +805,42 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 				SetFilePointer(dstH,0,&sizetmp,FILE_END);
 			}
 									// 現在位置を取得
-			nhs = 0;
-			nls = SetFilePointer(dstH,0,(PLONG)&nhs,FILE_CURRENT);
+			nowpos.u.HighPart = 0;
+			nowpos.u.LowPart = SetFilePointer(dstH,0,(PLONG)&nowpos.u.HighPart,FILE_CURRENT);
 									// ファイルサイズをOSに通知
-			if ( nextdiv == 0 ){
-				hs = srcfinfo.nFileSizeHigh;
-				ls = srcfinfo.nFileSizeLow;
+			if ( div.use == FALSE ){
+				curpos.u.HighPart = srcfinfo.nFileSizeHigh;
+				curpos.u.LowPart = srcfinfo.nFileSizeLow;
 				if ( FS->opt.burst ){
-					AddDD(ls,hs,SECTORSIZE - 1,0);
-					ls &= ~(SECTORSIZE - 1);
+					AddDD(curpos.u.LowPart, curpos.u.HighPart, SECTORSIZE - 1, 0);
+					curpos.u.LowPart &= ~(SECTORSIZE - 1);
 				}
-				ls = SetFilePointer(dstH,ls,(PLONG)&hs,FILE_CURRENT);
+				curpos.u.LowPart = SetFilePointer(dstH, curpos.u.LowPart, (PLONG)&curpos.u.HighPart, FILE_CURRENT);
 			}else{
-				hs = 0;
-				ls = SetFilePointer(dstH,nextdiv,(PLONG)&hs,FILE_CURRENT);
+				curpos.u.HighPart = div.leftsize.u.HighPart;
+				curpos.u.LowPart = SetFilePointer(dstH, div.leftsize.u.LowPart,(PLONG)&curpos.u.HighPart, FILE_CURRENT);
 			}
-			if ( (ls != MAX32) || (GetLastError() == NO_ERROR) ){
-				if ( !SetEndOfFile(dstH) ){
+			if ( (curpos.u.LowPart != MAX32) || (GetLastError() == NO_ERROR) ){
+				if ( SetEndOfFile(dstH) == FALSE ){
 					error = GetLastError();
 					if ( (error == ERROR_DISK_FULL) ||
 						((error == ERROR_INVALID_PARAMETER) && (srcfinfo.nFileSizeHigh || (srcfinfo.nFileSizeLow >= 0x80000000))) ){
 						error = DiskFillAction(FS,&srcfinfo,dst); //分割確認
+						if ( error == ERROR_NOT_SUPPORTED ){ // 2G 制限
+							div.divsize.u.LowPart = 0x7fff8000; // 2G - 32k
+							div.divsize.u.HighPart = 0;
+							div.leftsize = div.divsize;
+							div.use = TRUE;
+							error = NO_ERROR;
+						}
 					}
 				}
-				SetFilePointer(dstH,nls,(PLONG)&nhs,FILE_BEGIN);
+				SetFilePointer(dstH,nowpos.u.LowPart,(PLONG)&nowpos.u.HighPart,FILE_BEGIN);
 			}
 		}
 		dst1st = 0;
-		if ( divcount && nextdiv ){
-			CopyLeftLow = nextdiv;
-			CopyLeftHigh = 0;
+		if ( div.count && div.use ){
+			CopyLeft = div.leftsize;
 		}
 
 		FullDisplayProgress(&FS->progs,TotalTransSize,TotalSize);
@@ -812,10 +851,10 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 			if ( readsize == 0 ){
 				// バーストモード時、最後の読み込みは読込サイズを控えめにする
 				if ( FS->opt.burst &&
-					 (CopyLeftHigh == 0) &&
-					 (CopyLeftLow < buffersize) ){
+					 (CopyLeft.u.HighPart == 0) &&
+					 (CopyLeft.u.LowPart < buffersize) ){
 					buffersize =
-						(CopyLeftLow + (SECTORSIZE - 1)) & ~(SECTORSIZE - 1);
+						(CopyLeft.u.LowPart + (SECTORSIZE - 1)) & ~(SECTORSIZE - 1);
 					if ( buffersize == 0 ) buffersize = SECTORSIZE;
 				}
 				filebufp = filebuf;
@@ -884,13 +923,7 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 				}
 				if ( error != NO_ERROR ) break;
 				filebufp = filebuf;
-				{
-					DWORD tmp;
-
-					tmp = CopyLeftLow;
-					CopyLeftLow -= readsize;
-					if ( CopyLeftLow > tmp ) CopyLeftHigh--;
-				}
+				SubLIDW(CopyLeft,readsize);
 			}
 			if ( readsize == 0 ){
 				done = DONE_OK;
@@ -907,10 +940,7 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 					break;
 				}
 				CloseHandle(dstH);
-				TotalTransSize.u.LowPart += readsize;
-				if ( TotalTransSize.u.LowPart < readsize ){
-					TotalTransSize.u.HighPart++;
-				}
+				AddLIDW(TotalTransSize,readsize);
 
 				if ( dstatr & FILE_ATTRIBUTE_READONLY ){
 					SetFileAttributesL(dst,FILE_ATTRIBUTE_NORMAL);
@@ -936,24 +966,27 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 				DWORD tick,size,wsize;
 
 				wsize = min(writestep,readsize);
-				if ( nextdiv && (wsize > nextdiv) ) wsize = nextdiv;
+				if ( div.use && (div.leftsize.u.HighPart == 0) && (wsize > div.leftsize.u.LowPart) ){
+					wsize = div.leftsize.u.LowPart;
+				}
 				if ( IsTrue(WriteFile(dstH,filebufp,wsize,&writesize,NULL)) ){
-					TotalTransSize.u.LowPart += writesize;
-					if ( TotalTransSize.u.LowPart < writesize ){
-						TotalTransSize.u.HighPart++;
-					}
+					AddLIDW(TotalTransSize, writesize);
 									// writesize が正しく取得できない場合の対策
 					if ( writesize != wsize ){
 						err = ERROR_DISK_FULL;
 					}else{
 						readsize -= writesize;
 						filebufp += writesize;
-						if ( nextdiv != 0 ){
-							nextdiv -= writesize;
-							if ( nextdiv == 0 ){
-								nextdiv = opt->fop.divide;
-								error = FOPERROR_DIV;
-								break;
+						if ( div.use ){
+							if ( div.leftsize.u.HighPart > 0 ){
+								SubLIDW(div.leftsize, writesize);
+							}else{
+								div.leftsize.u.LowPart -= writesize;
+								if ( div.leftsize.u.LowPart == 0 ){
+									div.leftsize = div.divsize;
+									error = FOPERROR_DIV;
+									break;
+								}
 							}
 						}
 
@@ -1013,7 +1046,7 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 												// 終了処理
 		if ( error == FOPERROR_DIV ){
 			error = NO_ERROR;
-			divcount++;
+			div.count++;
 		}
 		if ( error == FOPERROR_GETLASTERROR ) error = GetLastError();
 //FlushFileBuffers
@@ -1047,10 +1080,11 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 				}else{
 					FindClose(hFF);
 
-					if ( divcount ){
+					if ( div.count ){
 						// 最後の 0byte ファイルを削除
 						if ( (ff.nFileSizeLow == 0) && (ff.nFileSizeHigh == 0) ){
 							DeleteFileL(dst);
+							div.count--;
 						}
 					}else if ( !append &&
 							((srcfinfo.nFileSizeLow != ff.nFileSizeLow) ||
@@ -1066,12 +1100,12 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 						error = CopySecurity(FS,src,dst);
 					}
 					if ( done == DONE_DIV ){
-						if ( divcount == 1 ){
+						if ( div.count == 1 ){
 							TCHAR buf[VFPS];
 
 							tstrcpy(buf,dst);
 							tstrcpy(dsttail,T(".000"));
-							divcount++;
+							div.count++;
 							MoveFileL(buf,dst);
 						}
 						done = DONE_NO;
@@ -1090,7 +1124,7 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 
 		if ( error == NO_ERROR ){
 												// 連結バッチファイルの生成
-			if( divcount && (FS->opt.fop.flags & VFSFOP_OPTFLAG_JOINBATCH) ){
+			if( div.count && (FS->opt.fop.flags & VFSFOP_OPTFLAG_JOINBATCH) ){
 				HANDLE hBFile;
 				DWORD divi;
 				TCHAR *dstptr;
@@ -1101,10 +1135,10 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 				hBFile = CreateFileL(dst,GENERIC_READ | GENERIC_WRITE,0,NULL,
 						CREATE_NEW,FILE_FLAG_SEQUENTIAL_SCAN,NULL);
 				WriteFile(hBFile,"@copy /b \"",10,&writesize,NULL);
-				for ( divi = 0 ; ; divi++ ){
+				for ( divi = 0 ; ; ){
 					wsprintf(dsttail,T(".%03d"),divi);
 					WriteFileZT(hBFile,dstptr,&writesize);
-					if ( divi == divcount ){
+					if ( ++divi == div.count ){
 						WriteFile(hBFile,"\" \"",3,&writesize,NULL);
 						*dsttail = '\0';
 						WriteFileZT(hBFile,dstptr,&writesize);

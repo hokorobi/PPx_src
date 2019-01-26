@@ -40,7 +40,7 @@ void USEFASTCALL SetMessageForEdit(HWND hWnd,const TCHAR *message)
 {
 	HWND hParentWnd = GetParent(hWnd);
 
-	if ( GetWindowLongPtr(hParentWnd,GWL_STYLE) & WS_CAPTION ){
+	if ( GetWindowLongPtr(hParentWnd,GWL_STYLE) & (WS_CAPTION & ~WS_BORDER) ){
 		SetMessageOnCaption(hParentWnd,message);
 	}
 }
@@ -190,7 +190,7 @@ BOOL SearchStr(PPxEDSTRUCT *PES,int mode)
 }
 
 // ファイル検索処理 -----------------------------------------------------------
-BOOL SearchFileInedInit(ESTRUCT *ED,TCHAR *str,WIN32_FIND_DATA *ff)
+BOOL SearchFileInedInit(ESTRUCT *ED, TCHAR *str, WIN32_FIND_DATA *ff)
 {
 	PPXCMDENUMSTRUCT work;
 	TCHAR spath[VFPS],cdir[VFPS],word[MAX_PATH];
@@ -221,33 +221,53 @@ BOOL SearchFileInedInit(ESTRUCT *ED,TCHAR *str,WIN32_FIND_DATA *ff)
 		tstrcpy(spath,cdir);
 	}
 
-	PPxEnumInfoFunc(ED->info,'1',cdir,&work);
-	if ( NULL == VFSFullPath(NULL,spath,cdir) ) return FALSE;
+	if ( ED->info != NULL ){
+		PPxEnumInfoFunc(ED->info,'1',cdir,&work);
+	}else{
+		cdir[0] = '\0';
+	}
+	if ( NULL == VFSFullPath(NULL, spath, cdir) ) return FALSE;
 	if ( (ED->cmdsearch & CMDSEARCH_NOUNC) && (spath[0] == '\\') ){
 		return FALSE; // UNC は検索対象外
 	}
 	ED->hF = FindFirstFileL(spath,ff);
-	if ( ED->hF == INVALID_HANDLE_VALUE ) return FALSE;
+	if ( ED->hF == INVALID_HANDLE_VALUE ){
+		ED->hF = NULL;
+		return FALSE;
+	}
 
 	tstrcpy(ED->Fsrc,spath);
 	ED->Fword = ED->Fsrc + tstrlen(ED->Fsrc) + 1;
 	tstrcpy(ED->Fword,word);
 									// 検索文字列からパスを分離
 	ED->FnameP = FindLastEntryPoint(ED->Fname);
+//	if ( ED->cmdsearch & CMDSEARCH_ROMA ) ED->romahandle = 0;
 	return TRUE;
 }
 
-TCHAR *SearchFileInedMain(ESTRUCT *ED,TCHAR *str,int mode)
+void ClearSearchFileIned(ESTRUCT *ED)
+{
+	if ( ED->hF != NULL ){
+		FindClose(ED->hF);
+		ED->hF = NULL;
+	}
+	if ( (ED->cmdsearch & CMDSEARCH_ROMA) && (ED->romahandle != 0) ){
+		SearchRomaString(NULL, NULL, 0, &ED->romahandle);
+	}
+}
+
+TCHAR *SearchFileInedMain(ESTRUCT *ED, TCHAR *str, int mode)
 {
 	WIN32_FIND_DATA ff;
 	int limit = 3;
 
 	for ( ; ; ){
 		if ( ED->hF != NULL ){					// 前回に検索を行っている場合…
-			if ( tstrcmp(str,ED->Fname) == 0 ){	// 検索直後なら検索続行
+			if ( tstrcmp(str, ED->Fname) == 0 ){	// 検索直後なら検索続行
 				if ( FindNextFile(ED->hF,&ff) == FALSE ){
 												// 最後までやったので最初から
 					FindClose(ED->hF);
+					ED->hF = NULL;
 /*					現在、うまく伝達できないので休止中
 					if ( !(mode & CMDSEARCH_ONE) ){
 						SetMessageForEdit(ED->info->hWnd,MES_EENF);
@@ -255,7 +275,7 @@ TCHAR *SearchFileInedMain(ESTRUCT *ED,TCHAR *str,int mode)
 */
 					if ( (mode & CMDSEARCH_ONE) &&
 							!(ED->cmdsearch & CMDSEARCH_CURRENT) ){
-						goto abort;
+						goto searchfail;
 					}
 
 					if ( mode & CMDSEARCH_CURRENT ){	// コマンド検索切替
@@ -265,40 +285,48 @@ TCHAR *SearchFileInedMain(ESTRUCT *ED,TCHAR *str,int mode)
 					}
 
 					limit--;
-					if ( limit <= 0 ) goto abort;
+					if ( limit <= 0 ) goto searchfail;
 					ED->hF = FindFirstFileL(ED->Fsrc,&ff);
 					if ( ED->hF == INVALID_HANDLE_VALUE ){
+						ED->hF = NULL;
 //						SetMessageForEdit(ED->info->hWnd,T("retry error"));
-					 	goto abort;	// 検索失敗
+					 	goto searchfail;
 					}
 				}
 			}else{							// 検索直後でないなら新規検索指定
-				FindClose(ED->hF);
-				ED->hF = NULL;
-				if ( mode & CMDSEARCHI_FINDFIRST ) goto abort;
+				ClearSearchFileIned(ED);
+				if ( mode & CMDSEARCHI_FINDFIRST ) goto searchfail;
 			}
 		}
 		if ( ED->hF == NULL ){					// 新規検索
 			ED->cmdsearch = mode & ~CMDSEARCHI_FINDFIRST;
-			if ( SearchFileInedInit(ED,str,&ff) == FALSE ) goto abort; //C4701ok
+			if ( SearchFileInedInit(ED, str, &ff) == FALSE ) goto searchfail; //C4701ok
 			setflag(mode,CMDSEARCHI_FINDFIRST);
 		}
-		if ( ED->cmdsearch & CMDSEARCH_DIRECTORY ){
+						// ファイル列挙に成功したため、内容一致を調べる -------
+		if ( ED->cmdsearch & CMDSEARCH_DIRECTORY ){ // dir 属性？
 			if ( !(ff.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ) continue; //C4701ok
 		}
+		// 部分/roma一致
+		if ( ED->cmdsearch & (CMDSEARCH_FLOAT | CMDSEARCH_ROMA) ){
+			if ( ED->cmdsearch & CMDSEARCH_ROMA ){
+				if ( SearchRomaString(ff.cFileName, ED->Fword, ISEA_ROMA | ISEA_FLOAT | ISEA_FNAME, &ED->romahandle) == FALSE ){
+					if ( ED == NULL ) return NULL; // SearchRomaStringのどこかで ED破壊？
+					continue;
+				}
+			}else{ // CMDSEARCH_FLOAT
+				if ( tstristr(ff.cFileName,ED->Fword) == NULL ) continue;
+			}
+		}else{ // 前方一致
+			TCHAR bkchr, *nametail;
 
-		if ( ED->cmdsearch & CMDSEARCH_FLOAT ){
-			if ( tstristr(ff.cFileName,ED->Fword) == NULL ) continue;
-		}else{
-			TCHAR bkchr,*p;
-
-			p = ff.cFileName + tstrlen(ED->Fword);
-			bkchr = *p;
-			*p = '\0';
+			nametail = ff.cFileName + tstrlen(ED->Fword);
+			bkchr = *nametail;
+			*nametail = '\0';
 			if ( tstricmp(ff.cFileName,ED->Fword) != 0 ) continue;
-			*p = bkchr;
+			*nametail = bkchr;
 		}
-											// 検索成功
+											// 検索成功 -----------------------
 		if ( ED->cmdsearch & CMDSEARCH_CURRENT ){
 			TCHAR buf[0x400];
 			FN_REGEXP fn;
@@ -330,22 +358,25 @@ TCHAR *SearchFileInedMain(ESTRUCT *ED,TCHAR *str,int mode)
 		break;
 	};
 
-	tstrcpy(ED->FnameP,ff.cFileName);
+	tstrcpy(ED->FnameP, ff.cFileName);
 	return ED->Fname;
 
-abort:
-	ED->hF = NULL;
+searchfail:
 	if ( !(mode & CMDSEARCH_ONE) ) XBeep(XB_NiERR);
 	return NULL;
 }
 
-PPXDLL TCHAR * PPXAPI SearchFileIned(ESTRUCT *ED,TCHAR *line,ECURSOR *cursor,int mode)
+PPXDLL TCHAR * PPXAPI SearchFileIned(ESTRUCT *ED, TCHAR *line, ECURSOR *cursor, int mode)
 {
 	TCHAR *p;
 	int braket = BRAKET_NONE;
 	DWORD nwP;
 
 	if ( !(mode & CMDSEARCH_MULTI) ){
+		if ( *line == '\0' ){
+			ClearSearchFileIned(ED);
+			return NULL;
+		}
 		cursor->start = 0;
 		cursor->end   = tstrlen32(line);
 	}else{
@@ -543,7 +574,7 @@ BOOL USEFASTCALL SelectEditStringsM(PPxEDSTRUCT *PES,TEXTSEL *ts,int mode)
 		line++;
 		#ifndef UNICODE
 		if ( xpbug < 0 ){
-			int i = 0;
+			size_t i = 0;
 			while ( i < len ){
 				wLP++;
 				i += IskanjiA( *(destptr + i) ) ? 2 : 1;
@@ -729,38 +760,44 @@ LRESULT CALLBACK CBTProc(int nCode,WPARAM wParam,LPARAM lParam)
 	return CallNextHookEx(Sm->hhookCBT,nCode,wParam,lParam);
 }
 
-BOOL CALLBACK PPxUnHookEditSub(HWND hWnd,LPARAM lParam)
+#pragma argsused
+BOOL CALLBACK PPxUnHookEditChild(HWND hWnd, LPARAM lParam)
 {
 	TCHAR buf[MAX_PATH];
+	UnUsedParam(lParam);
 
-	EnumChildWindows(hWnd,PPxUnHookEditSub,lParam);
-
-	if ( GetClassName((HWND)hWnd,buf,TSIZEOF(buf)) ){
-		if( tstricmp(buf,T("Edit")) == 0 ){
-			SendMessage(hWnd,WM_PPXCOMMAND,KE__FREE,0);
+	if ( GetClassName((HWND)hWnd, buf, TSIZEOF(buf)) ){
+		if( tstricmp(buf, T("Edit")) == 0 ){
+			SendMessage(hWnd, WM_PPXCOMMAND, KE__FREE, 0);
 		}
 	}
 	return TRUE;
+}
+
+BOOL CALLBACK PPxUnHookEditSub(HWND hWnd, LPARAM lParam)
+{
+	EnumChildWindows(hWnd, PPxUnHookEditChild, lParam);
+	return PPxUnHookEditChild(hWnd, lParam);
 }
 //------------------------------------ 設定処理
 PPXDLL BOOL PPXAPI PPxHookEdit(int local)
 {
 	if ( local < 0 ){				// フック解放
 		if ( Sm->hhookCBT ){
-			EnumWindows(PPxUnHookEditSub,0);
+			EnumWindows(PPxUnHookEditSub, 0);
 			UsePPx();
 			UnhookWindowsHookEx(Sm->hhookCBT);
 			Sm->hhookCBT = NULL;
 			FreePPx();
-			PostMessage(HWND_BROADCAST,WM_NULL,0,0);
+			PostMessage(HWND_BROADCAST, WM_NULL, 0, 0);
 			return TRUE;
 		}
 	}else if ( Sm->hhookCBT == NULL ){	// フック設定
 		UsePPx();
-		Sm->hhookCBT = SetWindowsHookEx(WH_CBT,CBTProc,DLLhInst,
+		Sm->hhookCBT = SetWindowsHookEx(WH_CBT, CBTProc, DLLhInst,
 				local ? GetCurrentThreadId() : 0);
 		FreePPx();
-		PostMessage(HWND_BROADCAST,WM_NULL,0,0);
+		PostMessage(HWND_BROADCAST, WM_NULL, 0, 0);
 		return TRUE;
 	}
 	return FALSE;

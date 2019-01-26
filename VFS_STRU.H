@@ -524,17 +524,17 @@ extern int USEFASTCALL CheckFATImage(const BYTE *image,const BYTE *max);
 extern ERRORCODE GetArchivefileImageFromTempExtract(TCHAR *ExtractPath,const TCHAR *EntryName,DWORD *sizeL,DWORD *sizeH,HANDLE *hMap,BYTE **mem);
 
 //------------------------------------------------------------------ vfs_arcd.c
-extern BOOL CheckAndLoadSusiePlugin(SUSIE_DLL *su,TCHAR *filename,THREADSTRUCT *ts,DWORD mode);
+extern BOOL CheckAndLoadSusiePlugin(SUSIE_DLL *su, const TCHAR *filename, THREADSTRUCT *ts, DWORD mode);
 
-extern BOOL VFS_check_def(UN_DLL *uD,VUCHECKSTRUCT *vcs);
-extern BOOL VFS_check_ARJ(UN_DLL *uD,VUCHECKSTRUCT *vcs);
-extern BOOL VFS_check_LHA(UN_DLL *uD,VUCHECKSTRUCT *vcs);
-extern BOOL VFS_check_TAR(UN_DLL *uD,VUCHECKSTRUCT *vcs);
-extern BOOL VFS_check_CAB(UN_DLL *uD,VUCHECKSTRUCT *vcs);
-extern BOOL VFS_check_Rar(UN_DLL *uD,VUCHECKSTRUCT *vcs);
-extern BOOL VFS_check_GCA(UN_DLL *uD,VUCHECKSTRUCT *vcs);
-extern BOOL VFS_check_ZIP(UN_DLL *uD,VUCHECKSTRUCT *vcs);
-extern BOOL VFS_check_7Zip(UN_DLL *uD,VUCHECKSTRUCT *vcs);
+extern BOOL VFS_check_def(UN_DLL *uD, VUCHECKSTRUCT *vcs);
+extern BOOL VFS_check_ARJ(UN_DLL *uD, VUCHECKSTRUCT *vcs);
+extern BOOL VFS_check_LHA(UN_DLL *uD, VUCHECKSTRUCT *vcs);
+extern BOOL VFS_check_TAR(UN_DLL *uD, VUCHECKSTRUCT *vcs);
+extern BOOL VFS_check_CAB(UN_DLL *uD, VUCHECKSTRUCT *vcs);
+extern BOOL VFS_check_Rar(UN_DLL *uD, VUCHECKSTRUCT *vcs);
+extern BOOL VFS_check_GCA(UN_DLL *uD, VUCHECKSTRUCT *vcs);
+extern BOOL VFS_check_ZIP(UN_DLL *uD, VUCHECKSTRUCT *vcs);
+extern BOOL VFS_check_7Zip(UN_DLL *uD, VUCHECKSTRUCT *vcs);
 
 extern int DoUnarc(PPXAPPINFO *ppxa,const TCHAR *DllName,HWND hWnd,const TCHAR *param);
 extern int UnArc_ExecMain(const UN_DLL *uD,HWND hWnd,const TCHAR *Cmd,PPXAPPINFO *loginfo);

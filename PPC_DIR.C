@@ -2425,51 +2425,51 @@ void read_entry(PPC_APPINFO *cinfo,int flags)
 //------------------------------------- キャプション用文字列を生成
 void SetCaption(PPC_APPINFO *cinfo)
 {
-	TCHAR *ptr,buf[VFPS * 2];
+	TCHAR *ptr, buf[VFPS * 2];
 
-	tstrcpy(buf,cinfo->UserInfo);
+	tstrcpy(buf, cinfo->UserInfo);
 	ptr = buf + tstrlen(buf);
 	if ( (cinfo->path[0] == ':') && (cinfo->path[1] != ':') ){ // Drives
-		VFSFullPath(ptr,CEL(cinfo->e.cellN).f.cFileName,NULL);
-		PPxSetPath(cinfo->RegNo,ptr);
-		tstrcpy(cinfo->RealPath,ptr);
+		VFSFullPath(ptr, CEL(cinfo->e.cellN).f.cFileName, NULL);
+		PPxSetPath(cinfo->RegNo, ptr);
+		tstrcpy(cinfo->RealPath, ptr);
 	}else if ( (cinfo->e.Dtype.mode == VFSDT_LFILE) &&
 			   (cinfo->e.Dtype.BasePath[0] != '\0') ){
-		tstrcpy(ptr,cinfo->e.Dtype.BasePath);
-		tstrcat(ptr,T(" - listfile"));
+		tstrcpy(ptr, cinfo->e.Dtype.BasePath);
+		tstrcat(ptr, T(" - listfile"));
 	}else{
-		tstrcpy(ptr,cinfo->path);
+		tstrcpy(ptr, cinfo->path);
 		if ( !((cinfo->e.cellIMax <= 1) && (CEL(0).type == ECT_SYSMSG)) ){
 			if ( cinfo->hTreeWnd != NULL ){
-				SendMessage(cinfo->hTreeWnd,VTM_SETPATH,0,(LPARAM)cinfo->path);
+				SendMessage(cinfo->hTreeWnd, VTM_SETPATH, 0, (LPARAM)cinfo->path);
 			}
 			if ( (Combo.hTreeWnd != NULL) && !firstinit &&
 				 (hComboFocus == cinfo->info.hWnd) ){
-				SendMessage(Combo.hTreeWnd,VTM_SETPATH,0,(LPARAM)cinfo->path);
+				SendMessage(Combo.hTreeWnd, VTM_SETPATH, 0,( LPARAM)cinfo->path);
 			}
 		}
 	}
 
 	if ( cinfo->docks.t.hAddrWnd != NULL ){
-		SetWindowText(cinfo->docks.t.hAddrWnd,ptr);
-		SendMessage(cinfo->docks.t.hAddrWnd,EM_SETSEL,EC_LAST,EC_LAST);
+		SetWindowText(cinfo->docks.t.hAddrWnd, ptr);
+		SendMessage(cinfo->docks.t.hAddrWnd, EM_SETSEL, EC_LAST, EC_LAST);
 	}
 	if ( cinfo->docks.b.hAddrWnd != NULL ){
-		SetWindowText(cinfo->docks.b.hAddrWnd,ptr);
-		SendMessage(cinfo->docks.b.hAddrWnd,EM_SETSEL,EC_LAST,EC_LAST);
+		SetWindowText(cinfo->docks.b.hAddrWnd, ptr);
+		SendMessage(cinfo->docks.b.hAddrWnd, EM_SETSEL, EC_LAST, EC_LAST);
 	}
 
 	if ( (cinfo->UseArcPathMask != ARCPATHMASK_OFF) && cinfo->ArcPathMask[0] ){
 		const TCHAR *arcpath = cinfo->ArcPathMask;
 
 		if ( (*arcpath == '\\') || (*arcpath == '/') ) arcpath++;
-		AppendPath(ptr,arcpath,cinfo->PathSeparater);
+		AppendPath(ptr, arcpath, cinfo->PathSeparater);
 	}
-	if ( XC_dpmk ) CatPath(NULL,ptr,cinfo->mask.file);
+	if ( XC_dpmk ) CatPath(NULL, ptr, cinfo->mask.file);
 	if ( cinfo->BoxStatus.top != cinfo->docks.t.client.bottom ){
-		tstrlimcpy(cinfo->Caption,buf,TSIZEOF(cinfo->Caption));
+		tstrlimcpy(cinfo->Caption, buf, TSIZEOF(cinfo->Caption));
 	}
-	SetWindowText(cinfo->info.hWnd,buf);
+	SetWindowText(cinfo->info.hWnd, buf);
 }
 
 void GetDirectoryFreeSpace(PPC_APPINFO *cinfo,BOOL subthread)

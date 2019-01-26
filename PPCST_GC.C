@@ -65,6 +65,13 @@ const TCHAR *GCchar[] = {
 	T("明紫\0light magenta"),T("明白\0light white"),
 	T("黒(背景)\0black(back)"),T("赤\0red"),T("緑\0green"),T("青\0blue"),
 	T("黄\0yellow"),T("水\0cyan"),T("紫\0magenta"),T("暗白(初期色)\0white(default)"),NULL};
+const TCHAR *GChili[] = {T("検索\0find"),
+	T("ハイライト1\0highlight1"),T("ハイライト2\0highlight2"),
+	T("ハイライト3\0highlight3"),T("ハイライト4\0highlight4"),
+	T("ハイライト5\0highlight5"),T("ハイライト6\0highlight6"),
+	T("ハイライト7\0highlight7"),T("ハイライト8\0highlight8"),
+	NULL};
+
 const TCHAR *GClbak[] = {
 	T("旧行\0old line"),T("(未実装)\0(reserverd)"),T("しおり行\0bookmark"),NULL};
 const TCHAR *GClnum[] = {T("先頭行\0first line"),T("桁折り行\0second line"),NULL};
@@ -100,7 +107,7 @@ const LISTS GClist[] = {
 	{T("PPv 全角空白\0PPv wide space"),	T("CV_spc"),	GC_single,	NULL,0},
 	{T("PPv リンク\0PPv link"),			T("CV_link"),	GC_single,	NULL,0},
 	{T("PPv タグ\0PPv tag"),			T("CV_syn"),	GC_list | GC_haveItem,GCltag,3},
-	{T("PPv 検索単語\0PPv highlight"),	T("CV_hili"),	GC_single,		NULL,0},
+	{T("PPv ハイライト\0PPv highlight"),	T("CV_hili"),	GC_list | GC_haveItem,GChili,9},
 	{T("PPb 編集時\0PPb edit line"),	T("CB_edit"),	GC_list | GC_haveItem | GC_ppbItem,GCbedit,4},
 	{T("PPb 実行時\0PPv log"),	T("CB_com"),	GC_list | GC_haveItem | GC_ppbItem,GCCdisp,2},
 	{NULL,NULL,0,NULL,0}

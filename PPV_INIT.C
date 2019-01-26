@@ -65,6 +65,10 @@ const TCHAR *OptionNames[] = {
 	T("TAIL"),
 	T("CODEPAGE"),
 	T("SJIS"),			// Shift_JIS
+	T("US"),
+	T("LATIN1"),
+	T("UTF16"),
+	T("UTF16BE"),
 //	T("FILECASE"),
 	NULL
 };
@@ -126,6 +130,7 @@ PPXINMENU barView[] = {
 	{'U'		,T("Line number\tU")},
 	{'C'		,T("&Control code\tC")},
 	{';'		,T("C&olumns\t;")},
+	{K_s | 'F'	,T("string &Highlight\tCtrl+Shift+F")},
 	{PPXINMENY_SEPARATE,NULL},
 	{K_c | 'L',T("Re&draw\tCtrl+L")},
 	{'.',T("&Reload\tF5")},
@@ -367,7 +372,19 @@ BOOL CheckParam(VIEWOPTIONS *viewopts,const TCHAR *param,TCHAR *filename)
 						( VO_textS[VTYPE_SYSTEMCP] == textcp_sjis ) ?
 						VTYPE_SYSTEMCP : CP__SJIS;
 				break;
-//			case 43:			//	filecase
+			case 44:			//	"US"
+				viewopts->T_code = VTYPE_IBM;
+				break;
+			case 45:			//	"LATIN1"
+				viewopts->T_code = VTYPE_ANSI;
+				break;
+			case 46:			//	"UTF16"
+				viewopts->T_code = VTYPE_UNICODE;
+				break;
+			case 47:			//	"UTF16BE"
+				viewopts->T_code = VTYPE_UNICODEB;
+				break;
+//			case 48:			//	filecase
 //				FileCase = CheckSubParam(more,OffOn,1);
 //				break;
 			default:
@@ -387,7 +404,7 @@ void InitGui(void)
 		hToolBarWnd = NULL;
 	}
 	if ( X_win & XWIN_TOOLBAR ){
-		hToolBarWnd = CreateToolBar(&thGuiWork,hMainWnd,&ID,T("B_vdef"),PPvPath,0);
+		hToolBarWnd = CreateToolBar(&thGuiWork,vinfo.info.hWnd,&ID,T("B_vdef"),PPvPath,0);
 	}
 }
 
@@ -459,18 +476,18 @@ BOOL InitializePPv(int *result,const TCHAR *lpszCmdLine)
 	InitPPvWindow();
 										// コマンドライン指定ファイル読み込み
 	if ( name[0] != '\0' ){
-		WmWindowPosChanged(hMainWnd); // まだ、情報がないことがある
+		WmWindowPosChanged(vinfo.info.hWnd); // まだ、情報がないことがある
 		OpenViewObject(name,NULL,&viewopt_def,0);
 		if ( vo_.DModeBit == DOCMODE_NONE ){
 			*result = 0;
 			if ( convert ) return FALSE;
 		}else{
-			FollowOpenView(hMainWnd);
+			FollowOpenView(&vinfo);
 			if ( VO_PrintMode == PRINTMODE_ONE ){
-				PostMessage(hMainWnd,WM_PPXCOMMAND,K_c | 'P',0);
+				PostMessage(vinfo.info.hWnd,WM_PPXCOMMAND,K_c | 'P',0);
 			}
 			if ( hViewReqWnd != NULL ){
-				PostMessage(hMainWnd,WM_PPXCOMMAND,KV_FOCUS,0);
+				PostMessage(vinfo.info.hWnd,WM_PPXCOMMAND,KV_FOCUS,0);
 			}
 		}
 	}else{
@@ -483,21 +500,21 @@ BOOL InitializePPv(int *result,const TCHAR *lpszCmdLine)
 				*result = 0;
 				return FALSE;
 			}
-			FollowOpenView(hMainWnd);
+			FollowOpenView(&vinfo);
 		}
 	}
 	if ( convert ){
 		ConvertMain();
-		PostMessage(hMainWnd,WM_CLOSE,0,0);
+		PostMessage(vinfo.info.hWnd,WM_CLOSE,0,0);
 	}else{								// メインウインドウの表示を更新 -------
 		int show = WinPos.show; // SetMenu で WinPos.show 破損
-		SetMenu(hMainWnd,
+		SetMenu(vinfo.info.hWnd,
 				(X_win & XWIN_MENUBAR) ? DynamicMenu.hMenuBarMenu : NULL);
-		ShowWindow(hMainWnd,show);
-		UpdateWindow(hMainWnd);
-		if ( X_IME == 1 ) PostMessage(hMainWnd,WM_PPXCOMMAND,K_IMEOFF,0);
-//		SetIMEDefaultStatus(hMainWnd);
-		DragAcceptFiles(hMainWnd,TRUE);
+		ShowWindow(vinfo.info.hWnd,show);
+		UpdateWindow(vinfo.info.hWnd);
+		if ( X_IME == 1 ) PostMessage(vinfo.info.hWnd,WM_PPXCOMMAND,K_IMEOFF,0);
+//		SetIMEDefaultStatus(vinfo.info.hWnd);
+		DragAcceptFiles(vinfo.info.hWnd,TRUE);
 
 		SetCurrentDirectory(PPvPath);
 	}
@@ -680,7 +697,8 @@ void PPvLoadCust(void)
 		SetCustData (T("CV_char"),CV_char,sizeof(COLORREF) * 16);
 	}
 	GetCustData (T("CV_lnum")	,CV_lnum,sizeof(CV_lnum));
-	GetCustData (T("CV_hili")	,&CV_char[CV__highlight],sizeof(CV_char[CV__highlight]));
+	GetCustData (T("CV_hili")	,&CV_hili,sizeof(CV_hili));
+	CV_char[CV__highlight] = CV_hili[0];
 	GetCustData (T("CV_lcsr")	,&CV_lcsr,sizeof(CV_lcsr));
 	XV.img.MagMode = IMGD_MM_FULLSCALE;
 	GetCustTableCID(T("XV_imgD"),RegCID,&XV.img.imgD,sizeof(XV.img.imgD));
@@ -720,7 +738,7 @@ void PPvLoadCust(void)
 	GetCustTable(T("_others"),T("pppv"),&X_pppv,sizeof(X_pppv));
 
 	StrLoading = MessageText(MES_FLOD);
-	StrLoadingLength = tstrlen(StrLoading);
+	StrLoadingLength = tstrlen32(StrLoading);
 
 	LoadHiddenMenu(&XV.HiddenMenu,T("HM_ppv"),PPvHeap,C_mes);
 
@@ -730,7 +748,7 @@ void PPvLoadCust(void)
 		IsExistCustTable(T("KV_page"),T("ACTIVEEVENT"));
 
 	GetCustData(T("X_pmc"),&X_pmc,sizeof(X_pmc));
-	if ( X_pmc[0] > 0 ) PPvEnterTabletMode(hMainWnd);
+	if ( X_pmc[0] > 0 ) PPvEnterTabletMode(vinfo.info.hWnd);
 
 #ifdef USEDIRECTX
 	X_scrm = 0;
@@ -749,9 +767,9 @@ const EXECKEYCOMMANDSTRUCT PPvExecKeyMain =
 
 void ClosePPv(void)
 {
-	KillTimer(hMainWnd,TIMERID_DRAGSCROLL);
-	ExecKeyCommand(&PPvExecKeyMain,&PPvInfo.info,K_E_CLOSE);
-	PPxRegist(hMainWnd,RegID,PPXREGIST_FREE);
+	KillTimer(vinfo.info.hWnd,TIMERID_DRAGSCROLL);
+	ExecKeyCommand(&PPvExecKeyMain,&vinfo.info,K_E_CLOSE);
+	PPxRegist(vinfo.info.hWnd,RegID,PPXREGIST_FREE);
 
 	CloseViewObject();
 	vo_.file.name[0] = '\0';
@@ -776,6 +794,7 @@ void ClosePPv(void)
 
 	CloseDxDraw(&DxDraw);
 	FreeAccServer();
+	FreeDynamicMenu(&DynamicMenu);
 
 	DeleteFonts();
 	DeleteObject(hStatusLine);
@@ -792,10 +811,10 @@ void InitPPvWindow(void)
 	DWORD style;
 	HWND hUseParentWnd;
 
-	PPvInfo.info.Function = (PPXAPPINFOFUNCTION)PPxGetIInfo;
-	PPvInfo.info.Name = T("PPv");
-	PPvInfo.info.RegID = RegID;
-	PPvInfo.info.hWnd = NULL;
+	vinfo.info.Function = (PPXAPPINFOFUNCTION)PPxGetIInfo;
+	vinfo.info.Name = T("PPv");
+	vinfo.info.RegID = RegID;
+	vinfo.info.hWnd = NULL;
 
 	WM_PPXCOMMAND = RegisterWindowMessageA(PPXCOMMAND_WM);
 	OSver.dwOSVersionInfoSize = sizeof(OSver);
@@ -882,29 +901,28 @@ void InitPPvWindow(void)
 		WinPos.pos.left = WinPos.pos.top = 0;
 		hUseParentWnd = hViewParentWnd;
 	}
-	hMainWnd = CreateWindowEx(0,T(PPVWinClass),NilStr,style,
+	vinfo.info.hWnd = CreateWindowEx(0,T(PPVWinClass),NilStr,style,
 		WinPos.pos.left,WinPos.pos.top,
 		WinPos.pos.right - WinPos.pos.left,WinPos.pos.bottom - WinPos.pos.top,
 		hUseParentWnd,NULL,hInst,NULL);
-	PPxRegist(hMainWnd,RegID,PPXREGIST_SETHWND);
+	PPxRegist(vinfo.info.hWnd,RegID,PPXREGIST_SETHWND);
 	wsprintf(buf,T("PPV[%c]"),RegID[2]);
-	SetWindowText(hMainWnd,buf);
+	SetWindowText(vinfo.info.hWnd,buf);
 
-	hDC = GetDC(hMainWnd);
-	CreateDxDraw(&DxDraw,hMainWnd);
+	hDC = GetDC(vinfo.info.hWnd);
+	CreateDxDraw(&DxDraw,vinfo.info.hWnd);
 	MakeFonts(hDC,X_textmag);
 	VideoBits = GetDeviceCaps(hDC,BITSPIXEL);
-	ReleaseDC(hMainWnd,hDC);
-	InitSystemDynamicMenu(&DynamicMenu,hMainWnd);
+	ReleaseDC(vinfo.info.hWnd,hDC);
+	InitSystemDynamicMenu(&DynamicMenu,vinfo.info.hWnd);
 	VFSOn(VFS_DIRECTORY | VFS_BMP);
 
 	BackScreen.hOffScreenDC = NULL;
 	BackScreen.X_WPbmp.DIB = NULL;
-	LoadWallpaper(&BackScreen,hMainWnd,RegCID);
+	LoadWallpaper(&BackScreen,vinfo.info.hWnd,RegCID);
 	FullDraw = X_fles | BackScreen.X_WallpaperType;
 	if ( BackScreen.X_WallpaperType ) X_scrm = 0;
 	InitGui();
 
-	PPvInfo.info.hWnd = hMainWnd;
-	PPxRegGetIInfo(&PPvInfo.info);
+	PPxRegGetIInfo(&vinfo.info);
 }

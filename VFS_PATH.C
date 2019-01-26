@@ -25,6 +25,8 @@ const TCHAR StrFileScheme[] = T("file://");
 const TCHAR DomainNameRegPathString[] = T("SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters");
 const TCHAR DomainNameRegNameString[] = T("Domain");
 
+HWND PasswordDialogWnd = NULL;
+
 /*-----------------------------------------------------------------------------
 	拡張子の位置を取得する			※階層指定「xx.xxx\yyy」には非対応
 -----------------------------------------------------------------------------*/
@@ -1128,42 +1130,43 @@ ERRORCODE VFSTryDirectory_Local(const TCHAR *vpath)
 	return GetLastError();
 }
 
-BOOL VFSTryDirectory_UNC(HWND hWnd,const TCHAR *vpath)
+ERRORCODE VFSTryDirectory_UNC(HWND hWnd,const TCHAR *vpath)
 {
 	NETRESOURCE nr;
 	TRYLOGINSTRUCT tls;
-	TCHAR phrasebuf[0x1000],*p;
+	TCHAR phrasebuf[0x1000], *ptr;
+	ERRORCODE er;
 
 	// メインスレッドのウィンドウがメッセージループに入る前に
 	// サブスレッドでダイアログを表示させようとすると、
 	// ATOK のスレッド内でデッドロックに陥るのを回避するコード
 	if ( hWnd != NULL ){
-		DWORD WndThreadID = GetWindowThreadProcessId(hWnd,NULL);
+		DWORD WndThreadID = GetWindowThreadProcessId(hWnd, NULL);
 
 		if ( WndThreadID != GetCurrentThreadId() ){ // サブスレッド?
 			DWORD_PTR sendresult;
 
 			// メッセージポンプが動いているとすぐ戻ってくる。
 			// そうでなければ TIMEOUT まで待機する
-			SendMessageTimeout(hWnd,WM_NULL,0,0,0,10000,&sendresult);
+			SendMessageTimeout(hWnd, WM_NULL, 0, 0, 0, 10000, &sendresult);
 		}
 	}
 
-	tstrcpy(tls.path,vpath);
+	tstrcpy(tls.path, vpath);
 
 	// ログイン先のパスを用意する/共有名\ -------------------------------------
-	p = VFSGetDriveType(tls.path,NULL,NULL);
-	if ( p != NULL ){
-		p = FindPathSeparator(p);
-		if ( p != NULL ){
-			p = FindPathSeparator(p + 1);
-			if ( p != NULL ) *p = '\0';
+	ptr = VFSGetDriveType(tls.path, NULL, NULL);
+	if ( ptr != NULL ){
+		ptr = FindPathSeparator(ptr);
+		if ( ptr != NULL ){
+			ptr = FindPathSeparator(ptr + 1);
+			if ( ptr != NULL ) *ptr = '\0';
 		}
 	}
 
 	// デフォルトのユーザ名を準備する(ドメインならPC名を用意) ---------
 	tls.password[0] = '\0';
-	GetRegString(HKEY_LOCAL_MACHINE,DomainNameRegPathString,DomainNameRegNameString,tls.password,TSIZEOF(tls.password));
+	GetRegString(HKEY_LOCAL_MACHINE, DomainNameRegPathString, DomainNameRegNameString, tls.password, TSIZEOF(tls.password));
 	if ( tls.password[0] != '\0' ){
 		TCHAR *src,*dest;
 
@@ -1173,35 +1176,40 @@ BOOL VFSTryDirectory_UNC(HWND hWnd,const TCHAR *vpath)
 		*dest++ = '\\';
 		*dest = '\0';
 	}else{
-		tstrcpy(tls.username,UserName);
+		tstrcpy(tls.username, UserName);
 	}
 
 	// キャッシュされたユーザ名とパスワードを取り出す -----------------
-	if ( NO_ERROR == GetCustTable(T("_IDpwd"),tls.path,phrasebuf,sizeof(phrasebuf)) ){
+	if ( NO_ERROR == GetCustTable(T("_IDpwd"), tls.path, phrasebuf, sizeof(phrasebuf)) ){
 		ERRORCODE ec;
 		TCHAR *ptr;
 
 		ptr = phrasebuf;
-		ReadEString(&ptr,tls.username,sizeof(tls.username));
+		ReadEString(&ptr, tls.username, sizeof(tls.username));
 		ptr = tls.username + tstrlen(tls.username) + 1;
 		tstrcpy(tls.password,ptr);
-		ClearMemory(ptr,sizeof(tls.password) - (ptr - tls.username) * sizeof(TCHAR) );
-		nr.dwType		= RESOURCETYPE_DISK;
-		nr.lpLocalName	= NULL;
-		nr.lpRemoteName	= tls.path;
+		ClearMemory(ptr, sizeof(tls.password) - (ptr - tls.username) * sizeof(TCHAR) );
+		nr.dwType = RESOURCETYPE_DISK;
+		nr.lpLocalName = NULL;
+		nr.lpRemoteName = tls.path;
 		nr.lpProvider = NULL;
-		ec = DWNetAddConnection3(hWnd,&nr,tls.password,tls.username,0);
+		ec = DWNetAddConnection3(hWnd, &nr, tls.password, tls.username, 0);
 		ClearMemory(tls.password,sizeof(tls.password));
 		if ( ec == NO_ERROR ){
 			SetCurrentDirectory(vpath);
-			return TRUE;
+			return NO_ERROR;
 		}
 	}
-	if ( PPxDialogBoxParam(DLLhInst,MAKEINTRESOURCE(IDD_LOGIN),hWnd,
-			VFSChangeDirectoryDlgBox,(LPARAM)&tls) > 0 ){
-		return TRUE;
+	if ( (PasswordDialogWnd != NULL) && IsWindow(PasswordDialogWnd) ){
+		er = ERROR_PATH_BUSY;
+	}else{
+		PasswordDialogWnd = hWnd;
+		er = (PPxDialogBoxParam(DLLhInst, MAKEINTRESOURCE(IDD_LOGIN), hWnd,
+				VFSChangeDirectoryDlgBox, (LPARAM)&tls) > 0) ?
+				NO_ERROR : ERROR_ACCESS_DENIED;
+		PasswordDialogWnd = NULL;
 	}
-	return FALSE;
+	return er;
 }
 
 // ユーザ認証付き SetCurrentDirectory -----------------------------------------
@@ -1285,7 +1293,10 @@ VFSDLL ERRORCODE PPXAPI VFSTryDirectory(HWND hWnd,const TCHAR *path,BOOL trymode
 			 (result == ERROR_LOGON_TYPE_NOT_GRANTED) ){
 			// UNCなら自前でダイアログを表示
 			if ( IsTrue(LoadNetFunctions()) ){
-				if ( IsTrue(VFSTryDirectory_UNC(hWnd,vp)) ) result = NO_ERROR;
+				ERRORCODE dlgresult;
+
+				dlgresult = VFSTryDirectory_UNC(hWnd,vp);
+				if ( dlgresult != ERROR_ACCESS_DENIED ) result = dlgresult;
 			}
 		}
 	}

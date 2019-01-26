@@ -23,17 +23,12 @@ DefineWinAPI(BOOL,SetLayeredWindowAttributes,(HWND hwnd,COLORREF crKey,BYTE bAlp
 
 void ChangeOpaqueWindow(HWND hWnd,int opaque)
 {
-	HWND hTargetWnd = GetParent(hWnd);
+	HWND hTargetWnd = GetParentCaptionWindow(hWnd);
 	COLORREF crKey;
 	BYTE bAlpha;
 	DWORD dwFlags;
 	DWORD exstyle;
 
-	if ( hTargetWnd == NULL ){
-		hTargetWnd = hWnd;
-//	}else{
-//		if ( GetParent(hTargetWnd) != NULL ) return; // ダイアログの時にも反応
-	}
 	if ( DSetLayeredWindowAttributes == NULL ){
 		HMODULE hUser32;
 
@@ -167,7 +162,7 @@ void AutoCustomizeUpdate(void)
 				xmessage(XM_GrERRld,MES_FBAK);
 				PPEui(NULL,fpath,ptr);
 			}
-			HeapFree(GetProcessHeap(),0,ptr);
+			HeapFree(ProcHeap,0,ptr);
 		}
 
 		if ( GetCustDataSize(T("P_arc")) <= 0 ){ // ●1.27から当分の間用意
@@ -431,7 +426,7 @@ void WmSettingChange(HWND hWnd,LPARAM lParam)
 /*-----------------------------------------------------------------------------
 	PPxCommand の共通部
 
-return:	!0:未処理
+return ERROR_INVALID_FUNCTION :未処理
 -----------------------------------------------------------------------------*/
 PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd,WPARAM wParam,WORD key)
 {
@@ -681,9 +676,9 @@ PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd,WPARAM wParam,WORD key)
 			break;
 
 		default:
-			return 1;
+			return ERROR_INVALID_FUNCTION;
 	}
-	return 0;
+	return NO_ERROR;
 }
 
 PPXDLL LRESULT PPXAPI PPxCommonExtCommand(WORD key,WPARAM wParam)
@@ -758,7 +753,6 @@ PPXDLL LRESULT PPXAPI PPxCommonExtCommand(WORD key,WPARAM wParam)
 
 		case K_INITROMA:
 			if ( LoadRegExp() == FALSE ) return FALSE;
-			if ( hMigemoDLL != NULL ) return TRUE;
 			return (LRESULT)InitMigemo();
 
 		case K_THREADUNREG:

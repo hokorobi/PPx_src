@@ -91,7 +91,7 @@ int CalcHexX(int off)
 BOOL ClipHexMem(TMS_struct *text,int StartLine,int EndLine)
 {
 	char *bottom;
-	size_t size,tsize;
+	int	size,tsize;
 
 	if ( StartLine < 0 ){
 		bottom = (char *)vo_.file.image + VOsel.bottom.y.line * 16;
@@ -215,7 +215,7 @@ BOOL ClipMem(TMS_struct *text,int StartLine,int EndLine)
 				WCHAR *src;
 
 				src = (WCHAR *)(p + 1);
-				copylength = length = strlenW(src);
+				copylength = length = strlenW32(src);
 				if ( VOsel.line == FALSE ){
 					if ( off == top ){	// 末尾調節
 						if ( (CharX + copylength) > VOsel.top.x.offset ){
@@ -469,10 +469,10 @@ void URIDUMP(const char *bottom,const char *top,const TCHAR *title)
 	if ( (top - bottom) > 900 ) top = bottom + 900;
 	#ifdef UNICODE
 	{
-		int i;
+		int len;
 
-		i = (int)MultiByteToWideChar(CP_ACP,MB_PRECOMPOSED,bottom,top - bottom,buf,0x800);
-		buf[i] = '\0';
+		len = (int)MultiByteToWideChar(CP_ACP,MB_PRECOMPOSED,bottom,top - bottom,buf,0x800);
+		buf[len] = '\0';
 	}
 	#else
 		memcpy(buf,bottom,top - bottom);
@@ -555,9 +555,11 @@ void MakeURIs(HMENU hMenu,int index)
 			if ( start == NULL ){
 				if ( strchr("([{",*p) == NULL ){ // 括弧でなければ検索開始地点
 					start = p;
+/*
 					if ( (p > textbottom) && (*(p - 1) == '\"') ){
 						use = URI_PATH;
 					}
+*/
 				}
 			}else{
 				if ( *p == '\\' ) use = URI_PATH;

@@ -139,11 +139,11 @@ void CreateDIBtoPalette(PPvViewObject *vo)
 
 void ClipBitmap(HWND hWnd)
 {
-	DWORD palettesize = 0,profilesize = 0;
-	DWORD bitmapsize = 0,tmpsize,headersize;
+	DWORD palettesize = 0, profilesize = 0;
+	DWORD bitmapsize = 0, tmpsize, headersize;
 	HGLOBAL hImage;
 	char *img;
-	int color,palette C4701CHECK;
+	int color, palette C4701CHECK;
 	UINT ClipType = CF_DIB;
 
 	HGLOBAL hImageNP;
@@ -208,7 +208,7 @@ void ClipBitmap(HWND hWnd)
 			int i;
 
 			pe = (PALETTEENTRY *)(img + vo_.bitmap.info->biSize);
-			GetPaletteEntries(vo_.bitmap.hPal,0,palette,pe); // C4701ok
+			GetPaletteEntries(vo_.bitmap.hPal, 0, palette,pe); // C4701ok
 						// PALETTEENTRY → RGBQUAD に修復
 			for ( i = 0 ; i < palette ; i++,pe++ ){
 				BYTE tmp;
@@ -218,7 +218,8 @@ void ClipBitmap(HWND hWnd)
 				pe->peBlue = tmp;
 			}
 		}
-		memcpy(img + headersize + palettesize,vo_.bitmap.bits.ptr,bitmapsize);
+		// bitmap 転送
+		memcpy(img + headersize + palettesize, vo_.bitmap.bits.ptr, bitmapsize);
 
 		if ( profilesize != 0 ){ // ICC プロファイルあり
 			 ((BITMAPV5HEADER_ *)img)->bV5ProfileData = headersize + palettesize + bitmapsize;
@@ -241,12 +242,12 @@ void ClipBitmap(HWND hWnd)
 	}else{
 		OpenClipboard(hWnd);
 		EmptyClipboard();
-		SetClipboardData(ClipType,hImage);
+		SetClipboardData(ClipType, hImage);
 		if ( (profilesize != 0) && (hImageNP != NULL) ){ // profile無しを保存
-			SetClipboardData(CF_DIB,hImageNP);
+			SetClipboardData(CF_DIB, hImageNP);
 		}
 		CloseClipboard();
-		SetPopMsg(POPMSG_NOLOGMSG,MES_CPTX);
+		SetPopMsg(POPMSG_NOLOGMSG, MES_CPTX);
 	}
 	return;
 }
@@ -254,9 +255,9 @@ void ClipBitmap(HWND hWnd)
 void Rotate(HWND hWnd,int d)
 {
 	BITMAPINFOHEADER *NewBmpInfo;
-	BYTE *NewDib,*src,*dest;
-	HLOCAL hBmpInfo,hDib;
-	DWORD width,x,y,srcwidth,bmpy;
+	BYTE *NewDib, *src, *dest;
+	HLOCAL hBmpInfo, hDib;
+	DWORD width, x, y, srcwidth, bmpy;
 
 	if ( vo_.DModeBit != DOCMODE_BMP ) return;
 	if ( (vo_.bitmap.info->biBitCount > 32) ||
@@ -282,12 +283,13 @@ void Rotate(HWND hWnd,int d)
 	if ( x == 0 ){
 		x = sizeof(BITMAPINFOHEADER) + vo_.bitmap.info->biClrUsed * sizeof(RGBQUAD) + 12;
 	}
-	hBmpInfo = LocalAlloc(LMEM_FIXED,x);
+	hBmpInfo = LocalAlloc(LMEM_FIXED, x);
 	if ( hBmpInfo == NULL ) return;
 	NewBmpInfo = LocalLock(hBmpInfo);
 	memcpy(NewBmpInfo,vo_.bitmap.info,x);
 	NewBmpInfo->biWidth = vo_.bitmap.info->biHeight;
 	NewBmpInfo->biHeight = vo_.bitmap.info->biWidth;
+	NewBmpInfo->biSizeImage = width * vo_.bitmap.rawsize.cx;
 	bmpy = NewBmpInfo->biHeight;
 	if ( NewBmpInfo->biWidth < 0 ){ // トップダウン
 		NewBmpInfo->biWidth = -NewBmpInfo->biWidth;

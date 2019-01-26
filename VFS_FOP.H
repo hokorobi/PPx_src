@@ -51,8 +51,9 @@ typedef struct {			// カスタマイズ内容(X_fopt)
 	DWORD	flags;			// VFSFOP_OPTFLAG_ 関連
 	char	aall;			// !0:auto all check
 	BYTE	firstsheet;		// 始めに開くシート FOPTAB_
-	short	useburst;		// バーストモード
-	DWORD	divide;			// 分割大きさ
+	char	useburst;		// バーストモード
+	BYTE	divide_unit;	// 分割大きさの単位
+	DWORD	divide_num;		// 分割大きさ
 	TCHAR	str[VFPS];		// ASCIIZs  1st:Dest 2nd:Rename 3rt:S.num
 } VFSFOP_OPTIONS;
 #pragma pack(pop)
@@ -130,14 +131,14 @@ enum { // mode の内容
 #define SECURITY_FLAG_SACL (OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | SACL_SECURITY_INFORMATION)
 
 typedef struct {
-	DWORD l,h;
+	DWORD l, h;
 } DDWORDS;
 
 struct ProgressInfo {
-	DWORD mark,markall;		// 処理済マーク数、全マーク数
-	DWORD donefiles,filesall;	// 処理済ファイル数、全ファイル数
-	DDWORDS donesize,allsize;	// 処理済バイト数、全バイト数
-	DWORD LEskips,EXskips,errors; // 軽微エラー無視によるスキップ数、上書き無しスキップ数、エラー数
+	DWORD mark, markall;		// 処理済マーク数、全マーク数
+	DWORD donefiles, filesall;	// 処理済ファイル数、全ファイル数
+	DDWORDS donesize, allsize;	// 処理済バイト数、全バイト数
+	DWORD LEskips, EXskips, errors; // 軽微エラー無視によるスキップ数、上書き無しスキップ数、エラー数
 	DWORD busybar;			// ワーキングカウンタ
 	DWORD count_exists; // 数算出時に検出した同名ファイル数
 	DWORD exists[3]; // 比較結果 new date,same date,old date
@@ -183,7 +184,7 @@ struct FopOption {
 };
 
 enum foptab { // 現在タブ FOPTAB_ ※-1は未設定
-	FOPTAB_GENERAL = 0,FOPTAB_RENAME,FOPTAB_OPTION,FOPTAB_NONE = -1
+	FOPTAB_GENERAL = 0, FOPTAB_RENAME, FOPTAB_OPTION, FOPTAB_NONE = -1
 };
 struct pageinfo {
 	HWND *hWnds; // ページ内のコントロールのウィンドウハンドル
@@ -222,7 +223,7 @@ typedef struct tagFOPSTRUCT{
 	PPXAPPINFO *info;
 	struct pageinfo page;
 	TCHAR DestDir[VFPS];
-	int EnableSetting,EnableSameSetting; // グレーにするコントロールの状態
+	int EnableSetting, EnableSameSetting; // グレーにするコントロールの状態
 	FN_REGEXP maskFn; // ファイル名マスク
 	DWORD maskFnFlags;
 } FOPSTRUCT;

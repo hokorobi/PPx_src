@@ -390,44 +390,74 @@ PPXDLL INT_PTR PPXAPI GetNumber(LPCTSTR *ptr)
 	return n;
 }
 
-PPXDLL BOOL PPXAPI GetSizeNumber(LPCTSTR *ptr,DWORD *Low,DWORD *High)
+PPXDLL BOOL PPXAPI GetSizeNumber(LPCTSTR *ptr, DWORD *Low, DWORD *High)
 {
-	DWORD basesize,scale = 0;
-	const TCHAR *p;
+	INT_PTR basesize;
+	DWORD scaleL = 0, scaleH = 0;
+	const TCHAR *oldp;
 
-	p = *ptr;
+	oldp = *ptr;
 	basesize = GetNumber(ptr);
-	if ( p == *ptr ) return FALSE;
-	if ( Isalpha(**ptr) ) switch(*(*ptr)++){
+	if ( oldp == *ptr ) return FALSE;
+	if ( Isalpha(**ptr) ) switch (*(*ptr)++){
 		case 'k':
-			scale = 1000;
+			scaleL = KBd;
 			break;
 		case 'K':
-			scale = KB;
+			scaleL = KB;
 			break;
 		case 'm':
-			scale = 1000000;
+			scaleL = MBd;
 			break;
 		case 'M':
-			scale = MB;
+			scaleL = MB;
 			break;
 		case 'g':
-			scale = 1000000000;
+			scaleL = GBd;
 			break;
 		case 'G':
-			scale = GB;
+			scaleL = GB;
 			break;
+		case 't':
+			scaleL = TBdL;
+			scaleH = (DWORD)basesize * TBdH;
+			break;
+		case 'T':
+			if ( High != NULL ) *High = (DWORD)basesize * TBiH;
+			*Low = 0; // TBiL == 0 ‚Ì‚½‚ß
+			return TRUE;
+/*
+		case 'p':
+			scaleL = PBdL;
+			scaleH = (DWORD)basesize * PBdH;
+			break;
+		case 'P':
+			if ( High != NULL ) *High = (DWORD)basesize * PBiH;
+			*Low = 0; // PBiL == 0 ‚Ì‚½‚ß
+			return TRUE;
+*/
 		default:
 			(*ptr)--;
 			break;
 	}
-	if ( !scale ){
+	if ( scaleL == 0 ){
+#ifdef _WIN64
+		if ( High != NULL ) *High = (DWORD)(INT_PTR)(basesize >> 32);
+#else
 		if ( High != NULL ) *High = 0;
-		*Low = basesize;
+#endif
+		*Low = (DWORD)basesize;
 	}else{
-		DWORD sizeL,sizeH;
+		DWORD sizeL, sizeH;
 
-		DDmul(basesize,scale,&sizeL,&sizeH);
+#ifdef _WIN64
+		basesize *= (INT_PTR)scaleL;
+		sizeL = (DWORD)basesize;
+		sizeH = (DWORD)(INT_PTR)(basesize >> 32) + scaleH;
+#else
+		DDmul(basesize, scaleL, &sizeL, &sizeH);
+		if ( scaleH != 0 ) sizeH += scaleH;
+#endif
 		if ( High != NULL ) *High = sizeH;
 		*Low = sizeL;
 	}

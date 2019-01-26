@@ -437,17 +437,20 @@ HWND InitCombo(PPCSTARTPARAM *psp)
 	}
 	ComboInit = 1;
 	memset(&Combo,0,sizeof(COMBOSTRUCT));
-	if ( (psp == NULL) || !psp->alone ){
+	if ( (psp == NULL) || (psp->ComboID <= 'A') ){
 		Combo.hWnd = PPxCombo(NULL);
-		if ( Combo.hWnd != BADHWND ) return Combo.hWnd;	// ì¬Ï‚Ý
+		if ( Combo.hWnd != BADHWND ){ // ì¬Ï‚Ý
+			if ((psp != NULL) && psp->usealone) Combo.hWnd = NULL; // alone ‹ÖŽ~
+			return Combo.hWnd;
+		}
 	}else{
-		ComboID[2] = (TCHAR)psp->alone;
+		ComboID[2] = psp->ComboID;
 		PPxRegist(BADHWND,ComboID,PPXREGIST_COMBO_IDASSIGN);
 	}
 	ComboThreadID = GetCurrentThreadId();
 
 	Combo.base = PPcHeapAlloc(sizeof(COMBOITEMSTRUCT) * 2);
-	Combo.show = PPcHeapAlloc(sizeof(COMBOPANES) * Combo_Max_Base);
+	Combo.show = PPcHeapAlloc(sizeof(COMBOPANES) * Combo_Max_Show);
 
 	ComboCust();
 									// ƒEƒBƒ“ƒhƒE¶¬ -------------------------
@@ -480,6 +483,7 @@ HWND InitCombo(PPCSTARTPARAM *psp)
 		X_combos[0] & CMBS_NOTITLE ? WS_NOTITLEOVERLAPPED : WS_OVERLAPPEDWINDOW,
 		ComboWinPos.pos.left,ComboWinPos.pos.top,
 		windowsize.cx,windowsize.cy,NULL,hMenuBar,hInst,NULL);
+	if ( Combo.hWnd == NULL ) return NULL;
 	Combo.FontDPI = PPxCommonExtCommand(K_GETDISPDPI,(WPARAM)Combo.hWnd);
 	InitSystemDynamicMenu(&ComboDMenu,Combo.hWnd);
 	ComboInitFont();
@@ -995,10 +999,7 @@ void SavePane_Base(TCHAR *dest,TCHAR *memo,BOOL save)
 				Combo.base[Combo.show[showindex].baseNo].hWnd = BADHWND;
 				continue;
 			}else{
-				*panedst++ = cinfo->RegCID[1];
-				if ( cinfo->RegSubIDNo >= 0 ){
-					panedst += wsprintf(panedst,T("%s"),cinfo->RegSubCID + 2);
-				}
+				panedst += wsprintf(panedst,T("%s"),cinfo->RegSubCID + 1);
 				if ( IsTrue(cinfo->ChdirLock) ) *panedst++ = '$';
 				panedst += wsprintf(panedst,T("%d"),showindex);
 			}
@@ -1033,17 +1034,13 @@ void SavePane_Base(TCHAR *dest,TCHAR *memo,BOOL save)
 				continue;
 			}else{ // •\Ž¦‚µ‚Ä‚¢‚È‚¢(Šù‚É“o˜^‚³‚ê‚Ä‚¢‚È‚¢)‚È‚ç“o˜^
 				if ( cinfo->RegSubIDNo < 0 ){
-					if ( NULL == tstrchr(dest,cinfo->RegCID[1]) ){
+					if ( tstrchr(dest,cinfo->RegCID[1]) == NULL ){
 						*panedst++ = cinfo->RegCID[1];
 						if ( IsTrue(cinfo->ChdirLock) ) *panedst++ = '$';
 					}
 				}else{
-					const TCHAR *bkID;
-
-					bkID = tstrchr(dest,cinfo->RegCID[1]);
-					if ( (bkID == NULL) || (memcmp((BYTE *)(TCHAR *)(bkID + 1),(BYTE *)(TCHAR *)(cinfo->RegSubCID + 2),tstrlen(cinfo->RegSubCID + 2) * sizeof(TCHAR)) != 0) ){
-						*panedst++ = cinfo->RegCID[1];
-						panedst += wsprintf(panedst,T("%s"),cinfo->RegSubCID + 2);
+					if ( tstrstr(dest,cinfo->RegSubCID + 1) == NULL ){
+						panedst += wsprintf(panedst,T("%s"),cinfo->RegSubCID + 1);
 						if ( IsTrue(cinfo->ChdirLock) ) *panedst++ = '$';
 					}
 				}
@@ -1085,10 +1082,7 @@ void SavePane_Tab(TCHAR *dest,TCHAR *memo)
 				if ( cinfo != NULL ){
 					int showindex;
 
-					*panedst++ = cinfo->RegCID[1];
-					if ( cinfo->RegSubIDNo >= 0 ){
-						panedst += wsprintf(panedst,T("%s"),cinfo->RegSubCID + 2);
-					}
+					panedst += wsprintf(panedst,T("%s"),cinfo->RegSubCID + 1);
 					if ( IsTrue(cinfo->ChdirLock) ) *panedst++ = '$';
 					showindex = GetComboShowIndex((HWND)tie.lParam);
 					if ( (showindex >= 0) &&
@@ -1140,20 +1134,20 @@ void USEFASTCALL ComboTableCheck(void)
 	}
 }
 
-void WmComboDestroy(HWND hWnd,BOOL EndSession)
+void WmComboDestroy(BOOL EndSession)
 {
-	TCHAR *panes;
+	TCHAR *panes, *panesptr;
 	int scount = max(Combo.BaseCount,Combo.ShowCount);
 	int showindex,rightbaseindex;
 
 	if ( Combo.hWnd == BADHWND ) return;
 
 	dd_combo_close();
-	if ( Combo.hWnd == PPxCombo(NULL) ){
-		PPxCombo(hWnd); // “o˜^‰ðœ
-	}else{
+//	if ( ComboID[2] == 'A' ){
+//		PPxCombo(hWnd); // “o˜^‰ðœ
+//	}else{
 		PPxRegist(Combo.hWnd,ComboID,PPXREGIST_COMBO_FREE);
-	}
+//	}
 	if ( EndSession ){
 		PPxCommonExtCommand(K_REPORTSHUTDOWN,0);
 	}else{
@@ -1171,35 +1165,41 @@ void WmComboDestroy(HWND hWnd,BOOL EndSession)
 	// I—¹Žž‚ÌƒyƒCƒ“\¬‚ð•Û‘¶‚·‚é
 	panes = PPcHeapAlloc(Panelistsize(scount));
 
-	panes[0] = '?'; // Focus
+	panesptr = panes;
+	*panes = '?'; // Focus
 	showindex = GetComboShowIndexDefault(hComboFocus);
 	if ( showindex >= 0 ){ // Focus ‚ð‹L‰¯‚·‚é
 		PPC_APPINFO *cinfo;
 
 		cinfo = Combo.base[Combo.show[showindex].baseNo].cinfo;
-		if ( cinfo != NULL ) panes[0] = cinfo->RegCID[1];
+		if ( cinfo != NULL ){
+			tstrcpy(panesptr, cinfo->RegSubCID + 1);
+			panesptr += tstrlen(panesptr) - 1;
+		}
 	}
 
-	panes[1] = '?'; // ‰E
+	*(++panesptr) = '?'; // ‰E
 	rightbaseindex = GetComboBaseIndex(hComboRightFocus);
 	if ( rightbaseindex >= 0 ){ // ‰E ‚ð‹L‰¯‚·‚é
 		PPC_APPINFO *cinfo;
 
 		cinfo = Combo.base[rightbaseindex].cinfo;
-		if ( cinfo != NULL ) panes[1] = cinfo->RegCID[1];
+		if ( cinfo != NULL ){
+			tstrcpy(panesptr, cinfo->RegSubCID + 1);
+			panesptr += tstrlen(panesptr) - 1;
+		}
 	}
 
-	panes[2] = '\0';
+	*(++panesptr) = '\0';
 	if ( Combo.Tabs == 0 ){	// ƒ^ƒu–³‚µ
-		SavePane_Base(panes + 2,NULL,TRUE);
+		SavePane_Base(panesptr, NULL, TRUE);
 	}else{	// ƒ^ƒu—L‚è
-		SavePane_Base(panes + 2,NULL,TRUE);
-		SavePane_Tab(panes + 2,NULL);
+		SavePane_Base(panesptr, NULL, TRUE);
+		SavePane_Tab(panesptr, NULL);
 	}
 	if ( ComboInit <= 0 ){
 		SetCustTable(T("_Path"),ComboID,panes,TSTRSIZE(panes));
 	}
-
 	PPcHeapFree(panes);
 
 	if ( Combo.LeftAreaWidth > 10 ){
@@ -1471,6 +1471,7 @@ int GetComboRegZID(void)
 			if ( regid == cinfo->RegSubIDNo ){
 				regid = (regid + 1) & 0x1ff;
 				retry = TRUE;
+				break;
 			}
 		}
 		if ( retry == FALSE ) break;

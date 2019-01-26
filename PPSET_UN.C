@@ -179,8 +179,8 @@ INT_PTR CALLBACK UnExecDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 		hRsrc = FindResource(hInst,MAKEINTRESOURCE(IF_PPXDEL),RT_RCDATA);
 		size = SizeofResource(hInst,hRsrc);
 
-		GetTempPath(TSIZEOF(temppath),temppath);
-		wsprintf(tempname,T("%s") T(DELBATNAME),temppath);
+		GetTempPath(TSIZEOF(temppath), temppath);
+		wsprintf(tempname,T("%s\\") T(DELBATNAME),temppath);
 		hFile = CreateFile(tempname,GENERIC_WRITE,
 				FILE_SHARE_READ | FILE_SHARE_WRITE,NULL,
 				CREATE_ALWAYS,FILE_FLAG_SEQUENTIAL_SCAN,NULL);

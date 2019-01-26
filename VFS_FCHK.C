@@ -473,6 +473,8 @@ const VFD_HEADERS vfd_exFATheader =
 #pragma argsused
 ERRORCODE vfd_MBRIMG(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
 {
+	UnUsedParam(fname);UnUsedParam(size);UnUsedParam(header);UnUsedParam(result);
+
 	if ( ((*(image + 0x1be) | *(image + 0x1ce) | *(image + 0x1de) | *(image + 0x1ee)) & 0x7f) == 0 ){
 		return NO_ERROR;
 	}

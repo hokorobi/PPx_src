@@ -302,7 +302,7 @@ void FixPaneSize(PPC_APPINFO *cinfo,int offsetx,int offsety,int mode)
 				thisbox.right,thisbox.bottom,SWP_NOACTIVATE | SWP_NOZORDER);
 		hDWP = DeferWindowPos(hDWP,hPairWnd,0,pairbox.left,pairbox.top,
 				pairbox.right,pairbox.bottom,SWP_NOACTIVATE | SWP_NOZORDER);
-		EndDeferWindowPos(hDWP);
+		if ( hDWP != NULL ) EndDeferWindowPos(hDWP);
 	}
 }
 
@@ -879,7 +879,7 @@ void InitCli(PPC_APPINFO *cinfo)
 		BYTE *fmt;
 
 		fmt = cinfo->celF.fmt;
-		if ( (*fmt == DE_WIDEV) || (*fmt == DE_WIDEW) ) fmt += 4;
+		if ( (*fmt == DE_WIDEV) || (*fmt == DE_WIDEW) ) fmt += DE_WIDEV_SIZE;
 		if ( *fmt == DE_IMAGE ){
 #if 0 // 丁寧な行数決定
 			int imgY;
@@ -994,20 +994,20 @@ void FixTwinWindow(PPC_APPINFO *cinfo)
 					SendX_win(cinfo);
 					hdWins = BeginDeferWindowPos(2);
 					// 自分の大きさを変更
-					DeferWindowPos(hdWins,cinfo->info.hWnd,NULL,
+					hdWins = DeferWindowPos(hdWins,cinfo->info.hWnd,NULL,
 							owp.rcNormalPosition.left,
 							owp.rcNormalPosition.top,
 							owp.rcNormalPosition.right,
 							owp.rcNormalPosition.bottom,
 							SWP_NOACTIVATE | SWP_NOZORDER);
 					// 相手の大きさを変更
-					DeferWindowPos(hdWins,PairHWnd,NULL,
+					hdWins = DeferWindowPos(hdWins,PairHWnd,NULL,
 							wp.rcNormalPosition.left,
 							wp.rcNormalPosition.top,
 							wp.rcNormalPosition.right,
 							wp.rcNormalPosition.bottom,
 							SWP_NOACTIVATE | SWP_NOZORDER);
-					EndDeferWindowPos(hdWins); // ←ここでSendMessageの受付
+					if ( hdWins != NULL ) EndDeferWindowPos(hdWins); // ←ここでSendMessageの受付
 				}else{	// 大きさ ------------------------------------------
 					SendX_win(cinfo);
 
@@ -1043,20 +1043,20 @@ void FixTwinWindow(PPC_APPINFO *cinfo)
 
 					hdWins = BeginDeferWindowPos(2);
 						// 自分の大きさを変更
-					DeferWindowPos(hdWins,cinfo->info.hWnd,NULL,
+					hdWins = DeferWindowPos(hdWins,cinfo->info.hWnd,NULL,
 							wp.rcNormalPosition.left,
 							wp.rcNormalPosition.top,
 							owp.rcNormalPosition.right,
 							owp.rcNormalPosition.bottom,
 							SWP_NOACTIVATE | SWP_NOZORDER);
 					// 相手の大きさを変更
-					DeferWindowPos(hdWins,PairHWnd,NULL,
+					hdWins = DeferWindowPos(hdWins,PairHWnd,NULL,
 							owp.rcNormalPosition.left,
 							owp.rcNormalPosition.top,
 							wp.rcNormalPosition.right,
 							wp.rcNormalPosition.bottom,
 							SWP_NOACTIVATE | SWP_NOZORDER);
-					EndDeferWindowPos(hdWins); // ←ここでSendMessageの受付
+					if ( hdWins != NULL ) EndDeferWindowPos(hdWins); // ←ここでSendMessageの受付
 				}
 			}
 		}

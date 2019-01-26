@@ -402,12 +402,12 @@ typedef struct {
 void MakeRegSubID(PPC_APPINFO *cinfo)
 {
 	if ( cinfo->RegSubIDNo < 26 ){
-		wsprintf(cinfo->RegSubCID,T("C%c%c%c"),cinfo->RegID[2],
+		wsprintf(cinfo->RegSubCID, T("C%c%c%c"), cinfo->RegID[2],
 //			cinfo->combo ? TinyCharLower(ComboID[2]) : '_',
 			TinyCharLower(ComboID[2]),
 			cinfo->RegSubIDNo + 'a');
 	}else{
-		wsprintf(cinfo->RegSubCID,T("C%c%c%c%c"),cinfo->RegID[2],
+		wsprintf(cinfo->RegSubCID, T("C%c%c%c%c"), cinfo->RegID[2],
 //			cinfo->combo ? TinyCharLower(ComboID[2]) : '_',
 			TinyCharLower(ComboID[2]),
 			(cinfo->RegSubIDNo / 26) + 'a',
@@ -472,10 +472,10 @@ BOOL LoadParam(PPCSTARTPARAM *psp,const TCHAR *param)
 	psp->UseCmd = FALSE;
 	psp->AllocCmd = FALSE;
 	//psp->cmd = NULL
-	psp->alone = 0;
+	psp->usealone = FALSE;
 	//psp->show
-
 	psp->Focus = '\0';
+	psp->ComboID = '\0';
 	psp->next = NULL;
 	one.pspo.combo.use = X_combo;
 	ThInit(&psp->th);
@@ -528,19 +528,19 @@ BOOL LoadParam(PPCSTARTPARAM *psp,const TCHAR *param)
 		}
 									//	"alone"
 		if ( !tstrcmp( buf + 1,T("ALONE") )){
-			modify = TRUE;	// ●1.0xそのうち削除(優先ID指定ができるようになったら)
 			if ( X_combo == 0 ) X_combo = 1;
-			if ( !one.pspo.combo.use ) one.pspo.combo.use = TRUE;
-			psp->alone = '@';
-			if ( Isalpha(*more) ) psp->alone = upper(*more);
+			if ( !one.pspo.combo.use ) one.pspo.combo.use = 1;
+			psp->ComboID = '@';
+			if ( Isalpha(*more) ) psp->ComboID = upper(*more);
+			psp->usealone = TRUE;
 			continue;
 		}
 									//	"combo"
 		if ( !tstrcmp( buf + 1,T("COMBO") )){
-			modify = TRUE;
 			if ( X_combo == 0 ) X_combo = 1;
-			if ( !one.pspo.combo.use ) one.pspo.combo.use = TRUE;
-			if ( Isalpha(*more) ) psp->alone = upper(*more);
+			if ( !one.pspo.combo.use ) one.pspo.combo.use = 1;
+			psp->ComboID = 'A';
+			if ( Isalpha(*more) ) psp->ComboID = upper(*more);
 			continue;
 		}
 									//	"lock"
@@ -553,14 +553,14 @@ BOOL LoadParam(PPCSTARTPARAM *psp,const TCHAR *param)
 		if ( !tstrcmp( buf + 1,T("TAB") )){
 			modify = TRUE;
 			X_combo = 2;
-			if ( !one.pspo.combo.use ) one.pspo.combo.use = TRUE;
+			if ( !one.pspo.combo.use ) one.pspo.combo.use = 2;
 			continue;
 		}
 									//	"single"
 		if ( !tstrcmp( buf + 1,T("SINGLE") )){
 			modify = TRUE;
 			X_combo = 0;
-			one.pspo.combo.use = FALSE;
+			one.pspo.combo.use = 0;
 			continue;
 		}
 									//	"sps" single process
@@ -633,7 +633,7 @@ BOOL LoadParam(PPCSTARTPARAM *psp,const TCHAR *param)
 		}
 									//	"CHOOSE:EDIT/D&D/CON"
 		if ( !tstrcmp( buf + 1,T("CHOOSE") )){
-			one.pspo.combo.use = FALSE;
+			one.pspo.combo.use = 0;
 			X_combo = 0;
 			switch ( TinyCharUpper(*more) ){
 				case 'E':
@@ -724,16 +724,15 @@ void SetWindowMinMax(HWND hWnd,PPCSTARTPARAM *psp)
 	SetForegroundWindow(hWnd);
 }
 
-BOOL RegisterID(PPC_APPINFO *cinfo,PPCSTARTPARAM *psp,BOOL *usepath)
+BOOL RegisterID(PPC_APPINFO *cinfo, PPCSTARTPARAM *psp, BOOL *usepath)
 {
-	int MultiRegMode,pane;
+	int MultiRegMode, pane;
 	BOOL Pair = FALSE;
 								// 登録準備
 	if ( (psp == NULL) || (psp->next == NULL) ){
-		tstrcpy(cinfo->RegID,T(PPC_REGID));
+		tstrcpy(cinfo->RegID, T(PPC_REGID));
 		cinfo->RegSubIDNo = -1;
 		MultiRegMode = PPXREGIST_NORMAL;
-		cinfo->combo = X_combo;
 		pane = PSPONE_PANE_DEFAULT;
 	}else{
 		DWORD size;
@@ -741,18 +740,25 @@ BOOL RegisterID(PPC_APPINFO *cinfo,PPCSTARTPARAM *psp,BOOL *usepath)
 
 		pspo = psp->next;
 		size = PSPONE_size(pspo);
-		tstrcpy(cinfo->RegID,pspo->id.RegID);
+		tstrcpy(cinfo->RegID, pspo->id.RegID);
 		cinfo->RegSubIDNo = pspo->id.SubID;
 
-		tstrcpy(cinfo->path,pspo->path);
+		tstrcpy(cinfo->path, pspo->path);
 		MultiRegMode = pspo->id.RegMode;
 
 		Pair = pspo->id.Pair;
 		pane = pspo->combo.pane;
-		cinfo->combo = pspo->combo.use;
 		cinfo->ChdirLock = pspo->combo.dirlock;
 		psp->next = (PSPONE *)(char *)((char *)pspo + size); // 次へ
 	}
+	// ComboID B 以降の自動割当ては、必ず Zxxx 形式にする
+	if ( cinfo->combo &&
+		 (ComboID[2] > 'A') &&
+		 (MultiRegMode == PPXREGIST_NORMAL) ){
+		cinfo->RegID[2] = 'Z';
+		cinfo->RegID[3] = '\0';
+	}
+
 	if ( psp != NULL ){			// 実行コマンドを確保(/k オプション)
 		if ( IsTrue(psp->UseCmd) ){
 			psp->UseCmd = FALSE;
@@ -767,7 +773,7 @@ BOOL RegisterID(PPC_APPINFO *cinfo,PPCSTARTPARAM *psp,BOOL *usepath)
 					cinfo->RegID[2] = (TCHAR)(((cinfo->RegID[2] - 1) ^ 1) + 1);
 				}
 				cinfo->RegNo = PPxRegist(PPXREGIST_DUMMYHWND,
-						cinfo->RegID,PPXREGIST_IDASSIGN);
+						cinfo->RegID, PPXREGIST_IDASSIGN);
 				if ( cinfo->RegNo >= 0 ){	// 新規割当てに成功
 					goto newppc;
 				}
@@ -820,7 +826,7 @@ BOOL RegisterID(PPC_APPINFO *cinfo,PPCSTARTPARAM *psp,BOOL *usepath)
 	cinfo->RegNo = PPxRegist(PPXREGIST_DUMMYHWND,cinfo->RegID,MultiRegMode);
 	if ( (cinfo->RegNo < 0) && (cinfo->RegSubIDNo < 0) ){
 		// alone の場合、1枚も開けないときはとりあえず１枚開くようにする
-		if ( cinfo->combo && psp && (psp->alone > 'A') && (Combo.hWnd == NULL) && (MultiRegMode == PPXREGIST_IDASSIGN) ){
+		if ( cinfo->combo && psp && psp->usealone && (Combo.hWnd == NULL) && (MultiRegMode == PPXREGIST_IDASSIGN) ){
 			cinfo->RegNo = PPxRegist(PPXREGIST_DUMMYHWND,cinfo->RegID,PPXREGIST_NORMAL);
 			if ( cinfo->RegNo < 0 ) goto nextppc;
 		}else{
@@ -844,22 +850,22 @@ newppc:		// 新規 PPc を起動
 	}
 	return TRUE;
 
-nextppc:	// 次の PPc があれば処理する
+nextppc:	// 初期化に失敗した場合、次の PPc があれば処理する
 	if ( (psp != NULL) && (psp->next != NULL) ){
 		if ( psp->next->id.RegID[0] ){	// 次の初期化へ
 			return RegisterID(cinfo,psp,usepath);
 		}else{ // 終わり / cmd 用のメモリを確保してなければここで解放
-			int alone;
+			int ComboID;
 
 			psp->next = NULL;
-			alone = psp->alone;
+			ComboID = psp->ComboID;
 			if ( psp->AllocCmd == FALSE ){ // cmd は静的なので PSPONE 解放
 				ThFree(&psp->th);
 			}
 			// comboのfocusfix
 			if ( X_combo ){
 				// alone で開き足りないかをチェック
-				if ( (alone > 'A') && (Combo.BaseCount < X_mpane.min) ){
+				if ( (ComboID > 'A') && (Combo.BaseCount < X_mpane.min) ){
 					MorePPc(NULL,&cinfo->mws);
 				}else{
 					PostMessage(Combo.hWnd,WM_PPXCOMMAND,KCW_ready,(LPARAM)NULL);
@@ -1045,6 +1051,51 @@ void CloseGuiControl(PPC_APPINFO *cinfo)
 	if ( cinfo->docks.b.hWnd != NULL ) DestroyWindow(cinfo->docks.b.hWnd);
 	ThFree(&cinfo->thGuiWork);
 }
+
+#if 0
+#define ToLightPart(c, lv) ((((c) + lv) < 0x100 ) ? ((c) += lv) : 0xff)
+#define ToDrakPart(c, lv)  (((c) > lv) ? ((c) -= lv) : 0)
+COLORREF ToLight(COLORREF color, DWORD lv)
+{
+	DWORD r,g,b;
+
+	r = GetRValue(color);
+	g = GetGValue(color);
+	b = GetBValue(color);
+	return RGB(ToLightPart(r,lv), ToLightPart(g,lv), ToLightPart(b,lv));
+}
+
+COLORREF ToDark(COLORREF color, DWORD lv)
+{
+	DWORD r,g,b;
+
+	r = GetRValue(color);
+	g = GetGValue(color);
+	b = GetBValue(color);
+	return RGB(ToDrakPart(r,lv), ToDrakPart(g,lv), ToDrakPart(b,lv));
+}
+
+void FixLightColor(void)
+{
+	DWORD lightmode;
+	const TCHAR RegThemesPath[] = T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize");
+	const TCHAR RegLightName[] = T("AppsUseLightTheme");
+	DWORD blight;
+
+	if ( GetRegString(HKEY_CURRENT_USER, RegThemesPath, RegLightName, (TCHAR *)&lightmode, TSIZEOF(lightmode)) == FALSE ) return;
+
+	// 0:dark 1:light
+	blight = GetRValue(C_back) + GetGValue(C_back) + GetBValue(C_back);
+	if ( (lightmode == 0) && (blight > (0xa0 * 3)) ){ // dark用に背景を暗く
+	}else if ( (lightmode == 1) && (blight < (0x60 * 3)) ){ // light用に背景を明るく
+		C_back = ToLight(C_back,0xc0);
+		C_mes =  ToDark(C_mes,0xc0);
+		C_info = ToDark(C_info,0xc0);
+		C_entry[ECT_NORMAL] = ToDark(C_entry[ECT_NORMAL],0xc0);
+	}
+}
+#endif
+
 // カスタマイズ内容をまとめて取得 ---------------------------------------------
 void PPcLoadCust(PPC_APPINFO *cinfo)
 {
@@ -1167,29 +1218,32 @@ void PPcLoadCust(PPC_APPINFO *cinfo)
 					DefCID + 1 : cinfo->RegCID + 1,&CFMT_celF);
 	}
 
-	AutoColor	(T("C_back")	,&C_back,COLOR_WINDOW);
-	cinfo->BackColor = C_back;
-	GetCustData (T("C_line")	,C_line,sizeof(C_line));
-	AutoColor	(T("C_mes")		,&C_mes,COLOR_WINDOWTEXT);
-	AutoColor	(T("C_info")	,&C_info,COLOR_WINDOWTEXT);
-	GetCustData	(T("C_res")		,&C_res,sizeof(C_res));
+//--------------------------
+	AutoColor	(T("C_back"),	&C_back, COLOR_WINDOW);
+	GetCustData (T("C_line"),	C_line, sizeof(C_line));
+	AutoColor	(T("C_mes"),	&C_mes, COLOR_WINDOWTEXT);
+	AutoColor	(T("C_info"),	&C_info, COLOR_WINDOWTEXT);
+	GetCustData	(T("C_res"),	&C_res, sizeof(C_res));
 	if ( C_res[0] == C_AUTO) C_res[0] = GetSysColor(COLOR_HIGHLIGHTTEXT);
 	if ( C_res[1] == C_AUTO) C_res[1] = GetSysColor(COLOR_HIGHLIGHT);
 
-	GetCustData (T("C_entry")	,C_entry,sizeof(C_entry));
+	GetCustData (T("C_entry"),	C_entry, sizeof(C_entry));
 	if ( C_entry[ECT_NORMAL] == C_AUTO ) C_entry[ECT_NORMAL] = GetSysColor(COLOR_WINDOWTEXT);
-	GetCustData (T("C_eInfo")	,C_eInfo,sizeof(C_eInfo));
-	for ( i = ECS_MESSAGE ; i < ECS_NOFOCUS ; i++ ){
-		if ( C_eInfo[i] == C_AUTO ) C_eInfo[i] = C_back;
-	}
+	GetCustData (T("C_eInfo"), C_eInfo, sizeof(C_eInfo));
 	if ( C_eInfo[ECS_MARK] == C_AUTO ) C_eInfo[ECS_MARK] = GetSysColor(COLOR_HIGHLIGHT);
 	if ( C_eInfo[ECS_SELECT] == C_AUTO ) C_eInfo[ECS_SELECT] = GetSysColor(COLOR_HIGHLIGHT);
 
+	C_defextC = C_AUTO;
+	GetCustTable(T("C_ext"), T("*"), &C_defextC, sizeof(C_defextC));
+
+//	FixLightColor();
+	cinfo->BackColor = C_back;
+	for ( i = ECS_MESSAGE ; i < ECS_NOFOCUS ; i++ ){
+		if ( C_eInfo[i] == C_AUTO ) C_eInfo[i] = C_back;
+	}
 	if ( cinfo->stat.fc == C_AUTO ) cinfo->stat.fc = C_info;
 	if ( cinfo->stat.bc == C_AUTO ) cinfo->stat.bc = C_back;
-
-	C_defextC = C_AUTO;
-	GetCustTable(T("C_ext"),T("*"),&C_defextC,sizeof(C_defextC));
+//--------------------------
 
 	GetCustData(T("XC_ifix"),&XC_ifix,sizeof(XC_ifix));
 	GetCustData(T("XC_ito"),&XC_ito,sizeof(XC_ito));
@@ -1273,9 +1327,9 @@ void PPcSaveCust(PPC_APPINFO *cinfo)
 			cinfo->XC_tree.mode,cinfo->XC_tree.width);
 
 	SetCustTable(T("_Path"),cinfo->RegSubCID,cinfo->path,TSTRSIZE(cinfo->path));
-	if ( !cinfo->combo ){ // Combo時は、Comboで保存する
+	if ( cinfo->combo == 0 ){ // Combo時は、Comboで保存する
 		SetCustTable(Str_WinPos,
-				cinfo->RegSubCID,&cinfo->WinPos,sizeof(cinfo->WinPos));
+				cinfo->RegSubCID, &cinfo->WinPos, sizeof(cinfo->WinPos));
 	}
 	IOX_win(cinfo,TRUE);
 }
@@ -1604,9 +1658,9 @@ void InitPPcWindow(PPC_APPINFO *cinfo,BOOL usepath)
 										// runas 状態のチェック -------------
 	if ( runasstate == NULL ) runasstate = CheckRunAs();
 	if ( runasstate != NULL ){
-		wsprintf(cinfo->UserInfo,T("PPC[%c](%s)"),cinfo->RegID[2],runasstate);
+		wsprintf(cinfo->UserInfo,T("PPC[%s](%s)"),cinfo->RegSubCID + 1,runasstate);
 	}else{
-		wsprintf(cinfo->UserInfo,T("PPC[%c]"),cinfo->RegID[2]);
+		wsprintf(cinfo->UserInfo,T("PPC[%s]"),cinfo->RegSubCID + 1);
 	}
 	SetCurrentDirectory(PPcPath); // カレントディレクトリをPPC.EXEの場所に移動
 	VFSOn(VFS_DIRECTORY);
@@ -1737,6 +1791,7 @@ void ClosePPc(PPC_APPINFO *cinfo)
 	ThFree(&cinfo->PathTrackingList);
 	ThFree(&cinfo->EntryComments);
 	ThFree(&cinfo->ColumnData);
+	FreeDynamicMenu(&cinfo->DynamicMenu);
 
 	FreeInfoIconCache(cinfo);
 	CloseDxDraw(&cinfo->DxDraw);

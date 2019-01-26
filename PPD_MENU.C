@@ -489,7 +489,7 @@ void NullPopupMenuEdit(HWND hWnd,HMENU hMenu,DWORD index,int flags)
 
 		case EDITMENU_DETAIL: {
 			PostMessage(xminfo->info->hWnd,WM_CHAR,0x1f,0); // メニューを閉じる
-			xminfo->Command = HeapAlloc(GetProcessHeap(),0,TSTROFF(CMDLINESIZE));
+			xminfo->Command = HeapAlloc(ProcHeap,0,TSTROFF(CMDLINESIZE));
 			if ( xminfo->Command == NULL ) break;
 			wsprintf(xminfo->Command,T("%%Obqs *ppcust /:%s"),custname);
 			break;
@@ -605,7 +605,7 @@ int TTrackPopupMenu(EXECSTRUCT *Z,HMENU hMenu,PPXMENUINFO *xminfo)
 	if ( (xminfo == NULL) || (xminfo->Command == NULL) ) return nps.result;
 execute:
 	PP_ExtractMacro(xminfo->info->hWnd,xminfo->info,NULL,xminfo->Command,NULL,0);
-	HeapFree(GetProcessHeap(),0,xminfo->Command);
+	HeapFree(ProcHeap,0,xminfo->Command);
 	return 0;
 }
 
@@ -823,13 +823,13 @@ BOOL ExMenuAdd(PPXAPPINFO *info,ThSTRUCT *thMenuData,HMENU hMenu,const TCHAR *ex
 		GetPackMenu(hMenuDest,thMenuData,PopupID);
 		return TRUE;
 	}else if ( !tstrcmp(exmenu,T("ppclist")) ){
-		GetPPxList(hMenuDest,GetPPcList_Path,NULL,thMenuData,PopupID);
+		GetPPxList(hMenuDest, GetPPcList_Path, thMenuData, PopupID);
 		return TRUE;
 	}else if ( !tstrcmp(exmenu,T("ppxidlist")) ){
-		GetPPxList(hMenuDest,GetPPxList_Id,NULL,thMenuData,PopupID);
+		GetPPxList(hMenuDest, GetPPxList_Id, thMenuData, PopupID);
 		return TRUE;
 	}else if ( !tstrcmp(exmenu,T("selectppx")) ){
-		GetPPxList(hMenuDest,GetPPxList_Select,NULL,thMenuData,PopupID);
+		GetPPxList(hMenuDest, GetPPxList_Select, thMenuData, PopupID);
 		return TRUE;
 	}else if ( !tstrcmp(exmenu,T("eject")) ){
 		if ( info != NULL ){
@@ -1083,11 +1083,6 @@ PPXDLL HMENU PPXAPI PP_AddMenu(PPXAPPINFO *ParentInfo,HWND hWnd,HMENU hMenu,DWOR
 	return hTmpMenu;
 }
 
-#ifndef MIIM_STRING
-#define MIIM_STRING 0x40
-#define MIIM_FTYPE 0x100
-#endif
-
 PPXDLL UINT PPXAPI FindMenuItem(HMENU hMenu,const TCHAR *name,int *menuPosition)
 {
 	int index = 0,excheck = 0,menuPos = 0;
@@ -1166,6 +1161,11 @@ void MakeRootMenu(ThSTRUCT *thMenuData,HMENU hRootMenu,const TCHAR *CustName,con
 	}
 }
 
+PPXDLL void PPXAPI FreeDynamicMenu(DYNAMICMENUSTRUCT *dms)
+{
+	ThFree(&dms->thMenuData);
+}
+
 PPXDLL HMENU PPXAPI InitDynamicMenu(DYNAMICMENUSTRUCT *dms,const TCHAR *barname /* static! */,const PPXINMENUBAR *inmenu)
 {
 	int count = 0,countmax;
@@ -1180,7 +1180,7 @@ PPXDLL HMENU PPXAPI InitDynamicMenu(DYNAMICMENUSTRUCT *dms,const TCHAR *barname 
 
 	countmax = CountCustTable(barname);
 	if ( countmax > 0 ){
-		dms->hMenuPopups = HeapAlloc(GetProcessHeap(),0,sizeof(HMENU) * countmax);
+		dms->hMenuPopups = HeapAlloc(ProcHeap,0,sizeof(HMENU) * countmax);
 		while( EnumCustTable(count,barname,keyword,param,sizeof(param)) >= 0 ){
 			AppendMenuString(hMenuBar,count + IDW_MENU,keyword);
 			dms->hMenuPopups[count] =
@@ -1198,7 +1198,7 @@ PPXDLL HMENU PPXAPI InitDynamicMenu(DYNAMICMENUSTRUCT *dms,const TCHAR *barname 
 		for ( inmp = inmenu ; inmp->name != NULL ; inmp++ ){
 			countmax++;
 		}
-		dms->hMenuPopups = HeapAlloc(GetProcessHeap(),0,sizeof(HMENU) * countmax);
+		dms->hMenuPopups = HeapAlloc(ProcHeap,0,sizeof(HMENU) * countmax);
 		for ( inmp = inmenu ; inmp->name != NULL ; inmp++ ){
 			AppendMenuString(hMenuBar,count + IDW_MENU,inmp->name);
 			dms->hMenuPopups[count] = INVALID_HANDLE_VALUE;
@@ -1496,7 +1496,7 @@ void FixWindowPosition(HWND hWnd)
 
 PPXDLL void PPXAPI CommandDynamicMenu(DYNAMICMENUSTRUCT *dms,PPXAPPINFO *info,WPARAM wParam)
 {
-	const TCHAR *p;
+	const TCHAR *ptr;
 	TCHAR keyword[CMDLINESIZE],param[CMDLINESIZE];
 	DWORD id = LOWORD(wParam);
 
@@ -1505,7 +1505,7 @@ PPXDLL void PPXAPI CommandDynamicMenu(DYNAMICMENUSTRUCT *dms,PPXAPPINFO *info,WP
 			if ( 0 >= EnumCustTable(id - dms->BarIDmin,dms->MenuName,keyword,param,sizeof(param)) ){
 				return;
 			}
-			p = param;
+			ptr = param;
 		}else{ // 内蔵メニュー ※普通はここに来ないはず
 			return; //
 		}
@@ -1518,13 +1518,13 @@ PPXDLL void PPXAPI CommandDynamicMenu(DYNAMICMENUSTRUCT *dms,PPXAPPINFO *info,WP
 			}
 			return;
 		}
-		p = GetMenuDataString(&dms->thMenuData,LOWORD(wParam) - (dms->BarIDmax + 1));
-		if ( p == NilStr ){
+		ptr = GetMenuDataString(&dms->thMenuData,LOWORD(wParam) - (dms->BarIDmax + 1));
+		if ( ptr == NilStr ){
 			wsprintf(param,T("Menu err.ID:%x "),wParam);
 			GetMenuString(dms->hMenuBarMenu,LOWORD(wParam),param + tstrlen(param),80,MF_BYCOMMAND);
 			PPxCommonExtCommand(K_SENDREPORT,(WPARAM)param);
 			return;
 		}
 	}
-	PP_ExtractMacro(info->hWnd,info,NULL,p,NULL,0);
+	PP_ExtractMacro(info->hWnd, info, NULL, ptr, NULL, 0);
 }

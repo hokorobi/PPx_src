@@ -420,13 +420,13 @@ HICON LoadIconDx(const TCHAR *IDorDLLname, int index, int iconsize)
 			freedll = TRUE;
 		}
 		if ( index < 0 ){ // ƒŠƒ\[ƒXID
-			hIcon = LoadImage(hResFile, MAKEINTRESOURCE(-index), IMAGE_ICON, iconsize, iconsize, 0);
+			hIcon = LoadImage(hResFile, MAKEINTRESOURCE(-index), IMAGE_ICON, iconsize, iconsize, LR_DEFAULTCOLOR);
 		} else{ // æ“ª‚©‚ç‚Ìindex
 			fiid.indexcount = index;
 			fiid.resid = 0;
 			EnumResourceNames(hResFile, RT_GROUP_ICON, (ENUMRESNAMEPROC)FindIconIndexProc, (LONG_PTR)&fiid);
 			if ( fiid.resid != 0 ){
-				hIcon = LoadImage(hResFile, fiid.resid, IMAGE_ICON, iconsize, iconsize, 0);
+				hIcon = LoadImage(hResFile, fiid.resid, IMAGE_ICON, iconsize, iconsize, LR_DEFAULTCOLOR);
 			}else{
 				hIcon = NULL;
 			}
@@ -436,9 +436,7 @@ HICON LoadIconDx(const TCHAR *IDorDLLname, int index, int iconsize)
 			fiid.resid = 0;
 			EnumResourceNames(hResFile, RT_GROUP_ICON, (ENUMRESNAMEPROC)FindIconIndexProc, (LONG_PTR)&index);
 			if ( fiid.resid != 0 ){
-				hIcon = LoadImage(hResFile, fiid.resid, IMAGE_ICON, iconsize, iconsize, 0);
-			}else{
-				hIcon = NULL;
+				hIcon = LoadImage(hResFile, fiid.resid, IMAGE_ICON, iconsize, iconsize, LR_DEFAULTCOLOR);
 			}
 //			if ( hIcon == NULL ) XMessage(NULL,NULL,XM_DbgLOG,T("%s %d"),IDorDLLname,index);
 		}
@@ -616,8 +614,7 @@ int LoadOverlayCom(OverlayClass **oc)
 				oci = newoci;
 				oci[ComCount].ComID = hid;
 
-				isoi->lpVtbl->GetOverlayInfo(isoi, layname, VFPS, &index, &layflags)
-					;
+				isoi->lpVtbl->GetOverlayInfo(isoi, layname, VFPS, &index, &layflags);
 				if ( !(layflags & ISIOI_ICONINDEX) ) index = LIDX_FILE;
 				#ifndef UNICODE
 				{
@@ -947,7 +944,7 @@ HICON LoadUnknownIcon(PPC_APPINFO *cinfo, int iconsize)
 	}
 	if ( hGetIcon == NULL ){
 		iconsize = SelectIconSizeMacro(iconsize);
-		hGetIcon = LoadImage(hInst, MAKEINTRESOURCE(Ic_UNKNOWN), IMAGE_ICON, iconsize, iconsize, 0);
+		hGetIcon = LoadImage(hInst, MAKEINTRESOURCE(Ic_UNKNOWN), IMAGE_ICON, iconsize, iconsize, LR_DEFAULTCOLOR);
 	}
 	*hUseIcon = hGetIcon;
 	return hGetIcon;

@@ -119,7 +119,7 @@ ERRORCODE LFNfilter(struct FopOption *opt,TCHAR *src)
 				return ERROR_CANCELLED;
 			}
 			if ( FindPathSeparator(src) != NULL ) UseRenum = TRUE;
-		}else if ( opt->rename[0] ){	// ワイルドカードによる加工
+		}else if ( opt->rename[0] != '\0' ){	// ワイルドカードによる加工
 			TCHAR *p,*s;
 			TCHAR orgname[MAX_PATH],orgext[MAX_PATH];
 												// Split
@@ -253,7 +253,7 @@ ERRORCODE LFNfilter(struct FopOption *opt,TCHAR *src)
 		p = name;
 		e = FindExtSeparator(p);			// ファイル名を8
 		q = p + e;
-		if (e <= 8){
+		if ( e <= 8 ){
 			p = q;
 		}else{
 			i = 0;
@@ -293,8 +293,13 @@ ERRORCODE LFNfilter(struct FopOption *opt,TCHAR *src)
 			*p = '\0';
 		}
 	}
-	if ( opt->fop.chrcase == 1 ) CharUpper(src); // 大文字化
-	if ( opt->fop.chrcase == 2 ) CharLower(src); // 小文字化
+	if ( opt->fop.chrcase != 0 ){
+		if ( opt->fop.chrcase == 1 ){
+			CharUpper(src); // 大文字化
+		}else{ // if ( opt->fop.chrcase == 2 )
+			CharLower(src); // 小文字化
+		}
+	}
 
 	// 末尾の空白を除去
 	{

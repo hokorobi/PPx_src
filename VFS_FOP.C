@@ -632,12 +632,12 @@ void FullDisplayProgress(struct _ProgressWndInfo *Progs,LARGE_INTEGER TotalTrans
 }
 
 #pragma argsused
-DWORD CALLBACK CopyProgress(LARGE_INTEGER TotalSize,LARGE_INTEGER TotalTransSize,LARGE_INTEGER StreamSize,LARGE_INTEGER StreamTransSize,DWORD StreamNumber,DWORD reason,HANDLE hSourceFile,HANDLE hDestinationFile,LPVOID lpData)
+DWORD CALLBACK CopyProgress(LARGE_INTEGER TotalSize, LARGE_INTEGER TotalTransSize, LARGE_INTEGER StreamSize, LARGE_INTEGER StreamTransSize, DWORD StreamNumber, DWORD reason, HANDLE hSourceFile, HANDLE hDestinationFile, LPVOID lpData)
 {
 	UnUsedParam(StreamSize);UnUsedParam(StreamTransSize);UnUsedParam(StreamNumber);UnUsedParam(hSourceFile);UnUsedParam(hDestinationFile);
 
 	if ( reason == CALLBACK_CHUNK_FINISHED ){
-		FullDisplayProgress((struct _ProgressWndInfo *)lpData,TotalTransSize,TotalSize);
+		FullDisplayProgress((struct _ProgressWndInfo *)lpData, TotalTransSize, TotalSize);
 		PeekMessageLoop(((struct _ProgressWndInfo *)lpData)->FS);
 	}
 	return PROGRESS_CONTINUE;

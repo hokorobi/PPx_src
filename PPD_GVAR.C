@@ -28,6 +28,7 @@ GVAR const TCHAR PPxRegPath[] GPARAM(T(PPxSettingsRegPath));
 GVAR const TCHAR IdlCacheName[] GPARAM(T("#IdlC"));
 GVAR const TCHAR StrShortcutExt[] GPARAM(T(ShortcutExt));
 GVAR const TCHAR StrX_dlf[] GPARAM(T("X_dlf"));
+GVAR const TCHAR StrX_tree[] GPARAM(T("X_tree"));
 
 GVAR const TCHAR PathJumpNameEx[] GPARAM(T("<%j>M_pjump"));
 #define PathJumpName (PathJumpNameEx + 4)

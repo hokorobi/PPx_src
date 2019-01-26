@@ -199,46 +199,46 @@ BOOL PPxFlashWindow(HWND hWnd,int mode)
 	}
 }
 
-PPXDLL void USECDECL XMessage(HWND hWnd,const TCHAR *title,UINT type,const TCHAR *message, ...)
+PPXDLL void USECDECL XMessage(HWND hWnd, const TCHAR *title, UINT type, const TCHAR *message, ...)
 {
 	TCHAR buf[0x400];
 	DWORD flag;
 	va_list argptr;
 	UINT icon;
 
-	message = MessageText(message);
-	if ( tstrlen(message) >= TSIZEOF(buf) ){
-		CriticalMessageBox(T("Internal error : Message flow!"));
-		return;
-	}
 	flag = 1 << type;
 	//------------------------------------------------------ 表示内容を作成する
-	va_start(argptr,message);
+	va_start(argptr, message);
 	if ( type <= XM_DbgLOG ){
-		wvsprintf(buf,message,argptr);
+		message = MessageText(message);
+		if ( tstrlen(message) >= TSIZEOF(buf) ){
+			CriticalMessageBox(T("Internal error : Message flow!"));
+			return;
+		}
+		wvsprintf(buf, message, argptr);
 	}else if ( type <= XM_DUMPLOG ){
 		DWORD size;
 		TCHAR *destp;
 		const BYTE *srcp;
 		int i;
 
-		size = va_arg(argptr,DWORD);
+		size = va_arg(argptr, DWORD);
 		destp = buf;
 		srcp = (const BYTE *)message;
-		if ( type == XM_DUMPLOG ) destp += wsprintf(destp,T("%s\r\n"),title);
+		if ( type == XM_DUMPLOG ) destp += wsprintf(destp, T("%s\r\n"), title);
 		while( size ){
 			if ( destp >= (buf + TSIZEOF(buf) - (PTRLEN + 1 + 6)) ) break;
-			destp += wsprintf(destp,T(PTRPRINTFORMAT) T(":"),srcp);
+			destp += wsprintf(destp, T(PTRPRINTFORMAT) T(":"), srcp);
 			for ( i = 0 ; i < 16 ; i++ ){
 				if ( destp >= (buf + TSIZEOF(buf) - 6) ) break;
-				destp += wsprintf(destp,T(" %02X"),*srcp++);
+				destp += wsprintf(destp, T(" %02X"), *srcp++);
 				size--;
-				if ( !size ) break;
+				if ( size == 0 ) break;
 			}
-			destp += wsprintf(destp,T("\r\n"));
+			destp += wsprintf(destp, T("\r\n"));
 		}
 	}else{
-		tstrcpy(buf,T("Unknown type"));
+		tstrcpy(buf, T("Unknown type"));
 	}
 	va_end(argptr);
 	//----------------------------------------------------- アイコン設定 ------
@@ -259,44 +259,44 @@ PPXDLL void USECDECL XMessage(HWND hWnd,const TCHAR *title,UINT type,const TCHAR
 		SYSTEMTIME ltime;
 
 		temp[0] = '\0';
-		GetCustData(T("X_save"),&temp,sizeof(temp));
-		if ( temp[0] == '\0' ) tstrcpy(temp,DLLpath);
-		VFSFixPath(NULL,temp,DLLpath,VFSFIX_FULLPATH | VFSFIX_REALPATH);
-		CatPath(NULL,temp,T("PPX.LOG"));
+		GetCustData(T("X_save"), &temp, sizeof(temp));
+		if ( temp[0] == '\0' ) tstrcpy(temp, DLLpath);
+		VFSFixPath(NULL, temp, DLLpath, VFSFIX_FULLPATH | VFSFIX_REALPATH);
+		CatPath(NULL, temp, T("PPX.LOG"));
 		GetLocalTime(&ltime);
 
-		hFile = CreateFileL(temp,
-				GENERIC_WRITE,0,NULL,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,NULL);
+		hFile = CreateFileL(temp, GENERIC_WRITE, 0,
+				NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		if ( hFile != INVALID_HANDLE_VALUE ){
 			DWORD len;
 			#ifdef UNICODE
 			if ( GetLastError() == NO_ERROR ){
-				WriteFile(hFile,UCF2HEADER,UCF2HEADERSIZE,&size,NULL);
+				WriteFile(hFile, UCF2HEADER, UCF2HEADERSIZE, &size, NULL);
 			}
 			#endif
 			size = 0;							// 末尾に移動 -----------------
-			SetFilePointer(hFile,0,(PLONG)&size,FILE_END);
+			SetFilePointer(hFile, 0, (PLONG)&size, FILE_END);
 												// 時刻を出力 -----------------
-			wsprintf(temp,T("%4d-%02d-%02d %02d:%02d:%02d.%03d (%s) "),
-					ltime.wYear,ltime.wMonth,ltime.wDay,
-					ltime.wHour,ltime.wMinute,ltime.wSecond,
-					ltime.wMilliseconds,MessageType[type]);
-			WriteFile(hFile,temp,TSTRLENGTH32(temp),&size,NULL);
+			wsprintf(temp, T("%4d-%02d-%02d %02d:%02d:%02d.%03d (%s) "),
+					ltime.wYear, ltime.wMonth, ltime.wDay,
+					ltime.wHour, ltime.wMinute, ltime.wSecond,
+					ltime.wMilliseconds, MessageType[type]);
+			WriteFile(hFile, temp, TSTRLENGTH32(temp), &size, NULL);
 												// 内容を出力 -----------------
 			len = TSTRLENGTH32(buf);
 			if ( (len > 4) && (buf[(len / sizeof(TCHAR)) - 2] == '\r') ){
 				len -= sizeof(TCHAR) * 2;
 			}
-			WriteFile(hFile,buf,len,&size,NULL);
+			WriteFile(hFile, buf, len, &size, NULL);
 												// 改行 -------------------
-			WriteFile(hFile,T("\r\n"),TSTROFF(2),&size,NULL);
+			WriteFile(hFile, T("\r\n"), TSTROFF(2), &size, NULL);
 			CloseHandle(hFile);
 		}
 	}
 	//----------------------------------------------------- ダイアログ表示/Beep
 	/* 0000 1001 1111 1111 0000 0000 1111 1111 */
 	if ( 0x09ff00ff & flag ){
-		PMessageBox(hWnd,buf,(title != NULL) ? title : PPxName,
+		PMessageBox(hWnd, buf, (title != NULL) ? title : PPxName,
 				MB_APPLMODAL | MB_OK | icon);
 	/* 0001 0010 1111 1111 1111 1111 0000 0000 */
 	}else if ( X_beep & flag & 0x12ffff00 ){
@@ -488,13 +488,7 @@ PPXDLL void PPXAPI MoveWindowByKey(HWND hWnd,int offx,int offy)
 	int x,y,stepX,stepY,fixX = 0,fixY = 0;
 	RECT box,desktop;
 
-	while ( !(GetWindowLong(hWnd,GWL_STYLE) & WS_CAPTION) ){
-		HWND htWnd;
-
-		htWnd = GetParent(hWnd);
-		if ( htWnd == NULL ) break;
-		hWnd = htWnd;
-	}
+	hWnd = GetCaptionWindow(hWnd);
 	GetWindowRect(hWnd,&box);
 
 	if ( DDwmGetWindowAttribute == NULL ){
@@ -564,9 +558,9 @@ PPXDLL void PPXAPI PPxHelp(HWND hWnd,UINT command,DWORD_PTR data)
 
 		p = path + tstrlen(path);
 		if ( (command == HELP_CONTEXT) || (command == HELP_CONTEXTPOPUP) ){
-			wsprintf(p,T("#%d"),data);
+			wsprintf(p,T("#%d"),(int)data);
 		}else if ( command == HELP_KEY ){
-			wsprintf(p,T("#%s"),data);
+			wsprintf(p,T("#%s"), data);
 		}else{
 			tstrcpy(path,T(TOROsWEB) T(HTMLHELPINDEX));
 			attr = BADATTR;
@@ -599,17 +593,17 @@ BOOL PPxDialogHelp(HWND hDlg)
 }
 
 #pragma argsused
-PPXDLL BOOL PPXAPI PPxDialogHelper(HWND hDlg,UINT iMsg,WPARAM wParam,LPARAM lParam)
+PPXDLL BOOL PPXAPI PPxDialogHelper(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	UnUsedParam(wParam);UnUsedParam(lParam);
+	UnUsedParam(wParam); UnUsedParam(lParam);
 
-	switch(iMsg){
+	switch(message){
 		case WM_DESTROY:
 			SetIMEDefaultStatus(hDlg);
 			return FALSE;
 
 		case WM_CLOSE:
-			EndDialog(hDlg,0);
+			EndDialog(hDlg, 0);
 			break;
 
 		case WM_HELP:
@@ -617,6 +611,7 @@ PPXDLL BOOL PPXAPI PPxDialogHelper(HWND hDlg,UINT iMsg,WPARAM wParam,LPARAM lPar
 			PPxDialogHelp(hDlg);
 			break;
 		default:
+			if ( message == WM_PPXCOMMAND ) return ERROR_INVALID_FUNCTION;
 			return FALSE;
 	}
 	return TRUE;
@@ -702,7 +697,7 @@ BOOL MessageBoxInitDialog(HWND hDlg,MESSAGEDATA *md)
 	RECT msgbox = {0,0,0,0};	// テキストの大きさ
 	RECT buttonbox = {0,0,0,0};	// ボタンの大きさ
 	RECT tempbox = {0,0,0,0};
-	HWND hPWnd = GetParentBox(hDlg),hDpiWnd;
+	HWND hPWnd = GetParentCaptionWindow(hDlg), hDpiWnd;
 	int dpi,gdi_dpi,minHeight;
 
 	md->hOldForegroundWnd = NULL;

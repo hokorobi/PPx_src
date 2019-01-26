@@ -824,6 +824,7 @@ typedef enum {
 #define MES_TFEM	T("TFEM|Find mask")
 #define MES_TFMK	T("TFMK|FindMark")
 #define MES_TFUM	T("TFUM|FindUnMark")
+#define MES_THIL	T("THIL|Highlight words")
 #define MES_TINS	T("TINS|Input new menu item name")
 #define MES_TISD	T("TISD|Path fix")
 #define MES_TLDS	T("TLDS|Logdisk")

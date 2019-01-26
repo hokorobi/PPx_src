@@ -123,6 +123,45 @@ void SetEditMode(EXECSTRUCT *Z)
 	}
 }
 
+void LineEscape(EXECSTRUCT *Z) // %b 行末エスケープ・文字挿入
+{
+	TCHAR c;
+
+	c = *Z->src;
+	switch ( c ){
+		case '\r':
+		case '\n':
+			for (;;){
+				*Z->dst++ = c;
+				c = *(++Z->src);
+				if ( (c != '\r') && (c != '\n') ) break;
+			}
+			break;
+
+		case 'n':
+			Z->src++;
+			*Z->dst++ = '\r';
+			*Z->dst++ = '\n';
+			break;
+
+		case 't':
+			Z->src++;
+			*Z->dst++ = '\t';
+			break;
+
+		case 'x':
+			Z->src++;
+			c = (TCHAR)GetHexNumber(&Z->src);
+			if ( c != 0 ) *Z->dst++ = c;
+			break;
+
+		default:
+			c = (TCHAR)GetNumber(&Z->src);
+			if ( c != 0 ) *Z->dst++ = c;
+			break;
+	}
+}
+
 void USEFASTCALL SetTitleMacro(EXECSTRUCT *Z)
 {
 	TCHAR *maxp,*titlep;
@@ -381,9 +420,12 @@ void Get_F_MacroData(PPXAPPINFO *info,PPXCMD_F *fbuf,PPXCMDENUMSTRUCT *work)
 	GetFmacroString(flags,buf,fbuf->dest);
 }
 
-// %M[$][&][@][[:][?]name][,[!]shortcut]
-// $ : %M$M_pjump 等、マクロ文字展開無し →廃止予定
+// %M[&][@][[?][:]name][,[!]shortcut]
 // & : %s Menu_Index に内容を保存
+// : : %M:M_pjump 等、マクロ文字展開無し
+// @ : pjump用追加項目
+// ? : 動的生成指定
+// ! : メニュー表示無しで選択
 BOOL USEFASTCALL MenuCmd(EXECSTRUCT *Z)
 {
 	TCHAR cid[MAX_PATH],*p;
@@ -812,6 +854,49 @@ BOOL ZTinput(EXECSTRUCT *Z,TINPUT *tinput)
 	return TRUE;
 }
 
+#if 0
+HWND GetWindowAloneOnCombo(const TCHAR *ID)
+{
+	HWND hTargetWnd = Sm->ppc.hComboWnd[ID[2] - 'A'];
+	HWND hWnd;
+
+	if ( (hTargetWnd != NULL) && (hTargetWnd != BADHWND) ){
+	DWORD pid;
+	HANDLE hMap,hSendMap,hProcess;
+	TCHAR *param;
+	const TCHAR *np;
+
+	hMap = CreateFileMapping(INVALID_HANDLE_VALUE,
+				NULL,PAGE_READWRITE,0,TSTROFF(CMDLINESIZE),NULL);
+	if ( hMap == NULL ) return BADHWND;
+	param = MapViewOfFile(hMap,FILE_MAP_ALL_ACCESS,0,0,TSTROFF(CMDLINESIZE));
+	if ( param == NULL ){
+		CloseHandle(hMap);
+		return BADHWND;
+	}
+	GetWindowThreadProcessId(hTargetWnd,&pid);
+	hProcess = OpenProcess(PROCESS_DUP_HANDLE,FALSE,pid);
+	DuplicateHandle(GetCurrentProcess(),hMap,
+				hProcess,&hSendMap,0,FALSE,DUPLICATE_SAME_ACCESS);
+
+	wsprintf ( param, T("%%N%s"), ID );
+	SendMessage(hTargetWnd,WM_PPXCOMMAND,K_EXTRACT,(LPARAM)hSendMap);
+	CloseHandle(hSendMap);
+
+	np = param;
+	hWnd = (HWND)GetDigitNumber(&np);
+
+	UnmapViewOfFile(param);
+	CloseHandle(hMap);
+
+		if ( hWnd == NULL ) hWnd = BADHWND;
+		return hWnd;
+	}
+
+	return BADHWND; // 該当なし
+}
+#endif
+
 HWND GetPPcPairWindow(PPXAPPINFO *ppxa)
 {
 	HWND hWnd;
@@ -836,13 +921,12 @@ HWND GetPPcPairWindow(PPXAPPINFO *ppxa)
 
 // BADHWND ... 該当ウィンドウがない
 // NULL ... ID指定がされていない
-PPXDLL HWND PPXAPI GetPPxhWndFromID(PPXAPPINFO *ppxa,const TCHAR **src,TCHAR *path)
+PPXDLL HWND PPXAPI GetPPxhWndFromID(PPXAPPINFO *ppxa, const TCHAR **src, TCHAR *path)
 {
 	int i; // 0～X_Mtask 未満なら有効な値
-	TCHAR *bufp,buf[REGEXTIDSIZE];
-	int combosite = 0,offset;
-
-	TCHAR code;
+	TCHAR *bufp, buf[REGEXTIDSIZE], code;
+	int combosite = -2, offset;
+	HWND hComboWnd;
 
 	code = SkipSpace(src);
 	if ( code == '~' ){ // 反対窓
@@ -855,14 +939,13 @@ PPXDLL HWND PPXAPI GetPPxhWndFromID(PPXAPPINFO *ppxa,const TCHAR **src,TCHAR *pa
 	}
 
 	if ( !Isalpha(code) ){
-		if ( code == '-' ){
+		if ( code == '-' ){ // PPv の呼び出し元 PPc
 			HWND hWnd;
 
 			(*src)++;
-			hWnd = (HWND)PPxInfoFunc(ppxa,PPXCMDID_GETREQHWND,NULL);
+			hWnd = (HWND)PPxInfoFunc(ppxa, PPXCMDID_GETREQHWND, NULL);
 			if ( hWnd != NULL ){
 				while ( Isalpha(**src) || (**src == '_') ) (*src)++;
-				if ( path != NULL ) *path = '\0';
 				return hWnd;
 			}
 			if ( !Isalpha(**src) ) return BADHWND; // 指定なし
@@ -871,7 +954,7 @@ PPXDLL HWND PPXAPI GetPPxhWndFromID(PPXAPPINFO *ppxa,const TCHAR **src,TCHAR *pa
 		}
 	}
 	bufp = buf;
-	for ( offset = 0 ; offset < (REGEXTIDSIZE - 1) ; offset++ ){
+	for ( offset = 0 ; offset < (REGEXTIDSIZE - 1) ; offset++ ){ //ID部分を抽出
 		if ( !Isalpha(**src) && (**src != '_') ) break;
 		*bufp++ = upper(*((*src)++));
 	}
@@ -885,72 +968,66 @@ PPXDLL HWND PPXAPI GetPPxhWndFromID(PPXAPPINFO *ppxa,const TCHAR **src,TCHAR *pa
 		}else{
 			bufp = buf;
 		}
-		hWnd = (HWND)PPxInfoFunc(ppxa,PPXCMDID_COMBOGETHWNDEX,bufp);
-		if ( hWnd == NULL ) return BADHWND; // 指定なし
-		if ( path != NULL ) *path = '\0';
+		hWnd = Sm->ppc.hComboWnd[TinyCharUpper(buf[2]) - 'A'];
+		if ( hWnd == hProcessComboWnd ){
+			hWnd = (HWND)PPxInfoFunc(ppxa, PPXCMDID_COMBOGETHWNDEX, bufp);
+		}else{
+			LPARAM lParam;
+
+			if ( (hWnd == NULL) || (hWnd == BADHWND) ) return BADHWND;
+			lParam = (DWORD)buf[3] | ((DWORD)buf[4] << 8) | ((DWORD)buf[5] << 16) | ((DWORD)buf[5] << 24);
+			hWnd = (HWND)SendMessage(hWnd, WM_PPXCOMMAND, KCW_GetIDWnd, lParam);
+		}
+		if ( hWnd == NULL ) return BADHWND;
 		return hWnd;
 	}
 
 	if ( **src == '#' ){ // 一体化指定
 		TCHAR c;
 
+		if ( TinyCharUpper(buf[0]) != 'C' ) return BADHWND;
+
+		if ( (TinyCharUpper(buf[1]) == 'B') && Isalpha(buf[2]) ){ // 任意のcombo
+			hComboWnd = Sm->ppc.hComboWnd[TinyCharUpper(buf[2]) - 'A'];
+		}else{ // default
+			hComboWnd = hProcessComboWnd;
+			if ( hComboWnd == NULL ) hComboWnd = Sm->ppc.hComboWnd[0];
+		}
+		if ( (hComboWnd == NULL) || (hComboWnd == BADHWND) ) return BADHWND;
+
 		(*src)++;
 		c = upper(**src);
-		if ( c == 'L' ){ // 左
+		if ( c == 'C' ){ // 現在窓
+			(*src)++;
+			combosite = KC_GETSITEHWND_CURRENT;
+		}else if ( c == 'L' ){ // 左側
 			(*src)++;
 			combosite = KC_GETSITEHWND_LEFT;
-		}else if ( c == 'R' ){ // 右
+		}else if ( c == 'R' ){ // 右側
 			(*src)++;
 			combosite = KC_GETSITEHWND_RIGHT;
-		}else{ // combo 自体
-			if ( (buf[1] == 'B') && Isupper(buf[2]) ){
-				HWND hComboWnd = Sm->ppc.hComboWnd[buf[2] - 'A'];
-				if ( hComboWnd == NULL ) hComboWnd = BADHWND;
-				return hComboWnd;
-			}
+		}else if ( c == '~' ){ // 反対窓
+			(*src)++;
+			combosite = KC_GETSITEHWND_PAIR;
+		}else if ( Isdigit(c) ){ // 左からのペイン位置
+			combosite = KC_GETSITEHWND_LEFTENUM + GetDigitNumber(src);
+		}else{
 			combosite = KC_GETSITEHWND_BASEWND;
 		}
 	}
 
-	if ( Isalpha(**src) ){
+	if ( Isalpha(**src) ){ // 余分な文字
 		while ( Isalpha(**src) ) (*src)++;
 		return BADHWND;
 	}
 
-	if ( buf[0] == '\0' ) return NULL;
-	UsePPx();
-	if ( (buf[0] == 'C') && (buf[1] == '\0') ){ // 1文字指定
-		if ( combosite == 0 ){
-			HWND hFocusWnd = Sm->ppc.hLastFocusWnd;
-
-			if ( (hFocusWnd != NULL) && IsWindow(hFocusWnd) ){
-				FreePPx();
-				return hFocusWnd;
-			}
-		}
-
-		i = Sm->ppc.LastFocusID;
-		if ( CheckPPcID(i) == FALSE ){
-			for ( i = 0 ; i < X_Mtask ; i++ ){
-				if ( IsTrue(CheckPPcID(i)) ) break;
-			}
-		}
-	}else{
-		i = SearchPPx(buf);
-		if ( i < 0 ){
-			buf[3] = '\0';
-			buf[2] = buf[1];
-			buf[1] = '_';
-			i = SearchPPx(buf);
-		}
-	}
-	if ( (combosite != 0) && ((i >= 0) && (i < X_Mtask)) ){ // 一体化窓の左右を取得
+	if ( combosite != -2 ){ // 一体化窓関連取得
 		HWND hWnd;
 
-		hWnd = Sm->P[i].hWnd;
-		FreePPx(); // 一旦、専有を解除する
-		hWnd = (HWND)SendMessage(hWnd,WM_PPXCOMMAND,KC_GETSITEHWND,(LPARAM)combosite);
-		if ( (combosite < 0) && (path == NULL) ) return hWnd;
+		hWnd = (HWND)SendMessage(hComboWnd, WM_PPXCOMMAND, KC_GETSITEHWND, (LPARAM)combosite);
+		if ( hWnd == NULL ) return BADHWND;
+		if ( path == NULL ) return hWnd;
+
 		UsePPx();
 		if ( hWnd == NULL ){
 			i = -1;
@@ -959,11 +1036,38 @@ PPXDLL HWND PPXAPI GetPPxhWndFromID(PPXAPPINFO *ppxa,const TCHAR **src,TCHAR *pa
 				if ( Sm->P[i].hWnd == hWnd ) break;
 			}
 		}
+	}else{ // 通常窓取得
+		if ( buf[0] == '\0' ) return NULL;
+		UsePPx();
+		if ( (buf[0] == 'C') && (buf[1] == '\0') ){ // 1文字指定
+			HWND hFocusWnd = Sm->ppc.hLastFocusWnd;
+
+			if ( (hFocusWnd != NULL) && IsWindow(hFocusWnd) ){
+				FreePPx();
+				return hFocusWnd;
+			}
+
+			i = Sm->ppc.LastFocusID;
+			if ( CheckPPcID(i) == FALSE ){
+				for ( i = 0 ; i < X_Mtask ; i++ ){
+					if ( IsTrue(CheckPPcID(i)) ) break;
+				}
+			}
+		}else{
+			i = SearchPPx(buf);
+			if ( i < 0 ){
+				buf[3] = '\0';
+				buf[2] = buf[1];
+				buf[1] = '_';
+				i = SearchPPx(buf);
+			}
+		}
 	}
 
 	if ( (i >= 0) && (i < X_Mtask) ){
 		HWND hWnd = Sm->P[i].hWnd;
-		if ( path != NULL ) tstrcpy(path,Sm->P[i].path);
+
+		if ( path != NULL ) tstrcpy(path, Sm->P[i].path);
 		FreePPx();
 		return hWnd;
 	}
@@ -1009,28 +1113,18 @@ void USEFASTCALL ZGetPPvCursorPos(EXECSTRUCT *Z)
 	Z->dst += tstrlen(Z->dst);
 }
 
-void USEFASTCALL ZGetWndMacro(EXECSTRUCT *Z)
+void USEFASTCALL ZGetWndCaptionMacro(EXECSTRUCT *Z)
 {
 	HWND nhWnd;
 
-	nhWnd = Z->hWnd;
-	for ( ; ; ){
-		if ( GetWindowLongPtr(nhWnd,GWL_STYLE) & (WS_CAPTION | WS_SYSMENU) ){
-			break;
-		}
-		nhWnd = GetParent(nhWnd);
-		if ( nhWnd == NULL ){
-			nhWnd = Z->hWnd;
-			break;
-		}
-	}
+	nhWnd = GetCaptionWindow(Z->hWnd);
 	*Z->dst = '\0';
-	SendMessage(nhWnd,WM_GETTEXT,VFPS,(LPARAM)Z->dst);
+	SendMessage(nhWnd, WM_GETTEXT, VFPS, (LPARAM)Z->dst);
 	Z->dst += tstrlen(Z->dst);
 }
 
 // 特殊環境変数
-void ZStringVariable(EXECSTRUCT *Z,const TCHAR **src,int mode)
+void ZStringVariable(EXECSTRUCT *Z, const TCHAR **src, int mode)
 {
 	TCHAR name[CMDLINESIZE],*str;
 	ThSTRUCT *UseTH = &ProcessStringValue;
@@ -1045,7 +1139,7 @@ void ZStringVariable(EXECSTRUCT *Z,const TCHAR **src,int mode)
 				break;
 
 			case 'i': {// ID内
-				ThSTRUCT *THt = (ThSTRUCT *)PPxInfoFunc(Z->Info,PPXCMDID_GETWNDVARIABLESTRUCT,NULL);
+				ThSTRUCT *THt = (ThSTRUCT *)PPxInfoFunc(Z->Info, PPXCMDID_GETWNDVARIABLESTRUCT, NULL);
 				if ( THt != NULL ) UseTH = THt;
 				break;
 			}
@@ -1058,13 +1152,13 @@ void ZStringVariable(EXECSTRUCT *Z,const TCHAR **src,int mode)
 				break;
 
 			default: { // デフォルト
-				ThSTRUCT *THt = (ThSTRUCT *)PPxInfoFunc(Z->Info,PPXCMDID_GETTEMPVARIABLESTRUCT,NULL);
+				ThSTRUCT *THt = (ThSTRUCT *)PPxInfoFunc(Z->Info, PPXCMDID_GETTEMPVARIABLESTRUCT, NULL);
 				if ( THt != NULL ){
 					UseTH = THt;
 				}else{
-					THt = (ThSTRUCT *)PPxInfoFunc(Z->Info,PPXCMDID_GETWNDVARIABLESTRUCT,NULL);
+					THt = (ThSTRUCT *)PPxInfoFunc(Z->Info, PPXCMDID_GETWNDVARIABLESTRUCT, NULL);
 					if ( THt != NULL ) UseTH = THt;
-					}
+				}
 				(*src)--;
 				break;
 			}
@@ -1079,16 +1173,16 @@ void ZStringVariable(EXECSTRUCT *Z,const TCHAR **src,int mode)
 
 		hPopupMenu = CreatePopupMenu();
 		for (;;){
-			if ( FALSE == ThEnumString(UseTH,index++,Z->dst,name,TSIZEOF(name)) ){
+			if ( FALSE == ThEnumString(UseTH, index++, Z->dst, name, TSIZEOF(name)) ){
 				break;
 			}
-			wsprintf(Z->dst + tstrlen(Z->dst),T("=%s"),name);
-			AppendMenuString(hPopupMenu,index + 1,Z->dst);
+			wsprintf(Z->dst + tstrlen(Z->dst), T("=%s"), name);
+			AppendMenuString(hPopupMenu, index + 1, Z->dst);
 		}
 		*Z->dst = '\0';
-		index = TTrackPopupMenu(Z,hPopupMenu,NULL);
+		index = TTrackPopupMenu(Z, hPopupMenu, NULL);
 		if ( index ){
-			GetMenuString(hPopupMenu,index + 1,Z->dst,CMDLINESIZE,MF_BYCOMMAND);
+			GetMenuString(hPopupMenu, index + 1, Z->dst, CMDLINESIZE, MF_BYCOMMAND);
 			Z->dst += tstrlen(Z->dst);
 		}
 		DestroyMenu(hPopupMenu);
@@ -1098,9 +1192,10 @@ void ZStringVariable(EXECSTRUCT *Z,const TCHAR **src,int mode)
 		tstrcpy(name,*src);
 	}else{
 		if ( **src != '\"' ){
-			GetCommandParameter(src,name,TSIZEOF(name));
+			GetCommandParameter(src, name, TSIZEOF(name));
 		}else{
 			TCHAR *dest = name;
+
 			(*src)++;
 			while ( (UTCHAR)**src >= ' ' ){
 				if ( **src == '\"' ){
@@ -1114,14 +1209,15 @@ void ZStringVariable(EXECSTRUCT *Z,const TCHAR **src,int mode)
 	}
 	str = tstrchr(name,'=');
 	if ( str == NULL ){
-		ThGetString(UseTH,name,Z->dst,CMDLINESIZE - 1);
+		*Z->dst = '\0';
+		ThGetString(UseTH, name, Z->dst, CMDLINESIZE - 1);
 		if ( mode == StringVariable_extract ){
-			Z->result = PP_ExtractMacro(Z->hWnd,Z->Info,NULL,Z->dst,Z->dst,0);
+			Z->result = PP_ExtractMacro(Z->hWnd, Z->Info, NULL, Z->dst, Z->dst, 0);
 		}
 		Z->dst += tstrlen(Z->dst);
 	}else{
 		*str++ = '\0';
-		ThSetString(UseTH,name,str);
+		ThSetString(UseTH, name, str);
 	}
 }
 
@@ -1329,8 +1425,8 @@ void GetPPxHWND(EXECSTRUCT *Z)
 	}else{
 		hWnd = GetPPxhWndFromID(Z->Info,&Z->src,NULL);
 		if ( hWnd == BADHWND ) return; // 該当無し
+		if ( hWnd == NULL ) hWnd = Z->hWnd; // ID指定無し
 	}
-	if ( hWnd == NULL ) hWnd = Z->hWnd;
 	if ( hWnd != NULL ) Z->dst += wsprintf(Z->dst,T("%u"),hWnd);
 	return;
 }
@@ -1369,11 +1465,15 @@ void GetPPxPath(EXECSTRUCT *Z)
 {
 	HWND hWnd;
 
+	*Z->dst = '\0';
 	hWnd = GetPPxhWndFromID(Z->Info,&Z->src,Z->dst); // Z->dst に path が保存
+
 	if ( hWnd == NULL ){ // デフォルト指定
 		tstrcpy(Z->dst,GetZCurDir(Z));
 	}else if ( hWnd == BADHWND ){ // 該当無し
 		return;
+	}else if ( *Z->dst == '\0' ){
+		ExtractPPxCall(hWnd,Z,T("%1"));
 	}
 	Z->dst += tstrlen(Z->dst);
 	return;
@@ -1433,7 +1533,7 @@ DWORD GetModuleNameHash(const TCHAR *src,TCHAR *dest)
 
 BOOL GetCommandString(EXECSTRUCT *Z)
 {
-	TCHAR cmdname[64];
+	TCHAR cmdname[CmdFuncMaxLen];
 	const TCHAR *src;
 									// コマンドを切り出す
 	{
@@ -1506,7 +1606,7 @@ void ZInit(EXECSTRUCT *Z)
 				259(ERROR_NO_MORE_ITEMS):空欄終了
 				ERROR_CANCELLED :キャンセル
 -----------------------------------------------------------------------------*/
-PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd,PPXAPPINFO *ParentInfo,POINT *pos,const TCHAR *param,TCHAR *extract,int flag)
+PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd, PPXAPPINFO *ParentInfo, POINT *pos, const TCHAR *param, TCHAR *extract, int flags)
 {
 	EXECSTRUCT Z;
 	BOOL loadnext = FALSE;
@@ -1528,7 +1628,7 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd,PPXAPPINFO *ParentInfo,POINT *
 		Z.Info = PPxDefInfo;
 	}
 
-	PPxEnumInfoFunc(Z.Info,PPXCMDID_STARTENUM,Z.DstBuf,&Z.IInfo);
+	PPxEnumInfoFunc(Z.Info, PPXCMDID_STARTENUM, Z.DstBuf, &Z.IInfo);
 	Z.oldsrc = NULL;
 	Z.status = 0;
 	Z.result = NO_ERROR;
@@ -1537,7 +1637,7 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd,PPXAPPINFO *ParentInfo,POINT *
 	Z.edit.cache.hash = MAX32;
 	while ( Z.result == NO_ERROR ){
 										// 繰り返し行う初期化 -----------------
-		Z.flag = flag;
+		Z.flag = flags;
 		Z.status = Z.status & (ST_EXECLOOP);
 		Z.src = param;
 		Z.ExtendDst.top = 0;
@@ -1822,8 +1922,8 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd,PPXAPPINFO *ParentInfo,POINT *
 		if ( *Z.src == '\"' ) Z.src++;
 		break;
 
-	case 'W':					//----- %W		WND取得 ------------
-		ZGetWndMacro(&Z);
+	case 'W':					//----- %W		Window Caption取得 ------------
+		ZGetWndCaptionMacro(&Z);
 		break;
 
 	case '\\': {				//----- %\		\ の付加 ----------------------
@@ -1864,6 +1964,10 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd,PPXAPPINFO *ParentInfo,POINT *
 		if ( CreateResponseFile(&Z) == FALSE ) continue;
 		break;
 
+	case 'b':					//----- %b		行末エスケープ・文字挿入 ------
+		LineEscape(&Z);
+		break;
+
 	case 'e':					//----- %e		一行編集の設定変更 ------------
 		SetEditMode(&Z);
 		break;
@@ -1897,7 +2001,7 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd,PPXAPPINFO *ParentInfo,POINT *
 		break;
 
 	case 's':					//----- %s		特殊環境変数
-		ZStringVariable(&Z,&Z.src,StringVariable_function);
+		ZStringVariable(&Z, &Z.src, StringVariable_function);
 		break;
 
 	case 'u':					//----- %u	UnXXX を実行 ------------------
@@ -1908,7 +2012,7 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd,PPXAPPINFO *ParentInfo,POINT *
 			ZExec(&Z);
 			ZInit(&Z);
 			Z.command = 'u';
-			setflag(Z.status,ST_MULTIPARAM);
+			setflag(Z.status, ST_MULTIPARAM);
 		}
 		break;
 
@@ -1941,7 +2045,7 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd,PPXAPPINFO *ParentInfo,POINT *
 		while ( Isalnum(*Z.src) || (*Z.src == '#') ) *p++ = *Z.src++;
 		*p = '\0';
 		hPairWnd = GetPPcPairWindow(Z.Info);
-		if ( hPairWnd != NULL ) ExtractPPxCall(hPairWnd,&Z,Z.dst);
+		if ( hPairWnd != NULL ) ExtractPPxCall(hPairWnd, &Z, Z.dst);
 		break;
 	}
 
@@ -2000,7 +2104,7 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd,PPXAPPINFO *ParentInfo,POINT *
 	ThFree(&Z.ExpandCache); // %M のキャッシュを解放
 	ThFree(&Z.ExtendDst);
 	Freeoldsrc(&Z);
-	if ( Z.useppb != -1 ) FreePPb(Z.hWnd,Z.useppb);
+	if ( Z.useppb != -1 ) FreePPb(Z.hWnd, Z.useppb);
 	return Z.result;
 }
 /*-----------------------------------------------------------------------------
@@ -2138,7 +2242,7 @@ BOOL EnumEntries(EXECSTRUCT *Z,const TCHAR *extract)
 	int maxentries = 0xfffffff;
 
 	oldsrc = Z->src;
-	if ( Isdigit(*oldsrc) ) maxentries = GetNumber(&oldsrc);
+	if ( Isdigit(*oldsrc) ) maxentries = GetDigitNumber(&oldsrc);
 
 	if ( ((UTCHAR)*oldsrc > ' ') && !Isalnum(*oldsrc) ){
 		separator = *oldsrc++;

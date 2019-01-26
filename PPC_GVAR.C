@@ -41,14 +41,15 @@ extern "C" {
 #define DEBUGLOGC(message,param)
 #endif
 
-#define TIMERID_SPECIAL			105	// おまけ用
-#define TIMERID_DRAGSCROLL		106	// ドラッグによる窓スクロール処理用
-#define TIMERID_COMBOHIDEMENU	107	// 隠しメニューを閉じるために使用
-#define TIMERID_COMBODRAGSCROLL	108	// 一体化用
-#define TIMERID_TIP				109	// チップ表示
-#define TIMERID_DELAYCURSOR		110	// 遅延移動カーソル
-#define TIMERID_DELAYLOGSHOW	111	// 遅延ログ更新
-#define TIMERID_INFODOCK_MMOVE	112
+#define TIMERID_SPECIAL			105 // おまけ用
+#define TIMERID_DRAGSCROLL		106 // ドラッグによる窓スクロール処理用
+#define TIMERID_COMBOHIDEMENU	107 // 隠しメニューを閉じるために使用
+#define TIMERID_COMBODRAGSCROLL	108 // 一体化用
+#define TIMERID_ENTRYTIP		109 // ファイル名チップ表示
+#define TIMERID_DELAYCURSOR		110 // 遅延移動カーソル
+#define TIMERID_DELAYLOGSHOW	111 // 遅延ログ更新
+#define TIMERID_INFODOCK_MMOVE	112 // dock上情報行の隠しメニュー表示制御用
+#define TIMERID_HOVERTIP		113 // チップ表示のホバー検出
 
 #define TIMER_DRAGSCROLL	400		// TIMERID_DRAGSCROLLの間隔(ms)
 #define TIMER_COMBOHIDEMENU	200		// TIMERID_COMBOHIDEMENUの間隔(ms)
@@ -535,6 +536,9 @@ GVAR int XC_ifix GPARAM(0);
 GVAR BOOL XC_fexc GPARAM(FALSE);
 GVAR int XC_cdc GPARAM(B3 | B4);
 
+#define STIP_HOVER	B31 //
+#define STIP_NOW	B30 // 即時に表示
+#define STIP_MASK	0xffff
 GVAR DWORD X_stip GPARAM(1000);
 
 //GVAR int X_lspc GPARAM(0);

@@ -133,7 +133,7 @@ LRESULT CALLBACK CommonWindow(HWND hWnd,UINT uMsg,WPARAM wParam,LPARAM lParam)
 						SendMessage(hWnd,WM_CLOSE,0,0);
 					}
 				}
-				break;
+				return ERROR_INVALID_FUNCTION;
 			}
 			return DefWindowProc(hWnd,uMsg,wParam,lParam);
 	}
@@ -307,8 +307,7 @@ LRESULT CALLBACK TrayWindow(HWND hWnd,UINT uMsg,WPARAM wParam,LPARAM lParam)
 				if ( (WORD)wParam == KRN_getcwnd ){
 					return (LRESULT)GetCommonWnd();
 				}
-				PPxCommonCommand(hWnd,0,(WORD)wParam);
-				break;
+				return PPxCommonCommand(hWnd,0,(WORD)wParam);
 			}
 			if ( uMsg == WM_TASKBARCREATE ){
 				TrayMessage(hWnd,NIM_ADD,IDI_TRAY,T("PPtray"));

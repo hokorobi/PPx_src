@@ -155,7 +155,7 @@ const TCHAR NoItem[] = T("-");
 #define msgstr_faultDEP 13
 
 const TCHAR *msgstringsJ[] = {
-	T("%s threadで、%s異常が発生しました。終了します。\n")
+	T("%s で、%s異常の対処ができなかったため、終了します。\n")
 	T("  詳細\tWin%d.%d,") MSGVER T("\n%s\n%s%s"), // 0 msgstr_fault
 
 	T("例外 %XH"), // 1 msgstr_except
@@ -572,6 +572,32 @@ typedef struct {
 volatile DWORD PPxUnhandledExceptionFilterMainCount = 0;
 volatile PVOID PPxUnhandledExceptionFilterOldAddress;
 
+void GetExceptionCodeText(EXCEPTION_RECORD *ExceptionRecord, const TCHAR **Msg, TCHAR *exceptionbuf, const TCHAR **Comment)
+{
+	if ( (ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) ||
+		 (ExceptionRecord->ExceptionCode == EXCEPTION_IN_PAGE_ERROR) ){
+		DWORD rwmode = msgstr_faultread;
+		DWORD rwinfo = (DWORD)ExceptionRecord->ExceptionInformation[0];
+
+		if ( rwinfo ){
+			rwmode = (rwinfo == 8) ? msgstr_faultDEP : msgstr_faultwrite;
+		}
+		wsprintf(exceptionbuf,Msg[msgstr_memaddress],
+				ExceptionRecord->ExceptionInformation[1],Msg[rwmode]);
+		if ( (Comment != NULL) &&
+			 (ExceptionRecord->ExceptionAddress >= FUNCCAST(void *,DefCust)) &&
+			 (ExceptionRecord->ExceptionAddress <= FUNCCAST(void *,GetCustDword)) ){
+			*Comment = Msg[msgstr_brokencust];
+		}
+	}else if ( ExceptionRecord->ExceptionCode == EXCEPTION_INT_DIVIDE_BY_ZERO){
+		tstrcpy(exceptionbuf,Msg[msgstr_div0]);
+	}else if ( ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW ){
+		tstrcpy(exceptionbuf,Msg[msgstr_stackflow]);
+	}else{
+		wsprintf(exceptionbuf,Msg[msgstr_except],ExceptionRecord->ExceptionCode);
+	}
+}
+
 DWORD WINAPI PPxUnhandledExceptionFilterMain(ExceptionData *EP)
 {
 	EXCEPTION_RECORD *ExceptionRecord;
@@ -585,7 +611,7 @@ DWORD WINAPI PPxUnhandledExceptionFilterMain(ExceptionData *EP)
 
 	THREADSTRUCT *tstruct;
 
-	TCHAR exceptionbuf[128],stackinfo[SHOWSTACKSBUFSIZE + 16],*stackptr;
+	TCHAR exceptionbuf[256],stackinfo[SHOWSTACKSBUFSIZE + 16],*stackptr;
 	const TCHAR **Msg = msgstringsE;
 	const TCHAR *Comment = NilStr;
 	int result = 0;
@@ -597,33 +623,22 @@ DWORD WINAPI PPxUnhandledExceptionFilterMain(ExceptionData *EP)
 	ExceptionRecord = ExceptionInfo->ExceptionRecord;
 
 	// 例外詳細 exception
-	if ( (ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) ||
-		 (ExceptionRecord->ExceptionCode == EXCEPTION_IN_PAGE_ERROR) ){
-		DWORD rwmode = msgstr_faultread;
-		DWORD rwinfo = (DWORD)ExceptionRecord->ExceptionInformation[0];
+	GetExceptionCodeText(ExceptionRecord, Msg, exceptionbuf, &Comment);
 
-		if ( rwinfo ){
-			rwmode = (rwinfo == 8) ? msgstr_faultDEP : msgstr_faultwrite;
-		}
-		wsprintf(exceptionbuf,Msg[msgstr_memaddress],
-				ExceptionRecord->ExceptionInformation[1],Msg[rwmode]);
-		if ( (ExceptionRecord->ExceptionAddress >= FUNCCAST(void *,DefCust)) &&
-			 (ExceptionRecord->ExceptionAddress <= FUNCCAST(void *,GetCustDword)) ){
-			Comment = Msg[msgstr_brokencust];
-		}
-	}else if ( ExceptionRecord->ExceptionCode == EXCEPTION_INT_DIVIDE_BY_ZERO){
-		tstrcpy(exceptionbuf,Msg[msgstr_div0]);
-	}else if ( ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW ){
-		tstrcpy(exceptionbuf,Msg[msgstr_stackflow]);
-	}else{
-		wsprintf(exceptionbuf,Msg[msgstr_except],ExceptionRecord->ExceptionCode);
-	}
 	// PPxUnhandledExceptionFilterMain 内で落ちたかもしれないので前回のを表示
 	if ( PPxUnhandledExceptionFilterMainCount != 0 ){
-		wsprintf(stackinfo,T("n:") T(PTRPRINTFORMAT)
-				T("(PPLIB:") T(PTRPRINTFORMAT) T(")\np:") T(PTRPRINTFORMAT),
+		TCHAR *eb;
+		wsprintf(stackinfo,
+				T("n:") T(PTRPRINTFORMAT) T("(PPLIB:") T(PTRPRINTFORMAT)
+				T(")\np:") T(PTRPRINTFORMAT),
 				ExceptionRecord->ExceptionAddress,DLLhInst,
 				PPxUnhandledExceptionFilterOldAddress);
+		eb = exceptionbuf + tstrlen(exceptionbuf);
+		*eb++ = '\n';
+		*eb++ = 'p';
+		*eb++ = ':';
+		GetExceptionCodeText(ExceptionRecord, Msg, eb, NULL);
+
 		ShowErrorDialog(Msg,msgstr_fault,msgexfthread,exceptionbuf,stackinfo,Msg[msgstr_deepprom]);
 		ExitProcess(ExceptionRecord->ExceptionCode);
 		return EXCEPTION_EXECUTE_HANDLER;
@@ -797,7 +812,7 @@ DWORD WINAPI PPxUnhandledExceptionFilterMain(ExceptionData *EP)
 		( (WinType == WINTYPE_VISTA) || // ← SHGetFileInfo が DOS EXE で落ちる対策、XP,7,10 では問題なし
 		  (tstrstr(stackinfo,T("SS1H001")) != 0) ||
 		  (tstrstr(stackinfo,T("SugarSyncShellExt")) != 0) ||
-		  (tstrstr(stackinfo,T("LdrResSearchResource")) != 0) ||
+		  (tstrstr(stackinfo,T("Resource")) != 0) || // LdrResSearchResource, FindResourceEx, BaseDllMapResourceId
 		  (tstrstr(stackinfo,T("TortoiseSVN")) != 0) ||
 		  (tstrstr(stackinfo,T("libapr_tsvn")) != 0) ) ){
 		result = IDNO;

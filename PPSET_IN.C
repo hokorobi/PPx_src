@@ -14,7 +14,7 @@ const DWORD JointMode[] = {
 	0x18f	//1 1000 1111	IDR_PPC_JOIN_P
 };
 
-#if defined(UNICODEBINARY) || defined(UNICODE)
+#if defined(UNICODE)
 	#define MAKESHORTCUTT MAKESHORTCUTW
 #else
 	#define MAKESHORTCUTT MAKESHORTCUTA
@@ -30,21 +30,9 @@ const TCHAR Str_DisplayIcon[] = T("DisplayIcon");
 
 HRESULT MakeShortCutS(const TCHAR *LinkedFile,const TCHAR *LinkFname,const TCHAR *DestPath)
 {
-#ifdef UNICODEBINARY
-	WCHAR LinkedFileW[MAX_PATH],LinkFnameW[MAX_PATH],DestPathW[MAX_PATH];
-
-	if ( DMakeShortCut == NULL ) return E_NOTIMPL;
-
-	AnsiToUnicode(LinkedFile,LinkedFileW,MAX_PATH);
-	AnsiToUnicode(LinkFname,LinkFnameW,MAX_PATH);
-	AnsiToUnicode(DestPath,DestPathW,MAX_PATH);
-
-	return DMakeShortCut(LinkedFileW,LinkFnameW,DestPathW);
-#else
 	if ( DMakeShortCut == NULL ) return E_NOTIMPL;
 
 	return DMakeShortCut(LinkedFile,LinkFname,DestPath);
-#endif
 }
 
 // 階層ディレクトリの一括作成 -------------------------------------------------
@@ -233,10 +221,13 @@ BOOL InstallMain(HWND hWnd)
 //===================================== 上書きの場合のバックアップ ============
 	SetupResult = SRESULT_NOERROR;
 	if ( XX_setupedPPx[0] ){ // 上書きインストール...backup
+		const TCHAR *destpath;
+
 		CloseAllPPxLocal(XX_setupedPPx,FALSE);
-		wsprintf(bufT,T("\"%s\\") T(CSEXE) T("\" CD \"%s\\PPXold.CFG\""),XX_setupedPPx,XX_setupedPPx);
+		destpath = (XX_setupedPPx[0] != '?') ? XX_setupedPPx : T(".");
+		wsprintf(bufT, T("\"%s\\") T(CSEXE) T("\" CD \"%s\\PPXold.CFG\""), destpath, destpath);
 		Cmd(bufT);
-		wsprintf(bufT,MessageStr[MSG_BACKUP],XX_setupedPPx);
+		wsprintf(bufT, MessageStr[MSG_BACKUP], destpath);
 		SMessage(bufT); // ppcust の実行が終わるまで、待たせる必要がある
 	}
 //===================================== インストールディレクトリを作成 ========
@@ -366,7 +357,7 @@ BOOL InstallMain(HWND hWnd)
 	}
 	if ( errstate != 0 ) WriteResult(T("PPXDEF.CFG"),RESULT_FAULT);
 	if ( XX_setupedPPx[0] ){ // 上書きインストール...旧カスタマイズを削除
-		wsprintf(bufT,T("\"%s\\") T(CSEXE) T("\" CINIT"),XX_setupPPx);
+		wsprintf(bufT, T("\"%s\\") T(CSEXE) T("\" CINIT"), XX_setupPPx);
 		Cmd(bufT);
 	}
 							// PPLIBxxx.DLL をロード(＆初期カスタマイズ)
@@ -447,6 +438,6 @@ BOOL InstallMain(HWND hWnd)
 	}
 	return TRUE;
 #ifndef UNICODE
-  #undef bufT bufA
+  #undef bufT
 #endif
 }

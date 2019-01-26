@@ -104,7 +104,7 @@ typedef struct {
 #define PPXCMDID_GETTMPFILENAME	0x07ef	// PP_ExtractMacro で %@ を使ったとき、その名前の通知時に使用
 
 #define PPXCMDID_CHARTYPE		0x07fe	// 使用文字コード 0:Multibyte 1:UNICODE
-#define PPXCMDID_VERSION		0x07ff	// PPx のバージョンを返す
+#define PPXCMDID_VERSION		0x07ff	// PPx のバージョンを返す(10進 12300)
 
 //##  0x0800～0x0bff:			各種コマンド(PPxで解釈)。
 //   0x0800～0x09ff 取得系
@@ -664,19 +664,20 @@ extern PPXDLL HWND PPXAPI PPxRegistExEdit(PPXAPPINFO *info,HWND hED,int maxlen,c
 #define CMDSEARCH_ONE		B11	// ループしない
 #define CMDSEARCH_FLOAT		B12	// 部分一致検索
 #define CMDSEARCH_NOUNC		B13	// UNCは検索しない
-//#define CMDSEARCH_ROMA		B14	// ローマ字検索
+#define CMDSEARCH_ROMA		B14	// ローマ字検索(要 romahandle = 0 に初期化)
 // B16 以降は内部で使用する
 
 typedef struct {	// 編集処理共通構造体
 // 要設定
 	PPXAPPINFO *info;
-	HANDLE	hF;				// ファイル検索用ハンドル
+	HANDLE hF;				// ファイル検索用ハンドル
 // 設定不要
-	int		cmdsearch;		// コマンド検索モード CMDSEARCH_
-	TCHAR	Fsrc[VFPS+4];	// ファイル検索・連続検索用検索文字列
-	TCHAR	Fname[VFPS];	// ファイル検索・連続検索用キャッシュ
-	TCHAR	*FnameP;		// ファイル検索・連続検索用書込位置
-	TCHAR	*Fword;
+	int cmdsearch;		// コマンド検索モード CMDSEARCH_
+	TCHAR Fsrc[VFPS+4];	// ファイル検索・連続検索用検索文字列
+	TCHAR Fname[VFPS];	// ファイル検索・連続検索用キャッシュ
+	TCHAR *FnameP;		// ファイル検索・連続検索用書込位置
+	TCHAR *Fword;
+	DWORD_PTR romahandle;	// CMDSEARCH_ROMA 指定時要 0 設定
 } ESTRUCT;
 
 typedef struct {
@@ -1002,6 +1003,7 @@ typedef struct {
 } DYNAMICMENUSTRUCT;
 
 extern PPXDLL HMENU PPXAPI InitDynamicMenu(DYNAMICMENUSTRUCT *dms, const TCHAR *barname /* static! */, const PPXINMENUBAR *inmenu);
+extern PPXDLL void PPXAPI FreeDynamicMenu(DYNAMICMENUSTRUCT *dms);
 extern PPXDLL void PPXAPI DynamicMenu_InitMenu(DYNAMICMENUSTRUCT *dms, HMENU hMenuBar, BOOL showbar);
 extern PPXDLL BOOL PPXAPI DynamicMenu_InitPopupMenu(DYNAMICMENUSTRUCT *dms, HMENU hPopupMenu, PPXAPPINFO *info);
 extern PPXDLL void PPXAPI InitSystemDynamicMenu(DYNAMICMENUSTRUCT *dms, HWND hWnd);
@@ -1283,9 +1285,10 @@ extern PPXDLL int PPXAPI ReceiveStrings(const TCHAR *ID,TCHAR *str);
 #define CGETW_SAVEFOCUS	-2	// Focus 保存,要 RegNo
 #define CGETW_GETFOCUS	-3	// Focus 取得,RegNo 不要
 #define CGETW_GETFOCUSPAIR	-4	// Focus 窓の反対窓取得,RegNo 不要
+#define CGETW_GETCOMBOHWND	8	// 指定ID(0-25)のCombo hWnd取得
 // 'A'-'Z':直接指定
-extern PPXDLL HWND PPXAPI PPcGetWindow(int RegNo,int d);
-extern PPXDLL void PPXAPI PPcOldPath(INT_PTR RegNo,DWORD join,TCHAR *str);
+extern PPXDLL HWND PPXAPI PPcGetWindow(int RegNo, int direction);
+extern PPXDLL void PPXAPI PPcOldPath(INT_PTR RegNo, DWORD join, TCHAR *str);
 extern PPXDLL HWND PPXAPI PPxCombo(HWND hWnd);
 
 //-------------------------------------------------------------------- PPV 関連

@@ -193,7 +193,7 @@ class CDropTarget:public IDropTarget,private PPcDropTargetBase{
 
 		STDMETHODIMP QueryDrop(DWORD grfKeyState,POINTL *pt,DWORD *pdwEffect);
 
-		void DropDDFormat(LPDATAOBJECT pDataObj,POINTL *pt,DWORD pdwEffect);
+		BOOL DropDDFormat(LPDATAOBJECT pDataObj,POINTL *pt,DWORD pdwEffect);
 		BOOL DropEtcFormat(LPDATAOBJECT pDataObj,POINTL *pt,DWORD pdwEffect);
 		STDMETHODIMP DropPidlLink(LPDATAOBJECT pDataObj,DWORD pdwEffect);
 #if USE_URLDROP

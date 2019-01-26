@@ -39,7 +39,7 @@ void CALLBACK DrawTimerProc(HWND hWnd,UINT unuse1,UINT_PTR unuse2,DWORD unuse3)
 }
 #endif
 
-void Isearch(HWND hWnd,HWND hEditWnd)
+void Isearch(PPV_APPINFO *vinfo,HWND hEditWnd)
 {
 	VOsel.VSstring[0] = '\0';
 	GetWindowText(hEditWnd,VOsel.VSstring,TSIZEOF(VOsel.VSstring));
@@ -56,7 +56,7 @@ void Isearch(HWND hWnd,HWND hEditWnd)
 
 	if ( VOsel.VSstring[0] == '\0' ){
 		VOsel.highlight = FALSE;
-		InvalidateRect(hWnd,NULL,TRUE);
+		InvalidateRect(vinfo->info.hWnd,NULL,TRUE);
 	}else{
 		#ifdef UNICODE
 			UnicodeToAnsi(VOsel.VSstringW,VOsel.VSstringA,VFPS);
@@ -70,7 +70,7 @@ void Isearch(HWND hWnd,HWND hEditWnd)
 			MoveCsrkey(0,BackupOffY - VOi->offY,FALSE);
 		}
 		VOsel.lastY = BackuplastY;
-		DoFind(hWnd,2);
+		DoFind(vinfo->info.hWnd,2);
 	}
 }
 
@@ -101,7 +101,7 @@ void GetSelectText(TCHAR *destptr)
 	}
 }
 
-LRESULT PPvPPxCommand(HWND hWnd,WPARAM wParam,LPARAM lParam)
+LRESULT PPvPPxCommand(PPV_APPINFO *vinfo, WPARAM wParam, LPARAM lParam)
 {
 	switch ( LOWORD(wParam) ){
 		case K_EXTRACT: {
@@ -111,7 +111,7 @@ LRESULT PPvPPxCommand(HWND hWnd,WPARAM wParam,LPARAM lParam)
 					FILE_MAP_ALL_ACCESS,0,0,CMDLINESIZE);
 			if ( p == NULL ) break;
 
-			PP_ExtractMacro(hWnd,&PPvInfo.info,NULL,p,p,0);
+			PP_ExtractMacro(vinfo->info.hWnd,&vinfo->info,NULL,p,p,0);
 			UnmapViewOfFile(p);
 			CloseHandle((HANDLE)lParam);
 			break;
@@ -127,7 +127,7 @@ LRESULT PPvPPxCommand(HWND hWnd,WPARAM wParam,LPARAM lParam)
 				StopPopMsg(PMF_ALL);
 			}else{
 				SetPopMsg(POPMSG_NOLOGMSG,(TCHAR *)lParam);
-				UpdateWindow_Part(hWnd);
+				UpdateWindow_Part(vinfo->info.hWnd);
 			}
 			return 1;
 
@@ -136,7 +136,7 @@ LRESULT PPvPPxCommand(HWND hWnd,WPARAM wParam,LPARAM lParam)
 			break;
 
 		case K_EDITCHANGE:
-			Isearch(hWnd,(HWND)lParam);
+			Isearch(vinfo,(HWND)lParam);
 			break;
 
 /* XWIN_HIDETASK で一体化PPcに埋め込む為の試験コード
@@ -145,7 +145,7 @@ LRESULT PPvPPxCommand(HWND hWnd,WPARAM wParam,LPARAM lParam)
 				ShowWindow(hWnd,SW_HIDE);
 				return 0;
 			}
-			PPvCommand(&PPvInfo,LOWORD(wParam));
+			PPvCommand(vinfo,LOWORD(wParam));
 			return 0;
 */
 		case KCW_captureEx:
@@ -157,7 +157,7 @@ LRESULT PPvPPxCommand(HWND hWnd,WPARAM wParam,LPARAM lParam)
 		// default へ
 
 		default:
-			PPvCommand(&PPvInfo,LOWORD(wParam));
+			PPvCommand(vinfo,LOWORD(wParam));
 	}
 	return 0;
 }
@@ -169,19 +169,19 @@ int CallKeyHook(WORD key)
 
 	keyhookinfo.key = key;
 	pmp.keyhook = &keyhookinfo;
-	return CallModule(&PPvInfo.info,PPXMEVENT_KEYHOOK,pmp,KeyHookEntry);
+	return CallModule(&vinfo.info,PPXMEVENT_KEYHOOK,pmp,KeyHookEntry);
 }
 
-void ExecDualParam(HWND hWnd,const TCHAR *param)
+void ExecDualParam(PPV_APPINFO *vinfo, const TCHAR *param)
 {
 	if ( (UTCHAR)*param == EXTCMD_CMD ){
-		PP_ExtractMacro(hWnd,&PPvInfo.info,NULL,param + 1,NULL,0);
+		PP_ExtractMacro(vinfo->info.hWnd, &vinfo->info, NULL, param + 1, NULL, 0);
 	}else{
 		const WORD *key;
 
 		if ( (UTCHAR)*param == EXTCMD_KEY ) param++;
 		key = (WORD *)param;
-		while( *key ) PPvCommand(&PPvInfo,*key++);
+		while( *key ) PPvCommand(vinfo, *key++);
 	}
 }
 
@@ -209,9 +209,9 @@ void PPvToolbarCommand(int id,int orcode)
 		if ( key == (K_s | K_raw | K_bs) ){
 			key = K_raw | K_c | K_bs;
 		}
-		PPvCommand(&PPvInfo,key);
+		PPvCommand(&vinfo,key);
 	}else{
-		ExecDualParam(hMainWnd,ptr);
+		ExecDualParam(&vinfo, ptr);
 	}
 }
 
@@ -238,7 +238,7 @@ LRESULT PPvNotify(NMHDR *nmh)
 #define RANGEOFFSET 1 // 少しずれても選べるようにする大きさ
 #define COffX ParamX	// istate == SELPOSCHANGE_OFFSET なら、カーソルX移動量
 #define CPosX ParamX	// istate == SELPOSCHANGE_PIX なら、ポイントX座標
-int CalcTextXPoint(int ParamX,int csrY,int istate)
+int CalcTextXPoint(int ParamX, int csrY, int istate)
 {
 	char buf[TEXTBUFSIZE],*p;
 #ifdef UNICODE
@@ -256,7 +256,7 @@ int CalcTextXPoint(int ParamX,int csrY,int istate)
 	MAKETEXTINFO mti;
 
 	if ( istate == SELPOSCHANGE_PIX ){ // 左マージンと行番号の幅を除去
-		CPosX -= (XV_left + XV_lleft) + VOi->offX * fontX;
+		CPosX -= (XV_left + XV_lleft) - VOi->offX * fontX;
 		leftX = CPosX + RANGEOFFSET;
 		if ( leftX < 0 ) leftX = 0;
 	}
@@ -316,7 +316,7 @@ int CalcTextXPoint(int ParamX,int csrY,int istate)
 	XV_bctl[2] = XV_bctl3bk;
 
 	// 表示に使用するフォントを選択
-	hDC = GetDC(hMainWnd);
+	hDC = GetDC(vinfo.info.hWnd);
 	switch ( VOi->ti[csrY].type ){
 		case VTYPE_IBM:
 			hUseFont = GetIBMFont();
@@ -460,7 +460,7 @@ int CalcTextXPoint(int ParamX,int csrY,int istate)
 		{
 			int length,result;
 
-			length = strlenW((WCHAR *)p);
+			length = strlenW32((WCHAR *)p);
 			if ( istate != SELPOSCHANGE_PIX ){ // カーソル移動：文字列内にいる
 				if ( (charX <= MaxcX) && ((charX + length) >= MaxcX) ){
 					GetTextExtentPoint32W(hDC,(WCHAR *)p,MaxcX - charX,&textsize);
@@ -571,7 +571,7 @@ int CalcTextXPoint(int ParamX,int csrY,int istate)
 	}
 fin:
 	SelectObject(hDC,hOldFont);
-	ReleaseDC(hMainWnd,hDC);
+	ReleaseDC(vinfo.info.hWnd,hDC);
 
 	VOsel.now.x.offset = charX;
 	VOsel.now.x.pix = PixX;
@@ -648,14 +648,14 @@ int GetPointY(int posY)
 
 void SetCursorCaret(SELPOSINFO *posinfo)
 {
-	if ( GetFocus() == hMainWnd ){
+	if ( GetFocus() == vinfo.info.hWnd ){
 		SetCaretPos(posinfo->x.pix - (VOi->offX * fontX) + XV_left + XV_lleft,
 				posinfo->y.pix - (VOi->offY * LineY) + BoxView.top);
 	}
-	DNotifyWinEvent(EVENT_OBJECT_FOCUS,hMainWnd,OBJID_CLIENT,posinfo->y.line + 1);
+	DNotifyWinEvent(EVENT_OBJECT_FOCUS,vinfo.info.hWnd,OBJID_CLIENT,posinfo->y.line + 1);
 }
 
-void MoveCsrkey(int offx,int offy,BOOL select)
+void MoveCsrkey(int offx, int offy, BOOL select)
 {
 	int newY;
 
@@ -663,18 +663,18 @@ void MoveCsrkey(int offx,int offy,BOOL select)
 
 	if ( (VOsel.cursor == FALSE) || !(vo_.DModeBit & VO_dmode_TEXTLIKE) ){
 		// ページモード／カーソル非表示
-		MoveCsr(offx,offy,FALSE);
-		if ( GetFocus() == hMainWnd ){
-			SetCaretPos(0,(LineY >> 1) + BoxView.top); // アクセシビリティ通知用
+		MoveCsr(offx, offy, FALSE);
+		if ( GetFocus() == vinfo.info.hWnd ){
+			SetCaretPos(0, (LineY >> 1) + BoxView.top); // アクセシビリティ通知用
 		}
-		DNotifyWinEvent(EVENT_OBJECT_FOCUS,hMainWnd,OBJID_CLIENT,VOi->offY + 1);
+		DNotifyWinEvent(EVENT_OBJECT_FOCUS, vinfo.info.hWnd, OBJID_CLIENT, VOi->offY + 1);
 		return;
 	}
 									// カーソルモード／カーソル表示中
 	if ( select == FALSE ){ // 非選択モード
 		if ( VOsel.select != FALSE ){ // 選択中なら解除
 			ResetSelect(FALSE);
-			InvalidateRect(hMainWnd,NULL,TRUE);
+			InvalidateRect(vinfo.info.hWnd, NULL, TRUE);
 			if ( VOsel.cursor != FALSE ){	// カーソルが外なら呼び戻す
 				if ( VOsel.now.y.line < VOi->offY ) VOsel.now.y.line = VOi->offY;
 				if ( VOsel.now.y.line >= (VOi->offY + VO_sizeY - 1) ){
@@ -687,7 +687,7 @@ void MoveCsrkey(int offx,int offy,BOOL select)
 			VOsel.select = TRUE;
 			VOsel.start = VOsel.now;
 			// FixSelectRange は後で実行されるので不要
-			InvalidateRect(hMainWnd,NULL,FALSE);
+			InvalidateRect(vinfo.info.hWnd, NULL, FALSE);
 		}
 	}
 									// y 範囲検査
@@ -704,7 +704,7 @@ void MoveCsrkey(int offx,int offy,BOOL select)
 		newlinemode = offx ? FALSE : X_vzs;
 		if ( VOsel.line != newlinemode ){
 			VOsel.line = newlinemode;
-			InvalidateRect(hMainWnd,NULL,FALSE);
+			InvalidateRect(vinfo.info.hWnd, NULL, FALSE);
 		}
 		// 表示を更新する領域を決定
 		oldY = VOsel.now.y.line;
@@ -715,7 +715,7 @@ void MoveCsrkey(int offx,int offy,BOOL select)
 			int oldpixx;
 
 			oldpixx = VOsel.now.x.pix;
-			CalcTextXPoint(VOsel.now.x.pix + XV_left + XV_lleft - VOi->offX * fontX,newY,SELPOSCHANGE_PIX);
+			CalcTextXPoint(VOsel.now.x.pix + XV_left + XV_lleft - VOi->offX * fontX, newY, SELPOSCHANGE_PIX);
 			VOsel.now.x.pix = oldpixx; // キャレットのX座標を維持する
 			// ↓選択しているときは、キャレット位置の補正をした方がよいか？
 //			if ( (VOsel.select != FALSE) && !X_vzs ) VOsel.posdiffX = 0;
@@ -727,17 +727,11 @@ void MoveCsrkey(int offx,int offy,BOOL select)
 				}else{
 					VOsel.now.y.line--;
 					VOsel.now.y.pix -= LineY;
-					CalcTextXPoint(MAX_MOVE_X,VOsel.now.y.line,SELPOSCHANGE_PIX);
+					CalcTextXPoint(MAX_MOVE_X, VOsel.now.y.line, SELPOSCHANGE_PIX);
 				}
 				VOsel.posdiffX = 0;
 			}else{
-				/*
-				if ( (VOsel.now.x.offset + offx) == 0 ){
-					VOsel.now.x.pix = 0;
-					VOsel.now.x.offset = 0;
-				}else
-				*/
-				if ( CalcTextXPoint(offx,newY,SELPOSCHANGE_OFFSET) ){
+				if ( CalcTextXPoint(offx, newY, SELPOSCHANGE_OFFSET) ){
 					if ( newY < (VOi->line - 1) ){ // 次の行に移動する
 						VOsel.now.y.line++;
 						VOsel.now.y.pix += LineY;
@@ -763,15 +757,15 @@ void MoveCsrkey(int offx,int offy,BOOL select)
 		}
 		box.left = 0;
 		box.right = WndSize.cx;
-		InvalidateRect(hMainWnd,&box,TRUE);
+		InvalidateRect(vinfo.info.hWnd, &box, TRUE);
 		if ( !FullDraw ){ // 旧カーソルを消去
-			UpdateWindow_Part(hMainWnd);
+			UpdateWindow_Part(vinfo.info.hWnd);
 		}
 		// 表示範囲チェック
 		{
 			int cX;
 
-			cX = VOsel.now.x.pix / fontX;
+			cX = (VOsel.now.x.pix + XV_left + XV_lleft) / fontX;
 			if( cX < (VOi->offX + CARETSCROLLMARGIN) ){
 				int delta = cX - (VOi->offX + CARETSCROLLMARGIN);
 				if ( delta < offx ) offx = delta;
@@ -792,15 +786,15 @@ void MoveCsrkey(int offx,int offy,BOOL select)
 			offy = 0;
 		}
 		if( offy || offx ){ // スクロール有り
-			InvalidateRect(hMainWnd,&box,FALSE);
+			InvalidateRect(vinfo.info.hWnd,&box,FALSE);
 			MoveCsr(offx,offy,FALSE);	// スクロール
 		}
 		box.top = (newY - VOi->offY) * LineY + BoxView.top;
 		box.bottom = box.top + LineY;
-		InvalidateRect(hMainWnd,&box,FALSE); // 新カーソルを表示
-		if ( !FullDraw ) UpdateWindow_Part(hMainWnd);
-		InvalidateRect(hMainWnd,&BoxStatus,FALSE); // ステータス変更
-		if ( FullDraw ) UpdateWindow_Part(hMainWnd);
+		InvalidateRect(vinfo.info.hWnd,&box,FALSE); // 新カーソルを表示
+		if ( !FullDraw ) UpdateWindow_Part(vinfo.info.hWnd);
+		InvalidateRect(vinfo.info.hWnd,&BoxStatus,FALSE); // ステータス変更
+		if ( FullDraw ) UpdateWindow_Part(vinfo.info.hWnd);
 	}
 	SetCursorCaret(&VOsel.now);
 }
@@ -911,7 +905,7 @@ BOOL USEFASTCALL WmCopyData(HWND hWnd,COPYDATASTRUCT *copydata)
 			if ( copydata->cbData >= sizeof(cmd) ) return FALSE;
 			tstrcpy(cmd,(TCHAR *)copydata->lpData);
 			ReplyMessage(TRUE);
-			PP_ExtractMacro(hWnd,&PPvInfo.info,NULL,cmd,NULL,0);
+			PP_ExtractMacro(hWnd,&vinfo.info,NULL,cmd,NULL,0);
 			return TRUE;
 		}
 	}
@@ -932,7 +926,7 @@ void USEFASTCALL DoDropFiles(HWND hWnd,HDROP hDrop)
 
 		DragQueryFile(hDrop,0,name,TSIZEOF(name));
 		DragFinish(hDrop);
-		OpenAndFollowViewObject(hWnd,name,NULL,NULL,0);
+		OpenAndFollowViewObject(&vinfo,name,NULL,NULL,0);
 		SetForegroundWindow(hWnd);
 		if ( VO_PrintMode == PRINTMODE_ONE ) PPVPrint(hWnd);
 	}
@@ -1168,7 +1162,7 @@ void CancelMouse(HWND hWnd)
 	SetCursorIcon(hWnd,IDC_ARROW);
 }
 
-void USEFASTCALL RunGesture(HWND hWnd,MOUSESTATE *ms)
+void USEFASTCALL RunGesture(PPV_APPINFO *vinfo, MOUSESTATE *ms)
 {
 	TCHAR buf[CMDLINESIZE];
 
@@ -1176,7 +1170,7 @@ void USEFASTCALL RunGesture(HWND hWnd,MOUSESTATE *ms)
 	wsprintf(buf,T("RG_%s"),ms->gesture.step);
 	ms->gesture.count = 0;
 	if ( NO_ERROR == GetCustTable(T("MV_click"),buf,buf,sizeof(buf)) ){
-		ExecDualParam(hWnd,buf);
+		ExecDualParam(vinfo, buf);
 	}
 }
 
@@ -1296,7 +1290,7 @@ void UpMouse(HWND hWnd,MOUSESTATE *ms,int button,int oldmode,LPARAM lParam)
 	KillTimer(hWnd,TIMERID_DRAGSCROLL);
 	if ( oldmode == MOUSEMODE_DRAG ){
 		if ( button == XV_DragGes ){
-			if ( ms->gesture.count ) RunGesture(hWnd,ms);
+			if ( ms->gesture.count ) RunGesture(&vinfo ,ms);
 			return;
 		}
 
@@ -1367,7 +1361,7 @@ void UpMouse(HWND hWnd,MOUSESTATE *ms,int button,int oldmode,LPARAM lParam)
 		 (ms->PushTick > MOUSE_LONG_PUSH_TIME) ){ // 長押しチェック
 		click[1] = 'H';
 		click[2] = '\0';
-		if ( IsTrue(PPvMouseCommandPos(hWnd,&pos,click,posY)) ) return;
+		if ( IsTrue(PPvMouseCommandPos(&vinfo,&pos,click,posY)) ) return;
 		click[1] = '\0';
 	}
 
@@ -1376,11 +1370,11 @@ void UpMouse(HWND hWnd,MOUSESTATE *ms,int button,int oldmode,LPARAM lParam)
 		const TCHAR *p;
 
 		p = HiddenMenu_cmd(XV.HiddenMenu.data[Mpos]);
-		ExecDualParam(hWnd,p);
+		ExecDualParam(&vinfo, p);
 		return;
 	}
 	if ( oldmode != MOUSEMODE_DRAG ){
-		if ( IsTrue(PPvMouseCommandPos(hWnd,&pos,click,posY)) ){
+		if ( IsTrue(PPvMouseCommandPos(&vinfo,&pos,click,posY)) ){
 			if ( button == XV_DragSel ){
 				if ( VOsel.select != FALSE ){
 					ResetSelect(TRUE);
@@ -1412,7 +1406,7 @@ void DoubleClickMouse(HWND hWnd,MOUSESTATE *ms)
 	type[0] = PPxMouseButtonChar[ms->PushButton];
 	type[1] = 'D';
 	type[2] = '\0';
-	PPvMouseCommandPos(hWnd,&ms->PushScreenPoint,type,ms->PushClientPoint.y);
+	PPvMouseCommandPos(&vinfo,&ms->PushScreenPoint,type,ms->PushClientPoint.y);
 }
 
 void WheelMouse(HWND hWnd,MOUSESTATE *ms,WPARAM wParam,LPARAM lParam)
@@ -1458,7 +1452,7 @@ void WheelMouse(HWND hWnd,MOUSESTATE *ms,WPARAM wParam,LPARAM lParam)
 			const TCHAR *p = T("C");
 
 			hPPcWnd = (hLastViewReqWnd != NULL) ?
-					hLastViewReqWnd : GetPPxhWndFromID(&PPvInfo.info,&p,NULL);
+					hLastViewReqWnd : GetPPxhWndFromID(&vinfo.info,&p,NULL);
 			if ( hPPcWnd != NULL ){
 				PostMessage(hPPcWnd,WM_PPXCOMMAND,
 					now < 0 ? (K_raw | K_dw) : (K_raw | K_up),0);
@@ -1471,12 +1465,12 @@ void WheelMouse(HWND hWnd,MOUSESTATE *ms,WPARAM wParam,LPARAM lParam)
 	}
 }
 
-void H_WheelMouse(HWND hWnd,WPARAM wParam,LPARAM lParam)
+void H_WheelMouse(PPV_APPINFO *vinfo, WPARAM wParam, LPARAM lParam)
 {
 	POINT pos;
 
 	LPARAMtoPOINT(pos,lParam);
-	PPvMouseCommandPos(hWnd,&pos,((short)HIWORD(wParam) < 0) ? T("H") : T("I"),pos.y);
+	PPvMouseCommandPos(vinfo, &pos,((short)HIWORD(wParam) < 0) ? T("H") : T("I"),pos.y);
 }
 
 LRESULT USEFASTCALL PPvWmCommand(HWND hWnd,WPARAM wParam,LPARAM lParam)
@@ -1490,7 +1484,7 @@ LRESULT USEFASTCALL PPvWmCommand(HWND hWnd,WPARAM wParam,LPARAM lParam)
 	switch ( LOWORD(wParam) >> 12){
 		case (IDW_MENU >> 12):
 			PopupPosType = PPT_MOUSE;
-			CommandDynamicMenu(&DynamicMenu,&PPvInfo.info,wParam);
+			CommandDynamicMenu(&DynamicMenu,&vinfo.info,wParam);
 			break;
 
 		case 0xf: {				// f000-ffff System Menu ==============
@@ -1659,13 +1653,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 #endif
 	PPxCommonExtCommand(K_TBB_INIT,1);
 #if USEDELAYCURSOR || SHOWFRAMERATE
-	SetTimer(hMainWnd,TIMERID_DRAW,TIMERRATE_DRAW,DrawTimerProc);
+	SetTimer(vinfo.info.hWnd,TIMERID_DRAW,TIMERRATE_DRAW,DrawTimerProc);
 #endif
 	if ( FirstCommand != NULL ){
-		PostMessage(hMainWnd,WM_PPXCOMMAND,K_FIRSTCMD,0);
+		PostMessage(vinfo.info.hWnd,WM_PPXCOMMAND,K_FIRSTCMD,0);
 	}
 	if ( IsExistCustTable(T("KV_main"),T("FIRSTEVENT")) ){
-		PostMessage(hMainWnd,WM_PPXCOMMAND,K_E_FIRST,0);
+		PostMessage(vinfo.info.hWnd,WM_PPXCOMMAND,K_E_FIRST,0);
 	}
 										// メインループ -----------------------
 	while( (int)GetMessage(&msg,NULL,0,0) > 0 ){
@@ -1719,7 +1713,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 				hDispTypeMenu = NULL;
 				break;
 			}
-			DynamicMenu_InitPopupMenu(&DynamicMenu,(HMENU)wParam,&PPvInfo.info);
+			DynamicMenu_InitPopupMenu(&DynamicMenu,(HMENU)wParam,&vinfo.info);
 			break;
 
 		case WM_SETFOCUS:
@@ -1813,8 +1807,8 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 			break;
 							// ホイールの移動(左右,Vista以降)
 		case WM_MOUSEHWHEEL:
-			DxTransformPoint(DxDraw,&lParam);
-			H_WheelMouse(hWnd,wParam,lParam);
+			DxTransformPoint(DxDraw, &lParam);
+			H_WheelMouse(&vinfo, wParam, lParam);
 			break;
 
 		case WM_MOUSEACTIVATE:
@@ -1859,7 +1853,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 				if ( CallKeyHook(key) != PPXMRESULT_SKIP ) break;
 			}
 
-			if ( PPvCommand(&PPvInfo,key) == ERROR_INVALID_FUNCTION ){
+			if ( PPvCommand(&vinfo,key) == ERROR_INVALID_FUNCTION ){
 				if ( X_alt && (wParam == VK_MENU) ) break;
 				return DefWindowProc(hWnd,message,wParam,lParam);
 			}
@@ -1892,7 +1886,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 					}
 				}
 
-				if ( PPvCommand(&PPvInfo,FixCharKeycode(key)) == NO_ERROR ){
+				if ( PPvCommand(&vinfo,FixCharKeycode(key)) == NO_ERROR ){
 					break;
 				}
 			}
@@ -1951,8 +1945,8 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 			return DefWindowProc(hWnd,message,wParam,lParam);
 */
 		case WM_SYSCOLORCHANGE:
-			PPvCommand(&PPvInfo, K_Scust);
-			PPvCommand(&PPvInfo, K_Lcust);
+			PPvCommand(&vinfo, K_Scust);
+			PPvCommand(&vinfo, K_Lcust);
 			FreeOffScreen(&BackScreen);
 			break;
 
@@ -1989,7 +1983,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 							// 知らないメッセージ -----------------------------
 		default:
 			if ( message == WM_PPXCOMMAND ){
-				return PPvPPxCommand(hWnd,wParam,lParam);
+				return PPvPPxCommand(&vinfo, wParam, lParam);
 			}
 			return DefWindowProc(hWnd,message,wParam,lParam);
 	}

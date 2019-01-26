@@ -57,7 +57,7 @@ BOOL USEFASTCALL IsTouchMessage(void)
 }
 
 #pragma argsused
-VOID CALLBACK DelayLogShowProc(HWND hWnd,UINT uMsg,UINT_PTR idEvent,DWORD dwTime)
+VOID CALLBACK DelayLogShowProc(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 {
 	UnUsedParam(uMsg);UnUsedParam(dwTime);
 
@@ -65,6 +65,24 @@ VOID CALLBACK DelayLogShowProc(HWND hWnd,UINT uMsg,UINT_PTR idEvent,DWORD dwTime
 	SendMessage(hWnd,WM_SETREDRAW,TRUE,0);
 	InvalidateRect(hWnd,NULL,TRUE);
 	SendMessage(hWnd,EM_SCROLLCARET,0,0);
+	return;
+}
+
+#pragma argsused
+VOID CALLBACK HoverTipTimerProc(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
+{
+	PPC_APPINFO *cinfo;
+	UnUsedParam(uMsg);UnUsedParam(dwTime);
+
+	KillTimer(hWnd,idEvent);
+	cinfo = (PPC_APPINFO *)GetWindowLongPtr(hWnd,GWLP_USERDATA);
+	if ( cinfo->e.cellPoint >= 0 ){
+		setflag(X_stip,(STIP_NOW | STIP_HOVER));
+		cinfo->X_stip_mode = stip_mode_fileinfo;
+		// 仮。dw版だと合わない
+		RefleshCell(cinfo,cinfo->e.cellPoint);
+		UpdateWindow_Part(cinfo->info.hWnd);
+	}
 	return;
 }
 
@@ -1177,8 +1195,16 @@ void WMMouseMove(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 
 				oldn = cinfo->e.cellPoint;
 				cinfo->e.cellPoint = pn;
+
 				if ( pn >= 0 ) RefleshCell(cinfo,pn);
 				if ( oldn >= 0 ) RefleshCell(cinfo,oldn);
+				if ( cinfo->X_stip_hover ){
+					HideFileNameTip(cinfo);
+					KillTimer(cinfo->info.hWnd, TIMERID_HOVERTIP);
+					if ( pn >= 0 ){
+						SetTimer(cinfo->info.hWnd, TIMERID_HOVERTIP, 500,HoverTipTimerProc);
+					}
+				}
 				pn = -2;
 			}
 		}
@@ -1242,7 +1268,7 @@ void WMMouseMove(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 
 			if ( cinfo->Mpos >= 0 ){ // 隠しメニューが有効の時
 				cinfo->Mpos = -1;
-				InvalidateRect(cinfo->info.hWnd,&cinfo->BoxInfo,FALSE);
+				InvalidateRect(cinfo->info.hWnd, &cinfo->BoxInfo, FALSE);
 			}
 
 			if ( (cinfo->PushArea == PPCR_CELLMARK) && (wParam & MK_LBUTTON) ){
@@ -1255,7 +1281,7 @@ void WMMouseMove(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 			MarkDragArea(cinfo,&area,MARK_REVERSE);
 			DrawDragFrame(cinfo->info.hWnd,&area);
 			if ( cinfo->PushArea != PPCR_CELLMARK ){
-				ExplorerTypeMark(cinfo,wParam);
+				ExplorerTypeMark(cinfo, wParam);
 			}
 			InvalidateRect(cinfo->info.hWnd,NULL,FALSE);
 			break;
@@ -1326,6 +1352,7 @@ void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo,WPARAM wParam)
 		if ( (wParam & MK_SHIFT) &&
 			 ((area == PPCR_CELLMARK) || (area == PPCR_CELLTEXT)) ){
 			ENTRYINDEX cellold;
+			ENTRYINDEX i, f;
 
 			cellold = cinfo->e.cellN;
 			if ( XC_msel[1] && (cinfo->e.markC > 0) ){
@@ -1336,19 +1363,14 @@ void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo,WPARAM wParam)
 				cellold = GetCellIndexFromCellData(cinfo,olddata);
 			}
 			cinfo->MarkMask = 0x1f;
-			if ( XC_msel[0] ){
-				MoveCellCsr(cinfo,n - cellold,&MarkClick);
+			if ( XC_msel[0] == 2 ) ClearMark(cinfo);
+			f = !IsCEL_Marked(n);
+			if ( n < cellold){
+				for ( i = n ; i <= cellold ; i++ ) CellMark(cinfo,i,f);
 			}else{
-				ENTRYINDEX i,f;
-
-				f = !IsCEL_Marked(n);
-				if ( n < cellold){
-					for ( i = n ; i <= cellold ; i++ ) CellMark(cinfo,i,f);
-				}else{
-					for ( i = cellold ; i <= n ; i++ ) CellMark(cinfo,i,f);
-				}
-				Repaint(cinfo);
+				for ( i = cellold ; i <= n ; i++ ) CellMark(cinfo,i,f);
 			}
+			Repaint(cinfo);
 			return;
 		}
 		// Ctrl + Lclick : マーク & カーソル移動 ------------------------------
@@ -1396,12 +1418,6 @@ void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo,WPARAM wParam)
 				return;
 #else
 				cinfo->MousePush = MOUSE_LDDCHECK;
-				// マーク無しで、単独右クリック解除時にマークを一つにする
-				if ( XC_msel[0] && !(wParam & (MK_SHIFT | MK_CONTROL)) ){
-					if ( !IsCEL_Marked(n) ){
-						ExplorerTypeMark_solo(cinfo,wParam,n);
-					}
-				}
 				MoveCellCsr(cinfo,n - cinfo->e.cellN,NULL);
 #endif
 			}
@@ -1741,14 +1757,14 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 			break;
 
 		case K_EXTRACT:{
-			TCHAR *p;
+			TCHAR *mptr;
 
-			p = MapViewOfFile((HANDLE)lParam,
+			mptr = MapViewOfFile((HANDLE)lParam,
 						FILE_MAP_ALL_ACCESS,0,0,CMDLINESIZE);
-			if ( p == NULL ) break;
+			if ( mptr == NULL ) break;
 
-			PP_ExtractMacro(cinfo->info.hWnd,&cinfo->info,NULL,p,p,XEO_EXTRACTEXEC);
-			UnmapViewOfFile(p);
+			PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, mptr, mptr, XEO_EXTRACTEXEC);
+			UnmapViewOfFile(mptr);
 			CloseHandle((HANDLE)lParam);
 			break;
 		}
@@ -1832,7 +1848,7 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 		case KC_GETSITEHWND: {
 			int site;
 
-			if ( (int)lParam < 0 ){ // KC_GETSITEHWND_BASEWND
+			if ( (int)lParam <= 0 ){ // KC_GETSITEHWND_BASEWND / KC_GETSITEHWND_CURRENT
 				return (LRESULT)( (cinfo->combo != 0) ? cinfo->hComboWnd : cinfo->info.hWnd);
 			}
 			if ( (int)lParam == KC_GETSITEHWND_PAIR ){
@@ -1845,7 +1861,7 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 
 			// KC_GETSITEHWND_LEFT / KC_GETSITEHWND_RIGHT
 			site = PPcGetSite(cinfo);
-			if ( site == 0 ) site = 1;
+			if ( site == PPCSITE_SINGLE ) site = PPCSITE_LEFT;
 			if ( (int)lParam == site ){ // 自窓側
 				return (LRESULT)cinfo->info.hWnd;
 			}else{ // 反対窓側
@@ -1909,7 +1925,7 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 			PPcCommand(cinfo,LOWORD(wParam));
 	}
 	DEBUGLOGC("WmPPxCommand %4x end",wParam);
-	return 0;
+	return NO_ERROR;
 }
 
 void WmClose(PPC_APPINFO *cinfo)
@@ -2092,7 +2108,7 @@ void SetSHNClipboardData(PPC_APPINFO *cinfo)
 
 		guiinfo.cbSize = sizeof(guiinfo);
 		if ( FALSE != DGetGUIThreadInfo(
-				GetWindowThreadProcessId(GetForegroundWindow(),NULL),
+				GetWindowThreadProcessId(GetForegroundWindow(), NULL),
 				&guiinfo) ){
 			HWND hTargetWnd;
 			hTargetWnd = guiinfo.hwndFocus ? guiinfo.hwndFocus : guiinfo.hwndActive;
@@ -2222,7 +2238,7 @@ void USEFASTCALL PPcWmSetFocus(HWND hWnd,PPC_APPINFO *cinfo)
 					0,0,0,0,SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
 			hDWP = DeferWindowPos(hDWP,hPairWnd,hWnd,
 					0,0,0,0,SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
-			EndDeferWindowPos(hDWP);
+			if ( hDWP != NULL ) EndDeferWindowPos(hDWP);
 		}
 	}
 	if ( ((XC_alst[ALST_ACTIVATE] >= ALSTV_UPD) || (cinfo->FDirWrite != FDW_NORMAL)) &&
@@ -2538,11 +2554,23 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 				}
 			}
 			break;
-/*
-		case WM_SETTINGCHANGE:
-			PostMessage(hWnd,lParam,K_SETTINGCHANGE);
+#if 0
+		case WM_SETTINGCHANGE: // ※一体化時は直接届かない
+			#ifdef UNICODE
+			if ( (wParam == 0) && (lParam != 0) && (((BYTE *)lParam)[0] != '\0') && (((BYTE *)lParam)[1] == '\0') )
+			#else
+			if ( (wParam == 0) && (lParam != 0) && (((BYTE *)lParam)[0] != '\0') && (((BYTE *)lParam)[1] != '\0') )
+			#endif
+			{
+				if ( tstricmp((TCHAR *)lParam, T("ImmersiveColorSet")) == 0 ){
+					PPcCommand(cinfo,K_Scust);
+					PPcCommand(cinfo,K_Lcust);
+					FreeOffScreen(&cinfo->bg);
+				}
+			}
+			//PostMessage(hWnd,lParam,K_SETTINGCHANGE);
 			return DefWindowProc(hWnd,message,wParam,lParam);
-*/
+#endif
 		case WM_SYSCOLORCHANGE:
 			PPcCommand(cinfo,K_Scust);
 			PPcCommand(cinfo,K_Lcust);
@@ -2557,7 +2585,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 		case WM_RENDERFORMAT:
 			if ( wParam == CF_TTEXT ){
 				SetTextClipboardData(cinfo);
-			}else if (wParam == CF_xSHELLIDLIST ){
+			}else if ( wParam == CF_xSHELLIDLIST ){
 				SetSHNClipboardData(cinfo);
 			}
 			break;
@@ -2569,6 +2597,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 
 		case WM_DESTROYCLIPBOARD: {
 			int i;
+
 			// CFSTR_PREFERREDDROPEFFECT はここで破棄してはいけないようだ
 			for ( i = 0 ; i < CLIPTYPES_DROPEFFECT/*CLIPTYPES-1*/ ; i++ ){
 				if ( cinfo->CLIPDATAS[i] != NULL ){

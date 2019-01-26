@@ -12,7 +12,7 @@
 #pragma hdrstop
 #include "PPC_GVAR.C"	// グローバルの実体定義
 
-void ComboFix(PPCSTARTPARAM *psp);
+BOOL ComboFix(PPCSTARTPARAM *psp);
 
 const TCHAR RunAlone[] = T("-alone");
 
@@ -62,8 +62,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		while ( next != NULL ){
 			if ( next->id.RegID[0] == '\0' ) break;
 			XMessage(NULL,NULL,XM_DbgLOG,T("PSPone RegID:%s RegMode:%d Pair:%d Combo:%d Lock:%d Pane:%d Path:%s"),
-				next->id.RegID,next->id.RegMode,next->id.Pair,
-				next->combo.use,next->combo.dirlock,next->combo.pane,
+				next->id.RegID, next->id.RegMode, next->id.Pair,
+				next->combo.use, next->combo.dirlock, next->combo.pane,
 				next->path);
 			next = PSPONE_next(next);
 		}
@@ -75,11 +75,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}else{
 		if ( X_combo ){
 			X_sps = psp.SingleProcess = TRUE;
-			ComboFix(&psp);
+			if ( ComboFix(&psp) == FALSE ){
+				result = EXIT_SUCCESS;
+				goto fin;
+			}
 		}
 
 		 if ( IsTrue(psp.SingleProcess) ){
-			if ( !psp.alone ){
+			if ( psp.ComboID == '\0' ){
 				if ( IsTrue(CallPPc(&psp,NULL)) ){
 					result = EXIT_SUCCESS;
 					goto fin;
@@ -110,7 +113,7 @@ fin:
 	return result;
 }
 
-void FindParamComboTarget(PPCSTARTPARAM *psp,TCHAR ID,int subid,BOOL dirlock,int showpane)
+void FindParamComboTarget(PPCSTARTPARAM *psp, TCHAR ID, int subid, BOOL dirlock, int showpane)
 {
 	PSPONE newpspo,*pspo,*foundPspo = NULL;
 
@@ -124,7 +127,7 @@ void FindParamComboTarget(PPCSTARTPARAM *psp,TCHAR ID,int subid,BOOL dirlock,int
 					return;
 				}
 			}else{ // 未定義IDの窓があれば利用
-				if ( pspo->combo.use ){
+				if ( pspo->combo.use != 0 ){
 					foundPspo = pspo;
 					// PPXREGIST_IDASSIGN 指定のが有るかもしれないので続行
 				}
@@ -132,13 +135,13 @@ void FindParamComboTarget(PPCSTARTPARAM *psp,TCHAR ID,int subid,BOOL dirlock,int
 			pspo = PSPONE_next(pspo);
 		}
 		if ( foundPspo != NULL ){
-			foundPspo->id.RegMode = PPXREGIST_IDASSIGN;
-			foundPspo->combo.dirlock = dirlock;
 			foundPspo->id.RegID[0] = 'C';
 			foundPspo->id.RegID[1] = '_';
 			foundPspo->id.RegID[2] = ID;
 			foundPspo->id.RegID[3] = '\0';
+			foundPspo->id.RegMode = PPXREGIST_IDASSIGN;
 			foundPspo->id.SubID = subid;
+			foundPspo->combo.dirlock = dirlock;
 			return;
 		}
 		psp->th.top -= TSTROFF(1); // 末端を除去
@@ -162,31 +165,57 @@ void FindParamComboTarget(PPCSTARTPARAM *psp,TCHAR ID,int subid,BOOL dirlock,int
 	psp->next = (PSPONE *)psp->th.bottom;
 }
 
-void ComboFix(PPCSTARTPARAM *psp)
+BOOL ComboFix(PPCSTARTPARAM *psp)
 {
-	TCHAR list[Panelistsize(Combo_Max_Base)],id[] = T("CBA");
+	TCHAR list[Panelistsize(Combo_Max_Base)], comboid[] = T("CBA");
 	TCHAR *listptr;
 	int showpane = PSPONE_PANE_DEFAULT;
 
-	if ( psp->alone ){
-		id[2] = (TCHAR)psp->alone;
+	if ( psp->ComboID != '\0' ){
+		comboid[2] = (TCHAR)psp->ComboID;
+		if ( comboid[2] == '@' ){
+			// ID を確保しないが、未使用 ID を得る
+			PPxRegist(NULL, comboid, PPXREGIST_COMBO_IDASSIGN);
+			psp->ComboID = comboid[2];
+		}
+		if ( IsTrue(psp->Reuse) ){
+			HWND hAloneWnd;
+
+			hAloneWnd = PPcGetWindow(psp->ComboID - 'A',CGETW_GETCOMBOHWND);
+			if ( hAloneWnd != NULL  ) { // 既存aloneを使用
+				CallPPc(psp, hAloneWnd);
+				if ( (psp->show != SW_SHOWNOACTIVATE) &&
+					 (psp->show != SW_SHOWMINNOACTIVE) ){
+					SetForegroundWindow(hAloneWnd);
+				}
+				return FALSE;
+			}
+		}
 	}else if ( PPxCombo(BADHWND) != NULL ){
 		// 普通の一体化時で、既に一体化窓があるときは、
 		// 既存一体化窓への追加なので何もしない
-		return;
+		return TRUE;
 	}else if ( IsTrue(psp->Reuse) ){
 		// -r 時、既に別のPPcがあるなら、CallPPc をさせる
-		if ( PPcGetWindow(0,CGETW_GETFOCUS) != NULL ) return;
+		if ( PPcGetWindow(0,CGETW_GETFOCUS) != NULL ) return TRUE;
 	}
 
-	if ( X_combos[1] & CMBS1_NORESTORETAB ) return;
+	if ( X_combos[1] & CMBS1_NORESTORETAB ) return TRUE;
+	if ( psp->usealone ) return TRUE; // alone 時はペインの再現を行わない
 	// 元の状態を取得
 	list[0] = '\0';
-	GetCustTable(T("_Path"),id,list,sizeof(list));
-	if ( (list[0] == '\0') || (list[1] == '\0') || (list[2] == '\0') ) return;
+	GetCustTable(T("_Path"),comboid,list,sizeof(list));
+	if ( (list[0] == '\0') || (list[1] == '\0') || (list[2] == '\0') ){
+		return TRUE;
+	}
 
 	if ( list[0] != '?' ) psp->Focus = list[0];
-	listptr = list + 2;
+	listptr = list + 1;
+	while ( Islower(*listptr) ) listptr++; // Z小文字部分をスキップ
+	// listptr は、右側窓を示す
+	if ( Isupper(*listptr) ) listptr++;
+	while ( Islower(*listptr) ) listptr++; // Z小文字部分をスキップ
+	// listptr は、ペイン・タブ並びの先頭を示す
 
 	{ //Z が複数ある場合、無効にする
 		TCHAR *Zfirst = tstrchr(listptr,'Z');
@@ -222,51 +251,54 @@ void ComboFix(PPCSTARTPARAM *psp)
 
 	if ( X_combos[0] & CMBS_TABEACHITEM ){
 		showpane = PSPONE_PANE_SETPANE;
-		if ( list[2] == '-' ){
+		if ( *listptr == '-' ){
 			listptr++;
 		}else{ // CMBS_TABEACHITEM 用の設定でないので並び順を廃棄
-			list[2] = '\0';
+			*listptr = '\0';
 		}
 	}else{
-		if ( list[2] == '-' ){ // CMBS_TABEACHITEM 用の設定なので並び順を廃棄
-			list[2] = '\0';
+		if ( *listptr == '-' ){ // CMBS_TABEACHITEM 用の設定なので並び順を廃棄
+			*listptr = '\0';
 		}
 	}
 	ComboPaneLayout = PPcStrDup(list);
 
 	if ( psp->next != NULL ){ // IDを割り振っていないコマンドラインパラメータにIDを割り当てる
 		int sindex = 0;
-		TCHAR *tmplistptr;
+		TCHAR *tmplist;
 		PSPONE *pspo = psp->next;
 
 		while ( pspo->id.RegID[0] != '\0' ){
 			if ( (pspo->id.RegMode <= PPXREGIST_IDASSIGN) &&
 				 (pspo->id.RegID[2] == '\0') ){ // ID を割り振っていない
-				tmplistptr = listptr;
-				for ( ; *tmplistptr ; ){
+				tmplist = listptr;
+				for ( ; *tmplist != '\0' ; ){
 					TCHAR ID;
-					int paneid,panesubid;
+					int panesubid;
 
-					ID = *tmplistptr++;
+					ID = *tmplist++;
 					if ( !Isupper(ID) ) continue;
 
-					if ( Islower(*tmplistptr) ){
+					if ( Islower(*tmplist) ){ // subid(ComboID)有り
 						panesubid = 0;
-						while ( Islower(*tmplistptr) ){
-							panesubid = (panesubid * 26) + (*tmplistptr++ - 'a');
+						tmplist++; // ComboID skip
+						while ( Islower(*tmplist) ){
+							panesubid = (panesubid * 26) + (*tmplist++ - 'a');
 						}
 					}else{
 						panesubid = -1;
 					}
 
-					if ( *tmplistptr == '$' ) tmplistptr++;
+					if ( *tmplist == '$' ) tmplist++;
 
-					paneid = 0;
-					if ( Isdigit(*tmplistptr) ){
-						while ( Isdigit(*tmplistptr) ){
-							paneid = (paneid * 10) + (*tmplistptr++ - '0');
+					if ( Isdigit(*tmplist) ){
+						int showid;
+
+						showid = 0;
+						while ( Isdigit(*tmplist) ){
+							showid = (showid * 10) + (*tmplist++ - '0');
 						}
-						if ( sindex == paneid ){
+						if ( sindex == showid ){
 							pspo->id.RegID[2] = ID;
 							pspo->id.RegID[3] = '\0';
 							pspo->id.SubID = panesubid;
@@ -274,7 +306,7 @@ void ComboFix(PPCSTARTPARAM *psp)
 							break;
 						}
 					}
-					while ( *tmplistptr && !Isupper(*tmplistptr) ) tmplistptr++;
+					while ( *tmplist && !Isupper(*tmplist) ) tmplist++;
 				}
 				sindex++;
 			}
@@ -283,7 +315,7 @@ void ComboFix(PPCSTARTPARAM *psp)
 	}
 
 	// 元の状態を再現する為の一覧を作成する
-	for ( ; *listptr ; ){
+	for ( ; *listptr != '\0' ; ){
 		TCHAR ID;
 		BOOL dirlock;
 		int panesubid;
@@ -291,8 +323,9 @@ void ComboFix(PPCSTARTPARAM *psp)
 		ID = *listptr++;
 		if ( !Isupper(ID) ) continue;
 
-		if ( Islower(*listptr) ){
+		if ( Islower(*listptr) ){ // subid有り
 			panesubid = 0;
+			listptr++; // ComboID部分をスキップ
 			while ( Islower(*listptr) ){
 				panesubid = (panesubid * 26) + (*listptr++ - 'a');
 			}
@@ -308,7 +341,7 @@ void ComboFix(PPCSTARTPARAM *psp)
 		}
 		while ( Isdigit(*listptr) ) listptr++;
 
-		FindParamComboTarget(psp,ID,panesubid,dirlock,showpane);
+		FindParamComboTarget(psp, ID, panesubid, dirlock, showpane);
 
 		if ( *listptr == '-' ){
 			listptr++;
@@ -330,6 +363,7 @@ void ComboFix(PPCSTARTPARAM *psp)
 		}
 	}
 #endif
+	return TRUE;
 }
 
 void USEFASTCALL PPCuiWithPathForLock(PPC_APPINFO *cinfo,const TCHAR *path)
@@ -381,16 +415,30 @@ void RunNewPPc(PPCSTARTPARAM *psp,MAINWINDOWSTRUCT *mws)
 	CloseHandle(CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)PPcMain,psp,0,&tmp));
 }
 
+int GetPPcSubID(const TCHAR *idstr, TCHAR *dest)
+{
+	const TCHAR *strptr;
+
+	strptr = idstr;
+	if ( Isupper(*strptr) ){
+		*dest++ = *strptr++;
+		while ( Islower(*strptr) ) *dest++ = *strptr++;
+	}
+	*dest = '\0';
+	return strptr - idstr;
+}
+
 BOOL CreatePPcWindow(PPCSTARTPARAM *psp,MAINWINDOWSTRUCT *mws)
 {
 	BOOL usepath = FALSE;
 	DWORD tmp;
-	TCHAR focus = '\0';
+	TCHAR focusID[REGEXTIDSIZE];
 	BOOL lastinit = TRUE;
 	PPC_APPINFO *cinfo;
 	int showpane = PSPONE_PANE_DEFAULT;
 	int select = FALSE;
 
+	focusID[0] = '\0';
 	if ( (psp != NULL) && (psp->next != NULL) ){
 		showpane = psp->next->combo.pane;
 		select = psp->next->combo.select;
@@ -402,25 +450,30 @@ BOOL CreatePPcWindow(PPCSTARTPARAM *psp,MAINWINDOWSTRUCT *mws)
 		return FALSE;
 	}
 	// cinfo は 0 fill 済み
-	//	cinfo.FirstCommand = NULL;
 	//********** ここで psp->next は次の pspo を示すようになる
-	if ( RegisterID(cinfo,psp,&usepath) == FALSE ){
-		HeapFree(hProcessHeap,0,cinfo);
-		return FALSE;
-	}
 	if ( psp != NULL ){
+		cinfo->combo = ( psp->next != NULL ) ? psp->next->combo.use : X_combo;
 		cinfo->WinPos.show = (BYTE)psp->show;
 	}else{
+		cinfo->combo = X_combo;
 		cinfo->WinPos.show = SW_SHOWDEFAULT;
 	}
+
 	if ( cinfo->combo ){
 		cinfo->combo = -1; // Size 変更通知を無効にする
 		if ( Combo.hWnd == NULL ){ // Combo を新規起動→左端をフォーカス指定
 			firstfocus = 1;
 		}
 		cinfo->hComboWnd = InitCombo(psp);
+		if ( cinfo->hComboWnd == NULL ) return FALSE;
 	}
-	InitPPcWindow(cinfo,usepath);
+
+	if ( RegisterID(cinfo, psp, &usepath) == FALSE ){
+		HeapFree(hProcessHeap, 0, cinfo);
+		return FALSE;
+	}
+
+	InitPPcWindow(cinfo, usepath);
 	if ( cinfo->swin & SWIN_WBOOT ){
 		if ( !(psp && psp->next && psp->next->id.RegID[0]) ){
 			// 後続の指定が無ければ、連結対象を開く
@@ -490,11 +543,19 @@ BOOL CreatePPcWindow(PPCSTARTPARAM *psp,MAINWINDOWSTRUCT *mws)
 	}
 	// 次のPPcを起動 / psp を解放
 	if ( psp != NULL ){
-		focus = psp->Focus;
+		if ( psp->Focus != 0 ){
+			focusID[0] = 'C';
+			if ( ComboPaneLayout == NULL ){
+				focusID[1] = psp->Focus;
+				focusID[2] = '\0';
+			}else{
+				GetPPcSubID(ComboPaneLayout, focusID + 1);
+			}
+		}
 		if ( psp->next != NULL ){
 			if ( psp->next->id.RegID[0] ){	// 次を起動
 				lastinit = FALSE;
-				RunNewPPc(psp,mws);
+				RunNewPPc(psp, mws);
 			}else{ // 終わり / cmd 用のメモリを確保してなければここで解放
 				psp->next = NULL;
 				if ( psp->AllocCmd == FALSE ){ // cmd は静的なので PSPONE 解放
@@ -533,12 +594,10 @@ BOOL CreatePPcWindow(PPCSTARTPARAM *psp,MAINWINDOWSTRUCT *mws)
 				hWnd = firstfocus ? NULL : cinfo->info.hWnd;
 				firstfocus = 0;
 				firstinit = 0;
-				if ( focus ){
-					TCHAR id[] = T("C_X");
+				if ( focusID[0] != '\0' ){
 					HWND hFocusWnd;
 
-					id[2] = focus;
-					hFocusWnd = PPxGetHWND(id);
+					hFocusWnd = GetHwndFromIDCombo(focusID);
 					if ( hFocusWnd != NULL ) hWnd = hFocusWnd;
 				}
 				PostMessage(cinfo->hComboWnd,WM_PPXCOMMAND,KCW_ready,(LPARAM)hWnd);
@@ -594,15 +653,15 @@ BOOL CreatePPcWindow(PPCSTARTPARAM *psp,MAINWINDOWSTRUCT *mws)
 	return TRUE;
 }
 
-void PPCui(HWND hWnd,const TCHAR *cmdline)
+void PPCui(HWND hWnd, const TCHAR *cmdline)
 {
-	TCHAR param[CMDLINESIZE],dir[VFPS];
+	TCHAR param[CMDLINESIZE], dir[VFPS];
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 
 	if ( cmdline != RunAlone ){
 		if ( X_sps || X_combo ){
-			MorePPc(cmdline,&MainWindows);
+			MorePPc(cmdline, &MainWindows);
 			return;
 		}
 	}
@@ -615,24 +674,24 @@ void PPCui(HWND hWnd,const TCHAR *cmdline)
 	si.cbReserved2	= 0;
 	si.lpReserved2	= NULL;
 
-	GetModuleFileName(hInst,dir,VFPS);
+	GetModuleFileName(hInst, dir, VFPS);
 #ifdef WINEGCC
-	tstrcpy(tstrrchr(dir,'\\')+1,T(PPCEXE)); //Z:\...\PPC.EXE を Z:\...\ppc に修正
+	tstrcpy(tstrrchr(dir, '\\') + 1, T(PPCEXE)); //Z:\...\PPC.EXE を Z:\...\ppc に修正
 #endif
 	if ( cmdline ){
-		wsprintf(param,T("\"%s\" %s"),dir,cmdline);
+		wsprintf(param, T("\"%s\" %s"), dir, cmdline);
 	}else{
-		wsprintf(param,T("\"%s\""),dir);
+		wsprintf(param, T("\"%s\""), dir);
 	}
 											// カレントディレクトリを作成
-	*tstrrchr(dir,'\\') = '\0';		// 最後は「\PPC.EXE」なので、漢字対策せず
+	*tstrrchr(dir, '\\') = '\0'; // 最後は「\PPC.EXE」なので、漢字対策せず
 
-	if ( IsTrue(CreateProcess(NULL,param,NULL,NULL,FALSE,
-			CREATE_DEFAULT_ERROR_MODE,NULL,dir,&si,&pi)) ){
+	if ( IsTrue(CreateProcess(NULL, param, NULL, NULL, FALSE,
+			CREATE_DEFAULT_ERROR_MODE, NULL, dir, &si, &pi)) ){
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
 	}else{
-		PPErrorBox(hWnd,dir,PPERROR_GETLASTERROR);
+		PPErrorBox(hWnd, dir, PPERROR_GETLASTERROR);
 	}
 }
 

@@ -246,8 +246,8 @@ void GetWindowHashList(HMENU hMenuDest,DWORD *PopupID)
 }
 #endif
 typedef struct {
-	PPXAPPINFO info,*parent;
-	const TCHAR *param;
+	PPXAPPINFO info, *parent;
+	const TCHAR *arg;
 } USERCOMMANDSTRUCT;
 
 DWORD_PTR USECDECL UserCommandInfo(USERCOMMANDSTRUCT *info,DWORD cmdID,PPXAPPINFOUNION *uptr)
@@ -255,26 +255,26 @@ DWORD_PTR USECDECL UserCommandInfo(USERCOMMANDSTRUCT *info,DWORD cmdID,PPXAPPINF
 	switch(cmdID){
 		case PPXCMDID_FUNCTION:
 			if ( !tstrcmp(uptr->funcparam.param,T("ARG")) ){
-				const TCHAR *p;
+				const TCHAR *ptr;
 				int index;
 
-				p = uptr->funcparam.optparam;
-				index = GetNumber(&p);
+				ptr = uptr->funcparam.optparam;
+				index = GetDigitNumber(&ptr);
 				if ( index <= 0 ){
-					if ( index == 0 ){
-						p = info->param;
-						GetCommandParameter(&p,uptr->funcparam.dest,CMDLINESIZE);
+					if ( index == 0 ){ // arg(0)
+						ptr = info->arg;
+						GetCommandParameter(&ptr,uptr->funcparam.dest,CMDLINESIZE);
 					}else{
 						*uptr->funcparam.dest = '\0';
 					}
-				}else{
-					p = info->param;
-					p += tstrlen(p) + 1;
+				}else{ // arg(1...)
+					ptr = info->arg;
+					ptr += tstrlen(ptr) + 1;
 					for (;;){
-						GetCommandParameter(&p,uptr->funcparam.dest,CMDLINESIZE);
+						GetCommandParameter(&ptr, uptr->funcparam.dest,CMDLINESIZE);
 						if ( --index == 0 ) break;
 						*uptr->funcparam.dest = '\0';
-						if ( NextParameter(&p) == FALSE ) break;
+						if ( NextParameter(&ptr) == FALSE ) break;
 					}
 				}
 				return 1;
@@ -286,15 +286,16 @@ DWORD_PTR USECDECL UserCommandInfo(USERCOMMANDSTRUCT *info,DWORD cmdID,PPXAPPINF
 	}
 }
 
-void USEFASTCALL UserCommand(EXECSTRUCT *Z,const TCHAR *command,const TCHAR *param,TCHAR *dest)
+void USEFASTCALL UserCommand(EXECSTRUCT *Z,const TCHAR *args, const TCHAR *cmdline, TCHAR *dest)
 {
 	USERCOMMANDSTRUCT ucs;
 
 	ucs.info = *Z->Info;
 	ucs.info.Function = (PPXAPPINFOFUNCTION)UserCommandInfo;
 	ucs.parent = Z->Info;
-	ucs.param = command;
-	Z->result = PP_ExtractMacro(ucs.info.hWnd,&ucs.info,NULL,param,dest,XEO_EXTRACTEXEC);
+	ucs.arg = args;
+	Z->result = PP_ExtractMacro(ucs.info.hWnd, &ucs.info, NULL, cmdline, dest, XEO_EXTRACTEXEC);
+	if ( Z->result == ERROR_CONTINUE ) Z->result = NO_ERROR;
 }
 
 void USEFASTCALL ExecOnConsole(EXECSTRUCT *Z,const TCHAR *param)
@@ -409,14 +410,14 @@ void CustFile(EXECSTRUCT *Z,const TCHAR *filename,BOOL reload)
 	HeapFree(ProcHeap,0,mem);
 }
 
-void CustLine(EXECSTRUCT *Z,const TCHAR *line,BOOL reload)
+void CustLine(EXECSTRUCT *Z, const TCHAR *line, BOOL reload)
 {
 	TCHAR buf[CMDLINESIZE];
 	TCHAR *p,*q,separator;
 
-	PPxSendMessage(WM_PPXCOMMAND,K_Scust,0);
-	p = tstrchr(line,'=');
-	q = tstrchr(line,',');
+	PPxSendMessage(WM_PPXCOMMAND, K_Scust, 0);
+	p = tstrchr(line, '=');
+	q = tstrchr(line, ',');
 	if ( p == NULL ){
 		if ( q == NULL ) return;
 		p = q;
@@ -425,12 +426,12 @@ void CustLine(EXECSTRUCT *Z,const TCHAR *line,BOOL reload)
 	}
 	separator = *p;
 	*p++ = '\0';
-	q = tstrchr(line,':');
+	q = tstrchr(line, ':');
 	if ( (q != NULL) && (q < p) ){
 		*q = '\0';
-		wsprintf(buf,T("%s = {\n%s %c%s\n}"),line,q + 1,separator,p);
+		wsprintf(buf,T("%s = {\n%s %c%s\n}"),line, q + 1, separator, p);
 	}else{
-		wsprintf(buf,T("%s %c%s"),line,separator,p);
+		wsprintf(buf,T("%s %c%s"),line, separator, p);
 	}
 	CustCmdSub(Z,buf,buf + tstrlen(buf),reload);
 }
@@ -710,6 +711,7 @@ void PPcSetForeground(HWND hParentWnd,HWND hPPcWnd,BOOL combo)
 	if ( combo ?
 			((hParentWnd != NULL) && (GetParent(hPPcWnd) != NULL)) :
 			(hParentWnd != hPPcWnd) ){
+		hParentWnd = GetParent(hPPcWnd);
 		SendMessage(hParentWnd,WM_PPXCOMMAND,KCW_setforeground,(LPARAM)hPPcWnd);
 		if ( GetForegroundWindow() != hParentWnd ){
 			ForceSetForegroundWindow(hParentWnd); // ↑で失敗した時用
@@ -763,33 +765,59 @@ void CmdFocusPPx(EXECSTRUCT *Z,const TCHAR *paramptr)
 	}
 }
 
-void CmdSelectPPx(EXECSTRUCT *Z,const TCHAR *p)
+void CmdSelectPPx(EXECSTRUCT *Z, const TCHAR *param)
 {
-	HWND hTargetWnd,hWnds[X_Mtask];
+	HWND hTargetWnd;
+	DWORD menuid = 1;
+	TCHAR buf[VFPS + 16];
 									// 指定あり？
-	hTargetWnd = GetPPxhWndFromID(Z->Info,&p,NULL);
+	hTargetWnd = GetPPxhWndFromID(Z->Info, &param, NULL);
 	if ( hTargetWnd == BADHWND ){
 		Z->result = ERROR_INVALID_PARAMETER;
 		return; // 該当無し
 	}
 	if ( hTargetWnd == NULL ){ // 指定無し...メニュー表示
 		HMENU hPopupMenu;
+		MENUITEMINFO minfo;
 
 		hPopupMenu = CreatePopupMenu();
-		if ( GetPPxList(hPopupMenu,GetPPxList_Command,hWnds,NULL,NULL) ){
+		if ( GetPPxList(hPopupMenu, GetPPxList_hWnd, NULL, &menuid) ){
 			int index;
 
-			index = TTrackPopupMenu(Z,hPopupMenu,NULL);
+			index = TTrackPopupMenu(Z, hPopupMenu, NULL);
 			if ( index > 0 ){
-				hTargetWnd = hWnds[index - 1];
+				minfo.cbSize = sizeof(minfo);
+				minfo.fMask = (WinType < WINTYPE_2000) ?
+						(MIIM_STATE | MIIM_TYPE | MIIM_ID | MIIM_DATA) :
+						(MIIM_STATE | MIIM_FTYPE | MIIM_STRING | MIIM_ID | MIIM_DATA);
+				minfo.cch = VFPS + 8;
+				minfo.dwTypeData = buf;
+				if ( GetMenuItemInfo(hPopupMenu, index, MF_BYCOMMAND,&minfo) == FALSE ){
+					Z->result = ERROR_CANCELLED;
+				}else{
+					hTargetWnd = (HWND)minfo.dwItemData;
+					if ( hTargetWnd == NULL ){ // 一体化PPc
+						TCHAR *idptr,*sep;
+						idptr = tstrchr(buf, '&');
+						if ( idptr != NULL ){
+							*idptr = 'C';
+							sep = tstrchr(idptr, ':');
+							if ( sep != NULL ) *sep = '\0';
+							hTargetWnd = (HWND)PPxInfoFunc(Z->Info,PPXCMDID_COMBOGETHWNDEX,idptr);
+							if ( hTargetWnd == NULL ){ // 別プロセスPPc
+								hTargetWnd = GetPPxhWndFromID(Z->Info, (const TCHAR **)&idptr, NULL);
+							}
+						}
+					}
+				}
 			}else{
 				Z->result = ERROR_CANCELLED;
 			}
 		}
 		DestroyMenu(hPopupMenu);
 	}
-	if ( hTargetWnd != NULL ){
-		PPcSetForeground(Sm->ppc.hComboWnd[0],hTargetWnd,TRUE);
+	if ( (hTargetWnd != NULL) && (hTargetWnd != BADHWND) ){
+		PPcSetForeground(Sm->ppc.hComboWnd[0], hTargetWnd, TRUE);
 	}
 }
 
@@ -1617,12 +1645,42 @@ void CmdPack(EXECSTRUCT *Z,const TCHAR *param)
 	}
 }
 
+void CmdNextItem(EXECSTRUCT *Z,const TCHAR *param)
+{
+	int skipcount = 1;
+	TCHAR buf[64];
+
+	if ( *param != '\0' ) CalcString(&param,&skipcount);
+	while ( skipcount > 0 ){
+		if ( PPxEnumInfoFunc(Z->Info,PPXCMDID_NEXTENUM,buf,&Z->IInfo) == 0 ){
+			XMessage(Z->hWnd,NULL,XM_GrERRld,T("empty next item"));
+			Z->result = ERROR_INVALID_PARAMETER;
+			break;
+		}
+		skipcount--;
+	}
+}
+
 void CmdStop(EXECSTRUCT *Z,const TCHAR *param)
 {
 	int result = 1;
+	BOOL nextitem = FALSE;
+
+	if ( ((param[0] == '-') || (param[0] == '/')) && // nextitem option
+		 (param[1] == 'n') &&
+		 ((UTCHAR)param[2] <= ' ') ){
+		param += 2;
+		nextitem = TRUE;
+	}
 
 	if ( (*param == '\0') || (CalcString(&param,&result) == CALC_NOERROR) ){
-		if ( result ) Z->result = ERROR_CANCELLED;
+		if ( result ){
+			if ( nextitem == FALSE ){ // 実行中止
+				Z->result = ERROR_CANCELLED;
+			}else{ // 次へ
+				Z->src += tstrlen(Z->src);
+			}
+		}
 	}else{
 		XMessage(Z->hWnd,NULL,XM_GrERRld,T("stop error"));
 		Z->result = ERROR_INVALID_PARAMETER;
@@ -1734,16 +1792,16 @@ fin:
 	}
 }
 
-void CustCmd(EXECSTRUCT *Z,const TCHAR *line,BOOL reload)
+void CustCmd(EXECSTRUCT *Z, const TCHAR *line, BOOL reload)
 {
 	TCHAR param[CMDLINESIZE];
 
 	if ( SkipSpace(&line) == '@' ){ // filename mode
 		line++;
-		ZGetFilePathParam(Z,&line,param);
-		CustFile(Z,param,reload);
+		ZGetFilePathParam(Z, &line, param);
+		CustFile(Z, param, reload);
 	}else{
-		CustLine(Z,line,reload);
+		CustLine(Z, line, reload);
 	}
 }
 
@@ -1803,7 +1861,7 @@ void LineCustCmd(EXECSTRUCT *Z,const TCHAR *line)
 			if ( p > param ) --p;
 			*p = '\0';
 			last = next;
-			if ( toggle ) custtext = T(""); // 既にあるので挿入しない
+			if ( toggle ) custtext = NilStrNC; // 既にあるので挿入しない
 			break;
 		}
 	}
@@ -2026,7 +2084,54 @@ void USEFASTCALL CmdPPeEdit(EXECSTRUCT *Z,const TCHAR *param)
 	}
 }
 
-void USEFASTCALL CmdMessageBox(EXECSTRUCT *Z,const TCHAR *param)
+// 改行使用可能なパラメータ取得
+void GetLfGetParam(const TCHAR **param, TCHAR *dest, DWORD destlength)
+{
+	const TCHAR *src = *param;
+
+	SkipSpace(&src);
+	for (;;){
+		TCHAR c;
+
+		c = *src;
+		if ( c == '\0' ) break;
+		if ( c != '\"' ){
+			if ( ((UTCHAR)c <= ' ') || (c == ',') ){
+				break;
+			}
+			if ( destlength ){
+				*dest++ = c;
+				destlength--;
+			}
+			src++;
+			continue;
+		}
+		// " 処理
+		src++;
+		for (;;){
+			c = *src;
+			if ( c == '\0' ) goto end;
+			if ( c == '\"' ){
+				if ( *(src + 1) != '\"' ){ // 末尾？
+					src++;
+					break;
+				}
+				src++; // "" ... " 自身
+			}
+			if ( destlength ){
+				*dest++ = c;
+				destlength--;
+			}
+			src++;
+			continue;
+		}
+	}
+end:
+	*param = src;
+	*dest = '\0';
+}
+
+void USEFASTCALL CmdMessageBox(EXECSTRUCT *Z, const TCHAR *param)
 {
 	DWORD style = MB_ICONINFORMATION;
 	TCHAR parambuf[CMDLINESIZE];
@@ -2042,7 +2147,7 @@ void USEFASTCALL CmdMessageBox(EXECSTRUCT *Z,const TCHAR *param)
 			style = MB_ICONQUESTION | MB_OKCANCEL;
 		}
 	}
-	GetCommandParameter(&param,parambuf,TSIZEOF(parambuf));
+	GetLfGetParam(&param, parambuf, TSIZEOF(parambuf));
 	if ( IDOK != PMessageBox(Z->hWnd,parambuf,ZGetTitleName(Z),style) ){
 		Z->result = ERROR_CANCELLED;
 	}
@@ -2327,6 +2432,10 @@ void ZExec(EXECSTRUCT *Z)
 		case CID_STOP:
 			CmdStop(Z,param);
 			break;
+										// *nextitem
+		case CID_NEXTITEM:
+			CmdNextItem(Z,param);
+			break;
 										// *cd
 		case CID_CD:
 			ZGetFilePathParam(Z,&param,GetZCurDir(Z));
@@ -2596,6 +2705,13 @@ void ZExec(EXECSTRUCT *Z)
 		case CID_CLEARAUTH:
 			AuthHostCache[0] = '\0';
 			break;
+										// *return
+		case CID_RETURN:
+			tstrcpy(Z->dst,param);
+			Z->result = ERROR_CONTINUE;
+			Z->dst += tstrlen(Z->dst);
+			Z->src += tstrlen(Z->src);
+			break;
 										// *jumpentry
 		case CID_JUMPENTRY:
 //		case 'J': へ
@@ -2629,42 +2745,44 @@ void ZExec(EXECSTRUCT *Z)
 
 		default:
 			if ( Z->command >= CID_USERNAME ){
-				const TCHAR *name;
 				ERRORCODE result;
 
+				// 各PPx固有機能
 				if ( 0 != (result = PPxInfoFunc(Z->Info,PPXCMDID_COMMAND,(void *)param)) ){
 					Z->result = result ^ 1;
 					break;
 				}
 
-				name = param;
+				// コマンドモジュール
 				ZSetCurrentDir(Z,olddir);
-				result = CommandModule(Z,&param);
+				result = CommandModule(Z, param);
 				if ( result == (ERRORCODE)PPXMRESULT_STOP ){
 					Z->result = ERROR_CANCELLED;
 					break;
 				}
 				if ( result != PPXMRESULT_SKIP ) break;
+
+				// user コマンド
 				linebuf[CMDLINESIZE - 1] = '\0';
-				if ( NO_ERROR != GetCustTable(StrUserCommand,name,linebuf,sizeof(linebuf)) ){
-					XMessage(Z->hWnd,NULL,XM_GrERRld,MES_EUXC,name);
+				if ( NO_ERROR != GetCustTable(StrUserCommand, param, linebuf, sizeof(linebuf)) ){
+					XMessage(Z->hWnd, NULL, XM_GrERRld, MES_EUXC, param);
 					Z->result = ERROR_BAD_COMMAND;
 					break;
 				}else{
 					if ( linebuf[CMDLINESIZE - 1] != '\0' ){
 						TCHAR *longbuf;
-						int size = GetCustTableSize(StrUserCommand,name);
+						int size = GetCustTableSize(StrUserCommand, param);
 
 						longbuf = HeapAlloc(DLLheap,0,size);
 						if ( longbuf == NULL ){
 							Z->result = RPC_S_STRING_TOO_LONG;
 							break;
 						}
-						GetCustTable(StrUserCommand,name,longbuf,size);
-						UserCommand(Z,param,longbuf,NULL);
-						HeapFree(DLLheap,0,longbuf);
+						GetCustTable(StrUserCommand, param, longbuf, size);
+						UserCommand(Z, param, longbuf, NULL);
+						HeapFree(DLLheap, 0, longbuf);
 					}else{
-						UserCommand(Z,param,linebuf,NULL);
+						UserCommand(Z, param, linebuf, NULL);
 					}
 					break;
 				}

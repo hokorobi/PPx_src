@@ -235,11 +235,15 @@ typedef struct {
 #define KC_SYNCPROP_INIT	0xbec0	// 初期化
 #define KC_SYNCPROP_SETFILE	0xbec1	// 表示ファイルを指定
 #define KC_GETSITEHWND		0xbeff	// 指定位置の hWnd を取得
+		#define PPCSITE_SINGLE 0
+		#define PPCSITE_LEFT 1
+		#define PPCSITE_RIGHT 2
 		#define KC_GETSITEHWND_BASEWND	-1 // 一体化窓の hWnd。なければ自分自身
-		#define KC_GETSITEHWND_LEFT		1  // 左
-		#define KC_GETSITEHWND_RIGHT	2  // 右(右側反対窓)
-		#define KC_GETSITEHWND_PAIR		3  // 反対窓
-		#define KC_GETSITEHWND_LEFTENUM	4  // 左からの連番
+		#define KC_GETSITEHWND_CURRENT	0 // 現在窓
+		#define KC_GETSITEHWND_LEFT		PPCSITE_LEFT  // 左
+		#define KC_GETSITEHWND_RIGHT	PPCSITE_RIGHT // 右(右側反対窓)
+		#define KC_GETSITEHWND_PAIR		3 // 反対窓
+		#define KC_GETSITEHWND_LEFTENUM	4 // 左からの連番
 //0x3dxx	PPv 特殊機能	---------------------------------------------------
 #define KV_ICC	0x3b80				// toggle Enable ICC
 // 通信用
@@ -325,6 +329,7 @@ typedef struct {
 #define KE_opennewfile	0xbb09		// 指定のファイルを開く lParam : ファイル名
 #define KE_excmdopen	0xbb0a		// *ppe/*edit用 lParam : PPE_CMDMODEDATA
 #define KE_execprecmd	0xbb0b		// Input_FirstCmd を実行
+#define KE_clearmodify	0xbb0c		// 更新初期化
 #define KE_getHWND	0xbbff			// (WM_PPXCOMMAND経由)editのhWndを得る
 
 //0x3a8x/ba8x	PPtree 特殊機能 ----------------------------------------------
@@ -386,3 +391,4 @@ typedef struct {
 									// PPx対応
 #define KCW_enteraddress 0xba60		// address bar に入力があったことが通知
 #define KCW_showjoblist  0xba61		// job一覧窓を表示
+#define KCW_GetIDWnd	0xba62		// 指定されたhWndを取得

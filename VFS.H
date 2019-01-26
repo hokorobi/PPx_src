@@ -684,28 +684,28 @@ typedef struct {
 } SUSIE_FINFOW;
 #pragma pack(pop)
 //-------------------------------------- DLL ä÷êî
-typedef int (__stdcall *GETPLUGININFO)(int infono,LPSTR buf,int buflen);
-typedef int (__stdcall *ISSUPPORTED)(LPCSTR filename,void *dw);
-typedef int (__stdcall *ISSUPPORTEDW)(LPCWSTR filename,void *dw);
-typedef int (__stdcall *CONFIGURATIONDLG)(HWND hWnd,int function);
-typedef int (__stdcall *GETPICTUREINFO)(LPCSTR buf,LONG_PTR len,unsigned int flag,struct PictureInfo *lpInfo);
-typedef int (__stdcall *GETPICTUREINFOW)(LPCWSTR buf,LONG_PTR len,unsigned int flag,struct PictureInfo *lpInfo);
-typedef int (__stdcall *GETPICTURE)(LPCSTR buf,LONG_PTR len,unsigned int flag,HANDLE *pHBInfo,HANDLE *pHBm,FARPROC lpPrgressCallback,LONG_PTR lData);
-typedef int (__stdcall *GETPICTUREW)(LPCWSTR buf,LONG_PTR len,unsigned int flag,HANDLE *pHBInfo,HANDLE *pHBm,FARPROC lpPrgressCallback,LONG_PTR lData);
-typedef int (__stdcall *GETPREVIEW)(LPCSTR buf,LONG_PTR len,unsigned int flag,HANDLE *pHBInfo,HANDLE *pHBm,FARPROC lpPrgressCallback,LONG_PTR lData);
-typedef int (__stdcall *GETPREVIEWW)(LPCWSTR buf,LONG_PTR len,unsigned int flag,HANDLE *pHBInfo,HANDLE *pHBm,FARPROC lpPrgressCallback,LONG_PTR lData);
-typedef int (__stdcall *GETARCHIVEINFO)(LPCSTR buf,LONG_PTR len,unsigned int flag,HLOCAL *lphInf);
-typedef int (__stdcall *GETARCHIVEINFOW)(LPCWSTR buf,LONG_PTR len,unsigned int flag,HLOCAL *lphInf);
-typedef int (__stdcall *GETFILE)(LPCSTR src,LONG_PTR len,LPSTR dest,unsigned int flag,FARPROC prgressCallback,LONG_PTR lData);
-typedef int (__stdcall *GETFILEW)(LPCWSTR src,LONG_PTR len,LPWSTR dest,unsigned int flag,FARPROC prgressCallback,LONG_PTR lData);
-typedef int (__stdcall *GETFILEINFO)(LPCSTR buf,LONG_PTR len,LPCSTR filename,unsigned int flag,SUSIE_FINFO *lpInfo);
-typedef int (__stdcall *GETFILEINFOW)(LPCWSTR buf,LONG_PTR len,LPCWSTR filename,unsigned int flag,SUSIE_FINFOW *lpInfo);
+typedef int (__stdcall *GETPLUGININFO)(int infono, LPSTR buf, int buflen);
+typedef int (__stdcall *ISSUPPORTED)(LPCSTR filename, void *dw);
+typedef int (__stdcall *ISSUPPORTEDW)(LPCWSTR filename, void *dw);
+typedef int (__stdcall *CONFIGURATIONDLG)(HWND hWnd, int function);
+typedef int (__stdcall *GETPICTUREINFO)(LPCSTR buf, LONG_PTR len, unsigned int flag, struct PictureInfo *lpInfo);
+typedef int (__stdcall *GETPICTUREINFOW)(LPCWSTR buf, LONG_PTR len, unsigned int flag, struct PictureInfo *lpInfo);
+typedef int (__stdcall *GETPICTURE)(LPCSTR buf, LONG_PTR len, unsigned int flag, HANDLE *pHBInfo, HANDLE *pHBm, FARPROC lpPrgressCallback, LONG_PTR lData);
+typedef int (__stdcall *GETPICTUREW)(LPCWSTR buf, LONG_PTR len, unsigned int flag, HANDLE *pHBInfo, HANDLE *pHBm, FARPROC lpPrgressCallback, LONG_PTR lData);
+typedef int (__stdcall *GETPREVIEW)(LPCSTR buf, LONG_PTR len, unsigned int flag, HANDLE *pHBInfo, HANDLE *pHBm, FARPROC lpPrgressCallback, LONG_PTR lData);
+typedef int (__stdcall *GETPREVIEWW)(LPCWSTR buf, LONG_PTR len, unsigned int flag, HANDLE *pHBInfo, HANDLE *pHBm, FARPROC lpPrgressCallback, LONG_PTR lData);
+typedef int (__stdcall *GETARCHIVEINFO)(LPCSTR buf, LONG_PTR len, unsigned int flag, HLOCAL *lphInf);
+typedef int (__stdcall *GETARCHIVEINFOW)(LPCWSTR buf, LONG_PTR len, unsigned int flag, HLOCAL *lphInf);
+typedef int (__stdcall *GETFILE)(LPCSTR src, LONG_PTR len, LPSTR dest, unsigned int flag, FARPROC prgressCallback, LONG_PTR lData);
+typedef int (__stdcall *GETFILEW)(LPCWSTR src, LONG_PTR len, LPWSTR dest, unsigned int flag, FARPROC prgressCallback, LONG_PTR lData);
+typedef int (__stdcall *GETFILEINFO)(LPCSTR buf, LONG_PTR len, LPCSTR filename, unsigned int flag, SUSIE_FINFO *lpInfo);
+typedef int (__stdcall *GETFILEINFOW)(LPCWSTR buf, LONG_PTR len, LPCWSTR filename, unsigned int flag, SUSIE_FINFOW *lpInfo);
 #define SUSIE_SOURCE_DISK 0
 #define SUSIE_SOURCE_MEM 1
 #define SUSIE_IGNORECASE B7
 #define SUSIE_DEST_DISK 0
 #define SUSIE_DEST_MEM 0x100
-// int FAR WINAPI SusieProgressCallback(int nNum,int nDenom,LONG_PTR lData)
+// int FAR WINAPI SusieProgressCallback(int nNum, int nDenom, LONG_PTR lData)
 
 //-------------------------------------- PPx íËã`
 #define VFSSUSIE_BMP B0

@@ -96,7 +96,7 @@ int MinusDiv(int v1,int v2) // 負数被除数の丸め処理を調整した割り算
 	return (v1 >= 0) ? (v1 / v2) : -((-v1 + (v2 - 1)) / v2);
 }
 
-void MarkDragArea(PPC_APPINFO *cinfo,RECT *area,int markmode)
+void MarkDragArea(PPC_APPINFO *cinfo, RECT *area, int markmode)
 {
 	RECT box;
 	int ofL,ofR;
@@ -162,6 +162,13 @@ void MarkDragArea(PPC_APPINFO *cinfo,RECT *area,int markmode)
 
 		index = cinfo->cellWMin + box.left + box.top;
 		indexmax = cinfo->cellWMin + box.right + box.bottom;
+		if ( box.left < box.right ) { // ２段以上のときの補正
+			int righttop = min(box.top, box.bottom);
+			// 右端の選択範囲にエントリが無い場合、右端段を除外
+			if ( (cinfo->cellWMin + box.right + righttop) >= cinfo->e.cellIMax ){
+				indexmax -= cinfo->cel.Area.cy;
+			}
+		}
 
 		for ( ; index <= indexmax ; index++){
 #if FREEPOSMODE

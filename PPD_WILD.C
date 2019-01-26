@@ -112,17 +112,12 @@ LOADWINAPISTRUCT MIGEMODLL[] = {
 	{NULL,NULL}
 };
 
-const TCHAR migemodicnameSJIS[] = T("dict\\cp932\\migemo-dict");
 #ifdef UNICODE
 UINT migemocodepage = CP_ACP;
 UINT migemocodeflags = MB_PRECOMPOSED;
-/*
 const TCHAR migemodicnameUTF8[] = T("dict\\utf-8\\migemo-dict");
-
-UINT migemocodepage = CP_UTF8;
-UINT migemocodeflags = 0;
-*/
 #endif
+const TCHAR migemodicnameSJIS[] = T("dict\\cp932\\migemo-dict");
 // BRegExp 関連 ---------------------------------------------------------------
 typedef struct tag_bregexp {
 	const char *outp;		/* result string start ptr   */
@@ -408,27 +403,50 @@ loaderror:
 	return FALSE;
 }
 //-----------------------------------------------------------------------------
+#define MIGEMO_FREE 0
+#define MIGEMO_LOADING 1
+#define MIGEMO_READY 2
+volatile int LoadMigemo = MIGEMO_FREE;
+
+void WaitMigemoLoad(void)
+{
+	int waitcount = 1000 / 50;
+
+	while ( LoadMigemo == MIGEMO_LOADING ){
+		Sleep(50);
+		if ( --waitcount == 0 ) break; // 強制待機終了
+	}
+}
+
 void FreeMigemo(void)
 {
-	if ( migemodic != NULL ) migemo_close(migemodic);
-	if ( hMigemoDLL != NULL ) FreeLibrary(hMigemoDLL);
-	hMigemoDLL = NULL;
+	if ( LoadMigemo == MIGEMO_LOADING ) WaitMigemoLoad();
+	if ( hMigemoDLL != NULL ) {
+		LoadMigemo = MIGEMO_LOADING;
+		if ( migemodic != NULL ) migemo_close(migemodic);
+		FreeLibrary(hMigemoDLL);
+		hMigemoDLL = NULL;
+		LoadMigemo = MIGEMO_FREE;
+	}
 }
 
 BOOL InitMigemo(void)
 {
-	TCHAR migemodicpath[MAX_PATH],*p;
+	TCHAR migemodicpath[MAX_PATH];
+
+	if ( LoadMigemo == MIGEMO_READY ) return TRUE;
+	WaitMigemoLoad();
+	if ( LoadMigemo == MIGEMO_READY ) return TRUE;
+	LoadMigemo = MIGEMO_LOADING;
 
 	hMigemoDLL = LoadWinAPI("MIGEMO.DLL",NULL,MIGEMODLL,LOADWINAPI_LOAD);
 	#ifdef _WIN64
 	if ( hMigemoDLL == NULL ){
 		hMigemoDLL = LoadWinAPI("MIGEMO64.DLL",NULL,MIGEMODLL,LOADWINAPI_LOAD);
-		if ( hMigemoDLL == NULL ){
-			hMigemoDLL = LoadWinAPI("UNBYPASS.DLL",NULL,MIGEMODLL,LOADWINAPI_LOAD);
-		}
 	}
 	#endif
 	if ( hMigemoDLL != NULL ){
+		TCHAR *ptr;
 		#ifdef UNICODE
 		char migemodicpathA[MAX_PATH];
 		#else
@@ -436,20 +454,19 @@ BOOL InitMigemo(void)
 		#endif
 
 		GetModuleFileName(hMigemoDLL,migemodicpath,TSIZEOF(migemodicpath));
-		p = tstrrchr(migemodicpath,'\\') + 1;
+		ptr = tstrrchr(migemodicpath,'\\') + 1;
 
 #ifdef UNICODE
-#if 0 // 現在未完成(IRegExp等のCP調整をしていない)
-		tstrcpy(p,migemodicnameUTF8);
-		if ( GetFileAttributes(migemodicpath) == BADATTR )
-			migemocodepage = CP_ACP;
-			migemocodeflags = MB_PRECOMPOSED;
-#endif
+		tstrcpy(ptr, migemodicnameUTF8);
+		if ( GetFileAttributes(migemodicpath) != BADATTR ){
+			migemocodepage = CP_UTF8;
+			migemocodeflags = 0;
+		}else
 #endif
 		{
-			tstrcpy(p,migemodicnameSJIS);
+			tstrcpy(ptr, migemodicnameSJIS);
 			if ( GetFileAttributes(migemodicpath) == BADATTR ){
-				tstrcpy(p + 5,migemodicnameSJIS + 11);
+				tstrcpy(ptr + 5,migemodicnameSJIS + 11); // migemo-dict のみ
 				if ( GetFileAttributes(migemodicpath) == BADATTR ){
 					migemodicpath[0] = '\0';
 				}
@@ -458,7 +475,7 @@ BOOL InitMigemo(void)
 
 		if ( migemodicpath[0] != '\0' ){
 			#ifdef UNICODE
-				UnicodeToAnsi(migemodicpath,migemodicpathA,MAX_PATH);
+				UnicodeToAnsi(migemodicpath, migemodicpathA, MAX_PATH);
 			#endif
 			migemodic = migemo_open_fix(migemodicpathA);
 			if ( migemodic != NULL ){
@@ -467,8 +484,8 @@ BOOL InitMigemo(void)
 			}
 		}
 		PMessageBox(GetFocus(),T("migemo-dict open error"),NULL,MB_APPLMODAL | MB_OK);
-		FreeMigemo();
 	}
+	FreeMigemo();
 	PMessageBox(GetFocus(),MES_MIGE,NULL,MB_APPLMODAL | MB_OK);
 	return FALSE;
 }
@@ -490,7 +507,7 @@ typedef union { // 各種ポインタ(共用体)
 	SRS_BONIREG *bo;
 } SRS_UNION;
 
-PPXDLL BOOL PPXAPI SearchRomaString(const TCHAR *text,const TCHAR *searchstr,DWORD mode,DWORD_PTR *handles)
+PPXDLL BOOL PPXAPI SearchRomaString(const TCHAR *text, const TCHAR *searchstr, DWORD mode, DWORD_PTR *handles)
 {
 	SRS_UNION srs;
 	char mesA[256];
@@ -502,10 +519,10 @@ PPXDLL BOOL PPXAPI SearchRomaString(const TCHAR *text,const TCHAR *searchstr,DWO
 		#define TXTSTR text
 		#define mes mesA
 	#endif
-								// 領域解放
 	if ( handles == NULL ){
 		return migemodic != NULL;
 	}
+								// 領域解放
 	srs = *(SRS_UNION *)handles;
 	if ( text == NULL ){
 		if ( srs.ptr != NULL ){
@@ -519,6 +536,7 @@ PPXDLL BOOL PPXAPI SearchRomaString(const TCHAR *text,const TCHAR *searchstr,DWO
 			}else{ // EX_IREGEXP
 				IRegExp_Release( srs.ireg );
 			}
+			*handles = 0;
 		}
 		return TRUE;
 	}
@@ -549,7 +567,7 @@ PPXDLL BOOL PPXAPI SearchRomaString(const TCHAR *text,const TCHAR *searchstr,DWO
 		if ( tstrlen(searchstr) <= X_rscah ){ // キャッシュ検索
 			usesave = TRUE;
 			UsePPx();
-			query = (char *)SearchHistory(PPXH_ROMASTR,searchstr);
+			query = (char *)SearchHistory(PPXH_ROMASTR, searchstr);
 			if ( query != NULL ){
 				query = (char *)GetHistoryData(query);
 				usehist = TRUE;
@@ -558,9 +576,9 @@ PPXDLL BOOL PPXAPI SearchRomaString(const TCHAR *text,const TCHAR *searchstr,DWO
 		if ( usehist == FALSE ){	// Migemo で正規表現を取得する
 			size_t length;
 			#ifdef UNICODE
-				WideCharToMultiByte(migemocodepage,0,searchstr,-1,searchstrA,VFPS,NULL,NULL);
+				WideCharToMultiByte(migemocodepage, 0, searchstr, -1, searchstrA, VFPS, NULL, NULL);
 			#endif
-			query = migemo_query(migemodic,SSTR);
+			query = migemo_query(migemodic, SSTR);
 			if ( query != NULL ){
 				length = strlen(query);
 			}else{
@@ -579,7 +597,7 @@ PPXDLL BOOL PPXAPI SearchRomaString(const TCHAR *text,const TCHAR *searchstr,DWO
 				TCHAR *p;
 
 				#ifdef UNICODE
-					querylen = MultiByteToWideChar(migemocodepage,migemocodeflags,query,-1,NULL,0);
+					querylen = MultiByteToWideChar(migemocodepage, migemocodeflags, query, -1, NULL, 0);
 				#else
 					querylen = strlen(query);
 				#endif
@@ -593,7 +611,7 @@ PPXDLL BOOL PPXAPI SearchRomaString(const TCHAR *text,const TCHAR *searchstr,DWO
 				*p++ = '/';
 				if ( !(mode & ISEA_FLOAT) ) *p++ = '^';
 				#ifdef UNICODE
-					wcscpy(p + MultiByteToWideChar(migemocodepage,migemocodeflags,query,-1,p,querylen) - 1,L"/i");
+					wcscpy(p + MultiByteToWideChar(migemocodepage, migemocodeflags, query, -1, p, querylen) - 1,L"/i");
 				#else
 					strcpy(p,query);
 					strcpy(p + querylen,"/ki");
@@ -612,13 +630,31 @@ PPXDLL BOOL PPXAPI SearchRomaString(const TCHAR *text,const TCHAR *searchstr,DWO
 				*p++ = '/';
 				if ( !(mode & ISEA_FLOAT) ) *p++ = '^';
 				strcpy(p,query);
-				strcpy(p + querylen,"/ki");
+				#ifdef UNICODE
+					strcpy(p + querylen, (migemocodepage == CP_UTF8) ? "/i" : "/ki");
+				#else
+					strcpy(p + querylen,"/ki");
+				#endif
 			}
 		}else{ // EX_IREGEXP
 			BSTR pattern;
 
 			IRegExp_put_IgnoreCase(srs.ireg,VARIANT_TRUE);
-			pattern = CreateBstringA(query);
+			#ifdef UNICODE
+			{
+				size_t querylen;
+				WCHAR *widep;
+
+				querylen = MultiByteToWideChar(migemocodepage, migemocodeflags, query, -1, NULL, 0);
+				widep = (WCHAR *)HeapAlloc(DLLheap,0,(querylen + 2) * sizeof(WCHAR));
+				if ( widep == NULL ) return FALSE;
+				MultiByteToWideChar(migemocodepage, migemocodeflags, query, -1, widep, querylen);
+				pattern = CreateBstring(widep);
+				HeapFree(DLLheap,0,widep);
+			}
+			#else
+				pattern = CreateBstringA(query);
+			#endif
 			if ( FAILED(IRegExp_put_Pattern(srs.ireg,pattern)) ){
 				XMessage(NULL,NULL,XM_GrERRld,IREGEXPPATTENERROR);
 			}
@@ -635,7 +671,7 @@ PPXDLL BOOL PPXAPI SearchRomaString(const TCHAR *text,const TCHAR *searchstr,DWO
 					(TCHAR *)text + tstrlen(text),&srs.bo->boniregwork,mes);
 		}else{ // EX_BREGEXP
 			#ifdef UNICODE
-				UnicodeToAnsi(text,textA,VFPS);
+				WideCharToMultiByte(migemocodepage, 0, text, -1, textA, VFPS, NULL, NULL);
 			#endif
 			return BMatch( srs.bm->migemotext,TXTSTR,
 					TXTSTR + strlen(TXTSTR),&srs.bm->bregwork,mesA);
@@ -680,19 +716,19 @@ int GetWildDate(const TCHAR **string,FILETIME *ftime,SYSTEMTIME *stime)
 	TCHAR c;
 
 	oldp = nowp = *string;
-	num = GetDwordNumber(&nowp);
+	num = (DWORD)GetDigitNumber(&nowp);
 	if ( oldp == nowp ) return 0;
 	c = SkipSpace(&nowp);
 	if ( (c == '-') || (c == '/') ){ // Date 2007-1-31
 		nowp++;
 		oldp = nowp;
-		num2 = GetDwordNumber(&nowp);
+		num2 = (DWORD)GetDigitNumber(&nowp);
 		if ( oldp == nowp ) return 0;
 		c = SkipSpace(&nowp);
 		if ( (c == '-') || (c == '/') ){ // パラメータが3つ 年-月-日
 			nowp++;
 			oldp = nowp;
-			num3 = GetDwordNumber(&nowp);
+			num3 = (DWORD)GetDigitNumber(&nowp);
 			if ( oldp == nowp ) return 0;
 			if ( num < 100 ) num = num < 80 ? num + 2000 : num + 1900;
 			stmptime.wYear = (WORD)num;
@@ -1616,7 +1652,7 @@ PPXDLL DWORD PPXAPI MakeFN_REGEXP(FN_REGEXP *fn,const TCHAR *src)
 
 			default: {
 				const TCHAR *nextsrc;
-				DWORD extoffset,extrasize = 0;
+				DWORD extoffset, extrasize = 0;
 				TCHAR *namebufdest;
 
 				mfs.param = NULL;
@@ -1652,7 +1688,6 @@ PPXDLL DWORD PPXAPI MakeFN_REGEXP(FN_REGEXP *fn,const TCHAR *src)
 					goto error;
 				}
 				*namebufdest = '\0';
-				CharLower(mfs.name);
 
 				if ( mfs.param != NULL ){ // オプションを取得
 					int extresult;
@@ -1663,6 +1698,8 @@ PPXDLL DWORD PPXAPI MakeFN_REGEXP(FN_REGEXP *fn,const TCHAR *src)
 					if ( mfs.flags & REGEXPF_WORDMATCH ) sepchar = ' ';
 					if ( extresult > 0 /* CEM_COMP */ ) break;
 				}
+
+				CharLower(mfs.name);
 
 				if ( mfs.flags & REGEXPF_WORDMATCH ){
 					extrasize +=
@@ -2199,20 +2236,20 @@ BOOL RegularExpressionReplace(RXPREPLACESTRING *rxps,TCHAR *target)
 
 void GetParamFlags(GETPARAMFLAGSSTRUCT *gpfs,const TCHAR **param,const TCHAR *flagnames)
 {
-	DWORD flag;
+	DWORD flags;
 	const TCHAR *lp,*nowp;
 
 	gpfs->mask = 0;
 	gpfs->value = 0;
 	nowp = *param;
-	while( *nowp ){
+	while( *nowp != '\0' ){
 		TCHAR c;
 
-		c = SkipSpace(&nowp);
-		for ( flag = LSBIT,lp = flagnames ; *lp ; flag <<= 1,lp++){
+		c = TinyCharLower(SkipSpace(&nowp));
+		for ( flags = LSBIT,lp = flagnames ; *lp ; flags <<= 1,lp++){
 			if ( c != *lp ) continue;
 			nowp++;
-			setflag(gpfs->mask,flag);
+			setflag(gpfs->mask, flags);
 			switch( *nowp ){
 				case '-':
 					nowp++;
@@ -2220,28 +2257,28 @@ void GetParamFlags(GETPARAMFLAGSSTRUCT *gpfs,const TCHAR **param,const TCHAR *fl
 				case '+':
 					nowp++;
 				default:
-					setflag(gpfs->value,flag);
+					setflag(gpfs->value, flags);
 			}
 			break;
 		}
-		if ( !*lp ) break;
+		if ( *lp == '\0' ) break;
 	}
 	*param = nowp;
 	return;
 }
 
-int CheckExtMode(EXSMEM *exm,MAKEFNSTRUCT *mfs)
+int CheckExtMode(EXSMEM *exm, MAKEFNSTRUCT *mfs)
 {
-	switch ( mfs->name[0] ){
+	switch ( TinyCharLower(mfs->name[0]) ){
 		case 'a': {	// Attribute: 属性指定
 			GETPARAMFLAGSSTRUCT gpfs;
 
-			setflag(mfs->flags,REGEXPF_REQ_ATTR);
-			if ( CheckExsmem(exm,sizeof(EXS_ATTR)) == FALSE) return CEM_ERROR;
-			GetParamFlags(&gpfs,(const TCHAR **)&mfs->param,AttrLabelString);
+			setflag(mfs->flags, REGEXPF_REQ_ATTR);
+			if ( CheckExsmem(exm, sizeof(EXS_ATTR)) == FALSE ) return CEM_ERROR;
+			GetParamFlags(&gpfs, (const TCHAR **)&mfs->param, AttrLabelString);
 			if ( (gpfs.mask & FILE_ATTRIBUTE_DIRECTORY) &&
 				!(gpfs.value & FILE_ATTRIBUTE_DIRECTORY) ){
-				setflag(mfs->flags,REGEXPF_PATHMASK);
+				setflag(mfs->flags, REGEXPF_PATHMASK);
 			}
 			((EXS_ATTR *)exm->dest)->ext = EX_ATTR;
 			((EXS_ATTR *)exm->dest)->next = sizeof(EXS_ATTR);
@@ -2251,7 +2288,7 @@ int CheckExtMode(EXSMEM *exm,MAKEFNSTRUCT *mfs)
 		}
 
 		case 'p': {	// Path: ディレクトリ指定
-			setflag(mfs->flags,REGEXPF_PATHMASK | REGEXPF_REQ_ATTR);
+			setflag(mfs->flags, REGEXPF_PATHMASK | REGEXPF_REQ_ATTR);
 										// ワイルドカード指定がない
 			if ( SkipSpace((const TCHAR **)&mfs->param) == '\0' ){
 				((EXS_DATA *)exm->dest)->ext = EX_NONE;
@@ -2259,17 +2296,17 @@ int CheckExtMode(EXSMEM *exm,MAKEFNSTRUCT *mfs)
 				break;
 			}
 
-			if ( CheckExsmem(exm,sizeof(EXS_DIR)) == FALSE) return CEM_ERROR;
+			if ( CheckExsmem(exm, sizeof(EXS_DIR)) == FALSE ) return CEM_ERROR;
 			((EXS_DIR *)exm->dest)->ext = EX_DIR;
 			((EXS_DIR *)exm->dest)->next = sizeof(EXS_DIR);
 			exm->left -= sizeof(EXS_DIR);
 			exm->dest += sizeof(EXS_DIR);
 			if ( *mfs->param != '/' ){
-				memmove(mfs->name,mfs->param,TSTRSIZE(mfs->param));
+				memmove(mfs->name, mfs->param, TSTRSIZE(mfs->param));
 				return CEM_ANALYZE; //解析を続行させて名前/正規表現の処理を行う
 			}
 			// 正規表現
-			if ( RegExpWildCard(exm,(const TCHAR **)&mfs->param) == FALSE ){
+			if ( RegExpWildCard(exm, (const TCHAR **)&mfs->param) == FALSE ){
 				return CEM_ERROR; // error;
 			}
 			break;
@@ -2280,7 +2317,7 @@ int CheckExtMode(EXSMEM *exm,MAKEFNSTRUCT *mfs)
 			if ( SkipSpace((const TCHAR **)&mfs->param) != '\0' ){
 				GETPARAMFLAGSSTRUCT gpfs;
 
-				GetParamFlags(&gpfs,(const TCHAR **)&mfs->param,inclabel);
+				GetParamFlags(&gpfs, (const TCHAR **)&mfs->param, inclabel);
 				mfs->flags = (mfs->flags & ~(REGEXPF_PATHMASK | REGEXPF_NOEXT | REGEXPF_SILENTERROR | REGEXPF_WORDMATCH)) | gpfs.value;
 				// REGEXPF_PATHMASK 以外のフラグがなければ、保存不要
 				if ( !(gpfs.value & ~REGEXPF_PATHMASK) ){
@@ -2289,7 +2326,7 @@ int CheckExtMode(EXSMEM *exm,MAKEFNSTRUCT *mfs)
 					break;
 				}
 			}	// 拡張子非分離指定
-			if ( CheckExsmem(exm,sizeof(EXS_OPTION)) == FALSE) return CEM_ERROR;
+			if ( CheckExsmem(exm,sizeof(EXS_OPTION)) == FALSE ) return CEM_ERROR;
 			((EXS_OPTION *)exm->dest)->ext = EX_JOINEXT;
 			((EXS_OPTION *)exm->dest)->next = sizeof(EXS_OPTION);
 			mfs->useext = FALSE;
@@ -2304,8 +2341,8 @@ int CheckExtMode(EXSMEM *exm,MAKEFNSTRUCT *mfs)
 			WORD offset = 0;
 			TCHAR typechar;
 
-			setflag(mfs->flags,REGEXPF_REQ_TIME);
-			typechar = SkipSpace((const TCHAR **)&mfs->param);
+			setflag(mfs->flags, REGEXPF_REQ_TIME);
+			typechar = TinyCharLower(SkipSpace((const TCHAR **)&mfs->param));
 			if ( typechar == 'c' ){
 				mfs->param++;
 				offset = EX_CREATEDATEREL - EX_WRITEDATEREL;
@@ -2314,7 +2351,7 @@ int CheckExtMode(EXSMEM *exm,MAKEFNSTRUCT *mfs)
 				offset = EX_ACCESSDATEREL - EX_WRITEDATEREL;
 			}
 			type = GetCompareType((const TCHAR **)&mfs->param);
-			daytype = GetWildDate((const TCHAR **)&mfs->param,&ftime,&stime);
+			daytype = GetWildDate((const TCHAR **)&mfs->param, &ftime, &stime);
 			if ( daytype == DAY_NONE ) return CEM_ERROR;
 			type2 = GetCompareType((const TCHAR **)&mfs->param);
 			if ( type2 ){ // type2 は符号反転を行う
@@ -2377,7 +2414,7 @@ int CheckExtMode(EXSMEM *exm,MAKEFNSTRUCT *mfs)
 			((EXS_ROMA *)(exm->dest))->ext = EX_ROMA;
 			((EXS_ROMA *)(exm->dest))->next = (WORD)structsize;
 			((EXS_ROMA *)(exm->dest))->handle = 0;
-			memcpy(((EXS_ROMA *)(exm->dest))->data,mfs->param,size * sizeof(TCHAR));
+			memcpy(((EXS_ROMA *)(exm->dest))->data, mfs->param, size * sizeof(TCHAR));
 			((EXS_ROMA *)(exm->dest))->data[size] = '\0';
 			break;
 		}

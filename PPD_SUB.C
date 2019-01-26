@@ -488,7 +488,7 @@ PPXDLL BOOL PPXAPI ThSetString(ThSTRUCT *TH,const TCHAR *name,const TCHAR *str)
 	THVARS *tvs,*maxtvs;
 
 	varsize = (sizeof(DWORD) * 2) + namesize + strsize;
-
+	if ( TH == NULL ) TH = &ProcessStringValue;
 	tvs = (THVARS *)TH->bottom;
 	maxtvs = (THVARS *)(char *)(TH->bottom + TH->top);
 	while ( tvs < maxtvs ){
@@ -540,6 +540,7 @@ PPXDLL TCHAR * PPXAPI ThAllocString(ThSTRUCT *TH,const TCHAR *name,DWORD strsize
 
 	varsize = (sizeof(DWORD) * 2) + namesize + strsize;
 
+	if ( TH == NULL ) TH = &ProcessStringValue;
 	tvs = (THVARS *)TH->bottom;
 	maxtvs = (THVARS *)(char *)(TH->bottom + TH->top);
 	while ( tvs < maxtvs ){
@@ -578,6 +579,7 @@ PPXDLL const TCHAR * PPXAPI ThGetString(ThSTRUCT *TH,const TCHAR *name,TCHAR *st
 	DWORD namesize = TSTRLENGTH32(name);
 	THVARS *tvs,*maxtvs;
 
+	if ( TH == NULL ) TH = &ProcessStringValue;
 	tvs = (THVARS *)TH->bottom;
 	maxtvs = (THVARS *)(char *)(TH->bottom + TH->top);
 	while ( tvs < maxtvs ){
@@ -599,6 +601,7 @@ PPXDLL BOOL PPXAPI ThEnumString(ThSTRUCT *TH,int index,TCHAR *name,TCHAR *str,DW
 {
 	THVARS *tvs,*maxtvs;
 
+	if ( TH == NULL ) TH = &ProcessStringValue;
 	tvs = (THVARS *)TH->bottom;
 	maxtvs = (THVARS *)(char *)(TH->bottom + TH->top);
 	while ( tvs < maxtvs ){
@@ -936,7 +939,7 @@ struct CHARSETLISTSTRUCT {
 	{"EUC",3,		VTYPE_EUCJP},
 	{"X-EUC",5,		VTYPE_EUCJP},
 	{"UTF-7",5,		VTYPE_UTF7},
-	{"UTF-8",5,		VTYPE_UTF8},
+	{"UTF-8",5,		CP_UTF8},
 	{NULL,0,0}
 };
 
@@ -968,14 +971,15 @@ void SkipSepA(char **ptr)
 }
 
 #define DEFAULTCODEPAGE	VTYPE_SYSTEMCP // wine のときは CP_UTF8 の方が良さそう
+#define CODECHECKSIZE (2 * KB)
 
 // 戻り値 : VTypeToCPlist 又は codepage
 // SJIS の場合、GetACP == CP__SJIS なら VTYPE_SYSTEMCP。そうでなければ CP__SJIS
 // UNICODE の場合、BOM有りなら VTYPE_UNICODE/VTYPE_UNICODEB/VTYPE_UTF8
 //                 BOM無しなら CP__UTF16L/CP__UTF16B/CP_UTF8
-PPXDLL int PPXAPI GetTextCodeType(const BYTE *image,DWORD size)
+PPXDLL int PPXAPI GetTextCodeType(const BYTE *image, DWORD size)
 {
-	const BYTE *bottom,*ptr,*maximage;
+	const BYTE *bottom, *ptr, *maximage;
 	int cnt; // utf-8の２バイト目以降のバイト数カウント & 7bit限定チェッカ
 
 	if ( *image >= 0xef ){ // UNICODE ヘッダの可能性
@@ -992,7 +996,7 @@ PPXDLL int PPXAPI GetTextCodeType(const BYTE *image,DWORD size)
 
 	if ( size > 0x4000 ) size = 0x4000;
 										// charset 指定があるか
-	maximage = image + ((size > 0x800) ? 0x800 : size); // このチェックは控えめに。
+	maximage = image + ((size > CODECHECKSIZE) ? CODECHECKSIZE : size); // このチェックは控えめに。
 	for ( ptr = image ; ptr < maximage ; ptr++ ){
 		BYTE c;
 
@@ -1032,7 +1036,7 @@ PPXDLL int PPXAPI GetTextCodeType(const BYTE *image,DWORD size)
 		len = ptr - image;
 		if ( len < (size - 4) && !(IsalnumA(*image) && Isalnum(*(image + 1))) ){
 			up = image + (len & 1);
-			c = 8;
+			c = 8; // tab
 			while ( up < maximage ){	// 上位バイトのみ調査
 				c = *up;
 				up += 2;
@@ -1049,7 +1053,7 @@ PPXDLL int PPXAPI GetTextCodeType(const BYTE *image,DWORD size)
 	}
 										// UTF-8 チェック
 	bottom = ptr; // 少なくとも tabcode～0x80 の範囲内であったところは省略する
-	maximage = image + size;
+	// maximage = image + size;
 	cnt = -1;
 	for ( ptr = bottom ; ptr < maximage ; ){
 		BYTE c;
@@ -1112,7 +1116,7 @@ int FixTextImage(const char *src,DWORD memsize,TCHAR **dest,int usecp)
 {
 	int charcode;
 	DWORD size;
-	BYTE *eucimage = NULL;
+	BYTE *tmpimage = NULL;
 	UINT cp;
 	DWORD flags;
 
@@ -1130,9 +1134,27 @@ int FixTextImage(const char *src,DWORD memsize,TCHAR **dest,int usecp)
 				if ( memcmp(src,UCF2HEADER,UCF2HEADERSIZE) == 0 ){
 					src += UCF2HEADERSIZE;
 				}
-			}else{
+			}else{ // VTYPE_UNICODEB / CP__UTF16B
+				WCHAR *udest;
 				if ( memcmp(src,UCF2BEHEADER,UCF2HEADERSIZE) == 0 ){
 					src += UCF2HEADERSIZE;
+				}
+				size = wcslen32((WCHAR *)src) + 1;
+				tmpimage = HeapAlloc(DLLheap,0,size * sizeof(WCHAR));
+				if ( tmpimage != NULL ){ // バイトオーダ変換
+					udest = (WCHAR *)tmpimage;
+					while ( size-- ){
+						WCHAR lc;
+
+						lc = *((WCHAR *)src)++;
+						*udest++ = (WCHAR)((lc >> 8) | (lc << 8));
+					}
+					#ifdef UNICODE
+						*dest = (WCHAR *)tmpimage;
+						return -charcode;
+					#else
+						src = (char *)tmpimage;
+					#endif
 				}
 			}
 		#ifdef UNICODE
@@ -1154,10 +1176,10 @@ int FixTextImage(const char *src,DWORD memsize,TCHAR **dest,int usecp)
 			int c,d;
 
 			size = strlen32(src) + 1;
-			eucimage = HeapAlloc(DLLheap,0,size);
-			if ( eucimage == NULL ) break;
-			memcpy(eucimage,src,size);
-			dstp = srcp = (BYTE *)eucimage;
+			tmpimage = HeapAlloc(DLLheap,0,size);
+			if ( tmpimage == NULL ) break;
+			memcpy(tmpimage,src,size);
+			dstp = srcp = (BYTE *)tmpimage;
 			while ( *srcp != '\0' ){
 				c = *srcp++;
 				if ( c < 0x80 ){
@@ -1191,13 +1213,81 @@ int FixTextImage(const char *src,DWORD memsize,TCHAR **dest,int usecp)
 			}
 			*dstp = '\0';
 			#ifdef UNICODE
-				src = (char *)eucimage;
+				src = (char *)tmpimage;
 				break;
 			#else
-				*dest = (char *)eucimage;
+				*dest = (char *)tmpimage;
 				return -charcode;
 			#endif
 		}
+#if 0
+		case VTYPE_JIS: {
+			BYTE *srcp,*dstp;
+			int c,d, jismode = 0;
+
+			size = strlen32(src) + 1;
+			tmpimage = HeapAlloc(DLLheap,0,size);
+			if ( tmpimage == NULL ) break;
+			memcpy(tmpimage,src,size);
+			dstp = srcp = (BYTE *)tmpimage;
+			while ( *srcp != '\0' ){
+				if ( jismode == 0 ){ // 非JIS
+					while ( *srcp != '\0' ){
+						c = *srcp++;
+						if ( (c == '\x1b') && (*srcp == '$') && (*(srcp + 1) == 'B') ){
+							jismode = 1;
+							srcp += 2;
+							break;
+						}
+						*dstp++ = (BYTE)c;
+						continue;
+					}
+					continue;
+				}
+				while ( *srcp != '\0' ){ // JIS
+					d = *srcp;
+					c = *(srcp + 1);
+					if ( (d < 0x21) || (d >= 0x7f) || (c < 0x21) || (c >= 0x7f) ){
+						if ( (d == '\x1b') && (c == '(') && (*(srcp + 2) == 'B') ){
+							jismode = 0;
+							srcp += 3;
+							break;
+						}
+						*dstp++ = (unsigned char)d;
+						srcp += 1;
+						break;
+					}
+					srcp += 2;
+
+					if ( d & 1 ){
+						if ( c < 0x60 ){
+							c += 0x1F;
+						}else{
+							c += 0x20;
+						}
+					}else{
+						c += 0x7E;
+					}
+					if ( d < 0x5F ){
+						d = (d + 0xE1) >> 1;
+					}else{
+						d = (d + 0x161) >> 1;
+					}
+					*dstp++ = (unsigned char)d;
+					*dstp++ = (unsigned char)c;
+				}
+			}
+			*dstp = '\0';
+			charcode = CP__SJIS;
+			#ifdef UNICODE
+				src = (char *)tmpimage;
+				break;
+			#else
+				*dest = (char *)tmpimage;
+				return -charcode;
+			#endif
+		}
+#endif
 	}
 						// S-JIS 等の MultiByte
 	cp = (charcode < VTypeToCPlist_max) ? VTypeToCPlist[charcode] : charcode;
@@ -1206,8 +1296,8 @@ int FixTextImage(const char *src,DWORD memsize,TCHAR **dest,int usecp)
 	size = MultiByteToWideCharU8(cp,flags,src,-1,NULL,0);
 	*dest = HeapAlloc(ProcHeap,0,TSTROFF(size));
 	if ( *dest == NULL ){
-		if ( eucimage != NULL ){
-			*dest = (TCHAR *)eucimage;
+		if ( tmpimage != NULL ){
+			*dest = (TCHAR *)tmpimage;
 			return -charcode;
 		}else{
 			*dest = (TCHAR *)src;
@@ -1215,7 +1305,7 @@ int FixTextImage(const char *src,DWORD memsize,TCHAR **dest,int usecp)
 		}
 	}
 	MultiByteToWideCharU8(cp,flags,src,-1,*dest,size);
-	if ( eucimage != NULL ) HeapFree(ProcHeap,0,eucimage);
+	if ( tmpimage != NULL ) HeapFree(ProcHeap,0,tmpimage);
 	return -charcode;
 
 #else // Multibyte
@@ -1226,7 +1316,7 @@ int FixTextImage(const char *src,DWORD memsize,TCHAR **dest,int usecp)
 		WCHAR *srcW;
 		BOOL reqfree;
 
-		if ( cp != CP__UTF16L ){ // 一旦UNICODEに変換
+		if ( (cp != CP__UTF16L) && (cp != CP__UTF16B) ){ // 一旦UNICODEに変換
 			size = MultiByteToWideCharU8(cp,flags,src,-1,NULL,0);
 			srcW = HeapAlloc(ProcHeap,0,size * sizeof(WCHAR));
 			if ( srcW == NULL ){
@@ -1245,12 +1335,12 @@ int FixTextImage(const char *src,DWORD memsize,TCHAR **dest,int usecp)
 		if ( *dest == NULL ){
 			HeapFree(ProcHeap,0,srcW);
 			*dest = (TCHAR *)src;
-			if ( eucimage != NULL ) HeapFree(ProcHeap,0,eucimage);
+			if ( tmpimage != NULL ) HeapFree(ProcHeap,0,tmpimage);
 			return charcode;
 		}
 		WideCharToMultiByte(CP_ACP,0,srcW,-1,*dest,size,NULL,NULL);
 		if ( IsTrue(reqfree) ) HeapFree(ProcHeap,0,srcW);
-		if ( eucimage != NULL ) HeapFree(ProcHeap,0,eucimage);
+		if ( tmpimage != NULL ) HeapFree(ProcHeap,0,tmpimage);
 		return -charcode;
 	}
 #endif
@@ -1309,9 +1399,9 @@ PPXDLL BOOL PPXAPI MakeTempEntry(DWORD bufsize,TCHAR *tempath,DWORD attribute)
 	int pathlen,i;
 
 	if ( TempPath[0] == '\0' ){
-		GetTempPath(MAX_PATH,TempPath);
-		if ( MakeTempEntry(MAX_PATH,TempPath,FILE_ATTRIBUTE_DIRECTORY) == FALSE ){
-			tstrcpy(TempPath,StrDummyTempPath); // TempPath が生成できなかったので、決め打ちでディレクトリを決める
+		GetTempPath(MAX_PATH, TempPath);
+		if ( MakeTempEntry(MAX_PATH, TempPath, FILE_ATTRIBUTE_DIRECTORY) == FALSE ){
+			tstrcpy(TempPath, StrDummyTempPath); // TempPath が生成できなかったので、決め打ちでディレクトリを決める
 		}
 	}
 	// 2: "\\" と "\n" 8:filename 4:ext
@@ -1406,6 +1496,7 @@ PPXDLL const TCHAR * PPXAPI PPxGetSyncTag(void)
 	return SyncTag;
 }
 
+#if 0
 struct GETCHILD {
 	RECT box;
 	HWND hWnd;
@@ -1440,30 +1531,49 @@ HWND GetChildWindowFromPoint(HWND hWnd,POINT *pos)
 							// ChildWindowFromPoint をあえて使わない
 	GetWindowRect(gc.hWnd,&gc.box);
 	gc.pos = *pos;
-	if ( !(GetWindowLong(gc.hWnd,GWL_STYLE) & (WS_CAPTION | WS_SYSMENU)) ){
+	if ( !(GetWindowLong(gc.hWnd,GWL_STYLE) & ((WS_CAPTION | WS_SYSMENU) & ~WS_BORDER)) ){
 		hPWnd = GetParent(gc.hWnd);
 		if ( hPWnd != NULL ) gc.hWnd = hPWnd;
 	}
 	EnumChildWindows(gc.hWnd,GetWindowFromPointProc,(LPARAM)&gc);
 	return gc.hWnd;
 }
+#endif
 
-// 親ウィンドウを推測する -----------------------------------------------------
-HWND GetParentBox(HWND hWnd)
+
+// 自か親のタイトル付きウィンドウを取得する -----------------------------------
+HWND GetCaptionWindow(HWND hWnd)
+{
+	// タイトルバーを持っているかを確認
+	while ( !(GetWindowLong(hWnd,GWL_STYLE) & (WS_CAPTION & ~WS_BORDER)) ){
+		HWND htWnd;
+
+		htWnd = GetParent(hWnd);
+		if ( htWnd == NULL ) break;
+		hWnd = htWnd;
+	}
+	return hWnd;
+}
+
+// 親ウィンドウ(タイトル付き)を推測する ---------------------------------------
+HWND GetParentCaptionWindow(HWND hWnd)
 {
 	HWND nhWnd;
 
 	nhWnd = hWnd;
-	while ( (nhWnd = GetParent(nhWnd)) != NULL){
-		if (GetWindowLong(nhWnd,GWL_STYLE) & WS_SYSMENU ) return nhWnd;
+	while ( (nhWnd = GetParent(nhWnd)) != NULL ){
+		if ( GetWindowLong(nhWnd,GWL_STYLE) & (WS_CAPTION & ~WS_BORDER) ){
+			return nhWnd;
+		}
 	}
 	nhWnd = GetParent(hWnd);
 	return nhWnd;
 }
+
 // ウィンドウを親ウィンドウのまん中に移動させる -------------------------------
 PPXDLL void PPXAPI CenterWindow(HWND hWnd)
 {
-	MoveCenterWindow(hWnd,GetParentBox(hWnd));
+	MoveCenterWindow(hWnd,GetParentCaptionWindow(hWnd));
 }
 
 PPXDLL void PPXAPI MoveCenterWindow(HWND hWnd,HWND hParentWnd)

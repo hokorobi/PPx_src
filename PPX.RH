@@ -10,9 +10,17 @@
 #define P_Company_NAME	"TOROid"
 #define P_Copyright		Copyright
 #ifndef _WIN64
-#define P_Processor		"x86"
+ #ifdef _M_ARM
+  #define P_Processor "ARM32"
+ #else
+  #define P_Processor "x86"
+ #endif
 #else
-#define P_Processor		"AMD64"
+ #ifdef _M_ARM64
+  #define P_Processor "ARM64"
+ #else
+  #define P_Processor "AMD64"
+ #endif
 #endif
 #define TOOLBARIMAGE	9
 

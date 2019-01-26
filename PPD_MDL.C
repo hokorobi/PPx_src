@@ -249,7 +249,7 @@ DWORD_PTR USECDECL CommandModuleInfoFunc(COMMANDMODULEINFOSTRUCT *ppxa,DWORD cmd
 #endif
 
 		case PPXCMDID_VERSION:
-			return (VersionH * 10000 + VersionM * 100 + VersionL);
+			return (VersionH * 10000 + VersionM * 1000 + VersionL * 100 + VersionP);
 
 		case PPXCMDID_GETKEYNAME:
 #ifdef UNICODE
@@ -312,7 +312,9 @@ void FreePPxModule(void)
 	if ( mdll == NULL ) return;
 
 	module.info = NULL;
-	for ( i = ppxmodule_count ; i ; i--,mdll++ ){
+	i = ppxmodule_count;
+	ppxmodule_count = 0;
+	for ( ; i > 0 ; i--,mdll++ ){
 		if ( mdll->types == MODULE_NOLOAD ) continue;
 		if ( mdll->hDLL != NULL ){
 			if ( (mdll->ModuleEntry != NULL) &&
@@ -337,23 +339,24 @@ void LoadModuleList(void)
 	int modulecount = 0;
 
 	EnterCriticalSection(&ThreadSection);
+	if ( ppxmodule_count >= 0 ) return; // 別スレッドで処理された
 
 	ThInit(&Thmodule);
 	ThInit(&Thmodule_str);
-	CatPath(dir,DLLpath,T("PPX*.DLL"));
+	CatPath(dir, DLLpath, T("PPX*.DLL"));
 										// 検索 -------------------------------
-	hFF = FindFirstFileL(dir,&ff);
+	hFF = FindFirstFileL(dir, &ff);
 	if ( hFF != INVALID_HANDLE_VALUE ){
 		do{
-			if ( !tstricmp(ff.cFileName,T("PPXLIB32.DLL")) ) continue;
+			if ( !tstricmp(ff.cFileName, T("PPXLIB32.DLL")) ) continue;
 			mdll.hDLL = NULL;
 			mdll.types = MAX32; // 仮に全部を読み込み可能に
-			GetCustTable(P_moduleStr,ff.cFileName,&mdll.types,sizeof(mdll.types));
+			GetCustTable(P_moduleStr, ff.cFileName, &mdll.types, sizeof(mdll.types));
 			mdll.DllNameOffset = Thmodule_str.top;
-			ThAddString(&Thmodule_str,ff.cFileName);
-			ThAppend(&Thmodule,&mdll,sizeof mdll);
+			ThAddString(&Thmodule_str, ff.cFileName);
+			ThAppend(&Thmodule, &mdll, sizeof mdll);
 			modulecount++;
-		}while( IsTrue(FindNextFile(hFF,&ff)) );
+		}while( IsTrue(FindNextFile(hFF, &ff)) );
 		FindClose(hFF);
 	}
 	if ( Thmodule.bottom == NULL ) modulecount = 0; // モジュールがない
@@ -366,6 +369,7 @@ void LoadModuleList(void)
 BOOL LoadModuleFile(HWND hWnd,MODULESTRUCT *mdll,DWORD types)
 {
 	ERRORCODE result;
+
 	if ( !(mdll->types & types) ) return FALSE;
 	EnterCriticalSection(&ThreadSection);
 	if ( mdll->hDLL != NULL ){
@@ -415,7 +419,7 @@ loaderror:
 	return FALSE;
 }
 
-int CommandModule(EXECSTRUCT *Z,const TCHAR **ptr)
+int CommandModule(EXECSTRUCT *Z, const TCHAR *cmdparam)
 {
 	const WCHAR *param;
 	DWORD paramcount = 0;
@@ -428,10 +432,10 @@ int CommandModule(EXECSTRUCT *Z,const TCHAR **ptr)
 	PPXMODULEPARAM module;
 
 #ifndef UNICODE
-	WCHAR regidW[REGIDSIZE],nameW[MAX_PATH];
+	WCHAR regidW[REGIDSIZE], nameW[MAX_PATH];
 
-	AnsiToUnicode(Z->Info->Name,nameW,MAX_PATH);
-	AnsiToUnicode(Z->Info->RegID,regidW,REGIDSIZE);
+	AnsiToUnicode(Z->Info->Name, nameW, MAX_PATH);
+	AnsiToUnicode(Z->Info->RegID, regidW, REGIDSIZE);
 	#define PPXAINFONAME nameW
 	#define PPXAINFOREGID regidW
 #else
@@ -440,31 +444,31 @@ int CommandModule(EXECSTRUCT *Z,const TCHAR **ptr)
 #endif
 	if ( ppxmodule_count < 0 ) LoadModuleList();
 	if ( ppxmodule_count <= 0 ) return PPXMRESULT_SKIP; // モジュールがない
-									// コマンド名保存
-	strcpyToW(cmdbuf,*ptr,VFPS);
+									// arg(0) コマンド名保存
+	strcpyToW(cmdbuf, cmdparam, CMDLINESIZE);
 	param = next = cmdbuf + strlenW(cmdbuf) + 1;
-	(*ptr) += tstrlen(*ptr) + 1;
-									// パラメータの切り出し
+	cmdparam += tstrlen(cmdparam) + 1;
+									// arg(1...) パラメータの切り出し
 #ifndef UNICODE
-	while( **ptr ){
+	while( *cmdparam ){
 		char tmp[CMDLINESIZE];
 
 		tmp[0] = '\0';
-		GetCommandParameter(ptr,tmp,TSIZEOF(tmp));
+		GetCommandParameter(&cmdparam, tmp, TSIZEOF(tmp));
 		if ( tmp[0] == '\0' ) break;
 		paramcount++;
-		AnsiToUnicode(tmp,next,CMDLINESIZE);
+		AnsiToUnicode(tmp, next, CMDLINESIZE);
 		next = next + strlenW(next) + 1;
-		if ( NextParameter(ptr) == FALSE ) break;
+		if ( NextParameter(&cmdparam) == FALSE ) break;
 	}
 #else
-	while( **ptr ){
+	while( *cmdparam ){
 		*next = '\0';
-		GetCommandParameter(ptr,next,CMDLINESIZE - VFPS);
+		GetCommandParameter(&cmdparam, next, CMDLINESIZE - VFPS);
 		if ( *next == '\0' ) break;
 		paramcount++;
 		next = next + strlenW(next) + 1;
-		if ( NextParameter(ptr) == FALSE ) break;
+		if ( NextParameter(&cmdparam) == FALSE ) break;
 	}
 #endif
 										// 検索と実行
@@ -484,19 +488,19 @@ int CommandModule(EXECSTRUCT *Z,const TCHAR **ptr)
 	ppxa.parent = Z->Info;
 	ppxa.Z = Z;
 
-	for ( i = ppxmodule_count ; i ; i--,mdll++ ){
+	for ( i = ppxmodule_count ; i ; i--, mdll++ ){
 		if ( mdll->hDLL == NULL ){
-			if ( LoadModuleFile(ppxa.info.hWnd,mdll,PPMTYPEFLAGS(PPXMEVENT_COMMAND)) == FALSE ){
+			if ( LoadModuleFile(ppxa.info.hWnd, mdll, PPMTYPEFLAGS(PPXMEVENT_COMMAND)) == FALSE ){
 				continue;
 			}
 		}
 #ifdef _WIN64
-		result = mdll->ModuleEntry(&ppxa.info,PPXMEVENT_COMMAND,module);
+		result = mdll->ModuleEntry(&ppxa.info, PPXMEVENT_COMMAND, module);
 #else
 		if ( mdll->ModuleEntry != NULL ){
-			result = mdll->ModuleEntry(&ppxa.info,PPXMEVENT_COMMAND,module);
+			result = mdll->ModuleEntry(&ppxa.info, PPXMEVENT_COMMAND, module);
 		}else{
-			result = mdll->OldModuleEntry(&ppxa.info,PPXMEVENT_COMMAND,module);
+			result = mdll->OldModuleEntry(&ppxa.info, PPXMEVENT_COMMAND, module);
 		}
 #endif
 		if ( result == PPXMRESULT_SKIP ) continue;
@@ -518,28 +522,40 @@ void ToUtf8Function(EXECSTRUCT *Z,const char *param)
 }
 */
 
-void TreeFunction(EXECSTRUCT *Z,const TCHAR *param)
+void TreeFunction(EXECSTRUCT *Z,const TCHAR *param) // %*tree
 {
 	HWND hTreeWnd;
 	HWND hParentWnd;
 	POINT pos;
 	MSG msg;
+	DWORD X_tree[5];
+	int dpi;
 
 	*Z->dst = '\0';
 	Z->result = ERROR_BUSY;
 	if ( Z->hWnd == NULL ){
 		hParentWnd = NULL;
 	}else{
-		hParentWnd = GetParentBox(Z->hWnd);
-		if ( hParentWnd == NULL ) hParentWnd = Z->hWnd;
+		hParentWnd = GetParentCaptionWindow(Z->hWnd);
 	}
 	if ( SkipSpace(&param) == '\0' ) param = T("1"); // 空欄なら M_pjump に
 
 	InitVFSTree();
 	GetPopupPoint(Z,&pos);
+
+	// 初期大きさ調整
+	dpi = GetMonitorDPI(hParentWnd);
+	X_tree[3] = 300 * dpi / DEFAULT_WIN_DPI;
+	X_tree[4] = 400 * dpi / DEFAULT_WIN_DPI;
+	GetCustData(StrX_tree, X_tree, sizeof(X_tree));
+//	if ( X_tree[3] < 100 ) X_tree[3] = 100; // Windows側で処理される
+	if ( X_tree[4] < 100 ) X_tree[4] = 100;
+
+	// 作成
 	hTreeWnd = CreateWindow(TreeClassStr,ZGetTitleName(Z),
-			WS_OVERLAPPEDWINDOW | WS_VISIBLE,pos.x,pos.y,
-			300,400,NULL,NULL,NULL,0);
+			WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+			pos.x,pos.y, X_tree[3],X_tree[4], NULL, NULL, NULL, 0);
+
 	SendMessage(hTreeWnd,VTM_SETFLAG,(WPARAM)hParentWnd,(LPARAM)VFSTREE_MENU);
 	SendMessage(hTreeWnd,VTM_TREECOMMAND,0,(LPARAM)param);
 	SendMessage(hTreeWnd,VTM_SETRESULT,(WPARAM)&Z->result,(LPARAM)Z->dst);
@@ -743,10 +759,10 @@ void InputFunctionOption(EXECSTRUCT *Z, TINPUT *tinput, const TCHAR *param, TCHA
 				}else if ( *more == 't' ){
 					tinput->firstC = tinput->lastC = EC_LAST;
 				}else {
-					tinput->firstC = tinput->lastC = GetNumber(&more);
+					tinput->firstC = tinput->lastC = GetDigitNumber(&more);
 					if ( SkipSpace(&more) == ',' ){
 						more++;
-						tinput->lastC = GetNumber(&more);
+						tinput->lastC = GetDigitNumber(&more);
 					}
 				}
 			}
@@ -871,137 +887,34 @@ void NestedFunction(EXECSTRUCT *Z)
 	}
 }
 
-// ※ パラメータは、Z->DstBuf 上なので、パラメータを読む前に Z->dst を使うとパラメータが破損する
-void FunctionModule(EXECSTRUCT *Z)
+void CallFunction(EXECSTRUCT *Z, TCHAR *cmdname, DWORD namehash, const TCHAR *funcparam)
 {
-	TCHAR cmdname[64];
 	PPXMDLFUNCSTRUCT mdlparam;
-	const TCHAR *dptr;
-	DWORD namehash;
 
-// 関数名抽出
-	namehash = GetModuleNameHash(Z->dst,cmdname);
-	dptr = Z->dst + tstrlen(Z->dst) + 1;
-
-// PPx common 内蔵関数
-	if ( cmdname[0] <= 'I' ){ //------------------------------------------- A-I
-		if ( !tstrcmp(cmdname,T("ADDCHAR")) ){
-			TCHAR code = *dptr;
-
-			if ( code != '\0' ){
-				if ( (Z->DstBuf < Z->dst) && (*(Z->dst - 1) != code) ){
-					*Z->dst++ = code;
-				}
-			}
-			return;
-		}
-
-		if ( !tstrcmp(cmdname,T("CALC")) ){
-			CalculationFunction(Z,dptr);
-			return;
-		}
-		if ( !tstrcmp(cmdname,T("EDITTEXT")) ){
-			*Z->dst = '\0';
-			if ( Z->flag & XEO_CONSOLE ){
-				Z->result = PPxInfoFunc(Z->Info,PPXCMDID_PPBEDITTEXT,Z->dst);
-			}else{
-				SendMessage(Z->hWnd,WM_PPXCOMMAND,KE_edtext,(LPARAM)Z->dst);
-			}
-			Z->dst += tstrlen(Z->dst);
-			return;
-		}
-		if ( !tstrcmp(cmdname,T("ERRORMSG")) ){
-			PPErrorMsg(Z->dst,GetNumber(&dptr));
-			Z->dst += tstrlen(Z->dst);
-			return;
-		}
-		if ( !tstrcmp(cmdname,T("EXITCODE")) || !tstrcmp(cmdname,T("ERRORLEVEL")) ){ // *exitcode
-			Z->dst += wsprintf(Z->dst,T("%d"),Z->ExitCode);
-			return;
-		}
-		if ( !tstrcmp(cmdname,T("EXTRACT")) ){ // *extract
-			HWND hWnd;
-
-			hWnd = GetPPxhWndFromID(Z->Info,&dptr,NULL);
-			if ( SkipSpace(&dptr) == ',' ) dptr++;
-			GetCommandParameter(&dptr,Z->dst,CMDLINESIZE);
-			if ( hWnd == NULL ){ // 指定無し
-				PP_ExtractMacro(Z->hWnd, Z->Info, NULL, Z->dst, Z->dst, XEO_EXTRACTEXEC);
-				Z->dst += tstrlen(Z->dst);
-				return;
-			}else if ( hWnd == BADHWND ){ // 該当無し…何もしない
-				return;
-			}
-			ExtractPPxCall(hWnd,Z,Z->dst);
-			return;
-		}
-		if ( !tstrcmp(cmdname,T("F")) ){
-			GetNameFunction(Z,dptr);
-			return;
-		}
-		if ( !tstrcmp(cmdname,T("GETCUST")) ){
-			GetCustFunction(Z,dptr);
-			return;
-		}
-		if ( !tstrcmp(cmdname,T("INPUT")) ){
-			InputFunction(Z,dptr);
-			return;
-		}
-	}else{ //-------------------------------------------------------------- J-Z
-		if ( !tstrcmp(cmdname,T("JOB")) ){
-			CountJobFunction(Z);
-			return;
-		}
-		if ( !tstrcmp(cmdname,T("LINKEDPATH")) ){
-			GetLinkedPathFunction(Z,dptr);
-			return;
-		}
-		if ( !tstrcmp(cmdname,T("NAME")) ){
-			GetNameFunction(Z,dptr);
-			return;
-		}
-		if ( !tstrcmp(cmdname,T("REGEXP")) ){
-			RegExpFunction(Z,dptr);
-			return;
-		}
-		if ( !tstrcmp(cmdname,T("SELECTTEXT")) ){
-			SelectTextFunction(Z,dptr);
-			return;
-		}
-/*
-		if ( !tstrcmp(cmdname,T("TOUTF8")) ){
-			ToUtf8Function(Z,dptr);
-			return;
-		}
-*/
-		if ( !tstrcmp(cmdname,T("TREE")) ){
-			TreeFunction(Z,dptr);
-			return;
-		}
-	}
+	BOOL result;
+	MODULESTRUCT *mdll;
+	WCHAR argbuf[CMDLINESIZE], *next;
+	const TCHAR *pptr;
+	COMMANDMODULEINFOSTRUCT ppxa;
+	PPXMCOMMANDSTRUCT function;
+	PPXMODULEPARAM module;
+	TCHAR olddir[VFPS];
 
 // 各 PPx 内蔵関数
 	mdlparam.param = cmdname;
 	mdlparam.dest = Z->dst;
 	mdlparam.dest[0] = '\0';
-	mdlparam.optparam = dptr;
+	mdlparam.optparam = funcparam;
 
 	if ( 1 != (Z->result = (PPxInfoFunc(Z->Info,PPXCMDID_FUNCTION,&mdlparam) ^ 1)) ){
 		Z->dst += tstrlen(mdlparam.dest);
 		return;
 	}
+
 // Module
 	{
 		DWORD paramcount = 0;
-		BOOL result;
-		MODULESTRUCT *mdll;
 		int i;
-		WCHAR cmdbuf[CMDLINESIZE],*next;
-		const TCHAR *pptr;
-		COMMANDMODULEINFOSTRUCT ppxa;
-		PPXMCOMMANDSTRUCT function;
-		PPXMODULEPARAM module;
-		TCHAR olddir[VFPS];
 #ifndef UNICODE
 		WCHAR regidW[REGIDSIZE],nameW[MAX_PATH],destW[CMDLINESIZE];
 
@@ -1016,12 +929,12 @@ void FunctionModule(EXECSTRUCT *Z)
 		#define DESTBUF Z->dst
 #endif
 		if ( ppxmodule_count < 0 ) LoadModuleList();
-									// コマンド名保存
-		strcpyToW(cmdbuf,cmdname,MAX_PATH);
-		function.param = next = cmdbuf + strlenW(cmdbuf) + 1;
-		pptr = dptr;
 
-									// パラメータの切り出し
+		// arg の用意
+		strcpyToW(argbuf, cmdname, MAX_PATH); // arg(0) コマンド名保存
+		function.param = next = argbuf + strlenW(argbuf) + 1;
+		pptr = funcparam;
+									// arg(1...) パラメータの切り出し
 #ifndef UNICODE
 		while ( *pptr ){
 			char tmp[CMDLINESIZE];
@@ -1046,10 +959,10 @@ void FunctionModule(EXECSTRUCT *Z)
 #endif
 		GetCurrentDirectory(TSIZEOF(olddir),olddir);
 		SetCurrentDirectory(GetZCurDir(Z));
-										// 検索と実行
+										// function module実行
 		mdll = ppxmodule_list;
 		module.command = &function;
-		function.commandname = cmdbuf;
+		function.commandname = argbuf;
 		function.commandhash = namehash;
 		function.paramcount = paramcount;
 		function.resultstring = DESTBUF;
@@ -1062,9 +975,9 @@ void FunctionModule(EXECSTRUCT *Z)
 		ppxa.parent = Z->Info;
 		ppxa.Z = Z;
 
-		for ( i = ppxmodule_count ; i ; i--,mdll++ ){
+		for ( i = ppxmodule_count ; i > 0 ; i--,mdll++ ){
 			if ( mdll->hDLL == NULL ){
-				if ( LoadModuleFile(ppxa.info.hWnd,mdll,PPMTYPEFLAGS(PPXMEVENT_FUNCTION)) == FALSE ){
+				if ( LoadModuleFile(ppxa.info.hWnd, mdll, PPMTYPEFLAGS(PPXMEVENT_FUNCTION)) == FALSE ){
 					continue;
 				}
 			}
@@ -1085,14 +998,17 @@ void FunctionModule(EXECSTRUCT *Z)
 			Z->dst += tstrlen(Z->dst);
 			goto endfunc;
 		}
-		((TCHAR *)cmdbuf)[CMDLINESIZE - 1] = '\0';
-		if ( NO_ERROR != GetCustTable(StrUserCommand,cmdname,(TCHAR *)cmdbuf,sizeof(cmdbuf)) ){
+
+
+// user関数
+		((TCHAR *)argbuf)[CMDLINESIZE - 1] = '\0';
+		if ( NO_ERROR != GetCustTable(StrUserCommand, cmdname, (TCHAR *)argbuf, sizeof(argbuf)) ){
 			XMessage(NULL,NULL,XM_GrERRld,T("Unknown function:%%*%s"),cmdname);
 			Z->result = ERROR_INVALID_FUNCTION;
 		}else{
-			*Z->dst = *cmdname;
+			tstrcpy(cmdname + tstrlen(cmdname) + 1, funcparam);
 
-			if ( ((TCHAR *)cmdbuf)[CMDLINESIZE - 1] != '\0' ){
+			if ( ((TCHAR *)argbuf)[CMDLINESIZE - 1] != '\0' ){
 				TCHAR *longbuf;
 				int size = GetCustTableSize(StrUserCommand,cmdname);
 
@@ -1101,11 +1017,11 @@ void FunctionModule(EXECSTRUCT *Z)
 					Z->result = RPC_S_STRING_TOO_LONG;
 					goto endfunc;
 				}
-				GetCustTable(StrUserCommand,cmdname,longbuf,size);
-				UserCommand(Z,Z->dst,longbuf,Z->dst);
-				HeapFree(DLLheap,0,longbuf);
+				GetCustTable(StrUserCommand, cmdname, longbuf, size);
+				UserCommand(Z, cmdname, longbuf, Z->dst);
+				HeapFree(DLLheap, 0, longbuf);
 			}else{
-				UserCommand(Z,Z->dst,(TCHAR *)cmdbuf,Z->dst);
+				UserCommand(Z, cmdname, (TCHAR *)argbuf, Z->dst);
 			}
 			Z->dst += tstrlen(Z->dst);
 		}
@@ -1113,6 +1029,127 @@ endfunc:
 		SetCurrentDirectory(olddir);
 		return;
 	}
+}
+
+// ※ funcparam は、Z->DstBuf 上なので、パラメータを読む前に Z->dst を使うとパラメータが破損する
+void FunctionModule(EXECSTRUCT *Z)
+{
+	TCHAR cmdname[CMDLINESIZE];
+	const TCHAR *funcparam;
+	DWORD namehash;
+
+// 関数名抽出
+	namehash = GetModuleNameHash(Z->dst, cmdname);
+	funcparam = Z->dst + tstrlen(Z->dst) + 1;
+
+// PPx common 内蔵関数
+	if ( cmdname[0] <= 'I' ){ //------------------------------------------- A-I
+		if ( !tstrcmp(cmdname,T("ADDCHAR")) ){
+			TCHAR code = *funcparam;
+
+			if ( code != '\0' ){
+				if ( (Z->DstBuf < Z->dst) && (*(Z->dst - 1) != code) ){
+					*Z->dst++ = code;
+				}
+			}
+			return;
+		}
+
+		if ( !tstrcmp(cmdname,T("CALC")) ){
+			CalculationFunction(Z, funcparam);
+			return;
+		}
+
+		if ( !tstrcmp(cmdname,T("EDITTEXT")) ){
+			*Z->dst = '\0';
+			if ( Z->flag & XEO_CONSOLE ){
+				Z->result = PPxInfoFunc(Z->Info,PPXCMDID_PPBEDITTEXT,Z->dst);
+			}else{
+				SendMessage(Z->hWnd,WM_PPXCOMMAND,KE_edtext,(LPARAM)Z->dst);
+			}
+			Z->dst += tstrlen(Z->dst);
+			return;
+		}
+
+		if ( !tstrcmp(cmdname,T("ERRORMSG")) ){
+			PPErrorMsg(Z->dst, GetNumber(&funcparam));
+			Z->dst += tstrlen(Z->dst);
+			return;
+		}
+
+		if ( !tstrcmp(cmdname,T("EXITCODE")) || !tstrcmp(cmdname,T("ERRORLEVEL")) ){ // *exitcode
+			Z->dst += wsprintf(Z->dst,T("%d"),Z->ExitCode);
+			return;
+		}
+
+		if ( !tstrcmp(cmdname,T("EXTRACT")) ){ // *extract
+			HWND hWnd;
+
+			hWnd = GetPPxhWndFromID(Z->Info, &funcparam,NULL);
+			if ( SkipSpace(&funcparam) == ',' ) funcparam++;
+			GetCommandParameter(&funcparam, Z->dst, CMDLINESIZE);
+			if ( hWnd == NULL ){ // 指定無し
+				PP_ExtractMacro(Z->hWnd, Z->Info, NULL, Z->dst, Z->dst, XEO_EXTRACTEXEC);
+				Z->dst += tstrlen(Z->dst);
+				return;
+			}else if ( hWnd == BADHWND ){ // 該当無し…何もしない
+				return;
+			}
+			ExtractPPxCall(hWnd,Z,Z->dst);
+			return;
+		}
+
+		if ( !tstrcmp(cmdname,T("F")) ){
+			GetNameFunction(Z, funcparam);
+			return;
+		}
+
+		if ( !tstrcmp(cmdname,T("GETCUST")) ){
+			GetCustFunction(Z, funcparam);
+			return;
+		}
+
+		if ( !tstrcmp(cmdname,T("INPUT")) ){
+			InputFunction(Z, funcparam);
+			return;
+		}
+	}else{ //-------------------------------------------------------------- J-Z
+		if ( !tstrcmp(cmdname,T("JOB")) ){
+			CountJobFunction(Z);
+			return;
+		}
+
+		if ( !tstrcmp(cmdname,T("LINKEDPATH")) ){
+			GetLinkedPathFunction(Z, funcparam);
+			return;
+		}
+
+		if ( !tstrcmp(cmdname,T("NAME")) ){
+			GetNameFunction(Z, funcparam);
+			return;
+		}
+
+		if ( !tstrcmp(cmdname,T("REGEXP")) ){
+			RegExpFunction(Z, funcparam);
+			return;
+		}
+
+		if ( !tstrcmp(cmdname,T("SELECTTEXT")) ){
+			SelectTextFunction(Z, funcparam);
+			return;
+		}
+/*
+		if ( !tstrcmp(cmdname,T("TOUTF8")) ){
+			ToUtf8Function(Z, funcparam);
+			return;
+		}
+*/
+		if ( !tstrcmp(cmdname,T("TREE")) ){
+			TreeFunction(Z, funcparam);
+			return;
+		}
+	}
+	CallFunction(Z, cmdname, namehash, funcparam);
 }
 #undef PPXAINFONAME
 #undef PPXAINFOREGID
@@ -1143,23 +1180,23 @@ PPXDLL int PPXAPI CallModule(PPXAPPINFO *info,DWORD func,PPXMODULEPARAM ModulePa
 	ppxa.Z = NULL;
 
 	if ( CallBackModule != NULL ){
-		return CallBackModule(&ppxa.info,func,ModuleParam);
+		return CallBackModule(&ppxa.info, func, ModuleParam);
 	}
 
 	if ( ppxmodule_count < 0 ) LoadModuleList();
 	mdll = ppxmodule_list;
-	for ( i = ppxmodule_count ; i ; i--,mdll++ ){
+	for ( i = ppxmodule_count ; i > 0 ; i--,mdll++ ){
 		int result;
 
 		if ( mdll->hDLL == NULL ){
-			if ( LoadModuleFile(ppxa.info.hWnd,mdll,PPMTYPEFLAGS(func)) == FALSE ){
+			if ( LoadModuleFile(ppxa.info.hWnd, mdll, PPMTYPEFLAGS(func)) == FALSE ){
 				continue;
 			}
 		}
 #ifndef _WIN64
 		if ( mdll->ModuleEntry == NULL ) continue;
 #endif
-		result = mdll->ModuleEntry(&ppxa.info,func,ModuleParam);
+		result = mdll->ModuleEntry(&ppxa.info, func, ModuleParam);
 		if ( result == PPXMRESULT_SKIP ) continue;
 		return result;
 	}

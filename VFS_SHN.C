@@ -162,19 +162,61 @@ VFSDLL BOOL PPXAPI PIDL2DisplayNameOf(TCHAR *name,LPSHELLFOLDER sfolder,LPCITEMI
 	}
 	return TRUE;
 }
+
+LPITEMIDLIST PathToPidl2(const TCHAR *vfs)
+{
+	LPITEMIDLIST idl = NULL,idl2,idlc;
+	LPSHELLFOLDER pSF;
+	LPMALLOC pMA;
+	TCHAR tempdir[VFPS],*p;
+	HWND hWnd = NULL;
+
+	pSF = VFPtoIShell(hWnd,vfs,&idl);
+	if ( pSF == NULL ){ // 最後のエントリがbindできないと思われるので試行する
+		TCHAR c;
+
+		tstrcpy(tempdir,vfs);
+		p = VFSFindLastEntry(tempdir);
+		if ( (c = *p) == '\0' ) return NULL; // エントリがない
+		*p = '\0';
+		pSF = VFPtoIShell(hWnd,tempdir,&idl); // 最終エントリ以外で取得
+		if ( pSF == NULL ) return NULL;
+									// 最終エントリを処理
+		if ( c == '\\' ){
+			p++;
+		}else{
+			*p = c;
+		}
+		idl2 = BindIShellAndFname(pSF,p);
+		if ( idl2 == NULL ){
+			pSF->lpVtbl->Release(pSF);
+			return NULL;
+		}
+		SHGetMalloc(&pMA);
+		idlc = CatPidl(pMA,idl,idl2);
+		pMA->lpVtbl->Free(pMA,idl2);
+		pMA->lpVtbl->Free(pMA,idl);
+		pMA->lpVtbl->Release(pMA);
+		idl = idlc;
+	}
+	pSF->lpVtbl->Release(pSF);
+	return idl;
+}
+
 /*-----------------------------------------------------------------------------
 	Fullpath で構成された pszFile を絶対指定の ITEMIDLIST に変換する。
 	NULL なら失敗
 -----------------------------------------------------------------------------*/
 VFSDLL LPITEMIDLIST PPXAPI PathToPidl(LPCTSTR pszFile)
 {
-	LPSHELLFOLDER	piDesktop;
-	LPITEMIDLIST	pidl;
+	LPSHELLFOLDER piDesktop;
+	LPITEMIDLIST pidl;
 									// shell name space のroot(desktop)を取得
 	if ( FAILED(SHGetDesktopFolder(&piDesktop)) ) return NULL;
 
-	pidl = IShellToPidl(piDesktop,pszFile);
+	pidl = IShellToPidl(piDesktop, pszFile);
 	piDesktop->lpVtbl->Release(piDesktop);
+	if ( pidl == NULL ) pidl = PathToPidl2(pszFile);
 	return pidl;
 }
 /*=============================================================================

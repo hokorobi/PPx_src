@@ -170,6 +170,8 @@ extern ENUMCUSTCACHESTRUCT enumcustcache;
 
 //#pragma pack(pop)
 //================================================================ コマンド実行
+#define CmdFuncMaxLen	64	// *commane / %*function の名称最大値 + 1
+
 #define ST_PATHFIX		B0	// 次の編集はパス補完が必要
 #define ST_SDIRREF		B1	// サブディレクトリを参照している
 #define ST_CHKSDIRREF	B2	// ST_SDIRREF の判定を済ませている
@@ -297,7 +299,7 @@ extern void ZStringVariable(EXECSTRUCT *Z,const TCHAR **src,int mode);
 
 extern const TCHAR HistType[];
 extern const TCHAR Title_ValueName[];
-extern void USEFASTCALL UserCommand(EXECSTRUCT *Z,const TCHAR *command,const TCHAR *param,TCHAR *dest);
+extern void USEFASTCALL UserCommand(EXECSTRUCT *Z,const TCHAR *args, const TCHAR *cmdline, TCHAR *dest);
 
 #define StringVariable_command	0
 #define StringVariable_function	1
@@ -420,7 +422,7 @@ extern const TCHAR * USEFASTCALL SearchMessageText(const TCHAR *idstr);
 extern void ReloadMessageText(void);
 
 //------------------------------------------------------------------ ppd_mdl.c
-extern int CommandModule(EXECSTRUCT *Z,const TCHAR **ptr);
+extern int CommandModule(EXECSTRUCT *Z,const TCHAR *ptr);
 extern void FunctionModule(EXECSTRUCT *Z);
 extern void FreePPxModule(void);
 extern void NestedFunction(EXECSTRUCT *Z);
@@ -469,7 +471,8 @@ extern const TCHAR *EscapeMacrochar(const TCHAR *string,TCHAR *buf);
 
 //------------------------------------------------------------------ ppd_sub.c
 extern void MakeUserfilename(TCHAR *dst,const TCHAR *src,const TCHAR *idname);
-extern HWND GetParentBox(HWND hWnd);
+extern HWND GetCaptionWindow(HWND hWnd);
+extern HWND GetParentCaptionWindow(HWND hWnd);
 extern BOOL DeleteDirectories(const TCHAR *path,BOOL notify);
 extern int FixTextImage(const char *src,DWORD memsize,TCHAR **dest,int usecp);
 extern BOOL CheckLoadSize(HWND hWnd,DWORD *sizeL);
@@ -511,11 +514,11 @@ extern void SetAppID(void);
 extern void CreateJobListWnd(void);
 extern void USEFASTCALL ClosePPxOne(HWND hWnd);
 
-#define GetPPxList_Command 0
-#define GetPPcList_Path 1
-#define GetPPxList_Select 2
-#define GetPPxList_Id 3
-extern int GetPPxList(HMENU hPopupMenu,int mode,HWND *hWnds,ThSTRUCT *th,DWORD *id);
+#define GetPPxList_hWnd 0
+#define GetPPcList_Path 1	// Pathをitem/thMenuDataから取得
+#define GetPPxList_Select 2	// *focusコマンドをthMenuDataから取得
+#define GetPPxList_Id 3		// idをthMenuDataから取得
+extern int GetPPxList(HMENU hPopupMenu, int mode, ThSTRUCT *th, DWORD *menuid);
 ExternWinAPI(BOOL,SetDllDirectory,(LPCTSTR lpPathName));
 
 //------------------------------------------------------------------ ppd_ui.c

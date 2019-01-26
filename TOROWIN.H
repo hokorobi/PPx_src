@@ -48,9 +48,20 @@
 #define WINTYPE_10_BUILD_RS4	17134 // 1803
 #define WINTYPE_10_BUILD_RS5	17763 // 1809
 
-#define KB		0x400		// 1KBi
-#define MB		0x100000	// 1MBi
-#define GB		0x40000000	// 1GBi
+#define KB		0x400		// 1KiB
+#define KBd		1000		// 1KB
+#define MB		0x100000	// 1MiB
+#define MBd		1000000		// 1MB
+#define GB		0x40000000	// 1GiB
+#define GBd		1000000000	// 1GB
+#define TBdL	0xd4a51000	// 1TB(low dword)
+#define TBdH	0xe8		// 1TB(high dword)
+#define TBiL	0x00000000	// 1TiB(low dword)
+#define TBiH	0x100		// 1TiB(high dword)
+#define PBdL	0xa4c68000	// 1PB(low dword)
+#define PBdH	0x38d7e		// 1PB(high dword)
+#define PBiL	0x00000000	// 1PiB(low dword)
+#define PBiH	0x40000		// 1PiB(high dword)
 #define MAX16	0xffff
 #define MAX32	0xffffFFFF
 #ifdef _WIN64
@@ -73,9 +84,9 @@
 #define CP__SJIS	932 // shift_jis 2000未満,Win9xではJP版のみ使用可能
 #define CP__UTF16L	1200 // utf-16 little endian .net のみ
 #define CP__UTF16B	1201 // unicodeFFFE big endian .net のみ
-#define CP__LATIN1	1252 // 常に使用可能
+#define CP__LATIN1	1252 // iso-8859-1 常に使用可能
 #define CP__JIS		50220 // ISO-2022 JIS X 0202-1984 .net のみ
-#define CP__JISSI	50222 // ISO-2022 JIS X 0202-1984 (SI/SO有り) .net のみ
+#define CP__JISSI	50222 // iso-2022-jp JIS X 0202-1984 (SI/SO有り) .net のみ
 #define CP__EUCJP	51932 // euc-jp .net のみ
 // CP_UTF7/CP_UTF8 は NT4 SP?/98SE? から使用可能
 #define INVALID_VALUE(type) ((type)(LONG_PTR)-1)
@@ -225,8 +236,8 @@
 	#define tstrrchr	strrchrW
 	#define tstrstr	strstrW
 	#define tstrupr(str)	struprW(str)
-	#define TSTRSIZE(string)	((tstrlen32(string) + 1) * sizeof(TCHAR))
-	#define TSTRLENGTH(string)	(tstrlen32(string) * sizeof(TCHAR))
+	#define TSTRSIZE(string)	ToSIZE32_T((tstrlen(string) + 1) * sizeof(TCHAR))
+	#define TSTRLENGTH(string)	ToSIZE32_T(tstrlen(string) * sizeof(TCHAR))
 	#define TSTROFF(size)	((size) * sizeof(TCHAR))
 	#define TSIZEOF(size)	TSIZEOFW(size)
 	#define CF_TTEXT	CF_UNICODETEXT

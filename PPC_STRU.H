@@ -75,11 +75,11 @@ typedef struct tagPSPONE {	// 各ID のオプション
 	struct {
 		TCHAR RegID[REGIDSIZE]; // 使用予定 ID(必ず先頭にすること)
 		int  RegMode;	// IDの登録方法 PPXREGIST_xxx
-		int  SubID;		// ID Z の sub ID
+		int  SubID;		// ID Zciii の sub ID(iii部分)
 		BOOL Pair;		// 反対窓指定
 	} id;
 	struct {	// 一体化関連
-		BOOL use;		// 一体型にするか
+		int use;		// 一体型にするか(X_comboの値)
 		BOOL dirlock;	// ディレクトリ移動のロック
 		BOOL select;	// タブ選択動作を行う
 
@@ -96,16 +96,17 @@ typedef struct tagPSPONE {	// 各ID のオプション
 #define PSPONE_next(pspo) ((PSPONE *)(char *)((char *)pspo + (DWORD)PSPONE_size(pspo)))
 
 typedef struct tagPPCSTARTPARAM {	// 共通オプション
-	BOOL SingleProcess;	// シングルプロセス
-	BOOL Reuse;			// 再利用
+	BOOL SingleProcess;	// シングルプロセス -single
+	BOOL Reuse;			// 再利用 -r
 	BOOL UseCmd;		// cmd を参照する必要があるか
 	BOOL AllocCmd;		// cmd は動的メモリであるか
-	const TCHAR *cmd;	// /k の内容
-	int alone;			// -alone をつかわないなら 0、そうでなければ ID
+	const TCHAR *cmd;	// -k の内容
+	BOOL usealone;		// -alone をつかわないなら 0、そうでなければ ID
 	int show;			// 表示方法 ※要初期化
 
 	ThSTRUCT th; // PSPONE / cmd 用メモリ
 	TCHAR Focus;
+	TCHAR ComboID;
 	PSPONE *next;
 } PPCSTARTPARAM;
 
@@ -306,6 +307,20 @@ typedef struct {
 	b18	EA/RECALL_ON_OPEN	b19	PINNED
 	b20	UNPINNED		b21	---
 	b22	RECALL_ON_DATA_ACCESS
+
+ createfile flags
+						b19 FIRST_PIPE_INSTANCE
+	b20 OPEN_NO_RECALL	b21 OPEN_REPARSE_POINT
+						b23 SESSION_AWARE
+	b24 POSIX_SEMANTICS	b25 BACKUP_SEMANTICS
+	b26 DELETE_ON_CLOSE	b27 SEQUENTIAL_SCAN
+	b28 RANDOM_ACCESS	b29 NO_BUFFERING
+	b30 OVERLAPPED		b31 WRITE_THROUGH
+
+ ppx
+						b25 LF_MARK
+	b26 LF_COMMENT		b27 FOLDER
+	b28 VIRTUAL			b29 NODETAIL
 */
 // ----------------------------------------------------------------------------
 /* ２窓間比較の方法
@@ -756,12 +771,19 @@ typedef struct tagPPC_APPINFO {
 
 	int			NowJoint;		// 連結作業中は偽
 	HWND		hSyncInfoWnd;
+
 	HWND		hTipWnd;
 	int			TipWndState;
 #define TWS_HIDE 0  // 非表示中
 #define TWS_SHOWNOW 1 // すぐに表示
 #define TWS_READY 2 // 表示のタイミング待ち
 #define TWS_SHOW 3 // 表示中
+	int			X_stip_mode;
+#define stip_mode_filename	0
+#define stip_mode_fileinfo	1
+#define stip_mode_comment	2
+#define stip_mode_text		3
+	int			X_stip_hover;
 
 	BOOL		ModifyComment;	// コメント編集がされたかどうか
 	PPCSTARTPARAM *FirstCommand; // /k で実行する内容を参照する

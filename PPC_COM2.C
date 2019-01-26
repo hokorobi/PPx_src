@@ -2526,33 +2526,36 @@ BOOL OpenClipboardCheck(PPC_APPINFO *cinfo)
 
 void ClipFiles(PPC_APPINFO *cinfo, DWORD effect, DWORD cliptypes)
 {
-	UINT cfDE C4701CHECK;	// DropEffect のクリップボードID
+	UINT CF_xDROPEFFECT C4701CHECK;	// DropEffect のクリップボードID
 
 	if ( OpenClipboardCheck(cinfo) == FALSE ) return;
-	EmptyClipboard();
+	EmptyClipboard(); // ※ WM_DESTROYCLIPBOARD が実行され、CLIPDATAS初期化
 
 	if ( cliptypes & CFT_FILE ){
 		CF_xSHELLIDLIST = RegisterClipboardFormat(CFSTR_SHELLIDLIST);
-		cfDE = RegisterClipboardFormat(CFSTR_PREFERREDDROPEFFECT);
+		CF_xDROPEFFECT = RegisterClipboardFormat(CFSTR_PREFERREDDROPEFFECT);
 
 		if ( (cinfo->CLIPDATAS[CLIPTYPES_DROPEFFECT] = GlobalAlloc(GMEM_MOVEABLE, sizeof(DWORD))) != NULL ){
 			*(DWORD *)GlobalLock(cinfo->CLIPDATAS[CLIPTYPES_DROPEFFECT]) = effect;
 			GlobalUnlock(cinfo->CLIPDATAS[CLIPTYPES_DROPEFFECT]);
 		}
 
-		cinfo->CLIPDATAS[CLIPTYPES_SHN] = CreateShellIdList(cinfo);
-		SetClipboardData(CF_xSHELLIDLIST, NULL);
-
 		cinfo->CLIPDATAS[CLIPTYPES_HDROP] = CreateHDrop(cinfo);
 		if ( cinfo->CLIPDATAS[CLIPTYPES_HDROP] != NULL ){
 			SetClipboardData(CF_HDROP, cinfo->CLIPDATAS[CLIPTYPES_HDROP]);
 		}
+
+		cinfo->CLIPDATAS[CLIPTYPES_SHN] = CreateShellIdList(cinfo);
+		SetClipboardData(CF_xSHELLIDLIST, NULL);
+
 	}
 	if ( cliptypes & CFT_TEXT ){
 		cinfo->CLIPDATAS[CLIPTYPES_TEXT] = CreateHText(cinfo);
 		SetClipboardData(CF_TTEXT, NULL);
 	}
-	if ( cliptypes & CFT_FILE ) SetClipboardData(cfDE, cinfo->CLIPDATAS[CLIPTYPES_DROPEFFECT]);  // C4701ok
+	if ( cliptypes & CFT_FILE ){
+		SetClipboardData(CF_xDROPEFFECT, cinfo->CLIPDATAS[CLIPTYPES_DROPEFFECT]);  // C4701ok
+	}
 	CloseClipboard();
 }
 

@@ -229,7 +229,7 @@ PPXDLL int PPXAPI PPxRegist(HWND hWnd,TCHAR *ID,int mode)
 									// ID 検索を始める
 	if ( (mode == PPXREGIST_NORMAL) || (mode == PPXREGIST_MAX) ){
 		if ( mode == PPXREGIST_MAX ) limit = ID[2];
-		ID[2] = 'A';
+		if ( ID[2] == '\0' ) ID[2] = 'A';
 	}
 	ID[3] = '\0';
 
@@ -600,7 +600,7 @@ BOOL USEFASTCALL CheckPPcID(int no)
 
 /*-----------------------------------------------------------------------------
 	直前の PPC 番号を取得
-	d:検索方向の指定		1:次 -1:前 CGETW_PAIR
+	d:検索方向の指定		>0:次 <0:前 CGETW_PAIR
 out	Number
 -----------------------------------------------------------------------------*/
 int PPcGetNo(int RegNo,int direction)
@@ -615,7 +615,7 @@ int PPcGetNo(int RegNo,int direction)
 		for ( j = 0 ; j < X_Mtask ; j++ ){
 			if ( !tstrcmp(Sm->P[j].ID,ID) ) break;
 		}
-	}else if ( direction >= 0 ){
+	}else if ( direction >= 0 ){ // 増加方向
 		for ( i = 0 ; i < 26 ; i++ ){
 			ID[2]++;
 			if ( ID[2] > 'Z' ) ID[2] = 'A';
@@ -626,7 +626,7 @@ int PPcGetNo(int RegNo,int direction)
 				}
 			}
 		}
-	}else{
+	}else{ // 減少方向
 		for ( i = 0 ; i < 26 ; i++ ){
 			ID[2]--;
 			if ( ID[2] < 'A' ) ID[2] = 'Z';
@@ -659,7 +659,7 @@ int PPxRegistCombo(HWND hWnd,TCHAR *ID,int mode)
 		}
 		ID[2] = (TCHAR)('A' + index);
 	}
-
+	// PPXREGIST_COMBO_IDASSIGN / PPXREGIST_COMBO_FREE
 	Sm->ppc.hComboWnd[index] = hProcessComboWnd =
 			(mode == PPXREGIST_COMBO_IDASSIGN) ? hWnd : NULL;
 	return 0;
@@ -717,7 +717,7 @@ int PPxRegistLiveSearch(TCHAR *ID,int mode)
 /*-----------------------------------------------------------------------------
 	PPc窓の取得
 -----------------------------------------------------------------------------*/
-PPXDLL HWND PPXAPI PPcGetWindow(int RegNo,int direction)
+PPXDLL HWND PPXAPI PPcGetWindow(int RegNo, int direction)
 {
 	if ( direction == CGETW_SAVEFOCUS ){
 		if ( Sm->ppc.LastFocusID != RegNo ){
@@ -768,7 +768,12 @@ PPXDLL HWND PPXAPI PPcGetWindow(int RegNo,int direction)
 			return Sm->P[Sm->ppc.PrevFocusID].hWnd;
 		}
 	}
-	if ( (RegNo < 0) && (RegNo >= X_Mtask) ) return NULL;
+	if ( direction == CGETW_GETCOMBOHWND ){
+		if ( (RegNo < 0) || (RegNo > 25) ) return NULL;
+		return Sm->ppc.hComboWnd[RegNo];
+	}
+
+	if ( (RegNo < 0) || (RegNo >= X_Mtask) ) return NULL;
 	{
 		int i;
 		HWND hWnd;
@@ -976,19 +981,23 @@ PPXDLL HWND PPXAPI PPxCombo(HWND hWnd)
 	UsePPx();
 
 	if ( hWnd == NULL ){
-		if ( Sm->ppc.hComboWnd[0] == NULL ) Sm->ppc.hComboWnd[0] = BADHWND;
-	}else if ( hWnd == Sm->ppc.hComboWnd[0] ){
-		Sm->ppc.hComboWnd[0] = NULL;
-	}else if ( hWnd != BADHWND ){
-		if ( IsWindow(Sm->ppc.hComboWnd[0]) == FALSE ){ // Combo window が壊れているか？
-			Sm->ppc.hComboWnd[0] = NULL;
+		if ( Sm->ppc.hComboWnd[0] == NULL ){
+			Sm->ppc.hComboWnd[0] = hProcessComboWnd = BADHWND;
 		}
-		if ( (Sm->ppc.hComboWnd[0] == NULL) || (Sm->ppc.hComboWnd[0] == BADHWND) ){
-			Sm->ppc.hComboWnd[0] = hWnd;
+	}else if ( hWnd != BADHWND ){
+		if ( hWnd == Sm->ppc.hComboWnd[0] ){
+			Sm->ppc.hComboWnd[0] = hProcessComboWnd = NULL;
+		}else{
+			if ( IsWindow(Sm->ppc.hComboWnd[0]) == FALSE ){ // Combo window が壊れているか？
+				Sm->ppc.hComboWnd[0] = hProcessComboWnd = NULL;
+			}
+			if ( (Sm->ppc.hComboWnd[0] == NULL) || (Sm->ppc.hComboWnd[0] == BADHWND) ){
+				Sm->ppc.hComboWnd[0] = hProcessComboWnd = hWnd;
+			}
 		}
 	}
 	FreePPx();
-	return hProcessComboWnd = Sm->ppc.hComboWnd[0]; // 代入
+	return Sm->ppc.hComboWnd[0];
 }
 
 int CountPPc(void)
@@ -1004,68 +1013,105 @@ int CountPPc(void)
 	return cnt;
 }
 
-int GetPPxList(HMENU hPopupMenu,int mode,HWND *hWnds,ThSTRUCT *th,DWORD *id)
+int GetPPxListFromCombo(HMENU hPopupMenu, int mode, ThSTRUCT *th, TCHAR *ppclist, DWORD *useppclist, MENUITEMINFO *minfo)
 {
-	int i,minpos,pos,item = 0;
+	TCHAR *listIDptr, *listPathPtr;
+	int item = 0;
+	TCHAR buf2[VFPS];
+
+	if ( ppclist == NULL ) return 0;
+
+	listIDptr = ppclist;
+	for ( ; *listIDptr != '\0'; ){
+		listPathPtr = listIDptr + tstrlen(listIDptr) + 1;
+		if ( *listIDptr == '\t' ){
+			AppendMenu(hPopupMenu, MF_SEPARATOR, 0, NULL);
+		}else{
+			setflag(*useppclist, 1 << (listIDptr[2] - 'A'));
+			if ( mode == GetPPcList_Path ){
+				if ( th != NULL ){
+					ThAddString(th,EscapeMacrochar(listPathPtr,minfo->dwTypeData));
+				}
+				wsprintf(minfo->dwTypeData,T("%c&%s: %s"),*listIDptr, listIDptr + 2,listPathPtr);
+			}else{
+				wsprintf(minfo->dwTypeData,T("PPc %c&%s: %s"),*listIDptr, listIDptr + 2,listPathPtr);
+			}
+			minfo->fMask = MIIM_STATE | MIIM_TYPE | MIIM_ID | MIIM_DATA;
+			minfo->dwItemData = 0;
+			InsertMenuItem(hPopupMenu, 0, FALSE, minfo);
+			++minfo->wID;
+
+			if ( th != NULL ){
+				wsprintf(buf2,T("C_%s"),listIDptr + 2);
+				switch ( mode ){
+					case GetPPxList_Id:
+						ThAddString(th,buf2);
+						break;
+					case GetPPxList_Select:
+						wsprintf(minfo->dwTypeData,T("*focus %s"),buf2);
+						ThAddString(th,minfo->dwTypeData);
+						break;
+				}
+			}
+
+			item++;
+		}
+		listIDptr = listPathPtr + tstrlen(listPathPtr) + 1;
+	}
+	HeapFree(DLLheap,0,ppclist);
+	if ( mode != GetPPcList_Path ){
+		AppendMenu(hPopupMenu,MF_SEPARATOR,0,NULL);
+	}
+	return item;
+}
+/*
+	GetPPcList_Path なら "x&ID: path" 形式
+	他 mode なら "PPc x&ID: path" 又は "PPx ID: & " 形式
+*/
+int GetPPxList(HMENU hPopupMenu, int mode, ThSTRUCT *th, DWORD *menuid)
+{
+	int i, minpos, pos, item = 0;
 	MENUITEMINFO minfo;
 	ShareX *sx;
-	TCHAR buf1[VFPS + 16],buf2[VFPS];
-	DWORD useppclist = 0;
+	TCHAR buf1[VFPS + 16], buf2[VFPS];
+	DWORD useppclist = 0; // 現プロセスで使用しているPPcのID一覧
 
-	minpos = GetMenuItemCount(hPopupMenu);
 	minfo.cbSize = sizeof(minfo);
-	minfo.fMask = MIIM_STATE | MIIM_TYPE | MIIM_ID;
 	minfo.fType = MFT_STRING;
 	minfo.fState = MFS_ENABLED;
 	minfo.dwTypeData = buf1;
+	minfo.wID = *menuid;
 
-	if ( (hProcessComboWnd != NULL) && (mode != GetPPxList_Command) ){
-		TCHAR *ppclist = (TCHAR *)SendMessage(hProcessComboWnd,WM_PPXCOMMAND,KCW_ppclist,0);
-		if ( ppclist != NULL ){
-			TCHAR *listIDptr,*listPathPtr;
-
-			listIDptr = ppclist;
-			for ( ; *listIDptr != '\0'; ){
-				listPathPtr = listIDptr + tstrlen(listIDptr) + 1;
-				if ( *listIDptr == '\t' ){
-					AppendMenu(hPopupMenu,MF_SEPARATOR,0,NULL);
-				}else{
-					if ( listIDptr[2] == '\0' ){
-						setflag(useppclist,1 << (listIDptr[1] - 'A'));
-					}
-
-					if ( mode == GetPPcList_Path ){
-						if ( th != NULL ){
-							ThAddString(th,EscapeMacrochar(listPathPtr,buf1));
-						}
-						wsprintf(buf1,T("&%s\t%s"),listIDptr + 1,listPathPtr);
-					}else{
-						wsprintf(buf1,T("PPc &%s %s"),listIDptr + 1,listPathPtr);
-					}
-
-					AppendMenuString(hPopupMenu,(*id)++,buf1);
-
-					if ( th != NULL ){
-						wsprintf(buf2,T("C_%s"),listIDptr + 1);
-						switch ( mode ){
-							case GetPPxList_Id:
-								ThAddString(th,buf2);
-								break;
-							case GetPPxList_Select:
-								wsprintf(buf1,T("*focus %s"),buf2);
-								ThAddString(th,buf1);
-								break;
-						}
-					}
-
-					item++;
-				}
-				listIDptr = listPathPtr + tstrlen(listPathPtr) + 1;
-			}
-			HeapFree(DLLheap,0,ppclist);
-			AppendMenu(hPopupMenu,MF_SEPARATOR,0,NULL);
-		}
+	if ( hProcessComboWnd != NULL ){
+		item += GetPPxListFromCombo(hPopupMenu, mode, th, (TCHAR *)SendMessage(hProcessComboWnd,WM_PPXCOMMAND,KCW_ppclist,0), &useppclist, &minfo);
 	}
+
+	for ( i = 0 ; i < 26 ; i++ ){
+		HWND hComboWnd;
+		LRESULT lr;
+		TCHAR *ppclist = NULL;
+		DWORD size;
+		ERRORCODE ec;
+
+		hComboWnd = Sm->ppc.hComboWnd[i];
+		if ( (hComboWnd == NULL) || (hComboWnd == BADHWND) || (hComboWnd == hProcessComboWnd) ){
+			continue;
+		}
+
+		lr = SendMessage(hComboWnd,WM_PPXCOMMAND,TMAKEWPARAM(KCW_ppclist,1),0);
+		if ( lr == 0 ) continue;
+
+		wsprintf(buf1,T("%%temp%%\\ppxl%d"),lr);
+		ExpandEnvironmentStrings(buf1, buf2, TSIZEOF(buf2));
+
+		ec = LoadFileImage(buf2, 4, (char **)&ppclist,&size,LFI_ALWAYSLIMITLESS);
+		DeleteFile(buf2);
+		if ( ec != NO_ERROR ) continue;
+
+		item += GetPPxListFromCombo(hPopupMenu, mode, th, ppclist, &useppclist, &minfo);
+	}
+
+	minpos = GetMenuItemCount(hPopupMenu);
 
 	UsePPx();
 	sx = Sm->P;
@@ -1083,7 +1129,9 @@ int GetPPxList(HMENU hPopupMenu,int mode,HWND *hWnds,ThSTRUCT *th,DWORD *id)
 				if ( th != NULL ){
 					ThAddString(th,EscapeMacrochar(sx->path,buf1));
 				}
-				wsprintf(buf1,T("&%c\t%s"),sx->ID[2],sx->path);
+				wsprintf(buf1,T("%c&%c: %s"),
+						(sx->hWnd == Sm->ppc.hLastFocusWnd) ? '*' : ' ',
+						sx->ID[2],sx->path);
 			}else{
 				switch ( ID ){
 					case 'B':
@@ -1102,20 +1150,20 @@ int GetPPxList(HMENU hPopupMenu,int mode,HWND *hWnds,ThSTRUCT *th,DWORD *id)
 						continue;
 				}
 				if ( (ID == 'C') && (sx->ID[2] <= 'Z') ){
-					wsprintf(buf1,T("%s &%c  %s"),name,sx->ID[2],sx->path);
-				}else{
-					wsprintf(buf1,T("%s &- %c"),name,sx->ID[2]);
+					wsprintf(buf1,T("%s %c&%c: %s"),name,
+							(sx->hWnd == Sm->ppc.hLastFocusWnd) ? '*' : ' ',
+							sx->ID[2],sx->path);
+				}else {
+					wsprintf(buf1,T("%s %c: & "),name,sx->ID[2]);
 				}
 			}
 			for ( pos = minpos ; pos < (minpos + item) ; pos++ ){ // 簡易ソート
 				GetMenuString(hPopupMenu,pos,buf2,TSIZEOF(buf2),MF_BYPOSITION);
 				if ( tstrcmp(buf1,buf2) < 0 ) break;
 			}
-			if ( mode == GetPPxList_Command ){
-				hWnds[i] = sx->hWnd;
-				minfo.wID = i + 1;
+			if ( mode == GetPPxList_hWnd ){
+				minfo.dwItemData = (ULONG_PTR)sx->hWnd;
 			}else{
-				minfo.wID = (*id)++;
 				if ( th != NULL ) switch ( mode ){
 					case GetPPxList_Id:
 						ThAddString(th,sx->ID);
@@ -1126,12 +1174,15 @@ int GetPPxList(HMENU hPopupMenu,int mode,HWND *hWnds,ThSTRUCT *th,DWORD *id)
 						break;
 				}
 			}
-			InsertMenuItem(hPopupMenu,pos,TRUE,&minfo);
+			minfo.fMask = MIIM_STATE | MIIM_TYPE | MIIM_ID | MIIM_DATA;
+			InsertMenuItem(hPopupMenu, pos, TRUE, &minfo);
+			minfo.wID++;
 			item++;
 			continue;
 		}
 	}
 	FreePPx();
+	*menuid = minfo.wID;
 	return item;
 }
 

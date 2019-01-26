@@ -132,13 +132,13 @@ BOOL InitProcessDLL(void)
 		}
 								// çÏã∆ópã§óLÉÅÉÇÉäÇÃópà” =============
 	{
-		TCHAR *p;
+		TCHAR *lastp;
 		int mapresult;
 
-		GetTempPath(TSIZEOF(buf),buf);
-		p = buf + tstrlen(buf);
-		wsprintf(p,T("%s.TMP"),SyncTag);
-		mapresult = FileMappingOn(&SM_tmp,buf,p,sizeof(ShareM),
+		GetTempPath(TSIZEOF(buf), buf);
+		lastp = buf + tstrlen(buf);
+		wsprintf(lastp, T("%s.TMP"), SyncTag);
+		mapresult = FileMappingOn(&SM_tmp, buf, lastp, sizeof(ShareM),
 					FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE);
 		if ( mapresult < 0 ){
 			CriticalMessageBox(MSG_SHAREBLOCKERROR);

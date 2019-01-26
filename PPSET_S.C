@@ -149,43 +149,45 @@ void CloseNewPPx(HINSTANCE hDLL)
 	return;
 }
 
-void CloseAllPPxLocal(TCHAR *destpath,BOOL setuppath)
+void CloseAllPPxLocal(TCHAR *destpath, BOOL setuppath)
 {
 	HMODULE hDLL;
 	TCHAR buf[MAX_PATH];
 
+	if ( destpath[0] == '?' ) return; // セットアップしたdirが不明
+
 #ifndef _WIN64
 // 0.42以前のPPxを終了
-	CloseOldPPx(destpath,T("%s\\PPCOMMON.DLL"));	// MultiByte 版 PPx を終了
+	CloseOldPPx(destpath, T("%s\\PPCOMMON.DLL"));	// MultiByte 版 PPx を終了
 	if ( OSver.dwPlatformId == VER_PLATFORM_WIN32_NT ){
-		CloseOldPPx(destpath,T("%s\\PPXLIB32.DLL"));	// UNICODE 版 PPx を終了
+		CloseOldPPx(destpath, T("%s\\PPXLIB32.DLL"));	// UNICODE 版 PPx を終了
 	}
 
 // 0.43以降のPPxを終了
 	// MultiByte 版 PPx を終了
-	wsprintf(buf,T("%s\\PPLIB32.DLL"),destpath);
+	wsprintf(buf, T("%s\\PPLIB32.DLL"), destpath);
 	hDLL = LoadLibrary(buf);
 	if ( hDLL != NULL ){
 		CloseNewPPx(hDLL);
-	#if !defined(UNICODEBINARY) && !defined(UNICODE)
+	#if !defined(UNICODE)
 		if ( IsTrue(setuppath) ){
 			PASSETCUSTTABLEA DSetCustTableA;
 
-			DSetCustTableA = (PASSETCUSTTABLEA)GetProcAddress(hDLL,"SetCustTable");
+			DSetCustTableA = (PASSETCUSTTABLEA)GetProcAddress(hDLL, "SetCustTable");
 			if ( DSetCustTableA != NULL ){
-				DSetCustTableA("_Setup","path",destpath,strlen(destpath) + 1);
+				DSetCustTableA("_Setup", "path", destpath, strlen(destpath) + 1);
 				buf[0] = (char)((AdminCheck() == ADMINMODE_ELEVATE) ? '1' : '0');
 				buf[1] = '\0';
-				DSetCustTableA("_Setup","elevate",buf,sizeof(char) * 2);
+				DSetCustTableA("_Setup", "elevate", buf, sizeof(char) * 2);
 			}
 		}
 	#endif
 		FreeLibrary(hDLL);
-	#if !defined(UNICODEBINARY) && !defined(UNICODE)
+	#if !defined(UNICODE)
 	}else{
 		tstrcat(buf,MessageStr[MSG_DLL_LOADERROR_PART]);
 		if ( setuppath ){
-			WriteResult(buf,RESULT_NORMAL);
+			WriteResult(buf, RESULT_NORMAL);
 		}else{
 			SMessage(buf);
 		}
@@ -194,41 +196,34 @@ void CloseAllPPxLocal(TCHAR *destpath,BOOL setuppath)
 
 	if ( OSver.dwPlatformId == VER_PLATFORM_WIN32_NT ){
 	// UNICODE 版 PPx を終了
-		wsprintf(buf,T("%s\\PPLIB32W.DLL"),destpath);
+		wsprintf(buf, T("%s\\PPLIB32W.DLL"), destpath);
 #else
-		wsprintf(buf,T("%s\\PPLIB64W.DLL"),destpath);
+		wsprintf(buf, T("%s\\PPLIB64W.DLL"), destpath);
 #endif
 		hDLL = LoadLibrary(buf);
 		if ( hDLL != NULL ){
 			CloseNewPPx(hDLL);
-#if defined(UNICODEBINARY) || defined(UNICODE)
+#if defined(UNICODE)
 			if ( IsTrue(setuppath) ){
 				PASSETCUSTTABLEW DSetCustTableW;
 
-				DSetCustTableW = (PASSETCUSTTABLEW)GetProcAddress(hDLL,"SetCustTable");
+				DSetCustTableW = (PASSETCUSTTABLEW)GetProcAddress(hDLL, "SetCustTable");
 				if ( DSetCustTableW != NULL ){
 					WCHAR bufW[MAX_PATH];
 
-				#ifdef UNICODEBINARY
-					DWORD len;
-
-					len = AnsiToUnicode(destpath,bufW,MAX_PATH);
-					DSetCustTableW(L"_Setup",L"path",bufW,len * sizeof(WCHAR));
-				#else
-					DSetCustTableW(L"_Setup",L"path",destpath,(wcslen(destpath) + 1) * sizeof(WCHAR));
-				#endif
+					DSetCustTableW(L"_Setup", L"path", destpath, (strlenW32(destpath) + 1) * sizeof(WCHAR));
 					bufW[0] = (AdminCheck() == ADMINMODE_ELEVATE) ? L'1' : L'0';
 					bufW[1] = '\0';
-					DSetCustTableW(L"_Setup",L"elevate",bufW,sizeof(WCHAR) * 2);
+					DSetCustTableW(L"_Setup", L"elevate", bufW, sizeof(WCHAR) * 2);
 				}
 			}
 #endif
 			FreeLibrary(hDLL);
 		}else{
-#if defined(UNICODEBINARY) || defined(UNICODE)
+#if defined(UNICODE)
 			tstrcat(buf,MessageStr[MSG_DLL_LOADERROR_PART]);
 			if ( setuppath ){
-				WriteResult(buf,RESULT_NORMAL);
+				WriteResult(buf, RESULT_NORMAL);
 			}else{
 				SMessage(buf);
 			}
@@ -270,7 +265,7 @@ BOOL GetRegStrLocal(HKEY hKey,const TCHAR *path,const TCHAR *name, _Out_ TCHAR *
 	カスタマイズ内容へのポインタを取得する
 	UsePPx-FreePPx間内で使用すること
 -----------------------------------------------------------------------------*/
-BYTE *LocalGetCustDataPtr(const TTCHAR *str)
+BYTE *LocalGetCustDataPtr(const TCHAR *str)
 {
 	BYTE *ptr;	// 現在の内容の先頭
 	DWORD w;	// (+0)次の内容へのオフセット
@@ -280,8 +275,8 @@ BYTE *LocalGetCustDataPtr(const TTCHAR *str)
 	for ( ;; ){
 		w = *(DWORD *)ptr;
 		if ( w == 0 ) return NULL;	// 末尾の判断
-		if ( ttstricmp((TTCHAR *)(ptr + 4),str ) == 0 ){
-			return ptr + TTSTRSIZE(str) + 4;
+		if ( tstricmp((TCHAR *)(ptr + 4),str ) == 0 ){
+			return ptr + TSTRSIZE(str) + 4;
 		}
 		ptr += w;
 	}
@@ -291,13 +286,13 @@ BYTE *LocalGetCustDataPtr(const TTCHAR *str)
 	配列内のカスタマイズ内容を取得する
 	b_size = 0 なら保存に必要な大きさを返す
 -----------------------------------------------------------------------------*/
-int LocalGetCustTable(const TTCHAR *str,const TTCHAR *sub,void *bin,DWORD b_size)
+int LocalGetCustTable(const TCHAR *str,const TCHAR *sub,void *bin,DWORD b_size)
 {
 	BYTE *p;		// 現在の内容の先頭
 	size_t ssize;	// 文字列部分の大きさ
 	DWORD w;		// (+0)次の内容へのオフセット
 
-	ssize = (DWORD)TTSTRSIZE(sub);
+	ssize = (DWORD)TSTRSIZE(sub);
 
 	p = LocalGetCustDataPtr(str);
 	if ( p == NULL ){
@@ -308,7 +303,7 @@ int LocalGetCustTable(const TTCHAR *str,const TTCHAR *sub,void *bin,DWORD b_size
 		if ( !w ){
 			return -1;
 		}
-		if ( !ttstricmp( (TTCHAR *)(p + 2),sub) ){
+		if ( !tstricmp( (TCHAR *)(p + 2),sub) ){
 			w -= (WORD)(ssize + 2);
 			if ( !b_size ){
 				return w;
@@ -648,17 +643,9 @@ BOOL SearchPPx(void)
 		SMessage(T("カスタマイズ領域のIDがおかしい"));
 		result = FALSE;
 	}else{										// セットアップパスを求める
-	#ifdef UNICODEBINARY
-		WCHAR bufw[MAX_PATH];
-
-		bufw[0] = '\0';
-		if ( NO_ERROR == LocalGetCustTable(L"_Setup",L"path",bufw,sizeof(bufw)) ){
-			UnicodeToAnsi(bufw,XX_setupedPPx,MAX_PATH);
-	#else
 		buf[0] = '\0';
 		if ( NO_ERROR == LocalGetCustTable(T("_Setup"),T("path"),buf,sizeof(buf)) ){
 			tstrcpy(XX_setupedPPx,buf);
-	#endif
 			p = tstrrchr(XX_setupedPPx,'\\');
 			if ( (p != NULL) && (*(p + 1) == '\0') ) *p = '\0';
 		}else{								// なかったのでファイルの場所にする
@@ -668,7 +655,7 @@ BOOL SearchPPx(void)
 		}
 
 		wsprintf(buf,T("%s\\") T(COMMONDLL), XX_setupedPPx);
-		if ( GetFileAttributes(buf) & FILE_ATTRIBUTE_DIRECTORY ){
+		if ( GetFileAttributes(buf) & FILE_ATTRIBUTE_DIRECTORY ){ // DLLがファイルでない
 			tstrcpy(buf,XX_setupedPPx);
 			XX_setupedPPx[0] = '?';
 			tstrcpy(XX_setupedPPx + 1,buf);

@@ -337,7 +337,7 @@ INT_PTR CALLBACK GetCodePageDialog(HWND hDlg,UINT iMsg,WPARAM wParam,LPARAM lPar
 
 DWORD GetCodePageType(HWND hWnd)
 {
-	LPARAM result = MAX32;
+	DWORD result = MAX32;
 
 	if ( PPxDialogBoxParam(hInst,MAKEINTRESOURCE(IDD_PASTETYPE),
 			hWnd,GetCodePageDialog,(LPARAM)&result) > 0 ){

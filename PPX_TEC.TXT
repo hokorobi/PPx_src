@@ -107,11 +107,11 @@ WM_COPYDATA	dwData/LOWORD:key dwData/HIWORD:ƒpƒ‰ƒ[ƒ^
 9				)
 :	Command Separator	*	Function module
 ;	Escape ';'		{	Set Select start
-				|	Set Cursor mark
+^				|	Set Cursor mark
 \	Add path separator	}	Set Select end & Edit
 @	Get Response filename	~	Pair window macro
 A				a	Get Response filename without '@'
-B				b
+B				b	line escape / insert char.
 C	Get entryname		c
 D	Get PPx directory	d
 E	Get Edit strings	e	Set Edit dialog mode

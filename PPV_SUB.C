@@ -155,7 +155,7 @@ void MoveCursor(int *param)
 			return;
 
 		default:
-			XMessage(hMainWnd,StrPPvTitle,XM_GrERRld,T("*cursor param error"));
+			XMessage(vinfo.info.hWnd,StrPPvTitle,XM_GrERRld,T("*cursor param error"));
 			return;
 	}
 	MoveCsrkey(deltaX,deltaY,param[2]);
@@ -282,7 +282,7 @@ DWORD_PTR USECDECL PPxGetIInfo(PPV_APPINFO *vinfo,DWORD cmdID,PPXAPPINFOUNION *u
 			TCHAR buf[VFPS];
 
 			VFSFixPath(buf,uptr->str,NULL,VFSFIX_PATH | VFSFIX_NOFIXEDGE);
-			OpenAndFollowViewObject(vinfo->info.hWnd,buf,NULL,NULL,0);
+			OpenAndFollowViewObject(vinfo, buf, NULL, NULL, 0);
 			break;
 		}
 
@@ -325,14 +325,14 @@ DWORD_PTR USECDECL PPxGetIInfo(PPV_APPINFO *vinfo,DWORD cmdID,PPXAPPINFOUNION *u
 			param = uptr->str + tstrlen(uptr->str) + 1;
 			if ( !tstrcmp(uptr->str,T("ZOOM")) ){ // *zoom
 				if ( vo_.DModeBit & VO_dmode_IMAGE ){
-					SetimgD(hMainWnd,GetIntNumber(&param));
+					SetimgD(vinfo->info.hWnd,GetIntNumber(&param));
 				}
 				break;
 			}
 
 			if ( !tstrcmp(uptr->str,T("REDUCEMODE")) ){
 				XV.img.imgD[1] = GetNumber(&param);
-				InvalidateRect(hMainWnd,NULL,TRUE);
+				InvalidateRect(vinfo->info.hWnd,NULL,TRUE);
 				break;
 			}
 
@@ -358,7 +358,7 @@ DWORD_PTR USECDECL PPxGetIInfo(PPV_APPINFO *vinfo,DWORD cmdID,PPXAPPINFOUNION *u
 				}else{
 					FullDraw = X_fles;
 				}
-				InvalidateRect(hMainWnd,NULL,TRUE);
+				InvalidateRect(vinfo->info.hWnd,NULL,TRUE);
 				break;
 			}
 
@@ -368,7 +368,7 @@ DWORD_PTR USECDECL PPxGetIInfo(PPV_APPINFO *vinfo,DWORD cmdID,PPXAPPINFOUNION *u
 				CheckParam(&viewopt,param,NULL);
 				SetOpts(&viewopt);
 				VOi->img = NULL;
-				FixChangeMode(hMainWnd);
+				FixChangeMode(vinfo->info.hWnd);
 				break;
 			}
 			return ERROR_INVALID_FUNCTION ^ 1;
@@ -460,7 +460,7 @@ void PPvLayoutCommand(void)
 		X_win ^= 1 << (i - PPCLC_XWIN);
 		SetCustTable(T("X_win"),T("V"),&X_win,sizeof(X_win));
 		if ( i == PPCLC_XWIN + 0){	// メニュー
-			SetMenu(hMainWnd,(X_win & XWIN_MENUBAR) ? DynamicMenu.hMenuBarMenu : NULL);
+			SetMenu(vinfo.info.hWnd,(X_win & XWIN_MENUBAR) ? DynamicMenu.hMenuBarMenu : NULL);
 		}
 		if ((i == PPCLC_XWIN + 2) || (i == PPCLC_XWIN + 3)){	// scrollbar
 			SCROLLINFO sinfo;
@@ -471,19 +471,19 @@ void PPvLayoutCommand(void)
 			sinfo.nMax = 0;
 			sinfo.nPage = 1;
 			sinfo.nPos = 0;
-			SetScrollInfo(hMainWnd,SB_HORZ,&sinfo,TRUE);
-			SetScrollInfo(hMainWnd,SB_VERT,&sinfo,TRUE);
+			SetScrollInfo(vinfo.info.hWnd,SB_HORZ,&sinfo,TRUE);
+			SetScrollInfo(vinfo.info.hWnd,SB_VERT,&sinfo,TRUE);
 		}
 		if ( i == PPCLC_XWIN + 4 ){	// toolbar
 			InitGui();
 		}
 		if ( i == PPCLC_XWIN + 8 ){
-			SetWindowLong(hMainWnd,GWL_STYLE,GetWindowLong(hMainWnd,
+			SetWindowLong(vinfo.info.hWnd,GWL_STYLE,GetWindowLong(vinfo.info.hWnd,
 					GWL_STYLE) ^ (WS_OVERLAPPEDWINDOW ^ WS_NOTITLEOVERLAPPED));
-			SetWindowPos(hMainWnd,NULL,0,0,0,0,SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
+			SetWindowPos(vinfo.info.hWnd,NULL,0,0,0,0,SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
 		}
-		WmWindowPosChanged(hMainWnd);
-		InvalidateRect(hMainWnd,NULL,TRUE);
+		WmWindowPosChanged(vinfo.info.hWnd);
+		InvalidateRect(vinfo.info.hWnd,NULL,TRUE);
 	}
 }
 
@@ -525,11 +525,11 @@ void SetPopMsg(ERRORCODE err,const TCHAR *msg)
 	rect.top	= 0;
 	rect.right	= WndSize.cx;
 	rect.bottom	= fontY - 1;
-	InvalidateRect(hMainWnd,&rect,FALSE);	// 更新指定
+	InvalidateRect(vinfo.info.hWnd,&rect,FALSE);	// 更新指定
 
 	if ( !(err & POPMSG_NOLOGFLAG) ){
 		if ( X_evoc == 1 ){
-			PPxCommonExtCommand(K_FLASHWINDOW,(WPARAM)hMainWnd);
+			PPxCommonExtCommand(K_FLASHWINDOW,(WPARAM)vinfo.info.hWnd);
 			setflag(PopMsgFlag,PMF_FLASH);
 		}
 		XMessage(NULL,NULL,XM_ETCl,PopMsgStr);
@@ -541,19 +541,19 @@ void SetPopMsg(ERRORCODE err,const TCHAR *msg)
 void StopPopMsg(int mask)
 {
 	if ( PopMsgFlag & mask & PMF_FLASH ){
-		PPxCommonExtCommand(K_STOPFLASHWINDOW,(WPARAM)hMainWnd);
+		PPxCommonExtCommand(K_STOPFLASHWINDOW,(WPARAM)vinfo.info.hWnd);
 		resetflag(PopMsgFlag,PMF_FLASH);
 	}
 	if ( PopMsgFlag & PMF_DISPLAYMASK ){
 		resetflag(PopMsgFlag,mask);
 		// 表示が無くなるので描画する
 		if ( !(PopMsgFlag & PMF_DISPLAYMASK) ){
-			InvalidateRect(hMainWnd,&BoxStatus,TRUE);
+			InvalidateRect(vinfo.info.hWnd,&BoxStatus,TRUE);
 		}
 	}
 }
 
-BOOL PPvMouseCommand(HWND hWnd,POINT *pos,const TCHAR *click,const TCHAR *type)
+BOOL PPvMouseCommand(PPV_APPINFO *vinfo, POINT *pos,const TCHAR *click,const TCHAR *type)
 {
 	TCHAR buf[VFPS],*p;
 
@@ -562,16 +562,16 @@ BOOL PPvMouseCommand(HWND hWnd,POINT *pos,const TCHAR *click,const TCHAR *type)
 	wsprintf(p,T("%s_%s"),click,type);
 
 	if ( NO_ERROR == GetCustTable(T("MV_click"),buf,buf,sizeof(buf)) ){
-		ExecDualParam(hWnd,buf);
+		ExecDualParam(vinfo, buf);
 		return TRUE;
 	}else{
 		return FALSE;
 	}
 }
 
-BOOL PPvMouseCommandPos(HWND hWnd,POINT *pos,const TCHAR *click,int Y)
+BOOL PPvMouseCommandPos(PPV_APPINFO *vinfo,POINT *pos,const TCHAR *click,int Y)
 {
-	return PPvMouseCommand(hWnd,pos,click,
+	return PPvMouseCommand(vinfo,pos,click,
 			(Y >= BoxView.top) ? T("SPC") : T("LINE"));
 }
 
@@ -654,7 +654,7 @@ LRESULT PPvNCMouseCommand(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 	}
 
 	LPARAMtoPOINT(pos,lParam);
-	if ( PPvMouseCommand(hWnd,&pos,click,type) == FALSE ){
+	if ( PPvMouseCommand(&vinfo,&pos,click,type) == FALSE ){
 		return DefWindowProc(hWnd,message,wParam,lParam);
 	}
 	return 0;
@@ -716,7 +716,7 @@ void FixWindowSize(HWND hWnd,int offx,int offy)
 }
 
 // 表示形式の切り換えメニュー -------------------------------------------------
-void ChangeSusie(HWND hWnd,HMENU hPopupMenu,int index)
+void ChangeSusie(PPV_APPINFO *vinfo, HMENU hPopupMenu,int index)
 {
 	TCHAR tmppath[VFPS + 0x40],*p,*popt;
 
@@ -734,7 +734,7 @@ void ChangeSusie(HWND hWnd,HMENU hPopupMenu,int index)
 		*popt++ = ':';
 		*popt++ = ':';
 		if ( GetMenuString(hPopupMenu,index,popt,0x40,MF_BYCOMMAND) > 0 ){
-			OpenAndFollowViewObject(hWnd,tmppath,NULL,NULL,0);
+			OpenAndFollowViewObject(vinfo, tmppath, NULL, NULL, 0);
 		}
 	}
 }
@@ -760,7 +760,7 @@ void PPvAddDisplayTypeMenu(HMENU hPopupMenu,BOOL extend)
 			MFT_STRING | (TailModeFlags ? MF_CHECKED : 0 ),
 			MENUID_TYPE_TAIL,MessageText(disptypestr[5]) );
 	}
-	ChangeSusie(NULL,hPopupMenu,0);
+	ChangeSusie(&vinfo, hPopupMenu, 0);
 }
 
 void GetDivMax(DDWORDST *divptr)
@@ -778,7 +778,7 @@ void GetDivMax(DDWORDST *divptr)
 	}
 }
 
-void ToggleTailMode(HWND hWnd)
+void ToggleTailMode(PPV_APPINFO *vinfo)
 {
 	TailModeFlags = TailModeFlags ? 0 : 1;
 	if ( TailModeFlags ){
@@ -787,10 +787,10 @@ void ToggleTailMode(HWND hWnd)
 
 		if ( FileDivideMode > FDM_NODIVMAX ){
 			GetDivMax(&FileDividePointer);
-			PPvReload(hMainWnd);
+			PPvReload(vinfo);
 		}
 	}
-	InvalidateRect(hWnd,NULL,TRUE);
+	InvalidateRect(vinfo->info.hWnd,NULL,TRUE);
 }
 
 ERRORCODE PPV_DisplayType(HWND hWnd,BOOL extend)
@@ -802,14 +802,14 @@ ERRORCODE PPV_DisplayType(HWND hWnd,BOOL extend)
 	PPvAddDisplayTypeMenu(hPopupMenu,extend);
 	index = PPvTrackPopupMenu(hPopupMenu);
 	if ( index >= VFSCHK_MENUID ){ // SPI直接指定
-		ChangeSusie(hWnd,hPopupMenu,index);
+		ChangeSusie(&vinfo,hPopupMenu,index);
 		DestroyMenu(hPopupMenu);
 		return NO_ERROR;
 	}
 	DestroyMenu(hPopupMenu);
 
 	if ( index == MENUID_TYPE_TAIL ){
-		ToggleTailMode(hWnd);
+		ToggleTailMode(&vinfo);
 		return NO_ERROR;
 	}
 
@@ -1045,13 +1045,13 @@ void SetScrollBar(void)
 	sinfo.nMin	= VO_minX;
 	sinfo.nPos	= VOi->offX;
 	sinfo.nMax	= VO_maxX;
-	SetScrollInfo(hMainWnd,SB_HORZ,&sinfo,TRUE);
+	SetScrollInfo(vinfo.info.hWnd,SB_HORZ,&sinfo,TRUE);
 
 	sinfo.nPage	= VO_sizeY;
 	sinfo.nMin	= VO_minY;
 	sinfo.nPos	= VOi->offY;
 	sinfo.nMax	= VO_maxY;
-	SetScrollInfo(hMainWnd,SB_VERT,&sinfo,TRUE);
+	SetScrollInfo(vinfo.info.hWnd,SB_VERT,&sinfo,TRUE);
 }
 //----------------------------------------------------------------------------
 void USEFASTCALL MoveCsr(int x,int y,BOOL detailmode)
@@ -1082,16 +1082,16 @@ void USEFASTCALL MoveCsr(int x,int y,BOOL detailmode)
 		 ((vo_.memo.bottom != NULL) && (vo_.memo.top > 1)) ){ // 仮？
 		VOi->offX = x;
 		VOi->offY = y;
-		InvalidateRect(hMainWnd,&box,TRUE);
+		InvalidateRect(vinfo.info.hWnd,&box,TRUE);
 	}else if ( vo_.DModeBit & (DOCMODE_BMP | DOCMODE_RAWIMAGE) ){
 		switch ( X_scrm ){
 			case 0:				// 全画面書換
 				VOi->offX = x;
 				VOi->offY = y;
-				InvalidateRect(hMainWnd,&box,FALSE);
+				InvalidateRect(vinfo.info.hWnd,&box,FALSE);
 				break;
 			case 1:				// 全ウィンドウスクロール
-				ScrollWindow(hMainWnd,VOi->offX - x,VOi->offY - y,NULL,&box);
+				ScrollWindow(vinfo.info.hWnd,VOi->offX - x,VOi->offY - y,NULL,&box);
 				VOi->offX = x;
 				VOi->offY = y;
 				break;
@@ -1099,12 +1099,12 @@ void USEFASTCALL MoveCsr(int x,int y,BOOL detailmode)
 				HDC hDC;
 				RECT rp;
 
-				hDC = GetDC(hMainWnd);
+				hDC = GetDC(vinfo.info.hWnd);
 				ScrollDC(hDC,VOi->offX - x,VOi->offY - y,&box,&box,NULL,&rp);
-				ReleaseDC(hMainWnd,hDC);
+				ReleaseDC(vinfo.info.hWnd,hDC);
 				VOi->offX = x;
 				VOi->offY = y;
-				InvalidateRect(hMainWnd,&rp,TRUE);
+				InvalidateRect(vinfo.info.hWnd,&rp,TRUE);
 			}
 		}
 	}else{
@@ -1113,39 +1113,39 @@ void USEFASTCALL MoveCsr(int x,int y,BOOL detailmode)
 				box.top = 0;
 				VOi->offX = x;
 				VOi->offY = y;
-				InvalidateRect(hMainWnd,&box,FALSE);
+				InvalidateRect(vinfo.info.hWnd,&box,FALSE);
 				break;
 			case 1:				// 全ウィンドウスクロール
-				if ( VOsel.cursor != FALSE ) HideCaret(hMainWnd);
-				ScrollWindow(hMainWnd,(VOi->offX - x) * fontX,
+				if ( VOsel.cursor != FALSE ) HideCaret(vinfo.info.hWnd);
+				ScrollWindow(vinfo.info.hWnd,(VOi->offX - x) * fontX,
 							(VOi->offY - y) * LineY,NULL,&box);
 				VOi->offX = x;
 				VOi->offY = y;
-				UpdateWindow(hMainWnd);
+				UpdateWindow(vinfo.info.hWnd);
 				box.bottom = box.top - 1;
 				box.top = 0;
-				InvalidateRect(hMainWnd,&box,TRUE);
-				UpdateWindow(hMainWnd);
-				if ( VOsel.cursor != FALSE ) ShowCaret(hMainWnd);
+				InvalidateRect(vinfo.info.hWnd,&box,TRUE);
+				UpdateWindow(vinfo.info.hWnd);
+				if ( VOsel.cursor != FALSE ) ShowCaret(vinfo.info.hWnd);
 				break;
 			case 2: {			// 部分スクロール
 				HDC hDC;
 				RECT rp;
 
-				if ( VOsel.cursor != FALSE ) HideCaret(hMainWnd);
-				hDC = GetDC(hMainWnd);
+				if ( VOsel.cursor != FALSE ) HideCaret(vinfo.info.hWnd);
+				hDC = GetDC(vinfo.info.hWnd);
 				ScrollDC(hDC, (VOi->offX - x) * fontX,(VOi->offY - y) * LineY,
 						&box,&box,NULL,&rp);
-				ReleaseDC(hMainWnd,hDC);
+				ReleaseDC(vinfo.info.hWnd,hDC);
 				VOi->offX = x;
 				VOi->offY = y;
-				InvalidateRect(hMainWnd,&rp,TRUE);
-				UpdateWindow(hMainWnd);
+				InvalidateRect(vinfo.info.hWnd,&rp,TRUE);
+				UpdateWindow(vinfo.info.hWnd);
 				box.bottom = box.top - 1;
 				box.top = 0;
-				InvalidateRect(hMainWnd,&box,FALSE);
-				UpdateWindow(hMainWnd);
-				if ( VOsel.cursor != FALSE ) ShowCaret(hMainWnd);
+				InvalidateRect(vinfo.info.hWnd,&box,FALSE);
+				UpdateWindow(vinfo.info.hWnd);
+				if ( VOsel.cursor != FALSE ) ShowCaret(vinfo.info.hWnd);
 			}
 		}
 	}
@@ -1157,7 +1157,7 @@ void CloseViewObject(void)
 {
 	VO_INFO *tmpVOi;
 
-	if ( BackReader != FALSE ) KillTimer(hMainWnd,TIMERID_READLINE);
+	if ( BackReader != FALSE ) KillTimer(vinfo.info.hWnd,TIMERID_READLINE);
 	if ( hReadStream != NULL ){
 		CloseHandle(hReadStream);
 		hReadStream = NULL;
@@ -1449,12 +1449,12 @@ void SetMag(int offset)
 				newD -= 1;
 				if ( newD < IMGD_AUTOFIXWINDOWSIZE ) newD = 0;
 			}
-			SetimgD(hMainWnd,newD);
+			SetimgD(vinfo.info.hWnd,newD);
 			return;
 		}
 		if ( offset == IMGD_AUTOWINDOWSIZE_2 ){
 			newD = (newD != 0) ? IMGD_NORMAL : IMGD_AUTOWINDOWSIZE;
-			SetimgD(hMainWnd,newD);
+			SetimgD(vinfo.info.hWnd,newD);
 			return;
 		}
 		if ( newD < IMGD_NORMAL ){	// 非% → 等倍
@@ -1483,7 +1483,7 @@ void SetMag(int offset)
 				return;
 			}
 		}
-		SetimgD(hMainWnd,newD);
+		SetimgD(vinfo.info.hWnd,newD);
 		return;
 	}else{ // テキスト
 		HDC hDC;
@@ -1501,11 +1501,11 @@ void SetMag(int offset)
 		}
 
 		DeleteFonts();
-		hDC = GetDC(hMainWnd);
+		hDC = GetDC(vinfo.info.hWnd);
 		MakeFonts(hDC,X_textmag);
-		ReleaseDC(hMainWnd,hDC);
-		WmWindowPosChanged(hMainWnd);
-		InvalidateRect(hMainWnd,NULL,FALSE);
+		ReleaseDC(vinfo.info.hWnd,hDC);
+		WmWindowPosChanged(vinfo.info.hWnd);
+		InvalidateRect(vinfo.info.hWnd,NULL,FALSE);
 	}
 };
 
@@ -1677,12 +1677,12 @@ void FindFowardText(HWND hWnd,int mode)
 	}
 }
 
-void PPvReload(HWND hWnd)
+void PPvReload(PPV_APPINFO *vinfo)
 {
 	TCHAR buf[VFPS];
 
 	tstrcpy(buf,vo_.file.name);
-	OpenAndFollowViewObject(hWnd,buf,NULL,NULL,PPV__reload);
+	OpenAndFollowViewObject(vinfo, buf, NULL, NULL, PPV__reload);
 }
 
 void PPvReceiveRequest(HWND hWnd)
@@ -1709,7 +1709,7 @@ void PPvReceiveRequest(HWND hWnd)
 		VFSFixPath(NULL,ReceivedParam,NULL,VFSFIX_PATH | VFSFIX_NOFIXEDGE | VFSFIX_VREALPATH);
 		OpenViewObject(ReceivedParam,NULL,NULL,flags);
 	}
-	FollowOpenView(hWnd);
+	FollowOpenView(&vinfo);
 
 	if ( WinPos.show != SW_SHOWDEFAULT ) ShowWindow(hWnd,WinPos.show);
 	if ( flags & PPV_NOFOREGROUND ){
@@ -1733,7 +1733,7 @@ ERRORCODE PPvExecute(HWND hWnd)
 			PPXH_COMMAND,PPXH_COMMAND) <= 0 ){
 		return ERROR_CANCELLED;
 	}
-	PP_ExtractMacro(hWnd,&PPvInfo.info,NULL,buf,NULL,0);
+	PP_ExtractMacro(hWnd,&vinfo.info,NULL,buf,NULL,0);
 	return NO_ERROR;
 }
 
@@ -1746,7 +1746,7 @@ ERRORCODE PPvShell(HWND hWnd)
 			PPXH_COMMAND,PPXH_COMMAND) <= 0 ){
 		return ERROR_CANCELLED;
 	}
-	PP_ExtractMacro(hWnd,&PPvInfo.info,NULL,buf,NULL,0);
+	PP_ExtractMacro(hWnd,&vinfo.info,NULL,buf,NULL,0);
 	return NO_ERROR;
 }
 
@@ -1842,7 +1842,7 @@ void PPvEditFile(HWND hWnd)
 	ComExec(hWnd,buf,curdir);
 }
 
-DWORD USEFASTCALL PPvContextMenuAddSub(HWND hWnd,HMENU hMenu,ThSTRUCT *TH,const TCHAR *ext)
+DWORD USEFASTCALL PPvContextMenuAddSub(PPV_APPINFO *vinfo,HMENU hMenu,ThSTRUCT *TH,const TCHAR *ext)
 {
 	DWORD ID;
 	TCHAR ccrname[VFPS];
@@ -1852,7 +1852,7 @@ DWORD USEFASTCALL PPvContextMenuAddSub(HWND hWnd,HMENU hMenu,ThSTRUCT *TH,const 
 
 	ID = MENUID_USER;
 	wsprintf(ccrname,T("M_Ccr%s"),(*ext != '\0') ? ext : T("NoExt") );
-	PP_AddMenu(&PPvInfo.info,hWnd,hMenu,&ID,ccrname,TH);
+	PP_AddMenu(&vinfo->info,vinfo->info.hWnd,hMenu,&ID,ccrname,TH);
 	if ( ID != MENUID_USER ) AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
 
 	if ( vo_.DModeBit == DOCMODE_BMP ){
@@ -1880,11 +1880,11 @@ DWORD USEFASTCALL PPvContextMenuAddSub(HWND hWnd,HMENU hMenu,ThSTRUCT *TH,const 
 			AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
 		}
 	}
-	PP_AddMenu(&PPvInfo.info,hWnd,hMenu,&ID,T("M_ppvc"),TH);
+	PP_AddMenu(&vinfo->info,vinfo->info.hWnd,hMenu,&ID,T("M_ppvc"),TH);
 	return ID;
 }
 
-void PPvContextMenu(HWND hWnd)
+void PPvContextMenu(PPV_APPINFO *vinfo)
 {
 	HMENU hMenu;
 	int menuid;
@@ -1909,7 +1909,7 @@ void PPvContextMenu(HWND hWnd)
 
 		if ( vo_.DModeBit & DOCMODE_TEXT ){
 			AppendMenu(hMenu,MF_EPOP,(UINT_PTR)TextCodeMenu(VOsel.select),MessageText(StrEDEC));
-			PPvContextMenuAddSub(hWnd,hMenu,&TH,ext);
+			PPvContextMenuAddSub(vinfo,hMenu,&TH,ext);
 			AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
 			if ( VOsel.select != FALSE ){
 				AppendMenuString(hMenu,MENUID_SELECTURI,StrOPSA);
@@ -1918,7 +1918,7 @@ void PPvContextMenu(HWND hWnd)
 		}else if ( vo_.DModeBit & (DOCMODE_HEX | DOCMODE_RAWIMAGE) ){
 			AppendMenu(hMenu,MF_EPOP,(UINT_PTR)TextCodeMenu(FALSE),MessageText(StrEDEC));
 		}else{
-			PPvContextMenuAddSub(hWnd,hMenu,&TH,ext);
+			PPvContextMenuAddSub(vinfo,hMenu,&TH,ext);
 		}
 	}else{
 		if ( vo_.DModeBit & (DOCMODE_HEX | DOCMODE_RAWIMAGE) ){
@@ -1927,7 +1927,7 @@ void PPvContextMenu(HWND hWnd)
 		AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
 		AppendMenu(hMenu,MF_EPOP,(UINT_PTR)PPV_GetDisplayTypeMenu(),MessageText(StrEDET));
 		AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
-		PPvContextMenuAddSub(hWnd,hMenu,&TH,ext);
+		PPvContextMenuAddSub(vinfo,hMenu,&TH,ext);
 	}
 	menuid = PPvTrackPopupMenu(hMenu);
 
@@ -1938,36 +1938,36 @@ void PPvContextMenu(HWND hWnd)
 			if ( menuid == KV_ICC ){
 				vo_.bitmap.UseICC = (vo_.bitmap.UseICC == ICM_ON) ? ICM_OFF : ICM_ON;
 				SetPopMsg(POPMSG_NOLOGMSG,(vo_.bitmap.UseICC == ICM_ON) ? T("ICM on") : T("ICM off"));
-				InvalidateRect(hWnd,NULL,TRUE);
+				InvalidateRect(vinfo->info.hWnd,NULL,TRUE);
 			}
 			break;
 		}else if ( menuid <= MENUID_KEYLAST ){
-			PPvCommand(&PPvInfo,(WORD)((menuid - K_M) | K_raw));
+			PPvCommand(vinfo, (WORD)((menuid - K_M) | K_raw));
 			break;
 		}else if ( (menuid >= MENUID_TYPE_FIRST) && (menuid <= MENUID_TYPE_LAST) ){
 			if ( vo_.DModeType != (DWORD)((menuid - MENUID_TYPE_FIRST) + 1) ){
 				vo_.DModeType = (menuid - MENUID_TYPE_FIRST) + 1;
-				FixChangeMode(hWnd);
+				FixChangeMode(vinfo->info.hWnd);
 			}
 			break;
 		}else if ( menuid == MENUID_TYPE_TAIL ){
-			ToggleTailMode(hWnd);
+			ToggleTailMode(vinfo);
 			break;
 		}else if ( (menuid >= MENUID_TEXTCODE) && (menuid <= MENUID_ALLCODE) ){
-			PPV_TextCode(hWnd,menuid);
+			PPV_TextCode(vinfo->info.hWnd,menuid);
 			break;
 		}else if ( menuid >= MENUID_USER ){
 			const TCHAR *p;
 
 			if ( menuid >= VFSCHK_MENUID ){ // SPI直接指定
-				ChangeSusie(hWnd,hMenu,menuid);
+				ChangeSusie(vinfo, hMenu, menuid);
 			}else{
 				GetMenuDataMacro2(p,&TH,menuid - MENUID_USER);
-				if ( p != NULL ) PP_ExtractMacro(hWnd,&PPvInfo.info,NULL,p,NULL,0);
+				if ( p != NULL ) PP_ExtractMacro(vinfo->info.hWnd, &vinfo->info, NULL, p, NULL, 0);
 			}
 			break;
 		}else if ( menuid == MENUID_SELECTURI ){
-			JumpToSelectedAddress(hWnd);
+			JumpToSelectedAddress(vinfo->info.hWnd);
 			break;
 		}
 
@@ -1980,12 +1980,12 @@ void PPvContextMenu(HWND hWnd)
 				if ( hm == NULL ) break;
 				tstrcpy(GlobalLock(hm),buf);
 				GlobalUnlock(hm);
-				OpenClipboard(hWnd);
+				OpenClipboard(vinfo->info.hWnd);
 				EmptyClipboard();
 				SetClipboardData(CF_TTEXT,hm);
 				CloseClipboard();
 			}else{
-				OpenBrowser(hWnd,buf);
+				OpenBrowser(vinfo->info.hWnd,buf);
 			}
 			break;
 		}
@@ -1998,7 +1998,7 @@ void PPvContextMenu(HWND hWnd)
 				while ( menuid-- ) action += tstrlen(action) + 1;
 			}
 //			verb = (buf[0] == '*') ? NULL : buf;
-			if ( NULL == PPxShellExecute(hWnd,action,vo_.file.name,NilStr,NilStr,0,buf) ){
+			if ( NULL == PPxShellExecute(vinfo->info.hWnd,action,vo_.file.name,NilStr,NilStr,0,buf) ){
 				SetPopMsg(POPMSG_NOLOGMSG,buf);
 			}
 		}
@@ -2198,7 +2198,7 @@ void DoFind(HWND hWnd,int mode)
 		SetPopMsg(POPMSG_NOLOGMSG,MES_NOTX);
 	}
 	if ( (XV_tmod == 0) && (VOsel.cursor != FALSE) ){
-		HideCaret(hMainWnd);
+		HideCaret(vinfo.info.hWnd);
 		VOsel.cursor = FALSE;
 	}
 }
@@ -2382,7 +2382,7 @@ void ResetSelect(BOOL csrOff)
 	if ( IsTrue(csrOff) ){
 		if ( !XV_tmod ){
 			if ( VOsel.cursor != FALSE ){
-				HideCaret(hMainWnd);
+				HideCaret(vinfo.info.hWnd);
 				VOsel.cursor = FALSE;
 			}
 			VOsel.now.y.line = -1;	// カーソル位置を初期化
@@ -2490,7 +2490,7 @@ void GetPopupPosition(POINT *pos)
 				pos->x = XV_left + XV_lleft + (VOi->offX * fontX) + VOsel.now.x.pix;
 				pos->y = (VOsel.now.y.line - VOi->offY + 1) * LineY + BoxView.top;
 			}
-			ClientToScreen(hMainWnd,pos);
+			ClientToScreen(vinfo.info.hWnd,pos);
 			break;
 	}
 }
@@ -2501,7 +2501,7 @@ int PPvTrackPopupMenu(HMENU hMenu)
 	POINT pos;
 
 	GetPopupPosition(&pos);
-	return TrackPopupMenu(hMenu,TPM_TDEFAULT,pos.x,pos.y,0,hMainWnd,NULL);
+	return TrackPopupMenu(hMenu,TPM_TDEFAULT,pos.x,pos.y,0,vinfo.info.hWnd,NULL);
 }
 
 typedef struct {
@@ -2586,7 +2586,7 @@ void DumpEmf(void)
 	}else{
 		VFSFullPath(des.basename,vo_.file.name,NULL);
 	}
-	if ( tInput(hMainWnd,T("Save Base name"),
+	if ( tInput(vinfo.info.hWnd,T("Save Base name"),
 			des.basename,VFPS,PPXH_NAME_R,PPXH_PATH) <= 0 ){
 		return;
 	}
@@ -2594,9 +2594,9 @@ void DumpEmf(void)
 	box.left = box.top = 0;
 	box.right = vo_.bitmap.rawsize.cx;
 	box.bottom = vo_.bitmap.rawsize.cy;
-	hDC = GetDC(hMainWnd);
+	hDC = GetDC(vinfo.info.hWnd);
 	EnumEnhMetaFile(hDC,vo_.eMetafile.handle,(ENHMFENUMPROC)DumpEmfProc,(void *)&des,&box);
-	ReleaseDC(hMainWnd,hDC);
+	ReleaseDC(vinfo.info.hWnd,hDC);
 }
 
 void ReverseBackground(HWND hWnd)
@@ -2651,7 +2651,7 @@ void DivChange(int offset)
 		}
 		SubDD(FileDividePointer.LowPart,FileDividePointer.HighPart,X_wsiz,0);
 	}
-	PPvReload(hMainWnd);
+	PPvReload(&vinfo);
 }
 
 int USEFASTCALL FixedWidthRange(int cols)
@@ -2705,7 +2705,7 @@ void LoadWinpos(HWND hWnd)
 	}
 }
 
-void ReadSizeChange(HWND hWnd)
+void ReadSizeChange(PPV_APPINFO *vinfo)
 {
 	DWORD X_wsiz = IMAGESIZELIMIT;
 
@@ -2725,7 +2725,7 @@ void ReadSizeChange(HWND hWnd)
 		FileDividePointer.LowPart = FileDividePointer.HighPart = 0;
 		FileDivideMode = FDM_FORCENODIV;
 	}
-	PPvReload(hWnd);
+	PPvReload(vinfo);
 }
 
 void SaveBookmark(int index)
@@ -2741,13 +2741,13 @@ void SaveBookmark(int index)
 	setflag(ShowTextLineFlags,SHOWTEXTLINE_BOOKMARK);
 }
 
-void GotoBookmarkPos(HWND hWnd,int index,int posY)
+void GotoBookmarkPos(PPV_APPINFO *vinfo,int index,int posY)
 {
 	if ( (FileDivideMode > FDM_NODIVMAX) &&
 		 ((Bookmark[index].div.LowPart != FileDividePointer.LowPart) ||
 		  (Bookmark[index].div.HighPart != FileDividePointer.HighPart)) ){
 		FileDividePointer = Bookmark[index].div;
-		PPvReload(hWnd);
+		PPvReload(vinfo);
 	}
 	if ( IsTrue(BackReader) ){
 		mtinfo.PresetY = posY;
@@ -2757,7 +2757,7 @@ void GotoBookmarkPos(HWND hWnd,int index,int posY)
 				posY - VOi->offY,	FALSE);
 }
 
-BOOL GotoBookmark(HWND hWnd,int index)
+BOOL GotoBookmark(PPV_APPINFO *vinfo,int index)
 {
 	if ( Bookmark[index].pos.x < 0 ) return FALSE; // 記憶していない
 
@@ -2772,7 +2772,7 @@ BOOL GotoBookmark(HWND hWnd,int index)
 			Bookmark[BookmarkID_undo].pos.y = VOi->offY;
 			Bookmark[BookmarkID_undo].div = FileDividePointer;
 		}
-		GotoBookmarkPos(hWnd,index,Bookmark[index].pos.y);
+		GotoBookmarkPos(vinfo,index,Bookmark[index].pos.y);
 	}else{ // キャレット位置で記憶
 		if ( !(vo_.DModeBit & VO_dmode_SELECTABLE) ) return FALSE;
 
@@ -2790,24 +2790,24 @@ BOOL GotoBookmark(HWND hWnd,int index)
 		if ( XV_tmod == 0 ){
 			XV_tmod = 1;
 			SetCustData(T("XV_tmod"),&XV_tmod,sizeof(XV_tmod));
-			InitCursorMode(hWnd);
+			InitCursorMode(vinfo->info.hWnd);
 		}
-		GotoBookmarkPos(hWnd,index,-Bookmark[index].pos.y);
+		GotoBookmarkPos(vinfo,index,-Bookmark[index].pos.y);
 	}
 	return TRUE;
 }
 
 #pragma argsused
-ERRORCODE SaveBookmarkMenu(HWND hWnd)
+ERRORCODE SaveBookmarkMenu(PPV_APPINFO *vinfo)
 {
 	HMENU hPopupMenu = CreatePopupMenu();
 	TCHAR buf[MAX_PATH];
-	int i,index;
-	UnUsedParam(hWnd);
+	int i, index;
+	UnUsedParam(vinfo);
 
 	for ( i = BookmarkID_1st ; i <= MaxBookmark ; i++ ){
-		wsprintf(buf,T("&%d: [%d,%d] <--"),i,Bookmark[i].pos.x,Bookmark[i].pos.y);
-		AppendMenuString(hPopupMenu,i,buf);
+		wsprintf(buf, T("&%d: [%d,%d] <--"), i, Bookmark[i].pos.x, Bookmark[i].pos.y);
+		AppendMenuString(hPopupMenu, i, buf);
 	}
 	index = PPvTrackPopupMenu(hPopupMenu);
 	DestroyMenu(hPopupMenu);
@@ -2816,7 +2816,7 @@ ERRORCODE SaveBookmarkMenu(HWND hWnd)
 	return NO_ERROR;
 }
 
-ERRORCODE GotoBookmarkMenu(HWND hWnd)
+ERRORCODE GotoBookmarkMenu(PPV_APPINFO *vinfo)
 {
 	HMENU hPopupMenu = CreatePopupMenu();
 	TCHAR buf[MAX_PATH];
@@ -2840,7 +2840,7 @@ ERRORCODE GotoBookmarkMenu(HWND hWnd)
 	if ( index == TailID ){
 		MoveCsr(0,(OldTailLine - 2) - VOi->offY,FALSE);
 	}else{
-		GotoBookmark(hWnd,index - BookMarkID);
+		GotoBookmark(vinfo,index - BookMarkID);
 	}
 	return NO_ERROR;
 }

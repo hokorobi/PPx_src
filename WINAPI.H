@@ -55,3 +55,8 @@
   #define GetCompressedFileSize  GetCompressedFileSizeA
  #endif
 #endif
+
+#ifndef MIIM_STRING
+#define MIIM_STRING 0x40
+#define MIIM_FTYPE 0x100
+#endif

@@ -112,9 +112,10 @@ HPALETTE DIBtoPalette(HTBMP *hTbmp,int mode,int maxY)
 	*src++ = (BYTE)c;\
 }
 
-PPXDLL BOOL PPXAPI InitBMP(HTBMP *hTbmp,const TCHAR *filename,DWORD size,int bright)
+PPXDLL BOOL PPXAPI InitBMP(HTBMP *hTbmp, const TCHAR *filename, DWORD size, int bright)
 {
-	int offset,palette,maxY;
+	int palette, maxY;
+	DWORD offset;
 	DWORD color;
 
 	if ( size < 8 ) goto error;

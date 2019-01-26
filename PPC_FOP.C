@@ -69,62 +69,6 @@ DefineWinAPI(int, SHFileOperation, (LPSHFILEOPSTRUCT)) = NULL;
 #define SFOERROR_BADNEW	3
 #define PPcEnumInfoFunc(func,str,work) ((work)->buffer = str, cinfo->info.Function(&cinfo->info,func,work))
 
-LPITEMIDLIST CatPidl2(LPMALLOC pMA,LPCITEMIDLIST idl1,LPCITEMIDLIST idl2)
-{
-	LPITEMIDLIST idlNew;
-	UINT cb1, cb2;
-
-	cb1 = (idl1 == NULL) ? 0 : GetPidlSize(idl1) - (sizeof(BYTE) * 2);
-	cb2 = GetPidlSize(idl2);
-	idlNew = (LPITEMIDLIST)pMA->lpVtbl->Alloc(pMA,cb1 + cb2);
-
-	if ( idlNew != NULL ){
-		if ( idl1 != NULL ) memcpy(idlNew,idl1,cb1);
-		memcpy( ((BYTE *)idlNew) + cb1,idl2,cb2);
-	}
-	return idlNew;
-}
-
-LPITEMIDLIST PathToPidl2(const TCHAR *vfs)
-{
-	LPITEMIDLIST idl = NULL,idl2,idlc;
-	LPSHELLFOLDER pSF;
-	LPMALLOC pMA;
-	TCHAR tempdir[VFPS],*p;
-	HWND hWnd = NULL;
-
-	pSF = VFPtoIShell(hWnd,vfs,&idl);
-	if ( pSF == NULL ){ // 最後のエントリがbindできないと思われるので試行する
-		TCHAR c;
-
-		tstrcpy(tempdir,vfs);
-		p = VFSFindLastEntry(tempdir);
-		if ( (c = *p) == '\0' ) return NULL; // エントリがない
-		*p = '\0';
-		pSF = VFPtoIShell(hWnd,tempdir,&idl); // 最終エントリ以外で取得
-		if ( pSF == NULL ) return NULL;
-									// 最終エントリを処理
-		if ( c == '\\' ){
-			p++;
-		}else{
-			*p = c;
-		}
-		idl2 = BindIShellAndFname(pSF,p);
-		if ( idl2 == NULL ){
-			pSF->lpVtbl->Release(pSF);
-			return NULL;
-		}
-		SHGetMalloc(&pMA);
-		idlc = CatPidl2(pMA,idl,idl2);
-		pMA->lpVtbl->Free(pMA,idl2);
-		pMA->lpVtbl->Free(pMA,idl);
-		pMA->lpVtbl->Release(pMA);
-		idl = idlc;
-	}
-	pSF->lpVtbl->Release(pSF);
-	return idl;
-}
-
 int SxFileOperation(PPC_APPINFO *cinfo, SHFILEOPSTRUCT *fileop)
 {
 	xIFileOperation *ifo;
@@ -183,7 +127,7 @@ int SxFileOperation(PPC_APPINFO *cinfo, SHFILEOPSTRUCT *fileop)
 #endif
 		if ( FAILED(DSHCreateItemFromParsingName(destdirW, NULL, &XIID_IShellItem, (void**)&destShellItem)) ){
 			destShellItem = NULL;
-			pidl = PathToPidl2(fileop->pTo);
+			pidl = PathToPidl(fileop->pTo);
 			if ( pidl != NULL ){
 				if ( FAILED(DSHCreateItemFromIDList(pidl, &XIID_IShellItem, (void**)&destShellItem)) ){
 					destShellItem = NULL;
@@ -237,7 +181,7 @@ int SxFileOperation(PPC_APPINFO *cinfo, SHFILEOPSTRUCT *fileop)
 				if ( IsParentDir(buf) == FALSE ){
 					VFSFullPath(NULL,buf,cinfo->path);
 				}
-				pidl = PathToPidl2(buf);
+				pidl = PathToPidl(buf);
 				if ( pidl == NULL ){
 					PPErrorBox(fileop->hwnd,NULL,ERROR_ACCESS_DENIED);
 					break;

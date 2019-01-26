@@ -353,8 +353,9 @@ ERRORCODE DoUndll(PPC_APPINFO *cinfo,const TCHAR *destpath,DWORD X_unbg)
 		uud.hBatchfile = INVALID_HANDLE_VALUE;
 		if ( X_unbg ){
 			MakeTempEntry(VFPS,tempfilename,FILE_ATTRIBUTE_NORMAL);
-			uud.hBatchfile = CreateFileL(tempfilename,GENERIC_WRITE,
-					0,NULL,CREATE_ALWAYS,FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+			uud.hBatchfile = CreateFileL(tempfilename, GENERIC_WRITE,
+					0, NULL, CREATE_ALWAYS,
+					FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 			if ( uud.hBatchfile == INVALID_HANDLE_VALUE ) return GetLastError();
 		}
 
@@ -1179,8 +1180,9 @@ ERRORCODE PPC_Unpack(PPC_APPINFO *cinfo,const TCHAR *destpath)
 	X_unbg = Get_X_unbg;
 	if ( (cinfo->e.markC > 1) && X_unbg ){
 		MakeTempEntry(MAX_PATH,tempfilename,FILE_ATTRIBUTE_NORMAL);
-		hBatchfile = CreateFileL(tempfilename,GENERIC_WRITE,
-					0,NULL,CREATE_ALWAYS,FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+		hBatchfile = CreateFileL(tempfilename, GENERIC_WRITE,
+					0, NULL, CREATE_ALWAYS,
+					FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	}
 	info.chop = GetCustXDword(T("X_arcdr"),NULL,0);
 	info.DestPathLast = info.DestPath + tstrlen(info.DestPath);

@@ -519,8 +519,10 @@ BOOL USEFASTCALL CheckPairJump(PPC_APPINFO *cinfo,int offset)
 			return FALSE;
 		}
 		site = PPcGetSite(cinfo);
-		if ( site == 0 ) return FALSE;
-		if ( (offset >= 0) ? (site == 2) : (site == 1) ) return FALSE;
+		if ( site == PPCSITE_SINGLE ) return FALSE;
+		if ( (offset >= 0) ? (site == PPCSITE_RIGHT) : (site == PPCSITE_LEFT) ){
+			return FALSE;
+		}
 		PostMessage(cinfo->hComboWnd,WM_PPXCOMMAND,
 				TMAKELPARAM(KCW_nextppc,0),(LPARAM)cinfo->info.hWnd);
 		return TRUE;
@@ -532,7 +534,7 @@ BOOL USEFASTCALL CheckPairJump(PPC_APPINFO *cinfo,int offset)
 		site ^= PAIRBIT;
 	}
 	if ( offset < 0 ) site ^= PAIRBIT;
-	if ( site == 0 ) return FALSE;
+	if ( site == PPCSITE_SINGLE ) return FALSE;
 	PPcChangeWindow(cinfo,(offset > 0) ? PPCHGWIN_NEXT : PPCHGWIN_BACK);
 	return TRUE;
 }

@@ -15,8 +15,12 @@ typedef struct {
 	int index;		// 参照している古さ。-1:編集中
 	int count;		// 検索中のパラメータ 0:検索していない
 		#define HISCOUNT_MAX 9999
+		#define HIST_CMD_ALL 0
+		#define HIST_CMD_FIND 1
+		#define HIST_PARAM_ALL 2
+		#define HIST_PARAM_FIND 3
 	int mode;		// (前回の)検索方法 0:全体 1:コマンド前方一致
-						//                2:パラメータ 2:パラメータ前方一致
+						//                2:パラメータ 3:パラメータ前方一致
 	TCHAR *findstr;	// 検索文字列の開始位置
 	DWORD findsize;	// 検索文字列の長さ
 } HISTVAR;
@@ -59,7 +63,7 @@ struct tagIncSearchInfo {
 	COORD pos;	// 最後に検索した位置
 } incsearch;
 
-ESTRUCT ED;
+ESTRUCT ComplED;
 HISTVAR hvar;
 TCHAR *baseptr;
 WORD histype;
@@ -769,7 +773,7 @@ void GetHistorySearchMode(HISTVAR *hivar,TCHAR *dl)
 
 	if ( EdX == 0 ){							// カーソルが先頭…全体
 		InitHistorySearch(hivar,dl);
-		hivar->mode = 0;
+		hivar->mode = HIST_CMD_ALL;
 		return;
 	}
 												// カーソルが末尾…前回と同じ
@@ -787,11 +791,11 @@ void GetHistorySearchMode(HISTVAR *hivar,TCHAR *dl)
 	}
 	InitHistorySearch(hivar,dl);
 	if ( s == NULL ){		// 空白がなかった→コマンド検索
-		hivar->mode = (cmd == p) ? 0 : 1;	// 文字列なし→全体検索
+		hivar->mode = (cmd == p) ? HIST_CMD_ALL : HIST_CMD_FIND;	// 文字列なし→全体検索
 		hivar->findstr = cmd;				// 文字列有り→コマンド前方一致検索
 		hivar->findsize = p - cmd;
 	}else{					// 空白有り→パラメータ検索
-		hivar->mode = (s == p) ? 2 : 3;		// 文字列なし→パラ検索
+		hivar->mode = (s == p) ? HIST_PARAM_ALL : HIST_PARAM_FIND;		// 文字列なし→パラ検索
 		hivar->findstr = s;					// 文字列有り→パラ前方一致検索
 		hivar->findsize = p - s;
 		hivar->count = 1;
@@ -810,10 +814,10 @@ const TCHAR *NextWord(const TCHAR *p)
 const TCHAR *SearchLineHistory2(HISTVAR *hivar,const TCHAR *p)
 {
 	switch( hivar->mode ){
-		case 0:			// 全体検索
+		case HIST_CMD_ALL:			// 全体検索
 			break;
 
-		case 1:			// コマンド前方一致検索
+		case HIST_CMD_FIND:			// コマンド前方一致検索
 			while ( *p == ' ' ) p++;
 			if ( (tstrlen(p) < hivar->findsize) ||
 				 tstrnicmp(p,hivar->findstr,hivar->findsize) ){
@@ -821,7 +825,7 @@ const TCHAR *SearchLineHistory2(HISTVAR *hivar,const TCHAR *p)
 			}
 			break;
 
-		case 2: {		// パラメータ検索
+		case HIST_PARAM_ALL: {		// パラメータ検索
 			int i;
 
 			for ( i = hivar->count ; i ; i-- ){
@@ -836,7 +840,7 @@ const TCHAR *SearchLineHistory2(HISTVAR *hivar,const TCHAR *p)
 			}
 			break;
 		}
-		case 3:{		// パラメータ前方一致検索
+		case HIST_PARAM_FIND:{		// パラメータ前方一致検索
 			int i;
 
 			for ( i = hivar->count ; i ; i-- ){
@@ -857,7 +861,7 @@ const TCHAR *SearchLineHistory2(HISTVAR *hivar,const TCHAR *p)
 		}
 	}
 	if ( p ){
-		if ( hivar->mode <= 1 ){
+		if ( hivar->mode <= HIST_CMD_FIND ){ // HIST_CMD_ALL / HIST_CMD_FIND
 			tstrcpy(hivar->findstr,p);
 		}else{
 			const UTCHAR *src;
@@ -961,8 +965,9 @@ int tCInput(TCHAR *buf,size_t bsize,WORD htype)
 	int X_calc = 1;
 	int formlen = 0;
 
-	ED.info	= &ppbappinfo;
-	ED.hF	= NULL;
+	ComplED.info = &ppbappinfo;
+	ComplED.hF = NULL;
+	ComplED.romahandle = 0;
 
 	mouseSX = -1;
 	maxsize = bsize;
@@ -1094,7 +1099,7 @@ int tCInput(TCHAR *buf,size_t bsize,WORD htype)
 	ReverseRange(FALSE);
 	if ( incsearch.len ) ReverseText(incsearch.len);
 	if ( cmode != CMODE_EDIT ) screen.dwCursorPosition.Y = (SHORT)sinfo.BackupY;
-	if ( ED.hF != NULL ) FindClose(ED.hF);
+	SearchFileIned(&ComplED, T(""), NULL, 0);
 	{
 		COORD pos;
 		WORD atr = T_CYA;
@@ -1287,7 +1292,9 @@ void EditModeCommand(int key)
 			break;
 
 		case K_c | 'C':				//	^C:クリップ
+		case K_c | K_s | 'C':
 		case K_c | 'X':				//	^X:カット
+		case K_c | K_s | 'X':
 			if ( *EditText && IsTrue(OpenClipboard(NULL)) ){
 				HGLOBAL hG;
 				int i,j;
@@ -1311,7 +1318,7 @@ void EditModeCommand(int key)
 				}
 				CloseClipboard();
 
-				if ( key == (K_c | 'X') ){
+				if ( (key & 0xff) == 'X' ){
 					if ( SelStart != SelEnd ){
 						tstrcpy(EditText + SelStart,EditText + SelEnd);
 						EdX = SelStart;
@@ -1395,7 +1402,7 @@ void EditModeCommand(int key)
 				cursor.end	 = SelEnd;
 			}
 
-			p = SearchFileIned(&ED,tmp,&cursor,
+			p = SearchFileIned(&ComplED,tmp,&cursor,
 				((histype & PPXH_COMMAND) ? CMDSEARCH_CURRENT : CMDSEARCH_OFF) |
 				((key != (K_c | 'I')) ? 0 : CMDSEARCH_FLOAT) |
 				CMDSEARCH_MULTI );
@@ -1473,6 +1480,20 @@ void EditModeCommand(int key)
 			GetHistorySearchMode(&hvar,EditText);
 			UsePPx();
 			p = SearchLineHistory(&hvar,(key == K_up) ? 1 : -1);
+			if ( p == NULL ){
+				if ( hvar.mode == HIST_CMD_FIND ){
+					hvar.mode = HIST_CMD_ALL;
+					hvar.index = -1;
+					hvar.count = 0;
+					p = SearchLineHistory(&hvar,(key == K_up) ? 1 : -1);
+				}
+				if ( hvar.mode == HIST_PARAM_FIND ){
+					hvar.mode = HIST_PARAM_ALL;
+					hvar.index = -1;
+					hvar.count = 1;
+					p = SearchLineHistory(&hvar,(key == K_up) ? 1 : -1);
+				}
+			}
 			if ( p != NULL ){
 				ShowOffset = 0;
 				EdX = tstrlen32(EditText);
@@ -1707,6 +1728,7 @@ void ScrollModeCommand(int key)
 			ReverseRange(TRUE);
 			break;
 		case K_c | 'C':				// ^C:クリップ
+		case K_c | K_s | 'C':
 		case K_c | 'M':
 		case K_cr:					// CR:確定
 			ClipText();

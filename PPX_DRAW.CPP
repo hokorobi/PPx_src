@@ -29,6 +29,7 @@
   #define RenderTargetProperties_OPTION
 #endif
 
+#define DEFAULT_DPI 96.0f
 // Direct Write 版 ------------------------------------------------------------
 #if DRAWMODE == DRAWMODE_DW
 #include <wincodec.h>
@@ -198,9 +199,9 @@ BOOL CreateDxDraw(DXDRAWSTRUCT **DxDrawPtr,HWND hWnd)
 
 	// ログオフしない限り値は変化しない
 	DxDraw->d2dFactory->GetDesktopDpi(&DxDraw->DeskScale.x,&DxDraw->DeskScale.y);
-	DxDraw->DeskScaleRate.x = 96.0f / DxDraw->DeskScale.x;
-	DxDraw->DeskScaleRate.y = 96.0f / DxDraw->DeskScale.y;
-	if ( DxDraw->DeskScale.x != 96.0f ){
+	DxDraw->DeskScaleRate.x = DEFAULT_DPI / DxDraw->DeskScale.x;
+	DxDraw->DeskScaleRate.y = DEFAULT_DPI / DxDraw->DeskScale.y;
+	if ( DxDraw->DeskScale.x != DEFAULT_DPI ){
 		DxDraw->DefaultTransform._11 = DxDraw->DeskScaleRate.x;
 		DxDraw->DefaultTransform._22 = DxDraw->DeskScaleRate.y;
 	}
@@ -423,7 +424,7 @@ void SetRotate(DXDRAWSTRUCT *DxDraw,int rel_angle)
 	while ( DxDraw->RotateAngle >= 360 ) DxDraw->RotateAngle -= 360;
 
 	height = static_cast<float>(DxDraw->clientArea.height) / 2.0f;
-	centerPoint = D2D1::Point2F(0.0f,height / ((DxDraw->DeskScale.y / 96.0f - 1.0f) / 2.0f + 1.0f));
+	centerPoint = D2D1::Point2F(0.0f,height / ((DxDraw->DeskScale.y / DEFAULT_DPI - 1.0f) / 2.0f + 1.0f));
 
 	if ( DxDraw->RotateAngle == 0 ){ // DeskScaleRate
 		DxDraw->DefaultTransform = D2D1::Matrix3x2F::Identity();
@@ -533,7 +534,7 @@ DWORD SetFontDxDraw(DXDRAWSTRUCT *DxDraw,HFONT hFont,int type)
 	hOldGDI = SelectObject(hDC,hFont);
 
 	if ( type == 0 ){
-		DxDraw->DotScaleRate = 96.0f / static_cast<float>(PPxCommonExtCommand(K_GETDISPDPI,(WPARAM)DxDraw->hWnd));
+		DxDraw->DotScaleRate = DEFAULT_DPI / static_cast<float>(PPxCommonExtCommand(K_GETDISPDPI,(WPARAM)DxDraw->hWnd));
 
 		if ( DxDraw->textFormatMain != NULL ){
 			DxDraw->textFormatMain->Release();
@@ -578,11 +579,15 @@ DWORD SetFontDxDraw(DXDRAWSTRUCT *DxDraw,HFONT hFont,int type)
 	DWRITE_TEXT_METRICS strMet;
 	IDWriteTextLayout *dwLayout;
 
-	DxDraw->dwFactory->CreateGdiCompatibleTextLayout(chr,TSIZEOFW(chr) - 1,DxDraw->textFormat,32000,32000,1.0f,NULL,TRUE,&dwLayout);
-	dwLayout->GetMetrics(&strMet);
-	dwLayout->Release();
+	if ( SUCCEEDED(DxDraw->dwFactory->CreateGdiCompatibleTextLayout(chr,TSIZEOFW(chr) - 1,DxDraw->textFormat,32000,32000,1.0f,NULL,TRUE,&dwLayout)) ){
+		dwLayout->GetMetrics(&strMet);
+		dwLayout->Release();
 
-	DxDraw->fontW = (strMet.widthIncludingTrailingWhitespace) / static_cast<float>(TSIZEOFW(chr) - 1);
+		DxDraw->fontW = (strMet.widthIncludingTrailingWhitespace) / static_cast<float>(TSIZEOFW(chr) - 1);
+	}else{
+		DxDraw->fontW = 8; // dummy
+	}
+
 	return static_cast<int>(DxDraw->fontW);
 }
 
@@ -740,18 +745,22 @@ void DxGetTextExtentExPoint(DXDRAWSTRUCT *DxDraw,HDC hDC,const TCHAR *str,int le
 	#endif
 
 	for (;;){
-		DxDraw->dwFactory->CreateGdiCompatibleTextLayout(DRAWSTR,DRAWLEN,DxDraw->textFormat,32000,32000,1.0f,NULL,FALSE,&dwLayout);
-		#undef DRAWLEN
-		#undef DRAWSTR
+		if ( SUCCEEDED(DxDraw->dwFactory->CreateGdiCompatibleTextLayout(DRAWSTR,DRAWLEN,DxDraw->textFormat,32000,32000,1.0f,NULL,FALSE,&dwLayout)) ){
+			#undef DRAWLEN
+			#undef DRAWSTR
 
-		DWRITE_TEXT_METRICS strMet;
+			DWRITE_TEXT_METRICS strMet;
 
-		dwLayout->GetMetrics(&strMet);
-		dwLayout->Release();
-		blksize->cx = static_cast<int>(strMet.widthIncludingTrailingWhitespace);
-		if ( blksize->cx < maxwidth ) break;
-		if ( len == 0 ) break;
-		len--;
+			dwLayout->GetMetrics(&strMet);
+			dwLayout->Release();
+			blksize->cx = static_cast<int>(strMet.widthIncludingTrailingWhitespace);
+			if ( blksize->cx < maxwidth ) break;
+			if ( len == 0 ) break;
+			len--;
+		} else {
+			len = 0;
+			break;
+		}
 	}
 	*fitlem = len;
 }
@@ -788,8 +797,9 @@ void DxTextOutRel(DXDRAWSTRUCT *DxDraw,HDC hDC,const TCHAR *str,int len)
 		int DRAWLEN = MultiByteToWideChar(CP_ACP,MB_PRECOMPOSED,str,len,DRAWSTR,TSIZEOFW(DRAWSTR) );
 	#endif
 
-	DxDraw->dwFactory->CreateGdiCompatibleTextLayout(DRAWSTR,DRAWLEN,DxDraw->textFormat,32000,32000,1.0f,NULL,FALSE,&dwLayout);
-
+	if ( FAILED(DxDraw->dwFactory->CreateGdiCompatibleTextLayout(DRAWSTR,DRAWLEN,DxDraw->textFormat,32000,32000,1.0f,NULL,FALSE,&dwLayout)) ){
+		return;
+	}
 
 	DWRITE_TEXT_METRICS strMet;
 	dwLayout->GetMetrics(&strMet);
@@ -896,10 +906,12 @@ void DxDrawText(DXDRAWSTRUCT *DxDraw,HDC hDC,const TCHAR *str,int len,RECT *box,
 	}
 
 	drawWidth = static_cast<float>(box->right - box->left);
-	DxDraw->dwFactory->CreateGdiCompatibleTextLayout(DRAWSTR, DRAWLEN,
-			DxDraw->textFormat,
+	if ( FAILED(DxDraw->dwFactory->CreateGdiCompatibleTextLayout(DRAWSTR,
+			DRAWLEN, DxDraw->textFormat,
 			drawWidth, static_cast<float>(box->bottom - box->top),
-			1.0f, NULL, FALSE, &dwLayout);
+			1.0f, NULL, FALSE, &dwLayout)) ){
+		return;
+	}
 
 	DWRITE_TEXT_METRICS strMet;
 	dwLayout->GetMetrics(&strMet);

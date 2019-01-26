@@ -633,17 +633,19 @@ void USEFASTCALL InitCmdList(HWND hDlg)
 	RECT box;
 
 	if ( (hCmdListWnd != NULL) && IsWindow(hCmdListWnd) ){
-		PostMessage(hCmdListWnd,WM_CLOSE,0,0);
+		PostMessage(hCmdListWnd, WM_CLOSE, 0, 0);
 		hCmdListWnd = NULL;
 		return;
 	}
 
 	GetWindowRect(hDlg,&box);
-	hCmdListWnd = CreateWindow(WC_TREEVIEW,GetCText(StrTitleCommandBox),
+	hCmdListWnd = CreateWindow(WC_TREEVIEW, GetCText(StrTitleCommandBox),
 		WS_OVERLAPPEDWINDOW | WS_VISIBLE |
 		TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS,
-		box.left - 8,box.top - 8,200,((box.bottom - box.top) * 2) / 3,hDlg,NULL,hInst,NULL);
-	if ( X_dss & DSS_COMCTRL ) SendMessage(hCmdListWnd,CCM_DPISCALE,TRUE,0);
+		box.left - 8, box.top - 8,
+		(box.right - box.left) / 3, ((box.bottom - box.top) * 2) / 3,
+		hDlg, NULL, hInst, NULL);
+	if ( X_dss & DSS_COMCTRL ) SendMessage(hCmdListWnd, CCM_DPISCALE, TRUE, 0);
 	InitCommandTree();
 }
 
@@ -2063,8 +2065,8 @@ void AddItem(HWND hDlg,TABLEINFO *tinfo,DWORD mode)
 	GetControlText(hDlg,IDE_EXITEM,item,TSIZEOF(item));
 	type = typebuf + 2;
 	GetControlText(hDlg,IDE_EXTYPE,type,TSIZEOF(typebuf) - 2);
-	if ( !*type ) return;
-	if ( !*item ) return;
+	if ( *type == '\0' ) return;
+	if ( *item == '\0' ) return;
 
 	if ( CheckTypeName(tinfo->key,type) == FALSE ){
 		typebuf[0] = tinfo->key;
@@ -2586,7 +2588,7 @@ void InitTablePage(HWND hDlg,TABLEINFO *tinfo)
 	SendDlgItemMessage(hDlg,IDE_ALCCMD,EM_LIMITTEXT,(WPARAM)CMDLINESIZE - 1,0);
 	if ( OSver.dwMajorVersion >= 6 ){
 		PPxRegistExEdit(NULL,GetDlgItem(hDlg,IDE_ALCCMD),CMDLINESIZE - 1,NULL,
-				PPXH_GENERAL, 0, PPXEDIT_NOWORDBREAK);
+				PPXH_GENERAL, 0, PPXEDIT_USEALT | PPXEDIT_NOWORDBREAK);
 	}
 
 	SendDlgItemMessage(hDlg,IDE_ALCCMT,EM_SETCUEBANNER,0,(LPARAM)GetCTextW(StrCommentInfo));

@@ -23,7 +23,7 @@
 */
 
 typedef struct {
-	BYTE *dest,*destmax; // 書き込み位置と、書き込みバッファ末尾
+	BYTE *dest, *destmax; // 書き込み位置と、書き込みバッファ末尾
 	BYTE *textfirst; // 表示文字列先頭
 	BYTE *CalcTextPtr; // 文字列幅計算基準位置
 	int cnt;
@@ -31,7 +31,7 @@ typedef struct {
 	HDC hDC;
 	int vcode;		// 現在の buf への書き出しモード
 	BOOL paintmode;
-	int Fclr,Bclr;	// 前景色,背景色
+	int Fclr, Bclr;	// 前景色,背景色
 } TEXTCODEINFO;
 
 #pragma warning(disable:4245) // VCで、カタカナなどの定義で警告が出るのを抑制
@@ -299,7 +299,7 @@ const int ESC_NEC_C1[] = {  1, 3, 6, 2, 4, 5, 7};
 //                     30,31,32,33,34,35,36,37,38
 const int ESC_C2[] = {  0, 1, 2, 4, 3, 6, 5, 7, 7};
 
-BOOL EscColor(BYTE **text,TEXTCODEINFO *tci,int dcode)
+BOOL EscColor(BYTE **text, TEXTCODEINFO *tci, int dcode)
 {
 	int n,nfg = CV__deftext,nbg = CV__defback;
 	BOOL rev = FALSE;
@@ -804,7 +804,7 @@ int UrlDecode(BYTE **text,BYTE *dest,size_t *size)
 	*size = destp - urlsrc;
 
 	codetype = GetTextCodeType((const BYTE *)urlsrc,*size);
-	if ( codetype >= VTYPE_OTHER ){
+	if ( codetype >= VTYPE_MAX ){
 		if ( (codetype == VTYPE_UTF8) || (codetype == CP_UTF8) ){
 			codetype = VTYPE_UTF8;
 		}else{
@@ -1301,7 +1301,7 @@ BOOL DecodeHtmlTag(TEXTCODEINFO *tci,BYTE **textptr,BYTE *srcmax,int *attrs)
 		];
 		tci->dest += sizeof(COLORREF);
 		SetVcode(tci,VCODE_ASCII);
-		setflag(*attrs,VTTF_TAG);
+		setflag(*attrs, VTTF_TAG);
 	}else{
 		char *s,*dst,tagname[32];
 		int offsw = 0,l;
@@ -1329,14 +1329,14 @@ BOOL DecodeHtmlTag(TEXTCODEINFO *tci,BYTE **textptr,BYTE *srcmax,int *attrs)
 				*tci->dest++ = VCODE_COLOR;
 				*tci->dest++ = (BYTE)tci->Fclr;
 				*tci->dest++ = (BYTE)tci->Bclr;
-				resetflag(*attrs,VTTF_LINK);
+				resetflag(*attrs, VTTF_LINK);
 			}else{
 				SkipSepA(&s);
 				if ( upper(*s) == 'H' ){
 					CloseVcode(tci);
 					tci->vcode = VCODE_END;
 					*tci->dest++ = VCODE_LINK;
-					setflag(*attrs,VTTF_LINK);
+					setflag(*attrs, VTTF_LINK);
 				}
 			}
 			*textptr = ShrinkTagBlankLine(tagend,0);
@@ -1422,7 +1422,7 @@ BOOL DecodeHtmlTag(TEXTCODEINFO *tci,BYTE **textptr,BYTE *srcmax,int *attrs)
 			*tci->dest++ = VCODE_RETURN;
 			*tci->dest++ = CTRLSIG_CRLF;
 			*textptr = ShrinkTagBlankLine(tagend,0);
-			setflag(*attrs,VTTF_TOP);
+			setflag(*attrs, VTTF_TOP);
 			tci->cnt = 0;
 			return TRUE;
 		}
@@ -1584,7 +1584,7 @@ BOOL DecodeControlCode(TEXTCODEINFO *tci,BYTE **textptr,int c1st,int *attrs,int 
 		}else{
 			if ( (**textptr == '\a') && (*(*textptr+1) == 0) ) *textptr += 2;
 		}
-		setflag(*attrs,VTTF_TOP);
+		setflag(*attrs, VTTF_TOP);
 		return FALSE;
 	}
 											// CR -----------------------------
@@ -1611,7 +1611,7 @@ BOOL DecodeControlCode(TEXTCODEINFO *tci,BYTE **textptr,int c1st,int *attrs,int 
 				*(tci->dest - 1) = CTRLSIG_CR;
 			}
 		}
-		setflag(*attrs,VTTF_TOP);
+		setflag(*attrs, VTTF_TOP);
 		return FALSE;
 	}
 											// ^K 改段 ------------------------
@@ -1619,7 +1619,7 @@ BOOL DecodeControlCode(TEXTCODEINFO *tci,BYTE **textptr,int c1st,int *attrs,int 
 		CloseVcode(tci);
 		tci->vcode = VCODE_END;
 		*tci->dest++ = VCODE_PARA;
-		setflag(*attrs,VTTF_TOP);
+		setflag(*attrs, VTTF_TOP);
 		return FALSE;
 	}
 											// ^L 改ページ --------------------
@@ -1627,7 +1627,7 @@ BOOL DecodeControlCode(TEXTCODEINFO *tci,BYTE **textptr,int c1st,int *attrs,int 
 		CloseVcode(tci);
 		tci->vcode = VCODE_END;
 		*tci->dest++ = VCODE_PAGE;
-		setflag(*attrs,VTTF_TOP);
+		setflag(*attrs, VTTF_TOP);
 		return FALSE;
 	}
 											// ESC ----------------------------
@@ -1751,12 +1751,12 @@ WCHAR *stristrW(const WCHAR *target,const WCHAR *findstr)
 #define COLORREF_ABNORMAL 0x1000000
 
 #define USERHILIGHTA_ADDSIZE 11
-void WriteUserHilightA(BYTE *dest,size_t size,COLORREF color)
+void WriteUserHilightA(BYTE *dest, size_t size, COLORREF color,int extend)
 {
 	// text xxx1 add1[7] firstp[size] add2[4] last
 	memmove(dest + VCODE_FCOLOR_SIZE + 2,dest,size); // firstp
 	*(dest + 0) = '\0'; // xxx1 term.
-	*(dest + 1) = VCODE_FCOLOR; // +1 header
+	*(dest + 1) = (extend & HILIGHTKEYWORD_R) ? (BYTE)VCODE_BCOLOR : (BYTE)VCODE_FCOLOR; // +1 header
 	*(COLORREF *)(dest + 2) = color; // +2～+5 color
 	*(dest + 6) = VCODE_ASCII; // +6 header
 
@@ -1768,7 +1768,7 @@ void WriteUserHilightA(BYTE *dest,size_t size,COLORREF color)
 }
 
 #define SEARCHHILIGHTA_ADDSIZE 9
-void WriteSearchHilightA(BYTE *dest,size_t size)
+void WriteSearchHilightA(BYTE *dest, size_t size)
 {
 	// text xxx1 add1[5] firstp[size] add2[4] last
 	memmove(dest + VCODE_COLOR_SIZE + 2,dest,size);
@@ -1825,7 +1825,7 @@ void CheckSearchAscii(TEXTCODEINFO *tci,const char *search,COLORREF color,int ex
 					size += firstp - text;
 					firstp = text;
 				}
-				WriteUserHilightA(firstp,size,color);
+				WriteUserHilightA(firstp, size, color, extend);
 				addsize += USERHILIGHTA_ADDSIZE - sizeof(char);
 			}
 			break;
@@ -1850,7 +1850,7 @@ void CheckSearchAscii(TEXTCODEINFO *tci,const char *search,COLORREF color,int ex
 				size += strlen((char *)firstp + size);
 			}
 			memmove(firstp + size + USERHILIGHTA_ADDSIZE + 1, firstp + size,last - (firstp + size));
-			WriteUserHilightA(firstp,size,color);
+			WriteUserHilightA(firstp, size, color, extend);
 			firstp += size + USERHILIGHTA_ADDSIZE;
 			*firstp++ = VCODE_ASCII;
 			last += USERHILIGHTA_ADDSIZE + 1;
@@ -1862,13 +1862,13 @@ void CheckSearchAscii(TEXTCODEINFO *tci,const char *search,COLORREF color,int ex
 }
 
 #define USERHILIGHTW_ADDSIZE 13
-void WriteUserHilightW(BYTE *dest,size_t size,COLORREF color)
+void WriteUserHilightW(BYTE *dest,size_t size,COLORREF color,int extend)
 {
 	// text xxx1 add1[8] firstp[size] add2[5] last
 	memmove(dest + VCODE_FCOLOR_SIZE + 3,dest,size);
 	*(dest + 0) = '\0';
 	*(dest + 1) = '\0';
-	*(dest + 2) = VCODE_FCOLOR;
+	*(dest + 2) = (extend & HILIGHTKEYWORD_R) ? (BYTE)VCODE_BCOLOR : (BYTE)VCODE_FCOLOR; // +1 header
 	*(COLORREF *)(dest + 3) = color;
 	*(dest + 7) = VCODE_UNICODE;
 
@@ -1899,15 +1899,15 @@ void WriteSearchHilightW(BYTE *dest,size_t size)
 	*(dest +10) = CV__defback;
 }
 
-void CheckSearchUNICODE(TEXTCODEINFO *tci,const WCHAR *search,COLORREF color,int extend)
+void CheckSearchUNICODE(TEXTCODEINFO *tci, const WCHAR *search, COLORREF color, int extend)
 {
-	BYTE *firstp,*text = tci->textfirst,*last = tci->dest;
-	size_t size,addsize = 0;
+	BYTE *firstp, *text = tci->textfirst, *last = tci->dest;
+	size_t size, addsize = 0;
 
 	for ( ;; ){
-		firstp = (BYTE *)stristrW((WCHAR *)text,search);
+		firstp = (BYTE *)stristrW((WCHAR *)text, search);
 		if ( firstp == NULL ){
-			BYTE *tmpp,type;
+			BYTE *tmpp, type;
 
 			tmpp = text + (strlenW((WCHAR *)text) + 1) * sizeof(WCHAR);
 			if ( tmpp >= last ) break;
@@ -1940,7 +1940,7 @@ void CheckSearchUNICODE(TEXTCODEINFO *tci,const WCHAR *search,COLORREF color,int
 					size += firstp - text;
 					firstp = text;
 				}
-				WriteUserHilightW(firstp,size,color);
+				WriteUserHilightW(firstp, size, color, extend);
 				addsize += USERHILIGHTW_ADDSIZE - sizeof(WCHAR);
 			}
 			break;
@@ -1965,7 +1965,7 @@ void CheckSearchUNICODE(TEXTCODEINFO *tci,const WCHAR *search,COLORREF color,int
 				size += strlenW((WCHAR *)(firstp + size)) * sizeof(WCHAR);
 			}
 			memmove(firstp + size + USERHILIGHTW_ADDSIZE + 1, firstp + size,last - (firstp + size));
-			WriteUserHilightW(firstp,size,color);
+			WriteUserHilightW(firstp, size, color, extend);
 			firstp += size + USERHILIGHTW_ADDSIZE;
 			*firstp++ = VCODE_UNICODE;
 			last += USERHILIGHTW_ADDSIZE + 1;
@@ -2134,7 +2134,7 @@ int MakeIndexTable(int mode,int param)
 	}else{
 		if ( mode == MIT_REMAKE ){ // 再計算
 			VOi->reading = TRUE;
-			SetTimer(hMainWnd,TIMERID_READLINE,TIMER_READLINE,BackReaderProc);
+			SetTimer(vinfo.info.hWnd,TIMERID_READLINE,TIMER_READLINE,BackReaderProc);
 			BackReader = TRUE;
 		}
 	}
@@ -2188,6 +2188,11 @@ void USEFASTCALL CloseVcode(TEXTCODEINFO *tci)
 
 	switch ( tci->vcode ){
 		case VCODE_CONTROL:
+			*(BYTE *)(tci->dest) = '\0';
+			tci->dest += 1;
+			if ( XV_unff ) RecalcWidthA(tci);
+			return;
+
 		case VCODE_ASCII:{
 			*(BYTE *)(tci->dest) = '\0';
 			tci->dest += 1;
@@ -2195,10 +2200,10 @@ void USEFASTCALL CloseVcode(TEXTCODEINFO *tci)
 
 			if ( tci->paintmode != FALSE ){
 				if ( VOsel.highlight ){
-					CheckSearchAscii(tci,VOsel.VSstringA,SEARCHHILIGHT_COLORREF,0);
+					CheckSearchAscii(tci, VOsel.VSstringA, SEARCHHILIGHT_COLORREF, 0);
 				}
 				for ( hks = X_hkey ; hks ; hks = hks->next ){
-					CheckSearchAscii(tci,hks->ascii,hks->color,hks->extend);
+					CheckSearchAscii(tci, hks->ascii, hks->color, hks->extend);
 				}
 			}
 			return;
@@ -2211,10 +2216,10 @@ void USEFASTCALL CloseVcode(TEXTCODEINFO *tci)
 
 			if ( tci->paintmode != FALSE ){
 				if ( VOsel.highlight ){
-					CheckSearchUNICODE(tci,VOsel.VSstringW,SEARCHHILIGHT_COLORREF,0);
+					CheckSearchUNICODE(tci, VOsel.VSstringW, SEARCHHILIGHT_COLORREF, 0);
 				}
 				for ( hks = X_hkey ; hks ; hks = hks->next ){
-					CheckSearchUNICODE(tci,hks->wide,hks->color,hks->extend);
+					CheckSearchUNICODE(tci, hks->wide, hks->color, hks->extend);
 				}
 			}
 			return;
@@ -2223,7 +2228,7 @@ void USEFASTCALL CloseVcode(TEXTCODEINFO *tci)
 	}
 }
 
-void USEFASTCALL SetVcode(TEXTCODEINFO *tci,int setvcode)
+void USEFASTCALL SetVcode(TEXTCODEINFO *tci, int setvcode)
 {
 	if ( tci->vcode == setvcode ) return;
 	CloseVcode(tci);
@@ -2237,7 +2242,7 @@ void USEFASTCALL SetVcode(TEXTCODEINFO *tci,int setvcode)
 }
 
 #ifdef UNICODE
-void SetUchar(TEXTCODEINFO *tci,DWORD code)
+void SetUchar(TEXTCODEINFO *tci, DWORD code)
 {
 	const WORD *destptr;
 	WORD types[4];
@@ -2262,7 +2267,7 @@ void SetUchar(TEXTCODEINFO *tci,DWORD code)
 	tci->cnt -= (types[0] & C3_HALFWIDTH) ? 1 : 2;
 }
 #else
-void SetUchar(TEXTCODEINFO *tci,DWORD code)
+void SetUchar(TEXTCODEINFO *tci, DWORD code)
 {
 	const WORD *destptr;
 
@@ -2311,7 +2316,7 @@ BYTE *MakeDispText(MAKETEXTINFO *mti,VT_TABLE *tbl)
 	tci.paintmode = mti->paintmode;
 
 	if ( XV_unff ){
-		tci.hDC = GetDC(hMainWnd);
+		tci.hDC = GetDC(vinfo.info.hWnd);
 		hOldFont = SelectObject(tci.hDC,hUnfixedFont);
 		tci.PxWidth = tci.cnt * fontX;
 	}
@@ -2452,7 +2457,7 @@ BYTE *MakeDispText(MAKETEXTINFO *mti,VT_TABLE *tbl)
 								1 : 0
 							];
 							tci.dest += sizeof(COLORREF);
-							setflag(attrs,VTTF_TAG);
+							setflag(attrs, VTTF_TAG);
 						}
 					}
 					if ( c == '>' ){
@@ -2462,7 +2467,7 @@ BYTE *MakeDispText(MAKETEXTINFO *mti,VT_TABLE *tbl)
 						*tci.dest++ = VCODE_COLOR;
 						*tci.dest++ = CV__deftext;
 						*tci.dest++ = CV__defback;
-						resetflag(attrs,VTTF_TAG);
+						resetflag(attrs, VTTF_TAG);
 						continue;
 					}
 				}
@@ -2558,7 +2563,7 @@ BYTE *MakeDispText(MAKETEXTINFO *mti,VT_TABLE *tbl)
 			*tci.dest++ = CV__deftext;
 			*tci.dest++ = CV__defback;
 			text++;
-			resetflag(attrs,VTTF_TAG);
+			resetflag(attrs, VTTF_TAG);
 			continue;
 		}
 										// html spcial charchter --------------
@@ -2687,7 +2692,7 @@ BYTE *MakeDispText(MAKETEXTINFO *mti,VT_TABLE *tbl)
 	}
 	if ( IsTrue(XV_unff) ){
 		SelectObject(tci.hDC,hOldFont); // C4701ok
-		ReleaseDC(hMainWnd,tci.hDC);
+		ReleaseDC(vinfo.info.hWnd,tci.hDC);
 	}
 	return text;
 }

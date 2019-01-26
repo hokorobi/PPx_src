@@ -113,7 +113,7 @@ CPPvAccServer::CPPvAccServer()
 	m_cRefCount = 1;
 	m_enumCount = 0;
 
-	DCreateStdAccessibleObject(hMainWnd,OBJID_CLIENT,
+	DCreateStdAccessibleObject(vinfo.info.hWnd,OBJID_CLIENT,
 			xIID_IAccessible,(void **)&m_AccessibleServer);
 }
 
@@ -429,7 +429,7 @@ STDMETHODIMP CPPvAccServer::accSelect(long flagsSelect,VARIANT varChild)
 	if ( (V_VT(&varChild) != VT_I4) || (V_I4(&varChild) > m_GetMax()) ){
 		return E_INVALIDARG;
 	}
-	SetFocus(hMainWnd);
+	SetFocus(vinfo.info.hWnd);
 	return S_OK;
 };
 
@@ -452,7 +452,7 @@ STDMETHODIMP CPPvAccServer::accLocation(long *pxLeft,long *pyTop,long *pcxWidth,
 		int y  = V_I4(&varChild) - 1 - VOi->offY;
 		pos.x = BoxView.left;
 		pos.y = BoxView.top + y * LineY;
-		ClientToScreen(hMainWnd,&pos);
+		ClientToScreen(vinfo.info.hWnd,&pos);
 
 		*pxLeft = pos.x;
 		*pyTop  = pos.y;
@@ -542,7 +542,7 @@ STDMETHODIMP CPPvAccServer::accHitTest(long xLeft,long yTop,VARIANT *pvarChild)
 
 	V_VT(pvarChild) = VT_I4;
 	ModeCheckMacro;
-	ScreenToClient(hMainWnd,&pos);
+	ScreenToClient(vinfo.info.hWnd,&pos);
 
 	if ( (pos.y >= BoxView.top) && (pos.y < BoxView.bottom) ){
 		y = (pos.y - BoxView.top) / LineY + VOi->offY;

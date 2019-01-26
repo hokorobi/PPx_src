@@ -9,7 +9,7 @@ extern "C" {
 extern LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam);
 extern BOOL CheckParam(VIEWOPTIONS *viewopts,const TCHAR *param,TCHAR *name);
 extern void MoveCsrkey(int offx,int offy,BOOL select);
-extern void ExecDualParam(HWND hWnd,const TCHAR *param);
+extern void ExecDualParam(PPV_APPINFO *vinfo, const TCHAR *param);
 extern void WmWindowPosChanged(HWND hWnd);
 extern void SetCursorCaret(SELPOSINFO *posinfo);
 extern int CalcTextXPoint(int ParamX,int csrY,int istate);
@@ -52,14 +52,15 @@ extern HFONT GetANSIFont(void);
 //------------------------------------------------------------------ ppv_open.c
 extern void InitViewObject(VIEWOPTIONS *viewopt,TCHAR *type);
 extern BOOL OpenViewObject(const TCHAR *filename,HGLOBAL mem,VIEWOPTIONS *viewopt,int flags);
-extern void OpenAndFollowViewObject(HWND hWnd,const TCHAR *filename,HGLOBAL mem,VIEWOPTIONS *viewopt,int flags);
-extern void FollowOpenView(HWND hWnd);
+extern void OpenAndFollowViewObject(PPV_APPINFO *vinfo,const TCHAR *filename,HGLOBAL mem,VIEWOPTIONS *viewopt,int flags);
+extern void FollowOpenView(PPV_APPINFO *vinfo);
 extern void ChangePage(int delta);
 extern void ReMakeIndexes(HWND hWnd);
 extern void CALLBACK BackReaderProc(HWND hWnd,UINT uMsg,UINT_PTR idEvent,DWORD dwTime);
 extern void SetOpts(VIEWOPTIONS *viewopts);
 extern void GetMemo(void);
 extern void InitRawImageRectSize(void);
+extern void SetHighlight(PPV_APPINFO *vinfo);
 
 //------------------------------------------------------------------ ppv_pain.c
 extern void Paint(HWND hWnd);
@@ -95,20 +96,20 @@ extern void SkipSepA(char **p);
 extern DWORD_PTR USECDECL PPxGetIInfo(PPV_APPINFO *ppc,DWORD cmdID,PPXAPPINFOUNION *uptr);
 
 extern void SetMag(int offset);
-extern BOOL PPvMouseCommand(HWND hWnd,POINT *pos,const TCHAR *click,const TCHAR *type);
+extern BOOL PPvMouseCommand(PPV_APPINFO *vinfo, POINT *pos,const TCHAR *click,const TCHAR *type);
 extern LRESULT PPvNCMouseCommand(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam);
-extern BOOL PPvMouseCommandPos(HWND hWnd,POINT *pos,const TCHAR *click,int Y);
+extern BOOL PPvMouseCommandPos(PPV_APPINFO *vinfo, POINT *pos,const TCHAR *click,int Y);
 extern BOOL FindInputBox(HWND hWnd,const TCHAR *title);
 
 extern void InputAspectRate(HWND hWnd);
 extern void PPvAddDisplayTypeMenu(HMENU hPopupMenu,BOOL extend);
 extern void PPvMenu(HWND hWnd,WORD key);
-extern void PPvContextMenu(HWND hWnd);
+extern void PPvContextMenu(PPV_APPINFO *vinfo);
 extern void PPvEditFile(HWND hWnd);
 extern ERRORCODE PPvShell(HWND hWnd);
 extern ERRORCODE PPvExecute(HWND hWnd);
 extern void PPvReceiveRequest(HWND hWnd);
-extern void PPvReload(HWND hWnd);
+extern void PPvReload(PPV_APPINFO *vinfo);
 extern BOOL PPvSave(HWND hWnd);
 extern void ConvertMain(void);
 extern void DoFind(HWND hWnd,int mode);
@@ -128,12 +129,12 @@ extern void DivChange(int offset);
 extern ERRORCODE ChangeWidth(HWND hWnd);
 extern void LoadWinpos(HWND hWnd);
 extern void FixChangeMode(HWND hWnd);
-extern void ReadSizeChange(HWND hWnd);
+extern void ReadSizeChange(PPV_APPINFO *vinfo);
 extern int USEFASTCALL FixedWidthRange(int cols);
 extern void SaveBookmark(int index);
-extern BOOL GotoBookmark(HWND hWnd,int index);
-extern ERRORCODE SaveBookmarkMenu(HWND hWnd);
-extern ERRORCODE GotoBookmarkMenu(HWND hWnd);
+extern BOOL GotoBookmark(PPV_APPINFO *vinfo, int index);
+extern ERRORCODE SaveBookmarkMenu(PPV_APPINFO *vinfo);
+extern ERRORCODE GotoBookmarkMenu(PPV_APPINFO *vinfo);
 extern void WINAPI DummyNotifyWinEvent(DWORD event,HWND hwnd,LONG idObject,LONG idChild);
 extern int LogicalLineToDisplayLine(DWORD line);
 extern void FixBitmapShowSize(PPvViewObject *vo);

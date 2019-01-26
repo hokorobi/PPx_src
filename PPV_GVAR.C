@@ -69,64 +69,65 @@
 #define MENUID_URIMAX 0xd7ff
 #define MENUID_USER 0xd800 // - 0xefff メニュー
 
+GVAR HINSTANCE hInst;
+GVAR PPV_APPINFO vinfo;
+GVAR OSVERSIONINFO OSver;
+GVAR TCHAR PPvPath[MAX_PATH];
+GVAR HANDLE PPvHeap; // GetProcessHeap() の値
+
 GVAR const TCHAR StrPPvTitle[] GPARAM(T("PPV"));
 GVAR const TCHAR StrUser32DLL[] GPARAM(T("USER32.DLL"));
 GVAR const TCHAR StrKernel32DLL[] GPARAM(T("KERNEL32.DLL"));
-GVAR PPV_APPINFO PPvInfo;
-GVAR OSVERSIONINFO OSver;
-GVAR TCHAR PPvPath[MAX_PATH];
 GVAR const TCHAR *StrLoading;
 GVAR DWORD StrLoadingLength;
-GVAR HANDLE PPvHeap; // GetProcessHeap() の値
 
 GVAR HMENU hDispTypeMenu	GPARAM(NULL);
 GVAR int FontDPI GPARAM(DEFAULT_WIN_DPI);
 
-GVAR BOOL Embed GPARAM(FALSE);
+GVAR BOOL Embed GPARAM(FALSE); // ウィンドウ埋め込み
 
 //--------------------------------------------------------- 色関係
-GVAR HBRUSH	C_BackBrush	GPARAM(NULL);	// 背景用ブラシ
-GVAR int	VideoBits;					// 画面の色数(4,8,16,24,32)
+GVAR HBRUSH C_BackBrush GPARAM(NULL);	// 背景用ブラシ
+GVAR int VideoBits;					// 画面の色数(4,8,16,24,32)
 
-GVAR TCHAR	PopMsgStr[VFPS] GPARAM(T(""));
-GVAR int	PopMsgFlag GPARAM(0);
+GVAR TCHAR PopMsgStr[VFPS] GPARAM(T(""));
+GVAR int PopMsgFlag GPARAM(0);
 
 //----------------------------------------------------------------- Window 管理
-GVAR HWND	hMainWnd,hViewParentWnd GPARAM(NULL);
-GVAR HINSTANCE	hInst;
-GVAR RECT	winS;
-GVAR SIZE	WndSize GPARAM2(1,1);
+GVAR HWND hViewParentWnd GPARAM(NULL);
+GVAR RECT winS;
+GVAR SIZE WndSize GPARAM2(1,1);
 GVAR DYNAMICMENUSTRUCT DynamicMenu;
-GVAR UINT	WM_PPXCOMMAND;				// PPx 間通信用 Window Message
-GVAR HWND	hCommonWnd GPARAM(NULL);	// タスクを隠すときのPPtray
+GVAR UINT WM_PPXCOMMAND;				// PPx 間通信用 Window Message
+GVAR HWND hCommonWnd GPARAM(NULL);	// タスクを隠すときのPPtray
 
-GVAR HWND	hToolBarWnd GPARAM(NULL);
-GVAR ThSTRUCT	thGuiWork;		// DockやToolBarなどの記憶領域
+GVAR HWND hToolBarWnd GPARAM(NULL);
+GVAR ThSTRUCT thGuiWork;		// DockやToolBarなどの記憶領域
 
-GVAR int	Use2ndView GPARAM(0); // 分割表示有り
-GVAR RECT	BoxStatus;	// ステータス行
-GVAR RECT	BoxAllView;	// 表示領域
-GVAR RECT	BoxView;	// 表示領域
-GVAR RECT	Box2ndView;	// 表示領域
+GVAR int Use2ndView GPARAM(0); // 分割表示有り
+GVAR RECT BoxStatus;	// ステータス行
+GVAR RECT BoxAllView;	// 表示領域
+GVAR RECT BoxView;	// 表示領域
+GVAR RECT Box2ndView;	// 表示領域
 GVAR CALLBACKMODULEENTRY KeyHookEntry GPARAM(NULL);	// キー入力拡張モジュール
 
 //---------------------------------------------------------------------- 描画用
-GVAR HFONT	hBoxFont;
-GVAR HFONT	hUnfixedFont GPARAM(NULL);
-GVAR HFONT	hANSIFont GPARAM(INVALID_HANDLE_VALUE);
-GVAR HFONT	hIBMFont GPARAM(INVALID_HANDLE_VALUE);
-GVAR HFONT	hSYMFont GPARAM(INVALID_HANDLE_VALUE);
-GVAR HBRUSH	hStatusLine;
-GVAR int	fontX GPARAM(1),fontY GPARAM(1),LineY GPARAM(1);
-GVAR int	fontSYMY; // fontANSIY,fontIBMY;
-GVAR int	fontWW;		// 漢字のときの補正値
-GVAR BOOL	XV_unff GPARAM(FALSE);
+GVAR HFONT hBoxFont;
+GVAR HFONT hUnfixedFont GPARAM(NULL);
+GVAR HFONT hANSIFont GPARAM(INVALID_HANDLE_VALUE);
+GVAR HFONT hIBMFont GPARAM(INVALID_HANDLE_VALUE);
+GVAR HFONT hSYMFont GPARAM(INVALID_HANDLE_VALUE);
+GVAR HBRUSH hStatusLine;
+GVAR int fontX GPARAM(1),fontY GPARAM(1),LineY GPARAM(1);
+GVAR int fontSYMY; // fontANSIY,fontIBMY;
+GVAR int fontWW;		// 漢字のときの補正値
+GVAR BOOL XV_unff GPARAM(FALSE);
 
-GVAR int	FullDraw;			// 全クライアント画面描画モードなら真
-GVAR BGSTRUCT	BackScreen;
+GVAR int FullDraw;			// 全クライアント画面描画モードなら真
+GVAR BGSTRUCT BackScreen;
 
-GVAR int	PopupPosType GPARAM(PPT_FOCUS);	// メニューなどを表示するとき使う座標の種類 (TKEY.H の PPT_ )
-GVAR POINT	PopupPos;		// メニューなどを表示するとき使う座標
+GVAR int PopupPosType GPARAM(PPT_FOCUS);	// メニューなどを表示するとき使う座標の種類 (TKEY.H の PPT_ )
+GVAR POINT PopupPos;		// メニューなどを表示するとき使う座標
 
 	// 全角空白表示用
 GVAR const char StrSJISSpace[] GPARAM("□");
@@ -263,8 +264,8 @@ GVAR ValueWinAPI(sndPlaySound) GPARAM(NULL);
 GVAR ValueWinAPI(NotifyWinEvent) GPARAM(DummyNotifyWinEvent);
 
 // /convert 関連
-GVAR int	convert GPARAM(0);	// 1:text convert
-GVAR TCHAR	convertname[VFPS];
+GVAR int convert GPARAM(0);	// 1:text convert
+GVAR TCHAR convertname[VFPS];
 
 GVAR VO_SELECT VOsel	// 選択状態の保存
 #ifndef GLOBALEXTERN
@@ -302,7 +303,7 @@ GVAR MOUSESTATE MouseStat;
 GVAR BookmarkInfo Bookmark[MaxBookmark + 1 + 1];
 
 // 遅延処理関連
-GVAR BOOL BackReader	GPARAM(FALSE);
+GVAR BOOL BackReader GPARAM(FALSE);
 GVAR HANDLE hReadStream GPARAM(NULL);
 
 #ifdef GLOBALEXTERN
@@ -448,6 +449,14 @@ GVAR COLORREF	CV_char[17]
 	C_BLACK,	C_DRED,		C_DGREEN,	C_DBLUE,
 	C_DYELLOW,	C_DCYAN,	C_DMAGENTA,	C_DWHITE,
 	C_BLUE }
+#endif
+;
+
+GVAR COLORREF	CV_hili[9]
+#ifndef GLOBALEXTERN
+= {	C_BLUE,
+	C_YELLOW,	C_GREEN,	C_CYAN,		C_SBLUE,
+	C_MAGENTA,	C_RED,		C_MGREEN,	C_DMAGENTA}
 #endif
 ;
 // 内部用 ---------------------------------------------------------------------

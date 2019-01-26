@@ -418,12 +418,12 @@ int USECDECL main(void)
 			GUIcustomizer(-1,Command + 2);
 			return EXIT_SUCCESS;
 		}else if ( *(Command + 1) == 'e' ){ // -edit 編集エディタ
-			PPxDialogBoxParam(hInst,MAKEINTRESOURCE(IDD_TEXTCUST),
-					NULL,TextCustomizeDlgBox,0);
+			PPxDialogBoxParam(hInst, MAKEINTRESOURCE(IDD_TEXTCUST),
+					GetForegroundWindow(), TextCustomizeDlgBox, 0);
 			return EXIT_SUCCESS;
 		}else if ( *(Command + 1) == 'c' ){ // -c コマンド実行ツリー
-			PPxDialogBoxParam(hInst,MAKEINTRESOURCE(IDD_CMDTREE),
-					NULL,CommandTreeDlgBox,0);
+			PPxDialogBoxParam(hInst, MAKEINTRESOURCE(IDD_CMDTREE),
+					GetForegroundWindow(), CommandTreeDlgBox, 0);
 			return EXIT_SUCCESS;
 		}
 	}

@@ -1,6 +1,6 @@
 @echo off
 rem XVER: 123 or 123p1
-set XVER=164
+set XVER=165
 set RETAIL=1
 set DIR64=PPx64
 rem *** set value ***
@@ -52,8 +52,12 @@ rem 2015/3現在、unlha32 でドライブ名指定していない書庫名があると異常終了する
 ppb /c %%u/UNLHA32.DLL,a %~dp0\PPX%XVER%SR.LZH -z -n -r2x MAKE*. GNUmake*. *.BAT *.C *.CPP *.H *.HPJ index.html *.pl *.RC *.RH X*.TXT PPX_TEC.TXT PPX_REC.TXT *.XLS resource\* VS2008\PPx.sln VS2008\PPb\*.vcproj VS2008\PPc\*.vcproj VS2008\PPcommon\*.vcproj VS2008\PPcust\*.vcproj VS2008\PPffix\*.vcproj VS2008\PPtray\*.vcproj VS2008\PPv\*.vcproj VS2008\SETUP\*.vcproj VS2015\PPx.sln VS2015\PPb\*.vcxproj VS2015\PPc\*.vcxproj VS2015\PPcommon\*.vcxproj VS2015\PPcust\*.vcxproj VS2015\PPffix\*.vcxproj VS2015\PPtray\*.vcxproj VS2015\PPv\*.vcxproj VS2015\SETUP\*.vcxproj
 CT %readme% PPX%XVER%SR.LZH
 ppb /c %%u/7-ZIP32.DLL,a -tzip -hide -mx=7 -r ppx%XVER%s.zip PPXSRC.TXT PPX%XVER%SR.LZH
-CT %readme% ppx%XVER%S.zip
+tfilesign s ppx%XVER%s.zip ppx%XVER%s.zip
+CT %readme% ppx%XVER%s.zip
 del /q PPX%XVER%SR.LZH 2> NUL
+ppb /c %%u/7-ZIP32.DLL,a -tzip -hide -mx=7 ppxhelp.zip %help%
+tfilesign s ppxhelp.zip ppxhelp.zip
+CT %readme% ppxhelp.zip
 
 rem *** x64 ***
 :x64call
@@ -102,7 +106,7 @@ rem ** archive **
 set ppcommon=PPLIB%arcbit%%tail%.DLL
 set ppc=PPC%tail%.EXE
 set ppv=PPV%tail%.EXE
-set ppb=PPB%tail%.EXE
+if %RETAIL%==1 set ppb=PPB%tail%.EXE
 set ppcust=PPCUST%tail%.EXE
 if %RETAIL%==1 set pptray=PPTRAY%tail%.EXE
 if %RETAIL%==1 set ppffix=PPFFIX%tail%.EXE
@@ -124,7 +128,7 @@ CT %readme% PPX.HLP
 CT %readme% %ppcommon%
 
 del %arcpath%%arcx%%XVER%.zip 2> NUL
-ppb /c %%u/7-ZIP32.DLL,a -tzip -hide -mx=7 %arcpath%%arcx%%XVER%.zip %readme% %help% %ppsetup% %ppc% %ppv% %ppb% %ppcust% %pptray% %ppffix% %ppcommon% %etcfile%
+ppb /c %%u/7-ZIP32.DLL,a -tzip -hide -mx=7 %arcpath%%arcx%%XVER%.zip %readme% %ppsetup% %ppc% %ppv% %ppb% %ppcust% %pptray% %ppffix% %ppcommon% %etcfile%
 tfilesign s %arcpath%%arcx%%XVER%.zip %arcpath%%arcx%%XVER%.zip
 CT %readme% %arcpath%%arcx%%XVER%.zip
 

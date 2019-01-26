@@ -55,7 +55,7 @@ HKEY_CURRENT_USER\\Software\\TOROid\\PPX ‚ÉˆÈ‰º‚ÌƒL[‚ð‹LÚ‚·‚é‚ÆA‚»‚ÌƒL[‚ÉŽ¦‚
 PPXC	ƒJƒXƒ^ƒ}ƒCƒY“à—e‚ð•Û‘¶‚·‚éƒtƒ@ƒCƒ‹‚ÌêŠ‚ðŽ¦‚·ƒpƒX
 PPXH	ƒqƒXƒgƒŠ“à—e‚ð•Û‘¶‚·‚éƒtƒ@ƒCƒ‹‚ÌêŠ‚ðŽ¦‚·ƒpƒX
 
-œUNICODE”Å
+œUNICODE”Å, 64bit”Å
 PPWC	ƒJƒXƒ^ƒ}ƒCƒY“à—e‚ð•Û‘¶‚·‚éƒtƒ@ƒCƒ‹‚ÌêŠ‚ðŽ¦‚·ƒpƒX
 PPWH	ƒqƒXƒgƒŠ“à—e‚ð•Û‘¶‚·‚éƒtƒ@ƒCƒ‹‚ÌêŠ‚ðŽ¦‚·ƒpƒX
 <tb:0>
@@ -230,13 +230,16 @@ Tatsuo Baba Žì‚Ì BREGEXP.DLL <http://www.hi-ho.ne.jp/babaq/index.html> ‚ðŽg—p‚
 <a:CMigemo>
 <b>EC/Migemo</b>
 
-MURAOKA Taro (KoRoN)Žì‚Ì C/Migemo ‚ª‚ ‚ê‚ÎAƒCƒ“ƒNƒŠƒƒ“ƒgƒT[ƒ`‚Åƒ[ƒ}Žšˆê’vŒŸõ‚ªs‚¦‚Ü‚·B®A³‹K•\Œ»ƒ‰ƒCƒuƒ‰ƒŠ‚à•K—v‚Å‚·B
+MURAOKA Taro (KoRoN)Žì‚Ì C/Migemo ‚ª‚ ‚ê‚ÎAƒCƒ“ƒNƒŠƒƒ“ƒgƒT[ƒ`‚Åƒ[ƒ}Žš“Ç‚Ýˆê’vŒŸõ‚ªs‚¦‚Ü‚·B®A³‹K•\Œ»ƒ‰ƒCƒuƒ‰ƒŠ‚à•K—v‚Å‚·B
 <http://www.kaoriya.net/>
 
 PPx ‚Æ“¯‚¶ƒfƒBƒŒƒNƒgƒŠ‚©AŠÂ‹«•Ï” PATH ‚ÅŽQÆ‚³‚ê‚éƒfƒBƒŒƒNƒgƒŠ‚ÉŠi”[‚·‚ê‚ÎŽg—p‚µ‚Ü‚·B
-¦64bit”Å‚ÍA64bit”Å migemo.dll ‚ðŽg—p‚Å‚«‚Ü‚·B‚Ü‚½A32bit”Åmigemo.dll ‚µ‚©‚È‚¢ê‡‚ÍA32bit”ÅDLL‚ð“Y•tUNBYPASS.DLLŒo—R‚ÅŽg—p‚Å‚«‚Ü‚·B
+¦64bit”Å‚ÍA64bit”Å migemo.dll ‚ðŽg—p‚Å‚«‚Ü‚·B‚Ü‚½Amigemo.dll ‚ð migemo64.dll ‚É–¼‘O•ÏX‚µ‚Ä‚àŽg—p‚Å‚«‚Ü‚·B32/64bit ”Å migemo.dll ‚ð“¯‚¶ƒfƒBƒŒƒNƒgƒŠ‚É“ü‚ê‚é‚Æ‚«‚ÉŽg—p‚µ‚Ä‚­‚¾‚³‚¢B
 
-‚Ü‚½Amigemo.dll ‚Æ“¯‚¶ƒfƒBƒŒƒNƒgƒŠ‚ÉŠeŽíŽ«‘‚ª“ü‚Á‚½ dict ƒfƒBƒŒƒNƒgƒŠ‚ð—pˆÓ‚µ‚Ä‚­‚¾‚³‚¢B­‚È‚­‚Æ‚à dict ’¼‰º‚©Adict\\cp932 ‰º‚É migemo-dict“™‚ª“ü‚Á‚Ä‚¢‚é•K—v‚ª‚ ‚è‚Ü‚·B
+‚Ü‚½Amigemo.dll ‚Æ“¯‚¶ƒfƒBƒŒƒNƒgƒŠ‚ÉŠeŽíŽ«‘‚ª“ü‚Á‚½ dict ƒfƒBƒŒƒNƒgƒŠ‚ð—pˆÓ‚µ‚Ä‚­‚¾‚³‚¢B
+MultiByte”Å‚Ìê‡Adict\\cp932 ‰º‚©Adict ’¼‰º‚É migemo-dict“™‚ª“ü‚Á‚Ä‚¢‚é•K—v‚ª‚ ‚è‚Ü‚·B
+UNICODE”Å, 64 bit”Å‚Ìê‡Adict\\utf-8Adict\\cp932Adict ‚Ì‚¢‚¸‚ê‚©‰º‚É migemo-dict“™‚ª“ü‚Á‚Ä‚¢‚é•K—v‚ª‚ ‚è‚Ü‚·B
+Žg—p‚·‚é migemo-dict ‚ÍA•\‹L‚Ì‡‚Å—Dæ‚µ‚ÄŽg—p‚µ‚Ü‚·B
 
 <b>¦</b>C/Migemo 1.2 “Y•t‚ÌŽ«‘migemo-dict‚ÍAu(vu)v‚ª‘µ‚Á‚Ä‚¢‚È‚¢’PŒêiŠç•¶Žš‚È‚Çj‚ª“ü‚Á‚Ä‚¢‚ÄA‚»‚ê‚ª‚ ‚é‚Æ³‚µ‚­ŒŸõ‚Å‚«‚È‚­‚È‚è‚Ü‚·B
 migemo-dict‚©‚ç‘Î‰ž‚·‚é’PŒê‚ðíœ‚µ‚Ä‚¨‚¢‚Ä‚­‚¾‚³‚¢B
@@ -716,9 +719,9 @@ w	ƒAƒNƒZƒXŽž‚É¶¬ FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS
 ‚Ü‚½Ausize:< ‘å‚«‚³v‚ÍA‰‰ŽZŽqu< v‚ðÈ—ª‚µ‚½‚Æ‚«‚Æ“¯‚¶‚æ‚¤‚ÉŽw’è–¢–žƒGƒ“ƒgƒŠ‚ªˆê’v‚µ‚Ü‚·Busize:‘å‚«‚³ >v‚ÆŽw’è‚µ‚Ä‚à“¯‚¶Œ‹‰Ê‚É‚È‚è‚Ü‚·B
 ‰‰ŽZŽq‚ÍA< , >,<  >, >< ,< =,=< , >=,= > ‚ªŽg—p‚Å‚«‚Ü‚·B
 
-X‚ÉA‘å‚«‚³‚Ík, m, g‚ð––”ö‚É‚Â‚¯‚ÄA’PˆÊ‚ðŽw’è‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
-’PˆÊ‚Í‚»‚ê‚¼‚ê k(x1,000),M(x1,000,000),G(x1,000,000,000)‚Å‚·B
-®A‘å‚«‚³‚Í’PˆÊ‚ð•¹—p‚·‚é‚±‚Æ‚É‚æ‚Á‚ÄA4,294,967,295Gbyte ‚Ü‚ÅŽw’è‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·‚ªA”’lŽ©‘Ì‚Í 0`4,294,967,295 ‚Ü‚Å‚ÉŒÀ’è‚³‚ê‚Ü‚·B
+X‚ÉA‘å‚«‚³‚Í k,m,g,t ‚ð––”ö‚É‚Â‚¯‚ÄA’PˆÊ‚ðŽw’è‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+’PˆÊ‚ð¬•¶Žš‚Å‹LÚ‚µ‚½‚Æ‚«‚ÍA‚»‚ê‚¼‚ê k(x1,000), M(x1,000,000), G(x1,000,000,000), T(x1,000,000,000,000)‚Å‚·B’PˆÊ‚ª‘å•¶Žš (K,M,G,T) ‚Ì‚Æ‚«‚ÍAKi(x2‚Ì10æ), Mi(x2‚Ì20æ), Gi(x2‚Ì30æ), Ti(x2‚Ì40æ)‚É‚È‚è‚Ü‚·B
+®A‘å‚«‚³‚Í’PˆÊ‚ð•¹—p‚·‚é‚±‚Æ‚É‚æ‚Á‚ÄA–ñ8Ebyte(8,000,000T/8,000,000,000G) ‚Ü‚ÅŽw’è‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·‚ªA”’lŽ©‘Ì‚Í 0`4,294,967,295 ‚Ü‚Å‚ÉŒÀ’è‚³‚ê‚Ü‚·B
 
 usize:v‚Íus:v‚ÉÈ—ª‰Â”\‚Å‚·B
 <group:roma: ::ƒ[ƒ}Žš•”•ªˆê’vŽw’è>
@@ -806,9 +809,9 @@ MultiByte”Å‚ðŽg‚¤
 ‚±‚Ì‚½‚ßA”ÅŠÔ‚ÅÝ’è‚ðˆÚs‚µ‚½‚¢‚Æ‚«‚ÍAˆê’UˆÚsŒ³‚ÌÝ’è‚ðƒtƒ@ƒCƒ‹‚É‘‚«o‚µ‚Ä‚©‚çAˆÚsæ‚Ì PPcust ‚ÅŽæ‚èž‚Þ‚±‚Æ‚Å‚Å‚«‚Ü‚·B
 
 EMultiByte”Å‚ÆUNICODE”Å‚ÌŽÀsƒtƒ@ƒCƒ‹‚ð“¯‚¶ƒfƒBƒŒƒNƒgƒŠ‚ÉƒCƒ“ƒXƒg[ƒ‹‚µ‚Ä‚à“Á‚É–â‘è‚Í‚ ‚è‚Ü‚¹‚ñB(ŠJ”­‚ÍA“¯‚¶ƒfƒBƒŒƒNƒgƒŠ‚Ås‚Á‚Ä‚¢‚Ü‚·B)
-‚½‚¾‚µASETUP.EXE‚É‚æ‚éƒAƒ“ƒCƒ“ƒXƒg[ƒ‹‚ÍA—¼•û‚ð‚Ü‚Æ‚ß‚Äíœ‚·‚é‚æ‚¤‚É‚È‚Á‚Ä‚¢‚é‚Ì‚ÅAˆê•û‚Ì‚Ýíœ‚·‚é‚Æ‚«‚ÍAŽè“®‚Åíœ‚µ‚Ä‚­‚¾‚³‚¢B
+‚½‚¾‚µASETUP.EXE ‚É‚æ‚éƒAƒ“ƒCƒ“ƒXƒg[ƒ‹‚ÍA—¼•û‚ð‚Ü‚Æ‚ß‚Äíœ‚·‚é‚æ‚¤‚É‚È‚Á‚Ä‚¢‚é‚Ì‚ÅAˆê•û‚Ì‚Ýíœ‚·‚é‚Æ‚«‚ÍAŽè“®‚Åíœ‚µ‚Ä‚­‚¾‚³‚¢B
 
-ESETUP.EXE‚Í‚Ç‚¿‚ç‚Ì”Å‚à“¯‚¶–¼‘O‚Å‚·‚ªAÅŒã‚ÉŽÀs‚·‚éPPc‚ªˆÙ‚È‚é‚¾‚¯‚ÅA—¼•û‚Ì”Å‚Ìƒtƒ@ƒCƒ‹‚ð“¯Žž‚ÉƒCƒ“ƒXƒg[ƒ‹EƒAƒ“ƒCƒ“ƒXƒg[ƒ‹EƒAƒbƒvƒf[ƒg‚·‚é‚æ‚¤‚É‚È‚Á‚Ä‚¢‚Ü‚·B
+ESETUP.EXE ‚Í‚Ç‚¿‚ç‚Ì”Å‚à“¯‚¶–¼‘O‚Å‚·‚ªAÅŒã‚ÉŽÀs‚·‚éPPc‚ªˆÙ‚È‚é‚¾‚¯‚ÅA—¼•û‚Ì”Å‚Ìƒtƒ@ƒCƒ‹‚ð“¯Žž‚ÉƒCƒ“ƒXƒg[ƒ‹EƒAƒ“ƒCƒ“ƒXƒg[ƒ‹EƒAƒbƒvƒf[ƒg‚·‚é‚æ‚¤‚É‚È‚Á‚Ä‚¢‚Ü‚·B
 }\page
 .2:32bit”Å‚Æ64bit”Å‚Ìˆá‚¢=x86x64
 EPPx‚Ì“à‘ ‹@”\Ž©‘Ì‚Ìˆá‚¢‚Í¡‚Ì‚Æ‚±‚ë‚ ‚è‚Ü‚¹‚ñB
@@ -842,11 +845,11 @@ PPx ‚ÍA“ú–{ŒêˆÈŠO‚ÌŠÂ‹«‚Å“®ì‚³‚¹‚é‚±‚Æ‚ð‚ ‚é’ö“xl—¶‚µ‚Ä‚¢‚Ü‚·B
 <b>‹¤’ÊŽd—l</b>
 
 EŠeŽíƒƒbƒZ[ƒW‚ðŒ¾Œê‚É‡‚í‚¹‚ÄØ‘Ö‚Å‚«‚Ü‚·B
-@Œ»ÝA–¢’è‹`Œ¾Œê‚Í‰pŒêƒƒbƒZ[ƒW‚Å•\Ž¦A“ú–{ŒêƒƒbƒZ[ƒW(Mes0411)‚ÍSETUP.EXE‚Å—pˆÓA‘¼‚ÌŒ¾Œê‚ÍƒJƒXƒ^ƒ}ƒCƒY‰Â”\(MesXXXX)
+@Œ»ÝA–¢’è‹`Œ¾Œê‚Í‰pŒêƒƒbƒZ[ƒW‚Å•\Ž¦A“ú–{ŒêƒƒbƒZ[ƒW(Mes0411)‚Í SETUP.EXE ‚Å—pˆÓA‘¼‚ÌŒ¾Œê‚ÍƒJƒXƒ^ƒ}ƒCƒY‰Â”\(MesXXXX)
 
 EPPc‚Ìíœ(\\[D])A–¼‘O•ÏX([R])‚Í’Z‚¢ƒtƒ@ƒCƒ‹–¼‚ð‹É—ÍŽg—p‚·‚é‚±‚Æ‚Å•\Ž¦‚Å‚«‚È‚¢•¶Žš‚ðŽg‚Á‚Ä‚¢‚Ä‚à“®ì‚·‚é‚æ‚¤‚É‘Îˆ
 
-EPPcust‚ÆSetup‚Í‰pŒê/“ú–{Œê‚Ì‚QŽí‚Ì‚Ý‰Â”\
+EPPcust ‚Æ Setup ‚Í‰pŒê/“ú–{Œê‚Ì‚QŽí‚Ì‚Ý‰Â”\
 
 E‰E¨¶‚Ì‡‚É‘‚­Œ¾Œê‚Í–¢‘Î‰ž
 <hr>
@@ -948,9 +951,9 @@ MS-DOS —pƒtƒ@ƒCƒ‰‚Å‘½‚­Œ©‚ç‚ê‚½•¶ŽšŽå‘Ì‚ÅƒVƒ“ƒvƒ‹‚ÈŠOŠÏ‚Æ‚È‚Á‚Ä‚¢‚Ü‚·‚ªAƒL[ƒ{
 EPPc‚ª•¡”–‡‹N“®‚µ‚Ä‚¢‚éê‡A‚»‚Ì•\Ž¦•û–@‚ðFX‘I‘ð‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B‚Ü‚½Aˆê•”§ŒÀ‚ª‚ ‚è‚Ü‚·‚ªA•¡”‚Ì•\Ž¦•û–@‚ð¬Ý‚µ‚ÄŽg—p‚·‚é‚±‚Æ‚à‚Å‚«‚Ü‚·B
 <tb:1600>
 “Æ—§Œ^	Še‘‹‚ªŠ®‘S‚É“Æ—§‚µ‚ÄAD‚«‚ÈˆÊ’u‚ÉD‚«‚È‘å‚«‚³‚Å”z’u‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
-ˆê‘ÌŒ^	‚PƒEƒBƒ“ƒhƒE“à‚ð¶‰E/ã‰º‚É‹æØ‚Á‚½ˆê——ƒyƒCƒ“‚Ì‚»‚ê‚¼‚ê‚ÉAƒfƒBƒŒƒNƒgƒŠ‚Ìˆê——‘‹‚ª•\Ž¦‚³‚ê‚éAƒ}ƒ‹ƒ`ƒyƒCƒ“Œ^•\Ž¦‚Å‚·BÝ’è‚Åî•ñs‚ð‹¤’Ê‚É‚µAî•ñs‚É•\Ž¦‚³‚ê‚é“à—e‚ð‘½‚­‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+ˆê‘Ì‰»Œ^	‚P‚Â‚Ìˆê‘Ì‰»‘‹“à‚ð¶‰E/ã‰º‚É‹æØ‚Á‚½ˆê——ƒyƒCƒ“‚Ì‚»‚ê‚¼‚ê‚ÉAƒfƒBƒŒƒNƒgƒŠ‚Ìˆê——‘‹‚ª•\Ž¦‚³‚ê‚éAƒ}ƒ‹ƒ`ƒyƒCƒ“Œ^•\Ž¦‚Å‚·BÝ’è‚Åî•ñs‚ð‹¤’Ê‚É‚µAî•ñs‚É•\Ž¦‚³‚ê‚é“à—e‚ð‘½‚­‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
 	¶/ã’[‚Ìˆê——ƒyƒCƒ“‚É•\Ž¦‚³‚ê‚½‘‹‚ÆA‚»‚êˆÈŠO‚ÅÅŒã‚ÉƒAƒNƒeƒBƒu‚É‚È‚Á‚½ˆê——ƒyƒCƒ“‚É•\Ž¦‚³‚ê‚½‘‹‚Æ‚ªƒyƒA‚Æ‚È‚Á‚½‚Q‰æ–Ê“®ì‚ð‚µ‚Ü‚·B
-ƒ^ƒuŒ^	ˆê‘ÌŒ^‚Ì•ÏŒ`‚ÅAˆê——ƒyƒCƒ“‚Å•\Ž¦‚·‚é‘‹‚ðƒ^ƒu‚ÅØ‚è‘Ö‚¦‚Å‚«‚Ü‚·Bƒ^ƒu‚Ì”‚Í•\Ž¦ƒyƒCƒ“”‚æ‚è‘½‚­‚Å‚«‚Ü‚·Bƒ^ƒuŠÇ—‚Ì•û–@‚ª‚¢‚­‚Â‚©‚ ‚èA•ÏX‚Å‚«‚Ü‚·B
+ƒ^ƒuŒ^	ˆê‘Ì‰»Œ^‚Ì•ÏŒ`‚ÅAˆê——ƒyƒCƒ“‚Å•\Ž¦‚·‚é‘‹‚ðƒ^ƒu‚ÅØ‚è‘Ö‚¦‚Å‚«‚Ü‚·Bƒ^ƒu‚Ì”‚Í•\Ž¦ƒyƒCƒ“”‚æ‚è‘½‚­‚Å‚«‚Ü‚·Bƒ^ƒuŠÇ—‚Ì•û–@‚ª‚¢‚­‚Â‚©‚ ‚èA•ÏX‚Å‚«‚Ü‚·B
 @‹¤—pƒ^ƒuŒ^	•¡”‚Ìˆê——ƒyƒCƒ“‚ª‚ ‚Á‚Ä‚à‚P‚Â‚Ìƒ^ƒu‚Å•\Ž¦‚µ‚Ü‚·B
 @•ª—£ƒ^ƒuŒ^	ˆê——ƒyƒCƒ“–ˆ‚Éƒ^ƒu‚ª‚ ‚è‚Ü‚·‚ªAƒ^ƒu‚Ì“à—e‚ÍŠeƒyƒCƒ“‚Å‹¤’Ê‚Å‚·B‚P‚Â‚Ìƒ^ƒu‚ðD‚«‚ÈƒyƒCƒ“‚É•\Ž¦‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B¦‚P‚Â‚Ìƒ^ƒu‚ð•¡”ƒyƒCƒ“‚É“¯Žž•\Ž¦‚Í•s‰ÂB
 @“Æ—§ƒ^ƒuŒ^	ˆê——ƒyƒCƒ“–ˆ‚É‚»‚ÌƒyƒCƒ“‚Ì‚Ý‚É‚ ‚éƒ^ƒu‚ª‚ ‚è‚Ü‚·Bƒ^ƒu‚ÍAƒ^ƒu‚ÌD&D‚Å•Ê‚ÌƒyƒCƒ“‚ÉˆÚ“®‚Å‚«‚Ü‚·B
@@ -974,6 +977,11 @@ MS-DOS —pƒtƒ@ƒCƒ‰‚Å‘½‚­Œ©‚ç‚ê‚½•¶ŽšŽå‘Ì‚ÅƒVƒ“ƒvƒ‹‚ÈŠOŠÏ‚Æ‚È‚Á‚Ä‚¢‚Ü‚·‚ªAƒL[ƒ{
  Šî–{“I‚Éƒƒ‚ƒŠ‚Ì‹–‚·‚Ü‚ÅƒfƒBƒŒƒNƒgƒŠ‚Ìˆê——‚ð“Ç‚Ýž‚ß‚Ü‚·B“Á‚ÉA100`5,000 ’ö“x‚ÅÅ‚à‰õ“K‚ÉŽg‚¦‚é—l‚ÉÝŒv‚µ‚Ä‚¢‚Ü‚·B–ñ200,000ƒGƒ“ƒgƒŠ‚Å‚à—˜—p‚Å‚«‚é‚±‚Æ‚ðŠm”FÏ‚Ý‚Å‚·B
  ¦ˆê‘Ì‰»•\Ž¦“™‚Ì‚PƒvƒƒZƒX‚Å•¡”‘‹‚ðˆµ‚¤ó‘Ô‚É‚µ‚½‚èAƒAƒCƒRƒ“E‰æ‘œ‚ÌƒTƒ€ƒlƒCƒ‹•\Ž¦‚È‚Ç‚Ìƒƒ‚ƒŠ‚ð‘½‚­Žg—p‚·‚é‹@”\‚ðŽg‚Á‚½‚è‚·‚é‚ÆA“Ç‚Ýž‚Ý‰Â”\‚ÈƒGƒ“ƒgƒŠ”‚ª‘å•‚ÉŒ¸‚è‚Ü‚·‚Ì‚Å’ˆÓ‚µ‚Ä‚­‚¾‚³‚¢B
   ”–œ`”\–œ‚Ì‘å—Ê‚ÌƒGƒ“ƒgƒŠ‚ðíŽžˆµ‚¤ê‡iˆê‘Ì‰»Žž‚Í‘Sƒ^ƒu^‘SƒyƒCƒ“‚Ì‘”j‚ÍAŽg‚¢•û‚É‚æ‚Á‚Ä‚Í32bit”Å‚Åƒƒ‚ƒŠ•s‘«‚É‚È‚é‚±‚Æ‚àl‚¦‚ç‚ê‚Ü‚·B64bit”ÅPPx‚ðŽg‚¤‚±‚Æ‚àŒŸ“¢‚µ‚Ä‚Ý‚Ä‚­‚¾‚³‚¢B
+<hr>
+<tk:ˆê‘Ì‰»‘‹>
+
+ ˆê‘Ì‰»Œ^‘‹‚É“o˜^‰Â”\‚È‘‹‚Ì”‚ÍAƒpƒtƒH[ƒ}ƒ“ƒXã‚Ì——R‚É‚æ‚èŒ»Ý 200 ‚ðãŒÀ‚Æ‚µ‚Ä‚¢‚Ü‚·B
+ ‚Ü‚½Aˆê‘Ì‰»Œ^‘‹‚ª•\Ž¦‰Â”\‚ÈƒyƒCƒ“”‚Í 32 ‚ðãŒÀ‚Æ‚µ‚Ä‚¢‚Ü‚·B
 <hr>
 <tk:ˆê——‚ÌXV>
 
@@ -1261,18 +1269,21 @@ PPc ‚ªŠù‚É‚ ‚éê‡‚Í‚»‚ê‚ð—˜—p‚µ‚ÄƒfƒBƒŒƒNƒgƒŠ‚ð•\Ž¦‚µ‚Ü‚·B‚Ü‚½AŠY“– PPc ‚ðƒAƒ
 ‹N“®Žž‚É’Êí‚Ì‘å‚«‚³‚Å‘‹‚ð•\Ž¦‚µ‚Ü‚·B-r ƒIƒvƒVƒ‡ƒ“Žw’èŽž‚Í–³Œø‚Å‚·B
 
 <b>-combo</b>
+<b>-combo:<i>ID</i></b>
 ‘¼‚Ì -combo Žw’è‚ª‚³‚ê‚½PPc‚ÆAˆê‘Ì‚Ì‘‹‚É‚µ‚½<jmpa:ˆê‘Ì‰»:X_combo>ó‘Ô‚É‚µ‚Ü‚·B
+ID‚ðŽw’è‚µ‚È‚¢ê‡‚ÍAA (CBA)‚ðŽg—p‚µ‚Ü‚·B
+A`Z ‚Ì ID ‚ð•t‚¯‚½ê‡‚ÍA‚»‚Ì ID ‚ðŽg—p‚µ‚Ü‚·B
+
 <b>-lock</b>
 Žw’è‚µ‚½ID‚ÌƒJƒŒƒ“ƒgƒfƒBƒŒƒNƒgƒŠ‚Ì•ÏX‚ð‹ÖŽ~‚·‚éƒƒbƒNó‘Ô‚É‚µ‚Ü‚·B
 ¦‹N“®Œã‚ÍA*pane lock ‚Å•ÏX‚Å‚«‚Ü‚·B
 ŽQl: <jmpa:*pane ƒRƒ}ƒ“ƒh:panecommand>
 
 <b>-alone</b>
-<b>-alone:B-Z</b>
--combo‚Æ“¯—l‚É<jmpa:ˆê‘Ì‰»:X_combo>ó‘Ô‚É‚µ‚Ü‚·B’A‚µAŠù‘¶‚Ìˆê‘Ì‰»‘‹‚©‚ç“Æ—§‚µ‚½V‚µ‚¢ˆê‘Ì‰»‘‹‚É‚È‚è‚Ü‚·B®A‚Q‚Â–ÚˆÈ~‚Ìˆê‘Ì‰»‘‹‚ÍAˆê‘Ì‰»‘‹‚ÌID‚ðŽw’è‚µ‚ÄŠO•”‚©‚ç‘‹‚ð’Ç‰Á‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚¹‚ñBˆê‘Ì‰»‘‹“à‚ÌŠePPc‚ÌID‚É‚æ‚é‘€ì‚È‚ç‚Å‚«‚Ü‚·B
-B`Z‚ÌID‚ð•t‚¯‚½ê‡‚ÍA‚»‚ÌID‚Å‹L‰¯‚³‚ê‚½Ý’è‚ðŽg—p‚µ‚Ü‚·B
-‚Ü‚½Aˆê‘Ì‘‹‚ÌID‚ªd•¡‚µ‚Ä‚àŠJ‚«‚Ü‚·B
-¦A‚Í-alone‚Å‚Í‚È‚¢-combo‚ÌÝ’è‚Å‚·B
+<b>-alone:<i>ID</i></b>
+-combo‚Æ“¯—l‚É<jmpa:ˆê‘Ì‰»:X_combo>ó‘Ô‚É‚µ‚Ü‚·Bˆá‚¢‚ÍAƒ^ƒuEƒyƒCƒ“‚ª•K‚¸‰Šú‰»‚³‚ê‚Ä‚¢‚é‚±‚Æ‚Å‚·B
+ID ‚ðŽw’è‚µ‚È‚¢ê‡‚ÍA–¢Žg—p‚ÌÅ‚àŽá‚¢ ID ‚ðŽg—p‚µ‚Ü‚·B
+A`Z ‚Ì ID ‚ð•t‚¯‚½ê‡‚ÍA‚»‚Ì ID ‚ðŽg—p‚µ‚Ü‚·B‚±‚Ì‚Æ‚«A-r ƒIƒvƒVƒ‡ƒ“‚ðŽw’è‚µ‚È‚¢‚ÆAˆê‘Ì‘‹‚Ì ID ‚ªd•¡‚µ‚Ä‚àŠJ‚«‚Ü‚·B
 
 <b>-pane</b>
 <b>-pane:[~|l|r|”’l]</b>
@@ -1368,8 +1379,8 @@ for /f "delims=?" %i in ('ppc -choose:multi -bootid:z') do @echo %i
 }<hid:IDH_PPC>
 .2:‹@”\ˆê——=ppckey
 <a:ppckey>
-<grouptitlememo>ˆê——‚É‹LÚ‚µ‚Ä‚¢‚éƒL[–¼‚ÍASETUP‚ðŽg‚í‚¸‚É‹N“®‚µ‚½‚Æ‚«^SETUP‚ÅuPPx ƒIƒŠƒWƒiƒ‹v‚ð‘I‘ð‚µ‚½‚Æ‚«‚ÌŠ„“–‚ÄƒL[‚Å‚·BƒL[ƒJƒXƒ^ƒ}ƒCƒY‚ð‚·‚é‚Æ‚«‚Í‚±‚ÌƒL[–¼‚Éu@v‚ð•t‰Á‚µ‚½‚à‚Ì‚ðŽg‚¢‚Ü‚·B
-SETUP‚Å‘¼‚ÌÝ’è‚ð‘I‘ð‚µ‚½‚Æ‚«‚ÍAÚ×’†‚É‹LÚ‚µ‚½ƒL[‚É‚È‚è‚Ü‚·B
+<grouptitlememo>ˆê——‚É‹LÚ‚µ‚Ä‚¢‚éƒL[–¼‚ÍASETUP.EXE ‚ðŽg‚í‚¸‚É‹N“®‚µ‚½‚Æ‚«^ SETUP ‚ÅuPPx ƒIƒŠƒWƒiƒ‹v‚ð‘I‘ð‚µ‚½‚Æ‚«‚ÌŠ„“–‚ÄƒL[‚Å‚·BƒL[ƒJƒXƒ^ƒ}ƒCƒY‚ð‚·‚é‚Æ‚«‚Í‚±‚ÌƒL[–¼‚Éu@v‚ð•t‰Á‚µ‚½‚à‚Ì‚ðŽg‚¢‚Ü‚·B
+ SETUP ‚Å‘¼‚ÌÝ’è‚ð‘I‘ð‚µ‚½‚Æ‚«‚ÍAÚ×’†‚É‹LÚ‚µ‚½ƒL[‚É‚È‚è‚Ü‚·B
 
 <grouptitle:’†Ž~EI—¹>
 <group:[ESC]::Šm”F‚ ‚è‚ÅI—¹E’†Ž~>
@@ -1573,8 +1584,8 @@ PPx,KL,FD,FILMTN:[T]
 \\[J]‚ÍAƒXƒe[ƒ^ƒXs‚É“ü—ÍŒ‹‰Ê‚ª•\Ž¦‚³‚êiƒ_ƒCƒAƒƒOƒ{ƒbƒNƒX‚ª‚È‚¢jA•¶Žš—ñˆÈŠO‚ð“ü—Í‚·‚é‚ÆA‚»‚ÌƒL[‚ÉŠ„‚è“–‚Ä‚ç‚ê‚½‹@”\‚ðŽÀs‚µ‚Ü‚·B
 <hid:IDD_EJUMP><tb:1500>
 <b>ƒtƒ@ƒCƒ‹–¼</b>	Alt+T‚ÅAƒCƒ“ƒNƒŠƒƒ“ƒ^ƒ‹ƒT[ƒ`‚Ì‘ÎÛ‚ðƒtƒ@ƒCƒ‹/ƒRƒƒ“ƒg/—¼•û‚ÉØ‚è‘Ö‚¦‚Å‚«‚Ü‚·B
-<b>ƒ[ƒ}Žš</b>	Alt+O‚ÅA’Êíˆê’v^ƒ[ƒ}Žšˆê’v‚ÌØŠ·‚ªs‚¦‚Ü‚·Bƒ[ƒ}Žšˆê’vƒ‚[ƒh‚ÍAƒAƒ‹ƒtƒ@ƒxƒbƒg•¶Žš—ñ‚ð“ü—Í‚·‚é‚ÆA‚»‚Ì•¶Žš—ñ‚ðƒ[ƒ}Žš“Ç‚Ý‚µ‚ÄŠY“–ƒJƒ^ƒJƒiA‚Ð‚ç‚ª‚ÈAŠ¿Žš‚ðŠÜ‚ÞƒGƒ“ƒgƒŠ‚ÌƒCƒ“ƒNƒŠƒƒ“ƒ^ƒ‹ƒT[ƒ`‚ðs‚¢‚Ü‚·B
-@®Aƒ[ƒ}Žšˆê’vƒ‚[ƒh‚ÍA<jmpa:³‹K•\Œ»ƒ‰ƒCƒuƒ‰ƒŠ:BREGEXP>‚ÆA<jmpa:C/Migemo:CMigemo>‚ª•K—v‚Å‚·B
+<b>ƒ[ƒ}Žš</b>	Alt+O‚ÅA’Êíˆê’v^ƒ[ƒ}Žš“Ç‚Ýˆê’v‚ÌØŠ·‚ªs‚¦‚Ü‚·Bƒ[ƒ}Žš“Ç‚Ýˆê’vƒ‚[ƒh‚ÍAƒAƒ‹ƒtƒ@ƒxƒbƒg•¶Žš—ñ‚ð“ü—Í‚·‚é‚ÆA‚»‚Ì•¶Žš—ñ‚ðƒ[ƒ}Žš“Ç‚Ý‚µ‚ÄŠY“–ƒJƒ^ƒJƒiA‚Ð‚ç‚ª‚ÈAŠ¿Žš‚ðŠÜ‚ÞƒGƒ“ƒgƒŠ‚ÌƒCƒ“ƒNƒŠƒƒ“ƒ^ƒ‹ƒT[ƒ`‚ðs‚¢‚Ü‚·B
+@®Aƒ[ƒ}Žš“Ç‚Ýˆê’vƒ‚[ƒh‚ÍA<jmpa:³‹K•\Œ»ƒ‰ƒCƒuƒ‰ƒŠ:BREGEXP>‚ÆA<jmpa:C/Migemo:CMigemo>‚ª•K—v‚Å‚·B
 <b>‘O•ûˆê’v</b>	Alt+F‚ÅA‘O•ûˆê’v^•”•ªˆê’v‚ÌØŠ·‚ªs‚¦‚Ü‚·B
 <b>ª«</b>	ƒJ[ƒ\ƒ‹ã‰º‚ÅðŒ‚É‡‚¤•Ê‚ÌŒó•â‚ÉˆÚ“®‚Å‚«‚Ü‚·B
 <b>Mark</b>	Alt+M‚ÅAƒJ[ƒ\ƒ‹ˆÊ’u‚Ìƒ}[ƒN‚ðs‚¢‚Ü‚·B
@@ -1582,7 +1593,7 @@ PPx,KL,FD,FILMTN:[T]
 
 ŽQl:XC_isea,X_rscah,KC_incs
 <grouptitle:‘‹‘€ì>
-<group:[F1]::PPX.HLP‚ðŠJ‚­>
+<group:[F1]::ƒwƒ‹ƒv‚ðŠJ‚­>
 <group:\\[ESC]::Å¬‰»>
 <group:&[©] &[¨] &[ª] &[«]::‘‹ˆÚ“®>
 <group:&\\[©] &\\[¨] &\\&[ª] &\\[«]::‘‹˜g‚Ì‘å‚«‚³‚ð‘Œ¸>
@@ -1970,7 +1981,7 @@ PPx ‚Ì•W€ƒJƒXƒ^ƒ}ƒCƒY‚Ìê‡Aƒtƒ@ƒ“ƒNƒVƒ‡ƒ“ƒL[‚Í Explorer €‹’A‰p”ŽšƒL[‚ÍK-
 <jmpa:‹@”\ˆê——:ppckey>‚ðŽQÆ‚µ‚Ä‚­‚¾‚³‚¢B
 }\page
 .3:ƒL[ƒ{[ƒh(ƒGƒNƒXƒvƒ[ƒ‰•—Ý’è)
-setup.exe ‚Å ƒGƒNƒXƒvƒ[ƒ‰ ‚Ì‹@”\Š„“–‚Ä‚ð‚¨‚±‚È‚Á‚½‚Æ‚«AƒL[Š„“–‚Ä‚ªƒGƒNƒXƒvƒ[ƒ‰•—‚É‚È‚è‚Ü‚·B
+SETUP.EXE ‚Å ƒGƒNƒXƒvƒ[ƒ‰ ‚Ì‹@”\Š„“–‚Ä‚ð‚¨‚±‚È‚Á‚½‚Æ‚«AƒL[Š„“–‚Ä‚ªƒGƒNƒXƒvƒ[ƒ‰•—‚É‚È‚è‚Ü‚·B
 EƒVƒtƒgƒL[‚ð‰Ÿ‚³‚È‚¢‚Æ‚«‚Ì A-Z,0-9 ƒL[‚ÍƒCƒ“ƒNƒŠƒƒ“ƒ^ƒ‹ƒT[ƒ`—p‚ÌƒL[‚É‚È‚è‚Ü‚·B
 EƒJ[ƒ\ƒ‹ƒL[‚Ì“®ì‚ªƒGƒNƒXƒvƒ[ƒ‰•—‚É‚È‚è‚Ü‚·B
 @¦ƒGƒNƒXƒvƒ[ƒ‰‚Ì“®ì‚ªD‚Ý‚Å‚È‚¯‚ê‚ÎAƒJƒXƒ^ƒ}ƒCƒU‚ÅƒJ[ƒ\ƒ‹‚Ìã‰º¶‰E‚ÌŠ„“–‚Ä‚ðíœ‚µ‚Ä‚­‚¾‚³‚¢Bíœ‚·‚é‚ÆPPc–{—ˆ‚Ì“®ì‚É‚È‚è‚Ü‚·B
@@ -2332,10 +2343,10 @@ filename ‚ÍAˆê”Ê‚Ìƒtƒ@ƒCƒ‹‚Ì‘¼AHTTP Œ`Ž®(http://cAhttps://c)‚ÆASusie Plug-
 <b>-prints</b>
 ‘‹ã‚Éƒhƒƒbƒv‚µ‚½‰æ‘œ‚ðA‚P‚Â‚ÌƒhƒLƒ…ƒƒ“ƒg‚Æ‚µ‚ÄˆêŠ‡ˆóü‚µ‚Ü‚·BƒvƒŠƒ“ƒ^‚Ì—¼–Êˆóü‚â‘Ü’Ô‚¶ˆóü‹@”\‚ðŽg‚¤Žž‚É•Ö—˜‚Å‚·B
 
-<b>-hex,-text,-document,-image,-rawimage</b>
+<b>-hex, -text, -document, -image, -rawimage</b>
 •\Ž¦Œ`Ž®‚ðŽw’è‚µ‚Ü‚·B
 
-<b>-ibm,-ansi,-jis,-sjis,-euc,-unicode,-unicodeb,-sjisnec,-sjisb,-kana,-rtf,-utf8,-utf7</b>
+<b>-us/-ibm(codepage:437), -latin1/-ansi(codepage:1252), -jis, -sjis, -euc, -utf16/-unicode, -utf16be/-unicodeb, -sjisnec, -sjisb, -kana, -rtf, -utf8, -utf7</b>
 ƒeƒLƒXƒg‚Ì•\Ž¦•¶ŽšƒR[ƒh‚ðŽw’è‚µ‚Ü‚·B
 
 <b>-system</b>
@@ -2343,7 +2354,7 @@ filename ‚ÍAˆê”Ê‚Ìƒtƒ@ƒCƒ‹‚Ì‘¼AHTTP Œ`Ž®(http://cAhttps://c)‚ÆASusie Plug-
 ’Êí‚Ì“ú–{ŒêŠÂ‹«‚Ì‚Æ‚«‚Í -sjis ‚Æ“¯‚¶ˆÓ–¡‚É‚È‚è‚Ü‚·B
 
 <b>-codepage:n</b>
-ƒeƒLƒXƒg‚Ì•\Ž¦•¶ŽšƒR[ƒh‚ðƒR[ƒhƒy[ƒW(n)‚ÅŽw’è‚µ‚Ü‚·B
+ƒeƒLƒXƒg‚Ì•\Ž¦•¶ŽšƒR[ƒh‚ðƒR[ƒhƒy[ƒW(n)‚ÅŽw’è‚µ‚Ü‚·BŽw’è‚Å‚«‚éƒR[ƒhƒy[ƒW‚ÍAWindows‚É“o˜^Ï‚Ý‚ÌƒR[ƒhƒy[ƒW(•¶ŽšƒR[ƒhØ‚è‘Ö‚¦[@] - other CP ‚Ìˆê——‚É•\Ž¦‚³‚ê‚½“à—e)‚Å‚·B
 —á) 0:ƒVƒXƒeƒ€ƒƒP[ƒ‹ 932:Shift_JIS 1252:latin1
 
 <b>-siso:auto/off/on</b>
@@ -2493,7 +2504,7 @@ ICON,CURSOR Œ`Ž®(.ICO/.CUR)
 <group:&[HOME]::&\\[HOME] ‚Å‹L‰¯‚µ‚½ˆÊ’u‚É‘‹‚ðˆÚ“®‚·‚é>
 <group:[^]::ƒƒjƒ…[ƒo[‚Ì On/Off>
 ƒƒjƒ…[ƒo[‚ª•\Ž¦‚³‚ê‚Ä‚¢‚È‚¢‚Æ‚«‚Å‚àAAlt+ƒVƒ‡[ƒgƒJƒbƒg•¶Žš‚ÅAŠY“–ƒƒjƒ…[‚ð•\Ž¦‚³‚¹‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
-<group:[F1]::PPX.HLP‚ðŠJ‚­>
+<group:[F1]::ƒwƒ‹ƒv‚ðŠJ‚­>
 <grouptitle:ƒtƒ@ƒCƒ‹‘€ì>
 <group:[ESC]::I—¹(Šm”F•t‚«)>
 <group:&[F4][Q]::I—¹>
@@ -2616,6 +2627,11 @@ ESC			cESC code ‚Ì‰ðÍ‚Ì—L–³
 quoted			cquoted-printable‰ðÍ
 
 ŽQl:<jmpa:XV_opts>,*viewoption
+<group:\\[F]^\\[F]::ƒnƒCƒ‰ƒCƒg’PŒê‚ÌÝ’è>
+
+‹ó”’‹æØ‚è‚ÅŽw’è‚µ‚½•¶Žš—ñ‚ðƒnƒCƒ‰ƒCƒg•\Ž¦‚µ‚Ü‚·B
+“ü—Í“à—e‚ÍA“ÁŽêŠÂ‹«•Ï” %si"Highlight" ‚É•Û‘¶‚³‚ê‚Ü‚·B
+íŽžŽg—p‚·‚éŒÅ’èƒL[ƒ[ƒhƒnƒCƒ‰ƒCƒg‚ÍA<jmpa:CV_hkey>‚ÅŽw’è‰Â”\‚Å‚·B
 <group:[:]::•\Ž¦Œ`Ž®Ø‘Ö>
 
 16iƒ_ƒ“ƒv/ƒeƒLƒXƒg/•¶‘/‰æ‘œ ‚Ì•\Ž¦Œ`Ž®Ø‚è‘Ö‚¦‚ðs‚¢‚Ü‚·B
@@ -2789,7 +2805,7 @@ Win9xŒnã‚ÅŠ¿Žš‚ð“ü—Í‚·‚éê‡‚ÉŽg—p‚µ‚Ä‚­‚¾‚³‚¢B
 <grouptitle:ŽQÆƒ‚[ƒh>
 
 ŽQÆƒ‚[ƒh‚Å‚ÍA•\Ž¦‚³‚ê‚½•¶Žš‚ÌƒCƒ“ƒNƒŠƒƒ“ƒ^ƒ‹ƒT[ƒ`‚ª‰Â”\‚Å‚·B‰pŽšƒL[‚ð‰Ÿ‚µ‚Ä‚¢‚­‚ÆŠY“–‚·‚é•¶Žš—ñ‚Ü‚ÅˆÚ“®‚µA”½“]•\Ž¦‚µ‚Ü‚·B‚Ü‚½A[TAB]‚ÅŽŸ‚ÌŒó•â‚ÉˆÚ“®‚µ‚Ü‚·B
-<group:&[F4]::I—¹>
+<group:&[F4],^[W]::I—¹>
 <group:[ESC]::•ÒWƒ‚[ƒh‚ÖˆÚs>
 <group:\\[ESC]::Å¬‰»>
 <group:[ª][«][©][¨]::ƒJ[ƒ\ƒ‹ˆÚ“®>
@@ -3234,8 +3250,8 @@ PPx ‚ÌƒCƒ“ƒXƒg[ƒ‹^ƒAƒ“ƒCƒ“ƒXƒg[ƒ‹^ƒAƒbƒvƒf[ƒg‚ðŽx‰‡‚µ‚Ü‚·B
 <hr>
 <b>ƒAƒbƒvƒf[ƒg</b>
 V‚µ‚¢PPx‚Ìƒtƒ@ƒCƒ‹‚Éã‘‚«‚µ‚Ü‚·B
-‚±‚ÌSETUP.EXE‚ðŽg‚í‚È‚­‚Ä‚àƒtƒ@ƒCƒ‹‚Ìã‘‚«‚ðs‚¦‚ÎƒAƒbƒvƒf[ƒg‰Â”\‚Å‚·‚ªAŽÀs’†‚ÌPPx‚ª‚ ‚éê‡‚Íã‘‚«‚Å‚«‚Ü‚¹‚ñBSETUP.EXE‚ð‚Â‚©‚Á‚½ƒAƒbƒvƒf[ƒg‚ÍAŽÀs’†‚ÌPPx‚ðI—¹‚³‚¹‚Ä‚©‚çã‘‚«‚·‚é‚Ì‚ÅAã‘‚«ƒ~ƒX‚ð‚·‚é‚±‚Æ‚ð–hŽ~‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
-‚Ü‚½AV‚µ‚¢PPx‚ÌƒA[ƒJƒCƒu‚É“ü‚Á‚Ä‚¢‚éSETUP.EXE‚ðŽÀs‚µ‚½ê‡A[Enter]‚ð‰½‰ñ‚©‰Ÿ‚·‚¾‚¯‚ÅƒAƒbƒvƒf[ƒg‚ðÏ‚Ü‚¹‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+‚±‚Ì SETUP.EXE ‚ðŽg‚í‚È‚­‚Ä‚àƒtƒ@ƒCƒ‹‚Ìã‘‚«‚ðs‚¦‚ÎƒAƒbƒvƒf[ƒg‰Â”\‚Å‚·‚ªAŽÀs’†‚ÌPPx‚ª‚ ‚éê‡‚Íã‘‚«‚Å‚«‚Ü‚¹‚ñBSETUP.EXE ‚ð‚Â‚©‚Á‚½ƒAƒbƒvƒf[ƒg‚ÍAŽÀs’†‚ÌPPx‚ðI—¹‚³‚¹‚Ä‚©‚çã‘‚«‚·‚é‚Ì‚ÅAã‘‚«ƒ~ƒX‚ð‚·‚é‚±‚Æ‚ð–hŽ~‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+‚Ü‚½AV‚µ‚¢PPx‚ÌƒA[ƒJƒCƒu‚É“ü‚Á‚Ä‚¢‚é SETUP.EXE ‚ðŽÀs‚µ‚½ê‡A[Enter]‚ð‰½‰ñ‚©‰Ÿ‚·‚¾‚¯‚ÅƒAƒbƒvƒf[ƒg‚ðÏ‚Ü‚¹‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
 
  <tk:“üŽèÏ‚Ý‘ŒÉ‚ðŽg‚Á‚ÄƒAƒbƒvƒf[ƒg>
 Šù‚ÉV‚µ‚¢PPx‚Ì‘ŒÉƒtƒ@ƒCƒ‹‚ª‚ ‚é‚Æ‚«‚ÉŽg—p‚µ‚Ü‚·B‘ŒÉƒtƒ@ƒCƒ‹‚ðŽw’è‚µ‚½Œã‚ÉƒAƒbƒvƒf[ƒg‚ðs‚¢‚Ü‚·B
@@ -3251,21 +3267,21 @@ PPx ‚ÌƒCƒ“ƒXƒg[ƒ‹^ƒAƒ“ƒCƒ“ƒXƒg[ƒ‹^ƒAƒbƒvƒf[ƒg‚ðŽx‰‡‚µ‚Ü‚·B
 <a:setupoption><b>‹N“®ŽžƒIƒvƒVƒ‡ƒ“</b>
 
 SETUP.EXE ‚Å /s ƒIƒvƒVƒ‡ƒ“‚ðŽw’è‚·‚é‚ÆAŽw’è‚µ‚½ƒfƒBƒŒƒNƒgƒŠ^‘ŒÉƒtƒ@ƒCƒ‹‚Ìƒtƒ@ƒCƒ‹‚ðŽg‚Á‚ÄƒAƒbƒvƒf[ƒg‚ð‚¨‚±‚È‚¢‚Ü‚·B
-ppx‚ªƒCƒ“ƒXƒg[ƒ‹‚³‚ê‚Ä‚¢‚éƒfƒBƒŒƒNƒgƒŠ‚Ìsetup.exe‚ðŽŸ‚Ì‚æ‚¤‚ÉŽw’è‚µ‚ÄŽÀs‚µ‚Ä‚­‚¾‚³‚¢BŽw’è‚³‚ê‚½ƒfƒBƒŒƒNƒgƒŠ‚ÉV‚µ‚¢setup.exe‚ª‚ ‚Á‚½ê‡‚Ísetup.exe‚àXV‚³‚ê‚Ü‚·B
+PPx ‚ªƒCƒ“ƒXƒg[ƒ‹‚³‚ê‚Ä‚¢‚éƒfƒBƒŒƒNƒgƒŠ‚Ì SETUP.EXE ‚ðŽŸ‚Ì‚æ‚¤‚ÉŽw’è‚µ‚ÄŽÀs‚µ‚Ä‚­‚¾‚³‚¢BŽw’è‚³‚ê‚½ƒfƒBƒŒƒNƒgƒŠ‚ÉV‚µ‚¢ SETUP.EXE ‚ª‚ ‚Á‚½ê‡‚Í SETUP.EXE ‚àXV‚³‚ê‚Ü‚·B
 
 EƒfƒBƒŒƒNƒgƒŠŽw’è
-<i>—á)setup.exe /s "VPPx‚ª‚ ‚éƒfƒBƒŒƒNƒgƒŠ"</i>
-ƒfƒBƒŒƒNƒgƒŠ“à‚ÌPPx‚ð‘S‚ÄŽÀsŒ³‚Ìsetup.exe‚ª‚ ‚éƒfƒBƒŒƒNƒgƒŠ‚ÉƒRƒs[‚µ‚Ü‚·B
+<i>—á) SETUP.EXE /s "VPPx‚ª‚ ‚éƒfƒBƒŒƒNƒgƒŠ"</i>
+ƒfƒBƒŒƒNƒgƒŠ“à‚ÌPPx‚ð‘S‚ÄŽÀsŒ³‚Ì SETUP.EXE ‚ª‚ ‚éƒfƒBƒŒƒNƒgƒŠ‚ÉƒRƒs[‚µ‚Ü‚·B
 
 E‘ŒÉŽw’è(¦7-zip32.dll‚©unzip32.dll ‚ª•K—v‚Å‚·)
-<i>—á)setup.exe /s "VPPx‚Ì‘ŒÉƒtƒ@ƒCƒ‹"</i>
-%temp%\\PPXUPDIR‚ÉŽw’è‚³‚ê‚½‘ŒÉƒtƒ@ƒCƒ‹‚Ì’†g‚ð“WŠJ‚µ‚ÄAŽÀsŒ³‚Ìsetup.exe‚ª‚ ‚éƒfƒBƒŒƒNƒgƒŠ‚ÉƒRƒs[‚µ‚Ü‚·B‚»‚ÌŒã%temp%\\PPXUPDIR‚Ííœ‚³‚ê‚Ü‚·B
+<i>—á) SETUP.EXE /s "VPPx‚Ì‘ŒÉƒtƒ@ƒCƒ‹"</i>
+%temp%\\PPXUPDIR ‚ÉŽw’è‚³‚ê‚½‘ŒÉƒtƒ@ƒCƒ‹‚Ì’†g‚ð“WŠJ‚µ‚ÄAŽÀsŒ³‚Ì SETUP.EXE ‚ª‚ ‚éƒfƒBƒŒƒNƒgƒŠ‚ÉƒRƒs[‚µ‚Ü‚·B‚»‚ÌŒã%temp%\\PPXUPDIR‚Ííœ‚³‚ê‚Ü‚·B
 
 EŒ‹‰Ê•\Ž¦–³‚µ
 /sq ‚ÆŽw’è‚µ‚½ê‡AƒGƒ‰[‚ª‚È‚¯‚ê‚ÎŒ‹‰Ê‚Ì•\Ž¦‚ðÈ—ª‚µ‚Ü‚·B‚Ü‚½APPc‚ªŽÀs‰Â”\‚Å‚ ‚ê‚ÎŽÀs‚µ‚Ü‚·B
 
 Eƒ_ƒEƒ“ƒ[ƒhŽw’è(¦7-zip32.dll‚©unzip32.dll ‚ª•K—v‚Å‚·)
-<i>—á)setup.exe /d "ƒ_ƒEƒ“ƒ[ƒh‚µ‚½‘ŒÉ‚ð•Û‘¶‚·‚éƒfƒBƒŒƒNƒgƒŠ"</i>
+<i>—á) SETUP.EXE /d "ƒ_ƒEƒ“ƒ[ƒh‚µ‚½‘ŒÉ‚ð•Û‘¶‚·‚éƒfƒBƒŒƒNƒgƒŠ"</i>
 ŒöŠJƒy[ƒW‚©‚çÅV‚Ì‘ŒÉ‚ðŽæ“¾‚µ‚½Œã‚Í /s ‚Æ“¯‚¶“®ì‚ðs‚¢‚Ü‚·B
 /dq ‚ÆŽw’è‚µ‚½ê‡AƒGƒ‰[‚ª‚È‚¯‚ê‚ÎŒ‹‰Ê‚Ì•\Ž¦‚ðÈ—ª‚µ‚Ü‚·B
 ®AŠJ”­’†”Å(1.23+z“™)‚ÍA‘ÎÛŠO‚Å‚·B
@@ -3339,6 +3355,7 @@ Top of Window		‘‹‚Ìæ“ªs‚ÖƒWƒƒƒ“ƒv
 <group:[F4]::(ˆês•ÒW)ƒqƒXƒgƒŠˆê——(¦)>
 <group:[F5]::Œ»Ý“ú•t‚ð‘}“ü>
 <group:[F7]::•¶Žš—ñ’uŠ·>
+<group:[F12],^\\[S]::–¼‘O‚ð•t‚¯‚Ä•Û‘¶>
 <group:\\[F7]::•¶Žš—ñ’uŠ·‚ÉŽg‚¤•¶Žš—ñ‚ð‘}“ü>
 <group:\\[DEL] ^[DEL]::s––‚Ü‚Åíœ>
 <group:\\[BS] ^[BS]::s“ª‚Ü‚Åíœ(¦)>
@@ -3536,9 +3553,9 @@ ftp: ‚â aux: ‚ÅŽg—p‚µ‚½ IDEƒpƒXƒ[ƒh‚ÌƒLƒƒƒbƒVƒ…‚ðÁ‹Ž‚µ‚Ü‚·B
 <group:#*cliptext <i>text</i>::ƒeƒLƒXƒg‚ðƒNƒŠƒbƒvƒ{[ƒh‚É“o˜^>
 
 text ‚ðƒeƒLƒXƒgŒ`Ž®‚ÅƒNƒŠƒbƒvƒ{[ƒh‚ÖƒRƒs[‚µ‚Ü‚·B
-®A‰üs‚ðŠÜ‚ÞƒeƒLƒXƒg‚ðƒRƒs[‚µ‚½‚¢‚Æ‚«‚ÍA<i>%OC *cliptext</i>‚Æ C ƒIƒvƒVƒ‡ƒ“‚ð—LŒø‚É‚µ‚Ä‚­‚¾‚³‚¢B
-—á)
-<tb:2000>
+<jmpa:‰üs“™‚ðŠÜ‚Þ text ‚Ì‹LÚ•û–@:mutilineparam>
+
+—á)<tb:2000>
 <i>*cliptext "abc"</i>	ƒNƒŠƒbƒvƒ{[ƒh‚Ì’†g‚Íu"abc"v(u"v‚à“ü‚è‚Ü‚·)
 <i>*cliptext abc def</i>	ƒNƒŠƒbƒvƒ{[ƒh‚Ì’†g‚Íuabc defv<tb:0>
 <group:#*commandhash <i>name</i>::ƒ‚ƒWƒ…[ƒ‹‚ÌƒRƒ}ƒ“ƒh–¼ƒnƒbƒVƒ…‚Ì•\Ž¦>
@@ -3647,9 +3664,10 @@ filename‚ðŽw’è‚µ‚Ä‚¢‚È‚¢‚Æ‚«‚ÍApplibXXX.dll Ž©g‚ÌŒŸØ‚ðs‚¢‚Ü‚·B
 PPx‚Ìƒwƒ‹ƒv‚ð•\Ž¦‚µ‚Ü‚·B
 keyword‚ªŽw’è‚µ‚Ä‚¢‚È‚¢ê‡‚ÍƒgƒsƒbƒN•\Ž¦‚ð‚µAŽw’è‚µ‚Ä‚ ‚é‚Æ‚«‚ÍŽw’èƒL[ƒ[ƒh‚Ì€–Ú‚ð•\Ž¦‚µ‚Ü‚·B
 
-¦•\Ž¦‚·‚éƒwƒ‹ƒv‚ÍA
-Windows95,98,Me,NT,2000,XP,2003 ‚È‚ç PPX.HLP ‚ðŽg—p‚µ‚Ü‚·B
-PPX.HLP‚ª‘¶Ý‚µ‚È‚¢‚©AWindowsVistaˆÈ~‚È‚çƒIƒ“ƒ‰ƒCƒ“ƒwƒ‹ƒv<<myurl>/ppxhlp.html>‚ðŽg—p‚µ‚Ü‚·B‚±‚Ì‚Æ‚«APPx‚ª‚ ‚éƒfƒBƒŒƒNƒgƒŠ‚É ppxhelp.html ‚ª‚ ‚ê‚ÎA‚»‚ê‚ðŽg—p‚µ‚Ü‚·B
+•\Ž¦‚·‚éƒwƒ‹ƒv‚ÍAWindows95,98,Me,NT,2000,XP,2003 ‚È‚ç PPX.HLP ‚ðŽg—p‚µ‚Ü‚·B
+PPX.HLP ‚ª‘¶Ý‚µ‚È‚¢‚©AWindowsVista ˆÈ~‚È‚çƒIƒ“ƒ‰ƒCƒ“ƒwƒ‹ƒv<<myurl>/ppxhlp.html>‚ðŽg—p‚µ‚Ü‚·B
+‚±‚Ì‚Æ‚«APPx‚ª‚ ‚éƒfƒBƒŒƒNƒgƒŠ‚É ppxhelp.html ‚ª‚ ‚ê‚ÎA‚»‚ê‚ðŽg—p‚µ‚Ü‚·B
+‚È‚¨APPX.HLP ‚Í PPx –{‘Ì‚Ì”z•z‘ŒÉ‚É“¯«‚µ‚Ä‚¢‚Ü‚¹‚ñB<<myurl>/slppx.html#ppxhelp> ‚Å•Ê“r”z•z‚µ‚Ä‚¢‚Ü‚·B
 <group:#*ime <i>0|1</i>::IMEó‘Ô‚Ì•ÏX>
 
 IME ‚É‚æ‚é“ü—Í‚Ì on (*ime 1)Aoff (*ime 0)‚ðØ‚è‘Ö‚¦‚Ü‚·BŠePPx‚âˆês“ü—Í‚Å—\‚ß IME‚Ìó‘Ô‚ðŽw’è‚·‚é‚Æ‚«‚ÉŽg—p‚µ‚Ü‚·BƒRƒ}ƒ“ƒhƒ‰ƒCƒ“‚Ì /k ‚â <jmpa:FIRSTEVENT> ‚É‹LÚ‚·‚é‚Æ—\‚ßŽw’è‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
@@ -3804,17 +3822,18 @@ IDŽw’è(<jmpa:PPx‚ÌIDŽw’è•û–@:ppxidformat>)‚ª‚ ‚ê‚Î‚»‚ÌID‚ÌPPx‚ÉƒtƒH[ƒJƒXˆÚ“®‚µ‚
 E*string o,ABC= ‚Æ‚·‚é‚ÆAƒRƒ}ƒ“ƒhƒ‰ƒCƒ““à—p‚Ì“ÁŽêŠÂ‹«•Ï”uABCv‚ªíœ‚³‚ê‚Ü‚·B
 EÝ’è‚µ‚½ŠÂ‹«•Ï”name‚ÍA<jmpa:%si"name"‚â%so"name":StringVariable>‚Æ‚µ‚Ä—˜—p‚Å‚«‚Ü‚·B
 ŽQl:<jmpa:‘¼‚Ì‹L‰¯ˆæ:values>
+<jmpa:‰üs“™‚ðŠÜ‚Þ strings ‚Ì‹LÚ•û–@:mutilineparam>
 <group:#*checkupdate <i>[p][y][f]</i>::PPx‚ÌXVƒ`ƒFƒbƒN‚ÆƒAƒbƒvƒf[ƒg>
 
 PPx”z•zƒTƒCƒg‚ÉÅV”Å‚ª‚ ‚é‚©‚Ç‚¤‚©‚ðƒ`ƒFƒbƒN‚µAÅV”Å‚ªŒ©‚Â‚©‚Á‚½ê‡‚ÍAŠm”FŒãƒ_ƒEƒ“ƒ[ƒh‚µ‚ÄƒAƒbƒvƒf[ƒg‚ðs‚¢‚Ü‚·B
-EƒAƒbƒvƒf[ƒg‚É‚Í PPx ‚Ì setup.exe ‚Ì‘¼Azipfldr.dll(WinXPˆÈ~‚È‚çWindows‚É“ü‚Á‚Ä‚¢‚Ü‚·)A7-zip32.dllAunzip32.dll ‚Ì‚Ç‚ê‚©‚ª•K—v‚Å‚·B
+EƒAƒbƒvƒf[ƒg‚É‚Í PPx ‚Ì SETUP.EXE ‚Ì‘¼Azipfldr.dll(WinXPˆÈ~‚È‚çWindows‚É“ü‚Á‚Ä‚¢‚Ü‚·)A7-zip32.dllAunzip32.dll ‚Ì‚Ç‚ê‚©‚ª•K—v‚Å‚·B
 Eƒ_ƒEƒ“ƒ[ƒh‚µ‚½ PPx ‚Ì”z•zƒtƒ@ƒCƒ‹‚ÍA<jmpa:–¼‚ðŠm”F:checksignature>‚µ‚½Œã‚É<jmpa:X_save> ‚ÅŽw’è‚³‚ê‚½êŠ‚É•ÛŠÇ‚³‚ê‚Ü‚·B
 Ep ‚ðƒpƒ‰ƒ[ƒ^‚ÉŽw’è‚µ‚½‚Æ‚«A‚Ü‚½‚ÍŽg—p’†‚ÌPPx‚ªŽŽŒ±ŒöŠJ”Å‚Ì‚Æ‚«‚ÍAŽŽŒ±ŒöŠJ”Å(—á 1.23+4)‚à‘ÎÛ‚É‚È‚è‚Ü‚·B‚Ü‚½A1.22‚©‚ç1.23+4‚Æ‚¢‚¤‚æ‚¤‚ÉA³Ž®ŒöŠJ”Å‚ÆŽŽŒ±ŒöŠJ”Å‚Ì—¼•û‚ðŽg‚Á‚ÄXV‚·‚é•K—v‚ª‚ ‚é‚Æ‚«‚ÍAˆê’UA³Ž®ŒöŠJ”Å 1.23‚ÉƒAƒbƒvƒf[ƒg‚µ‚½ŒãAŽŸ‰ñ‚Ì *checkupdate ‚ÅŽŽŒ±ŒöŠJ”Å 1.23+4‚ÉƒAƒbƒvƒf[ƒg‚·‚é“®ì‚É‚È‚è‚Ü‚·B
 Ey ‚ðƒpƒ‰ƒ[ƒ^‚ÉŽw’è‚·‚é‚ÆAXV‚ð‚·‚é‚©‚Ç‚¤‚©‚ÌŠm”Fƒ_ƒCƒAƒƒO‚ª–³‚­‚È‚èA‘¦À‚ÉXV‚ðŠJŽn‚µ‚Ü‚·B
 Ef ‚ðƒpƒ‰ƒ[ƒ^‚ÉŽw’è‚·‚é‚ÆAXV‚Ì•K—v‚ª–³‚­‚Ä‚àÅV”Å‚ÌŽæ“¾EXV‚ª‰Â”\‚É‚È‚è‚Ü‚·Bƒtƒ@ƒCƒ‹‚ª‰ó‚ê‚Ä‚¢‚½“™‚Ì‚½‚ß‚ÉÄƒ_ƒEƒ“ƒ[ƒh‚·‚é‚½‚ß‚ÉŽg—p‚µ‚Ü‚·B
 E¸ŠiEŠÇ—ŽÒŒ ŒÀ‚È‚µ‚ÅƒAƒbƒvƒf[ƒg‚µ‚½‚¢‚Æ‚«‚ÍAŽŸ‚Ì‚æ‚¤‚ÉŽÀs‚·‚é‚ÆŒ»Ý‚ÌŒ ŒÀ‚ÅƒAƒbƒvƒf[ƒg‚Å‚«‚Ü‚·B
 *set __COMPAT_LAYER=RunAsInvoker %: *checkupdate %: *set __COMPAT_LAYER=
-E®AŠù‚É”z•z‘ŒÉƒtƒ@ƒCƒ‹‚ª‚ ‚éê‡A<i>setup.exe /s "VPPx‚Ì‘ŒÉƒtƒ@ƒCƒ‹"</i>‚ÅXV‚Å‚«‚Ü‚·B
+E®AŠù‚É”z•z‘ŒÉƒtƒ@ƒCƒ‹‚ª‚ ‚éê‡A<i>SETUP.EXE /s "VPPx‚Ì‘ŒÉƒtƒ@ƒCƒ‹"</i>‚ÅXV‚Å‚«‚Ü‚·B
 <grouptitle:ŽÀsAŽÀs§Œä>
 <groupa:#*alias <i>valuename=[strings]</i>::ƒRƒ}ƒ“ƒhƒGƒCƒŠƒAƒX‚ÌÝ’èAíœ::aliascmd>
 ¦*alias <i>valuename [strings]</i> ‚à‰Â
@@ -3868,14 +3887,23 @@ PPx‚ÌID‚ÍŽŸ‚ÌŽw’è‚ª‰Â”\‚Å‚·B
 <b>Žw’è‚È‚µ</b>	ƒRƒ}ƒ“ƒh–ˆ‚ÉˆÙ‚È‚è‚Ü‚·B
 <b>C</b>	ƒAƒNƒeƒBƒuPPc‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B
 <b>~</b>	ƒAƒNƒeƒBƒuPPc‚Ì”½‘Î‘‹‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B
-<b>C#</b>	ƒAƒNƒeƒBƒuPPc‚Ìˆê‘Ì‰»‘‹Ž©g‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B%NA*focusA*selectppxA*autodragdropˆÈŠO‚ÍŽw’è‚µ‚Ä‚à³í‚É‹@”\‚µ‚Ü‚¹‚ñB
-<b>C#L</b>	ƒAƒNƒeƒBƒuPPc‚Ì¶/ã‘¤‚Ì‘‹‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B‚Â‚Ü‚èAƒAƒNƒeƒBƒuPPc‚ª¶‘¤‚È‚çƒAƒNƒeƒBƒuPPc‚ª‘ÎÛ‚É‚È‚èA‰E‘¤‚È‚ç”½‘Î‘‹‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B
-<b>C#R</b>	ƒAƒNƒeƒBƒuPPc‚Ì‰E/‰º‘¤‚Ì‘‹‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B
+<b>C#</b>	ƒAƒNƒeƒBƒuˆê‘Ì‰»‘‹Ž©g‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B%NA*focusA*selectppxA*autodragdropˆÈŠO‚ÍŽw’è‚µ‚Ä‚à³í‚É‹@”\‚µ‚Ü‚¹‚ñB
+<b>C#C</b>	ƒAƒNƒeƒBƒuˆê‘Ì‰»‘‹“à‚É‚¨‚¯‚éŒ»Ý‘‹‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B
+<b>C#~</b>	ƒAƒNƒeƒBƒuˆê‘Ì‰»‘‹“à‚É‚¨‚¯‚é”½‘Î‘‹‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B
+<b>C#L</b>	ƒAƒNƒeƒBƒuˆê‘Ì‰»‘‹‚ÌŒ»Ý‘‹E”½‘Î‘‹‚Ì‚¤‚¿A¶/ã‘¤‚Ì‘‹‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B‚Â‚Ü‚èAŒ»Ý‘‹‚ª¶‘¤‚È‚çŒ»Ý‘‹‚ª‘ÎÛ‚É‚È‚èA‰E‘¤‚È‚ç”½‘Î‘‹‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B
+<b>C#R</b>	ƒAƒNƒeƒBƒuˆê‘Ì‰»‘‹‚ÌŒ»Ý‘‹E”½‘Î‘‹‚Ì‚¤‚¿A‰E/‰º‘¤‚Ì‘‹‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B
+<b>C#”’l</b>	ƒAƒNƒeƒBƒuˆê‘Ì‰»‘‹‚Ì¶’[‚©‚ç‚ÌˆÊ’u‚Ì•\Ž¦‘‹(0:¶’[A1:¶‚©‚ç‚Q”Ô–Ú...)‚Å‚·B
+
 <b>-C</b>	•\Ž¦‚·‚éƒtƒ@ƒCƒ‹‚ðŽwŽ¦‚µ‚½ PPc (PPvŒÀ’èA%v “™‚Åƒtƒ@ƒCƒ‹‚ðŽw’è‚·‚é•K—v‚ ‚è)
 <b>CA`CZ</b>	Žw’èID‚ÌPPc‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B
-	¦ˆê‘Ì‰»‘‹‚Å‚ÍA•¡”‚ÌID Z‚ð‹æ•Ê‰Â”\‚ÈCZaa`CZzzz‚ÌŽw’è‚à‚Å‚«‚Ü‚·‚ªAŒ»Ý•Ê‚Ìˆê‘Ì‰»‘‹‚ÌCZaa“™‚ÍŽw’è‚Å‚«‚Ü‚¹‚ñB
+	¦ˆê‘Ì‰»‘‹‚Å‚ÍACZaa`CZzzz‚ÌŽw’è‚à‚Å‚«‚Ü‚·B
 <b>VA`VZ</b>	Žw’èID‚ÌPPv‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B
-<b>CBA#`CBZ#</b>	Žw’è‚Ìˆê‘Ì‰»‘‹Ž©g‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B¦ CBA#L “™‚ÌŽw’è‚ÍŒ»Ý‚Å‚«‚Ü‚¹‚ñB
+<b>CBA#`CBZ#</b>	Žw’è‚Ìˆê‘Ì‰»‘‹Ž©g‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B
+<b>CBA#C`CBZ#C</b>	Žw’èˆê‘Ì‰»‘‹“à‚ÌŒ»Ý‘‹‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B
+<b>CBA#~`CBZ#~</b>	Žw’èˆê‘Ì‰»‘‹“à‚Ì”½‘Î‘‹‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B
+<b>CBA#L`CBZ#L</b>	Žw’èˆê‘Ì‰»‘‹“à‚Ì¶/ã‘¤‘‹‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B
+<b>CBA#R`CBZ#R</b>	Žw’èˆê‘Ì‰»‘‹“à‚Ì‰E/‰º‘¤‘‹‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B
+<b>CBA#”’l</b>	Žw’èˆê‘Ì‰»‘‹‚Ì¶’[‚©‚ç‚ÌˆÊ’u‚Ì•\Ž¦‘‹(0:¶’[A1:¶‚©‚ç‚Q”Ô–Ú...)‚Å‚·B
 <b>TRA</b>	í’“‚µ‚Ä‚¢‚éPPtray‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B
 <group:#%*exitcode::ƒvƒƒZƒXI—¹ƒR[ƒh>
 <group:#%*errorlevel::ƒvƒƒZƒXI—¹ƒR[ƒh>
@@ -3902,7 +3930,8 @@ B	= *if %*getcust(_User:name) == 1 %: *stop
 	*ifmatch .abc %: abc_command %C %: *stop
 	*ifmatch def* %: def_command %C %: *stop
 	*ifmatch "/word ghi/",%1 %: ghi_command %C %: *stop
-	*ifmatch "option:e,attribure:d+" %: jkl_command %C %: *stop
+	*ifmatch "option:e,attribute:d+" %: jkl_command %C %: *stop
+	*ifmatch "option:ex,0",0%si"name" %: mno_command %C %: *stop
 	*linemessage "ŠY“–‚Í‚ ‚è‚Ü‚¹‚ñ"
 \}
 </pre>
@@ -3911,7 +3940,9 @@ B	= *if %*getcust(_User:name) == 1 %: *stop
 3)‘I‘ðƒtƒ@ƒCƒ‹‚Ì–¼‘O‚Ì“ª‚R•¶Žš‚ªudefv‚È‚çAdef_command‚ðŽÀs‚µ‚Ü‚·B
 4)ƒpƒX‚Éuword ghiv‚ðŠÜ‚Þ‚È‚çAghi_command‚ðŽÀs‚µ‚Ü‚·B
 5)‘I‘ðƒtƒ@ƒCƒ‹‚ªƒfƒBƒŒƒNƒgƒŠ‚È‚çAjkl_command‚ðŽÀs‚µ‚Ü‚·B
-6) 1)`5) ‚ð–ž‚½‚³‚È‚¢ê‡‚ÍA"ŠY“–‚Í‚ ‚è‚Ü‚¹‚ñ"‚Æ’Ê’m‚µ‚Ü‚·B
+6)“ÁŽêŠÂ‹«•Ï” name ‚Ì“à—e‚ª‹ó‚Å‚ ‚é‚È‚çAmno_command‚ðŽÀs‚µ‚Ü‚·B
+ ¦ "" ‚Ì”äŠr‚ÍAƒƒCƒ‹ƒhƒJ[ƒh‚ÌŽd—l‚É‚æ‚èðŒ‚ª^‚É‚È‚é‚½‚ßA“K“–‚È•¶Žšu0v‚ð’Ç‰Á‚µ‚Ä‚¢‚Ü‚·B
+7) 1)`5) ‚ð–ž‚½‚³‚È‚¢ê‡‚ÍA"ŠY“–‚Í‚ ‚è‚Ü‚¹‚ñ"‚Æ’Ê’m‚µ‚Ü‚·B
 ¦s––‚Éu%: *stopv‚ð‹LÚ‚µ‚È‚¢‚ÆA1)`5)‚ÌðŒ‚ð–ž‚½‚µ‚Ä‚àˆÈ~‚Ìs‚ªŽÀs‚³‚ê‚Ü‚·B
 
 <b>’ˆÓ</b>
@@ -3961,12 +3992,21 @@ launch‚Ì–¼‘O‚Ì’Ê‚èA”CˆÓ‚Ìcommand‚ð’P“Æ‚ÅŽÀsiƒ‰ƒEƒ“ƒ`j‚µ‚½‚¢‚Æ‚«‚ÉŽg—p‚·‚éƒRƒ
 E-launch ƒJƒŒƒ“ƒgƒfƒBƒŒƒNƒgƒŠ‚ðAname ‚ª‚ ‚éƒfƒBƒŒƒNƒgƒŠ‚É‚µ‚Ü‚·B‚±‚ÌŽw’è‚ª‚È‚¯‚ê‚ÎŒ»Ý‚ÌƒJƒŒƒ“ƒgƒfƒBƒŒƒNƒgƒŠ‚ðŽg—p‚µ‚Ü‚·B¦<jmpa:*launch:launch>‚Æ“¯‚¶ˆ—‚Å‚·B
 
 ŠÖ˜A <jmpa:ŽÀsˆ—:execute>,<jmpa:*launch:launch>,<jmpa:%Z:zapfile>,<jmpa:%z:zapmenu>,<jmpa:%O:optionmacro>
-<group:#*stop <i>[formula]</i>::ˆÈ~‚ÌŽÀs‚ð’†Ž~‚·‚é>
+<group:#*stop <i>[-n][formula]</i>::ˆÈ~‚ÌŽÀs‚ð’†Ž~‚·‚é>
 
 u*stop %: commandv‚Æ‘‚¢‚Ä‚àAcommand ‚ðŽÀs‚µ‚È‚¢‚æ‚¤‚É‚µ‚Ü‚·B
-‚Ü‚½u*stop %so"value"==3 %: commandv‚ÆŽ®‚ð‹LÚ‚µ‚½‚Æ‚«‚ÍA‚»‚ÌŒ‹‰Ê‚ª^(0ˆÈŠO)‚ÌŽž‚Ì‚ÝŽÀs‚ð’†Ž~‚µA‹U(0)‚Ì‚Æ‚«‚ÍAŒã‘±‚Ì command ‚ðŽÀs‚µ‚Ü‚·B
 Žå‚É *ifmatch ‚Æ‘g‚Ý‡‚í‚¹‚ÄŽg—p‚·‚éƒRƒ}ƒ“ƒh‚Å‚·B
+
+‚Ü‚½u*stop %so"value"==3 %: commandv‚ÆŽ®‚ð‹LÚ‚µ‚½‚Æ‚«‚ÍA‚»‚ÌŒ‹‰Ê‚ª^(0ˆÈŠO)‚ÌŽž‚Ì‚ÝŽÀs‚ð’†Ž~‚µA‹U(0)‚Ì‚Æ‚«‚ÍAŒã‘±‚Ì command ‚ðŽÀs‚µ‚Ü‚·B
+
+u-nv‚ª•t‰Á‚³‚ê‚Ä‚¢‚È‚¢‚Æ‚«‚ÍA‚Ü‚¾ˆ—‚µ‚Ä‚¢‚È‚¢ƒ}[ƒNƒGƒ“ƒgƒŠ‚ª‚ ‚Á‚Ä‚àŽÀs’†Ž~‚µ‚Ü‚·B
+u-nv‚ª•t‰Á‚³‚ê‚Ä‚¢‚é‚ÆAŽŸ‚Ìƒ}[ƒNƒGƒ“ƒgƒŠ‚ÌŽÀs‚ÉˆÚ‚è‚Ü‚·B
+
 ŠÖ˜A *if, *ifmatch
+<group:#*return::ƒ†[ƒUƒRƒ}ƒ“ƒh‚ÌI—¹>
+
+ƒ†[ƒUƒRƒ}ƒ“ƒh(<jmpa:_Command>)‚ð“r’†‚ÅI—¹‚µAƒ†[ƒUƒRƒ}ƒ“ƒhŒÄ‚Ño‚µŒ³‚ÌŽÀs‚ð‘±‚¯‚Ü‚·B
+ƒ†[ƒUƒRƒ}ƒ“ƒhŠO‚ÅŽg—p‚µ‚½‚Æ‚«‚ÍA*stop ‘Š“–‚É‚È‚è‚Ü‚·B
 <groupa:#*wait <i>time[,1|2]</i>::Žw’èŽžŠÔ‚ªŒo‰ß‚·‚é‚Ü‚Å‘Ò‹@‚·‚é::wait>
 
 %k ‚É‚æ‚éƒL[“ü—ÍƒGƒ~ƒ…ƒŒ[ƒg‚âAŠO•”ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚Ì“®ìŠ®—¹‘Ò‚¿“™‚ð‚·‚é‚½‚ß‚Ì‘Ò‹@‚ðs‚¤‚½‚ß‚ÌƒRƒ}ƒ“ƒh‚Å‚·B
@@ -4135,31 +4175,12 @@ PPc‚Ì[C]‘Š“–‚Ìˆ—‚ðs‚¢‚Ü‚·B<jmpa:*file:filecmd>+ƒ¿(ƒ}ƒ‹ƒ`ƒXƒŒƒbƒhˆ—A‘ŒÉ“à
 ŽŸ‚ÌƒIƒvƒVƒ‡ƒ“‚ð•¹—p‚Å‚«‚Ü‚·B
 <b>-new</b>	Žw’è‚µ‚½ƒtƒ@ƒCƒ‹‚ª–³‚¢ê‡‚ÍAV‹Kƒtƒ@ƒCƒ‹‚Æ‚µ‚Äˆµ‚¢‚Ü‚·B
 <b>-k</b>	‹N“®ŒãAŽÀs‚·‚éƒRƒ}ƒ“ƒh‚ðŽw’è‚µ‚Ü‚·B‚±‚ÌƒIƒvƒVƒ‡ƒ“ˆÈ~‚Í‘S‚ÄŽÀs‚·‚éƒRƒ}ƒ“ƒh‚Æ‰ðŽß‚µ‚Ü‚·‚Ì‚ÅAÅŒã‚ÉŽw’è‚·‚é•K—v‚ª‚ ‚è‚Ü‚·B
-<b>-sjis,-euc,-utf8,-utf8bom,-unicode(UTF-16),-unicodebom,-system,-codepage:n</b>
+<b>-sjis, -euc, -utf8, -utf8bom, -unicode / -utf16, -unicodeb / -utf16be, -unicodebom, -unicodebbom, -ibm, -us, -ansi, -latin1, -system, -codepage:n</b>
 	ƒtƒ@ƒCƒ‹‚Ì•¶ŽšƒR[ƒh‚ðŽè“®‚ÅŽw’è‚µ‚Ü‚·B
-	-utf8bom,-unicodebom ‚Í•Û‘¶Žž‚É BOM ‚ð•t‰Á‚µ‚Ü‚·B
+	-utf8bom, -unicodebom, -unicodebbom ‚Í•Û‘¶Žž‚É BOM ‚ð•t‰Á‚µ‚Ü‚·B
 	-system ‚ÍAƒVƒXƒeƒ€•W€‚Ì•¶ŽšƒR[ƒh(“ú–{‚Ìê‡‚Í sjis)‚ðŽw’è‚µ‚Ü‚·B
-	-codepage:n ‚ÍAŽw’è‚µ‚½”’l‚ÌƒR[ƒhƒy[ƒW n‚ðŽw’è‚µ‚Ü‚·B
+	-codepage:n ‚ÍAŽw’è‚µ‚½”’l‚ÌƒR[ƒhƒy[ƒW n‚ðŽw’è‚µ‚Ü‚·BŽw’è‚Å‚«‚éƒR[ƒhƒy[ƒW‚ÍAWindows‚É“o˜^Ï‚Ý‚ÌƒR[ƒhƒy[ƒW(PPv •¶ŽšƒR[ƒhØ‚è‘Ö‚¦[@] - other CP ‚Ìˆê——‚É•\Ž¦‚³‚ê‚½“à—e)‚Å‚·B
 
-<group:#%*input<i>[(option)]</i>::ˆês•ÒW‚ÌŒ‹‰Ê‚ð“¾‚é>
-
-ˆês•ÒW‚ÅƒeƒLƒXƒg‚Ì•ÒW‚ðs‚¢A•ÒW‚µ‚½“à—e‚ð‘}“ü‚µ‚Ü‚·B
-ŽŸ‚ÌŽw’è‚ª‰Â”\‚Å‚·B
-"text" –”‚Í -text:"text"	•ÒW‚·‚éƒeƒLƒXƒg‚ðŽw’è‚·‚é
--k:"command line" –”‚Í -k command line	ˆês•ÒWŠJŽnŽž‚ÉŽÀs‚·‚é“à—e
-	ŒãŽÒ‚Ì‹LÚ‚Ìê‡‚ÍA‚»‚êˆÈ~‚Ì‹LÚ‚ª‘S‚ÄŽÀs‚·‚é“à—e‚É‚È‚è‚Ü‚·B
-	•K—v‚É‰ž‚¶‚Äƒ}ƒNƒ•¶Žš‚âu"v‚ÌƒGƒXƒP[ƒv(%%C,""“™)‚ª•K—v‚Å‚·B
--title:"text"	text‚ðˆês•ÒW‚Ìƒ^ƒCƒgƒ‹‚É‚µ‚Ü‚·BŽw’è‚µ‚È‚¢ê‡‚ÍA%"text"‚Ì“à—e‚É‚È‚è‚Ü‚·B
--mode:type[,reftype]	ƒqƒXƒgƒŠŽí—Þ‚âŽQÆ‚Ì“®ì‚ð•ÏX‚µ‚Ü‚·BÚ×‚Í<jmpa:%e:editmodemacro>‚ðŽQÆ‚µ‚Ä‚­‚¾‚³‚¢B
--select[:i|a|t|l|first[,last]]	ƒLƒƒƒŒƒbƒgƒJ[ƒ\ƒ‹‚ÌˆÊ’uE‘I‘ð”ÍˆÍ‚ðŽw’è‚·‚é
-	–¢Žw’èA-select ‚Ü‚½‚Í -select:a	‘S‚Ä‘I‘ð‚É‚È‚è‚Ü‚·B
-	-select:t	æ“ª
-	-select:l	––”ö
-	-select:m	Žw’èŒ…m (0‚ªæ“ª)
-	-select:m,n	Žw’èŒ…m`n‚ð‘I‘ð (0‚ªæ“ª)
-	-select:i	•ÒW‚·‚éƒeƒLƒXƒg’†‚Ìu|v‚ðŽw’èE”ÍˆÍˆÊ’u‚É‚·‚é
-
-ŽQl: %E %! %{
 <group:#%*edittext::•ÒWƒeƒLƒXƒg>
 
 Œ»Ý•ÒW’†‚Ì•¶Žš—ñ‚ðŽæ“¾‚µ‚Ü‚·B
@@ -4192,9 +4213,9 @@ PPc‚Ì[C]‘Š“–‚Ìˆ—‚ðs‚¢‚Ü‚·B<jmpa:*file:filecmd>+ƒ¿(ƒ}ƒ‹ƒ`ƒXƒŒƒbƒhˆ—A‘ŒÉ“à
 /file:"ƒtƒ@ƒCƒ‹–¼" ˆê——•\Ž¦‚ÉŽg—p‚·‚é’Ç‰Á‚Ì•âŠ®Œó•âƒtƒ@ƒCƒ‹‚ðŽw’è‚µ‚Ü‚·(<jmpa:X_flst>)B
 
 <b>Ý’è</b>
-*completelist /set /file:"ƒtƒ@ƒCƒ‹–¼" ‚Å’Ç‰Á‚Ì•âŠ®Œó•âƒtƒ@ƒCƒ‹‚ðŽw’è‚Å‚«‚Ü‚·(<jmpa:X_flst>)B
+*completelist /set /file:"ƒtƒ@ƒCƒ‹–¼" ‚Å’Ç‰Á‚Ì•âŠ®Œó•âƒtƒ@ƒCƒ‹‚ðŽw’è‚Å‚«‚Ü‚·(<jmpa:X_flst>)BŠù‚ÉŽw’è‚³‚ê‚Ä‚¢‚½ê‡‚Í’u‚«Š·‚¦‚Ü‚·B /file ‚Ì‚æ‚¤‚Éƒtƒ@ƒCƒ‹–¼‚ÌŽw’è‚ª‚È‚¢ê‡‚ÍA’Ç‰Á‚µ‚½•âŠ®Œó•â‚ðÁ‹Ž‚µ‚Ü‚·B
 
-*completelist /reload ‚Å•W€‚Ì•âŠ®Œó•âƒtƒ@ƒCƒ‹(PPXUCMD.TXT“™)‚ðÄ“Ç‚Ýž‚Ý‚µ‚Ü‚·B
+*completelist /reload ‚Å•W€‚Ì•âŠ®Œó•âƒtƒ@ƒCƒ‹(PPXUCMD.TXT“™)‚ðÄ“Ç‚Ýž‚Ý‚µ‚Ü‚·B/file ‚ÅŽw’è‚µ‚½’Ç‰Á•ª‚Í‚»‚Ì‚Ü‚ÜˆÛŽ‚µ‚Ü‚·B
 <group:#*defaultmenu::Windows•W€‚ÌƒGƒfƒBƒbƒgƒ{ƒbƒNƒXƒƒjƒ…[‚ð•\Ž¦>
 
 ‰EƒNƒŠƒbƒN‚âƒAƒvƒŠƒP[ƒVƒ‡ƒ“ƒL[‚ðŽg‚¤‚Æ‚Å‚éWindows•W€‚Ìƒƒjƒ…[‚ð•\Ž¦‚µ‚Ü‚·B
@@ -4204,15 +4225,37 @@ PPc‚Ì[C]‘Š“–‚Ìˆ—‚ðs‚¢‚Ü‚·B<jmpa:*file:filecmd>+ƒ¿(ƒ}ƒ‹ƒ`ƒXƒŒƒbƒhˆ—A‘ŒÉ“à
 ƒqƒXƒgƒŠŽí—Þ‚âŽQÆ‚Ì“®ì‚ð•ÏX‚µ‚Ü‚·Btype,reftype‚ÌÚ×‚ÆA%!x,%E “™‚Ì“®ì‚ð•ÏX‚·‚éê‡‚Í<jmpa:%e:editmodemacro>‚ðŽQÆ‚µ‚Ä‚­‚¾‚³‚¢B
 
 ˆÈ‰º‚ÌŠeƒIƒvƒVƒ‡ƒ“‚Í—ñ‹L‰Â”\‚Å‚·B
-E*editmode -sjis|-euc|-utf8|-utf8bom|-unicode|-unicodebom|-system|-codepage
+E*editmode -sjis|-euc|-utf8|-utf8bom|-unicode|-utf16|-unicodebom|-unicodeb|-utf16be|-unicodebbom|-ibm|-us|-ansi|-latin1|-system|-codepage:n
 @•Û‘¶Žž‚Ì•¶ŽšƒR[ƒh‚ðŽw’è‚µ‚Ü‚·B
-@¦Œ»ÝŠJ‚¢‚Ä‚¢‚éƒeƒLƒXƒg‚Ì•¶ŽšƒR[ƒh‚ðØ‚è‘Ö‚¦‚é‚±‚Æ‚Í‚Å‚«‚Ü‚¹‚ñB
+@¦Œ»ÝŠJ‚¢‚Ä‚¢‚éƒeƒLƒXƒg‚Ì•¶ŽšƒR[ƒh‚ðØ‚è‘Ö‚¦‚éê‡A•ÒW‘O‚És‚Á‚Ä‚­‚¾‚³‚¢B
 
 E*editmode -crlf|-cr|-lf
 @•Û‘¶Žž‚Ì‰üsƒR[ƒh‚ðŽw’è‚µ‚Ü‚·B
 
 E*editmode -tab:n
 @ƒ^ƒuŒ…”‚ðŽw’è‚µ‚Ü‚·B
+<group:#%*input<i>[(option)]</i>::ˆês•ÒW‚ÌŒ‹‰Ê‚ð“¾‚é>
+
+ˆês•ÒW‚ÅƒeƒLƒXƒg‚Ì•ÒW‚ðs‚¢A•ÒW‚µ‚½“à—e‚ð‘}“ü‚µ‚Ü‚·B
+—á) *linemessage $$%*input("text" -title:"Input title" -mode:g)$$
+
+ŽŸ‚ÌŽw’è‚ª‰Â”\‚Å‚·B
+"text" –”‚Í -text:"text"	•ÒW‚·‚éƒeƒLƒXƒg‚ðŽw’è‚·‚é
+-k:"command line" –”‚Í -k command line	ˆês•ÒWŠJŽnŽž‚ÉŽÀs‚·‚é“à—e
+	ŒãŽÒ‚Ì‹LÚ‚Ìê‡‚ÍA‚»‚êˆÈ~‚Ì‹LÚ‚ª‘S‚ÄŽÀs‚·‚é“à—e‚É‚È‚è‚Ü‚·B
+	•K—v‚É‰ž‚¶‚Äƒ}ƒNƒ•¶Žš‚âu"v‚ÌƒGƒXƒP[ƒv(%%C,""“™)‚ª•K—v‚Å‚·B
+	®A-k ‚ÅŽÀs‚·‚é“à—e‚ÍAK_edit/K_lied:FIRSTEVENT ‚ÌŒã‚ÉŽÀs‚³‚ê‚Ü‚·B
+-title:"text"	text‚ðˆês•ÒW‚Ìƒ^ƒCƒgƒ‹‚É‚µ‚Ü‚·BŽw’è‚µ‚È‚¢ê‡‚ÍA%"text"‚Ì“à—e‚É‚È‚è‚Ü‚·B
+-mode:type[,reftype]	ƒqƒXƒgƒŠŽí—Þ‚âŽQÆ‚Ì“®ì‚ð•ÏX‚µ‚Ü‚·BÚ×‚Í<jmpa:%e:editmodemacro>‚ðŽQÆ‚µ‚Ä‚­‚¾‚³‚¢B
+-select[:i|a|t|l|first[,last]]	ƒLƒƒƒŒƒbƒgƒJ[ƒ\ƒ‹‚ÌˆÊ’uE‘I‘ð”ÍˆÍ‚ðŽw’è‚·‚é
+	–¢Žw’èA-select ‚Ü‚½‚Í -select:a	‘S‚Ä‘I‘ð‚É‚È‚è‚Ü‚·B
+	-select:t	æ“ª
+	-select:l	––”ö
+	-select:m	Žw’èŒ…m (0‚ªæ“ª)
+	-select:m,n	Žw’èŒ…m`n‚ð‘I‘ð (0‚ªæ“ª)
+	-select:i	•ÒW‚·‚éƒeƒLƒXƒg’†‚Ìu|v‚ðŽw’èE”ÍˆÍˆÊ’u‚É‚·‚é
+
+ŽQl: %E %! %{
 <group:#*setcaption <i>text</i>::ƒLƒƒƒvƒVƒ‡ƒ“‚ÌÝ’è>
 
 ƒ^ƒCƒgƒ‹ƒo[‚ÌƒLƒƒƒvƒVƒ‡ƒ“‚ðŽw’è‚³‚ê‚½text‚É•ÏX‚µ‚Ü‚·B
@@ -4398,6 +4441,17 @@ M_compare = \{
 
 u–ß‚év(^[©],^\\[©])‚Ì—š—ð‚ðŽæ“¾‚µ‚Ü‚·Bn ‚Í”’l‚ÅA
 0 ‚È‚çŒ»Ý‚ÌƒfƒBƒŒƒNƒgƒŠ‚ÌŽæ“¾A1 ‚È‚ç‚P‚Â‘O‚ÌƒfƒBƒŒƒNƒgƒŠc‚Æ‚È‚è‚Ü‚·B
+<groupa:#*entrytip::ƒGƒ“ƒgƒŠ‚Ìƒ`ƒbƒv•\Ž¦>
+
+‘I‘ð‚µ‚Ä‚¢‚éƒGƒ“ƒgƒŠ‚ÉŠÖ‚·‚éî•ñ‚ðA‚»‚ÌƒGƒ“ƒgƒŠ‚Ì‰º‚Éƒ`ƒbƒv•\Ž¦‚µ‚Ü‚·B
+X_stip ‚ÌÝ’è‚É‚©‚©‚í‚ç‚¸A‘¦Žž‚É•\Ž¦‚µ‚Ü‚·B
+
+*entrytip	ŽÀs‚·‚é“x‚É ƒtƒ@ƒCƒ‹–¼^ƒtƒ@ƒCƒ‹î•ñ‚ðŒðŒÝ‚É•\Ž¦‚µ‚Ü‚·B
+*entrytip filename	ƒtƒ@ƒCƒ‹–¼‚ð•\Ž¦‚µ‚Ü‚·B
+*entrytip fileinfo	ƒtƒ@ƒCƒ‹î•ñ‚ð•\Ž¦‚µ‚Ü‚·B
+*entrytip comment	ƒRƒƒ“ƒg‚ð•\Ž¦‚µ‚Ü‚·B
+*entrytip "text"	Žw’è‚³‚ê‚½ text ‚ð•\Ž¦‚µ‚Ü‚·B
+<jmpa:‰üs“™‚ðŠÜ‚Þ text ‚Ì‹LÚ•û–@:mutilineparam>
 <groupa:#*diroption::ƒfƒBƒŒƒNƒgƒŠ•Ê‚ÌÝ’è‚Ìƒƒjƒ…[E•ÏX::diroption>
 
 ƒpƒXEƒfƒBƒŒƒNƒgƒŠ•Ê‚ÌÝ’è(<jmpa:XC_dset>)‚ðŽQÆE•ÏX‚µ‚Ü‚·B
@@ -4619,6 +4673,7 @@ parameter‚Æ‚µ‚ÄA‚Ç‚ÌƒyƒCƒ“‚©‚ð•\‚·ID‚ªŽw’è‚Å‚«‚Ü‚·B
 	te ...ƒ^ƒu•\Ž¦(‰E’[)‚ðŠî€‚É”’lŽw’è‚·‚é
 	h ...ƒ^ƒu•\Ž¦(•\Ž¦‚³‚ê‚Ä‚¢‚È‚¢‚à‚ÌŒÀ’è)‚ðŠî€‚É”’lŽw’è‚·‚é
 	Cx ...”Ô†x‚ÌPPc(CA:PPc[A],CB:PPc[B]c)
+	C ...Œ»Ý‘‹
 	~ ...”½‘Î‘‹
 	l ...¶’[/ã’[‘¤‘‹
 	r ...‰E/‰º‘¤‘‹(Œ»Ý‘‹E”½‘Î‘‹‚Ì‰E‘¤)
@@ -5175,7 +5230,9 @@ on|offŽw’è‚Íu1v‚©u0v‚Å‚àŽw’è‚Å‚«A‰½‚àŽw’è‚µ‚È‚¢ê‡‚Íonˆµ‚¢‚É‚È‚è‚Ü‚·B
 	˜A”Ô‚ÉŽg—p‚·‚é‚Í‚¶‚ß‚Ì”’l‚ðŽw’è‚µ‚Ü‚·B<i>ex) /snum:1001</i>
 
 /div:<i>filesize</i>
-	•ªŠ„ƒTƒCƒY‚ðŽw’è‚µ‚Ü‚·BÅ‘å4Gbytes‚Ü‚ÅŽw’è‰Â”\‚Å‚·B<i>ex) /div:300k</i>
+	•ªŠ„‚·‚éƒtƒ@ƒCƒ‹ƒTƒCƒY‚ðŽw’è‚µ‚Ü‚·B<i>ex) /div:300k</i>
+	ƒTƒCƒY‚Í 9Œ…ˆÈ“à‚Ì”Žš‚ÅŽw’è‚µAk,m,g,t ‚ð––”ö‚É‚Â‚¯‚ÄA’PˆÊ‚ðŽw’è‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+	’PˆÊ‚ð¬•¶Žš‚Å‹LÚ‚µ‚½‚Æ‚«‚ÍA‚»‚ê‚¼‚ê k(x1,000), M(x1,000,000), G(x1,000,000,000), T(x1,000,000,000,000)‚Å‚·B’PˆÊ‚ª‘å•¶Žš (K,M,G,T) ‚Ì‚Æ‚«‚ÍAKi(x2‚Ì10æ), Mi(x2‚Ì20æ), Gi(x2‚Ì30æ), Ti(x2‚Ì40æ)‚É‚È‚è‚Ü‚·B
 
 /joinbatch:[on|off]
 	•ªŠ„‚ðs‚Á‚½‚Æ‚«‚ÉAŒ‹‡—pƒoƒbƒ`ƒtƒ@ƒCƒ‹‚ðì¬‚·‚é‚©‚Ç‚¤‚©‚ÌŽw’è‚Å‚·B
@@ -5390,8 +5447,11 @@ WSH VBScript‚Ìê‡‚ÍA’uŠ·(s/src/dest/)‚Ì‚ÝŽg—p‚Å‚«‚Ü‚·BCüŽq‚Ígi‚ªŽw’è‚Å‚«‚Ü‚
 	<jmpa:ƒ}ƒNƒ•¶Žš:macrodetail>‚âŠÖ”<jmpa:ƒ‚ƒWƒ…[ƒ‹:ppxmodule>‚ðŽg‚¢‚½‚¢‚Æ‚«‚ÍAu'%'‚ð“WŠJv‚ðƒ`ƒFƒbƒN‚·‚é•K—v‚ª‚ ‚è‚Ü‚·B
 
 <b>˜A”Ô</b>	–¼‘O—“‚ÅŽg—p‚·‚é˜A”ÔŽw’è \\ ‚ÅŽg—p‚·‚é”’l‚Ì‰Šú’l‚ðŽw’è‚µ‚Ü‚·B‚P‚Âˆ—‚·‚é–ˆ‚É‚P‚¸‚Â‘‰Á‚µ‚Ü‚·B(/snum)
-<b>•ªŠ„</b>	ƒtƒ@ƒCƒ‹•ªŠ„‚·‚é‘å‚«‚³‚ðŽw’è‚µ‚Ü‚·B¦Å‘å2Gbytes‚Ü‚ÅŽw’è‚Å‚«‚Ü‚·B‚Ü‚½A’PˆÊ k,K,m,M,g,G ‚ðŽw’è‚Å‚«‚Ü‚·B(/div)
-	0‚ðŽw’è‚µ‚½ê‡‚Å‚àˆ—æ‚Ì‹ó‚«—e—Ê‚ª–³‚­‚È‚Á‚½‚Æ‚«‚É•ªŠ„‚·‚é‚©‚Ç‚¤‚©‚ð–K‚Ë‚Ü‚·B
+<b>•ªŠ„</b>	ƒtƒ@ƒCƒ‹•ªŠ„‚·‚é‘å‚«‚³‚ðŽw’è‚µ‚Ü‚·(/div)B
+	‘å‚«‚³‚Í 9Œ…ˆÈ“à‚Ì”Žš‚ÅŽw’è‚µAk,m,g,t ‚ð––”ö‚É‚Â‚¯‚ÄA’PˆÊ‚ðŽw’è‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+	’PˆÊ‚ð¬•¶Žš‚Å‹LÚ‚µ‚½‚Æ‚«‚ÍA‚»‚ê‚¼‚ê k(x1,000), M(x1,000,000), G(x1,000,000,000), T(x1,000,000,000,000)‚Å‚·B’PˆÊ‚ª‘å•¶Žš (K,M,G,T) ‚Ì‚Æ‚«‚ÍAKi(x2‚Ì10æ), Mi(x2‚Ì20æ), Gi(x2‚Ì30æ), Ti(x2‚Ì40æ)‚É‚È‚è‚Ü‚·B
+	0‚ðŽw’è‚µ‚½ê‡Aˆ—æ‚Ì‹ó‚«—e—Ê‚ª–³‚­‚È‚Á‚½‚Æ‚«‚É•ªŠ„‚·‚é‚©‚Ç‚¤‚©‚ðq‚Ë‚Ü‚·B
+
 <b>Œ‹‡BATƒtƒ@ƒCƒ‹</b>	ƒtƒ@ƒCƒ‹•ªŠ„‚ðs‚Á‚½‚Æ‚«A•ªŠ„‚µ‚½ƒtƒ@ƒCƒ‹‚ðŒ³‚É–ß‚·ƒoƒbƒ`ƒtƒ@ƒCƒ‹‚ðo—Í‚µ‚Ü‚·B‚±‚Ìƒoƒbƒ`ƒtƒ@ƒCƒ‹‚ðŽg‚¤‚ÆAPPx ‚ª–³‚­‚Ä‚àŒ‹‡‚µ‚ÄŒ³‚É–ß‚·‚±‚Æ‚ª‚Å‚«‚Ü‚·Bì¬‚³‚ê‚éƒoƒbƒ`ƒtƒ@ƒCƒ‹‚Ì–¼‘O‚Íu•ªŠ„Œ³‚Ìƒtƒ@ƒCƒ‹–¼.batv‚Å‚·B(/joinbatch)
 <b>–¼‘O‰ÁH</b>	ˆê’èðŒ‚Åˆ—æ‚Ì–¼‘O‚ð‰ÁH‚·‚éðŒ‚ðŽw’è‚µ‚Ü‚·B
 	<b>‘å•¶Žš‰»</b>@‘S‚Ä‚Ì‰pŽš‚ð‘å•¶Žš‚É‚µ‚Ü‚·(/upper)
@@ -5453,7 +5513,7 @@ WSH VBScript‚Ìê‡‚ÍA’uŠ·(s/src/dest/)‚Ì‚ÝŽg—p‚Å‚«‚Ü‚·BCüŽq‚Ígi‚ªŽw’è‚Å‚«‚Ü‚
 
  ‚Ü‚½AƒJƒXƒ^ƒ}ƒCƒY“à—e‚ðŽè“®‚ÅƒAƒbƒvƒf[ƒg‚µ‚½‚¢ê‡‚ÍAu‰ŠúÝ’è’lv‚ðƒ_ƒEƒ“ƒ[ƒh‚µAuXVv(PPCUST(W) CU filenamej‚ðs‚¤‚±‚Æ‚ÅƒAƒbƒvƒf[ƒg‚ª‰Â”\‚Å‚·B
 
- ‚È‚¨APPx‚É“à‘ ‚³‚ê‚Ä‚¢‚éÅV‚ÌŠeŽíÝ’èƒtƒ@ƒCƒ‹‚ªã‹Lƒy[ƒW‚É“o˜^‚³‚ê‚Ä‚¢‚È‚¢ê‡‚ÍAPPLIB32/PPLIB32W.DLL,SETUP.EXE ‚ÌƒŠƒ\[ƒX‚©‚çŽæ“¾‚·‚é‚©APPx ‚Ìƒ\[ƒXƒtƒ@ƒCƒ‹’†‚Ì DEFxxx.CFG ‚ðŽæ‚è‚¾‚µ‚ÄAŽg—p‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+ ‚È‚¨APPx‚É“à‘ ‚³‚ê‚Ä‚¢‚éÅV‚ÌŠeŽíÝ’èƒtƒ@ƒCƒ‹‚ªã‹Lƒy[ƒW‚É“o˜^‚³‚ê‚Ä‚¢‚È‚¢ê‡‚ÍAPPLIB32/PPLIB32W.DLL, SETUP.EXE ‚ÌƒŠƒ\[ƒX‚©‚çŽæ“¾‚·‚é‚©APPx ‚Ìƒ\[ƒXƒtƒ@ƒCƒ‹’†‚Ì DEFxxx.CFG ‚ðŽæ‚è‚¾‚µ‚ÄAŽg—p‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
 }\page
 .2:Šî–{Ž–€(ƒeƒLƒXƒg•ûŽ®)=textcust
 
@@ -5680,6 +5740,18 @@ PPx‚ÌƒL[‚ÉŠ„‚è“–‚Ä‚ç‚ê‚Ä‚¢‚È‚¢ƒRƒ}ƒ“ƒh‚Ìˆê•”‚ÍAŽŸ‚ÌƒL[•\‹L‚ðŽg‚¤‚±‚Æ‚ÅŽg‚¤‚±‚
 <group:#%%::ƒGƒXƒP[ƒv>
 
 % ‚Íƒ}ƒNƒ‹L†‚Ìˆó‚Å‚·‚Ì‚ÅAu%v‚ðŽÀs“à—e‚É‘‚«‚½‚¢ê‡‚Í‚±‚Ì‚æ‚¤‚É‚·‚é•K—v‚ª‚ ‚è‚Ü‚·B‚Ü‚½“o˜^‚³‚ê‚Ä‚¢‚È‚¢ƒ}ƒNƒ‹L†‚Ìê‡‚à“¯‚¶“®ì‚É‚È‚è‚Ü‚·B
+<group:#%b::s––ƒGƒXƒP[ƒv>
+
+ƒRƒ}ƒ“ƒhƒ‰ƒCƒ“‚ª•¡”s‚É‚í‚½‚é‚Æ‚«A’Êí‚Ís––‚ÍƒRƒ}ƒ“ƒh‹æØ‚è‚É‚È‚è‚Ü‚·B
+s––‚É %b ‚ð‹LÚ‚µ‚½‚Æ‚«‚ÍAs––‚ÍƒRƒ}ƒ“ƒh‚Ìƒpƒ‰ƒ[ƒ^’†‚Ì‰üsˆµ‚¢‚É‚È‚èAŽŸ‚Ìs‚àƒRƒ}ƒ“ƒh‚Ìƒpƒ‰ƒ[ƒ^‚É‚È‚è‚Ü‚·B
+<b>*cliptext, *entrytip, *string, %I, %Q ‚ÅŽg—p‚Å‚«‚Ü‚·B</b>‘¼‚ÌƒRƒ}ƒ“ƒh‚Å‚ÍŒŸØ‚µ‚Ä‚¢‚Ü‚¹‚ñB
+<group:#%bt::ƒ^ƒu•¶Žš>
+
+ƒ^ƒu•¶Žš‚ª‘}“ü‚³‚ê‚Ü‚·B
+<group:#%bn::‰üs•¶Žš>
+
+‰üs•¶Žš(cr lf)‚ª‘}“ü‚³‚ê‚Ü‚·Bƒpƒ‰ƒ[ƒ^’†‚É‰üs‚ðŠÜ‚ß‚é‚½‚ß‚ÌŽw’è‚Å‚·B
+¦ <b>*cliptext, *entrytip, *string, %I, %Q ‚ÅŽg—p‚Å‚«‚Ü‚·B</b>‘¼‚ÌƒRƒ}ƒ“ƒh‚Å‚ÍŒŸØ‚µ‚Ä‚¢‚Ü‚¹‚ñB
 <group:#%;::u;v>
 
 Ý’èƒtƒ@ƒCƒ‹’†‚É’P“Æ‚Ìu;v‚ð‘‚«‚½‚¢ê‡AƒRƒƒ“ƒg‚Ìu;v‚Æ‹æ•Ê‚·‚é‚½‚ß‚É‚±‚Ì‚æ‚¤‚É‘‚«‚Ü‚·B
@@ -5748,6 +5820,10 @@ PPx‚ÌƒL[‚ÉŠ„‚è“–‚Ä‚ç‚ê‚Ä‚¢‚È‚¢ƒRƒ}ƒ“ƒh‚Ìˆê•”‚ÍAŽŸ‚ÌƒL[•\‹L‚ðŽg‚¤‚±‚Æ‚ÅŽg‚¤‚±‚
 <b>%si"HeaderSortU"</b> MC_click “à‚Ì R_HEAD (ƒJƒ‰ƒ€ƒwƒbƒ_‚ð‰EƒNƒŠƒbƒN) Žž‚ÉÝ’èBƒNƒŠƒbƒN‚µ‚½ƒJƒ‰ƒ€‚ð¸‡ƒ\[ƒg‚·‚é‚Æ‚«‚É *sortentry ‚ÉŽw’è‚·‚é’l‚Å‚·B
 <b>%si"HeaderSortD"</b> MC_click “à‚Ì R_HEAD (ƒJƒ‰ƒ€ƒwƒbƒ_‚ð‰EƒNƒŠƒbƒN) Žž‚ÉÝ’èBƒNƒŠƒbƒN‚µ‚½ƒJƒ‰ƒ€‚ð~‡ƒ\[ƒg‚·‚é‚Æ‚«‚É *sortentry ‚ÉŽw’è‚·‚é’l‚Å‚·B
 <b>%si"LoadCommand"</b> ƒfƒBƒŒƒNƒgƒŠ“Ç‚Ýž‚ÝŽž‚ÉŽg—p‚µ‚½ XC_dset ‚Ì cmd: (“Ç‚Ýž‚ÝŒãŽÀs‚·‚éƒRƒ}ƒ“ƒh) ‚Ì“à—e‚Å‚·B
+<b>%si"TipText"</b> *entrytip "text" ‚ÅŽw’è‚µ‚½utextv‚Ì•Û‘¶‚ÉŽg—p‚µ‚Ü‚·B
+
+<b>PPv “à‚ÅŽg—p</b>
+<b>%si"Highlight"</b> ’PŒêƒnƒCƒ‰ƒCƒg(\\[F])‚Ì‘ÎÛ‚Æ‚È‚é’PŒê—ñ‚Å‚·B
 
 <b>ŽÀsˆ—’†‚ÉŽg—p</b>
 <b>%so"title"</b> %"ƒ^ƒCƒgƒ‹" ‚Å•Û‘¶‚µ‚½“à—eB‚±‚±‚ð‘‚«Š·‚¦‚é‚ÆAˆês•ÒW‚â%O,%I ‚Å•\Ž¦‚³‚ê‚éƒ^ƒCƒgƒ‹ƒo[‚ÌƒLƒƒƒvƒVƒ‡ƒ“‚ª•Ï‚í‚è‚Ü‚·B
@@ -5767,10 +5843,9 @@ IDŽw’è‚ª‚È‚¯‚ê‚ÎŽÀsŒ³‚ÌPPx‚É‚È‚è‚Ü‚·B
 <group:#%n[#]::PPx‚ÌID‚ðŽæ“¾>
 
 ŽÀsŒ³‚ÌPPx‚ÌID‚ðŽæ“¾‚µ‚Ü‚·B
-PPc ‚È‚ç CA`CZ
+PPc ‚È‚ç CA`CZ / CZaa`CZzzz
 PPb ‚È‚ç BA`BZAPPv ‚È‚ç VA`VZAPPtray ‚È‚ç TRA ‚É‚È‚è‚Ü‚·B
  ¦ ˆê‘Ì‰»Žž‚É‚¨‚¢‚ÄAPPc‚ÌID‚ÍƒtƒH[ƒJƒX‚Ì‚ ‚éƒyƒCƒ“Eƒ^ƒu‚ÌID‚É‚È‚è‚Ü‚·B
-    ‚Ü‚½Aˆê‘Ì‰»Žž‚Í•¡”‚Ì CZ ‚àŒÂ•Ê‚ÉŽæ‚èˆµ‚¤‚±‚Æ‚ª‚Å‚«A‚±‚Ì‚Æ‚«‚Ì ID ‚Í CZaa`CZzzz ‚Æ‚È‚è‚Ü‚·B
 
 %n# ‚ÆŽw’è‚µ‚½‚Æ‚«‚ÍAŽÀsŒ³PPx‚Ìˆê‘Ì‰»‘‹‚ÌID(CBA`CBZ)‚ðŽæ“¾‚µ‚Ü‚·B
 <groupa:#%M_<i>xxx [,[!]n]</i>::ƒƒjƒ…[::menumacro>
@@ -5822,10 +5897,10 @@ filename‚ªŽw’è‚³‚ê‚Ä‚¢‚éŽž‚Í‚»‚Ìƒtƒ@ƒCƒ‹‚É‚æ‚é”»•Ê‚ðs‚¢‚Ü‚·B
 	 ®A%C,%X“™‚Å•¡”‚Ì‘I‘ðƒtƒ@ƒCƒ‹‚ª‘ÎÛ‚É‚È‚éê‡‚ÍA‚±‚ÌƒIƒvƒVƒ‡ƒ“‚ªŽ©“®•t‰Á‚³‚ê‚Ü‚·B‚±‚Ì“®ì‚ð—}§‚µ‚½‚¢ê‡‚ÍA<b>%OR‚ðæ“ª‚ÉŽw’è‚·‚é‚©A%Or- ‚ð%C,%X“™‚ÌŒã‚ë‚É•t‰Á‚·‚é</b>•K—v‚ª‚ ‚è‚Ü‚·B
 <b>R</b>	%Or ‚ð–³Œø‚É‚µ‚ÄA•K‚¸‚Pƒtƒ@ƒCƒ‹‚Ì‚Ýˆ—‚µ‚Ü‚·B•¡”‚Ì‘I‘ðƒtƒ@ƒCƒ‹‚ª‚ ‚Á‚Ä‚àA%Or ‚ð–³Œø‚É‚µ‚ÄŒJ‚è•Ô‚µŽÀs‚µ‚È‚¢‚æ‚¤‚É‚µ‚Ü‚·B
 <b>S</b>	“WŠJ‚·‚éƒpƒX‚Ì‹æØ‚è‚ðu/v‚É‚µ‚Ü‚·BUNZIP32.DLL—p‚ÌƒIƒvƒVƒ‡ƒ“‚Å‚·B
-<b>p</b>	"[","]"‚ð"\\[","\\]"‚ÉƒGƒXƒP[ƒv‚µ‚Ü‚·BUNZIP32.DLL—p‚ÌƒIƒvƒVƒ‡ƒ“‚Å‚·B
+<b>p</b>	"[", "]"‚ð"\\[", "\\]"‚ÉƒGƒXƒP[ƒv‚µ‚Ü‚·BUNZIP32.DLL—p‚ÌƒIƒvƒVƒ‡ƒ“‚Å‚·B
 <b>N</b>	•ÒW‹@”\‚ð–³Œø‚É‚µ‚Ü‚·B%!x ‚â %E ‚ª‚ ‚Á‚Ä‚à•ÒW‚ðs‚¢‚Ü‚¹‚ñB
-<b>C</b>	‰üs‚ðƒpƒ‰ƒ[ƒ^‚ÉŠÜ‚ß‚Ü‚·B*cliptext‚Å‰üs‚ðŠÜ‚ß‚½ƒeƒLƒXƒg‚ðƒRƒs[‚µ‚½‚¢‚Æ‚«‚È‚Ç‚ÉŽg‚¢‚Ü‚·B®A•’Ê‚ÌƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚ÌƒRƒ}ƒ“ƒhƒ‰ƒCƒ“‚Í‰üs‚ðŠÜ‚ß‚é‚±‚Æ‚Í‚Å‚«‚È‚¢‚Ì‚ÅA‚±‚ÌŽw’è‚ðŽg—p‚µ‚½‚±‚Æ‚É‚æ‚èˆÙí“®ì‚ð‹N‚±‚·‰Â”\«‚ª‚ ‚è‚Ü‚·B
-<b>D</b>	%#,%@,%a,%v,%I “™‚Ìƒtƒ@ƒCƒ‹ì¬‚âŽÀsAƒ_ƒCƒAƒƒO•\Ž¦“™‚Ì“®ì‚ðs‚¤ƒ}ƒNƒ•¶Žš‚Ì“®ì‚ð–³Œø‚É‚µ‚Ü‚·Bƒƒjƒ…[•\Ž¦“™‚ÉŽg‚¤‚½‚ßA“®ì‚µ‚Ä‚Ù‚µ‚­‚È‚¢‚Æ‚«‚É—p‚¢‚Ü‚·B
+<b>C</b>	‰üs‚ðƒpƒ‰ƒ[ƒ^‚ÉŠÜ‚ß‚Ü‚·B%I, %Q, *cliptext, *entrytip, *string ‚Å‰üs‚ðŠÜ‚ß‚½ƒeƒLƒXƒg‚ðŽw’è‚µ‚½‚¢‚Æ‚«‚È‚Ç‚ÉŽg‚¢‚Ü‚·B®A•’Ê‚ÌƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚ÌƒRƒ}ƒ“ƒhƒ‰ƒCƒ“‚Í‰üs‚ðŠÜ‚ß‚é‚±‚Æ‚Í‚Å‚«‚È‚¢‚Ì‚ÅA‚±‚ÌŽw’è‚ðŽg—p‚µ‚½‚±‚Æ‚É‚æ‚èˆÙí“®ì‚ð‹N‚±‚·‰Â”\«‚ª‚ ‚è‚Ü‚·B
+<b>D</b>	%#, %@, %a, %v, %I “™‚Ìƒtƒ@ƒCƒ‹ì¬‚âŽÀsAƒ_ƒCƒAƒƒO•\Ž¦“™‚Ì“®ì‚ðs‚¤ƒ}ƒNƒ•¶Žš‚Ì“®ì‚ð–³Œø‚É‚µ‚Ü‚·Bƒƒjƒ…[•\Ž¦“™‚ÉŽg‚¤‚½‚ßA“®ì‚µ‚Ä‚Ù‚µ‚­‚È‚¢‚Æ‚«‚É—p‚¢‚Ü‚·B
 
 <b>EŽÀs§Œä</b>
 ˆÈ‰º‚ÌŽÀs§Œä‚ÉŠÖ‚·‚éƒIƒvƒVƒ‡ƒ“‚ÍAƒtƒ@ƒCƒ‹‚ÌŽÀs‚Ì‘¼A%Z‚Æ *start ‚Å‹@”\‚µ‚Ü‚·B
@@ -6140,12 +6215,26 @@ runasuser	•Ê‚Ìƒ†[ƒU‚ÅŽÀs
 <group:#%I<i>"text"</i>::ƒƒbƒZ[ƒW•\Ž¦>
 
 “à—etext‚ðƒƒbƒZ[ƒWƒ{ƒbƒNƒX‚Å•\Ž¦‚µ‚Ü‚·([OK]ƒ{ƒ^ƒ“•t‚«)
+
+<a:mutilineparam>text ‚ÍŽŸ‚Ì‚æ‚¤‚È‹LÚ‚ª‰Â”\‚Å‚·B
+(1)ƒ^ƒu‚âA‰üs‚ðŠÜ‚ß‚é‚Æ‚«‚ÍA%bt, %bn ‚ðŽw’è‚µ‚Ü‚·B line1%bnline2
+(2)ŽŸ‚Ì‚æ‚¤‚È‰üs‚ðŠÜ‚ß‚½‹LÚ‚ª‚Å‚«‚Ü‚·B
+<pre>
+<b>(a)</b>
+text line1%b
+	text line2%b
+
+<b>(b)</b>
+%OC text line1
+	text line2
+</pre>
 <group:#%Q[Y|N|O|C]<i>"text"</i>::Šm”F•\Ž¦>
 
 “à—etext‚ðƒƒbƒZ[ƒWƒ{ƒbƒNƒX‚Å•\Ž¦‚µA[OK]/[ƒLƒƒƒ“ƒZƒ‹]ƒ{ƒ^ƒ“‚Å‘I‘ð‚µ‚Ü‚·B
 [OK]‚È‚ç‘±sA[ƒLƒƒƒ“ƒZƒ‹]‚È‚ç’†Ž~‚µ‚Ü‚·BŒJ‚è•Ô‚µŽÀs‚·‚é‚Æ‚«‚ÍÅ‰‚Ì‚P‰ñ‚Ì‚ÝŠm”F‚µ‚Ü‚·B
 ‚Ü‚½A%QN"text" , %QC"text" ‚Ì‚æ‚¤‚É %Q‚Ì’¼Œã‚ÉuNv‚©uCv‚ðŽw’è‚·‚é‚ÆAƒƒbƒZ[ƒWƒ{ƒbƒNƒX‚ÌƒfƒtƒHƒ‹ƒg‘I‘ðŽˆ‚ªuƒLƒƒƒ“ƒZƒ‹v‚É‚È‚è‚Ü‚·B
 %Q‚Ì’¼Œã‚ÌŽw’è‚ª‚È‚¢‚©AuYv‚©uOv‚Å‚ ‚ê‚ÎƒfƒtƒHƒ‹ƒg‘I‘ðŽˆ‚ªuOKv‚É‚È‚è‚Ü‚·B
+<jmpa:‰üs“™‚ðŠÜ‚Þ text ‚Ì‹LÚ•û–@:mutilineparam>
 <group:#%K<i>"keycommand"</i>::ƒL[ƒRƒ}ƒ“ƒhŽÀs>
 <group:#%K<i>[ID,]"keycommand"</i>::Žw’èPPx‚ÅƒL[ƒRƒ}ƒ“ƒh‚ðŽÀs>
 
@@ -6340,6 +6429,7 @@ Windows7ˆÈ~‚Å’Ç‰Á‚³‚ê‚½ƒ^ƒXƒNƒo[‚Ìƒ{ƒ^ƒ“‚Ì§Œä‹@”\‚ðŽg‚¢APPx(PPc,PPvc)‚ðˆê‚Â
 1	[TAB]‚ÌƒJƒXƒ^ƒ}ƒCƒY‚ª‰Â”\‚É‚È‚éB[TAB]‚Í‘O•ûˆê’vƒtƒ@ƒCƒ‹–¼•âŠ®B
 2	[TAB]‚ÌƒJƒXƒ^ƒ}ƒCƒY‚ª‰Â”\‚É‚È‚éB[TAB]‚Í•”•ªˆê’vƒtƒ@ƒCƒ‹–¼•âŠ®B
 3	[TAB]‚ÌƒJƒXƒ^ƒ}ƒCƒY‚ª‰Â”\‚É‚È‚éB[TAB]‚Í•”•ªˆê’vƒtƒ@ƒCƒ‹–¼•âŠ®B“¯‚¶ƒfƒBƒŒƒNƒgƒŠã‚Ì‘S‚Ä‚Ìˆê’vƒGƒ“ƒgƒŠ‚ðŒŸõ‚µAŒŸõŒ‹‰Ê‚Ìˆê’v‚µ‚È‚¢•”•ª‚ð‘I‘ð‚µ‚½ó‘Ô‚É‚·‚éB
+4	[TAB]‚ÌƒJƒXƒ^ƒ}ƒCƒY‚ª‰Â”\‚É‚È‚éB[TAB]‚Íƒ[ƒ}Žš“Ç‚Ý•”•ªˆê’vƒtƒ@ƒCƒ‹–¼•âŠ®B
 <hr>
 <atk:X_iacc> PPc,PPv‚ÅƒXƒNƒŠ[ƒ“ƒŠ[ƒ_‘Î‰ž
 
@@ -6409,15 +6499,16 @@ PPc/PPv‚ÍŠeŽíƒƒbƒZ[ƒW‚ðÅãˆÊs‚É•\Ž¦‚µ‚Ü‚·‚ªA•\Ž¦‚µ‚½Žž‚Éƒ^ƒCƒgƒ‹ƒo[‚ð“_–Å‚
 	‚Q“_ƒ^ƒbƒv‚âƒpƒ“‘€ì“™‚ðs‚¤‚Æƒ^ƒbƒ`‘€ì‚Æ‚µ‚ÄŒŸo‚µ‚Ü‚·B
 
 <b>Ú×Ý’è</b> ˆÈ‰º‚Éà–¾‚·‚é‹@”\‚ð—LŒø‚É‚·‚é‚©‚ÌŽw’è‚Å‚·B
-<pre>B0000000
- |||||||
- ||||||+--- 0=[1]ƒ^ƒbƒ`—Ìˆæ‚Ì•‚ðŠg‘å‚µ‚Ü‚·
- |||||+---- 0=[2]ƒ^ƒbƒ`—Ìˆæ‚Ì‚‚³‚ðŠg‘å‚µ‚Ü‚·
- ||||+----- 0=[3]ƒhƒ‰ƒbƒOŠJŽn‚ð‹ÖŽ~‚µ‚Ü‚·
- |||+------ 0=[4]‰B‚µƒƒjƒ…[‚ð–³Œø‚É‚µ‚Ü‚·
- ||+------- 0=[5]ƒ_ƒuƒ‹ƒNƒŠƒbƒN‚ðƒVƒ“ƒOƒ‹ƒ^ƒbƒv‚Ås‚¢‚Ü‚·
- |+-------- 0=[6]‚Q‘‹‚Ì•À‚Ñ‚ðc^‰¡‚ÉŽ©“®•ÏX‚µ‚Ü‚·
- +--------- 0=[7]ƒAƒNƒeƒBƒu‰»Žž‚ÍAƒ^ƒbƒ`‘€ì‚ð–³Œø‚É‚µ‚Ü‚·
+<pre>B00000000
+ ||||||||
+ |||||||+--- 0=[1]ƒ^ƒbƒ`—Ìˆæ‚Ì•‚ðŠg‘å‚µ‚Ü‚·
+ ||||||+---- 0=[2]ƒ^ƒbƒ`—Ìˆæ‚Ì‚‚³‚ðŠg‘å‚µ‚Ü‚·
+ |||||+----- 0=[3]ƒhƒ‰ƒbƒOŠJŽn‚ð‹ÖŽ~‚µ‚Ü‚·
+ ||||+------ 0=[4]‰B‚µƒƒjƒ…[‚ð–³Œø‚É‚µ‚Ü‚·
+ |||+------- 0=[5]ƒ_ƒuƒ‹ƒNƒŠƒbƒN‚ðƒVƒ“ƒOƒ‹ƒ^ƒbƒv‚Ås‚¢‚Ü‚·
+ ||+-------- 0=[6]‚Q‘‹‚Ì•À‚Ñ‚ðc^‰¡‚ÉŽ©“®•ÏX‚µ‚Ü‚·
+ |+--------- 0=[7]ƒAƒNƒeƒBƒu‰»Žž‚ÍAƒ^ƒbƒ`‘€ì‚ð–³Œø‚É‚µ‚Ü‚·
+ +---------- 0=[8]ˆês•ÒW‚ÅƒRƒ}ƒ“ƒhƒo[‚ð•\Ž¦‚µ‚Ü‚·
 </pre>
 ‹ï‘Ì“I‚É‚ÍAŽŸ‚Ì‚æ‚¤‚È‹““®‚É‚È‚è‚Ü‚·B
 ¦(PPc,PPv,PPe,ˆês•ÒW) ‚Q“_ƒ^ƒbƒv‚ÆA‚P“_ƒvƒŒƒX‚µ‚È‚ª‚çƒ_ƒuƒ‹ƒ^ƒbƒv‚ðƒAƒvƒŠƒP[ƒVƒ‡ƒ“ƒƒjƒ…[[APPS]ˆµ‚¢‚É‚·‚éˆ—‚ÍíŽž‹@”\‚µ‚Ü‚·B
@@ -6431,6 +6522,7 @@ PPc
 [5](PPc)‘I‘ðÏ‚Ý‚ÌƒGƒ“ƒgƒŠ‚Ìƒ^ƒbƒv‚ðƒ_ƒuƒ‹ƒNƒŠƒbƒNˆµ‚¢‚É‚µ‚Ü‚·B
 [6](PPc)ˆê‘Ì‰»‘‹‚ÅA‚Q‘‹ˆÈã‚ð•À‚×‚ÄÅ‘å‰»‚µ‚Ä‚¢‚é‚Æ‚«Ac’·‘‹‚È‚çc‚É•À‚×A‰¡’·‘‹‚È‚ç‰¡‚É•À‚×‚Ü‚·B
 [7](PPc)”ñƒAƒNƒeƒBƒuŽž‚Ìƒ^ƒbƒv‚ÍA‘I‘ð“®ì‚ðs‚í‚¸AƒtƒH[ƒJƒXØ‘Ö‚Ì‚Ý‚É‚È‚è‚Ü‚·(‹­§X_askp=1ó‘Ô)B
+[8](ˆês•ÒW)ˆês•ÒW‚Ì•ÒW—“‚ðƒ^ƒbƒ`‚µ‚½‚Æ‚«‚ÉAƒRƒ}ƒ“ƒhƒo[(B_flm/B_flp/B_flt)‚ð•\Ž¦‚µ‚Ü‚·B
 <hr>
 <tk:X_jinfo> ƒ_ƒCƒAƒƒO•\Ž¦ŽžE‘I‘ð—v‹Žž‚Ì’Ê’m•û–@
 
@@ -6494,7 +6586,7 @@ PPx‚ªˆê’è’·‚ð‰z‚¦‚½Žž‚ÉŠg’£Žq‚ÆŒ©‚È‚³‚È‚¢‚æ‚¤‚É‚·‚éŒ…”‚ðŽw’è‚µ‚Ü‚·B
 <hr>
 <tk:X_tree> ƒcƒŠ[‘‹‚ÌÝ’è
 ŠeŽíƒcƒŠ[‘‹‚ÌÝ’è‚ðŽw’è‚µ‚Ü‚·B
-<pre>B000000000
+<pre>B000000000,ˆês•ÒW“™—p‚ÌƒcƒŠ[‚Ì‚‚³
  |||||||||
  ||||||||+--- 1=ƒAƒCƒRƒ“•\Ž¦‚ð‚·‚é
  |||||||+---- 1=ƒAƒCƒRƒ“‚ðŠÈˆÕ•\Ž¦‚·‚éBƒhƒ‰ƒCƒuˆÈŠO‚Í‘S‚Ä“¯‚¶ƒAƒCƒRƒ“‚ðŽg‚Á‚Ä•\Ž¦‚ð‚‘¬‰»‚µ‚Ü‚·B
@@ -6847,7 +6939,7 @@ cust = *set cfg=%'tmp'%\\ppx.cfg %: ppcust cd %'cfg' %: editor %'cfg'
 2)%'c' ‚ÅŽg—p‚³‚ê‚Ü‚·Bã‹L“o˜^—á‚Ìê‡Au%'editor'v‚Íunotepad.exev‚É’u‚«Š·‚¦‚ç‚ê‚Ü‚·B
 
 3)PPx‚Ì’è‹`Ï‚ÝƒGƒCƒŠƒAƒX‚ÍAbrowser,editor,editorL,viewer‚Å‚·B
-  <b>browser</b> ‚ÍPPx‚ªŽg—p‚·‚éWeb ƒuƒ‰ƒEƒU‚ÌŽÀsƒtƒ@ƒCƒ‹‚ÌƒpƒX‚ð‹LÚ‚µ‚Ü‚·BŒ»Ý‚ÍAƒwƒ‹ƒv‚ðƒuƒ‰ƒEƒU‚Å•\Ž¦‚·‚é‚Æ‚«(PPX.HLP‚ª‚È‚¢‚Æ‚«‚©AWindows VistaˆÈ~)‚ÉŽg‚í‚ê‚Ü‚·B‹LÚ‚ª‚È‚¢‚Æ‚«‚ÍŠù’è‚Ìƒuƒ‰ƒEƒU‚ªŽg—p‚³‚ê‚Ü‚·B
+  <b>browser</b> ‚ÍPPx‚ªŽg—p‚·‚éWeb ƒuƒ‰ƒEƒU‚ÌŽÀsƒtƒ@ƒCƒ‹‚ÌƒpƒX‚ð‹LÚ‚µ‚Ü‚·BŒ»Ý‚ÍAƒwƒ‹ƒv‚ðƒuƒ‰ƒEƒU‚Å•\Ž¦‚·‚é‚Æ‚«‚ÉŽg‚í‚ê‚Ü‚·B‹LÚ‚ª‚È‚¢‚Æ‚«‚ÍŠù’è‚Ìƒuƒ‰ƒEƒU‚ªŽg—p‚³‚ê‚Ü‚·B
   <b>editor</b> ‚Æ <b>viewer</b> ‚ÍAPPc ‚Ì \\[E] ‚Æ \\[V],PPv‚Ì\\[Enter]‚ÅŽg‚í‚ê‚éŽÀsƒtƒ@ƒCƒ‹‚ÌƒpƒX‚ð‹LÚ‚µ‚Ü‚·B‰Šúó‘Ô‚ÍA.txt ‚ÌŠg’£Žq‚ÉŠ„‚è“–‚Ä‚ç‚ê‚½ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚ª“o˜^‚³‚ê‚Ä‚¢‚Ü‚·B
   <b>editorL</b> ‚ÍAPPv‚Ì\\[Enter]‚ÅŽÀs‚·‚é‚Æ‚«‚És”Ô†‚ðŽw’è‚·‚é‚½‚ß‚ÌƒIƒvƒVƒ‡ƒ“‚ð‹LÚ‚µ‚Ü‚·BŽŸ‚Ì‚æ‚¤‚ÈŒ`‚ÅŽg‚í‚ê‚Ü‚·B
   editor "ƒtƒ@ƒCƒ‹–¼" editorLs”Ô†
@@ -7000,7 +7092,7 @@ GUIƒJƒXƒ^ƒ}ƒCƒY‚Å‚ÍA<b>`‚Å‘‹ŠO‚ÉˆÚ“®‚µ‚½‚Æ‚«‚Í</b>‚Ì€–Ú‚ÅA<jmpa:‰æ–ÊŠO•û–@:X
 <b>B21</b> 1‚É‚·‚é‚Æƒ^ƒu‚Ì•À‚Ñ‚ªƒfƒBƒŒƒNƒgƒŠ‡‚Æ‚È‚é‚æ‚¤‚ÉAV‹Kƒ^ƒu‚ª‘}“ü‚³‚ê‚Ü‚·B
 <b>B22</b> 1‚É‚·‚é‚ÆAƒAƒNƒeƒBƒuƒ^ƒu‚ð•Â‚¶‚½‚Æ‚«‚É‚»‚Ìƒ^ƒu‚ª•\Ž¦‚µ‚Ä‚¢‚½ƒfƒBƒŒƒNƒgƒŠ‚Ìe‚ð•\Ž¦‚·‚éƒ^ƒu‚ª‚ ‚ê‚ÎA‚»‚Ìƒ^ƒu‚ªƒAƒNƒeƒBƒu‚É‚È‚è‚Ü‚·B
 
-<b>B24</b> 1‚Ì‚Æ‚«AF11‚Å‘‹‚ð‘‚â‚·‚Æ‚«‚ÉAŒ»Ý‚ÌƒyƒCƒ“”‚ª<jmpa:X_mpane> ‚ÌÅ‘å“¯Žž•\Ž¦ƒyƒCƒ“”‚Æ“¯‚¶‚È‚çA/alone Žw’è‚ÅV‹K‚Ìˆê‘Ì‰»‘‹‚ðŠJ‚«‚Ü‚·B
+<b>B24</b> 1‚Ì‚Æ‚«AF11‚Å‘‹‚ð‘‚â‚·‚Æ‚«‚ÉAŒ»Ý‚ÌƒyƒCƒ“”‚ª<jmpa:X_mpane> ‚ÌÅ‘å“¯Žž•\Ž¦ƒyƒCƒ“”‚Æ“¯‚¶‚È‚çA-alone Žw’è‚ÅV‹K‚Ìˆê‘Ì‰»‘‹‚ðŠJ‚«‚Ü‚·B
      ƒyƒCƒ“‚ª‘‚¦‚½‚çV‚µ‚¢ˆê‘Ì‰»‘‹‚É‚µ‚½‚¢‚Æ‚«‚ÌÝ’è‚Å‚·B
 <b>B25</b> 1‚Ì‚Æ‚«AŒ»Ý‚ÌƒyƒCƒ“”‚ª<jmpa:X_mpane> ‚Ì‹N“®Žž‚ÌƒyƒCƒ“”‚Æ“¯‚¶‚È‚çAˆê‘Ì‰»‘‹‚ðI—¹‚µ‚Ü‚·B
      ‹N“®Žž‚Ìƒ^ƒu”ˆÈ‰º‚ÍPPc‚ðI‚í‚ç‚¹‚½‚¢‚Æ‚«‚ÌÝ’è‚Å‚·B
@@ -7117,12 +7209,14 @@ XC_page = 1 Žž‚È‚ÇAã‰ºƒXƒNƒ[ƒ‹•ûŽ®‚ÌƒJ[ƒ\ƒ‹ˆÚ“®‚ðs‚Á‚Ä‚¢‚é‚Æ‚«Aã‰º‚Ì’[‚Å
 1	ƒVƒtƒgƒL[iShift,Ctrl“™j‚ð‰Ÿ‚³‚¸‚ÉƒNƒŠƒbƒN‚·‚é‚Æ‚·‚×‚Ä‚Ìƒ}[ƒN‚ª‰ðœ‚³‚ê‚ÄAƒNƒŠƒbƒN‚µ‚½ƒGƒ“ƒgƒŠ‚Ì‚Ýƒ}[ƒN‚³‚ê‚éƒGƒNƒXƒvƒ[ƒ‰•—‚ÌÝ’è‚É‚È‚è‚Ü‚·B
 ¦ƒGƒ“ƒgƒŠ‚Ì¶’[(ƒ}[ƒNEƒAƒCƒRƒ“‚Ì•\Ž¦ˆÊ’u)‚ÍA‚±‚ÌÝ’è‚É‚©‚©‚í‚ç‚¸ƒNƒŠƒbƒN‚µ‚½ƒGƒ“ƒgƒŠ‚Ìƒ}[ƒN‘€ì‚Æ‚È‚èA‘¼‚Ìƒ}[ƒN‚Í•Ï‰»‚µ‚È‚¢‚Ì‚ÅAŽg‚¢•ª‚¯‚ª‚Å‚«‚Ü‚·B
 <hr>
-<tk:XC_limc> ƒGƒ“ƒgƒŠ–¼‚æ‚è‰E‘¤‚ÌƒNƒŠƒbƒN‚ÍA‹ó—“ƒNƒŠƒbƒN‚ÆŒ©‚È‚·
+<tk:XC_limc> ƒGƒ“ƒgƒŠ‚ð‘I‘ð‰Â”\‚È”ÍˆÍ‚Í
 
-ƒGƒ“ƒgƒŠˆê——‚ÅAƒGƒ“ƒgƒŠ–¼‚æ‚è‚à‰E‚É‚ ‚éƒtƒ@ƒCƒ‹ƒTƒCƒY‚âŽž‚È‚Ç‚ðƒNƒŠƒbƒN‚µ‚Ä‚àAƒGƒ“ƒgƒŠ–¼‚Ì‘I‘ð‚Æ‚¹‚¸A‹ó—“‚ðƒNƒŠƒbƒN‚µ‚½‚Æˆµ‚¤‚©‚Ç‚¤‚©‚ÌŽw’è‚Å‚·B
+ƒGƒ“ƒgƒŠˆê——‚ÅAƒGƒ“ƒgƒŠ‚ð‘I‘ð‚·‚é‚Æ‚«‚ÌƒNƒŠƒbƒN‰Â”\‚È”ÍˆÍ‚ÌŽw’è‚Å‚·B
+¦ƒNƒŠƒbƒN‰Â”\‚È”ÍˆÍ‚ÍAŒ©‚½–Ú‚æ‚èL‚ß‚É‚È‚Á‚Ä‚¢‚Ü‚·B
+0	s‘S‘ÌBƒGƒ“ƒgƒŠs‚Ì‚Ç‚ÌˆÊ’u‚ðƒNƒŠƒbƒN‚µ‚Ä‚à‘I‘ð‚Å‚«‚Ü‚·B
+1	ƒGƒ“ƒgƒŠ–¼•\Ž¦—“BƒGƒ“ƒgƒŠ–¼‚ð•\Ž¦‚·‚é”ÍˆÍ‚Ì‚Ý‘I‘ð‰Â”\‚Æ‚È‚èAƒGƒ“ƒgƒŠ–¼‚æ‚è‰E‘¤‚Ìƒtƒ@ƒCƒ‹ƒTƒCƒY‚âŽž“™‚ðƒNƒŠƒbƒN‚µ‚Ä‚à‹ó—“ƒNƒŠƒbƒNˆµ‚¢‚É‚È‚è‚Ü‚·B
+2	ƒGƒ“ƒgƒŠ–¼‚ÌãB•\Ž¦‚³‚ê‚Ä‚¢‚éƒGƒ“ƒgƒŠ–¼‚Ì‚Ý‘I‘ð‰Â”\‚Æ‚È‚èA‚»‚êˆÈŠO‚ðƒNƒŠƒbƒN‚µ‚Ä‚à‹ó—“ƒNƒŠƒbƒNˆµ‚¢‚É‚È‚è‚Ü‚·B
 
-0	‘S‚ÄƒGƒ“ƒgƒŠ‚ðƒNƒŠƒbƒN‚·‚éˆµ‚¢‚É‚·‚é
-1	ƒGƒ“ƒgƒŠ–¼‚æ‚è‰E‘¤‚ÌƒNƒŠƒbƒN‚ÍA‹ó—“ƒNƒŠƒbƒN‚ÆŒ©‚È‚·
 <hr>
 <atk:XC_cdc> ƒfƒBƒŒƒNƒgƒŠ‘I‘ðŽžAƒ}ƒEƒXŠ„“–‚Ä‚ð–³Ž‹‚µ‚ÄƒTƒCƒYŒvŽZ‚ðs‚¤ƒ}ƒEƒXƒ{ƒ^ƒ“
 
@@ -7371,7 +7465,7 @@ PPc Žg—pŽž‚ÉAƒ}ƒEƒX‰Eƒ{ƒ^ƒ“‚ÅƒWƒFƒXƒ`ƒƒ[‚ðŽg—p‚·‚é‚©‚Ç‚¤‚©‚ðŽw’è‚µ‚Ü‚·B
 
 “ü—Í•û–@(Alt+O‚ÅˆêŽž•ÏX‰Â”\)
 0	’Êí“ü—Í
-2	ƒ[ƒ}Žš“ü—Í(migemo)
+2	ƒ[ƒ}Žš“Ç‚Ý“ü—Í(migemo)
 
 ŒŸõˆÊ’u(Alt+F‚ÅˆêŽž•ÏX‰Â”\)
 0	‘O•ûˆê’v
@@ -7397,13 +7491,13 @@ PPc Žg—pŽž‚ÉAƒ}ƒEƒX‰Eƒ{ƒ^ƒ“‚ÅƒWƒFƒXƒ`ƒƒ[‚ðŽg—p‚·‚é‚©‚Ç‚¤‚©‚ðŽw’è‚µ‚Ü‚·B
 <hr>
 <tk:X_rscah> ƒ[ƒ}ŽšŒŸõƒLƒƒƒbƒVƒ…‚ðs‚¤Å’·•¶Žš”
 
-XC_isea=2‚Ì‚Æ‚«‚Ìƒ[ƒ}ŽšƒCƒ“ƒNƒŠƒƒ“ƒ^ƒ‹ƒT[ƒ`‚ÅAŽn‚ß‚Ì”•¶Žš‚ð“ü—Í‚µ‚Ä‚¢‚é‚Æ‚«‚É‚©‚È‚èŽžŠÔ‚ªŠ|‚©‚é‚½‚ßAmigemo‚ÌŒ‹‰Ê‚ðƒLƒƒƒbƒVƒ…‚·‚é‚±‚Æ‚Å‚‘¬‰»‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+XC_isea=2‚Ì‚Æ‚«‚Ìƒ[ƒ}Žš“Ç‚ÝƒCƒ“ƒNƒŠƒƒ“ƒ^ƒ‹ƒT[ƒ`‚ÅAŽn‚ß‚Ì”•¶Žš‚ð“ü—Í‚µ‚Ä‚¢‚é‚Æ‚«‚É‚©‚È‚èŽžŠÔ‚ªŠ|‚©‚é‚½‚ßAmigemo‚ÌŒ‹‰Ê‚ðƒLƒƒƒbƒVƒ…‚·‚é‚±‚Æ‚Å‚‘¬‰»‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
 “ü—Í‚µ‚½•¶Žš—ñ‚Ì’·‚³‚ª‚±‚±‚ÅŽw’è‚µ‚½’·‚³ˆÈ‰º‚Å‚ ‚ê‚ÎAƒLƒƒƒbƒVƒ…‚ðŽg—p‚µ‚Ü‚·B
 
 ’Êí‚ÍX_rscah=2A‘½‚­‚Ä‚à3`4‚ðŽw’è‚µ‚Ä‚¨‚¯‚Î\•ª‚‘¬‚É‚È‚è‚Ü‚·BŒŸõ•¶Žš—ñ‚ª’·‚¢‚ÆAƒLƒƒƒbƒVƒ…‚ðŽg‚í‚È‚¢‚Æ‚«‚Æ”ä‚×‚Ä‚»‚ê‚Ù‚Ç•Ï‚í‚ç‚È‚¢Š—vŽžŠÔ‚É‚È‚è‚Ü‚·‚Ì‚ÅA‚ ‚Ü‚è’·‚­‚·‚é•K—v‚Í‚ ‚è‚Ü‚¹‚ñB
 
 ®AƒLƒƒƒbƒVƒ…“à—e‚ÍƒqƒXƒgƒŠ—Ìˆæ‚É•Û‘¶‚µ‚Ü‚·‚ªA‚©‚È‚è‘å‚«‚­ƒqƒXƒgƒŠ—Ìˆæ‚ðŽg—p‚µ‚Ü‚·BƒqƒXƒgƒŠ—Ìˆæ‚Ì‰Šú’l‚Å‚ ‚é64Kbytes‚Å‚ÍAƒLƒƒƒbƒVƒ…‚ÌŒø‰Ê‚ª\•ª‚É“¾‚ç‚ê‚È‚¢‚©‚à‚µ‚ê‚Ü‚¹‚ñB
-ƒ[ƒ}ŽšƒCƒ“ƒNƒŠƒƒ“ƒ^ƒ‹ƒT[ƒ`‚ð‘½—p‚µAX_rscah†2‚ðŽw’è‚·‚éê‡‚Íuppcust hsize 100000v“™‚ÆŽÀs‚µ‚ÄA100kbytesˆÈã‚ÌƒqƒXƒgƒŠ—Ìˆæ‚ð—pˆÓ‚·‚é‚æ‚¤‚É‚µ‚Ä‚­‚¾‚³‚¢B—pˆÓ‚µ‚½ƒqƒXƒgƒŠ—Ìˆæ‚Ì”¼•ª‹­‚Ü‚ÅƒLƒƒƒbƒVƒ…‚ª•Û‘¶‚³‚ê‚Ü‚·B
+ƒ[ƒ}Žš“Ç‚ÝƒCƒ“ƒNƒŠƒƒ“ƒ^ƒ‹ƒT[ƒ`‚ð‘½—p‚µAX_rscah†2‚ðŽw’è‚·‚éê‡‚Íuppcust hsize 100000v“™‚ÆŽÀs‚µ‚ÄA100kbytesˆÈã‚ÌƒqƒXƒgƒŠ—Ìˆæ‚ð—pˆÓ‚·‚é‚æ‚¤‚É‚µ‚Ä‚­‚¾‚³‚¢B—pˆÓ‚µ‚½ƒqƒXƒgƒŠ—Ìˆæ‚Ì”¼•ª‹­‚Ü‚ÅƒLƒƒƒbƒVƒ…‚ª•Û‘¶‚³‚ê‚Ü‚·B
 <hr>
 <tk:XC_alst> ƒfƒBƒŒƒNƒgƒŠ‚Ìˆê——‚ÌXV•û–@
 
@@ -8084,7 +8178,7 @@ PPcust‚ðGUIƒ‚[ƒh‚ÅŽg—p‚µ‚Ä‚¢‚é‚Æ‚«‚ÉAƒRƒ“ƒ\[ƒ‹ƒEƒBƒ“ƒhƒE‚ð‰B‚·‚©‚Ç‚¤‚©‚ÌÝ’è‚
 1200	UTF-16LE
 1252	latin1(‰pŒê”ÅWindows‹K’è’l)
 65001	UTF-8
-‚»‚Ì‘¼	ŠY“–‚·‚éƒR[ƒhƒy[ƒW(uMicrosoft codepagev‚Å’²‚×‚Ä‚­‚¾‚³‚¢)
+‚»‚Ì‘¼	ŠY“–‚·‚éƒR[ƒhƒy[ƒW(PPv •¶ŽšƒR[ƒhØ‚è‘Ö‚¦[@] - other CP ‚Ìˆê——‚É•\Ž¦‚³‚ê‚½“à—e)
 }\page
 .2:PPtray Ý’è
 <tk:X_eedit> ƒGƒfƒBƒbƒgƒ{ƒbƒNƒXŠg’£‚ðŠO•”‚É’ñ‹Ÿ‚·‚é
@@ -8746,22 +8840,25 @@ HTML ‚ÌƒAƒ“ƒJ[“™AƒŠƒ“ƒN‚ÉŽg—p‚·‚é•¶ŽšF‚Å‚·B<jmpa:FŽw’è•û–@:color>
 
 HTML,XML ‚Ìƒ^ƒOAƒRƒƒ“ƒg‚ÉŽg—p‚·‚é•¶ŽšF‚Å‚·B<jmpa:FŽw’è•û–@:color>
 
-<tk:CV_hili> PPv ŒŸõ’PŒê
+<tk:CV_hili> PPv ƒnƒCƒ‰ƒCƒg
 
-ŒŸõƒL[ƒ[ƒh‚Æ“¯‚¶•¶Žš‚ðƒnƒCƒ‰ƒCƒg•\Ž¦‚·‚é‚Æ‚«‚ÉŽg—p‚·‚éF‚Å‚·B<jmpa:FŽw’è•û–@:color>
+ŒŸõ([F])AƒnƒCƒ‰ƒCƒg(\\[F])‚ÉŠY“–‚·‚é•¶Žš‚ðƒnƒCƒ‰ƒCƒg•\Ž¦‚·‚é‚Æ‚«‚ÉŽg—p‚·‚éF‚Å‚·B<jmpa:FŽw’è•û–@:color>
 
-<tk:CV_hkey> PPv ŒÅ’èƒL[ƒ[ƒhƒnƒCƒ‰ƒCƒg
+<atk:CV_hkey> PPv ŒÅ’èƒL[ƒ[ƒhƒnƒCƒ‰ƒCƒg
 
 Žw’è‚µ‚½ƒL[ƒ[ƒh‚ðŽw’è‚µ‚½•¶ŽšF‚Å‹­’²•\Ž¦‚Å‚«‚Ü‚·BŽŸ‚Ì—á‚Ì‚æ‚¤‚ÉAŽw’è‚µ‚½ƒtƒ@ƒCƒ‹Ží•Ê–ˆ‚É”CˆÓ‚Ì”‚¾‚¯ƒL[ƒ[ƒh‚ðÝ’è‚Å‚«‚Ü‚·B
 ‚½‚¾‚µAƒL[ƒ[ƒh‚ð‘½‚­Žw’è‚µ‚·‚¬‚é‚Æ•\Ž¦‚ª’x‚­‚È‚é‚Ì‚Å‹C‚ð‚Â‚¯‚Ä‚­‚¾‚³‚¢B
+¦PPvŽg—p’†‚ÉˆêŽž“I‚ÉƒnƒCƒ‰ƒCƒg‚ðŽw’è‚·‚é‚Æ‚«‚ÍA\\[F],^\\[F]‚ªŽg—p‚Å‚«‚Ü‚·B
+
 CV_hkey = \{
 eml	= _CYA,from: ;Šg’£Žq = [ƒIƒvƒVƒ‡ƒ“]<jmpa:F:color>,ƒL[ƒ[ƒh(‘å¬‹æ•Ê–³) ‚ÅŽw’è‚µ‚Ü‚·B
 	_BRO,to: ;•¡”‚ÌƒL[ƒ[ƒh‚ðŽw’è‚·‚é‚Æ‚«‚ÍA‚±‚Ì‚æ‚¤‚És“ª‚É‹ó”’‚ð“ü‚ê‚Ü‚·B
-	 >_GRE,cc: ; FŽw’è‚Ì‘O‚Éu >v‚ª‚ ‚é‚ÆAƒL[ƒ[ƒhˆÈ~(‰E’[‚Ü‚Å)‚àF‚ª•Ï‰»‚µ‚Ü‚·B
+	 > _GRE,cc: ; FŽw’è‚Ì‘O‚Éu >v‚ª‚ ‚é‚ÆAƒL[ƒ[ƒhˆÈ~(‰E’[‚Ü‚Å)‚àF‚ª•Ï‰»‚µ‚Ü‚·B
 	< _GRE,ˆÈã ; FŽw’è‚Ì‘O‚Éu< v‚ª‚ ‚é‚ÆAƒL[ƒ[ƒhˆÈ‘O(¶’[‚Ü‚Å)‚àF‚ª•Ï‰»‚µ‚Ü‚·B
+	>~_GRE,ŽŠ‹} ; FŽw’è‚Ì‘O‚Éu~v‚ª‚ ‚é‚ÆAƒL[ƒ[ƒh‚Ì”wŒi‚ÌF‚ª•Ï‰»‚µ‚Ü‚·B
 *	= _SBLU,ppx ; ŠY“–Šg’£Žq‚ª‚È‚¢‚Æ‚«‚Í * ‚ªŽg‚í‚ê‚Ü‚·B* ‚ÌÝ’è‚ÍA‘¼‚ÌŠY“–Ý’è‚ª‚ ‚é‚Æ‚«‚ÍŽg‚í‚ê‚Ü‚¹‚ñB
 \}
-¦Šg’£Žq‚ÌŽw’è‚É <jmpa:ƒƒCƒ‹ƒhƒJ[ƒh:wildcard>(.EXE,.COM,.BAT)A³‹K•\Œ»(/.jpe/)‚àŽg—p‚Å‚«‚Ü‚·‚ªAŽžŠÔ‚ªŠ|‚©‚éˆ—‚È‚Ì‚ÅÅ¬ŒÀ‚ÌŽg—p‚ªD‚Ü‚µ‚¢‚ÆŽv‚¢‚Ü‚·B
+¦Šg’£Žq‚ÌŽw’è‚É <jmpa:ƒƒCƒ‹ƒhƒJ[ƒh:wildcard>(.EXE,.COM,.BAT)A³‹K•\Œ»(/.jpe/)‚àŽg—p‚Å‚«‚Ü‚·B
 
 <tk:CV_char> PPv •¶ŽšE”wŒi
 
@@ -8991,7 +9088,7 @@ deldir	= rd   "%*path"
 \}
 PPc ‚ÅƒfƒBƒŒƒNƒgƒŠ‚ÌƒpƒX‚Æ‚µ‚Äuaux:M_auxdir\c:\windowsv‚ðŽw’è‚·‚é‚ÆAM_auxdir‚ÉŽw’è‚µ‚½“à—e‚ð—p‚¢‚Äƒhƒ‰ƒCƒu C: “à‚Ì‰{——‚â•¡ŽÊ“™‚Ì‘€ì‚ðs‚¤‚±‚Æ‚ª‚Å‚«‚Ü‚·B
 
-¦‚±‚Ì‘¼APPx‚Ì”z•zƒy[ƒW<<myurl>/slppx.html>‚ÅAFTP‚âandorid ADB.EXE—p‚Ì—á‚ð—pˆÓ‚µ‚Ä‚¢‚Ü‚·B
+¦‚±‚Ì‘¼APPx‚Ì”z•zƒy[ƒW<<myurl>/slppx.html#ppxaux>‚ÅAFTP‚âandorid ADB.EXE—p‚Ì—á‚ð—pˆÓ‚µ‚Ä‚¢‚Ü‚·B
 <b>Eaux: ƒpƒX‚ÌŽw’è•û–@</b>
 (1)u\\v‹æØ‚è‚Ì‚Æ‚«
 aux:(Ý’èƒƒjƒ…[–¼)\\[(ƒpƒX1)[\\(ƒpƒX2)...]]
@@ -9108,7 +9205,8 @@ _Command = \{
 test1 = %I"%*arg(0)... #1:%*arg(1) #2:%*arg(2) #3:%*arg(3)"
 test2 = command1 %C
   command2 %*arg(1)
-  command3
+  *if %*arg(2) == 0 %: command3 %: *return
+  command4
 \}
 </pre>
 Žg—p—á)
@@ -9402,7 +9500,7 @@ PPcust ‚Å•Û‘¶‚µ‚½ƒtƒ@ƒCƒ‹‚ð“Çž‚ñ‚Å‚­‚¾‚³‚¢B
 œÝ’èƒtƒ@ƒCƒ‹
 ƒŠƒ€[ƒoƒuƒ‹ƒƒfƒBƒA‚ÉPPx‚ð“ü‚ê‚ÄŽ‚¿•à‚«‚½‚¢‚Æ‚«‚ÍA‰º‹L‚Ì‚æ‚¤‚ÉPPX?????.DAT‚ðì¬‚µ‚Ä‚­‚¾‚³‚¢B‚±‚ê‚ç‚Ìƒtƒ@ƒCƒ‹‚ðŽg‚¤‚æ‚¤‚É‚È‚è‚Ü‚·B
 
-¦SETUP.EXE‚ÅƒJƒXƒ^ƒ€ƒCƒ“ƒXƒg[ƒ‹‚ðs‚¤‚ÆA‚±‚ÌÝ’è‚ªŠÈ’P‚És‚¦‚Ü‚·B
+¦ SETUP.EXE ‚ÅƒJƒXƒ^ƒ€ƒCƒ“ƒXƒg[ƒ‹‚ðs‚¤‚ÆA‚±‚ÌÝ’è‚ªŠÈ’P‚És‚¦‚Ü‚·B
 
 EMultiByte”Å
 ì¬‚·‚éÝ’è^ƒqƒXƒgƒŠƒtƒ@ƒCƒ‹
@@ -9423,7 +9521,7 @@ PPcust ‚Å•Û‘¶‚µ‚½ƒtƒ@ƒCƒ‹‚ð“Çž‚ñ‚Å‚­‚¾‚³‚¢B
 ƒ}ƒNƒ•¶Žš %0 ‚ÍAuE:\\PPx\\v‚Ì‚æ‚¤‚ÉPPx‚ª‚ ‚éƒfƒBƒŒƒNƒgƒŠ‚ð•\‚µ‚Ü‚·Bu%0tool\\tool.exev“™‚ÆŽw’è‚·‚é‚ÆAPPx‚Ì‚ ‚éƒfƒBƒŒƒNƒgƒŠ‚Ì‰º‚É‚ ‚étoolƒfƒBƒŒƒNƒgƒŠ“à‚Ìtool.exe‚ðŽw’è‚µ‚½‚±‚Æ‚É‚È‚è‚Ü‚·B
 
 œSusie Plug-in‚âƒƒO‚È‚Ç‚Ì•Û‘¶æ
-<jmpa:X_save>,<jmpa:X_cache>,<jmpa:P_susieP>“™‚ÌƒpƒX‚ÉŠÖ‚·‚éÝ’è‚ÍAPPLIBxx.DLL‚ÌêŠ‚ðŠî€‚Æ‚µ‚½Žw’è‚ª‚Å‚«‚Ü‚·B—á‚¦‚Î X_save = savepath ‚ÆŽw’è‚µ‚½ê‡APPLIBxx.DLL‚Ì‚ ‚éƒfƒBƒŒƒNƒgƒŠ‰º‚Ì savepath ‚ðŽg—p‚µ‚Ü‚·B
+ƒJƒXƒ^ƒ}ƒCƒY‚Ì‘S”Ê-‘S”Ê‚É‚ ‚é ƒJƒXƒ^ƒ}ƒCƒYƒoƒbƒNƒAƒbƒv•ƒƒO‚Ì•Û‘¶êŠ<jmpa:X_save>, ŠeŽíƒLƒƒƒbƒVƒ…‚Ì•Û‘¶êŠ<jmpa:X_cache>, Susie plug-in‚ª‚ ‚éƒfƒBƒŒƒNƒgƒŠ<jmpa:P_susieP>“™‚ÌƒpƒX‚ÉŠÖ‚·‚éÝ’è‚ÍAPPLIBxx.DLL‚ÌêŠ‚ðŠî€‚Æ‚µ‚½Žw’è‚ª‚Å‚«‚Ü‚·B—á‚¦‚Î X_save = savepath ‚ÆŽw’è‚µ‚½ê‡APPLIBxx.DLL‚Ì‚ ‚éƒfƒBƒŒƒNƒgƒŠ‰º‚Ì savepath ‚ðŽg—p‚µ‚Ü‚·B
 
 œ“‡ƒA[ƒJƒCƒoŽd—l‚ÌDLL‚âmigemo.DLL‚È‚Ç
 UNLHA32.DLL“™‚ÌDLL‚âŠeŽíƒc[ƒ‹‚ÍAPPx.EXE‚Æ“¯‚¶ƒfƒBƒŒƒNƒgƒŠ‚É“ü‚ê‚Ä‚­‚¾‚³‚¢B
@@ -9472,29 +9570,33 @@ PPc‚Å‚ÍAƒNƒŠƒbƒvƒ{[ƒh‚ðŽg‚Á‚½ƒtƒ@ƒCƒ‹‘€ì Ctrl+C/Ctrl+X/Ctrl+V ‚ðs‚¤‚±‚Æ‚ª‚Å‚
 *freedriveuse %*name(H,"%1") %: %z"%*name(H,"%1")%\\",eject
 <group:‚²‚Ý” ‚Ì‘€ì>
 
-Eu%j#0:\\‚²‚Ý” v‚Å‚²‚Ý” “à‚ÉˆÚ“®‚µ‚Ü‚·B
-Eu%z"#0:\\‚²‚Ý” ",Bv‚Å‚²‚Ý” ‚Ìƒƒjƒ…[‚ð•\Ž¦‚µAu‚²‚Ý” ‚ð‹ó‚É‚·‚év‚ð’¼Ú‘I‘ð‚Å‚«‚Ü‚·B
-Eu%k"Y" %z"#0:\\‚²‚Ý” ",Bv‚È‚çA‘I‘ð‚µ‚½Œã[Y]‚ð‰Ÿ‚·‚Ì‚ÅAŠm”F–³‚µ‚Å‹ó‚É‚È‚è‚Ü‚·B
+Eu%j#10:\vu%jshell:RecycleBinFoldervu%j#0:\\‚²‚Ý” v‚Ì‚¢‚¸‚ê‚©‚Å‚²‚Ý” “à‚ÉˆÚ“®‚µ‚Ü‚·B¦ƒpƒX‚Æ‚µ‚ÄŽw’è‚·‚é‚Æ‚«‚Íu%jv‚ðŠO‚µ‚Ä‚­‚¾‚³‚¢B
+Eu%z"#10:\\"v‚Å‚²‚Ý” ‚Ìƒƒjƒ…[‚ð•\Ž¦‚µAu%z"#10:\\",Bv‚Åu‚²‚Ý” ‚ð‹ó‚É‚·‚év‚ð’¼Ú‘I‘ð‚Å‚«‚Ü‚·B
+Eu%k"Y" %z"#10:\\",Bv‚È‚çA‘I‘ð‚µ‚½Œã[Y]‚ð‰Ÿ‚·‚Ì‚ÅAŠm”F–³‚µ‚Å‹ó‚É‚È‚è‚Ü‚·B
 <group:Žg—p‚µ‚È‚¢‚Æ‚«‚Íƒ^ƒXƒNƒgƒŒƒC‚ÉŠi”[‚µAƒzƒbƒgƒL[‚ÅŒÄ‚Ño‚µ‚½‚¢>
 <key:ƒzƒbƒgƒL[><key:ƒ^ƒXƒNƒgƒŒƒC>
 Eƒ^ƒXƒNƒgƒŒƒC‚ÉŠi”[‚·‚é
-X_tray = 1 ‚Æ‚·‚é‚±‚Æ‚ÅAÅ¬‰»Žž‚Éƒ^ƒXƒNƒgƒŒƒC‚ÉŠi”[‚³‚ê‚Ü‚·B
+ƒJƒXƒ^ƒ}ƒCƒY‚Ì‘S”Ê-‰æ–Ê-Å¬‰»Žž‚Éƒ^ƒXƒNƒgƒŒƒC‚É“ü‚ê‚é(—vPPtray)‚Éƒ`ƒFƒbƒN‚·‚é (X_tray = 1) ‚±‚Æ‚ÅAÅ¬‰»Žž‚Éƒ^ƒXƒNƒgƒŒƒC‚ÉŠi”[‚³‚ê‚Ü‚·B
 PPtray ‚ª•K—v‚Å‚·B
 
 EƒzƒbƒgƒL[‚ðŽg‚¤^ƒzƒbƒgƒL[‚ÅŒ³‚É–ß‚·
 K_tray ‚ÉƒzƒbƒgƒL[‚ÌŽw’è‚ð’Ç‰Á‚µAPPtray ‚ð‹N“®‚³‚¹‚Ä‚¨‚­•K—v‚ª‚ ‚è‚Ü‚·B
-Œ³‚É–ß‚·‚½‚ß‚Ìê—pƒzƒbƒgƒL[‚ÌÝ’è‚Í“Á‚É—pˆÓ‚µ‚Ä‚¢‚Ü‚¹‚ñ‚ªAPPc‚ÌƒzƒbƒgƒL[‚ÍPPcust‚Ì‘S”Êƒ^ƒu’†‚Ì‘S”Ê-‰æ–Ê‚ÅÝ’è‚Å‚«‚Ü‚·B
+Œ³‚É–ß‚·‚½‚ß‚Ìê—pƒzƒbƒgƒL[‚ÌÝ’è‚Í“Á‚É—pˆÓ‚µ‚Ä‚¢‚Ü‚¹‚ñ‚ªAPPc‚ÌƒzƒbƒgƒL[‚ÍƒJƒXƒ^ƒ}ƒCƒY‚Ì‘S”Ê-‘S”Ê-‰æ–Ê‚ÅÝ’è‚Å‚«‚Ü‚·B
 <i>—á)
 K_tray =\{
 &\\P	, *focus !
 &\\V	, *focus "PPV["
 \}</i>
-<group:ƒIƒ“ƒ‰ƒCƒ“ƒwƒ‹ƒv‚ðƒ_ƒEƒ“ƒ[ƒh‚µ‚ÄŽg—p‚·‚é>
+<group:ƒwƒ‹ƒv‚ðƒ_ƒEƒ“ƒ[ƒh‚µ‚ÄŽg—p‚·‚é>
 
-Windows Vista ˆÈ~‚Å‚Í ƒIƒ“ƒ‰ƒCƒ“ƒwƒ‹ƒv<<myurl>/ppxhlp.html>‚ðŽg—p‚µ‚Ü‚·‚ªA‚±‚ê‚ðƒ_ƒEƒ“ƒ[ƒh‚µ‚ÄƒIƒtƒ‰ƒCƒ“‚ÅŽg—p‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+PPx ‚Ìƒwƒ‹ƒv‚ÍƒIƒ“ƒ‰ƒCƒ“<<myurl>/ppxhlp.html>‚Å‚·‚ªAƒwƒ‹ƒv‚ðƒ_ƒEƒ“ƒ[ƒh‚µ‚ÄƒIƒtƒ‰ƒCƒ“‚Åƒwƒ‹ƒv‚ðŽg—p‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
 
+(1)ƒIƒ“ƒ‰ƒCƒ“ƒwƒ‹ƒv‚Ìƒ_ƒEƒ“ƒ[ƒh
 @<<myurl>/ppxhelp.html>(ƒtƒŒ[ƒ€‚ª•t‚¢‚Ä‚¢‚é‚Æ‚«‚Í‰E‘¤‚ÌƒtƒŒ[ƒ€)‚ð PPx ‚ª‚ ‚éƒfƒBƒŒƒNƒgƒŠ‚É•Û‘¶‚µ‚Ä‚¨‚­‚ÆAF1ƒL[‚ð‰Ÿ‚µ‚½‚Æ‚«‚âAƒJƒXƒ^ƒ}ƒCƒU‚Å‰EƒNƒŠƒbƒN‚ð‰Ÿ‚µ‚½‚Æ‚«‚È‚Ç‚ÉA•Û‘¶‚µ‚½ ppxhelp.html ‚ðŠJ‚­‚æ‚¤‚É‚È‚è‚Ü‚·B
-@®AŠJ‚­ƒuƒ‰ƒEƒU‚ÍŠù’è‚Ìƒuƒ‰ƒEƒU‚Å‚·‚ªA<jmpa:A_exec>‚Ì browser ‚ÉŽg—p‚µ‚½‚¢ƒuƒ‰ƒEƒU‚ÌƒpƒX‚ðŽw’è‚µ‚Ä‚¨‚­‚Æ‚»‚Ìƒuƒ‰ƒEƒU‚ðŽg—p‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+@®AŠJ‚­ƒuƒ‰ƒEƒU‚ÍŠù’è‚Ìƒuƒ‰ƒEƒU‚Å‚·‚ªAƒJƒXƒ^ƒ}ƒCƒY‚Ì‘S”Ê-‘S”Ê-ƒfƒtƒHƒ‹ƒgƒuƒ‰ƒEƒU (<jmpa:A_exec>‚Ì browser) ‚ÉŽg—p‚µ‚½‚¢ƒuƒ‰ƒEƒU‚ÌƒpƒX‚ðŽw’è‚µ‚Ä‚¨‚­‚Æ‚»‚Ìƒuƒ‰ƒEƒU‚ðŽg—p‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+
+(2)Windows Help(WINHLP32.EXE)
+@<<myurl>/slppx.html#ppxhelp> ‚ðƒ_ƒEƒ“ƒ[ƒh‚µ‚ÄAPPx ‚ª‚ ‚éƒfƒBƒŒƒNƒgƒŠ‚É PPX.HLP ‚Æ PPX.CNT ‚ð•Û‘¶‚·‚é‚ÆAWindows XP ˆÈ‘O‚ÅŽg—p‚·‚é‚æ‚¤‚É‚È‚è‚Ü‚·BWindows Vista ˆÈ~‚Å‚ÍAWINHLP32.EXE PPX.HLP ‚ÆŽè“®ŽÀs‚·‚é•K—v‚ª‚ ‚è‚Ü‚·B
 <group:dump>
 }\page
 .2:PPc •Ò
@@ -9504,17 +9606,17 @@ Windows Vista ˆÈ~‚Å‚Í ƒIƒ“ƒ‰ƒCƒ“ƒwƒ‹ƒv<<myurl>/ppxhlp.html>‚ðŽg—p‚µ‚Ü‚·‚ªA‚±‚ê
 ‚±‚ÌƒRƒ}ƒ“ƒhˆê——‚ÍA" %Obd *ppcust /c "‚ð“à•”‚ÅŽÀs‚µ‚Ä‚¢‚Ü‚·‚Ì‚ÅAƒL[‚ÉŠ„‚è“–‚Ä‚½‚¢ê‡‚Í‚±‚Ì“à—e‚ð‹LÚ‚µ‚Ä‚­‚¾‚³‚¢B
 <group:‹@”\‚ÌƒL[Š„“–‚Äˆê——‚ÍH>
 
- SETUP‚Å‰pŒêŽw’è‚ð‚µ‚È‚¢‚ÅƒCƒ“ƒXƒg[ƒ‹‚µ‚½‚Æ‚«‚ÍAƒƒjƒ…[‚Éˆê’Ê‚è‚ÌƒL[Š„“–‚Ä‚ª•¹‹L‚³‚ê‚Ä‚¢‚Ü‚·B
- ƒJƒXƒ^ƒ}ƒCƒY‚µ‚½‚Æ‚«‚ÍAGUIƒJƒXƒ^ƒ}ƒCƒU‚Ìƒƒjƒ…[ƒ^ƒu¨ƒL[Š„“–‚Ä•\‹Lƒ{ƒ^ƒ“‚ÅAƒƒjƒ…[‚ÉƒJƒXƒ^ƒ}ƒCƒYŒã‚ÌƒL[Š„“–‚Ä‚ª”½‰f‚³‚ê‚Ü‚·B
+ SETUP.EXE ‚Å‰pŒêŽw’è‚ð‚µ‚È‚¢‚ÅƒCƒ“ƒXƒg[ƒ‹‚µ‚½‚Æ‚«‚ÍAƒƒjƒ…[‚Éˆê’Ê‚è‚ÌƒL[Š„“–‚Ä‚ª•¹‹L‚³‚ê‚Ä‚¢‚Ü‚·B
+ ƒJƒXƒ^ƒ}ƒCƒY‚µ‚½‚Æ‚«‚ÍAGUIƒJƒXƒ^ƒ}ƒCƒU‚Ìƒƒjƒ…[ƒ^ƒu¨¶‰º‚ÌƒL[Š„“–‚Ä•\‹Lƒ{ƒ^ƒ“‚ÅAƒƒjƒ…[‚ÉƒJƒXƒ^ƒ}ƒCƒYŒã‚ÌƒL[Š„“–‚Ä‚ª”½‰f‚³‚ê‚Ü‚·B
  ƒƒjƒ…[ƒo[‚ð‰B‚µ‚Ä‚¢‚éê‡‚Å‚àAƒ^ƒCƒgƒ‹ƒo[‚ð‰EƒNƒŠƒbƒN^Alt+Space‚Åƒƒjƒ…[‚ªŽg‚¦‚Ü‚·B
 <group:‚Q‰æ–Êƒtƒ@ƒCƒ‰‚É‚µ‚½‚¢>
 
-‚¢‚í‚ä‚é‚Q‰æ–ÊŒ`Aƒ_ƒuƒ‹ƒEƒBƒ“ƒhƒE‚É‚·‚éê‡Aˆê”Ê“I‚Èˆê‘ÌŒ^‚ÆA‚Q–‡‚ð•À‚×‚é˜AŒ‹Œ^‚ª‘I‚×‚Ü‚·B
-setup.exe‚É‚æ‚é‰ŠúƒJƒXƒ^ƒ}ƒCƒY‚Ì‚Æ‚«‚É‚¨ŽèŒy‚ÈÝ’è‚ª‚Å‚«‚Ü‚·B
+‚¢‚í‚ä‚é‚Q‰æ–ÊŒ`Aƒ_ƒuƒ‹ƒEƒBƒ“ƒhƒE‚É‚·‚éê‡Aˆê”Ê“I‚Èˆê‘Ì‰»Œ^‚ÆA‚Q–‡‚ð•À‚×‚é˜AŒ‹Œ^‚ª‘I‚×‚Ü‚·B
+SETUP.EXE ‚É‚æ‚é‰ŠúƒJƒXƒ^ƒ}ƒCƒY‚Ì‚Æ‚«‚É‚¨ŽèŒy‚ÈÝ’è‚ª‚Å‚«‚Ü‚·B
 
-setup.exe ‚ðŽg‚í‚È‚¢ê‡AƒJƒXƒ^ƒ}ƒCƒU‚Ì‘S”Ê-PPc-‰æ–Ê\¬‚ÆA
+SETUP.EXE ‚ðŽg‚í‚È‚¢ê‡AƒJƒXƒ^ƒ}ƒCƒU‚Ì‘S”Ê-PPc-‰æ–Ê\¬‚ÆA
  ƒƒjƒ…[ƒo[-Window-Option ‚ÅFX‚¢‚¶‚Á‚ÄŒ©‚Ä‚­‚¾‚³‚¢B
-Eˆê‘ÌŒ^‚È‚çuˆê‘Ì‰»(M)v‚ðŽw’è‚µ‚Ü‚·B
+Eˆê‘Ì‰»Œ^‚È‚çuˆê‘Ì‰»(M)v‚ðŽw’è‚µ‚Ü‚·B
 @‚Ü‚½A‹N“®Žž‚Ì–‡”‚ÍƒJƒXƒ^ƒ}ƒCƒU‚Ì‘S”Ê-PPc-‰æ–Ê\¬‚Ì‹N“®Žž‚ÌƒyƒCƒ“”‚ÅŽw’è‚µ‚Ü‚·B
 
 Eã‰º^¶‰E˜AŒ‹‚È‚çu˜AŒ‹ˆ—v“à‚Ì€–Ú‚ðÝ’è‚µ‚Ü‚·B
@@ -9552,15 +9654,15 @@ setup.exe ‚ðŽg‚í‚È‚¢ê‡AƒJƒXƒ^ƒ}ƒCƒU‚Ì‘S”Ê-PPc-‰æ–Ê\¬‚ÆA
  ’Êí‚Ì–¼‘O•ÏXƒ_ƒCƒAƒƒO([R])‚Å[ª][«]ƒ{ƒ^ƒ“(Alt + U / D)‚ð‰Ÿ‚·‚ÆˆêŒÂã^ˆêŒÂ‰º‚Ì–¼‘O•ÏX‚ÉˆÚ‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
 <group:CD-ROM‚©‚çƒtƒ@ƒCƒ‹‚ðƒRƒs[‚·‚éŽžA‘ž‚Ý‹ÖŽ~‚É‚È‚Á‚Ä‚µ‚Ü‚¤>
 
- ƒRƒs[‚Ìu2:RenamevƒV[ƒg‚ÌuCD‚Ì“ÇŽæê—p‰ðœv‚ðÝ’è‚µ‚Ä‚¨‚­‚Æ‰ðœ‚Å‚«‚Ü‚·B
+ ƒRƒs[‚Ìu2:–¼‘OvƒV[ƒg‚ÌuCD‚Ì“ÇŽæê—p‰ðœv‚ðÝ’è‚µ‚Ä‚¨‚­‚Æ‰ðœ‚Å‚«‚Ü‚·B
 
- ˆêŽž“I‚É‰ðœ‚·‚é‚Æ‚«‚ÍAu2:RenamevƒV[ƒg‚Ìu“ÇŽæê—p/Readonlyv‚Ìƒ`ƒFƒbƒN‚ðŠO‚µ‚Ä‚©‚çƒRƒs[‚µ‚Ü‚·B
+ ˆêŽž“I‚É‰ðœ‚·‚é‚Æ‚«‚ÍAu2:–¼‘OvƒV[ƒg‚Ìu“ÇŽæê—pv‚Ìƒ`ƒFƒbƒN‚ðŠO‚µ‚Ä‚©‚çƒRƒs[‚µ‚Ü‚·B
 <group:[T]ree‚Å‚¢‚¿‚¢‚¿ƒfƒBƒŒƒNƒgƒŠ‚Ì“à—e‚ðŽæ“¾‚µ‚Ä‚Ù‚µ‚­‚È‚¢>
 
- [Shift]‚ð‰Ÿ‚µ‚È‚ª‚çˆÚ“®‚µ‚Ä‚­‚¾‚³‚¢BÝ’è‚Åí‚ÉŽæ“¾‚µ‚È‚¢‚æ‚¤‚É‚·‚é‚±‚Æ‚à‚Å‚«‚Ü‚·B
+ [Shift]‚ð‰Ÿ‚µ‚È‚ª‚çˆÚ“®‚µ‚Ä‚­‚¾‚³‚¢BÝ’è‚Ì‘I‘ð“¯Šú•\Ž¦‚Åí‚ÉŽæ“¾‚µ‚È‚¢‚æ‚¤‚É‚·‚é‚±‚Æ‚à‚Å‚«‚Ü‚·B
 <group:ƒfƒBƒŒƒNƒgƒŠ‚ðƒRƒs[‚·‚éŽž‚Éƒ^ƒCƒ€ƒXƒ^ƒ“ƒv‚à“¯‚¶‚É‚µ‚½‚¢>
 
- WinNTŒn‚Å‚Í‚Å‚«‚Ü‚·‚ªWin9xŒn‚Å‚Í‚Å‚«‚Ü‚¹‚ñBˆê•”‚Ìƒtƒ@ƒCƒ‰‚Å‚Í‚Å‚«‚é‚Ì‚ª—L‚è‚Ü‚·‚ªADOSŒo—R‚Ås‚Á‚½‚èAƒVƒXƒeƒ€ŽžŒv‚ð•ÏX‚µ‚½‚è‚µ‚Ä‚¢‚é‚È‚Ç‚ ‚Ü‚èˆÀ‘S‚Å–³‚¢‚½‚ßAPPx‚Å‚ÍWinNTŒn‚Ì‚Ýˆ—‚µ‚Ä‚¢‚Ü‚·B
+ WinNTŒn‚Å‚Í‚Å‚«‚Ü‚·‚ªWin9xŒn‚Å‚Í‚Å‚«‚Ü‚¹‚ñBˆê•”‚Ìƒtƒ@ƒCƒ‰‚Å‚Í‚Å‚«‚é‚Ì‚ª—L‚è‚Ü‚·‚ªADOSŒo—R‚Ås‚Á‚½‚èAƒVƒXƒeƒ€ŽžŒv‚ð•ÏX‚µ‚½‚è‚µ‚Ä‚¢‚é‚È‚Ç‚ ‚Ü‚èˆÀ‘S‚Å–³‚¢‚½‚ßAPPx ‚Å‚ÍWinNTŒn‚Ì‚Ýˆ—‚µ‚Ä‚¢‚Ü‚·B
  ‚Ü‚½ANTFS‚Ìê‡‚Í‰ºˆÊƒfƒBƒŒƒNƒgƒŠ‚ðƒAƒNƒZƒX‚µ‚½‚è•ÏX‚µ‚½‚è‚µ‚½ê‡A‚»‚ÌƒfƒBƒŒƒNƒgƒŠ‚Ìƒ^ƒCƒ€ƒXƒ^ƒ“ƒv‚ª•ÏX‚³‚ê‚é‚½‚ßAƒRƒs[Žž‚É•ÏX‚µ‚Ä‚à‚·‚®•Ï‰»‚µ‚Ä‚µ‚Ü‚¢‚Ü‚·B
 <group:í‚É“¯‚¶•À‚Ñ‡‚Å•\Ž¦‚³‚¹‚½‚¢/•Ï‚È•À‚Ñ‚Å•\Ž¦‚³‚ê‚é>
 
@@ -9583,7 +9685,25 @@ setup.exe ‚ðŽg‚í‚È‚¢ê‡AƒJƒXƒ^ƒ}ƒCƒU‚Ì‘S”Ê-PPc-‰æ–Ê\¬‚ÆA
 *whereis %'path',cmd.exe,,,,0
 ‚ÆŽÀs‚·‚é‚±‚Æ‚ÅŒŸõ‚Å‚«‚Ü‚·B
 
-®A*whereis ƒ_ƒCƒAƒƒO‚ÅŒŸõ‚·‚é‚Æ‚«‚ÍAŒŸõ‘ÎÛ‚Éu%path%vAŒŸõ–¼‘O‚ÉŒŸõ‚·‚éŽÀsƒtƒ@ƒCƒ‹‚Ì–¼‘OAuƒTƒuƒfƒBƒŒƒNƒgƒŠ“àv‚Ìƒ`ƒFƒbƒN‚ð‰ðœ‚·‚é‚±‚Æ‚Å‰Â”\‚Å‚·B<group:dump>
+®A*whereis ƒ_ƒCƒAƒƒO‚ÅŒŸõ‚·‚é‚Æ‚«‚ÍAŒŸõ‘ÎÛ‚Éu%path%vAŒŸõ–¼‘O‚ÉŒŸõ‚·‚éŽÀsƒtƒ@ƒCƒ‹‚Ì–¼‘OAuƒTƒuƒfƒBƒŒƒNƒgƒŠ“àv‚Ìƒ`ƒFƒbƒN‚ð‰ðœ‚·‚é‚±‚Æ‚Å‰Â”\‚Å‚·B
+<group:ƒXƒ}[ƒgƒzƒ“‚âƒfƒWƒ^ƒ‹ƒI[ƒfƒBƒIƒvƒŒ[ƒ„[‚Æƒtƒ@ƒCƒ‹‚Ì‚â‚è‚Æ‚è‚ð‚µ‚½‚¢>
+
+ŠY“–ƒXƒ}[ƒgƒzƒ“‚âƒfƒWƒ^ƒ‹ƒI[ƒfƒBƒIƒvƒŒ[ƒ„[‚ÌŽd—lŽŸ‘æ‚Å•û–@‚ª•Ï‚í‚è‚Ü‚·B
+<b>(1)ƒŠƒ€[ƒoƒuƒ‹ƒhƒ‰ƒCƒu</b>
+ Ú‘±‚µ‚½‚Æ‚«‚Éƒhƒ‰ƒCƒu–¼‚ªŠ„‚è“–‚Ä‚ç‚ê‚éê‡‚ÍA‚»‚Ìƒhƒ‰ƒCƒu‚ÉˆÚ“®‚µ‚Äƒtƒ@ƒCƒ‹‘€ì‚ª‚Å‚«‚Ü‚·B
+
+<b>(2)MTPÚ‘±</b>
+ ƒhƒ‰ƒCƒu–¼‚ª‚È‚­AƒGƒNƒXƒvƒ[ƒ‰[‚ÌPC/ƒ}ƒCƒRƒ“ƒsƒ…[ƒ^‚É•\Ž¦‚³‚ê‚éê‡AMTPÚ‘±‚É‚È‚Á‚Ä‚¢‚Ü‚·B
+ •\Ž¦ƒfƒBƒŒƒNƒgƒŠ‚Æ‚µ‚Ä Explorer ŒÝŠ·Œ`Ž®‚ÌƒpƒX( #17:\\ ‚Ü‚½‚ÍA shell:MyComputerFolder )‚ðŽw’è‚µAŠY“–ƒfƒoƒCƒX“à‚ÉˆÚ“®‚·‚é‚±‚Æ‚Åƒtƒ@ƒCƒ‹‘€ì‚ª‚Å‚«‚Ü‚·B®APPv ‚É‚æ‚é•\Ž¦‚Í‘Î‰ž‚µ‚Ä‚¢‚Ü‚¹‚ñB
+
+<b>(3)FTP/WebDAV/HTTPÚ‘±</b>
+ ƒXƒ}[ƒgƒzƒ“‘¤‚ÉAFTP/WebDAV/HTTP ‚ÌƒT[ƒo‚ðƒCƒ“ƒXƒg[ƒ‹‚µA‚»‚ÌƒAƒhƒŒƒX‚ÉƒfƒBƒŒƒNƒgƒŠˆÚ“®‚·‚é‚±‚Æ‚Åƒtƒ@ƒCƒ‹‘€ì‚ª‚Å‚«‚Ü‚·B
+ ®AŠÂ‹«‚É‚æ‚Á‚Ä‚ÍA•Ê“r”z•z‚µ‚Ä‚¢‚é aux: sample ‚ª•K—v‚É‚È‚é‚±‚Æ‚ª‚ ‚è‚Ü‚·B
+
+<b>(4)adbÚ‘±</b>
+ android ƒXƒ}[ƒgƒzƒ“‚Ìê‡Aandroid ƒfƒoƒCƒX‚ÌƒfƒoƒbƒO—p‚É—pˆÓ‚³‚ê‚Ä‚¢‚é adb.exe ( https://developer.android.com/studio/releases/platform-tools ) ‚ðŽg‚Á‚ÄAandroid ƒfƒoƒCƒX‚ÌƒXƒgƒŒ[ƒW“à‚ðƒtƒ@ƒCƒ‹‘€ì‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+ •Ê“r”z•z‚µ‚Ä‚¢‚é aux: sample ‚ðŽQl‚ÉÝ’è‚ðs‚¤‚±‚Æ‚Åƒtƒ@ƒCƒ‹‘€ì‚ª‰Â”\‚Æ‚È‚è‚Ü‚·B
+<group:dump>
 }\page
 .2:ƒJƒXƒ^ƒ}ƒCƒY•Ò
 <group:ƒTƒ“ƒvƒ‹>
@@ -9599,7 +9719,7 @@ Configuration file & Memo <<myurl>/dlcfg.html> ‚ÆA
 
 <b>‰•à•Ò</b>
 @PPcã‚ÅƒGƒ“ƒgƒŠ‚ð‘I‘ð‚µ‚½Œã‚É Enter ‚ð‰Ÿ‚µ‚½‚èAƒ_ƒuƒ‹ƒNƒŠƒbƒN‚ð‚µ‚½‚è‚µ‚½‚Æ‚«‚ÍA
-•W€‚Å‚Í Ctrl+Enter ‚â‰EƒNƒŠƒbƒN‚ÅA•\Ž¦‚³‚ê‚éƒƒjƒ…[‚ð•\Ž¦‚µA‚»‚Ìƒƒjƒ…[‚É‚ ‚é€–Ú‚ð‘I‘ðEŽÀs‚·‚é‚æ‚¤‚É‚È‚Á‚Ä‚¢‚Ü‚·B
+•W€‚Å‚Í Ctrl + Enter ‚â‰EƒNƒŠƒbƒN‚ÅA•\Ž¦‚³‚ê‚éƒƒjƒ…[‚ð•\Ž¦‚µA‚»‚Ìƒƒjƒ…[‚É‚ ‚é€–Ú‚ð‘I‘ðEŽÀs‚·‚é‚æ‚¤‚É‚È‚Á‚Ä‚¢‚Ü‚·B
 
 <b>1)Šî–{Ý’è</b>
 @Enter ‚ð‰Ÿ‚µ‚½‚Æ‚«‚ÌŠî–{Ý’è‚ÍAŽŸ‚Ì‚æ‚¤‚É‚È‚è‚Ü‚·B
@@ -9607,14 +9727,14 @@ Configuration file & Memo <<myurl>/dlcfg.html> ‚ÆA
 @Eƒ}[ƒN‚ª‚ ‚Á‚Ä‚àƒJ[ƒ\ƒ‹ˆÊ’u‚ÌƒGƒ“ƒgƒŠ‚ð‘ÎÛ‚É‚·‚éB
 
 @‚±‚ê‚ç‚ÍŽŸ‚ÌÝ’è‚Å•ÏX‚Å‚«‚Ü‚·B¦‰ŠúÝ’è‚ÉƒGƒNƒXƒvƒ[ƒ‰•—Ý’è‚ð‘I‘ð‚µ‚½‚Æ‚«‚ÍA•ÏXÏ‚Ý‚Å‚·B
-@EˆÈ‰º‚ÌÝ’è‚ðs‚¤‚±‚Æ‚ÅAŠY“–Ží—Þ‚ÌÝ’è‚ª‚È‚¯‚ê‚ÎuŠJ‚­v‚É‚È‚é
+@EˆÈ‰º‚ÌÝ’è‚ðs‚¤‚±‚Æ‚ÅAŠY“–Ží—Þ‚ÌÝ’è‚ª‚È‚¯‚ê‚ÎuŠJ‚­v‚É‚È‚è‚Ü‚·
 E_cr = \{
 *    = @Z
 \}
 @Euƒ_ƒuƒ‹ƒNƒŠƒbƒN,[Enter],[Z]‚Íƒ}[ƒNƒGƒ“ƒgƒŠ‚ð‘ÎÛ‚É‚·‚év‚Ì‰ðœ( XC_exem = 1 )‚ð‚·‚é‚ÆAƒ}[ƒN‚ª‚ ‚é‚Æ‚«‚Í‚»‚ê‚ç‚ð‘ÎÛ‚É‚·‚é
 
 <b>2)‘I‘ð‚Ì‹L‰¯</b>
-@‚±‚Ìƒƒjƒ…[‚ðˆê“x‘I‘ð‚·‚é‚Æ‘I‘ðŽˆ‚ª‹L‰¯‚³‚ê‚ÄA‚Q“x–ÚˆÈ~‚Í Enter / ƒ_ƒuƒ‹ƒNƒŠƒbƒN‚Å‚»‚Ì‘I‘ðŽˆ‚ðƒƒjƒ…[•\Ž¦–³‚µ‚ÅŽÀs‚µ‚Ü‚·BŽ©“®‚Å‹L‰¯‚³‚ê‚½‚­‚È‚¢ê‡‚ÍAX_acr ‚ð•ÏX‚µ‚Ä‚­‚¾‚³‚¢BƒJƒXƒ^ƒ}ƒCƒU‚Ì‘S”Êƒ^ƒO‚Ì‰º•û‚É‚ ‚éŒŸõ—“‚ÅX_acr‚ð‹LÚ‚µ‚ÄŒŸõ‚·‚é‚Æ‚ÍŠY“–‚ÌêŠ‚ð•\Ž¦‚Å‚«‚Ü‚·B
+@‚±‚Ìƒƒjƒ…[‚ðˆê“x‘I‘ð‚·‚é‚Æ‘I‘ðŽˆ‚ª‹L‰¯‚³‚ê‚ÄA‚Q“x–ÚˆÈ~‚Í Enter / ƒ_ƒuƒ‹ƒNƒŠƒbƒN‚Å‚»‚Ì‘I‘ðŽˆ‚ðƒƒjƒ…[•\Ž¦–³‚µ‚ÅŽÀs‚µ‚Ü‚·BŽ©“®‚Å‹L‰¯‚³‚ê‚½‚­‚È‚¢ê‡‚ÍAƒJƒXƒ^ƒ}ƒCƒY‚Ì‘S”Ê-PPc-‘€ì-Enter/ƒ_ƒuƒ‹ƒNƒŠƒbƒN(M_Ccr“™)‚ÅŠg’£Žq‚Ì‘I‘ðŽˆ‚ðŽ©“®‹L‰¯‚·‚é(X_acr)‚ð•ÏX‚µ‚Ä‚­‚¾‚³‚¢BƒJƒXƒ^ƒ}ƒCƒU‚Ì‘S”Êƒ^ƒO‚Ì‰º•û‚É‚ ‚éŒŸõ—“‚ðŽg‚¢Au‘I‘ðŽˆv‚âuX_acrv‚ÅŒŸõ‚·‚é‚ÆA‚·‚®‚ÉŠY“–‚ÌêŠ‚ð•\Ž¦‚Å‚«‚Ü‚·B
 
 <b>3)‹L‰¯‚ÌÄÝ’è</b>
 @ˆê“x‹L‰¯‚µ‚½Ý’è‚ð•Ï‚¦‚é‚É‚ÍACtrl+Enter‚©‰EƒNƒŠƒbƒN‚Åƒƒjƒ…[‚ð•\Ž¦‚³‚¹‚½ŒãA
@@ -9625,11 +9745,11 @@ E_cr = \{
 @u‘—‚éEƒvƒƒOƒ‰ƒ€v“à‚Ìƒƒjƒ…[‚©‚çuƒvƒƒOƒ‰ƒ€‚ð‘I‘ð•“o˜^v‚ð‘I‘ð‚µAŽÀs‚·‚éƒvƒƒOƒ‰ƒ€‚ð‘I‘ð‚·‚é‚ÆA‘I‚ñ‚¾ƒvƒƒOƒ‰ƒ€‚ÅƒGƒ“ƒgƒŠ‚ðŠJ‚«‚Ü‚·B
 @‚Ü‚½AƒvƒƒOƒ‰ƒ€‚ªƒƒjƒ…[‚Ì‘æ‚PŠK‘w‚É“o˜^‚³‚ê‚Ü‚·B‚±‚Ì‚½‚ßA‰ü‚ß‚Ä“o˜^‚³‚ê‚½ƒvƒƒOƒ‰ƒ€‚ðŽg‚Á‚ÄŽÀs‚·‚é‚æ‚¤‚É 1)‘I‘ð‚Ì‹L‰¯ ‚ðs‚¤‚ÆAEnter‚©ƒ_ƒuƒ‹ƒNƒŠƒbƒN‚ÅŽÀs‚Å‚«‚é‚æ‚¤‚É‚È‚è‚Ü‚·B
 @‚±‚ê‚ðŒJ‚è•Ô‚¹‚ÎAˆê‚Â‚ÌŠg’£Žq‚É•¡”‚ÌƒvƒƒOƒ‰ƒ€‚ðƒƒjƒ…[‚É“o˜^‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
-@‚±‚ÌƒvƒƒOƒ‰ƒ€‚Ì“o˜^‚ÉŽg—p‚³‚ê‚éƒƒjƒ…[–¼‚Í M_Ccr.Šg’£Žq–¼ ‚Å‚·‚Ì‚ÅAŒã‚Å•ÒW‚µ‚½‚¢‚Æ‚«‚ÍAƒJƒXƒ^ƒ}ƒCƒU‚Å‚±‚Ìƒƒjƒ…[‚ð•ÒW‚µ‚Ä‚­‚¾‚³‚¢B
+@‚±‚ÌƒvƒƒOƒ‰ƒ€‚Ì“o˜^‚ÉŽg—p‚³‚ê‚éƒƒjƒ…[–¼‚Í M_Ccr.Šg’£Žq–¼ ‚Å‚·‚Ì‚ÅAŒã‚Å•ÒW‚µ‚½‚¢‚Æ‚«‚ÍAƒJƒXƒ^ƒ}ƒCƒU‚Ìƒƒjƒ…[ƒy[ƒW‚Å‚±‚Ìƒƒjƒ…[‚ð•ÒW‚µ‚Ä‚­‚¾‚³‚¢B
 
 <b>Šî–{•Ò</b>
 <b>1)Enterƒƒjƒ…[‚Ì•ÒW</b>
- Enterƒƒjƒ…[‚Å•ÒW‰Â”\‚È‰ÓŠ‚ÍAŠg’£Žq•Ê‚Ìƒƒjƒ…[uM_Ccr.Šg’£Žq–¼v‚Æ‹¤’Êƒƒjƒ…[uM_Ccrv‚Å‚·B‚±‚ê‚ç‚ÍƒJƒXƒ^ƒ}ƒCƒU‚Å•ÒW‚Å‚«‚Ü‚·B
+ Enterƒƒjƒ…[‚Å•ÒW‰Â”\‚È‰ÓŠ‚ÍAŠg’£Žq•Ê‚Ìƒƒjƒ…[uM_Ccr.Šg’£Žq–¼v‚Æ‹¤’Êƒƒjƒ…[uM_Ccrv‚Å‚·B‚±‚ê‚ç‚ÍƒJƒXƒ^ƒ}ƒCƒU‚Ìƒƒjƒ…[ƒy[ƒW‚Å•ÒW‚Å‚«‚Ü‚·B
  ‚Ü‚½Aƒƒjƒ…[•\Ž¦’†‚É Tab‚ð‰Ÿ‚·‚©A‰EƒNƒŠƒbƒN‚ð‰Ÿ‚·‚Æƒƒjƒ…[‚Ì•ÒWƒƒjƒ…[‚ªo‚Ü‚·‚Ì‚Å‚±‚¿‚ç‚©‚ç•ÒW‚·‚é‚±‚Æ‚à‚Å‚«‚Ü‚·B
 
 <b>2)ƒtƒ@ƒCƒ‹”»•Ê E_cr‚Ì•ÒW</b>
@@ -9649,10 +9769,9 @@ E_cr = \{
 %0	PPx‚ÌƒpƒX
 %1	Œ»Ý‘‹‚ÌƒfƒBƒŒƒNƒgƒŠ
 %2	”½‘Î‘‹‚ÌƒfƒBƒŒƒNƒgƒŠ
-%j(ƒpƒX)	ƒpƒX‚ð•ÏX‚·‚é
-%Ob,	PPb ‚ðŽg‚í‚¸‚ÉŽÀs‚·‚éiƒRƒ“ƒ\[ƒ‹‚ðê—L‚µ‚½‚­‚È‚¢‚Æ‚«j
 
-‚æ‚­Žg‚¤ƒRƒ}ƒ“ƒh‚ÍŽŸ‚Ì—á‚ð‹“‚°‚Ü‚·B
+%j(ƒpƒX)	ƒpƒX‚ð•ÏX‚·‚é —á) %j%2 ”½‘Î‘‹‚ÌƒfƒBƒŒƒNƒgƒŠ‚É•ÏX
+%Ob,	PPb ‚ðŽg‚í‚¸‚ÉŽÀs‚·‚éiƒRƒ“ƒ\[ƒ‹‚ðê—L‚µ‚½‚­‚È‚¢‚Æ‚«j
 *CD"%0"%:	ƒJƒŒƒ“ƒgƒfƒBƒŒƒNƒgƒŠ(ì‹ÆƒfƒBƒŒƒNƒgƒŠ)‚ð%0‚É‚·‚é
 <jmpa:*launch:launch> ƒtƒ@ƒCƒ‹–¼	ƒJƒŒƒ“ƒgƒfƒBƒŒƒNƒgƒŠ(ì‹ÆƒfƒBƒŒƒNƒgƒŠ)‚ðƒtƒ@ƒCƒ‹–¼‚ª‚ ‚éƒfƒBƒŒƒNƒgƒŠ‚É‚ ‚éó‘Ô‚Åƒtƒ@ƒCƒ‹–¼‚ðŽÀs‚·‚éB
 <tb:0>
@@ -9752,7 +9871,9 @@ GUIÝ’è‚Å‚Ì—á)
 <a:ppc_dispfmtdetail>
 PPc ‚Í<jmpa:•\Ž¦‚Ì‘Ž®:ppc_dispfmt>‚ð‹LÚ‚·‚é‚±‚Æ‚ÅA‚P`‚Rs–Ú(XC_stat,XC_inf1,XC_inf2)‚ÆŠeƒGƒ“ƒgƒŠ(MC_celS)‚Ì•\Ž¦‚ðƒJƒXƒ^ƒ}ƒCƒY‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
 
-•\Ž¦‚Ì‘Ž®‚ÍA¶‚©‚ç‡‚É‚Ç‚Ì“à—e‚ð•\Ž¦‚·‚é‚©‚Ç‚¤‚©‚ð‹LÚ‚µ‚Ü‚·B‚Ü‚½A‚Í‚¶‚ß‚Ì‚P•¶Žš‚Å‚Ç‚Ì“à—e‚ð•\Ž¦‚·‚é‚©A‚»‚µ‚Ä‚Q•¶Žš–ÚˆÈ~‚É•\Ž¦‚·‚éŒ…”‚âA•\Ž¦“à—e‚ÌÚ×‚ðŽw’è‚·‚é‚æ‚¤‚É‚È‚Á‚Ä‚¢‚Ü‚·B
+‚±‚Ì‘Ž®‚ÍAƒJƒXƒ^ƒ}ƒCƒY‚Ì‚»‚Ì‘¼ƒ^ƒu‚Ì PPcƒXƒe[ƒ^ƒXs‘Ž® / PPcî•ñs1s–Ú‘Ž® / PPcî•ñs2s–Ú‘Ž® / PPc•\Ž¦Œ`Ž®ƒƒjƒ…[ ‚Å•ÒW‰Â”\‚Å‚·B
+
+ƒGƒ“ƒgƒŠ•\Ž¦‘Ž®‚ÍA¶‚©‚ç‡‚É‚Ç‚Ì“à—e‚ð•\Ž¦‚·‚é‚©‚Ç‚¤‚©‚ð‹LÚ‚µ‚Ü‚·B‚Ü‚½A‚Í‚¶‚ß‚Ì‚P•¶Žš‚Å‚Ç‚Ì“à—e‚ð•\Ž¦‚·‚é‚©A‚»‚µ‚Ä‚Q•¶Žš–ÚˆÈ~‚É•\Ž¦‚·‚éŒ…”‚âA•\Ž¦“à—e‚ÌÚ×‚ðŽw’è‚·‚é‚æ‚¤‚É‚È‚Á‚Ä‚¢‚Ü‚·B
 
 ƒGƒ“ƒgƒŠ•\Ž¦‘Ž®•”•ª‚ÍA¶’[‚Ì•¶Žš‚PŒ…•ª‚ðƒ}[ƒN‚âƒAƒCƒRƒ“‚ÌƒNƒŠƒbƒN”»•Ê‚ÉŽg‚¢AÅŒã‚Ì‚PŒ…‚ð•\Ž¦‚ÌŽdØ‚è‚É—p‚¢‚Ü‚·B
 ‚±‚Ì‚½‚ßAuM`s1vAuN`Lv(ü‚ÅŽdØ‚éê‡)Au`s1v(ƒ}[ƒN‚ð”½“]•\Ž¦‚È‚Ç‚Å•\Œ»‚·‚éê‡)“™‚Æ‚·‚é‚Æ‚¢‚¢‚ÆŽv‚¢‚Ü‚·B––”ö‚Ìus1v‚¾‚Æ‰E’[‚ª‘‹˜g‚¬‚è‚¬‚è‚É‚È‚è‚Ü‚·Bus2v‚¾‚ÆA‚PŒ…Œ„ŠÔ‚ª—pˆÓ‚³‚ê‚Ü‚·B
@@ -9791,7 +9912,7 @@ PPc ‚Í<jmpa:•\Ž¦‚Ì‘Ž®:ppc_dispfmt>‚ð‹LÚ‚·‚é‚±‚Æ‚ÅA‚P`‚Rs–Ú(XC_stat,XC_inf1,
   \}
 
 <b>(3)ƒRƒƒ“ƒg‚ÆAƒRƒƒ“ƒg‡ƒ\[ƒg‚ð‘g‚Ý‡‚í‚¹‚é</b>
- ƒRƒƒ“ƒgƒtƒ@ƒCƒ‹‚âƒXƒNƒŠƒvƒg‚ðŽg‚Á‚Ä•K—v‚È•À‚Ñ‡‚Æ‚È‚é•¶Žš—ñ‚ðƒRƒƒ“ƒg‚ÉŽw’è‚·‚ê‚ÎAƒRƒƒ“ƒg‡ƒ\[ƒg(*sortentry 17 / 18)‚ðŽg‚Á‚Ä‚»‚Ì‡‚É•À‚Ñ‘Ö‚¦‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+ ƒRƒƒ“ƒgƒRƒ}ƒ“ƒh(\\[O], *comment)AƒRƒƒ“ƒgƒtƒ@ƒCƒ‹‚âƒXƒNƒŠƒvƒg‚ðŽg‚Á‚Ä•K—v‚È•À‚Ñ‡‚Æ‚È‚é•¶Žš—ñ‚ðƒRƒƒ“ƒg‚ÉŽw’è‚·‚ê‚ÎAƒRƒƒ“ƒg‡ƒ\[ƒg(*sortentry 17 / 18)‚ðŽg‚Á‚Ä‚»‚Ì‡‚É•À‚Ñ‘Ö‚¦‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
 ƒRƒƒ“ƒg‚ÌÝ’è‚ÍA<jmpa:LOADEVENT>‚ðŽg‚Á‚ÄƒfƒBƒŒƒNƒgƒŠ“Ç‚Ýž‚ÝŽž‚És‚¤‚±‚Æ‚à‚Å‚«‚Ü‚·B
 
 <b>(4)ListFile‚ÆA“Ç‚Ýž‚Ý‡ƒ\[ƒg‚ð‘g‚Ý‡‚í‚¹‚é</b>
@@ -9883,7 +10004,10 @@ WZ EDITOR“™‚ÌA<blue>ŽÀs‚µ‚½ƒvƒƒZƒX‚ªƒeƒLƒXƒg•ÒW‚ÉŽg‚í‚ê‚¸‚ÉI—¹‚·‚éƒGƒfƒBƒ^<
 
 ƒtƒ@ƒCƒ‹‚ÌƒRƒs[‚â•¡ŽÊ‚ðs‚¤ *file ‚â *ppcfile ‚Í<jmpa:X_fopt>‚É—\‚ßÝ’è‚ð—Œ`‚Æ‚µ‚Ä•Û‘¶‚µ‚Ä‚¨‚¯‚é‚Ì‚ÅA‚»‚ê‚ð‘I‘ð‚µ‚ÄŽÀs‚Å‚«‚Ü‚·B
 
-<b>(2)%k‚ðŽg—p‚·‚é</b>
+<b>(2)%*input‚ðŽg—p‚·‚é</b>
+%E‚â%!“™‚Ìˆês•ÒW‰Â”\‚Èƒ}ƒNƒ•¶Žš‚Ì”Ä—p”Å‚Æ‚µ‚Ä %*input ‚ª—pˆÓ‚³‚ê‚Ä‚¢‚Ü‚·B%*input ‚ÍAƒ_ƒCƒAƒƒO‚ð•\Ž¦‚µ‚½‚Æ‚«‚ÉƒRƒ}ƒ“ƒhŽÀs‚·‚éƒIƒvƒVƒ‡ƒ“ -k ‚ª—pˆÓ‚³‚ê‚Ä‚¢‚Ü‚·‚Ì‚ÅA‚±‚ê‚ðŽg‚Á‚ÄŠeŽí‘€ì‚ª‰Â”\‚Å‚·B
+
+<b>(3)%k‚ðŽg—p‚·‚é</b>
 ŽÀs‚·‚éƒRƒ}ƒ“ƒh(—á‚Å‚Í %K"@L" )‚Ì‘O‚ÉAŽÀs‚µ‚½‚¢‹@”\‚ªŠ„‚è“–‚Ä‚ç‚ê‚Ä‚¢‚éƒL[‚ð %k ‚Å‘—o‚·‚é‚±‚Æ‚ÅAˆês•ÒWã‚ÅƒRƒ}ƒ“ƒh‚ðŽÀs‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
 <i> %k"^1 home" %: %K"@L" </i>
 
@@ -9892,15 +10016,15 @@ WZ EDITOR“™‚ÌA<blue>ŽÀs‚µ‚½ƒvƒƒZƒX‚ªƒeƒLƒXƒg•ÒW‚ÉŽg‚í‚ê‚¸‚ÉI—¹‚·‚éƒGƒfƒBƒ^<
 
 ¦ŽÀs‚·‚é‚Æ‚«‚É Shift ‚â Ctrl “™‚ð‰Ÿ‚µ‚Ä‚¢‚é‚ÆƒL[‘—o‚É‰e‹¿‚·‚é‚±‚Æ‚ª‚ ‚è‚Ü‚·B
 
-<b>(3)FIRSTEVENT ‚ðŽg—p‚·‚é</b>
+<b>(4)FIRSTEVENT ‚ðŽg—p‚·‚é</b>
 ˆês•ÒW‚Ì <jmpa:FIRSTEVENT> ‚Íˆês•ÒW‚ðŠJŽn‚µ‚½‚Æ‚«‚ÉŽÀs‚³‚ê‚éŠ„“–‚Ä‚Å‚·B
 ‚»‚±‚ÅAˆês•ÒW‚ðŽn‚ß‚é‘O‚É FIRSTEVENT ‚ð“o˜^‚µA‚»‚ÌŒãíœ‚·‚é‚±‚Æ‚ÅAˆês•ÒWŠJŽnŽž‚ÉD‚«‚È‚±‚Æ‚ð‚¨‚±‚È‚¤‚±‚Æ‚ª‚Å‚«‚Ü‚·B
 <i> *setcust K_lied:FIRSTEVENT,*replace insertstring:%%C %%: *setcust K_lied:FIRSTEVENT, %: %K"@L"</i>
 ¦FIRSTEVENT‚É“o˜^‚·‚é“à—e‚É<jmpa:ƒ}ƒNƒ•¶Žš:macrodetail>‚ð‹LÚ‚·‚é‚Æ‚«‚Í %%x “™‚Æ % ‚ðƒGƒXƒP[ƒv‚³‚¹‚é•K—v‚ª‚ ‚è‚Ü‚·B(*setcust‚ÅÝ’è‚·‚é’iŠK‚Å‚àƒ}ƒNƒ•¶Žš‚ª‰ðŽß‚³‚ê‚é‚½‚ß)
 ¦FIRSTEVENT‚É“o˜^‚·‚é“à—e‚ÉŽ©•ªŽ©g‚ðíœ‚³‚¹‚éƒRƒ}ƒ“ƒh‚ð‹LÚ‚·‚é‚Ì‚ªƒ|ƒCƒ“ƒg‚Å‚·B
 
-<b>(4)FIRSTEVENT ‚ðŽg—p‚·‚éA‚»‚Ì‚Q</b>
-(3)‚Å‚Í–ˆ‰ñFIRSTEVENT‚Ì’†g‚ðíœ‚·‚é‹LÚ‚ð‚·‚é•K—v‚ª‚ ‚èAFIRSTEVENT ‚Ì’†g‚ªÁ‚¦‚Ä‚µ‚Ü‚¤–â‘è‚ª‚ ‚è‚Ü‚·B
+<b>(5)FIRSTEVENT ‚ðŽg—p‚·‚éA‚»‚Ì‚Q</b>
+(4)‚Å‚Í–ˆ‰ñFIRSTEVENT‚Ì’†g‚ðíœ‚·‚é‹LÚ‚ð‚·‚é•K—v‚ª‚ ‚èAFIRSTEVENT ‚Ì’†g‚ªÁ‚¦‚Ä‚µ‚Ü‚¤–â‘è‚ª‚ ‚è‚Ü‚·B
 ‚»‚±‚ÅAŽŸ‚Ì‚æ‚¤‚Éˆês•ÒW‚Ì FIRSTEVENT ‚ÉƒGƒCƒŠƒAƒX editcmd ‚ðŽÀs‚µA‚»‚ÌŒã editcmd “à‚ðÁ‹Ž‚·‚éÝ’è‚ð—\‚ßŠ„‚è“–‚Ä‚Ä‚¨‚­‚±‚Æ‚ÅAFIRSTEVENT ‚Ì’†gŽ©‘Ì‚ð‚¢‚¶‚é•K—v‚ª‚È‚­‚È‚è‚Ü‚·B
 K_lied = \{
 FIRSTEVENT , editcmd %: *alias editcmd=%%""
@@ -9908,7 +10032,7 @@ FIRSTEVENT , editcmd %: *alias editcmd=%%""
 A_exec  = \{
 editcmd = %"" ; ƒ_ƒ~[ƒRƒ}ƒ“ƒh
 \}
-(3)‚Æ“¯‚¶‚±‚Æ‚ðŽÀs‚·‚é‚Æ‚«‚ÍŽŸ‚Ì‚æ‚¤‚É‚È‚è‚Ü‚·B
+(4)‚Æ“¯‚¶‚±‚Æ‚ðŽÀs‚·‚é‚Æ‚«‚ÍŽŸ‚Ì‚æ‚¤‚É‚È‚è‚Ü‚·B
 <i> *alias editcmd=*replace insertstring:%%C %: %K"@L"</i>
 ¦FIRSTEVENT‚É“o˜^‚·‚é“à—e‚Éƒ}ƒNƒ•¶Žš(%x)‚ð‹LÚ‚·‚é‚Æ‚«‚Í %%x “™‚Æ % ‚ðƒGƒXƒP[ƒv‚³‚¹‚é•K—v‚ª‚ ‚è‚Ü‚·B(*alias‚ÅÝ’è‚·‚é’iŠK‚Å‚àƒ}ƒNƒ•¶Žš‚ª‰ðŽß‚³‚ê‚é‚½‚ß)
 <groupa:•Ï”EˆêŽž“I‚È•¶Žš—ñ‚Ì‹L‰¯::values>
@@ -9973,6 +10097,7 @@ PPxŠÔ‚Å“à—e‚ðŽó‚¯“n‚µ‚µ‚½‚¢‚Æ‚«‚âA’·Šú‚É“n‚èÝ’è‚ð‹L‰¯‚·‚é•K—v‚ª‚ ‚é‚Æ‚«‚É“K‚µ‚
 
 <b>“®“IƒJƒXƒ^ƒ}ƒCƒY</b>
 *customize‚Å‹N“®’†‚ÌPPx‚ÌÝ’è‚ð•Ï‚¦‚é“®“IƒJƒXƒ^ƒ}ƒCƒY‚ª‰Â”\‚Å‚·‚ªA*setcust‚Å–â‘è‚È‚¯‚ê‚Î*setcust‚ðŽg‚Á‚½‚Ù‚¤‚ª‘¬‚­‚È‚è‚Ü‚·B*customize‚ÍA•ÏX“à—e‚ÉŠÖŒW‚È‚¢Ý’è‚ÌÄ“ÇžEÄ‰Šú‰»‚ðs‚¢‚Ü‚·B
+‚Ü‚½AÝ’è‚ÌÄ“Çž‚ð–¾Ž¦‚µ‚½‚¢‚Æ‚«‚ÍA%K"LOADCUST" ‚ðŽg—p‚µ‚Ü‚·B
 
 <b>ƒXƒNƒŠƒvƒg</b>
 <jmpa:ƒXƒNƒŠƒvƒg:ppxscr>ƒ‚ƒWƒ…[ƒ‹‚ðŽg‚¤‚Æ‚«‚ÍAŽÀs‚·‚éƒXƒNƒŠƒvƒg‚Ì“à—eŽŸ‘æ‚ÅŽžŠÔ‚ÌŠ|‚©‚è•û‚ª‘å•‚É•Ï‰»‚µ‚Ü‚·B
@@ -9987,13 +10112,15 @@ PPxŠÔ‚Å“à—e‚ðŽó‚¯“n‚µ‚µ‚½‚¢‚Æ‚«‚âA’·Šú‚É“n‚èÝ’è‚ð‹L‰¯‚·‚é•K—v‚ª‚ ‚é‚Æ‚«‚É“K‚µ‚
 ƒJƒXƒ^ƒ}ƒCƒU‚ÌSusieƒ^ƒu‚ÅAŠY“–Plug-in‚ÌuŽg—p‚·‚év‚Ìƒ`ƒFƒbƒN‚ðŠO‚·‚©A
 P_susie ’†‚ÌŠY“––¼‚ÌÝ’è‚ðuB000v‚É•ÏX‚·‚é‚ÆAŽg—p‹ÖŽ~‚É‚Å‚«‚Ü‚·B
 
-‚Ü‚½A“Á‚ÉŽw’è‚ð‚µ‚È‚¢‚ÆAŠg’£Žq‚É‚©‚©‚í‚ç‚¸‘S‚Ä‚ÌŽí—Þ‚Ìƒtƒ@ƒCƒ‹‚É‘Î‚µ‚ÄPlug-in‚ª‘Î‰ž‚µ‚Ä‚¢‚é‚©‚Ç‚¤‚©‚ðƒ`ƒFƒbƒN‚µ‚Ü‚·BƒJƒXƒ^ƒ}ƒCƒU‚ÅAŠù’è‚ÌŠg’£Žq ‚ðŽw’è‚µ‚ÄuŠg’£ŽqÝ’èv‚ðs‚¤‚ÆA‚»‚ÌŠg’£Žq‚Ì‚ÝPlug-in‚É‚æ‚éƒ`ƒFƒbƒN‚ðs‚¢‚Ü‚·B
+‚Ü‚½A“Á‚ÉŽw’è‚ð‚µ‚È‚¢‚ÆAPlug-in‚ªŽw’è‚µ‚Ä‚¢‚éŠg’£Žq‚É‚©‚©‚í‚ç‚¸‘S‚Ä‚ÌŽí—Þ‚Ìƒtƒ@ƒCƒ‹‚É‘Î‚µ‚ÄPlug-in‚ª‘Î‰ž‚µ‚Ä‚¢‚é‚©‚Ç‚¤‚©‚ðƒ`ƒFƒbƒN‚µ‚Ü‚·BƒJƒXƒ^ƒ}ƒCƒU‚ÅAŠù’è‚ÌŠg’£Žq ‚ðŽw’è‚µ‚ÄuŠg’£ŽqÝ’èv‚ðs‚¤‚ÆA‚»‚ÌŠg’£Žq‚Ì‚ÝPlug-in‚É‚æ‚éƒ`ƒFƒbƒN‚ðs‚¢‚Ü‚·B
+
+•’i‚ÍŽg—p‚µ‚È‚¢‚ÅAŽè“®‚ÅŽw’èiPPc‚ÌCtrl+Enterƒƒjƒ…[‚ÌˆÚ“®Œ`Ž®‚â \\[U] ‚ÅŽw’è / PPv ‚Ì [:] ‚ÅŽw’èj‚µ‚½‚¢‚Æ‚«‚ÍAuŽ©“®”»•Êv‚Ìƒ`ƒFƒbƒN‚ðŠO‚µ‚Ä‚­‚¾‚³‚¢B
 }\page
 .1=ƒgƒ‰ƒuƒ‹A‘Îô
 .2:‘S”Ê
 <group:‹N“®‚µ‚È‚¢>
 
-1.uPPLIBxxx.DLL version errorv‚ª•\Ž¦‚³‚ê‚Ä‹N“®‚Å‚«‚È‚¢ê‡‚ÍA‘¼‚Ìƒo[ƒWƒ‡ƒ“‚ÌPPx‚ª“®ì‚µ‚Ä‚¢‚é‚½‚ß‚É‹N“®‚Å‚«‚È‚¢‚±‚Æ‚ðˆÓ–¡‚µ‚Ü‚·BŽg—p‚·‚éPPx‚Ìƒo[ƒWƒ‡ƒ“‚ð‘µ‚¦‚ÄÄ“x‹N“®‚µ‚Ä‚­‚¾‚³‚¢B
+1.uPPLIBxxx.DLL version errorv‚ª•\Ž¦‚³‚ê‚Ä‹N“®‚Å‚«‚È‚¢ê‡‚ÍA‘¼‚Ìƒo[ƒWƒ‡ƒ“‚ÌPPx ‚ª“®ì‚µ‚Ä‚¢‚é‚½‚ß‚É‹N“®‚Å‚«‚È‚¢‚±‚Æ‚ðˆÓ–¡‚µ‚Ü‚·BŽg—p‚·‚é PPx ‚Ìƒo[ƒWƒ‡ƒ“‚ð‘µ‚¦‚ÄÄ“x‹N“®‚µ‚Ä‚­‚¾‚³‚¢B
 
 2. ˆÈ‰º‚Ìì‹Æ‚ð‡ŽŸŽŽ‚µ‚ÄŒ©‚Ä‚­‚¾‚³‚¢B
  1) PPx ‚Ì\¬ƒtƒ@ƒCƒ‹‚ðƒRƒs[‚µ’¼‚·B
@@ -10033,13 +10160,14 @@ plug-in ‚ÌÝ’è‚ÍƒJƒXƒ^ƒ}ƒCƒU‚Ås‚¤‚±‚Æ‚ª‚Å‚«‚Ü‚·B
 <group:•\Ž¦‚³‚ê‚Ä‚¢‚é•¶Žš‚ª‰»‚¯‚é>
 
 MultiByte”Å‚Å‚ÍUNICODE”Å‚æ‚èˆµ‚¦‚é•¶Žš‚ÌŽí—Þ‚ª­‚È‚¢‚Ì‚ÅA‘Î‰ž‚µ‚Ä‚¢‚È‚¢•¶Žš‚ª‰»‚¯‚Ä•\Ž¦‚³‚ê‚Ü‚·BUNICODE”Å‚ðŽg—p‚µ‚Ä‚­‚¾‚³‚¢B
+‚Ü‚½ADirectWrite”Å‚Å‚È‚¢‚Æ•\Ž¦‚Å‚«‚È‚¢•¶Žš‚à‚ ‚è‚Ü‚·B
 <group:‘€ì‚Å‚«‚È‚¢ƒtƒ@ƒCƒ‹‚âƒfƒBƒŒƒNƒgƒŠ‚ª‚ ‚é>
 
  1) ŠY“–ƒGƒ“ƒgƒŠ‚Ì–¼‘O‚É‚Pbyte‹ó”’(”¼Šp‹ó”’‚Æ‚à‚¢‚¤)AƒnƒCƒtƒ“u-vAƒJƒ“ƒ}u,vAƒAƒgƒ}[ƒNu@v‚ª‚ ‚é‚Æ‚¤‚Ü‚­ˆ—‚Å‚«‚È‚¢ê‡‚ª‚ ‚è‚Ü‚·B
  2) u•\vu—\v‚È‚Ç‚ð–¼‘O‚ÉŽg‚Á‚Ä‚¢‚é‚ÆŽg—p‚Å‚«‚È‚¢ê‡‚ª‚ ‚è‚Ü‚·Bi“Á‚ÉA“ú–{»ˆÈŠO‚Ìƒ\ƒtƒg‚ðŽg—p‚·‚éê‡j
  3) OS‚â‘¼‚Ìƒ\ƒtƒg‚É‚æ‚Á‚ÄŽg—p‚³‚ê‚Ä‚¢‚éƒtƒ@ƒCƒ‹‚ÍAŽQÆA‘‚«Š·‚¦Aíœ“™‚ª‚Å‚«‚È‚¢ê‡‚ª‚ ‚è‚Ü‚·B
  4) ƒlƒbƒgƒ[ƒNã‚Ìƒhƒ‰ƒCƒu‚ðŽQÆ‚µ‚Ä‚¢‚éê‡A‘Š·‹ÖŽ~‚Ì§ŒÀ‚ª‚³‚ê‚Ä‚¢‚éê‡‚ª‚ ‚è‚Ü‚·B
- 5) NT/2000/XP/2003/Vista/2008/7“™ ‚Ì NTFS ‚ð—p‚¢‚½ƒhƒ‰ƒCƒu‚ÍAƒGƒ“ƒgƒŠ–ˆ‚ÉƒZƒLƒ…ƒŠƒeƒBÝ’è‚ª‚Å‚«Aƒ†[ƒU–ˆ‚É§ŒÀ‚ð‚©‚¯‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B‚±‚Ì§ŒÀ‚É‚æ‚Á‚ÄAŽQÆA‘‚«Š·‚¦Aíœ“™‚ª‚Å‚«‚È‚¢ê‡‚ª‚ ‚è‚Ü‚·B
+ 5) ƒtƒ@ƒCƒ‹ƒVƒXƒeƒ€‚Æ‚µ‚Ä NTFS ‚ð—p‚¢‚½ƒhƒ‰ƒCƒu‚ÍAƒGƒ“ƒgƒŠ–ˆ‚ÉƒZƒLƒ…ƒŠƒeƒBÝ’è‚ª‚Å‚«Aƒ†[ƒU–ˆ‚É§ŒÀ‚ð‚©‚¯‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B‚±‚Ì§ŒÀ‚É‚æ‚Á‚ÄAŽQÆA‘‚«Š·‚¦Aíœ“™‚ª‚Å‚«‚È‚¢ê‡‚ª‚ ‚è‚Ü‚·B
  6) Vista/7ˆÈ~‚Å‚ÍA‰ß‹Ž‚ÌŒÝŠ·«‚Ì‚½‚ß‚ÉAuDocuments and Settingsv‚È‚Ç‚Ì–¼‘O‚Ì“Á•Ê‚ÈƒVƒ“ƒ{ƒŠƒbƒNƒŠƒ“ƒN‚ª—pˆÓ‚³‚ê‚Ä‚¢‚Ü‚·B‚±‚ê‚ç‚ÍAƒAƒNƒZƒXŒ ‚ÅƒfƒBƒŒƒNƒgƒŠ‚Ìˆê——•\Ž¦‚ª‚Å‚«‚È‚¢‚æ‚¤‚É‚È‚Á‚Ä‚¢‚é‚Ì‚ÅAˆê——•\Ž¦‚Ì‚½‚ß‚ÉŽg—p‚·‚é‚±‚Æ‚Í‚Å‚«‚Ü‚¹‚ñB
 
 1),2)‚Í PPx Ž©‘Ì‚Ì‘Îô‚ðs‚Á‚Ä‚¢‚Ü‚·‚ªAŠO•”ƒ\ƒtƒg‚ð—p‚¢‚é‹@”\iˆ³k^“WŠJ‚È‚Çj‚Å‚ÍAŠO•”ƒ\ƒtƒg‚Ì‚Ù‚¤‚Åƒgƒ‰ƒuƒ‹‚ª¶‚¶‚Ä‚¢‚éê‡‚ª‚ ‚è‚Ü‚·B
@@ -10050,15 +10178,15 @@ MultiByte”Å‚Å‚ÍUNICODE”Å‚æ‚èˆµ‚¦‚é•¶Žš‚ÌŽí—Þ‚ª­‚È‚¢‚Ì‚ÅA‘Î‰ž‚µ‚Ä‚¢‚È‚¢•¶Žš‚ª‰»
  2)ƒL[Š„‚è“–‚Ä‚ÌƒJƒXƒ^ƒ}ƒCƒY‚Å•ÏX‚µ‚½‚©‚Ç‚¤‚©‚ðŠm”F‚·‚éB
  3)•Ê‚Ìƒ\ƒtƒg‚ÌƒzƒbƒgƒL[‚Ì‚½‚ß‚É‘€ì‚Å‚«‚È‚¢‚Ì‚©Šm”F‚·‚éB
  4)ƒL[ƒ{[ƒh‚ÌŽí—Þ‚É‚æ‚Á‚Ä‚Í•¡”ƒL[‚Ì“¯Žž“ü—Í‚ª‚¤‚Ü‚­‚Å‚«‚È‚¢—á‚ª‚ ‚è‚Ü‚·B
-   —á)[¶CTRL]+[¶SHIFT]+[W]‚ª”½‰ž‚µ‚È‚¢([‰ECTRL]+[‰ESHIFT]+[W]‚È‚ç”½‰ž‚·‚é)
+   —á) [¶CTRL]+[¶SHIFT]+[W]‚ª”½‰ž‚µ‚È‚¢([‰ECTRL]+[‰ESHIFT]+[W]‚È‚ç”½‰ž‚·‚é)
  5)ƒƒjƒ…[‚Ìtool-customizer‚©PPcust‚Ì[ƒL[’²¸]‚ÅŠY“–ƒL[‚Ì‘g‡‚í‚¹‚Å”½‰ž‚·‚é‚©‚Ç‚¤‚©‚ðŠm”F‚·‚éB
  6)ðŒ‚É‚æ‚Á‚Ä‚ÍA’¼‘O‚É‰Ÿ‚µ‚½ƒL[i[shift][ctrl][alt][–³•ÏŠ·][«]“™j‚ª‰Ÿ‚³‚ê‚½ó‘Ô‚Ì‚Ü‚Ü‚É‚È‚èA‚»‚ÌŒã‚ÌƒL[‘€ì‚ª‚Å‚«‚È‚­‚È‚é‚±‚Æ‚ª‚ ‚è‚Ü‚·BŠY“–ƒL[‚ð‰Ÿ‚µ’¼‚·‚ÆŒ³‚É–ß‚è‚Ü‚·B
 <group:Windows‚ª‚•‰‰×‚ÌŽž‚ÉV‹KPPx‚ðŠJ‚­‚ÆA“¯‚¶ID‚ÌPPx‚ðŠJ‚¢‚Ä‚µ‚Ü‚¤>
 
- ‘Îô‚ð‚¨‚±‚Á‚Ä‚¢‚Ü‚·‚ªA‚±‚ÌÇó‚ªo‚é‚Æ‚«‚ª‚ ‚è‚Ü‚·B‚à‚µ‚±‚ÌÇó‚ðŠm”F‚µ‚½‚ç˜A—‚ð‚¨Šè‚¢‚µ‚Ü‚·B
+ ‘Îô‚ð‚¨‚±‚È‚Á‚Ä‚¢‚Ü‚·‚ªA‚±‚ÌÇó‚ªo‚é‚Æ‚«‚ª‚ ‚è‚Ü‚·B‚à‚µ‚±‚ÌÇó‚ðŠm”F‚µ‚½‚ç˜A—‚ð‚¨Šè‚¢‚µ‚Ü‚·B
 <group:ƒEƒBƒ“ƒhƒEØ‚è‘Ö‚¦Žž‚É‚P•b‚­‚ç‚¢ƒL[“ü—Í‚ª–³Œø‚É‚È‚é(PPv,PPb,*file‚È‚Ç)>
 
- PPv‚©‚çPPc‚É–ß‚é‚Æ‚«‚âAFile Operationƒ_ƒCƒAƒƒO‚ð•Â‚¶‚é‚Æ‚«‚È‚Ç‚Ì‚æ‚¤‚ÉAƒEƒBƒ“ƒhƒE‚ð•Â‚¶‚½‚èA•Ê‚ÌƒEƒBƒ“ƒhƒE‚ÉØ‚è‘Ö‚¦‚½‚è‚·‚éÅ’†‚ÉƒL[“ü—Í‚ðs‚¤‚ÆAWindows‚ª‚P•b’ö“xƒL[“ü—Í‚ð–³Œø‚É‚·‚é‚½‚ßA‚»‚ÌŠÔ‚Ì‘€ì‚ª‚Å‚«‚È‚­‚È‚é‚±‚Æ‚ª‚ ‚è‚Ü‚·B
+ “Á‚É Windows XP ‚Ì‚Æ‚«APPv‚©‚çPPc‚É–ß‚é‚Æ‚«‚âAFile Operationƒ_ƒCƒAƒƒO‚ð•Â‚¶‚é‚Æ‚«‚È‚Ç‚Ì‚æ‚¤‚ÉAƒEƒBƒ“ƒhƒE‚ð•Â‚¶‚½‚èA•Ê‚ÌƒEƒBƒ“ƒhƒE‚ÉØ‚è‘Ö‚¦‚½‚è‚·‚éÅ’†‚ÉƒL[“ü—Í‚ðs‚¤‚ÆAWindows‚ª‚P•b’ö“xƒL[“ü—Í‚ð–³Œø‚É‚·‚é‚½‚ßA‚»‚ÌŠÔ‚Ì‘€ì‚ª‚Å‚«‚È‚­‚È‚é‚±‚Æ‚ª‚ ‚è‚Ü‚·B
 ¦PPx‚ÉŒÀ‚ç‚¸AWindowsƒAƒvƒŠƒP[ƒVƒ‡ƒ“‘S”Ê‚Å”­¶‚·‚éŒ»Û‚Å‚·B
 
 EƒJƒXƒ^ƒ}ƒCƒU‚Å[‘S”Ê]-[PPv]-[Å¬‰»Žž‚ÉŒÄ‚Ño‚µŒ³‚ð‹­§ƒAƒNƒeƒBƒuˆ—(XV_minf)]‚ð•û–@‚Q‚É‚·‚é‚Æ‰ñ”ð‚Å‚«‚é‚±‚Æ‚ª‚ ‚è‚Ü‚·B
@@ -10068,8 +10196,8 @@ MultiByte”Å‚Å‚ÍUNICODE”Å‚æ‚èˆµ‚¦‚é•¶Žš‚ÌŽí—Þ‚ª­‚È‚¢‚Ì‚ÅA‘Î‰ž‚µ‚Ä‚¢‚È‚¢•¶Žš‚ª‰»
 œ‚±‚Ì–³Œø‚É‚·‚éˆ—‚ð‰ðœ‚Å‚«‚éƒŒƒWƒXƒgƒŠ“™‚ÌÝ’è‚ª‚ ‚è‚Ü‚µ‚½‚çA‚²ˆê•ñ‚­‚¾‚³‚¢B
 <group:ƒJƒ‰ƒ€Šg’£‹@”\‚ªŽg‚¦‚È‚¢>
 <a:columnsupport>
-Explorer‚ÌƒJƒ‰ƒ€Šg’£‚ÍAWin2000,Me,XP,2003 ‚ÆAWinVista ˆÈ~‚Å‚Í‘S‚­ˆÙ‚È‚è‚Ü‚·B‚±‚Ì‚½‚ßAˆê•û‚Å“o˜^‚µ‚½ƒJƒ‰ƒ€Šg’£–¼‚ªA‘¼•û‚Å‚ÍŽg—p‚Å‚«‚È‚¢‚±‚Æ‚ª‚ ‚è‚Ü‚·B
-‚Ü‚½AWin2000,Me,XP,2003—p‚ÌƒJƒ‰ƒ€Šg’£ƒ\ƒtƒg‚ðWinVista ˆÈ~‚É‚¢‚ê‚Ä‚àExplorer‚Å‚ÍŽg—p‚Å‚«‚Ü‚¹‚ñ‚ªAPPx ‚Å‚ÍƒCƒ“ƒXƒg[ƒ‹(ƒŒƒWƒXƒgƒŠ HKEY_CLASSES_ROOT\\Folder\\shellex\\ColumnHandlers ‚É“o˜^)‚³‚ê‚Ä‚¢‚ê‚ÎPPx‚ÅŽg—p‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+Explorer‚ÌƒJƒ‰ƒ€Šg’£‚ÍAWin2000, Me, XP, 2003 ‚ÆAWinVista ˆÈ~‚Å‚Í‘S‚­ˆÙ‚È‚è‚Ü‚·B‚±‚Ì‚½‚ßAˆê•û‚Å“o˜^‚µ‚½ƒJƒ‰ƒ€Šg’£–¼‚ªA‘¼•û‚Å‚ÍŽg—p‚Å‚«‚È‚¢‚±‚Æ‚ª‚ ‚è‚Ü‚·B
+‚Ü‚½AWin2000, Me, XP, 2003—p‚ÌƒJƒ‰ƒ€Šg’£ƒ\ƒtƒg‚ðWinVista ˆÈ~‚É‚¢‚ê‚Ä‚àExplorer‚Å‚ÍŽg—p‚Å‚«‚Ü‚¹‚ñ‚ªAPPx ‚Å‚ÍƒCƒ“ƒXƒg[ƒ‹(ƒŒƒWƒXƒgƒŠ HKEY_CLASSES_ROOT\\Folder\\shellex\\ColumnHandlers ‚É“o˜^)‚³‚ê‚Ä‚¢‚ê‚ÎPPx‚ÅŽg—p‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
 
 ®AWin2000‚æ‚è‘O‚ÌExplorer‚ÍƒJƒ‰ƒ€Šg’£‚É‘Î‰ž‚µ‚Ä‚¢‚È‚¢‚Ì‚ÅAWindows•W€‚ÌƒJƒ‰ƒ€Šg’£‚ª“ü‚Á‚Ä‚¢‚Ü‚¹‚ñB
 <group:ƒtƒ@ƒCƒ‹‘€ìŒã‚É‰ž“š–³‚µó‘Ô‚É‚È‚Á‚½‚èAPPc‚ðI—¹‚µ‚Ä‚àƒvƒƒZƒX‚ªŽc‚Á‚½‚è‚·‚é>
@@ -10217,7 +10345,7 @@ Windows Registry Editor Version 5.00
 
 (2)ƒRƒ}ƒ“ƒhŒn
   ŠeƒAƒ‹ƒtƒ@ƒxƒbƒgƒL[‚É“Á’è‚Ì‹@”\‚ðŠ„‚è“–‚Ä‚½‚à‚Ì‚Å‚·BƒL[Š„“–‚Ä‚ÌŒXŒü‚É‚æ‚Á‚ÄX‚É•ª—Þ•ª‚¯‚Å‚«‚Ü‚·B
-  ƒCƒ“ƒNƒŠƒƒ“ƒ^ƒ‹ƒT[ƒ`‚ÅŠ¿Žš•ÏŠ·‚µ‚È‚ª‚ç“ú–{ŒêƒGƒ“ƒgƒŠ–¼‚ðŒˆ’è‚·‚é‚Ì‚Í•s•Ö‚È‚½‚ßA“ú–{‚Ìƒtƒ@ƒCƒ‰‚Í‚±‚¿‚ç‚ÌŒn“‚ª‘½‚¢‚Å‚·B‚½‚¾A¡‚Å‚Í<jmpa:migemo:CMigemo>‚ðŽg‚¦‚Îƒ[ƒ}Žš‚ÅƒCƒ“ƒNƒŠƒƒ“ƒ^ƒ‹ƒT[ƒ`‚ª‚Å‚«‚é‚æ‚¤‚É‚È‚Á‚½‚Ì‚ÅAƒRƒ}ƒ“ƒhŒn‚É‚±‚¾‚í‚é•K—v‚ª‚È‚­‚È‚Á‚Ä‚¢‚Ü‚·B
+  ƒCƒ“ƒNƒŠƒƒ“ƒ^ƒ‹ƒT[ƒ`‚ÅŠ¿Žš•ÏŠ·‚µ‚È‚ª‚ç“ú–{ŒêƒGƒ“ƒgƒŠ–¼‚ðŒˆ’è‚·‚é‚Ì‚Í•s•Ö‚È‚½‚ßA“ú–{‚Ìƒtƒ@ƒCƒ‰‚Í‚±‚¿‚ç‚ÌŒn“‚ª‘½‚¢‚Å‚·B‚½‚¾A¡‚Å‚Í<jmpa:migemo:CMigemo>‚ðŽg‚¦‚Îƒ[ƒ}Žš“Ç‚Ý‚ÅƒCƒ“ƒNƒŠƒƒ“ƒ^ƒ‹ƒT[ƒ`‚ª‚Å‚«‚é‚æ‚¤‚É‚È‚Á‚½‚Ì‚ÅAƒRƒ}ƒ“ƒhŒn‚É‚±‚¾‚í‚é•K—v‚ª‚È‚­‚È‚Á‚Ä‚¢‚Ü‚·B
 @FDŒn
 	[A]ttribute, [D]elete, [R]ename ƒRƒ}ƒ“ƒh‚ª”»’f‚Ì–ÚˆÀ‚É‚È‚é‚ÆŽv‚¢‚Ü‚·B
 	PPx,KL ‚ÌƒfƒtƒHƒ‹ƒgƒJƒXƒ^ƒ}ƒCƒY‚Í‚±‚¿‚ç‚É‚È‚è‚Ü‚·B

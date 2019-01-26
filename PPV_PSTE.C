@@ -250,7 +250,7 @@ void PPvPaste(HWND hWnd)
 	viewdata = PasteMain(type,&viewopts);
 	CloseClipboard();
 	if ( viewdata != NULL ){
-		OpenAndFollowViewObject(hWnd,T("Clipboard"),viewdata,&viewopts,0);
+		OpenAndFollowViewObject(&vinfo,T("Clipboard"),viewdata,&viewopts,0);
 	}
 }
 
@@ -274,7 +274,7 @@ ERRORCODE PPvPasteType(HWND hWnd)
 	viewdata = PasteMain(type,&viewopts);
 	CloseClipboard();
 	if ( viewdata != NULL ){
-		OpenAndFollowViewObject(hWnd,T("Clipboard"),viewdata,&viewopts,0);
+		OpenAndFollowViewObject(&vinfo,T("Clipboard"),viewdata,&viewopts,0);
 	}
 	return NO_ERROR;
 }

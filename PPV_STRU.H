@@ -47,6 +47,7 @@ enum {
 // #define VTTF_END B1 // 行末を含む
 #define VTTF_TAG B2 // タグ表示の途中
 #define VTTF_LINK B3 // リンク表示の途中
+#define VTTF_HIGHLIGHT B4 // ハイライト有り
 
 #pragma pack(push,1)
 typedef struct {
@@ -122,6 +123,7 @@ typedef struct tagHILIGHTKEYWORD { // 固定ハイライトキーワードのテーブル
 } HILIGHTKEYWORD;
 #define HILIGHTKEYWORD_T B0 // 前に拡張
 #define HILIGHTKEYWORD_B B1 // 後ろに拡張
+#define HILIGHTKEYWORD_R B2 // 反転
 
 #define SELPOSCHANGE_PIX 0		// pixからoffsetを求める
 #define SELPOSCHANGE_OFFSET 1	// offsetが変更された

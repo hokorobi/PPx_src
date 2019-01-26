@@ -425,24 +425,24 @@ void MakeFileInformation(PPC_APPINFO *cinfo,ThSTRUCT *text,ENTRYCELL *cell)
 	dst += tstrlen(dst);
 	dst += CnvDateTime(dst,NULL,NULL,&cell->f.ftLastAccessTime);
 	{
-		HANDLE hF;
+		HANDLE hFile;
 		BY_HANDLE_FILE_INFORMATION fi;
 
-		hF = CreateFileL(name,GENERIC_READ,FILE_SHARE_READ,NULL,
-							OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
-		if ( hF != INVALID_HANDLE_VALUE ){
+		hFile = CreateFileL(name, GENERIC_READ, FILE_SHARE_READ, NULL,
+				OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		if ( hFile != INVALID_HANDLE_VALUE ){
 			LPVOID context = NULL;
 
-			if ( IsTrue(GetFileInformationByHandle(hF,&fi)) ){
-				DefineWinAPI(HANDLE,FindFirstFileNameW,(LPCWSTR lpFileName,DWORD dwFlags,LPDWORD StringLength,PWCHAR LinkName));
-				DefineWinAPI(BOOL,FindNextFileNameW,(HANDLE hFindStream,LPDWORD StringLength,PWCHAR LinkName));
+			if ( IsTrue(GetFileInformationByHandle(hFile, &fi)) ){
+				DefineWinAPI(HANDLE, FindFirstFileNameW, (LPCWSTR lpFileName, DWORD dwFlags, LPDWORD StringLength, PWCHAR LinkName));
+				DefineWinAPI(BOOL, FindNextFileNameW, (HANDLE hFindStream, LPDWORD StringLength, PWCHAR LinkName));
 				HMODULE hKernel32 = GetModuleHandle(StrKernel32DLL);
 
 				dst += wsprintf(dst,T("\r\nHard Links    :%d"),
 						fi.nNumberOfLinks);
 				if ( fi.nNumberOfLinks >= 2){
-					GETDLLPROC(hKernel32,FindFirstFileNameW);
-					GETDLLPROC(hKernel32,FindNextFileNameW);
+					GETDLLPROC(hKernel32, FindFirstFileNameW);
+					GETDLLPROC(hKernel32, FindNextFileNameW);
 					if ( DFindFirstFileNameW != NULL ){
 						HANDLE hFFFN;
 						WCHAR linknameW[VFPS];
@@ -481,14 +481,14 @@ void MakeFileInformation(PPC_APPINFO *cinfo,ThSTRUCT *text,ENTRYCELL *cell)
 
 				for ( ; ; ){
 					size = (LPBYTE)&stid.cStreamName - (LPBYTE)&stid;
-					if ( FALSE == BackupRead(hF,
-							(LPBYTE)&stid,size,&reads,FALSE,FALSE,&context) ){
+					if ( FALSE == BackupRead(hFile, (LPBYTE)&stid,
+							size, &reads, FALSE, FALSE, &context) ){
 						break;
 					}
 					if ( reads < size ) break;
-					if ( FALSE == BackupRead(hF,(LPBYTE)&wname,
+					if ( FALSE == BackupRead(hFile, (LPBYTE)&wname,
 							stid.dwStreamNameSize,
-							&reads,FALSE,FALSE,&context) ){
+							&reads, FALSE, FALSE, &context) ){
 						break;
 					}
 					if ( reads < stid.dwStreamNameSize ) break;
@@ -515,12 +515,12 @@ void MakeFileInformation(PPC_APPINFO *cinfo,ThSTRUCT *text,ENTRYCELL *cell)
 							break;
 						case BACKUP_EA_DATA: // $EA
 							if ( (*(DWORD *)(&stid.Size) == 0x48) && (*((DWORD *)(&stid.Size) + 1) == 0) ){
-								GetLxssEA(hF,&context,&dst);
+								GetLxssEA(hFile,&context,&dst);
 								continue;
 							}
 							tstrcpy(dst,T("Enhanced attributes"));
 							break;
-						case BACKUP_SECURITY_DATA:
+						case BACKUP_SECURITY_DATA: // $SECURITY_DESCRIPTOR
 							tstrcpy(dst,T("Securities"));
 							break;
 						case BACKUP_ALTERNATE_DATA:
@@ -529,7 +529,7 @@ void MakeFileInformation(PPC_APPINFO *cinfo,ThSTRUCT *text,ENTRYCELL *cell)
 						case BACKUP_LINK: // $FILE_NAME
 							tstrcpy(dst,T("Hard Link"));
 							break;
-						case BACKUP_PROPERTY:
+						case BACKUP_PROPERTY: // BACKUP_PROPERTY_DATA
 							tstrcpy(dst,T("Properties"));
 							break;
 						case BACKUP_OBJECT_ID: // $OBJECT_ID
@@ -547,6 +547,12 @@ void MakeFileInformation(PPC_APPINFO *cinfo,ThSTRUCT *text,ENTRYCELL *cell)
 						case BACKUP_TXFS_DATA: // $TXF_DATA
 							tstrcpy(dst,T("Transactional NTFS (TxF)"));
 							break;
+						#ifndef BACKUP_GHOSTED_FILE_EXTENTS
+						  #define BACKUP_GHOSTED_FILE_EXTENTS 0xb
+						#endif
+						case BACKUP_GHOSTED_FILE_EXTENTS:
+							tstrcpy(dst,T("Ghosted file extent"));
+							break;
 						default:
 							wsprintf(dst,T("Unknown(%x)"),stid.dwStreamId);
 							break;
@@ -562,7 +568,7 @@ void MakeFileInformation(PPC_APPINFO *cinfo,ThSTRUCT *text,ENTRYCELL *cell)
 						dst += tstrlen(dst);
 					}
 
-					if ( FALSE == BackupSeek(hF,
+					if ( FALSE == BackupSeek(hFile,
 								*(DWORD *)(&stid.Size),
 								*((DWORD *)(&stid.Size) + 1),
 								&reads,&reads,&context) ){
@@ -570,10 +576,10 @@ void MakeFileInformation(PPC_APPINFO *cinfo,ThSTRUCT *text,ENTRYCELL *cell)
 					}
 				}
 				if ( context != NULL ){
-					BackupRead(hF,(LPBYTE)&stid,0,&reads,TRUE,FALSE,&context);
+					BackupRead(hFile,(LPBYTE)&stid,0,&reads,TRUE,FALSE,&context);
 				}
 			}
-			CloseHandle(hF);
+			CloseHandle(hFile);
 		}
 	}
 	if ( cell->comment != EC_NOCOMMENT ){

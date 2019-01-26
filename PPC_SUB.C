@@ -214,13 +214,12 @@ ENTRYCELL *EnumMarkCell(PPC_APPINFO *cinfo,int *work)
 }
 
 // クライアント座標から、項目の種類を求める -----------------------------------
-int GetItemTypeFromPoint(PPC_APPINFO *cinfo,POINT *pos,ENTRYINDEX *ItemNo)
+int GetItemTypeFromPoint(PPC_APPINFO *cinfo, POINT *pos, ENTRYINDEX *ItemNo)
 {
 	ENTRYINDEX cell = -1;
 	int rc;
 
-	int x,y;
-	int RightBorder;
+	int x, y;
 
 	x = pos->x;
 	y = pos->y;
@@ -229,11 +228,12 @@ int GetItemTypeFromPoint(PPC_APPINFO *cinfo,POINT *pos,ENTRYINDEX *ItemNo)
 									// Path / Status line =================
 	if ( y < cinfo->BoxStatus.top ) return PPCR_PATH;	// Path line
 	if ( y < cinfo->BoxStatus.bottom ) return PPCR_STATUS;	// Status line
-	if ( y < cinfo->BoxInfo.bottom ){	// Info line =================
-		if ( x < cinfo->BoxInfo.left + cinfo->iconR ){			// Info icon
+
+	if ( y < cinfo->BoxInfo.bottom ){	// 情報行 =================
+		if ( x < cinfo->BoxInfo.left + cinfo->iconR ){ // Info icon
 			rc = PPCR_INFOICON;
 			cell = cinfo->e.cellN;
-		}else{							// Info line / Hidden Menu ========
+		}else{							// Info line / Hidden Menu
 			int items;
 
 			x = (x - (cinfo->BoxInfo.left + cinfo->iconR)) / cinfo->fontX;
@@ -246,25 +246,7 @@ int GetItemTypeFromPoint(PPC_APPINFO *cinfo,POINT *pos,ENTRYINDEX *ItemNo)
 				return PPCR_INFOTEXT;
 			}
 		}
-	}else{								// cell line ==========================
-		int TouchWidth = 0;
-		if ( TouchMode & TOUCH_LARGEWIDTH ) TouchWidth = cinfo->FontDPI;
-		if ( TouchWidth != 0 ){
-			TouchWidth = (TouchWidth * 120) >> 8; // 12.0mm ( 120 / 254 ) の近似値
-			// iOS:7mm Android:9mm(7-10mm)
-		}
-		rc = PPCR_CELLBLANK;
-		{
-			int RightBorderWidth = cinfo->fontX;
-			if ( (cinfo->BoxEntries.right - cinfo->BoxEntries.left) > (cinfo->fontX * 16) ){
-				RightBorderWidth *= 2;
-				if ( RightBorderWidth < TouchWidth ){
-					RightBorderWidth = TouchWidth;
-				}
-			}
-
-			RightBorder = x >= (cinfo->BoxEntries.right - RightBorderWidth);
-		}
+	}else{								// cell 一覧 ==========================
 		x -= cinfo->BoxEntries.left;
 #if FREEPOSMODE
 		{
@@ -289,6 +271,30 @@ int GetItemTypeFromPoint(PPC_APPINFO *cinfo,POINT *pos,ENTRYINDEX *ItemNo)
 #endif
 		y = ( y - cinfo->BoxEntries.top ) / cinfo->cel.Size.cy;
 		if ( (y < cinfo->cel.Area.cy) && (x >= 0) ){
+			int TouchWidth = 0;
+			BOOL RightBorder;
+			int RightBorderWidth;
+
+			//==== 右側反応端を決定
+			if ( TouchMode & TOUCH_LARGEWIDTH ){
+				TouchWidth = cinfo->FontDPI;
+				if ( TouchWidth != 0 ){
+					TouchWidth = (TouchWidth * 120) >> 8; // 12.0mm ( 120 / 254 ) の近似値
+					// iOS:7mm Android:9mm(7-10mm)
+				}
+			}
+			rc = PPCR_CELLBLANK;
+
+			RightBorderWidth = cinfo->fontX;
+			if ( (cinfo->BoxEntries.right - cinfo->BoxEntries.left) > (cinfo->fontX * 16) ){
+				RightBorderWidth *= 2;
+				if ( RightBorderWidth < TouchWidth ){
+					RightBorderWidth = TouchWidth;
+				}
+			}
+			RightBorder = pos->x >= (cinfo->BoxEntries.right - RightBorderWidth);
+
+			//==== 検知対象 cell を決定
 			cell = cinfo->cellWMin + y +
 					(x / cinfo->cel.Size.cx) * cinfo->cel.Area.cy;
 			x = x % cinfo->cel.Size.cx;
@@ -299,19 +305,21 @@ int GetItemTypeFromPoint(PPC_APPINFO *cinfo,POINT *pos,ENTRYINDEX *ItemNo)
 #else
 			if ( (cell < cinfo->e.cellIMax) && (cell >= cinfo->cellWMin) ){
 #endif
-				if ( (DWORD)x < cinfo->CellNameWidth ){
-					BYTE *p;
+				if ( (DWORD)x < cinfo->CellNameWidth ){ // マーク部分の判定
+					BYTE *fmtp;
 					int markX;
 
-					p = cinfo->celF.fmt;
-					if ( (*p == DE_WIDEV) || (*p == DE_WIDEW) ) p += 4;
+					fmtp = cinfo->celF.fmt;
+					if ( (*fmtp == DE_WIDEV) || (*fmtp == DE_WIDEW) ){
+						fmtp += DE_WIDEV_SIZE;
+					}
 
-					if ( *p == DE_BLANK ){
+					if ( *fmtp == DE_BLANK ){
 						int blankX = 0;
-						while ( *p == DE_BLANK ){
+						do {
 							blankX += cinfo->fontX;
-							p++;
-						}
+							fmtp++;
+						} while ( *fmtp == DE_BLANK );
 						x -= blankX;
 						if ( x < 0 ){
 							if ( ItemNo != NULL ) *ItemNo = cell;
@@ -319,20 +327,48 @@ int GetItemTypeFromPoint(PPC_APPINFO *cinfo,POINT *pos,ENTRYINDEX *ItemNo)
 						}
 					}
 
-					if ( (*p == DE_ICON) || (*p == DE_CHECK) || (*p == DE_CHECKBOX)){
+					if ( (*fmtp == DE_ICON) || (*fmtp == DE_CHECK) || (*fmtp == DE_CHECKBOX)){
 						markX = cinfo->fontX * 2 + MARKOVERX;
-					}else if ( *p == DE_ICON2 ){
-						markX = *(p + 1) + ICONBLANK + MARKOVERX;
+						fmtp += DE_ICON_SIZE; // DE_CHECK_SIZE / DE_CHECKBOX_SIZE
+					}else if ( *fmtp == DE_ICON2 ){
+						markX = *(fmtp + 1) + ICONBLANK + MARKOVERX;
+						fmtp += DE_ICON2_SIZE;
 					}else{
 						markX = cinfo->fontX + MARKOVERX;
 					}
-					if ( markX < TouchWidth ){
-						markX = TouchWidth;
-					}
+					if ( markX < TouchWidth ) markX = TouchWidth;
+
 					if ( x < markX ){
 						rc = PPCR_CELLMARK;
 					}else{
-						rc = PPCR_CELLTEXT;
+						if ( (XC_limc == 2) && (CEL(cell).f.cFileName[0] != '>') ){
+							if ( *fmtp == DE_MARK ) fmtp += DE_MARK_SIZE;
+							if ( (*fmtp == DE_LFN) || (*fmtp == DE_SFN) ){
+								int namewidth;
+
+								if ( UsePFont ){
+									HDC hDC = GetDC(cinfo->info.hWnd);
+									SIZE boxsize;
+									HGDIOBJ hOldFont;
+									hOldFont = SelectObject(hDC,cinfo->hBoxFont);
+
+									GetTextExtentPoint32(hDC,CEL(cell).f.cFileName,
+											CEL(cell).ext, &boxsize);
+									namewidth = boxsize.cx + ((cinfo->fontX * 3) / 2) + MARKOVERX;
+									SelectObject(hDC,hOldFont);	// フォント
+									ReleaseDC(cinfo->info.hWnd,hDC);
+								}else{
+									namewidth = (CEL(cell).ext + 1) * cinfo->fontX + MARKOVERX;
+								}
+								if ( namewidth < (cinfo->fontX * 2) ) namewidth = (cinfo->fontX * 2);
+								if ( namewidth < TouchWidth ) namewidth = TouchWidth;
+								if ( x < namewidth ) rc = PPCR_CELLTEXT;
+							}else{
+								rc = PPCR_CELLTEXT;
+							}
+						}else{
+							rc = PPCR_CELLTEXT;
+						}
 					}
 				}
 			}

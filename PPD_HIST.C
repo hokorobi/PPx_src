@@ -1284,19 +1284,19 @@ int WINAPI SortCust_Name(const BYTE *cust1,const BYTE *cust2)
 			(const TCHAR *)(const BYTE *)(cust2 + TABLENEXTOFFSETSIZE));
 }
 
-PPXDLL int PPXAPI SortCustTable(const TCHAR *str,int (WINAPI *func)(const BYTE *cust1,const BYTE *cust2))
+PPXDLL int PPXAPI SortCustTable(const TCHAR *str, int (WINAPI *func)(const BYTE *cust1, const BYTE *cust2))
 {
 	int count = 1;
 	int sorted = 1;
 	int result;
-	BYTE *tablefirst,*tablelast,*tablemax,*areamax;
+	BYTE *tablefirst, *tablelast, *tablemax, *areamax;
 
 	if ( func == NULL ) func = SortCust_Name;
 	UsePPx();
 	// sort 済みか確認 & 個数算出
 	{
 		DWORD w;
-		BYTE *p,*bp;
+		BYTE *np, *bp;
 
 		tablefirst = GetCustDataPtrCache(str);
 		if ( tablefirst == NULL ) goto nodata;	// 未登録
@@ -1311,69 +1311,69 @@ PPXDLL int PPXAPI SortCustTable(const TCHAR *str,int (WINAPI *func)(const BYTE *
 		bp = tablefirst;
 		w = *(WORD *)bp;
 		if ( w == 0 ) goto nodata; // 登録数０
-		p = bp + w;
+		np = bp + w;
 		tablemax -= sizeof(WORD); // EoD のマーキング分を減らす
 			// 2つ目以降(比較有り)
 		for ( ; ; ){
-			if ( p <= tablemax ){
-				w = *(WORD *)p;
+			if ( np <= tablemax ){
+				w = *(WORD *)np;
 				if ( w == 0 ) break;
-				if ( sorted && (func(bp,p) > 0) ) sorted = 0;
-				bp = p;
-				p += w;
+				if ( sorted && (func(bp, np) > 0) ) sorted = 0;
+				bp = np;
+				np += w;
 				count++;
 				continue;
 			}else{ // 領域破損
-				p -= w;
-				*(WORD *)p = 0;
+				np -= w;
+				*(WORD *)np = 0;
 				break;
 			}
 		}
-		tablelast = p;
+		tablelast = np;
 	}
 	result = count;
 	if ( sorted == 0 ){ // ソートされていないときはソートを行う
-		BYTE **indextable,**indextablep; // ソート用インデックス
-		BYTE *tabledata,*tabledatap; // ソート後内容
-		BYTE *p;
+		BYTE **indextable, **indextablep; // ソート用インデックス
+		BYTE *tabledata, *tabledatap; // ソート後内容
+		BYTE *tp;
 
-		setflag(result,SORTCUSTTABLE_SORT);
-		indextable = (BYTE **)HeapAlloc(DLLheap,0,count * sizeof(BYTE *));
+		setflag(result, SORTCUSTTABLE_SORT);
+		indextable = (BYTE **)HeapAlloc(DLLheap, 0, count * sizeof(BYTE *));
 		if ( indextable == NULL ) goto nodata;
 		// ↓テーブル末尾は記憶する必要がないので省略
-		tabledata = (BYTE *)HeapAlloc(DLLheap,0,(tablelast - tablefirst));
+		tabledata = (BYTE *)HeapAlloc(DLLheap, 0, (tablelast - tablefirst));
 		if ( tabledata == NULL ){
-			HeapFree(DLLheap,0,indextable);
+			HeapFree(DLLheap, 0, indextable);
 			goto nodata;
 		}
 		// インデックスを作成しながら挿入ソート
 		indextablep = indextable;
 			// 1つ目(比較無し)
-		p = tablefirst;
-		*indextablep = p;
-		p = p + *(WORD *)p;
+		tp = tablefirst;
+		*indextablep = tp;
+		tp = tp + *(WORD *)tp;
 			// 2つ目以降(比較有り)
 		for ( ; ; ){
 			WORD w;
 
-			w = *(WORD *)p;
+			w = *(WORD *)tp;
 			if ( w == 0 ) break;
 
-			if ( func(*indextablep,p) > 0 ){
+			if ( func(*indextablep,tp) > 0 ){
 				BYTE **indextable_cp;
 
 				for ( indextable_cp = indextablep ; indextable_cp > indextable ; ){
-					if ( func(*(indextable_cp - 1),p) <= 0 ) break;
+					if ( func(*(indextable_cp - 1), tp) <= 0 ) break;
 					indextable_cp--;
 				}
-				memmove(indextable_cp + 1,indextable_cp,(indextablep - indextable_cp + 1) * sizeof(BYTE *));
-				*indextable_cp = p;
+				memmove(indextable_cp + 1, indextable_cp, (indextablep - indextable_cp + 1) * sizeof(BYTE *));
+				*indextable_cp = tp;
 				indextablep++;
 			}else{
 				indextablep++;
-				*indextablep = p;
+				*indextablep = tp;
 			}
-			p += w;
+			tp += w;
 		}
 		// インデックスを元にデータを作成
 		indextablep = indextable;
@@ -1383,7 +1383,7 @@ PPXDLL int PPXAPI SortCustTable(const TCHAR *str,int (WINAPI *func)(const BYTE *
 
 			if ( *indextablep == NULL ) break;
 			w = *(WORD *)*indextablep;
-			memcpy(tabledatap,*indextablep,w);
+			memcpy(tabledatap, *indextablep, w);
 			indextablep++;
 			tabledatap += w;
 		}

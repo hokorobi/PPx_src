@@ -150,7 +150,7 @@ typedef struct {
 	volatile DWORD CollapseCheck,CollapseID;
 	#define CollapseCheckID 0xf0c08040
 #endif
-	DWORD flag;		// 動作指定 VFSTREE_
+	DWORD flags;		// 動作指定 VFSTREE_
 	int TreeType;
 	ThSTRUCT itemdata; // ツリーの項目内容記憶
 	ThSTRUCT cmdwork; // ツールバーなどの記憶領域
@@ -265,6 +265,27 @@ void WMTreeDestroy(VFSTREESTRUCT *VTS)
 		VTS->CollapseID = 3;
 	}
 #endif
+	if ( !(VTS->flags & VFSTREE_PPC) ){ // サイズ記憶
+		RECT box;
+		DWORD data[5];
+
+		memset(data, 0, sizeof(data));
+		GetCustData(StrX_tree, data, sizeof(data));
+		GetWindowRect(VTS->vtinfo.hWnd, &box);
+		box.bottom -= box.top;
+		if ( VTS->flags & VFSTREE_MENU ){ // %*tree
+			data[3] = box.right - box.left;
+			data[4] = box.bottom;
+		}else{ // 一行編集 / *file の参照tree
+			if ( GetParent(VTS->vtinfo.hWnd) != NULL ){ // 親と一体
+				data[1] = box.bottom;
+			}else{ // 独立
+				data[2] = box.bottom;
+			}
+		}
+		data[0] = VTS->X_tree;
+		SetCustData(StrX_tree, data, sizeof(data));
+	}
 
 	// ImageList / Font は使用していた窓が廃棄されたので そのまま削除可
 	if ( VTS->ShNotifyID != 0 ){
@@ -617,7 +638,7 @@ void WMTreeCreate(HWND hWnd)
 	VTS->vtinfo.Name = T("Tree");
 	VTS->vtinfo.RegID = NilStr;
 	VTS->vtinfo.hWnd = hWnd;
-//	VTS->flag = 0;
+//	VTS->flags = 0;
 	VTS->TreeType = TREETYPE_DIRECTORY;
 //	VTS->hNotifyWnd = NULL;
 //	VTS->hImage = NULL;
@@ -625,7 +646,7 @@ void WMTreeCreate(HWND hWnd)
 //	VTS->OldTreeWndProc = NULL;
 	VTS->MainThreadID = VTS->ActiveThreadID = GetCurrentThreadId();
 	VTS->ThreadCount = 1;
-	VTS->X_tree = GetCustDword(T("X_tree"),XTREE_DEFAULT);
+	VTS->X_tree = GetCustDword(StrX_tree, XTREE_DEFAULT);
 //	VTS->hBarWnd = NULL;
 //	VTS->ShNotifyID = 0;
 #if TreeCollapseCheck
@@ -842,15 +863,19 @@ int StartTreeRename(VFSTREESTRUCT *VTS,HTREEITEM hTreeitem,const TCHAR *name)
 }
 
 
-void USEFASTCALL SwitchXtree(VFSTREESTRUCT *VTS,DWORD flag)
+void USEFASTCALL SwitchXtree(VFSTREESTRUCT *VTS, DWORD flags)
 {
-	VTS->X_tree ^= flag;
-	SetCustData(T("X_tree"),&VTS->X_tree,sizeof(VTS->X_tree));
+	DWORD data[3];
+
+	VTS->X_tree ^= flags;
+	GetCustData(StrX_tree, data, sizeof(data));
+	data[0] = VTS->X_tree;
+	SetCustData(StrX_tree, data, sizeof(data));
 }
 
-void ChangeTreeWindowStyle(VFSTREESTRUCT *VTS,DWORD flag)
+void ChangeTreeWindowStyle(VFSTREESTRUCT *VTS,DWORD flags)
 {
-	SwitchXtree(VTS,flag);
+	SwitchXtree(VTS,flags);
 	SetWindowLongPtr(VTS->hTViewWnd,GWL_STYLE,GetTreeWindowStyle(VTS));
 	InvalidateRect(VTS->hTViewWnd,NULL,TRUE);
 }
@@ -932,7 +957,7 @@ void TreeTypeMenu(VFSTREESTRUCT *VTS,HTREEITEM hTItem,WORD key)
 	}
 	AppendMenuCheckString(hSubMenu,TREETYPE__NOLINE,MES_MTSL,
 			!(VTS->X_tree & XTREE_NOLINE));
-	if ( VTS->flag & VFSTREE_PPC ){
+	if ( VTS->flags & VFSTREE_PPC ){
 		AppendMenuCheckString(hSubMenu,TREETYPE__SYNCSELECT,MES_MTSS,
 				VTS->X_tree & XTREE_SYNCSELECT);
 	}
@@ -1092,13 +1117,13 @@ void FixTreeSize(VFSTREESTRUCT *VTS)
 	RECT box;
 
 	GetClientRect(VTS->vtinfo.hWnd,&box);
-	if ( VTS->flag & VFSTREE_PPC ) box.top = PPCBUTTON;
-	if ( VTS->flag & VFSTREE_SPLITR ){
+	if ( VTS->flags & VFSTREE_PPC ) box.top = PPCBUTTON;
+	if ( VTS->flags & VFSTREE_SPLITR ){
 		box.right -= splitbarwide;
 		if ( box.right < 1 ) box.right = 1;
 	}
 	if ( VTS->hBarWnd != NULL ){
-		if ( VTS->flag & VFSTREE_PPC ){ // 上側にツールバー
+		if ( VTS->flags & VFSTREE_PPC ){ // 上側にツールバー
 			SetWindowPos(VTS->hBarWnd,NULL,
 					0,box.top, box.right,VTS->BarSize.cy,SWP_NOACTIVATE | SWP_NOZORDER);
 			if ( VTS->BarSize.cy < box.bottom ){
@@ -1120,18 +1145,18 @@ void FixTreeSize(VFSTREESTRUCT *VTS)
 
 void VfsTreeSetFlagFix(VFSTREESTRUCT *VTS)
 {
-	VTS->X_tree = GetCustDword(T("X_tree"),XTREE_DEFAULT);
+	VTS->X_tree = GetCustDword(StrX_tree, XTREE_DEFAULT);
 	if ( VTS->X_tree & XTREE_SHOWTOOLBAR ){
 		if ( VTS->hBarWnd == NULL ){
 			UINT ID = IDW_INTERNALMIN;
 
 			VTS->hBarWnd = CreateToolBar(&VTS->cmdwork,VTS->vtinfo.hWnd,&ID,
 					T("B_tree"),DLLpath,
-					(VTS->flag & VFSTREE_PPC) ? 0 : TBSTYLE_WRAPABLE);
+					(VTS->flags & VFSTREE_PPC) ? 0 : TBSTYLE_WRAPABLE);
 			if ( VTS->hBarWnd != NULL ){
 				RECT box;
 
-				if ( VTS->flag & VFSTREE_PPC ){
+				if ( VTS->flags & VFSTREE_PPC ){
 					GetWindowRect(VTS->hBarWnd,&box);
 					VTS->BarSize.cy = box.bottom - box.top;
 				}else{
@@ -1150,10 +1175,10 @@ void VfsTreeSetFlagFix(VFSTREESTRUCT *VTS)
 		}
 	}
 
-	if ( VTS->flag & VFSTREE_PPC ) SetPPcColor(VTS->hTViewWnd);
-	if ( VTS->flag & VFSTREE_SPLITR ) FixTreeSize(VTS);
+	if ( VTS->flags & VFSTREE_PPC ) SetPPcColor(VTS->hTViewWnd);
+	if ( VTS->flags & VFSTREE_SPLITR ) FixTreeSize(VTS);
 
-	if ( IsExistCustData( (VTS->flag & VFSTREE_PPC) ?
+	if ( IsExistCustData( (VTS->flags & VFSTREE_PPC) ?
 			T("KC_tree") : T("K_tree")) ){ //TreeKeyカスタマイズ有り
 		if ( VTS->OldTreeWndProc == NULL ){
 			SetProp(VTS->hTViewWnd,StrTreeProp,(HANDLE)VTS);
@@ -1376,10 +1401,10 @@ HICON LoadTreeIcon(VFSTREESTRUCT *VTS, const TCHAR *path, const TCHAR *name)
 			HICON hIcon = NULL;
 			TCHAR iconname[MAX_PATH];
 			int index;
-			UINT flag;
+			UINT flags;
 
-			pEI->lpVtbl->GetIconLocation(pEI,0,iconname,MAX_PATH,&index,&flag);
-			if ( flag & GIL_NOTFILENAME ){
+			pEI->lpVtbl->GetIconLocation(pEI,0,iconname,MAX_PATH,&index,&flags);
+			if ( flags & GIL_NOTFILENAME ){
 				if ( OSver.dwMajorVersion < 6 ){
 					HICON hSmallIcon;
 
@@ -1817,17 +1842,17 @@ void ResizeTreeWindow(VFSTREESTRUCT *VTS,int sizeX,int sizeY)
 	RECT box;
 	HWND hWnd;
 
-	if ( VTS->flag & VFSTREE_PPC ){
+	if ( VTS->flags & VFSTREE_PPC ){
 		if ( sizeY != 0 ){
 			PostMessage(VTS->hNotifyWnd,WM_PPXCOMMAND,(sizeY < 0) ?
 					K_raw | K_s | K_a | K_up : K_raw | K_s | K_a | K_dw,0);
 			return;
 		}
 		hWnd = VTS->vtinfo.hWnd;
-	}else if ( VTS->flag & VFSTREE_MENU ){
+	}else if ( VTS->flags & VFSTREE_MENU ){
 		hWnd = VTS->vtinfo.hWnd;
 	}else{
-		hWnd = GetParentBox(VTS->vtinfo.hWnd);
+		hWnd = GetParentCaptionWindow(VTS->vtinfo.hWnd);
 	}
 
 	GetWindowRect(hWnd,&box);
@@ -1883,7 +1908,7 @@ ERRORCODE TreeKeyCommand(VFSTREESTRUCT *VTS,WORD key)
 	if ( !(key & K_raw) ){
 		PutKeyCode(buf,key);
 
-		if ( NO_ERROR == GetCustTable( (VTS->flag & VFSTREE_PPC) ?
+		if ( NO_ERROR == GetCustTable( (VTS->flags & VFSTREE_PPC) ?
 				T("KC_tree") : T("K_tree"),buf,buf,sizeof(buf)) ){
 			WORD *keyp,keypre;
 
@@ -1946,7 +1971,7 @@ ERRORCODE TreeKeyCommand(VFSTREESTRUCT *VTS,WORD key)
 			if ( VTS->hNotifyWnd != NULL ){
 				SendMessage(VTS->hNotifyWnd,WM_PPXCOMMAND,KTN_escape,0);
 			}
-			if ( VTS->flag & VFSTREE_MENU ){
+			if ( VTS->flags & VFSTREE_MENU ){
 				PostMessage(VTS->vtinfo.hWnd,WM_CLOSE,0,0);
 			}
 			break;
@@ -2027,7 +2052,7 @@ ERRORCODE TreeKeyCommand(VFSTREESTRUCT *VTS,WORD key)
 				*VTS->resultCodePtr = NO_ERROR;
 				VTS->resultCodePtr = NULL;
 			}
-			if ( VTS->flag & VFSTREE_MENU ){
+			if ( VTS->flags & VFSTREE_MENU ){
 				PostMessage(VTS->vtinfo.hWnd,WM_CLOSE,0,0);
 			}
 			break;
@@ -2066,7 +2091,7 @@ void TreeDragDrop(VFSTREESTRUCT *VTS,HTREEITEM hTitem)
 {
 	TCHAR path[VFPS];
 
-	if ( VTS->flag & VFSTREE_DISABLEDRAG ) return;
+	if ( VTS->flags & VFSTREE_DISABLEDRAG ) return;
 	if ( FALSE == GetTreePath(VTS, hTitem, path) ) return;
 	DragDropPath(VTS->hTViewWnd,path);
 }
@@ -2293,8 +2318,8 @@ LRESULT CALLBACK TreeProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 //			return DefWindowProc(hWnd,message,wParam,lParam);
 
 		case VTM_SETFLAG:
-			VTS->flag = (DWORD)lParam;
-			if ( VTS->flag & VFSTREE_MENU ){
+			VTS->flags = (DWORD)lParam;
+			if ( VTS->flags & VFSTREE_MENU ){
 				VTS->hParentWnd = (HWND)wParam;
 				if ( VTS->hParentWnd != NULL ){
 					EnableWindow(VTS->hParentWnd, FALSE);
@@ -2358,7 +2383,7 @@ LRESULT CALLBACK TreeProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case VTM_SETRESULT:
-			if ( VTS->flag & VFSTREE_MENU ){
+			if ( VTS->flags & VFSTREE_MENU ){
 				VTS->resultCodePtr = (ERRORCODE *)wParam;
 				VTS->resultStrPtr = (TCHAR *)lParam;
 				FixTreeHeight(VTS);
@@ -2379,7 +2404,7 @@ LRESULT CALLBACK TreeProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case WM_NCHITTEST:
-			if ( VTS->flag & VFSTREE_SPLITR ){
+			if ( VTS->flags & VFSTREE_SPLITR ){
 				LRESULT lr;
 
 				lr = DefWindowProc(hWnd, message, wParam, lParam);
@@ -2428,7 +2453,7 @@ LRESULT CALLBACK TreeProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				case TVN_SELCHANGED:
 					if ( (((NM_TREEVIEW *)lParam)->itemNew.hItem != NULL) &&
 							(VTS->hNotifyWnd != NULL) ){
-						if ( (!(VTS->flag & VFSTREE_PPC) ||
+						if ( (!(VTS->flags & VFSTREE_PPC) ||
 							  (VTS->X_tree & XTREE_SYNCSELECT)) &&
 								!(GetShiftKey() & K_s) ){
 							TCHAR path[VFPS];
@@ -2633,18 +2658,18 @@ void InitVFSListTree(VFSTREESTRUCT *VTS,const TCHAR *filename)
 	}
 }
 
-void AddTreeItemFromList(VFSTREESTRUCT *VTS,const TCHAR *list)
+void AddTreeItemFromList(VFSTREESTRUCT *VTS, const TCHAR *list)
 {
-	const TCHAR *custname,*listptr;
+	const TCHAR *custname, *listptr;
 	HWND hTWnd = VTS->hTViewWnd;
 	HTREEITEM hParentItem;
 	TV_ITEM tvi;
 
-	hParentItem = TreeView_GetNextItem(hTWnd,NULL,TVGN_DROPHILITE);
-	TREEVOID TreeView_SelectDropTarget(hTWnd,NULL);
+	hParentItem = TreeView_GetNextItem(hTWnd, NULL, TVGN_DROPHILITE);
+	TREEVOID TreeView_SelectDropTarget(hTWnd, NULL);
 	if ( hParentItem == NULL ){ // 選択無し…親
 		hParentItem = TVI_ROOT;
-		custname = ThPointerT(&VTS->itemdata,0);
+		custname = ThPointerT(&VTS->itemdata, 0);
 	}else{
 		tvi.hItem = hParentItem;
 		tvi.mask = TVIF_PARAM;
@@ -2655,9 +2680,9 @@ void AddTreeItemFromList(VFSTREESTRUCT *VTS,const TCHAR *list)
 			custname = ThPointerT(&VTS->itemdata,tvi.lParam);
 		}
 		if ( custname[0] != '%' ){
-			custname = GetTreeItemCustname(VTS,hParentItem,&hParentItem);
+			custname = GetTreeItemCustname(VTS, hParentItem, &hParentItem);
 			if ( custname == NULL ){
-				XMessage(VTS->hTViewWnd,NULL,XM_GrERRld,T("bad point"));
+				XMessage(VTS->hTViewWnd, NULL, XM_GrERRld, T("bad point"));
 				return;
 			}
 		}else{
@@ -2666,26 +2691,26 @@ void AddTreeItemFromList(VFSTREESTRUCT *VTS,const TCHAR *list)
 	}
 	listptr = list;
 	while ( *listptr != '\0' ){
-		InsertCustTable(custname,listptr,0x7fffffff,NilStr,sizeof(NilStr));
-		AppendItemToTreeV(VTS,listptr,hParentItem,0,listptr);
+		InsertCustTable(custname, listptr, 0x7fffffff, NilStr, sizeof(NilStr));
+		AppendItemToTreeV(VTS, listptr, hParentItem, 0, listptr);
 
 		listptr += tstrlen(listptr) + 1;
 	}
 	tvi.mask = TVIF_CHILDREN;
 	tvi.hItem = hParentItem;
 	tvi.cChildren = 1;
-	TreeView_SetItem(hTWnd,&tvi);
-	TreeView_Expand(hTWnd,hParentItem,TVE_EXPAND);
+	TreeView_SetItem(hTWnd, &tvi);
+	TreeView_Expand(hTWnd, hParentItem, TVE_EXPAND);
 
 	if ( hParentItem == TVI_ROOT ){
 		int count = 0;
-		TCHAR keyword[CMDLINESIZE],name[CMDLINESIZE];
+		TCHAR keyword[CMDLINESIZE], name[CMDLINESIZE];
 
-		while( EnumCustTable(count,T("Mt_type"),keyword,name,sizeof(name)) >= 0 ){
-			if ( tstrcmp(name,custname) == 0 ) return;
+		while( EnumCustTable(count, T("Mt_type"), keyword, name, sizeof(name)) >= 0 ){
+			if ( tstrcmp(name, custname) == 0 ) return;
 			count++;
 		}
-		SetCustTable(T("Mt_type"),custname + 2,custname,TSTRSIZE(custname));
+		SetCustTable(T("Mt_type"), custname + 2, custname, TSTRSIZE(custname));
 		if ( VTS->hBarWnd != NULL ){
 			struct {
 				DWORD index;
@@ -2694,7 +2719,7 @@ void AddTreeItemFromList(VFSTREESTRUCT *VTS,const TCHAR *list)
 			bar.index = 11;
 			bar.cmd[0] = EXTCMD_CMD;
 			wsprintf(bar.cmd + 1,T("*tree %s"),custname);
-			InsertCustTable(T("B_tree"),custname + 2,0x7fffffff,&bar,sizeof(DWORD) + TSTRSIZE(bar.cmd) );
+			InsertCustTable(T("B_tree"), custname + 2,0x7fffffff,&bar,sizeof(DWORD) + TSTRSIZE(bar.cmd) );
 			DestroyWindow(VTS->hBarWnd);
 			VTS->hBarWnd = NULL;
 
@@ -2758,19 +2783,19 @@ void InitPPcListTree(VFSTREESTRUCT *VTS)
 	if ( hProcessComboWnd != NULL ){
 		TCHAR *ppclist = (TCHAR *)SendMessage(hProcessComboWnd,WM_PPXCOMMAND,KCW_ppclist,0);
 		if ( ppclist != NULL ){
-			TCHAR *listIDptr,*listPathPtr;
+			TCHAR *listIDptr, *listPathPtr;
 			HTREEITEM hParentItem = AppendItemToTreeV(VTS,NilStr,TVI_ROOT,0,NULL);
 			listIDptr = ppclist;
 			for ( ; *listIDptr != '\0'; ){
 				listPathPtr = listIDptr + tstrlen(listIDptr) + 1;
 				if ( *listIDptr == '\t' ){
-					TreeView_Expand(VTS->hTViewWnd,hParentItem,TVE_EXPAND);
-					hParentItem = AppendItemToTreeV(VTS,NilStr,TVI_ROOT,0,NULL);
+					TreeView_Expand(VTS->hTViewWnd, hParentItem, TVE_EXPAND);
+					hParentItem = AppendItemToTreeV(VTS, NilStr, TVI_ROOT, 0, NULL);
 				}else{
-					if ( listIDptr[2] == '\0' ){ // C_x\0
-						setflag(useppclist,1 << (listIDptr[1] - 'A'));
+					if ( listIDptr[3] == '\0' ){ // C_x\0
+						setflag(useppclist,1 << (listIDptr[2] - 'A'));
 					}
-					AppendItemToTreeV(VTS,listPathPtr,hParentItem,0,listPathPtr);
+					AppendItemToTreeV(VTS, listPathPtr, hParentItem, 0, listPathPtr);
 				}
 				listIDptr = listPathPtr + tstrlen(listPathPtr) + 1;
 			}
@@ -2825,7 +2850,7 @@ BOOL InitTreeViewItems(VFSTREESTRUCT *VTS,const TCHAR *param)
 {
 	HWND hTWnd = VTS->hTViewWnd;
 
-	VTS->X_tree = GetCustDword(T("X_tree"),XTREE_DEFAULT);
+	VTS->X_tree = GetCustDword(StrX_tree, XTREE_DEFAULT);
 	if ( *param != '\0' ){
 		if ( *param == '%' ){
 			param++;

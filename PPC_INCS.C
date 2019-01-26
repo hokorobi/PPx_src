@@ -506,12 +506,12 @@ LRESULT EntryJumpEditKey(ENTRYJUMPDIALOG *PES,WPARAM wParam)
 		case K_up:		// ‘O‚Ìˆê’v‚Ö
 			if ( GetShiftKey() & K_s ) break;
 			EntryJumpSub(PES,TRUE,-1);
-			return NO_ERROR;
+			return ERROR_SEEK;
 
 		case K_dw:	// ŽŸ‚Ìˆê’v‚Ö
 			if ( GetShiftKey() & K_s ) break;
 			EntryJumpSub(PES,TRUE,1);
-			return NO_ERROR;
+			return ERROR_SEEK;
 
 //		default:		// ˆ—•s—v
 	}
@@ -525,7 +525,7 @@ LRESULT CALLBACK EntryJumpEditProc(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lPar
 	if ( PES == NULL ) return DefWindowProc(hWnd,iMsg,wParam,lParam);
 
 	if ( iMsg == WM_KEYDOWN ){
-		if ( EntryJumpEditKey(PES,wParam | K_v ) == NO_ERROR ) return 0;
+		if ( EntryJumpEditKey(PES,wParam | K_v ) == ERROR_SEEK ) return 0;
 	}
 	return CallWindowProc(PES->hEdit,hWnd,iMsg,wParam,lParam);
 }

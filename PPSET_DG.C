@@ -13,9 +13,9 @@ const int jumpto[] = {
 #ifdef _WIN64
 const TCHAR UnbypassName[] = T("UNBYPASS.DLL");
 #endif
-typedef BOOL (PPXAPI *impGetImageByHttp)(const TTCHAR *urladr,ThSTRUCT *th);
+typedef BOOL (PPXAPI *impGetImageByHttp)(const TCHAR *urladr,ThSTRUCT *th);
 typedef ERRORCODE (PPXAPI *impPP_ExtractMacro)(HWND hWnd,PPXAPPINFO *ParentInfo,
-			POINT *pos,const TTCHAR *param,TTCHAR *extract,int flag);
+			POINT *pos,const TCHAR *param,TCHAR *extract,int flag);
 
 ERRORCODE Execute_ExtractMacro(const TCHAR *param)
 {
@@ -30,16 +30,7 @@ ERRORCODE Execute_ExtractMacro(const TCHAR *param)
 	}
 	GETDLLPROC(hDLL,PP_ExtractMacro);
 
-	#ifdef UNICODEBINARY
-	{
-		WCHAR paramW[CMDLINESIZE];
-
-		AnsiToUnicode(param,paramW,CMDLINESIZE);
-		result = DPP_ExtractMacro(GetActiveWindow(),NULL,NULL,paramW,NULL,0);
-	}
-	#else
-		result = DPP_ExtractMacro(GetActiveWindow(),NULL,NULL,param,NULL,0);
-	#endif
+	result = DPP_ExtractMacro(GetActiveWindow(),NULL,NULL,param,NULL,0);
 
 	FreeLibrary(hDLL);
 	return result;
@@ -742,7 +733,7 @@ BOOL CreateSourceDirectory(TCHAR *dir)
 	TCHAR buf[MAX_PATH];
 
 	GetTempPath(TSIZEOF(buf),buf);
-	wsprintf(dir,T("%sPPXUPDIR"),buf);
+	wsprintf(dir,T("%s\\PPXUPDIR"),buf);
 	DeleteDir(dir);
 	if ( CreateDirectory(dir,NULL) != FALSE ){
 		DeleteUpsrc = TRUE;
@@ -850,7 +841,7 @@ BOOL DownLoadPPx(BOOL usebeta)
 	}
 	// ファイル一覧を取得
 	GETDLLPROC(hDLL,GetImageByHttp);
-	if ( DGetImageByHttp(TT(TOROsWEB) TT(PPxWebPage),&th) == FALSE ){
+	if ( DGetImageByHttp(T(TOROsWEB) T(PPxWebPage),&th) == FALSE ){
 		ptr = NULL;
 	}else{ // ファイル名を抽出
 		ptr = strstr(th.bottom,"/ppxmes");
@@ -863,12 +854,18 @@ BOOL DownLoadPPx(BOOL usebeta)
 		goto fin;
 	}
 
-	if ( usebeta ) for (;;){ // 開発版を抽出
+	if ( usebeta ){
 		char *nextptr;
 
-		nextptr = strstr(ptr + 1,ARCNAME);
-		if ( (nextptr == NULL) || (*(nextptr - 1) != '\n') ) break;
-		ptr = nextptr;
+		nextptr = ptr;
+		for (;;){ // 開発版を抽出
+			nextptr = strstr(nextptr + 1,ARCNAME);
+			if ( (nextptr == NULL) || (*(nextptr - 1) != '\n') ) break;
+#ifndef UNICODE
+			if ( *(nextptr + 5) == '6' ) continue;
+#endif
+			ptr = nextptr;
+		}
 	}
 
 	// 既存ファイルを確認
