@@ -194,6 +194,7 @@ void PPC_RootDir(PPC_APPINFO *cinfo)
 
 	if ( TinyCheckCellEdit(cinfo) ) return;
 
+	if ( cinfo->UnpackFix ) OffArcPathMode(cinfo);
 	if ( cinfo->UseArcPathMask != ARCPATHMASK_OFF ){ // ‘ŒÉ“à
 		if ( cinfo->ArcPathMaskDepth > cinfo->MinArcPathMaskDepth ){
 			SetPPcDirPos(cinfo);
@@ -306,7 +307,9 @@ void PPC_UpDir(PPC_APPINFO *cinfo)
 
 	if ( TinyCheckCellEdit(cinfo) ) return;
 
+	if ( cinfo->UnpackFix ) OffArcPathMode(cinfo);
 	if ( cinfo->UseArcPathMask != ARCPATHMASK_OFF ){ // ‘ŒÉ“à
+
 		cinfo->ArcPathMaskDepth--;
 		if ( cinfo->ArcPathMaskDepth >= cinfo->MinArcPathMaskDepth ){
 			TCHAR *last;
@@ -2588,10 +2591,28 @@ void OpenFileWithPPe(PPC_APPINFO *cinfo)
 		return;
 	}
 
-	VFSFullPath(name, CEL(cinfo->e.cellN).f.cFileName, cinfo->path);
-	if ( cinfo->e.Dtype.mode == VFSDT_SHN ){
-		VFSGetRealPath(cinfo->info.hWnd, name, name);
+	{
+		const TCHAR *path, *entryname;
+
+		path = cinfo->path;
+		if ( (cinfo->e.Dtype.mode == VFSDT_LFILE) && (cinfo->e.Dtype.BasePath[0] != '\0') ){
+			path = cinfo->e.Dtype.BasePath;
+		}
+		entryname = CEL(cinfo->e.cellN).f.cFileName;
+		if ( *entryname == '>' ){
+			const TCHAR *longname = (const TCHAR *)EntryExtData_GetDATAptr(cinfo,DFC_LONGNAME,&CEL(cinfo->e.cellN));
+			if ( longname != NULL ) entryname = longname;
+		}
+		VFSFullPath(name, (TCHAR *)entryname, path);
 	}
+
+	if ( cinfo->e.Dtype.mode == VFSDT_SHN ){
+		TCHAR realname[VFPS];
+		if ( IsTrue(VFSGetRealPath(cinfo->info.hWnd, realname, name)) ){
+			tstrcpy(name,realname);
+		}
+	}
+
 	PPEui(cinfo->info.hWnd, name, NULL);
 }
 
@@ -2874,7 +2895,7 @@ ERRORCODE ExecuteEntry(PPC_APPINFO *cinfo)
 	if ( (cinfo->e.Dtype.mode == VFSDT_SUSIE) ||
 		(cinfo->e.Dtype.mode == VFSDT_UN) ||
 //		 IsNodirShnPath(cinfo) ||
-(cinfo->e.Dtype.mode == VFSDT_HTTP) ){
+		(cinfo->e.Dtype.mode == VFSDT_HTTP) ){
 		cinfo->UnpackFix = TRUE;
 		name = FindLastEntryPoint(name);
 	}
@@ -2885,7 +2906,7 @@ ERRORCODE ExecuteEntry(PPC_APPINFO *cinfo)
 		wsprintf(buf, T(" %s "), name);
 	}
 	result = tInputEx(&ti);
-	cinfo->UnpackFix = FALSE;
+	if ( cinfo->UnpackFix ) OffArcPathMode(cinfo);
 	if ( result <= 0 ) return ERROR_CANCELLED;
 	UnpackExec(cinfo, buf);
 	return NO_ERROR;
@@ -3022,10 +3043,10 @@ void PPcPPv(PPC_APPINFO *cinfo)
 
 	#ifndef UNICODE
 	if ( (strchr(CEL(cinfo->e.cellN).f.cFileName, '?') != NULL) &&
-		CEL(cinfo->e.cellN).f.cAlternateFileName[0] ){
+		 (CEL(cinfo->e.cellN).f.cAlternateFileName[0] != '\0') ){
 		VFSFullPath(buf, CEL(cinfo->e.cellN).f.cAlternateFileName, cinfo->RealPath);
 	} else
-		#endif
+	#endif
 	{
 		VFSFullPath(buf, (TCHAR *)GetCellFileName(cinfo, &CEL(cinfo->e.cellN), buf), cinfo->path);
 	}

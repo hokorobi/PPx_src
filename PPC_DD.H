@@ -58,9 +58,9 @@ class CImpIDataObject: public IDataObject{
 		CImpIDataObject();
 		~CImpIDataObject();
 
-		PPC_APPINFO *cinfo;
-		int arcmode;
-		TCHAR arctemp[VFPS];
+		PPC_APPINFO *m_cinfo;
+		int m_arcmode;
+		TCHAR m_arctemp[VFPS];
 										// IUnknown members -------------------
 		STDMETHOD(QueryInterface)(REFIID riid, void **ppvObj);
 		STDMETHOD_(ULONG,AddRef)(void);

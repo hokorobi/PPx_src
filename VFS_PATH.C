@@ -548,11 +548,11 @@ VFSDLL TCHAR * PPXAPI VFSFixPath(TCHAR *dst,TCHAR *src, _In_opt_z_ const TCHAR *
 					HRESULT ComInitResult;
 					ComInitResult = CoInitializeEx(NULL,COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 					if ( flag & VFSFIX_VREALPATH ){
-						VFSGetRealPath(NULL,buf2,buf);
-						if ( buf2[0] != '\0' ) tstrcpy(buf,buf2);
+						if ( IsTrue(VFSGetRealPath(NULL, buf2, buf)) ){
+							tstrcpy(buf,buf2);
+						}
 					}else{
-						VFSGetRealPath(NULL,buf,buf);
-						if ( buf[0] == '\0' ){
+						if ( VFSGetRealPath(NULL,buf,buf) == FALSE ){
 							buf[0] = '?';
 							buf[1] = '\0';
 						}

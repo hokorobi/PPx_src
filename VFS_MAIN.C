@@ -811,6 +811,7 @@ ERRORCODE UnarcGetArchivefileImage(HWND hWnd,const TCHAR *arcfile,const TCHAR *E
 	VGA_INFO vga;
 	ERRORCODE result;
 	const UN_DLL *undll;
+	int extractmode;
 
 	vga.info.Function = (PPXAPPINFOFUNCTION)VGAInfo;
 	vga.info.Name = T("getfile_arc");
@@ -849,7 +850,8 @@ ERRORCODE UnarcGetArchivefileImage(HWND hWnd,const TCHAR *arcfile,const TCHAR *E
 			}
 		}
 	}
-	result = UnArc_Extract(&vga.info,dt_opt,UNARCEXTRACT_SINGLE,buf,XEO_NOEDIT);
+	extractmode = (*FindLastEntryPoint(entry) != '@') ? UNARCEXTRACT_SINGLE : 0;
+	result = UnArc_Extract(&vga.info, dt_opt, extractmode, buf, XEO_NOEDIT);
 	if ( result != NO_ERROR ) return result;
 
 	if ( RunUnARCExec(&vga.info,dt_opt,buf,NilStr) ) return ERROR_READ_FAULT;

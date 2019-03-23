@@ -478,9 +478,11 @@ void PPvLayoutCommand(void)
 			InitGui();
 		}
 		if ( i == PPCLC_XWIN + 8 ){
-			SetWindowLong(vinfo.info.hWnd,GWL_STYLE,GetWindowLong(vinfo.info.hWnd,
-					GWL_STYLE) ^ (WS_OVERLAPPEDWINDOW ^ WS_NOTITLEOVERLAPPED));
-			SetWindowPos(vinfo.info.hWnd,NULL,0,0,0,0,SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
+			SetWindowLong(vinfo.info.hWnd, GWL_STYLE,
+					GetWindowLong(vinfo.info.hWnd,GWL_STYLE) ^
+							(WS_OVERLAPPEDWINDOW ^ WS_NOTITLEOVERLAPPED));
+			SetWindowPos(vinfo.info.hWnd, NULL, 0,0, 0,0,
+					SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
 		}
 		WmWindowPosChanged(vinfo.info.hWnd);
 		InvalidateRect(vinfo.info.hWnd,NULL,TRUE);
@@ -953,6 +955,7 @@ ERRORCODE PPV_TextCode(HWND hWnd,int defaultindex)
 						}else{
 							VO_CodePage = 0;
 						}
+						VO_CodePageValid = IsValidCodePage(VO_CodePage);
 						VOi->textC = (index - MENUID_TEXTCODE);
 					}
 				}else{ // カナシフト処理
@@ -967,6 +970,7 @@ ERRORCODE PPV_TextCode(HWND hWnd,int defaultindex)
 	return NO_ERROR;
 }
 //----------------------------------------------------------------------------
+#define TAILMARGIN 1
 void SetScrollBar(void)
 {
 	SCROLLINFO sinfo;
@@ -976,8 +980,15 @@ void SetScrollBar(void)
 		case DISPT_TEXT:
 		case DISPT_DOCUMENT:
 			VO_minX = VO_minY = 0;
-			VO_maxX = VOi->width + 1;
-			VO_maxY = VOi->line + 1;
+			VO_maxX = VOi->width + TAILMARGIN;
+			if ( vo_.DModeType == DISPT_TEXT ){
+				if ( (VOi->defwidth == WIDTH_NOWARP) && IsTrue(XV_unff) ){
+					VO_maxX = ScrollWidth + TAILMARGIN;
+				}
+				VO_maxX += (XV_lleft + fontX - 1) / fontX;
+			}
+
+			VO_maxY = VOi->line + TAILMARGIN;
 			VO_sizeX = (WndSize.cx / fontX);
 			VO_sizeY = ((BoxView.bottom - BoxView.top) / LineY + 1);
 			VO_stepX = VO_stepY = 1;
@@ -1065,7 +1076,7 @@ void USEFASTCALL MoveCsr(int x,int y,BOOL detailmode)
 		GetAsyncKeyState(VK_PAUSE); // 読み捨て(最下位bit対策)
 		while ( VOi->reading != FALSE ){
 			if ( (y + READLINE_SUPP) < VOi->line ) break;
-			MakeIndexTable(MIT_NEXT,READLINE_SUPP);
+			MakeIndexTable(MIT_NEXT, READLINE_SUPP);
 			if ( GetAsyncKeyState(VK_PAUSE) & KEYSTATE_FULLPUSH ) break;
 		}
 	}
@@ -1174,8 +1185,12 @@ void CloseViewObject(void)
 		if ( VOi->offX || VOi->offY ||
 			 (vo_.DModeType != (DWORD)viewopt_opentime.dtype ) ||
 			 (VOi->textC != viewopt_opentime.T_code) ||
-			 vo_.bitmap.rotate || (vp != NULL) || (OldTailLine > 0) ||
-			 (FileDivideMode == FDM_DIV2ND) ){
+			 vo_.bitmap.rotate ||
+			 (vp != NULL) ||
+			 (OldTailLine > 0) ||
+			 (FileDivideMode == FDM_DIV2ND) ||
+			 (VOi->width != VOi->defwidth) ||
+			 (VOsel.cursor != FALSE) ){
 			DWORD optsize = 0;
 			int i;
 
@@ -1212,56 +1227,75 @@ void CloseViewObject(void)
 			// オプション項目の用意 --------------
 			// HISTOPTID_OLDTAIL ※要先頭、HISTOPTID_FileDIV より前
 			if ( ((vo_.DModeType == DISPT_TEXT) || (vo_.DModeType == DISPT_DOCUMENT)) && TailModeFlags ){
-				if ( (optsize + 8) < MAX_HISTOPT_SIZE ){
-					addbin.opt[optsize + 0] = 6;
+				if ( (optsize + HISTOPTSIZE_OLDTAIL) < MAX_HISTOPT_SIZE ){
+					addbin.opt[optsize + 0] =  HISTOPTSIZE_OLDTAIL;
 					addbin.opt[optsize + 1] = (BYTE)HISTOPTID_OLDTAIL;
 					*(DWORD *)&addbin.opt[optsize + 2] = VO_maxY - 1;
 
 					if ( (FileDivideMode >= FDM_DIV) &&
-						 ((optsize + 16) < MAX_HISTOPT_SIZE) ){
-						addbin.opt[optsize + 0] = 14;
+						 ((optsize + HISTOPTSIZE_Bookmark_L) < MAX_HISTOPT_SIZE) ){
+						addbin.opt[optsize + 0] = HISTOPTSIZE_OLDTAIL_L;
 						*(DDWORDST *)&addbin.opt[optsize + 6] = FileDividePointer;
 						GetDivMax((DDWORDST *)&addbin.opt[optsize + 6]);
-						optsize += 14 - 6;
+						optsize += HISTOPTSIZE_OLDTAIL_L - HISTOPTSIZE_OLDTAIL;
 					}
-					optsize += 6;
+					optsize += HISTOPTSIZE_OLDTAIL;
 				}
 			}
 			// HISTOPTID_FileDIV ※要先頭、HISTOPTID_OLDTAIL より後
 			if ( FileDivideMode == FDM_DIV2ND ){
-				if ( (optsize + 12) < MAX_HISTOPT_SIZE ){
-					addbin.opt[optsize + 0] = 10;
+				if ( (optsize + HISTOPTSIZE_FileDIV) < MAX_HISTOPT_SIZE ){
+					addbin.opt[optsize + 0] = HISTOPTSIZE_FileDIV;
 					addbin.opt[optsize + 1] = (BYTE)HISTOPTID_FileDIV;
 					*(DDWORDST *)&addbin.opt[optsize + 2] = FileDividePointer;
-					optsize += 10;
+					optsize += HISTOPTSIZE_FileDIV;
 				}
 			}
 			if ( (vo_.DModeType == DISPT_TEXT) && VO_CodePage ){
-				if ( (optsize + 4) < MAX_HISTOPT_SIZE ){
-					addbin.opt[optsize + 0] = 4;
+				if ( (optsize + HISTOPTSIZE_OTHERCP) < MAX_HISTOPT_SIZE ){
+					addbin.opt[optsize + 0] = HISTOPTSIZE_OTHERCP;
 					addbin.opt[optsize + 1] = (BYTE)HISTOPTID_OTHERCP;
 					*(WORD *)&addbin.opt[optsize + 2] = (WORD)VO_CodePage;
-					optsize += 4;
+					optsize += HISTOPTSIZE_OTHERCP;
+				}
+			}
+			if ( ((vo_.DModeType == DISPT_TEXT) || (vo_.DModeType == DISPT_DOCUMENT)) ){
+				if ( VOi->width != VOi->defwidth ){
+					if ( (optsize + HISTOPTSIZE_WIDTH) < MAX_HISTOPT_SIZE ){
+						addbin.opt[optsize + 0] = HISTOPTSIZE_WIDTH;
+						addbin.opt[optsize + 1] = (BYTE)HISTOPTID_WIDTH;
+						*(int *)&addbin.opt[optsize + 2] = VOi->width;
+						optsize += HISTOPTSIZE_WIDTH;
+					}
+				}
+				if ( VOsel.cursor != FALSE ){
+					if ( (optsize + HISTOPTSIZE_CARET) < MAX_HISTOPT_SIZE ){
+						addbin.opt[optsize + 0] = HISTOPTSIZE_CARET;
+						addbin.opt[optsize + 1] = (BYTE)HISTOPTID_CARET;
+						*(int *)&addbin.opt[optsize + 2] = VOsel.now.x.offset;
+						*(int *)&addbin.opt[optsize + 6] = VOsel.now.y.line;
+						optsize += HISTOPTSIZE_CARET;
+					}
 				}
 			}
 			for ( i = 0 ; i <= MaxBookmark ; i++ ){
 				if ( Bookmark[i].pos.x >= 0 ){
 					if ( FileDivideMode < FDM_NODIVMAX ){
-						if ( (optsize + 12) > MAX_HISTOPT_SIZE ) break;
-						addbin.opt[optsize + 0] = 10;
+						if ( (optsize + HISTOPTSIZE_Bookmark) > MAX_HISTOPT_SIZE ) break;
+						addbin.opt[optsize + 0] = HISTOPTSIZE_Bookmark;
 						addbin.opt[optsize + 1] = (BYTE)(i + HISTOPTID_BookmarkMin);
 						*(POINT *)&addbin.opt[optsize + 2] = Bookmark[i].pos;
-						optsize += 10;
+						optsize += HISTOPTSIZE_Bookmark;
 					}else{
-						if ( (optsize + 20) > MAX_HISTOPT_SIZE ) break;
-						addbin.opt[optsize + 0] = 18;
+						if ( (optsize + HISTOPTSIZE_Bookmark_L) > MAX_HISTOPT_SIZE ) break;
+						addbin.opt[optsize + 0] = HISTOPTSIZE_Bookmark_L;
 						addbin.opt[optsize + 1] = (BYTE)(i + HISTOPTID_BookmarkMin);
 						*(BookmarkInfo *)&addbin.opt[optsize + 2] = Bookmark[i];
-						optsize += 18;
+						optsize += HISTOPTSIZE_Bookmark_L;
 					}
 				}
 			}
-			WriteHistory(PPXH_PPVNAME,vo_.file.name,(WORD)(sizeof(int) * 3 + optsize),&addbin);
+			WriteHistory(PPXH_PPVNAME, vo_.file.name, (WORD)(sizeof(int) * 3 + optsize), &addbin);
 		}
 	}
 	BackReader = FALSE;
@@ -1270,7 +1304,7 @@ void CloseViewObject(void)
 	if ( LineY < 1 ) LineY = 1;
 
 	vo_.file.source[0] = '\0';
-	tstrcpy(vo_.file.typeinfo,T("Unknown"));
+	tstrcpy(vo_.file.typeinfo, T("Unknown"));
 	vo_.SupportTypeFlags = 0;
 	vo_.DModeType = DISPT_NONE;
 	vo_.DModeBit = DOCMODE_NONE;
@@ -1292,7 +1326,7 @@ void CloseViewObject(void)
 	vo_.bitmap.transcolor = -1;
 	vo_.bitmap.UseICC = -1;
 
-	memset(Bookmark,0xff,sizeof(Bookmark)); // Bookmark[n].pos.x = -1;
+	memset(Bookmark, 0xff, sizeof(Bookmark)); // Bookmark[n].pos.x = -1;
 	ShowTextLineFlags = 0;
 	TailModeFlags = 0;
 
@@ -2074,15 +2108,15 @@ int SetFindString(char *strbin)
 
 		case VTYPE_UTF8: {
 			WCHAR *p;
-			BYTE *max;
+			BYTE *maxptr;
 
 			p = VOsel.VSstringW;
 			dst = (BYTE *)strbin;
-			max = dst + VFPS - 4;
+			maxptr = dst + VFPS - 4;
 			while( *p != '\0' ){
 				WORD c;
 
-				if ( dst >= max ) break;
+				if ( dst >= maxptr ) break;
 				c = *p++;
 				if ( c < 0x80 ){
 					*dst++ = (BYTE)c;
@@ -2414,23 +2448,27 @@ void FixSelectRange(void)
 	}
 }
 
-void InitCursorMode(HWND hWnd)
+void InitCursorMode(HWND hWnd, BOOL initpos)
 {
 	VOsel.cursor = TRUE;
-	VOsel.now.x.offset = 0;
-	VOsel.now.x.pix = 0;
-	VOsel.now.y.line = VOi->offY + (VO_sizeY >> 1);
+
+	if ( initpos || (VOsel.now.y.line < 0) ){
+		VOsel.now.x.offset = 0;
+		VOsel.now.y.line = VOi->offY + (VO_sizeY >> 1);
+	}else{
+	}
 	if ( VO_maxY <= VOsel.now.y.line ) VOsel.now.y.line = VO_maxY - 1;
 	if ( VOsel.now.y.line < 0 ) VOsel.now.y.line = 0;
+	VOsel.now.x.pix = 0;
 	VOsel.now.y.pix = VOsel.now.y.line * LineY;
 	VOsel.posdiffX = 0;
-	VOsel.line = TRUE;
-	CreateCaret(hWnd,NULL,fontX,fontY);
+	VOsel.linemode = TRUE;
+	CreateCaret(hWnd, NULL, fontX, fontY);
 	if ( vo_.DModeBit == DOCMODE_HEX ) XV_lleft = 0;
 	if ( VOsel.now.y.line >= VO_minY ){
-		CalcTextXPoint(0,VOsel.now.y.line,SELPOSCHANGE_OFFSET);
+		CalcTextXPoint(0, VOsel.now.y.line, SELPOSCHANGE_OFFSET);
 	}
-	MoveCsrkey(0,0,FALSE);
+	MoveCsrkey(0, 0, FALSE);
 	ShowCaret(hWnd);
 }
 
@@ -2445,14 +2483,15 @@ void PPvMinimize(HWND hWnd)
 	if ( (hViewReqWnd != NULL) && (IsIconic(hViewReqWnd) == FALSE) ){
 		DWORD XV_minf = 2;
 
-		GetCustData(T("XV_minf"),&XV_minf,sizeof(XV_minf));
+		GetCustData(T("XV_minf"), &XV_minf, sizeof(XV_minf));
 		if ( (XV_minf == 1) && (Embed == FALSE) ){
-			SendMessage(hWnd,WM_SYSCOMMAND,SC_MINIMIZE,MAX32);
+			SendMessage(hWnd, WM_SYSCOMMAND, SC_MINIMIZE, MAX32);
 			ForceSetForegroundWindow(hViewReqWnd);
-			SetWindowPos(hWnd,HWND_BOTTOM,0,0,0,0,SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+			SetWindowPos(hWnd, HWND_BOTTOM, 0, 0, 0, 0,
+					SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
 // 旧方法。最小化した後、hViewReqWndで新規プロセスを作り、戻ったとき、hWndに
 // 来てしまう
-//			ShowWindow(hWnd,SW_SHOWMINIMIZED);
+//			ShowWindow(hWnd, SW_SHOWMINIMIZED);
 //			SetForegroundWindow(hViewReqWnd);
 			return;
 		}else if ( XV_minf == 2 ){
@@ -2460,7 +2499,7 @@ void PPvMinimize(HWND hWnd)
 		}
 	}
 	if ( Embed == FALSE ){
-		PPxCommonCommand(hWnd,0,K_s | K_esc);
+		PPxCommonCommand(hWnd, 0, K_s | K_esc);
 		hViewReqWnd = NULL;
 	}else{
 		SetFocus(hViewReqWnd ? hViewReqWnd : GetParent(hWnd)); // ●最初の１回目が失敗する 1.57
@@ -2490,7 +2529,7 @@ void GetPopupPosition(POINT *pos)
 				pos->x = XV_left + XV_lleft + (VOi->offX * fontX) + VOsel.now.x.pix;
 				pos->y = (VOsel.now.y.line - VOi->offY + 1) * LineY + BoxView.top;
 			}
-			ClientToScreen(vinfo.info.hWnd,pos);
+			ClientToScreen(vinfo.info.hWnd, pos);
 			break;
 	}
 }
@@ -2501,7 +2540,7 @@ int PPvTrackPopupMenu(HMENU hMenu)
 	POINT pos;
 
 	GetPopupPosition(&pos);
-	return TrackPopupMenu(hMenu,TPM_TDEFAULT,pos.x,pos.y,0,vinfo.info.hWnd,NULL);
+	return TrackPopupMenu(hMenu, TPM_TDEFAULT, pos.x, pos.y, 0, vinfo.info.hWnd, NULL);
 }
 
 typedef struct {
@@ -2509,14 +2548,14 @@ typedef struct {
 	TCHAR basename[VFPS];
 } DUMPEMFSTRUCT;
 
-void DumpBMPinEmf(ENHMETARECORD *MFR,DUMPEMFSTRUCT *des,DWORD bmihoffset)
+void DumpBMPinEmf(ENHMETARECORD *MFR, DUMPEMFSTRUCT *des, DWORD bmihoffset)
 {
 	TCHAR filename[VFPS];
 	HANDLE hFile;
 
-	wsprintf(filename,T("%s_%04d.bmp"),des->basename,des->count);
-	hFile = CreateFileL(filename,GENERIC_WRITE,0,NULL,CREATE_NEW,
-				FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+	wsprintf(filename, T("%s_%04d.bmp"), des->basename, des->count);
+	hFile = CreateFileL(filename, GENERIC_WRITE, 0, NULL,CREATE_NEW,
+				FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if ( hFile != INVALID_HANDLE_VALUE ){
 		BITMAPFILEHEADER bmfileh;
 		BITMAPINFOHEADER *bmih;
@@ -2527,14 +2566,14 @@ void DumpBMPinEmf(ENHMETARECORD *MFR,DUMPEMFSTRUCT *des,DWORD bmihoffset)
 		bmfileh.bfSize = sizeof(BITMAPFILEHEADER) + (MFR->nSize - sizeof(DWORD)*2 - bmihoffset);
 		bmfileh.bfReserved1 = bmfileh.bfReserved2 = 0;
 		bmfileh.bfOffBits = sizeof(BITMAPFILEHEADER) + CalcBmpHeaderSize(bmih);
-		WriteFile(hFile,&bmfileh,sizeof(BITMAPFILEHEADER),&size,NULL);
-		WriteFile(hFile,(BYTE *)bmih,MFR->nSize - (sizeof(DWORD) * 2) - bmihoffset,&size,NULL);
+		WriteFile(hFile, &bmfileh, sizeof(BITMAPFILEHEADER), &size, NULL);
+		WriteFile(hFile, (BYTE *)bmih, MFR->nSize - (sizeof(DWORD) * 2) - bmihoffset, &size, NULL);
 		CloseHandle(hFile);
 	}
 }
 
 #pragma argsused
-int CALLBACK DumpEmfProc(HDC hDC,HANDLETABLE *HTable,ENHMETARECORD *MFR,int Obj,DUMPEMFSTRUCT *des)
+int CALLBACK DumpEmfProc(HDC hDC, HANDLETABLE *HTable, ENHMETARECORD *MFR, int Obj, DUMPEMFSTRUCT *des)
 {
 	UnUsedParam(hDC);UnUsedParam(HTable);UnUsedParam(Obj);
 
@@ -2551,25 +2590,25 @@ int CALLBACK DumpEmfProc(HDC hDC,HANDLETABLE *HTable,ENHMETARECORD *MFR,int Obj,
 			break;
 
 		case EMR_MOVETOEX:
-			XMessage(NULL,NULL,XM_DbgLOG,T("%04d : MoveTo %d,%d"),des->count,MFR->dParm[0],MFR->dParm[1]);
+			XMessage(NULL, NULL, XM_DbgLOG, T("%04d : MoveTo %d,%d"), des->count, MFR->dParm[0], MFR->dParm[1]);
 			break;
 
 		case EMR_LINETO:
-			XMessage(NULL,NULL,XM_DbgLOG,T("%04d : LineTo %d,%d"),des->count,MFR->dParm[0],MFR->dParm[1]);
+			XMessage(NULL, NULL, XM_DbgLOG, T("%04d : LineTo %d,%d"), des->count, MFR->dParm[0], MFR->dParm[1]);
 			break;
 
 		case EMR_STRETCHDIBITS:
-			XMessage(NULL,NULL,XM_DbgLOG,T("%04d : StretchDIBlt"),des->count);
-			DumpBMPinEmf(MFR,des,0x48);
+			XMessage(NULL, NULL, XM_DbgLOG, T("%04d : StretchDIBlt"), des->count);
+			DumpBMPinEmf(MFR, des, 0x48);
 			break;
 
 		case EMR_STRETCHBLT:
-			XMessage(NULL,NULL,XM_DbgLOG,T("%04d : StretchBlt"),des->count);
-			DumpBMPinEmf(MFR,des,0x64);
+			XMessage(NULL, NULL, XM_DbgLOG, T("%04d : StretchBlt"), des->count);
+			DumpBMPinEmf(MFR, des, 0x64);
 			break;
 
 		default:
-			XMessage(NULL,NULL,XM_DbgLOG,T("%04d : %d - %d"),des->count,MFR->iType,MFR->nSize);
+			XMessage(NULL, NULL, XM_DbgLOG, T("%04d : %d - %d"), des->count, MFR->iType, MFR->nSize);
 	}
 	return 1;
 }
@@ -2582,12 +2621,12 @@ void DumpEmf(void)
 
 	if ( vo_.file.name[0] == '\0' ) return;
 	if ( FindPathSeparator(vo_.file.name) != NULL ){
-		tstrcpy(des.basename,vo_.file.name);
+		tstrcpy(des.basename, vo_.file.name);
 	}else{
-		VFSFullPath(des.basename,vo_.file.name,NULL);
+		VFSFullPath(des.basename, vo_.file.name, NULL);
 	}
-	if ( tInput(vinfo.info.hWnd,T("Save Base name"),
-			des.basename,VFPS,PPXH_NAME_R,PPXH_PATH) <= 0 ){
+	if ( tInput(vinfo.info.hWnd, T("Save Base name"),
+			des.basename, VFPS, PPXH_NAME_R, PPXH_PATH) <= 0 ){
 		return;
 	}
 	des.count = 0;
@@ -2595,8 +2634,8 @@ void DumpEmf(void)
 	box.right = vo_.bitmap.rawsize.cx;
 	box.bottom = vo_.bitmap.rawsize.cy;
 	hDC = GetDC(vinfo.info.hWnd);
-	EnumEnhMetaFile(hDC,vo_.eMetafile.handle,(ENHMFENUMPROC)DumpEmfProc,(void *)&des,&box);
-	ReleaseDC(vinfo.info.hWnd,hDC);
+	EnumEnhMetaFile(hDC, vo_.eMetafile.handle, (ENHMFENUMPROC)DumpEmfProc, (void *)&des, &box);
+	ReleaseDC(vinfo.info.hWnd, hDC);
 }
 
 void ReverseBackground(HWND hWnd)
@@ -2790,7 +2829,7 @@ BOOL GotoBookmark(PPV_APPINFO *vinfo,int index)
 		if ( XV_tmod == 0 ){
 			XV_tmod = 1;
 			SetCustData(T("XV_tmod"),&XV_tmod,sizeof(XV_tmod));
-			InitCursorMode(vinfo->info.hWnd);
+			InitCursorMode(vinfo->info.hWnd, FALSE);
 		}
 		GotoBookmarkPos(vinfo,index,-Bookmark[index].pos.y);
 	}
@@ -2907,7 +2946,7 @@ void PPvEnterTabletMode(HWND hWnd)
 UTCHAR GetCommandParameter(LPCTSTR *commandline,TCHAR *param,size_t paramlen)
 {
 	const TCHAR *src;
-	TCHAR *dest,*max;
+	TCHAR *dest, *maxptr;
 	UTCHAR firstcode,code;
 
 	firstcode = SkipSpace(commandline);
@@ -2918,12 +2957,12 @@ UTCHAR GetCommandParameter(LPCTSTR *commandline,TCHAR *param,size_t paramlen)
 	if ( firstcode == '\"' ) return GetLineParam(commandline,param);
 	src = *commandline + 1;
 	dest = param;
-	max = dest + paramlen - 1;
+	maxptr = dest + paramlen - 1;
 	code = firstcode;
 	for ( ;; ){
 		*dest++ = code;
 		code = *src;
-		if ( (dest >= max) || (code == ',') || // (code == ' ') ||
+		if ( (dest >= maxptr) || (code == ',') || // (code == ' ') ||
 			 ((code < ' ') && ((code == '\0') || (code == '\t') ||
 							   (code == '\r') || (code == '\n'))) ){
 			break;

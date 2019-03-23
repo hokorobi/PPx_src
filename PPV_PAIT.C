@@ -371,20 +371,20 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 					}else if ( nowfont == hANSIFont ){
 						int wlength;
 
-						wlength = MultiByteToWideChar(CP_LATIN1,0,
-								(LPCSTR)drawp,length,wbuf,TEXTBUFSIZE);
-						DrawSelectedTextW(pps->ps.hdc,&pps->si,(WCHAR *)wbuf,wlength,CharX,y);
+						wlength = MultiByteToWideChar(CP_LATIN1, 0,
+								(LPCSTR)drawp, length, wbuf, TEXTBUFSIZE);
+						DrawSelectedTextW(pps->ps.hdc, &pps->si, (WCHAR *)wbuf, wlength, CharX, y);
 #endif
-					}else if ( VO_CodePage ){
+					}else if ( VO_CodePage && VO_CodePageValid ){
 						int wlength;
 						// UTF7/8を表示するには、フラグ指定をなくす必要がある
 						// UTF7/8指定はコード変換専用のようだ
-						wlength = MultiByteToWideChar(VO_CodePage,0,
-								(LPCSTR)drawp,length,wbuf,TEXTBUFSIZE);
-						DrawSelectedTextW(pps->ps.hdc,&pps->si,(WCHAR *)wbuf,wlength,CharX,y);
+						wlength = MultiByteToWideChar(VO_CodePage, 0,
+								(LPCSTR)drawp, length, wbuf, TEXTBUFSIZE);
+						DrawSelectedTextW(pps->ps.hdc, &pps->si, (WCHAR *)wbuf, wlength, CharX, y);
 
 					}else{
-						DrawSelectedTextA(pps->ps.hdc,&pps->si,(char *)drawp,length,CharX,y);
+						DrawSelectedTextA(pps->ps.hdc, &pps->si, (char *)drawp, length, CharX, y);
 					}
 				}
 				drawp += length + 1;
@@ -646,7 +646,7 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 
 BOOL CheckReverse(int CharY,int CharX)
 {
-	if ( VOsel.line ) return TRUE;
+	if ( VOsel.linemode ) return TRUE;
 
 	if ( VOsel.bottomOY == CharY ){		// 上端
 		if ( VOsel.topOY == CharY ){ // 同じ位置
@@ -671,7 +671,7 @@ void DrawSelectedTextW(HDC hDC,SELINFO *si,WCHAR *text,int length,int charX,int 
 	if ( !length ) return;
 
 	// 選択範囲の途中か、非選択範囲
-	if ( VOsel.line ||
+	if ( VOsel.linemode ||
 		(VOsel.select == FALSE) ||
 		!( (offsetY == VOsel.bottomOY) || (offsetY == VOsel.topOY) )
 	){
@@ -776,7 +776,7 @@ void DrawSelectedTextA(HDC hDC,SELINFO *si,char *text,int length,int charX,int o
 	if ( length == 0 ) return;
 
 	// 選択範囲の途中か、非選択範囲
-	if ( VOsel.line ||
+	if ( VOsel.linemode ||
 		(VOsel.select == FALSE) ||
 		!( (offsetY == VOsel.bottomOY) || (offsetY == VOsel.topOY) )
 	){

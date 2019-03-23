@@ -724,7 +724,7 @@ void PPcSetForeground(HWND hParentWnd,HWND hPPcWnd,BOOL combo)
 	}
 }
 
-void CmdFocusPPx(EXECSTRUCT *Z,const TCHAR *paramptr)
+void CmdFocusPPx(EXECSTRUCT *Z,const TCHAR *paramptr) // *focus
 {
 	TCHAR param[VFPS];
 	BOOL toggle = FALSE;
@@ -2206,11 +2206,11 @@ void USEFASTCALL CmdKeyCommand(EXECSTRUCT *Z,const TCHAR *param)
 	}
 }
 
-void CmdPPv(EXECSTRUCT *Z,const TCHAR *p,TCHAR *param) // %v
+void CmdPPv(EXECSTRUCT *Z, const TCHAR *paramptr, TCHAR *param) // %v
 {
 	TCHAR param2[CMDLINESIZE];
 
-	GetCommandParameter(&p,param,VFPS);
+	GetCommandParameter(&paramptr,param,VFPS);
 	if ( *param != '\0' ){
 		VFSFixPath(param2,param,GetZCurDir(Z),VFSFIX_PATH | VFSFIX_NOFIXEDGE);
 		PPxView(Z->hWnd,param2,0);
@@ -2219,21 +2219,21 @@ void CmdPPv(EXECSTRUCT *Z,const TCHAR *p,TCHAR *param) // %v
 
 		pcmdf.source = T("VCDN");
 		pcmdf.dest[0] = '\0';
-		Get_F_MacroData(Z->Info,&pcmdf,&Z->IInfo);
+		Get_F_MacroData(Z->Info, &pcmdf, &Z->IInfo);
 		PPxView(Z->hWnd,pcmdf.dest,0);
 	}
 }
 
-void CmdZap(EXECSTRUCT *Z,const TCHAR *p,TCHAR *param)
+void CmdZap(EXECSTRUCT *Z,const TCHAR *paramptr,TCHAR *param)
 {
 	TCHAR param2[CMDLINESIZE];
 	const TCHAR *command;
 	POINT pos;
 
-	GetCommandParameter(&p,param,CMDLINESIZE);
-	if ( *p == ',' ){
-		p++;
-		GetCommandParameter(&p,param2,CMDLINESIZE);
+	GetCommandParameter(&paramptr, param, CMDLINESIZE);
+	if ( *paramptr == ',' ){
+		paramptr++;
+		GetCommandParameter(&paramptr, param2, CMDLINESIZE);
 		command = *param2 ? param2 : NilStr;
 	}else{
 		command = NULL;

@@ -46,7 +46,7 @@ case K_c | 'A':
 		ResetSelect(TRUE);
 	}else{
 		VOsel.select = TRUE;
-		VOsel.line = TRUE;
+		VOsel.linemode = TRUE;
 
 		VOsel.now.x.offset = VOsel.start.x.offset = 0;
 		VOsel.start.y.line = 0;
@@ -63,7 +63,7 @@ case 'I':
 	XV_tmod = !XV_tmod;
 	SetCustData(T("XV_tmod"),&XV_tmod,sizeof(XV_tmod));
 	if ( XV_tmod ){
-		InitCursorMode(hWnd);
+		InitCursorMode(hWnd, TRUE);
 	}else{
 		ResetSelect(TRUE);
 	}
@@ -89,9 +89,9 @@ case K_c | 'C':
 			break;
 		}
 		if ( VOsel.cursor == FALSE ){ // カーソルモードになっていないので有効
-			InitCursorMode(hWnd);
-			InvalidateRect(hWnd,NULL,FALSE);
-			SetPopMsg(POPMSG_NOLOGMSG,MES_CPMS);
+			InitCursorMode(hWnd, TRUE);
+			InvalidateRect(hWnd, NULL, FALSE);
+			SetPopMsg(POPMSG_NOLOGMSG, MES_CPMS);
 			break;
 		}
 		// 非選択中なのでページモードにする
@@ -198,8 +198,6 @@ case K_c | 'L':
 case 'U':
 	XV_lnum ^= 1;
 	InvalidateRect(hWnd,NULL,TRUE);
-	SetScrollBar();
-	if ( VOi->defwidth != WIDTH_AUTOFIX ) break;
 	UpdateWindow(hWnd); // 1回表示しないと行番号の表示幅が計算できない
 	WmWindowPosChanged(hWnd);
 	break;
@@ -207,7 +205,8 @@ case 'U':
 case 'T':
 	XV_numt ^= 1;
 	InvalidateRect(hWnd,NULL,TRUE);
-	SetScrollBar();
+	UpdateWindow(hWnd); // 1回表示しないと行番号の表示幅が計算できない
+	WmWindowPosChanged(hWnd);
 	break;
 //----------------------------------------------- Memo / Alpha Grid / DumpEMF
 case 'M':
@@ -386,6 +385,10 @@ case K_cr:
 		PPvCommand(vinfo,K_c | 'C');
 		break;
 	}
+#ifdef WINEGCC
+	PostMessage(hWnd,WM_CLOSE,0,0);
+	break;
+#endif
 // K_s | K_esc へ続く
 case K_bs:
 case 'Y':

@@ -590,8 +590,6 @@ int ECTRL[] = {
 //** ‚»‚Ì‘¼ƒV[ƒg
 	IDX_FOP_USELOGWINDOW,
 	IDX_FOP_UNDOLOG,
-	IDX_FOP_LOWPRI,
-	IDX_FOP_PREVENTSLEEP,
 	IDX_FOP_COUNTSIZE,
 	IDX_FOP_CHECKEXISTFIRST,
 	IDX_FOP_SERIALIZE,
@@ -1249,14 +1247,14 @@ void SelectMode(FOPSTRUCT *FS,HWND hCtrlWnd)
 {
 	RECT box;
 	HMENU hMenu;
-	int i,max;
+	int i, maxmode;
 	TCHAR buf[VFPS];
 	const TCHAR **pp;
 
 	GetWindowRect(hCtrlWnd,&box);
 	hMenu = CreatePopupMenu();
-	max = (WinType >= WINTYPE_VISTA) ? modestr_max6 : modestr_max5;
-	for ( pp = JobTypeNames + JOBSTATE_FOP_MOVE,i = 0 ; i < max ; pp++,i++ ){
+	maxmode = (WinType >= WINTYPE_VISTA) ? modestr_max6 : modestr_max5;
+	for ( pp = JobTypeNames + JOBSTATE_FOP_MOVE,i = 0 ; i < maxmode ; pp++,i++ ){
 		AppendMenuCheckString(hMenu,i + 1,*pp,i == FS->opt.fop.mode);
 	}
 	i = TrackPopupMenu(hMenu,TPM_TDEFAULT,box.left,box.bottom,0,FS->hDlg,NULL);
@@ -1857,11 +1855,20 @@ void FopCommands(HWND hDlg,WPARAM wParam,LPARAM lParam)
 
 		case IDX_FOP_LOWPRI:
 			SetFlagButton(lParam,&FS->opt.fop.flags,VFSFOP_OPTFLAG_LOWPRI);
-			if ( FS->state != FOP_READY ) SetFopLowPriority(FS);
+			if ( (FS->state >= FOP_BUSY) && (FS->state <= FOP_SKIP) ){
+				SetFopLowPriority(FS);
+			}
 			break;
 
 		case IDX_FOP_PREVENTSLEEP:
 			SetFlagButton(lParam,&FS->opt.fop.flags,VFSFOP_OPTFLAG_PREVENTSLEEP);
+			if ( (FS->state >= FOP_BUSY) && (FS->state <= FOP_SKIP) ){
+				if ( FS->opt.fop.flags & VFSFOP_OPTFLAG_PREVENTSLEEP ){
+					StartPreventSleep(FS->hDlg);
+				}else{
+					EndPreventSleep(FS->hDlg);
+				}
+			}
 			break;
 
 		case IDX_FOP_ALLOWDECRYPT:

@@ -1682,17 +1682,17 @@ void JumpWordCursor(BOOL x,int mode,int key)
 	COORD newXY;
 	TCHAR c;
 	DWORD temp;
-	SHORT *cur,max;
+	SHORT *cur, maxpos;
 
 	newXY.X = (SHORT)sinfo.cx;
 	newXY.Y = (SHORT)sinfo.cy;
 
 	if ( IsTrue(x) ){
 		cur = &newXY.X;
-		max = (SHORT)(screen.dwSize.X - 1);
+		maxpos = (SHORT)(screen.dwSize.X - 1);
 	}else{
 		cur = &newXY.Y;
-		max = (SHORT)(screen.dwSize.Y - 1);
+		maxpos = (SHORT)(screen.dwSize.Y - 1);
 	}
 
 	for ( ; ; ){
@@ -1708,7 +1708,7 @@ void JumpWordCursor(BOOL x,int mode,int key)
 			if ( *cur == '\0' ) break;
 			(*cur)--;
 		}else{
-			if ( *cur >= max ) break;
+			if ( *cur >= maxpos ) break;
 			(*cur)++;
 		}
 	}

@@ -210,7 +210,7 @@ VFSDLL void PPXAPI VFSGetFFInfo(HANDLE hFF,int *mode,TCHAR *type,void **dt_opt)
 				tstrcpy(type,VFF->v.LFILE.search);
 				return;
 			}
-			*dt_opt = VFF->v.LFILE.p;
+			*dt_opt = VFF->v.LFILE.readptr;
 			break;
 		case VFSDT_SUSIE:
 			*dt_opt = (void *)(size_t)(VFF->v.SU.su - susie_list + 1);

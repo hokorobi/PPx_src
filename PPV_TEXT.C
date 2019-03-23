@@ -24,6 +24,7 @@
 
 typedef struct {
 	BYTE *dest, *destmax; // 書き込み位置と、書き込みバッファ末尾
+	BYTE *text, *srcmax;
 	BYTE *textfirst; // 表示文字列先頭
 	BYTE *CalcTextPtr; // 文字列幅計算基準位置
 	int cnt;
@@ -261,6 +262,7 @@ int B64DecodeBytes(BYTE **src,BYTE *dst);
 int USEFASTCALL GetHex(BYTE c);
 void SetUchar(TEXTCODEINFO *tci,DWORD code);
 void USEFASTCALL SetVcode(TEXTCODEINFO *tci,int setvcode);
+void USEFASTCALL CloseVcode(TEXTCODEINFO *tci);
 int GetHexNumberA(const char **ptr);
 
 typedef struct {
@@ -277,8 +279,6 @@ CPTEXTS cptext[] = {
 };
 
 const char ReplaceChar[] = "・";
-
-void USEFASTCALL CloseVcode(TEXTCODEINFO *tci);
 
 #ifdef UNICODE
 int GetIntNumberA(const char **line)
@@ -543,6 +543,7 @@ BOOL MimeDecode(BYTE **text,BYTE **textmax,int *code,BYTE **text2,BYTE **max2,in
 
 		if ( codetype >= VTYPE_MAX ){
 			VO_CodePage = codetype;
+			VO_CodePageValid = IsValidCodePage(VO_CodePage);
 			codetype = VTYPE_OTHER;
 		}
 	}else{
@@ -1487,6 +1488,7 @@ void CheckCharset(BYTE *text,int *dcode)
 		}else{
 			*dcode = VTYPE_OTHER;
 			VO_CodePage = CP__SJIS;
+			VO_CodePageValid = IsValidCodePage(VO_CodePage);
 		}
 	}else if ( (cp == CP__JIS) || (cp == 50225/*iso-2022-kr*/ ) ){
 		*dcode = VTYPE_SYSTEMCP; // 本来は VTYPE_JIS だが、コード切り替え前なので
@@ -1495,6 +1497,7 @@ void CheckCharset(BYTE *text,int *dcode)
 	}else if ( (cp != 0) && (VO_CodePageChanged == FALSE) ){
 		*dcode = VTYPE_OTHER;
 		VO_CodePage = cp;
+		VO_CodePageValid = IsValidCodePage(VO_CodePage);
 	}
 }
 
@@ -1712,17 +1715,16 @@ BOOL DecodeControlCode(TEXTCODEINFO *tci,BYTE **textptr,int c1st,int *attrs,int 
 }
 
 //-----------------------------------------------------------------------------
-char *stristrA(const char *target,const char *findstr)
+char *stristrVA(const char *target, size_t targetlen, const char *findstr)
 {
-	size_t len,flen;
-	const char *p,*max;
+	size_t flen;
+	const char *p, *maxptr;
 
 	flen = strlen(findstr);
-	len = strlen(target);
-	max = target + len - flen;
+	maxptr = target + targetlen - flen;
 
-	for ( p = target ; p <= max ; p += ChrlenA(*p) ){
-		if ( !strnicmp(p,findstr,flen) ){
+	for ( p = target ; p <= maxptr ; p += ChrlenA(*p) ){
+		if ( !strnicmp(p, findstr, flen) ){
 			return (char *)p;
 		}
 	}
@@ -1732,14 +1734,14 @@ char *stristrA(const char *target,const char *findstr)
 WCHAR *stristrW(const WCHAR *target,const WCHAR *findstr)
 {
 	size_t len,flen;
-	const WCHAR *p,*max;
+	const WCHAR *p, *maxptr;
 
 	flen = strlenW(findstr);
 	len = strlenW(target);
-	max = target + len - flen;
+	maxptr = target + len - flen;
 
-	for ( p = target ; p <= max ; p++ ){
-		if ( !strnicmpW(p,findstr,flen) ){
+	for ( p = target ; p <= maxptr ; p++ ){
+		if ( !strnicmpW(p, findstr, flen) ){
 			return (WCHAR *)p;
 		}
 	}
@@ -1786,11 +1788,11 @@ void WriteSearchHilightA(BYTE *dest, size_t size)
 
 void CheckSearchAscii(TEXTCODEINFO *tci,const char *search,COLORREF color,int extend)
 {
-	BYTE *firstp,*text = tci->textfirst,*last = tci->dest;
+	BYTE *firstp, *text = tci->textfirst, *last = tci->dest;
 	size_t size,addsize = 0;
 
 	for ( ;; ){
-		firstp = (BYTE *)stristrA((char *)text,search);
+		firstp = (BYTE *)stristrVA((char *)text, strlen((char *)text), search);
 		if ( firstp == NULL ){
 			BYTE *tmpp,type;
 
@@ -1995,7 +1997,7 @@ int GetHexNumberA(const char **ptr)
 	return n;
 }
 
-int MakeIndexTable(int mode,int param)
+int MakeIndexTable(int mode, int param)
 {
 	VMEM *vo;
 	BYTE *of,*vmax;			// 参照中のイメージと最大値
@@ -2298,16 +2300,18 @@ void SetUchar(TEXTCODEINFO *tci, DWORD code)
 -----------------------------------------------------------------------------*/
 BYTE *MakeDispText(MAKETEXTINFO *mti,VT_TABLE *tbl)
 {
-	BYTE *text;		// 読み込み位置
 	BYTE tmp[DESTBUFSIZE];
-	BYTE *text2 = NULL,*srcmax,*srcmax2 = NULL;
+	TEXTCODEINFO tci;
+	struct {
+		BYTE *text;
+		BYTE *srcmax;
+		int dcode;
+	} oldptr = { NULL, NULL, 0};
 	BOOL urldecode = FALSE;
-	int dcode,dcode2 = 0;		// 文字コードの解析方法
+	int dcode;		// 文字コードの解析方法
 	int attrs;
 	int ct;
 	HFONT hOldFont C4701CHECK;
-
-	TEXTCODEINFO tci;
 
 	tci.dest = tci.textfirst = tci.CalcTextPtr = mti->destbuf;
 	tci.cnt = VOi->width;
@@ -2321,71 +2325,72 @@ BYTE *MakeDispText(MAKETEXTINFO *mti,VT_TABLE *tbl)
 		tci.PxWidth = tci.cnt * fontX;
 	}
 
-	text	= tbl->ptr;
+	tci.text	= tbl->ptr;
 	tci.Fclr	= tbl->Fclr;
 	tci.Bclr	= tbl->Bclr;
 	dcode	= tbl->type;
 	attrs	= tbl->attrs & ~VTTF_TOP;
 //	if ( attrs & VTTF_END ) attrs ^= VTTF_END | VTTF_TOP; // VTTF_TOP を立てる
 
-	if ( text == NULL ) tci.cnt = 0;
-
-	srcmax = mti->srcmax;
+	tci.srcmax = mti->srcmax;
+	if ( tci.text == NULL ){
+		tci.cnt = 0;
+	}else{
 	while( (tci.cnt > 0) && (tci.dest < tci.destmax) ){
 		int c,d;
 
-		if ( text >= srcmax ){
-			if ( text2 != NULL ){
-				text = text2;
-				srcmax = srcmax2;
-				dcode = dcode2;
-				text2 = NULL;
+		if ( tci.text >= tci.srcmax ){
+			if ( oldptr.text != NULL ){
+				tci.text = oldptr.text;
+				tci.srcmax = oldptr.srcmax;
+				dcode = oldptr.dcode;
+				oldptr.text = NULL;
 				continue;
 			}
 			break;
 		}
-		c = *text;
+		c = *tci.text;
 
 		if ( VO_Tquoted && (c == '=') ){ // =xx Quoted-printable を置換 -------
-			c = DecodeQuotedPrintable(&text);
+			c = DecodeQuotedPrintable(&tci.text);
 			if ( c == '\0' ) continue;
 		}
 										// URL の %xx を置換 ------------------
 		if ( dcode != VTYPE_JIS ){
-			if ( (c == ':') && (*(text + 1)=='/') ){
+			if ( (c == ':') && (*(tci.text + 1)=='/') ){
 				urldecode = TRUE;
 			}else if ( (c == '%') && IsTrue(urldecode) && VO_Ttag &&
-						IsxdigitA(*(text+1)) && IsxdigitA(*(text+2)) ){
-				if ( text2 == NULL ){
+						IsxdigitA(*(tci.text+1)) && IsxdigitA(*(tci.text+2)) ){
+				if ( oldptr.text == NULL ){
 					BYTE *np;
 					int newdcode;
 					size_t size;
 
-					np = text;
-					newdcode = UrlDecode(&text,tmp,&size);
-					if ( np < text ){
-						dcode2 = dcode;
+					np = tci.text;
+					newdcode = UrlDecode(&tci.text,tmp,&size);
+					if ( np < tci.text ){
+						oldptr.dcode = dcode;
 						dcode = newdcode;
-						srcmax2 = srcmax;
-						text2 = text;
-						text = tmp;
-						srcmax = text + size;
-						c = *text;
+						oldptr.srcmax = tci.srcmax;
+						oldptr.text = tci.text;
+						tci.text = tmp;
+						tci.srcmax = tci.text + size;
+						c = *tci.text;
 					}
 				}
 			}
 		}
 		if ( (c == 'c') && VO_Tesc && (dcode != VTYPE_UNICODE) ){
-			if ( !memcmp(text + 1,"harset=",7) ) CheckCharset(text,&dcode);
+			if ( !memcmp(tci.text + 1,"harset=",7) ) CheckCharset(tci.text,&dcode);
 		}
 										// RTF 簡易解析 -----------------------
 		if ( dcode == VTYPE_RTF ){
 			if ( c == '\\' ){
-				text++;
-				c = DecodeRTF(&tci,&text);
+				tci.text++;
+				c = DecodeRTF(&tci,&tci.text);
 				if ( c == '\0' ) continue;
 			}else if ( (c < ' ') || (c == ';') || (c == '{') ){
-				text++;
+				tci.text++;
 				continue;
 			}
 		}else
@@ -2401,20 +2406,20 @@ BYTE *MakeDispText(MAKETEXTINFO *mti,VT_TABLE *tbl)
 			if ( (c >= 0x20) && ( c <= 0x5f) ){
 				SetVcode(&tci,VCODE_ASCII);
 				*tci.dest++ = (BYTE)(c + 0x80);
-				text++;
+				tci.text++;
 				tci.cnt--;
 				continue;
 			}
 		}else
 											//UNICODE -------------------------
 		if ( dcode == VTYPE_UNICODE ){
-			text++;
-			c += *text << 8;
+			tci.text++;
+			c += *tci.text << 8;
 			if ( c >= 0x20 ){
-				text++;
+				tci.text++;
 				if ( tci.cnt < 2 ){
 					tci.cnt = 0;
-					text -= 2;
+					tci.text -= 2;
 					break;
 				}
 				if ( (c == L'　') && XV_bctl[2] ){
@@ -2429,10 +2434,10 @@ BYTE *MakeDispText(MAKETEXTINFO *mti,VT_TABLE *tbl)
 						WORD *tagend;
 						int len = X_tlen;
 
-						tagend = (WCHAR *)text;
+						tagend = (WCHAR *)tci.text;
 												// 本当にTAGかを確認
 						for ( ; len ; len-- ){
-							if ( ++tagend >= (WORD *)srcmax ){
+							if ( ++tagend >= (WORD *)tci.srcmax ){
 								len = 0;
 								break;
 							}
@@ -2451,9 +2456,9 @@ BYTE *MakeDispText(MAKETEXTINFO *mti,VT_TABLE *tbl)
 							tci.vcode = VCODE_END;
 							*tci.dest++ = VCODE_FCOLOR;
 							*(COLORREF *)tci.dest = CV_syn[
-								((*((WORD *)text + 1) == '!') &&
-								 (*((WORD *)text + 2) == '-') &&
-								 (*((WORD *)text + 3) == '-')) ?
+								((*((WORD *)tci.text + 1) == '!') &&
+								 (*((WORD *)tci.text + 2) == '-') &&
+								 (*((WORD *)tci.text + 3) == '-')) ?
 								1 : 0
 							];
 							tci.dest += sizeof(COLORREF);
@@ -2478,13 +2483,13 @@ BYTE *MakeDispText(MAKETEXTINFO *mti,VT_TABLE *tbl)
 		}else
 
 		if ( dcode == VTYPE_UNICODEB ){
-			text++;
-			c = *text + (c << 8);
+			tci.text++;
+			c = *tci.text + (c << 8);
 			if ( c >= 0x20 ){
-				text++;
+				tci.text++;
 				if ( tci.cnt < 2 ){
 					tci.cnt = 0;
-					text-=2;
+					tci.text -= 2;
 					break;
 				}
 				if ( (c == L'　') && XV_bctl[2] ){
@@ -2505,9 +2510,9 @@ BYTE *MakeDispText(MAKETEXTINFO *mti,VT_TABLE *tbl)
 					break;
 				}
 				if ( !VO_Tquoted ){
-					c = Utf8toWchar(&text,c);
+					c = Utf8toWchar(&tci.text, c);
 				}else{
-					c = MimeUtf8toWchar(&text,c);
+					c = MimeUtf8toWchar(&tci.text, c);
 				}
 				SetUchar(&tci,c);
 				continue;
@@ -2516,7 +2521,7 @@ BYTE *MakeDispText(MAKETEXTINFO *mti,VT_TABLE *tbl)
 											// S-JIS/B ------------------------
 		if ( dcode == VTYPE_SJISB ){
 			if ( c > 0x20 ){
-				d = *(text + 1);
+				d = *(tci.text + 1);
 
 				SetVcode(&tci,VCODE_ASCII);
 				if ( IskanjiA(d) ){
@@ -2524,36 +2529,36 @@ BYTE *MakeDispText(MAKETEXTINFO *mti,VT_TABLE *tbl)
 						tci.cnt = 0;
 						break;
 					}
-					text += 2;
+					tci.text += 2;
 					*tci.dest++ = (BYTE)d;
 					tci.cnt -= 2;
 				}else{
-					if ( (d == 0x20) && (c & B7) ) text++;
-					text++;
+					if ( (d == 0x20) && (c & B7) ) tci.text++;
+					tci.text++;
 					tci.cnt--;
 				}
 				*tci.dest++ = (BYTE)c;
 				continue;
 			}else{
-				if ( (c > '\0') && (c < 0x20) && (*(text + 1) == '\0') ) text++;
+				if ( (c > '\0') && (c < 0x20) && (*(tci.text + 1) == '\0') ) tci.text++;
 			}
 		}else
 //-----------------------------------------------------------------------------
 		if ( (c == 0x80) && (dcode == VTYPE_ANSI) && (OSver.dwMajorVersion < 6) ){	// ユーロ単価
 			DecodeEuro(&tci,dcode);
-			text++;
+			tci.text++;
 			continue;
 		}
 
 		ct = T_CHRTYPE[(unsigned char)c];
 		if ( ct & T_IS_CTL ){				// コントロールコード -------------
-			if ( IsTrue(DecodeControlCode(&tci,&text,c,&attrs,&dcode)) ) continue;
+			if ( IsTrue(DecodeControlCode(&tci,&tci.text,c,&attrs,&dcode)) ) continue;
 			break;
 		}
 		SetVcode(&tci,VCODE_ASCII);
 										// <tag> ------------------------------
 		if ( (c == '<') && VO_Ttag && (dcode != VTYPE_JIS ) ){
-			if ( IsTrue(DecodeHtmlTag(&tci,&text,srcmax,&attrs)) ) continue;
+			if ( IsTrue(DecodeHtmlTag(&tci,&tci.text,tci.srcmax,&attrs)) ) continue;
 		}
 		if ( (c == '>') && (VO_Ttag > 1) && (dcode != VTYPE_JIS ) ){
 			*tci.dest++ = '>';
@@ -2562,24 +2567,24 @@ BYTE *MakeDispText(MAKETEXTINFO *mti,VT_TABLE *tbl)
 			*tci.dest++ = VCODE_COLOR;
 			*tci.dest++ = CV__deftext;
 			*tci.dest++ = CV__defback;
-			text++;
+			tci.text++;
 			resetflag(attrs, VTTF_TAG);
 			continue;
 		}
 										// html spcial charchter --------------
 		if ( (c == '&') && VO_Ttag && (dcode != VTYPE_JIS) ){
-			if ( IsTrue(DecodeHtmlSpecialChar(&tci,&text)) ) continue;
+			if ( IsTrue(DecodeHtmlSpecialChar(&tci,&tci.text)) ) continue;
 		}
 										// mime decode ------------------------
 		if ( (dcode != VTYPE_JIS) && (c == '=') && VO_Tesc &&
-				(*(text + 1) == '?') && (text2 == NULL) ){
-			if ( MimeDecode(&text,&srcmax,&dcode,&text2,&srcmax2,&dcode2,tmp) ){
+				(*(tci.text + 1) == '?') && (oldptr.text == NULL) ){
+			if ( MimeDecode(&tci.text,&tci.srcmax,&dcode,&oldptr.text,&oldptr.srcmax,&oldptr.dcode,tmp) ){
 				continue;
 			}
 		}
 										// mime decode(utf-7) -----------------
 		if ( (dcode == VTYPE_UTF7) && (c == '+') ){
-			if ( IsTrue(DecodeUTF7(&tci,&text)) ) continue;
+			if ( IsTrue(DecodeUTF7(&tci,&tci.text)) ) continue;
 		}
 										// S-JIS ------------------------------
 		if ( ((dcode == VTYPE_SYSTEMCP) || (dcode == VTYPE_SJISNEC) || (dcode == VTYPE_RTF) || (VO_CodePage == CP__SJIS)) && (ct & T_IS_KNJ) ){
@@ -2602,25 +2607,25 @@ BYTE *MakeDispText(MAKETEXTINFO *mti,VT_TABLE *tbl)
 				}
 			}
 			*tci.dest++ = (BYTE)c;
-			text++;
-			c2 = *text;
+			tci.text++;
+			c2 = *tci.text;
 			if ( c2 != '\0' ){
 				if ( VO_Tquoted ){
 					if ( c2 == '=' ){
-						if ((*(text + 1) == '\r') && (*(text + 2)=='\n') ){
-							text += 3;
-							c2 = *text;
-						}else if ( *(text + 1) == '\n' ){
-							text += 2;
-							c2 = *text;
+						if ((*(tci.text + 1) == '\r') && (*(tci.text + 2)=='\n') ){
+							tci.text += 3;
+							c2 = *tci.text;
+						}else if ( *(tci.text + 1) == '\n' ){
+							tci.text += 2;
+							c2 = *tci.text;
 						}
 					}
-					if ( (c2 == '=') && IsxdigitA(*(text + 1)) && IsxdigitA(*(text+2)) ){
-						c2 = (BYTE)((GetHex(*(text + 1)) * 16) + GetHex(*(text +2)));
-						text += 2;
+					if ( (c2 == '=') && IsxdigitA(*(tci.text + 1)) && IsxdigitA(*(tci.text + 2)) ){
+						c2 = (BYTE)((GetHex(*(tci.text + 1)) * 16) + GetHex(*(tci.text +2)));
+						tci.text += 2;
 					}
 				}
-				text++;
+				tci.text++;
 				if ( (c == 0x81) && (c2 == 0x40) && XV_bctl[2] ){ // 全角空白
 					tci.dest--;
 					CloseVcode(&tci);
@@ -2654,16 +2659,16 @@ BYTE *MakeDispText(MAKETEXTINFO *mti,VT_TABLE *tbl)
 		}else
 										// EUC JP -----------------------------
 		if ( (dcode == VTYPE_EUCJP) && (c >= 0x80) ){
-			if ( IsTrue(DecodeEUCJP(&tci,&text)) ) continue;
+			if ( IsTrue(DecodeEUCJP(&tci,&tci.text)) ) continue;
 			break;
 		}else
 										// JIS --------------------------------
 		if ( dcode == VTYPE_JIS ){
-			if ( IsTrue(DecodeJIS(&tci,&text,srcmax)) ) continue;
+			if ( IsTrue(DecodeJIS(&tci,&tci.text,tci.srcmax)) ) continue;
 			break;
 		}
 		*tci.dest++ = (BYTE)c;
-		text++;
+		tci.text++;
 		tci.cnt--;
 		if ( (tci.cnt == 0) && (XV_unff != 0) ){
 			if ( tci.vcode == VCODE_ASCII ){
@@ -2673,17 +2678,21 @@ BYTE *MakeDispText(MAKETEXTINFO *mti,VT_TABLE *tbl)
 			}
 		}
 	}
+		if ( (VOi->defwidth == WIDTH_NOWARP) && (ScrollWidth < (TEXTBUFSIZE - tci.cnt)) ) {
+			ScrollWidth = TEXTBUFSIZE - tci.cnt;
+		}
+	}
 	CloseVcode(&tci);
 	*tci.dest++ = VCODE_END;
 	*tci.dest = VCODE_END;
 
-	if ( text2 != NULL ){
-		text = text2;
-		dcode = dcode2;
+	if ( oldptr.text != NULL ){
+		tci.text = oldptr.text;
+		dcode = oldptr.dcode;
 	}
 	if ( mti->writetbl ){
 		tbl++;
-		tbl->ptr	= text;
+		tbl->ptr	= tci.text;
 		tbl->Fclr	= (BYTE)tci.Fclr;
 		tbl->Bclr	= (BYTE)tci.Bclr;
 		tbl->type	= (BYTE)dcode;
@@ -2694,5 +2703,5 @@ BYTE *MakeDispText(MAKETEXTINFO *mti,VT_TABLE *tbl)
 		SelectObject(tci.hDC,hOldFont); // C4701ok
 		ReleaseDC(vinfo.info.hWnd,tci.hDC);
 	}
-	return text;
+	return tci.text;
 }

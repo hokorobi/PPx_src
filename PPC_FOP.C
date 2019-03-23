@@ -683,7 +683,7 @@ int RenameMain(PPC_APPINFO *cinfo, ENTRYCELL *cell, BOOL continuous)
 	tinput.info = &cinfo->info;
 
 	for ( ; ; ){
-		tinput.flag = TIEX_USEREFLINE | TIEX_USEINFO | TIEX_SINGLEREF | TIEX_USEPNBTN | TIEX_REFEXT;
+		tinput.flag = TIEX_USEREFLINE | TIEX_USEINFO | TIEX_SINGLEREF | TIEX_USEPNBTN | TIEX_REFEXT | TIEX_FIXFORPATH;
 		if ( !XC_sdir && (cell->f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ){
 			resetflag(tinput.flag, TIEX_REFEXT);
 		}
@@ -896,10 +896,20 @@ ERRORCODE PPC_MakeDir(PPC_APPINFO *cinfo)
 	TCHAR target[VFPS], src[CMDLINESIZE], *ptr;
 	ERRORCODE result;
 
+	TINPUT tinput;
+
 	PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, MessageText(NewDirName), src, XEO_EXTRACTEXEC);
 	GetNewName(target, src, cinfo->RealPath);
-	if ( PPctInput(cinfo, MES_TMKD, target, TSIZEOF(target),
-		PPXH_NAME_R, PPXH_FILENAME) <= 0 ){
+
+	tinput.hOwnerWnd= cinfo->info.hWnd;
+	tinput.hRtype	= PPXH_NAME_R;
+	tinput.hWtype	= PPXH_FILENAME;
+	tinput.title	= MES_TMKD;
+	tinput.buff		= target;
+	tinput.size		= TSIZEOF(target);
+	tinput.flag		= TIEX_USEINFO | TIEX_SINGLEREF | TIEX_FIXFORPATH;
+	tinput.info		= &cinfo->info;
+	if ( tInputEx(&tinput) <= 0 ){
 		return ERROR_CANCELLED;
 	}
 	if ( cinfo->UseArcPathMask != ARCPATHMASK_OFF ){
@@ -1162,7 +1172,7 @@ ERRORCODE USEFASTCALL MakeEntryMain(PPC_APPINFO *cinfo,int type,TCHAR *name)
 		tinput.title	= MES_TMKF;
 		tinput.buff		= buf;
 		tinput.size		= VFPS;
-		tinput.flag		= TIEX_USESELECT | TIEX_USEINFO | TIEX_SINGLEREF;
+		tinput.flag		= TIEX_USESELECT | TIEX_USEINFO | TIEX_SINGLEREF | TIEX_FIXFORPATH;
 		tinput.firstC	= 0;
 		tinput.lastC	= FindExtSeparator(name);
 		tinput.info		= &cinfo->info;
@@ -1231,9 +1241,9 @@ void PPcCreateHarkLink(PPC_APPINFO *cinfo)
 		return;
 	}
 	tstrcpy(name,CEL(cinfo->e.cellN).f.cFileName);
-	if ( PPctInput(cinfo,MES_TMHL,name,TSIZEOF(name),
-			PPXH_NAME_R,PPXH_FILENAME) > 0 ){
-		CatPath(src,cinfo->path,CEL(cinfo->e.cellN).f.cFileName);
+	if ( PPctInput(cinfo, MES_TMHL, name, TSIZEOF(name),
+			PPXH_NAME_R, PPXH_FILENAME) > 0 ){
+		CatPath(src, cinfo->path, CEL(cinfo->e.cellN).f.cFileName);
 		VFSFixPath(dst,name,cinfo->path,VFSFIX_SEPARATOR | VFSFIX_FULLPATH | VFSFIX_REALPATH);
 		tstrcpy(cinfo->Jfname,name);
 
@@ -1271,7 +1281,7 @@ ERRORCODE PPcDupFile(PPC_APPINFO *cinfo)
 	tinput.buff		= name;
 	tinput.size		= TSIZEOF(name);
 	tinput.info		= &cinfo->info;
-	tinput.flag		= TIEX_USEREFLINE | TIEX_USEINFO | TIEX_SINGLEREF;
+	tinput.flag		= TIEX_USEREFLINE | TIEX_USEINFO | TIEX_SINGLEREF | TIEX_FIXFORPATH;
 	cell = &CEL(cinfo->e.cellN);
 	if ( !(cell->f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ){
 		setflag(tinput.flag,TIEX_REFEXT);

@@ -275,6 +275,8 @@ extern void FWriteLog(HWND hEWnd,const TCHAR *message);
 extern void CreateFWriteLogWindow(FOPSTRUCT *FS);
 extern void EndingOperation(FOPSTRUCT *FS);
 extern HWND FopGetMsgParentWnd(FOPSTRUCT *FS);
+extern void EndPreventSleep(HWND hWnd);
+extern void StartPreventSleep(HWND hWnd);
 
 extern const TCHAR STR_FOP[];
 extern const TCHAR STR_FOPWARN[];
@@ -299,15 +301,15 @@ extern const TCHAR StrLogExist[];
 extern const TCHAR StrLogAppend[];
 
 extern BOOL USEFASTCALL CheckSaveDrive(struct FopOption *opt, _In_ const TCHAR *src, _In_ const TCHAR *dst);
-extern BOOL Fop_ShellNameSpace(FOPSTRUCT *FS,const TCHAR *srcDIR,const TCHAR *dstDIR);
-extern ERRORCODE RenameDestFile(FOPSTRUCT *FS,const TCHAR *dst,BOOL addOldStr);
+extern BOOL Fop_ShellNameSpace(FOPSTRUCT *FS, const TCHAR *srcDIR, const TCHAR *dstDIR);
+extern ERRORCODE RenameDestFile(FOPSTRUCT *FS, const TCHAR *dst, BOOL addOldStr);
 
 //----------------------------------------------------------------- vfs_ocd.c
-extern ERRORCODE DlgCopyDir(FOPSTRUCT *FS,const TCHAR *src,TCHAR *dst,DWORD srcatr);
+extern ERRORCODE DlgCopyDir(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD srcatr);
 
 //----------------------------------------------------------------- vfs_ocf.c
-extern ERRORCODE DlgCopyFile(FOPSTRUCT *FS,const TCHAR *src,TCHAR *dst,DWORD srcatr);
-extern ERRORCODE CheckEntryMask(FOPSTRUCT *FS,const TCHAR *src,DWORD srcatr);
+extern ERRORCODE DlgCopyFile(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD srcatr);
+extern ERRORCODE CheckEntryMask(FOPSTRUCT *FS, const TCHAR *src, DWORD srcatr);
 
 //----------------------------------------------------------------- vfs_odel.c
 extern DWORD_PTR USECDECL FopDeleteInfoFunc(PPXAPPINFO *ppxa,DWORD cmdID,PPXAPPINFOUNION *uptr);

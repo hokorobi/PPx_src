@@ -793,9 +793,9 @@ PPXDLL HWND PPXAPI PPcGetWindow(int RegNo, int direction)
 /*-----------------------------------------------------------------------------
 	’¼‘OƒpƒX‚ÌŽæ“¾
 -----------------------------------------------------------------------------*/
-PPXDLL void PPXAPI PPcOldPath(INT_PTR RegNo,DWORD join,TCHAR *str)
+PPXDLL void PPXAPI PPcOldPath(INT_PTR RegNo, DWORD join, TCHAR *str)
 {
-	int index;
+	int index = -1;
 
 	UsePPx();
 	if ( join == MAX32 ){

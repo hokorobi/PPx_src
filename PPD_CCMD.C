@@ -329,26 +329,25 @@ void KeymapMenuMain(const TCHAR *MenuName,const TCHAR *KeyName,int menunested)
 }
 
 // ネットワークドライブ割り当て／切断 -----------------------------------------
-typedef DWORD (APIENTRY *DWNETDIALOG)(HWND hwnd,DWORD dwType);
-DWORD ExecWNetDialog(char *name,HWND hWnd)
+DWORD ExecWNetDialog(char *name, HWND hWnd)
 {
 	HMODULE hMPR;
-	DWNETDIALOG func;
 	DWORD result = 1;
+	DefineWinAPI(DWORD, WNetdialog, (HWND, DWORD));
 
-	hMPR = LoadLibrary(T("MPR.DLL"));
+	hMPR = LoadSystemDLL(SYSTEMDLL_MPR);
 	if ( hMPR == NULL ) return 1;
-	func = (DWNETDIALOG)GetProcAddress(hMPR,name);
-	if ( func != NULL ) result = func(hWnd,RESOURCETYPE_DISK);
+	DWNetdialog = (impWNetdialog)GetProcAddress(hMPR, name);
+	if ( DWNetdialog != NULL ) result = DWNetdialog(hWnd, RESOURCETYPE_DISK);
 	FreeLibrary(hMPR);
 	return result;
 }
 
 void LockPC(void)
 {
-	DefineWinAPI(BOOL,LockWorkStation,(void));
+	DefineWinAPI(BOOL, LockWorkStation, (void));
 
-	GETDLLPROC(GetModuleHandleA(User32DLL),LockWorkStation);
+	GETDLLPROC(GetModuleHandleA(User32DLL), LockWorkStation);
 	if ( DLockWorkStation != NULL ) DLockWorkStation();
 }
 
@@ -472,7 +471,7 @@ PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd,WPARAM wParam,WORD key)
 			}
 			FreePPxModule();
 			FreeRMatch();
-			if ( hMigemoDLL != NULL ) FreeMigemo();
+			FreeMigemo();
 			// カスタマイズログが開いていたら閉じる。
 			// ※ログ窓が残留して異常終了することの対策
 			if ( hUpdateResultWnd != NULL ){

@@ -890,20 +890,20 @@ ERRORCODE DoSusie_all(UNPACKINFOSTRUCT *info,const TCHAR *filename,void *dt_opt)
 }
 
 // ファイルの実行・複写元の準備のために展開を行う
-BOOL PPcUnpackForAction(PPC_APPINFO *cinfo,TCHAR *newpath,int mode)
+BOOL PPcUnpackForAction(PPC_APPINFO *cinfo, TCHAR *newpath, int mode)
 {
 	switch (cinfo->e.Dtype.mode){
 		case VFSDT_UN:
-			if ( Unpacksub(cinfo,newpath,mode) == FALSE ) return TRUE;
-			if ( DoUndll(cinfo,newpath,0) != NO_ERROR ) return FALSE;
+			if ( Unpacksub(cinfo, newpath, mode) == FALSE ) return TRUE;
+			if ( DoUndll(cinfo, newpath, 0) != NO_ERROR ) return FALSE;
 			return TRUE;
 
 		case VFSDT_SUSIE: {
 			ERRORCODE result;
 
-			if ( Unpacksub(cinfo,newpath,mode) == FALSE ) return TRUE;
-			if ( (result = DoSusie_part(cinfo,newpath)) != NO_ERROR ){
-				SetPopMsg(cinfo,result,NULL);
+			if ( Unpacksub(cinfo, newpath, mode) == FALSE ) return TRUE;
+			if ( (result = DoSusie_part(cinfo, newpath)) != NO_ERROR ){
+				SetPopMsg(cinfo, result, NULL);
 				return FALSE;
 			}
 			return TRUE;
@@ -919,8 +919,8 @@ BOOL PPcUnpackForAction(PPC_APPINFO *cinfo,TCHAR *newpath,int mode)
 		case VFSDT_ZIPFOLDER:{
 			VFSFILEOPERATION fileop;
 
-			if ( Unpacksub(cinfo,newpath,mode) == FALSE ) return TRUE;
-			if ( (fileop.files = GetFiles(cinfo,0)) == NULL ) return FALSE;
+			if ( Unpacksub(cinfo, newpath, mode) == FALSE ) return TRUE;
+			if ( (fileop.files = GetFiles(cinfo, 0)) == NULL ) return FALSE;
 			fileop.action	= FileOperationMode_Copy;
 			fileop.src		= cinfo->path;
 			fileop.dest		= newpath;
@@ -929,7 +929,7 @@ BOOL PPcUnpackForAction(PPC_APPINFO *cinfo,TCHAR *newpath,int mode)
 			fileop.info		= &cinfo->info;
 			fileop.flags	= VFSFOP_FREEFILES | VFSFOP_AUTOSTART | VFSFOP_SPECIALDEST;
 			fileop.hReturnWnd = cinfo->info.hWnd;
-			if ( PPxFileOperation(NULL,&fileop) <= 0 ) break;
+			if ( PPxFileOperation(NULL, &fileop) <= 0 ) break;
 			return TRUE;
 		}
 //		default:
@@ -939,45 +939,45 @@ BOOL PPcUnpackForAction(PPC_APPINFO *cinfo,TCHAR *newpath,int mode)
 }
 
 //-----------------------------------------------------------------------------
-ERRORCODE PPcUnpackSelectedEntry(PPC_APPINFO *cinfo,const TCHAR *destpath,const TCHAR *action)
+ERRORCODE PPcUnpackSelectedEntry(PPC_APPINFO *cinfo, const TCHAR *destpath, const TCHAR *action)
 {
 	HWND hFWnd;
 	TCHAR dst[VFPS];
 	ERRORCODE result = NO_ERROR;
 
 	hFWnd = GetForegroundWindow();
-	GetPairPath(cinfo,dst);
+	GetPairPath(cinfo, dst);
 	switch( cinfo->e.Dtype.mode ){
 		case VFSDT_CABFOLDER:
 		case VFSDT_LZHFOLDER:
 		case VFSDT_ZIPFOLDER:
-			PPcFileOperation(cinfo,action,destpath,NULL);
+			PPcFileOperation(cinfo, action, destpath, NULL);
 			return NO_ERROR;
 
 		case VFSDT_UN:
 			if ( cinfo->UseArcPathMask != ARCPATHMASK_OFF ){
 				if ( destpath == NULL ){
-					if ( PPctInput(cinfo,UnpackTitle,dst,TSIZEOF(dst),
-							PPXH_DIR_R,PPXH_DIR) <= 0 ){
+					if ( PPctInput(cinfo, UnpackTitle, dst, TSIZEOF(dst),
+							PPXH_DIR_R, PPXH_DIR) <= 0 ){
 						break;
 					}
 					destpath = dst;
 				}
 			}
-			result = DoUndll(cinfo,destpath,Get_X_unbg);
+			result = DoUndll(cinfo, destpath, Get_X_unbg);
 			break;
 
 		case VFSDT_SUSIE:
 			if ( destpath == NULL ){
-				if ( PPctInput(cinfo,UnpackTitle,dst,TSIZEOF(dst),
-						PPXH_DIR_R,PPXH_DIR) <= 0 ){
+				if ( PPctInput(cinfo, UnpackTitle, dst, TSIZEOF(dst),
+						PPXH_DIR_R, PPXH_DIR) <= 0 ){
 					result = ERROR_CANCELLED;
 					break;
 				}
 				destpath = dst;
 			}
-			result = DoSusie_part(cinfo,destpath);
-			if ( result != NO_ERROR ) SetPopMsg(cinfo,result,NULL);
+			result = DoSusie_part(cinfo, destpath);
+			if ( result != NO_ERROR ) SetPopMsg(cinfo, result, NULL);
 			break;
 
 		case VFSDT_HTTP: {
@@ -987,13 +987,13 @@ ERRORCODE PPcUnpackSelectedEntry(PPC_APPINFO *cinfo,const TCHAR *destpath,const 
 
 			pghs = PPcHeapAlloc(sizeof(PPCGETHTTPSTRUCT));
 			pghs->cinfo = cinfo;
-			if ( (pghs->files = GetFiles(cinfo,GETFILES_SETPATHITEM)) == NULL ){
+			if ( (pghs->files = GetFiles(cinfo, GETFILES_SETPATHITEM)) == NULL ){
 				break;
 			}
-			hT = CreateThread(NULL,0,
-					(LPTHREAD_START_ROUTINE)HttpThread,pghs,0,&tmp);
+			hT = CreateThread(NULL, 0,
+					(LPTHREAD_START_ROUTINE)HttpThread, pghs, 0, &tmp);
 			if ( hT != NULL ){
-				SetThreadPriority(hT,THREAD_PRIORITY_LOWEST);
+				SetThreadPriority(hT, THREAD_PRIORITY_LOWEST);
 				CloseHandle(hT);
 			}
 			break;
@@ -1003,15 +1003,15 @@ ERRORCODE PPcUnpackSelectedEntry(PPC_APPINFO *cinfo,const TCHAR *destpath,const 
 			if ( PPctInput(cinfo,
 					((action != FileOperationMode_Move) ?
 						StrFopCaption_Copy : StrFopCaption_Move),
-					dst,TSIZEOF(dst),PPXH_DIR_R,PPXH_DIR) <= 0 ){
+					dst, TSIZEOF(dst), PPXH_DIR_R, PPXH_DIR) <= 0 ){
 				return ERROR_CANCELLED;
 			}
-			CopyToShnPathFiles(cinfo,dst,(action != FileOperationMode_Move) ?
+			CopyToShnPathFiles(cinfo, dst, (action != FileOperationMode_Move) ?
 					DROPEFFECT_COPY : DROPEFFECT_MOVE);
 			break;
 
 		default:
-			SetPopMsg(cinfo,POPMSG_MSG,MES_ECDR);
+			SetPopMsg(cinfo, POPMSG_MSG, MES_ECDR);
 			result = ERROR_BAD_COMMAND;
 			break;
 	}
@@ -1023,55 +1023,55 @@ ERRORCODE PPcUnpackSelectedEntry(PPC_APPINFO *cinfo,const TCHAR *destpath,const 
 }
 
 //-----------------------------------------------------------------------------
-ERRORCODE PPcUnpackAll_Zipfolder(UNPACKINFOSTRUCT *info,const TCHAR *filename,DWORD type)
+ERRORCODE PPcUnpackAll_Zipfolder(UNPACKINFOSTRUCT *info, const TCHAR *filename, DWORD type)
 {
 	IMAGEGETEXINFO exinfo;
 	BYTE *mem;
 	ERRORCODE result;
 
-	MakeDirectories(info->DestPath,NULL);
+	MakeDirectories(info->DestPath, NULL);
 	exinfo.Progress = (LPPROGRESS_ROUTINE)NULL;
 	exinfo.lpData = NULL;
 	exinfo.Cancel = NULL;
-	tstrcpy(exinfo.dest,info->DestPath);
+	tstrcpy(exinfo.dest, info->DestPath);
 	mem = (BYTE *)&exinfo;
 
-	result = VFSGetArchivefileImage(INVALID_HANDLE_VALUE,NULL,filename,NilStr,NULL,&type,NULL,&mem);
+	result = VFSGetArchivefileImage(INVALID_HANDLE_VALUE, NULL, filename, NilStr, NULL, &type, NULL, &mem);
 	if ( result == MAX32 ) result = NO_ERROR;
-	if ( result != NO_ERROR ) PPErrorBox(NULL,T("Unarc"),result);
+	if ( result != NO_ERROR ) PPErrorBox(NULL, T("Unarc"), result);
 	UnpackChop(info);
 	return result;
 }
 
 // 全ファイル展開を行う
-ERRORCODE PPcUnpackAll(UNPACKINFOSTRUCT *info,HANDLE hBatchfile,const TCHAR *exname)
+ERRORCODE PPcUnpackAll(UNPACKINFOSTRUCT *info, HANDLE hBatchfile, const TCHAR *exname)
 {
 	TCHAR filename[VFPS];
 	void *dt_opt;
 	BYTE header[0x8000];
-	DWORD fsize,type;
+	DWORD fsize, type;
 	DWORD X_unbg = Get_X_unbg;
 	ERRORCODE result;
 
 	MakeArcDestDirPath(info);
-	VFSFixPath(filename,(TCHAR *)GetCellFileName(info->parent,info->Cell,filename),info->parent->path,VFSFIX_REALPATH | VFSFIX_FULLPATH | VFSFIX_NOFIXEDGE);
+	VFSFixPath(filename, (TCHAR *)GetCellFileName(info->parent, info->Cell, filename), info->parent->path, VFSFIX_REALPATH | VFSFIX_FULLPATH | VFSFIX_NOFIXEDGE);
 
-	fsize = GetFileHeader(filename,header,sizeof(header));
+	fsize = GetFileHeader(filename, header, sizeof(header));
 	if ( fsize ){										// ファイルだった
-		if ( exname != NULL ) tstrcat(filename,exname);
-		type = VFSCheckDir(filename,header,fsize,&dt_opt);
+		if ( exname != NULL ) tstrcat(filename, exname);
+		type = VFSCheckDir(filename, header, fsize, &dt_opt);
 		switch( type ){
 			case VFSDT_UN: {
 				TCHAR buf[CMDLINESIZE];
 
-				if ( (result = UnArc_Extract(&info->info,dt_opt,
-						UNARCEXTRACT_ALL,buf,XEO_NOEDIT)) == NO_ERROR ){
+				if ( (result = UnArc_Extract(&info->info, dt_opt,
+						UNARCEXTRACT_ALL, buf, XEO_NOEDIT)) == NO_ERROR ){
 					TCHAR OldCurrentDir[VFPS];
 
-					MakeDirectories(info->DestPath,NULL);
-					GetCurrentDirectory(TSIZEOF(OldCurrentDir),OldCurrentDir);
+					MakeDirectories(info->DestPath, NULL);
+					GetCurrentDirectory(TSIZEOF(OldCurrentDir), OldCurrentDir);
 					SetCurrentDirectory(info->parent->RealPath);
-					UnArc_Exec(&info->info,dt_opt,buf,hBatchfile,NilStr,X_unbg,
+					UnArc_Exec(&info->info, dt_opt, buf, hBatchfile, NilStr, X_unbg,
 							(info->chop == 2) ? info->DestPath : NULL);
 					if ( X_unbg == 0 ) UnpackChop(info);
 					SetCurrentDirectory(OldCurrentDir);
@@ -1080,33 +1080,33 @@ ERRORCODE PPcUnpackAll(UNPACKINFOSTRUCT *info,HANDLE hBatchfile,const TCHAR *exn
 			}
 
 			case VFSDT_SUSIE:
-				return DoSusie_all(info,filename,dt_opt);
+				return DoSusie_all(info, filename, dt_opt);
 
 			case VFSDT_CABFOLDER:
 			case VFSDT_LZHFOLDER:
 			case VFSDT_ZIPFOLDER:
-				return PPcUnpackAll_Zipfolder(info,filename,type);
+				return PPcUnpackAll_Zipfolder(info, filename, type);
 		}
 	}
 		//---------------------------------------------------------------------
-	return PP_ExtractMacro(info->info.hWnd,&info->parent->info,
-			NULL,T("%ME_unpack2"),NULL,XEO_NOEDIT | XEO_NOEXECMARK);
+	return PP_ExtractMacro(info->info.hWnd, &info->parent->info,
+			NULL, T("%ME_unpack2"), NULL, XEO_NOEDIT | XEO_NOEXECMARK);
 }
 
-BOOL CheckNameArchive(PPC_APPINFO *cinfo,ENTRYCELL *cell)
+BOOL CheckNameArchive(PPC_APPINFO *cinfo, ENTRYCELL *cell)
 {
 	TCHAR arcname[VFPS];
 	HANDLE hFF;
 	WIN32_FIND_DATA ff;
 	BOOL result = FALSE;
 
-	VFSFullPath(arcname,(TCHAR *)GetCellFileName(cinfo,cell,arcname),cinfo->path);
-	CatPath(NULL,arcname,T("*"));
+	VFSFullPath(arcname, (TCHAR *)GetCellFileName(cinfo, cell, arcname), cinfo->path);
+	CatPath(NULL, arcname, T("*"));
 
-	hFF = VFSFindFirst(arcname,&ff);	// .
+	hFF = VFSFindFirst(arcname, &ff);	// .
 	if ( hFF == INVALID_HANDLE_VALUE ) return FALSE;
-	VFSFindNext(hFF,&ff);				// ..
-	while ( IsTrue(VFSFindNext(hFF,&ff)) ){
+	VFSFindNext(hFF, &ff);				// ..
+	while ( IsTrue(VFSFindNext(hFF, &ff)) ){
 		if ( CheckWarningName(ff.cFileName) ){
 			result = TRUE;
 			break;
@@ -1116,7 +1116,7 @@ BOOL CheckNameArchive(PPC_APPINFO *cinfo,ENTRYCELL *cell)
 
 	if ( IsTrue(result) ){
 		if ( PMessageBox(cinfo->info.hWnd,
-				MES_QEWE,ff.cFileName,MB_QYES | MB_DEFBUTTON2) != IDOK){
+				MES_QEWE, ff.cFileName, MB_QYES | MB_DEFBUTTON2) != IDOK){
 			return TRUE;
 		}
 	}
@@ -1132,15 +1132,17 @@ BOOL IsShn_UnpackCheck(PPC_APPINFO *cinfo)
 	if ( cinfo->e.Dtype.mode != VFSDT_SHN ) return TRUE;
 	if ( cinfo->RealPath[0] != '?' ) return FALSE;
 
-	InitEnumMarkCell(cinfo,&work);
-	while ( (cell = EnumMarkCell(cinfo,&work)) != NULL ){
+	InitEnumMarkCell(cinfo, &work);
+	while ( (cell = EnumMarkCell(cinfo, &work)) != NULL ){
 		namebuf[0] = '\0';
 		if ( (cell->f.ftLastWriteTime.dwHighDateTime |
 			  cell->f.ftLastWriteTime.dwLowDateTime) == 0 ){
 			return TRUE;
 		}
-		if ( VFSFullPath(namebuf,CellFileName(cell),cinfo->path) != NULL ){
-			VFSGetRealPath(cinfo->info.hWnd,namebuf,namebuf);
+		if ( VFSFullPath(namebuf, CellFileName(cell), cinfo->path) != NULL ){
+			if ( VFSGetRealPath(cinfo->info.hWnd,  namebuf,  namebuf) == FALSE ){
+				return FALSE;
+			}
 		}
 		if ( namebuf[0] == '\0' ) return TRUE;
 	}
@@ -1149,7 +1151,7 @@ BOOL IsShn_UnpackCheck(PPC_APPINFO *cinfo)
 
 //-----------------------------------------------------------------------------
 // ファイルの展開
-ERRORCODE PPC_Unpack(PPC_APPINFO *cinfo,const TCHAR *destpath)
+ERRORCODE PPC_Unpack(PPC_APPINFO *cinfo, const TCHAR *destpath)
 {
 	HANDLE hBatchfile = INVALID_HANDLE_VALUE;
 	TCHAR tempfilename[MAX_PATH];
@@ -1159,44 +1161,45 @@ ERRORCODE PPC_Unpack(PPC_APPINFO *cinfo,const TCHAR *destpath)
 	int work;
 	BOOL error = FALSE;
 
+	if ( cinfo->UnpackFix ) OffArcPathMode(cinfo);
 	if ( (cinfo->e.Dtype.mode != VFSDT_PATH) &&
 		 (cinfo->e.Dtype.mode != VFSDT_LFILE) &&
 		 IsTrue(IsShn_UnpackCheck(cinfo)) ){
-		return PPcUnpackSelectedEntry(cinfo,destpath,FileOperationMode_Copy); // 仮想ディレクトリ内
+		return PPcUnpackSelectedEntry(cinfo, destpath, FileOperationMode_Copy); // 仮想ディレクトリ内
 	}
 
 	if ( destpath != NULL ){
-		tstrcpy(info.DestPath,destpath);
+		tstrcpy(info.DestPath, destpath);
 	}else{
-		GetPairPath(cinfo,info.DestPath);
-		CatPath(NULL,info.DestPath,NilStr);
-		if ( PPctInput(cinfo,UnpackTitle,info.DestPath,
-					TSIZEOF(info.DestPath),PPXH_DIR_R,PPXH_DIR) <= 0 ){
+		GetPairPath(cinfo, info.DestPath);
+		CatPath(NULL, info.DestPath, NilStr);
+		if ( PPctInput(cinfo, UnpackTitle, info.DestPath,
+					TSIZEOF(info.DestPath), PPXH_DIR_R, PPXH_DIR) <= 0 ){
 			return ERROR_CANCELLED;
 		}
-		VFSFixPath(NULL,info.DestPath,cinfo->path,VFSFIX_PATH);
+		VFSFixPath(NULL, info.DestPath, cinfo->path, VFSFIX_PATH);
 	}
 
 	X_unbg = Get_X_unbg;
 	if ( (cinfo->e.markC > 1) && X_unbg ){
-		MakeTempEntry(MAX_PATH,tempfilename,FILE_ATTRIBUTE_NORMAL);
-		hBatchfile = CreateFileL(tempfilename, GENERIC_WRITE,
-					0, NULL, CREATE_ALWAYS,
-					FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+		MakeTempEntry(MAX_PATH, tempfilename, FILE_ATTRIBUTE_NORMAL);
+		hBatchfile = CreateFileL(tempfilename,  GENERIC_WRITE,
+					0,  NULL,  CREATE_ALWAYS,
+					FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_SEQUENTIAL_SCAN,  NULL);
 	}
-	info.chop = GetCustXDword(T("X_arcdr"),NULL,0);
+	info.chop = GetCustXDword(T("X_arcdr"), NULL, 0);
 	info.DestPathLast = info.DestPath + tstrlen(info.DestPath);
 	info.info = cinfo->info;
 	info.info.Function = (PPXAPPINFOFUNCTION)UnpackInfoFunc_All;
 	info.parent = cinfo;
-	InitEnumMarkCell(cinfo,&work);
-	PPxCommonCommand(NULL,JOBSTATE_ARC_EXTRACT,K_ADDJOBTASK);
-	while ( (info.Cell = EnumMarkCell(cinfo,&work)) != NULL ){
-		if ( X_wnam && IsTrue(CheckNameArchive(cinfo,info.Cell)) ){
+	InitEnumMarkCell(cinfo, &work);
+	PPxCommonCommand(NULL, JOBSTATE_ARC_EXTRACT, K_ADDJOBTASK);
+	while ( (info.Cell = EnumMarkCell(cinfo, &work)) != NULL ){
+		if ( X_wnam && IsTrue(CheckNameArchive(cinfo, info.Cell)) ){
 			error = TRUE;
 			break;
 		}
-		PPcUnpackAll(&info,hBatchfile,NULL);
+		PPcUnpackAll(&info, hBatchfile, NULL);
 		if ( GetAsyncKeyState(VK_ESCAPE) & KEYSTATE_PUSH ){
 			error = TRUE;
 			break;
@@ -1207,18 +1210,18 @@ ERRORCODE PPC_Unpack(PPC_APPINFO *cinfo,const TCHAR *destpath)
 		if ( IsTrue(error) ){
 			DeleteFileL(tempfilename);
 		}else{
-			RunBatchProcess(cinfo,tempfilename,
+			RunBatchProcess(cinfo, tempfilename,
 				(GetFileAttributes(cinfo->path) != BADATTR ) ?
-				cinfo->path : PPcPath,X_unbg);
+				cinfo->path : PPcPath, X_unbg);
 		}
 	}
-	PPxCommonCommand(NULL,0,K_DELETEJOBTASK);
+	PPxCommonCommand(NULL, 0, K_DELETEJOBTASK);
 	return NO_ERROR;
 }
 
 ERRORCODE UnpackMenu(PPC_APPINFO *cinfo)
 {
-	TCHAR pathbuf[VFPS],unname[VFPS],cmd[CMDLINESIZE];
+	TCHAR pathbuf[VFPS], unname[VFPS], cmd[CMDLINESIZE];
 	BYTE header[VFS_check_size];
 	DWORD fsize;					// 読み込んだ大きさ
 	HMENU hPopupMenu;
@@ -1227,76 +1230,77 @@ ERRORCODE UnpackMenu(PPC_APPINFO *cinfo)
 	UNPACKINFOSTRUCT info;
 	int work;
 
-	InitEnumMarkCell(cinfo,&work);
-	if ( (info.Cell = EnumMarkCell(cinfo,&work)) == NULL ){
+	if ( cinfo->UnpackFix ) OffArcPathMode(cinfo);
+	InitEnumMarkCell(cinfo, &work);
+	if ( (info.Cell = EnumMarkCell(cinfo, &work)) == NULL ){
 		return ERROR_NO_MORE_FILES;
 	}
 
-	if ( VFSFullPath(pathbuf,CellFileName(info.Cell),cinfo->RealPath) == NULL ){
+	if ( VFSFullPath(pathbuf, CellFileName(info.Cell), cinfo->RealPath) == NULL ){
 		return ERROR_BAD_PATHNAME;
 	}
-	fsize = GetFileHeader(pathbuf,header,sizeof(header));
+	fsize = GetFileHeader(pathbuf, header, sizeof(header));
 	if ( fsize < 4 ) return ERROR_INVALID_DATA;
 
 	hPopupMenu = CreatePopupMenu();
-	if ( 0 == VFSCheckDir(pathbuf,header,fsize | VFSCHKDIR_GETEXTRACTMENU,(void **)hPopupMenu) ){
+	if ( 0 == VFSCheckDir(pathbuf, header, fsize | VFSCHKDIR_GETEXTRACTMENU, (void **)hPopupMenu) ){
 		DestroyMenu(hPopupMenu);
-		SetPopMsg(cinfo,POPMSG_MSG,T("no archive"));
+		SetPopMsg(cinfo, POPMSG_MSG, T("no archive"));
 		return ERROR_INVALID_DATA;
 	}
 
-	index = PPcTrackPopupMenu(cinfo,hPopupMenu);
+	index = PPcTrackPopupMenu(cinfo, hPopupMenu);
 	if ( index <= 0 ){
 		DestroyMenu(hPopupMenu);
 		return ERROR_CANCELLED;
 	}
 
-	GetMenuString(hPopupMenu,index,unname,TSIZEOF(unname),MF_BYCOMMAND);
+	GetMenuString(hPopupMenu, index, unname, TSIZEOF(unname), MF_BYCOMMAND);
 	DestroyMenu(hPopupMenu);
 
 	if ( unname[0] == '*' ){ // E_unpack2 を使用
-		return PP_ExtractMacro(cinfo->info.hWnd,&cinfo->info,
-				NULL,T("%ME_unpack2"),NULL,XEO_NOEDIT | XEO_NOEXECMARK);
+		return PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info,
+				NULL, T("%ME_unpack2"), NULL, XEO_NOEDIT | XEO_NOEXECMARK);
 	}
 
-	GetPairPath(cinfo,info.DestPath);
-	CatPath(NULL,info.DestPath,NilStr);
-	if ( PPctInput(cinfo,UnpackTitle,info.DestPath,
-			TSIZEOF(info.DestPath),PPXH_DIR_R,PPXH_DIR) <= 0 ){
+	GetPairPath(cinfo, info.DestPath);
+	CatPath(NULL, info.DestPath, NilStr);
+	if ( PPctInput(cinfo, UnpackTitle, info.DestPath,
+			TSIZEOF(info.DestPath), PPXH_DIR_R, PPXH_DIR) <= 0 ){
 		return ERROR_CANCELLED;
 	}
-	VFSFixPath(NULL,info.DestPath,cinfo->path,VFSFIX_PATH);
-	MakeDirectories(info.DestPath,NULL);
+	VFSFixPath(NULL, info.DestPath, cinfo->path, VFSFIX_PATH);
+	MakeDirectories(info.DestPath, NULL);
 
-	info.chop = GetCustXDword(T("X_arcdr"),NULL,0);
+	info.chop = GetCustXDword(T("X_arcdr"), NULL, 0);
 	info.DestPathLast = info.DestPath + tstrlen(info.DestPath);
 	info.info = cinfo->info;
 	info.info.Function = (PPXAPPINFOFUNCTION)UnpackInfoFunc_All;
 	info.parent = cinfo;
 
-	PPxCommonCommand(NULL,JOBSTATE_ARC_EXTRACT,K_ADDJOBTASK);
+	PPxCommonCommand(NULL, JOBSTATE_ARC_EXTRACT, K_ADDJOBTASK);
 
 	for (;;){
-		if ( X_wnam && IsTrue(CheckNameArchive(cinfo,info.Cell)) ){
+		if ( X_wnam && IsTrue(CheckNameArchive(cinfo, info.Cell)) ){
 			result = ERROR_INVALID_DATA;
 			break;
 		}
 
 		if ( unname[0] == ':' ){ // Susie を使用
-			result = PPcUnpackAll(&info,INVALID_HANDLE_VALUE,unname);
+			result = PPcUnpackAll(&info, INVALID_HANDLE_VALUE, unname);
 		}else{	// undll を使用
 			MakeArcDestDirPath(&info);
 
 			// PPcUnpackAll に統合する予定
-			if ( tstrcmp(unname,T("zipfldr.dll")) == 0 ){
-				result = PPcUnpackAll_Zipfolder(&info,pathbuf,VFSDT_ZIPFOLDER);
-			}else if ( tstrcmp(unname,T("lzhfldr2.dll")) == 0 ){
-				result = PPcUnpackAll_Zipfolder(&info,pathbuf,VFSDT_LZHFOLDER);
-			}else if ( tstrcmp(unname,T("cabview.dll")) == 0 ){
-				result = PPcUnpackAll_Zipfolder(&info,pathbuf,VFSDT_CABFOLDER);
+			if ( tstrcmp(unname, T("zipfldr.dll")) == 0 ){
+				result = PPcUnpackAll_Zipfolder(&info, pathbuf, VFSDT_ZIPFOLDER);
+			}else if ( tstrcmp(unname, T("lzhfldr2.dll")) == 0 ){
+				result = PPcUnpackAll_Zipfolder(&info,  pathbuf, VFSDT_LZHFOLDER);
+			}else if ( tstrcmp(unname, T("cabview.dll")) == 0 ){
+				result = PPcUnpackAll_Zipfolder(&info, pathbuf, VFSDT_CABFOLDER);
 			}else{
-				wsprintf(cmd,T("%%u/%s,!all,"),unname);
-				result = PP_ExtractMacro(cinfo->info.hWnd,&info.info,NULL,cmd,NULL,0);
+				wsprintf(cmd, T("%%u/%s,!all,"), unname);
+				result = PP_ExtractMacro(cinfo->info.hWnd, &info.info, NULL, cmd, NULL, 0);
 				UnpackChop(&info);
 			}
 		}
@@ -1305,14 +1309,14 @@ ERRORCODE UnpackMenu(PPC_APPINFO *cinfo)
 			result = ERROR_CANCELLED;
 			break;
 		}
-		if ( (info.Cell = EnumMarkCell(cinfo,&work)) == NULL ) break;
-		if ( VFSFullPath(pathbuf,CellFileName(info.Cell),cinfo->RealPath) == NULL ){
+		if ( (info.Cell = EnumMarkCell(cinfo, &work)) == NULL ) break;
+		if ( VFSFullPath(pathbuf, CellFileName(info.Cell), cinfo->RealPath) == NULL ){
 			result = ERROR_BAD_PATHNAME;
 			break;
 		}
 	}
 
-	PPxCommonCommand(NULL,0,K_DELETEJOBTASK);
+	PPxCommonCommand(NULL, 0, K_DELETEJOBTASK);
 
 	return result;
 }
@@ -1320,9 +1324,9 @@ ERRORCODE UnpackMenu(PPC_APPINFO *cinfo)
 // Http 処理
 DWORD WINAPI HttpThread(PPCGETHTTPSTRUCT *pghs)
 {
-	TCHAR *path,*files;
-	TCHAR dst[VFPS],buf[VFPS],name[VFPS];
-	THREADSTRUCT threadstruct = {HttpThreadName,XTHREAD_EXITENABLE | XTHREAD_TERMENABLE,NULL,0,0};
+	TCHAR *path, *files;
+	TCHAR dst[VFPS], buf[VFPS], name[VFPS];
+	THREADSTRUCT threadstruct = {HttpThreadName, XTHREAD_EXITENABLE | XTHREAD_TERMENABLE, NULL, 0, 0};
 	PPC_APPINFO *cinfo;
 
 	cinfo = pghs->cinfo;
@@ -1330,32 +1334,32 @@ DWORD WINAPI HttpThread(PPCGETHTTPSTRUCT *pghs)
 	PPcHeapFree(pghs);
 	cinfo->BreakFlag = FALSE;
 	PPxRegisterThread(&threadstruct);
-	GetPairPath(cinfo,dst);
-	CatPath(NULL,dst,NilStr);
+	GetPairPath(cinfo, dst);
+	CatPath(NULL, dst, NilStr);
 
-	if ( PPctInput(cinfo,MES_TCHP,dst,TSIZEOF(dst),PPXH_DIR_R,PPXH_DIR) > 0 ){
-		MakeDirectories(dst,NULL);
+	if ( PPctInput(cinfo, MES_TCHP, dst, TSIZEOF(dst), PPXH_DIR_R, PPXH_DIR) > 0 ){
+		MakeDirectories(dst, NULL);
 		files = path + tstrlen(path) + 1;
 
 		for ( ; *files ; files += tstrlen(files) + 1){
 			ThSTRUCT th;
-			char *bottom,*p;
-			TCHAR *namep,*namedst;
+			char *bottom, *p;
+			TCHAR *namep, *namedst;
 			DWORD size;
 			HANDLE hFile;
 										// メモリ上に取得 --------------------
-			VFSFullPath(name,files,path);
+			VFSFullPath(name, files, path);
 
-			SetPopMsg(cinfo,POPMSG_PROGRESSMSG,name);
-			if ( GetImageByHttp(name,&th) == FALSE ) continue;
+			SetPopMsg(cinfo, POPMSG_PROGRESSMSG, name);
+			if ( GetImageByHttp(name, &th) == FALSE ) continue;
 			bottom = th.bottom;
 			size = th.top - 1;
-			p = strstr(bottom,"\r\n\r\n");
+			p = strstr(bottom, "\r\n\r\n");
 			if ( p != NULL ){
 				if ( *(p + 4) == '\0' ){ // データ無し
 					*p = '\0';
 					// ステータスを取得する
-					if ( (strstr(th.bottom," 302") != NULL) && ((p = strstr(th.bottom,"Location: ")) != NULL) ){
+					if ( (strstr(th.bottom, " 302") != NULL) && ((p = strstr(th.bottom, "Location: ")) != NULL) ){
 						p += 10;
 						while ( *p == ' ' ) p++;
 						namep = buf;
@@ -1366,14 +1370,14 @@ DWORD WINAPI HttpThread(PPCGETHTTPSTRUCT *pghs)
 						}
 						*namep = '\0';
 						if ( *p <= ' ' ){
-							VFSFullPath(name,buf,path);
-							SetPopMsg(cinfo,POPMSG_PROGRESSMSG,name);
+							VFSFullPath(name, buf, path);
+							SetPopMsg(cinfo, POPMSG_PROGRESSMSG, name);
 							ThFree(&th);
-							if ( GetImageByHttp(name,&th) == FALSE ) continue;
+							if ( GetImageByHttp(name, &th) == FALSE ) continue;
 
 							bottom = th.bottom;
 							size = th.top - 1;
-							p = strstr(bottom,"\r\n\r\n");
+							p = strstr(bottom, "\r\n\r\n");
 							if ( (p != NULL)  && (*(p + 4) != '\0') ){
 								*p = '\0';
 								size -= p - bottom + 4;
@@ -1387,11 +1391,11 @@ DWORD WINAPI HttpThread(PPCGETHTTPSTRUCT *pghs)
 				}
 			}
 										// 書き込み名生成 ---------------------
-			tstrcpy(buf,files);
-			namep = tstrrchr(buf,'/');
+			tstrcpy(buf, files);
+			namep = tstrrchr(buf, '/');
 			if ( (namep != NULL) && (*(namep + 1) == '\0') ){
 				*namep = '\0';
-				namep = tstrrchr(buf,'/');
+				namep = tstrrchr(buf, '/');
 			}
 			if ( namep != NULL ){
 				namep++;
@@ -1404,28 +1408,28 @@ DWORD WINAPI HttpThread(PPCGETHTTPSTRUCT *pghs)
 				*namedst++ = *namep;
 			}
 			*namedst = '\0';
-			if ( (tstrchr(buf,'.') == NULL) && (bottom[0] == '<') ){
-				tstrcat(buf,T(".html"));
+			if ( (tstrchr(buf, '.') == NULL) && (bottom[0] == '<') ){
+				tstrcat(buf, T(".html"));
 			}
-			VFSFullPath(name,buf,dst);
+			VFSFullPath(name, buf, dst);
 			if ( IsTrue(cinfo->BreakFlag) ) break;
 
 			if ( GetFileAttributesL(name) != BADATTR ){
 				if ( PMessageBox(cinfo->info.hWnd,
-						MES_QSAM,files,MB_QYES) != IDOK) continue;
+						MES_QSAM, files, MB_QYES) != IDOK) continue;
 			}
 
 										// 書き込み ---------------------------
-			hFile = CreateFileL(name,GENERIC_WRITE,
+			hFile = CreateFileL(name, GENERIC_WRITE,
 						FILE_SHARE_READ | FILE_SHARE_WRITE,
-						 NULL,CREATE_ALWAYS,FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+						 NULL, CREATE_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 			if ( hFile == INVALID_HANDLE_VALUE ){
-				PPErrorBox(cinfo->info.hWnd,MES_TCHP,PPERROR_GETLASTERROR);
+				PPErrorBox(cinfo->info.hWnd, MES_TCHP, PPERROR_GETLASTERROR);
 				ThFree(&th);
 				break;
 			}else{
-				if ( !WriteFile(hFile,bottom,size,&size,NULL) ){
-					PPErrorBox(cinfo->info.hWnd,MES_TCHP,PPERROR_GETLASTERROR);
+				if ( !WriteFile(hFile, bottom, size, &size, NULL) ){
+					PPErrorBox(cinfo->info.hWnd, MES_TCHP, PPERROR_GETLASTERROR);
 					CloseHandle(hFile);
 					ThFree(&th);
 					break;
@@ -1436,8 +1440,8 @@ DWORD WINAPI HttpThread(PPCGETHTTPSTRUCT *pghs)
 			if ( IsTrue(cinfo->BreakFlag) ) break;
 		}
 	}
-	HeapFree( hProcessHeap,0,path);
-	SetPopMsg(cinfo,POPMSG_MSG,cinfo->BreakFlag ? MES_BRAK : MES_HPDN);
+	HeapFree( hProcessHeap, 0, path);
+	SetPopMsg(cinfo, POPMSG_MSG, cinfo->BreakFlag ? MES_BRAK : MES_HPDN);
 	PPxUnRegisterThread();
 	return TRUE;
 }
@@ -1447,19 +1451,25 @@ BOOL OnArcPathMode(PPC_APPINFO *cinfo)
 	TCHAR newpath[VFPS];
 	BOOL arcmode;
 
-	tstrcpy(newpath,cinfo->RealPath);
-	arcmode = PPcUnpackForAction(cinfo,newpath,UFA_ALL);
+	if ( IsTrue(cinfo->UnpackFix) ) return TRUE; // 既に有効
+	if ( (cinfo->e.markC == 0) &&
+		 (CEL(cinfo->e.cellN).attr & (ECA_PARENT | ECA_THIS)) ){
+		return FALSE;
+	}
+
+	tstrcpy(newpath, cinfo->RealPath);
+	arcmode = PPcUnpackForAction(cinfo,  newpath,  UFA_ALL);
 	if ( IsTrue(arcmode) ){
 		if ( cinfo->UnpackFixOldRealPath == NULL ){
 			cinfo->UnpackFixOldPath = PPcHeapAlloc(VFPS);
 			cinfo->UnpackFixOldRealPath = PPcHeapAlloc(VFPS);
 		}
 		if ( cinfo->UnpackFixOldRealPath != NULL ){
-			tstrcpy(cinfo->UnpackFixOldPath,cinfo->path);
-			tstrcpy(cinfo->UnpackFixOldRealPath,cinfo->RealPath);
+			tstrcpy(cinfo->UnpackFixOldPath,  cinfo->path);
+			tstrcpy(cinfo->UnpackFixOldRealPath,  cinfo->RealPath);
 		}
-		tstrcpy(cinfo->path,newpath);
-		tstrcpy(cinfo->RealPath,newpath);
+		tstrcpy(cinfo->path,  newpath);
+		tstrcpy(cinfo->RealPath,  newpath);
 		cinfo->UnpackFix = TRUE;
 	}
 	return arcmode;
@@ -1468,8 +1478,8 @@ BOOL OnArcPathMode(PPC_APPINFO *cinfo)
 void OffArcPathMode(PPC_APPINFO *cinfo)
 {
 	if ( cinfo->UnpackFixOldPath != NULL ){
-		tstrcpy(cinfo->path,cinfo->UnpackFixOldPath);
-		tstrcpy(cinfo->RealPath,cinfo->UnpackFixOldRealPath);
+		tstrcpy(cinfo->path,  cinfo->UnpackFixOldPath);
+		tstrcpy(cinfo->RealPath, cinfo->UnpackFixOldRealPath);
 		PPcHeapFree(cinfo->UnpackFixOldRealPath);
 		PPcHeapFree(cinfo->UnpackFixOldPath);
 		cinfo->UnpackFixOldPath = NULL;

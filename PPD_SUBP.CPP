@@ -113,7 +113,7 @@ void AutoDDDLL_Register(HWND hTargetWnd)
 {
 	if ( regobjectID ) return; // Šù‚É“o˜^Ï‚Ý
 
-	hOleaut32DLLHOOK = LoadWinAPI("OLEAUT32.DLL",NULL,OLEAUT32_SysStr,LOADWINAPI_LOAD);
+	hOleaut32DLLHOOK = LoadSystemWinAPI(SYSTEMDLL_OLEAUT32, OLEAUT32_SysStr);
 	if ( hOleaut32DLLHOOK == NULL ) return;
 	// DropTarget ‚ðŽæ“¾‚·‚é
 	DropTarget = (IDropTarget *)GetProp(hTargetWnd,DROPTARGETPROPNAME);
@@ -418,7 +418,7 @@ HRESULT GetLink(HWND hWnd,const TCHAR *LinkFile,TCHAR *Original)
 {
 	HRESULT hres;
 	IShellLink *psl;
-	WIN32_FIND_DATA f;
+	WIN32_FIND_DATA ff;
 										// IShellLink interface ‚ðŽæ“¾
 	hres = ::CoCreateInstance(XCLSID_ShellLink,NULL,
 			CLSCTX_INPROC_SERVER,XIID_IShellLink,(LPVOID *)&psl);
@@ -438,7 +438,7 @@ HRESULT GetLink(HWND hWnd,const TCHAR *LinkFile,TCHAR *Original)
 			if ( SUCCEEDED(hres) ){
 				hres = psl->Resolve(hWnd,SLR_ANY_MATCH);
 				if ( SUCCEEDED(hres) ){
-					hres = psl->GetPath(Original,MAX_PATH,&f,SLGP_UNCPRIORITY);
+					hres = psl->GetPath(Original,MAX_PATH,&ff,SLGP_UNCPRIORITY);
 					if ( FAILED(hres) || (Original[0] == '\0') ){
 						LPITEMIDLIST idl;
 

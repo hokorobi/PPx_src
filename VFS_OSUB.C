@@ -184,12 +184,12 @@ BOOL UndoCommand(FOPSTRUCT *FS)
 {
 	TCHAR name[VFPS],buf[VFPS];
 	ERRORCODE result;
-	TCHAR *mem,*text,*max;
+	TCHAR *mem, *text, *maxptr;
 	TCHAR *nowp;
 
 	CreateFWriteLogWindow(FS);
 	GetUndoLogFileName(name);
-	result = LoadTextImage(name,&mem,&text,&max);
+	result = LoadTextImage(name, &mem, &text, &maxptr);
 	if ( result != NO_ERROR ){
 		if ( result == ERROR_FILE_NOT_FOUND ){
 			FWriteLog(FS->hEWnd,MessageText(StrMES_ECUD));

@@ -339,30 +339,29 @@ void LoadModuleList(void)
 	int modulecount = 0;
 
 	EnterCriticalSection(&ThreadSection);
-	if ( ppxmodule_count >= 0 ) return; // 別スレッドで処理された
-
-	ThInit(&Thmodule);
-	ThInit(&Thmodule_str);
-	CatPath(dir, DLLpath, T("PPX*.DLL"));
-										// 検索 -------------------------------
-	hFF = FindFirstFileL(dir, &ff);
-	if ( hFF != INVALID_HANDLE_VALUE ){
-		do{
-			if ( !tstricmp(ff.cFileName, T("PPXLIB32.DLL")) ) continue;
-			mdll.hDLL = NULL;
-			mdll.types = MAX32; // 仮に全部を読み込み可能に
-			GetCustTable(P_moduleStr, ff.cFileName, &mdll.types, sizeof(mdll.types));
-			mdll.DllNameOffset = Thmodule_str.top;
-			ThAddString(&Thmodule_str, ff.cFileName);
-			ThAppend(&Thmodule, &mdll, sizeof mdll);
-			modulecount++;
-		}while( IsTrue(FindNextFile(hFF, &ff)) );
-		FindClose(hFF);
+	if ( ppxmodule_count < 0 ){ // 別スレッドで処理されていない
+		ThInit(&Thmodule);
+		ThInit(&Thmodule_str);
+		CatPath(dir, DLLpath, T("PPX*.DLL"));
+											// 検索 -------------------------------
+		hFF = FindFirstFileL(dir, &ff);
+		if ( hFF != INVALID_HANDLE_VALUE ){
+			do{
+				if ( !tstricmp(ff.cFileName, T("PPXLIB32.DLL")) ) continue;
+				mdll.hDLL = NULL;
+				mdll.types = MAX32; // 仮に全部を読み込み可能に
+				GetCustTable(P_moduleStr, ff.cFileName, &mdll.types, sizeof(mdll.types));
+				mdll.DllNameOffset = Thmodule_str.top;
+				ThAddString(&Thmodule_str, ff.cFileName);
+				ThAppend(&Thmodule, &mdll, sizeof mdll);
+				modulecount++;
+			} while ( IsTrue(FindNextFile(hFF, &ff)) );
+			FindClose(hFF);
+		}
+		if ( Thmodule.bottom == NULL ) modulecount = 0; // モジュールがない
+		ppxmodule_list = (MODULESTRUCT *)Thmodule.bottom;
+		ppxmodule_count = modulecount;
 	}
-	if ( Thmodule.bottom == NULL ) modulecount = 0; // モジュールがない
-	ppxmodule_list = (MODULESTRUCT *)Thmodule.bottom;
-	ppxmodule_count = modulecount;
-
 	LeaveCriticalSection(&ThreadSection);
 }
 
@@ -588,7 +587,7 @@ void SelectTextFunction(EXECSTRUCT *Z,const TCHAR *param)
 
 	if ( opt == 'u' ){
 		char bufA[CMDLINESIZE],*srcA;
-		TCHAR *dest,*max;
+		TCHAR *dest, *maxptr;
 
 #ifdef UNICODE
 		WideCharToMultiByteU8(CP_UTF8,0,Z->dst,-1,bufA,CMDLINESIZE,NULL,NULL);
@@ -600,8 +599,8 @@ void SelectTextFunction(EXECSTRUCT *Z,const TCHAR *param)
 #endif
 		srcA = bufA;
 		dest = Z->dst;
-		max = dest + CMDLINESIZE / 2;
-		while ( dest < max ){
+		maxptr = dest + CMDLINESIZE / 2;
+		while ( dest < maxptr ){
 			BYTE c;
 
 			c = (BYTE)*srcA++;

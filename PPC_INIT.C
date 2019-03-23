@@ -540,6 +540,7 @@ BOOL LoadParam(PPCSTARTPARAM *psp,const TCHAR *param)
 			if ( X_combo == 0 ) X_combo = 1;
 			if ( !one.pspo.combo.use ) one.pspo.combo.use = 1;
 			psp->ComboID = 'A';
+			if ( *more == '+' ) psp->ComboID = '@';
 			if ( Isalpha(*more) ) psp->ComboID = upper(*more);
 			continue;
 		}
@@ -1254,6 +1255,8 @@ void PPcLoadCust(PPC_APPINFO *cinfo)
 	GetCustData(T("X_askp"),&X_askp,sizeof(X_askp));
 	GetCustData(T("XC_ulh"),&XC_ulh,sizeof(XC_ulh));
 	GetCustData(T("X_stip"),&X_stip,sizeof(X_stip));
+	cinfo->Tip.mode = X_stip[TIP_LONG_TIME];
+
 	GetCustData(T("X_inag"),&cinfo->X_inag,sizeof(cinfo->X_inag));
 	GetCustData(T("X_poshl"),&X_poshl,sizeof(X_poshl));
 	GetCustData(T("X_nfmt"),&X_nfmt,sizeof(X_nfmt));
@@ -1636,10 +1639,11 @@ void InitPPcWindow(PPC_APPINFO *cinfo,BOOL usepath)
 				hMenu = cinfo->DynamicMenu.hMenuBarMenu;
 			}
 		}
-		hWnd = cinfo->info.hWnd = CreateWindowEx(exstyle,PPcClassStr,NilStr,
-				style,cinfo->WinPos.pos.left,cinfo->WinPos.pos.top,
-				windowsize.x,windowsize.y,(cinfo->hComboWnd != NULL) ?
-					Combo.Panes.hWnd : cinfo->hTrayWnd,hMenu,hInst,cinfo);
+		hWnd = cinfo->info.hWnd = CreateWindowEx(exstyle, PPcClassStr, NilStr,
+				style, cinfo->WinPos.pos.left, cinfo->WinPos.pos.top,
+				windowsize.x, windowsize.y,
+				(cinfo->hComboWnd != NULL) ? Combo.Panes.hWnd : cinfo->hTrayWnd,
+				hMenu, hInst, cinfo);
 	}
 	if ( cinfo->combo == 0 ) InitSystemDynamicMenu(&cinfo->DynamicMenu,hWnd);
 	CreateDxDraw(&cinfo->DxDraw,hWnd);

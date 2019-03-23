@@ -109,12 +109,50 @@ void DrawEMetafile(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 	}
 }
 
-void DrawHex(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
+// Win95/NT4 eng RTM は VTYPE_IBM / VTYPE_ANSI / VTYPE_SYSTEMCP のみ使用可能
+UINT VVTypeToCPlist[VTypeToCPlist_max] = {
+	CP__US,		// VTYPE_IBM
+	CP__LATIN1,	// VTYPE_ANSI
+	CP__JIS,	// VTYPE_JIS
+	CP_ACP,		// VTYPE_SYSTEMCP
+	CP__SJIS,	// VTYPE_EUCJP // ※ 殆ど CP__SJIS で処理するため
+	CP__UTF16L,	// VTYPE_UNICODE
+	CP__UTF16B,	// VTYPE_UNICODEB
+	CP__SJIS,	// VTYPE_SJISNEC
+	CP__SJIS,	// VTYPE_SJISB,
+	CP__SJIS,	// VTYPE_KANA
+	CP_UTF8,	// VTYPE_UTF8
+	CP_UTF7,	// VTYPE_UTF7
+};
+
+void DrawHex(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 {
 	RECT box;
-	int x,y,of;
+	int x, y, of, hoff;
 	TCHAR buf[100];
+	WCHAR bufW[100];
 	POINT LP;
+	UINT codepage;
+
+	if ( OSver.dwMajorVersion < 5 ){
+		codepage = 0;
+	}else{
+		codepage = VOi->textC;
+		switch ( codepage ){
+			case VTYPE_JIS:
+			case VTYPE_UNICODEB:
+			case VTYPE_KANA:
+			case VTYPE_UTF7:
+				codepage = 0;
+				break;
+
+			default:
+				codepage = (codepage < VTypeToCPlist_max) ? VVTypeToCPlist[codepage] : codepage;
+				if ( codepage == CP_ACP ) codepage = 0;
+				break;
+		}
+		if ( IsValidCodePage(codepage) == FALSE ) codepage = 0;
+	}
 
 	of = pps->shift.cy * 16 + pps->drawYtop * 16;
 										// 背景表示 ===================
@@ -144,34 +182,39 @@ void DrawHex(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 		// アドレス部分 -------------------------
 		wsprintf(buf,T("%08X "),of);
 		if ( !pps->print ){
-			DxSetTextColor(DxDraw,pps->ps.hdc,CV_lnum[0]);
-			DxSetBkColor(DxDraw,pps->ps.hdc,C_back);
+			DxSetTextColor(DxDraw, pps->ps.hdc, CV_lnum[0]);
+			DxSetBkColor(DxDraw, pps->ps.hdc, C_back);
 		}
-		DxTextOutRel(DxDraw,pps->ps.hdc,buf,HEXADRWIDTH);
+		DxTextOutRel(DxDraw, pps->ps.hdc, buf, HEXADRWIDTH);
 		if ( !pps->print ){
-			DxSetTextColor(DxDraw,pps->ps.hdc,pps->si.fg);
+			DxSetTextColor(DxDraw, pps->ps.hdc, pps->si.fg);
 
 			if ( VOsel.select || VOsel.highlight ){
 				if ( ((VOsel.select != FALSE) &&
 						  (VOsel.bottomOY <= y) && (VOsel.topOY >= y) ) ||
 					 ((y + pps->shift.cy) == VOsel.foundY)
 				){
-					if ( pps->si.bgmode ) DxSetBkMode(DxDraw,pps->ps.hdc,OPAQUE);
-					DxSetBkColor(DxDraw,pps->ps.hdc,C_info);
-					DxSetTextColor(DxDraw,pps->ps.hdc,C_back);
+					if ( pps->si.bgmode ){
+						DxSetBkMode(DxDraw, pps->ps.hdc, OPAQUE);
+					}
+					DxSetBkColor(DxDraw, pps->ps.hdc, C_info);
+					DxSetTextColor(DxDraw, pps->ps.hdc, C_back);
 				}else{
-					if ( pps->si.bgmode ) DxSetBkMode(DxDraw,pps->ps.hdc,TRANSPARENT);
-					DxSetTextColor(DxDraw,pps->ps.hdc,CV_char[CV__deftext]);
-					DxSetBkColor(DxDraw,pps->ps.hdc,CV_char[CV__defback]);
+					if ( pps->si.bgmode ){
+						DxSetBkMode(DxDraw, pps->ps.hdc, TRANSPARENT);
+					}
+					DxSetTextColor(DxDraw, pps->ps.hdc, CV_char[CV__deftext]);
+					DxSetBkColor(DxDraw, pps->ps.hdc, CV_char[CV__defback]);
 				}
 			}
 		}
 										// 16進部分
+		hoff = of;
 		for ( x = 0 ; x < (HEXNUMSWIDTH - 1) ; x += HEXNWIDTH ){
 			if ( (DWORD)of >= vo->file.size.l ){
-				tstrcpy(&buf[x],T("   "));
+				tstrcpy(&buf[x], T("   "));
 			}else{
-				wsprintf(&buf[x],T("%02X "),*(vo->file.image + of));
+				wsprintf(&buf[x], T("%02X "), *(vo->file.image + of));
 				of++;
 			}
 			if ( x == HEXNWIDTH * 7 ){
@@ -182,65 +225,99 @@ void DrawHex(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 
 		buf[HEXNUMSWIDTH - 1] = '\0';
 
-		DrawSelectedText(pps->ps.hdc,&pps->si,buf,HEXNUMSWIDTH - 1,0,y);
+		DrawSelectedText(pps->ps.hdc, &pps->si, buf, HEXNUMSWIDTH - 1, 0, y);
 
 		if ( pps->ps.fErase != FALSE ){ // １６進-文字列間
-			DxGetCurrentPositionEx(DxDraw,pps->ps.hdc,&LP);
+			DxGetCurrentPositionEx(DxDraw, pps->ps.hdc, &LP);
 
 			box.left   = LP.x;
 			box.right   = (HEXADRWIDTH + HEXNUMSWIDTH - pps->shift.cx) *
 					pps->fontsize.cx + pps->shiftdot.cx;
 			box.bottom = box.top + pps->fontsize.cy;
-			DxFillBack(DxDraw,pps->ps.hdc,&box,C_BackBrush);
+			DxFillBack(DxDraw, pps->ps.hdc, &box, C_BackBrush);
 		}
 		// 文字列部分 ---------------------------
 		{
 			HFONT font;
 			int len;
 
-			len = of - (pps->shift.cy + y) * HEXSTRWIDTH;
+			len = of - hoff;
 			font = pps->hBoxFont;
-			if ( VOi->textC == VTYPE_IBM ){
-				font = GetIBMFont();
-				SetFontDxDraw(DxDraw,font,1);
-			}else if ( VOi->textC == VTYPE_ANSI ){
-				font = GetANSIFont();
-				SetFontDxDraw(DxDraw,font,1);
+
+			if ( codepage == 0 ){
+				if ( VOi->textC == VTYPE_IBM ){
+					font = GetIBMFont();
+					SetFontDxDraw(DxDraw, font, 1);
+				}else if ( VOi->textC == VTYPE_ANSI ){
+					font = GetANSIFont();
+					SetFontDxDraw(DxDraw, font, 1);
+				}else{
+					DxSelectFont(DxDraw, 0);
+				}
 			}else{
-				DxSelectFont(DxDraw,0);
+				if ( (codepage == CP_UTF8) && len ){ // １文字途中の時は延長
+					int extlen;
+
+					extlen = 5;
+					while ( (DWORD)(hoff + len) < vo->file.size.l ){
+						if ( (*(char *)(vo->file.image + hoff + len) & 0xc0) != 0x80 ){
+							break;
+						}
+						len++;
+						if ( --extlen == 0 ) break;
+					}
+				}
+				DxSelectFont(DxDraw, 0);
 			}
-			IfGDImode(pps->ps.hdc) SelectObject(pps->ps.hdc,font);
+#if 0
+			if ( (VOi->textC == VTYPE_SYSTEMCP) && len ){
+				BYTE c;
+
+				c = *(char *)(vo->file.image + hoff + len - 1);
+				if ( c >= 0x80 ) len++;
+			}
+#endif
+			IfGDImode(pps->ps.hdc) SelectObject(pps->ps.hdc, font);
 			if ( (pps->ps.fErase != FALSE) && (font != pps->hBoxFont) ){
-			//	RECT box;
 				box.left   = box.right; // ※１６進-文字列間 で設定した内容
 				box.right  = box.left + len * pps->fontsize.cx;
 				// box.bottom は １６進-文字列間 で設定済み
-				DxFillBack(DxDraw,pps->ps.hdc,&box,C_BackBrush);
+				DxFillBack(DxDraw, pps->ps.hdc, &box, C_BackBrush);
 			}
-			DxMoveToEx(DxDraw,pps->ps.hdc,(HEXADRWIDTH + HEXNUMSWIDTH - pps->shift.cx) *
-				pps->fontsize.cx + pps->shiftdot.cx,box.top);
-			if ( VOi->textC != VTYPE_UNICODE ){
-				DxTextOutRelA(DxDraw,pps->ps.hdc,(char *)vo->file.image + of - len,len);
-			}else{
-				DxTextOutRelW(DxDraw,pps->ps.hdc,(WCHAR *)(vo->file.image + of - len),len / 2);
+			DxMoveToEx(DxDraw, pps->ps.hdc,
+					(HEXADRWIDTH + HEXNUMSWIDTH - pps->shift.cx) *
+					pps->fontsize.cx + pps->shiftdot.cx, box.top);
+			if ( VOi->textC == VTYPE_UNICODE ){
+				DxTextOutRelW(DxDraw, pps->ps.hdc, (WCHAR *)(vo->file.image + hoff), len / 2);
+			}else if ( codepage != 0 ){
+				DWORD size;
+
+				size = MultiByteToWideChar(codepage,
+						(codepage == CP_UTF8) ? 0 : MB_PRECOMPOSED,
+						(char *)(vo->file.image + hoff),
+						len, bufW, 100);
+				DxTextOutRelW(DxDraw, pps->ps.hdc, bufW, size);
+			}else {
+				DxTextOutRelA(DxDraw,pps->ps.hdc, (char *)vo->file.image + hoff, len);
 			}
+
 			if ( pps->ps.fErase != FALSE ){
-				DxGetCurrentPositionEx(DxDraw,pps->ps.hdc,&LP);
+				DxGetCurrentPositionEx(DxDraw, pps->ps.hdc, &LP);
 				box.right = (HEXWIDTH - pps->shift.cx) * pps->fontsize.cx + pps->shiftdot.cx;
 				if ( pps->lineY > pps->fontsize.cy ){ // 行下の未表示部分
 					box.left   = pps->ps.rcPaint.left;
 					box.top    = LP.y + pps->fontsize.cy;
 					box.bottom = LP.y + pps->lineY;
-					DxFillBack(DxDraw,pps->ps.hdc,&box,C_BackBrush);
+					DxFillBack(DxDraw, pps->ps.hdc, &box, C_BackBrush);
 				}
 				box.left  = LP.x;
 				if ( box.left < box.right ){	// 末端より右
 					box.top    = y * pps->lineY + pps->shiftdot.cy;
 					box.bottom = box.top + pps->fontsize.cy;
-					DxFillBack(DxDraw,pps->ps.hdc,&box,C_BackBrush);
+					DxFillBack(DxDraw, pps->ps.hdc, &box, C_BackBrush);
 				}
 			}
-			IfGDImode(pps->ps.hdc) SelectObject(pps->ps.hdc,pps->hBoxFont);
+			IfGDImode(pps->ps.hdc) SelectObject(pps->ps.hdc, pps->hBoxFont);
 		}
 		// ラインカーソル
 		if ( (VOsel.cursor != FALSE) && ((pps->shift.cy + y) == VOsel.now.y.line) ){
@@ -250,11 +327,11 @@ void DrawHex(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 			box.left = pps->ps.rcPaint.left;
 			box.right = pps->ps.rcPaint.right;
 			box.top = box.bottom - 1;
-			DxFillRectColor(DxDraw,pps->ps.hdc,&box,hB,CV_lcsr);
+			DxFillRectColor(DxDraw, pps->ps.hdc, &box, hB, CV_lcsr);
 			DeleteObject(hB);
 		}
 	}
-	DxSetTextAlign(pps->ps.hdc,TA_LEFT | TA_TOP | TA_NOUPDATECP); // CP を無効に
+	DxSetTextAlign(pps->ps.hdc, TA_LEFT | TA_TOP | TA_NOUPDATECP); // CP を無効
 
 	if ( pps->ps.fErase != FALSE ){			// 背景表示 ===================
 										// 未使用行 -------------------
@@ -263,7 +340,7 @@ void DrawHex(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 			box.top    = y * pps->lineY + pps->shiftdot.cy;
 			box.right  = pps->ps.rcPaint.right;
 			box.bottom = pps->ps.rcPaint.bottom;
-			DxFillBack(DxDraw,pps->ps.hdc,&box,C_BackBrush);
+			DxFillBack(DxDraw, pps->ps.hdc, &box, C_BackBrush);
 		}
 	}
 }

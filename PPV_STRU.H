@@ -128,21 +128,21 @@ typedef struct tagHILIGHTKEYWORD { // 固定ハイライトキーワードのテーブル
 #define SELPOSCHANGE_PIX 0		// pixからoffsetを求める
 #define SELPOSCHANGE_OFFSET 1	// offsetが変更された
 typedef struct {
-	BOOL	cursor;				// カーソル表示の有無
+	BOOL cursor;			// カーソル表示の有無
 // 選択関連
-	BOOL	select;				// 選択の有無
-	BOOL	line;				// 行選択モードの判別 TRUE:行選択モード
+	BOOL select;			// 選択の有無
+	BOOL linemode;			// 行選択モードの判別 TRUE:行選択モード
 
-	SELPOSINFO start,now;		// 選択開始位置   ／ 終了・現在位置
-	SELPOSINFO bottom,top;		// 選択先頭・上端 ／ 末尾・下端位置(bottom < top)
-	int		bottomOY,topOY;		// 選択先頭／終了 Y位置、画面上からの相対値
-								// ※ WM_PAINT 内で使用する
-	int		posdiffX;			// SELPOSCHANGE_PIX 時の文字と指定位置とのずれ(カーソル左右移動時に参照)
+	SELPOSINFO start, now;	// 選択開始位置   ／ 終了・現在位置
+	SELPOSINFO bottom, top;	// 選択先頭・上端 ／ 末尾・下端位置(bottom < top)
+	int bottomOY, topOY;	// 選択先頭／終了 Y位置、画面上からの相対値
+							// ※ WM_PAINT 内で使用する
+	int posdiffX;			// SELPOSCHANGE_PIX 時の文字と指定位置とのずれ(カーソル左右移動時に参照)
 // 検索・検索結果関連
-	BOOL	highlight;			// ハイライト表示中
-	int		lastY,foundY;		// 直前の検索 Yと該当Y
-	char	VSstringA[VFPS];	// 検索文字列(入力ヒストリ)
-	WCHAR	VSstringW[VFPS];	// 検索文字列(入力ヒストリ)
+	BOOL highlight;			// ハイライト表示中
+	int lastY, foundY;		// 直前の検索 Yと該当Y
+	char VSstringA[VFPS];	// 検索文字列(入力ヒストリ)
+	WCHAR VSstringW[VFPS];	// 検索文字列(入力ヒストリ)
 } VO_SELECT;
 #ifdef UNICODE
 	#define VSstring VSstringW
@@ -337,11 +337,29 @@ typedef struct {
 } BookmarkInfo;
 #pragma pack(pop)
 
-#define HISTOPTID_BookmarkMin	0	// 2 + 4*2 (+8)	// しおりの位置
+// ヒストリの追加情報 ※内部処理はこの記載順に依存する
+#define HISTOPTSIZE_HEADER		2	// (BYTE)length , (BYTE)HISTOPTID_xxx
+
+#define HISTOPTID_OLDTAIL		101	// tailmode:前回の読み込み完了位置 (要先頭)
+#define HISTOPTSIZE_OLDTAIL		(HISTOPTSIZE_HEADER + 4)	// (DWORD)y
+#define HISTOPTSIZE_OLDTAIL_L	(HISTOPTSIZE_HEADER + 12)	// (DWORD)y, (DDWORDST)div
+
+#define HISTOPTID_FileDIV		103	// FileDividePointer (要先頭)
+#define HISTOPTSIZE_FileDIV		(HISTOPTSIZE_HEADER + 8)	// (DDWORDST)div
+
+#define HISTOPTID_OTHERCP		102	// other cpの時のcode page
+#define HISTOPTSIZE_OTHERCP		(HISTOPTSIZE_HEADER + 2)	// (WORD)codepage
+
+#define HISTOPTID_WIDTH			104	// 表示桁数
+#define HISTOPTSIZE_WIDTH		(HISTOPTSIZE_HEADER + 4)	// (int)width
+
+#define HISTOPTID_CARET			105	// キャレットカーソルの位置
+#define HISTOPTSIZE_CARET		(HISTOPTSIZE_HEADER + 8)	// (POINT)pos
+
+#define HISTOPTID_BookmarkMin	0	// しおりの位置
 #define HISTOPTID_BookmarkMax	63
-#define HISTOPTID_OLDTAIL		101	// 2 + 4 (+8)	tailmode:前回の読み込み完了位置 (要先頭)
-#define HISTOPTID_OTHERCP		102	// 2 + 2	other cpの時のcode page
-#define HISTOPTID_FileDIV		103	// 2 + 8	FileDividePointer (要先頭)
+#define HISTOPTSIZE_Bookmark	(HISTOPTSIZE_HEADER + 8)	// (POINT)pos
+#define HISTOPTSIZE_Bookmark_L	(HISTOPTSIZE_HEADER + 16)	// (POINT)pos (DDWORDST)div
 
 #define HISTOPT_VMODESHIFT 8
 #define HISTOPT_TEXTOPT_CODESHIFT 16

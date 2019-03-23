@@ -18,7 +18,6 @@
 #pragma hdrstop
 
 const TCHAR PPxED[] = T("PPxExEdit");
-const TCHAR COMDLG32[] = T("COMDLG32.DLL");
 const TCHAR StrReload[] = T("Reload text ?");
 
 #ifndef UNICODE
@@ -72,7 +71,7 @@ void PPeReplaceStr(PPxEDSTRUCT *PES)
 		if ( InitPPeFindReplace(PES) == FALSE ) return;
 	}
 
-	hCOMDLG32 = LoadLibrary(COMDLG32);
+	hCOMDLG32 = LoadSystemDLL(SYSTEMDLL_COMDLG32);
 	if ( hCOMDLG32 == NULL ) return;
 	GETDLLPROCT(hCOMDLG32,ReplaceText);
 	if ( DReplaceText == NULL ) return;
@@ -1353,7 +1352,7 @@ int USEFASTCALL PPeGetFileName(PPxEDSTRUCT *PES)
 
 	ofile.lpstrTitle = MessageText(MES_TSFN);
 	PPxEnumInfoFunc(PES->info,'1',path,&work);
-	hCOMDLG32 = LoadLibrary(COMDLG32);
+	hCOMDLG32 = LoadSystemDLL(SYSTEMDLL_COMDLG32);
 	if ( hCOMDLG32 == NULL ) return 0;
 	GETDLLPROCT(hCOMDLG32,GetOpenFileName);
 	if ( DGetOpenFileName == NULL ) return 0;
@@ -2827,10 +2826,11 @@ LRESULT EdPPxWmCommand(PPxEDSTRUCT *PES, HWND hWnd, WPARAM wParam, LPARAM lParam
 void RegisterSHAutoComplete(HWND hRealED)
 {
 	if ( DSHAutoComplete == NULL ){
-		if ( LoadWinAPI("SHLWAPI.DLL",NULL,SHLWAPIDLL,LOADWINAPI_LOAD) == NULL ){
+		if ( LoadSystemWinAPI(SYSTEMDLL_SHLWAPI, SHLWAPIDLL) == NULL ){
 			return;
 		}
 	}
+
 	DSHAutoComplete(hRealED,SHACF_FILESYSTEM | // SHACF_USETAB | Å©Ç±ÇÍÇïtÇØÇÈÇ∆ÅAW2kÇ≈BS/DELÇÃãììÆÇ™Ç®Ç©ÇµÇ≠Ç»ÇÈÅH
 			SHACF_AUTOAPPEND_FORCE_ON | SHACF_AUTOSUGGEST_FORCE_ON);
 }

@@ -13,10 +13,10 @@
 #define HDR_SIZE hdrstrings[2]
 #define HDR_ATTR hdrstrings[3]
 
-const TCHAR *typestr1[] = {T("PATH"),T("LINE"),T("HMNU"),T("INFO"),T("ICON")};
-const TCHAR *typestr2[] = {T("SPC"),T("MARK"),T("ENT")};
-const TCHAR *XDtype[] = {T("?D"),T("XD"),T("YD"),T("ZD")};
-const TCHAR *Xtype[] = {T("?"),T("X"),T("Y"),T("Z")};
+const TCHAR *typestr1[] = {T("PATH"), T("LINE"), T("HMNU"), T("INFO"), T("ICON")};
+const TCHAR *typestr2[] = {T("SPC"), T("MARK"), T("ENT"), T("TAIL")};
+const TCHAR *XDtype[] = {T("?D"), T("XD"), T("YD"), T("ZD")};
+const TCHAR *Xtype[] = {T("?"), T("X"), T("Y"), T("Z")};
 
 typedef struct {
 	const TCHAR *label;
@@ -24,9 +24,9 @@ typedef struct {
 } TIME2HEADERSTRUCT;
 
 TIME2HEADERSTRUCT Time2Header[] = {
-	{ MES_HDRC,4,12 },
-	{ MES_HDRE,5,13 },
-	{ hdrstrings_eng_date,3,11 },
+	{ MES_HDRC, 4,12 },
+	{ MES_HDRE, 5,13 },
+	{ hdrstrings_eng_date, 3,11 },
 };
 
 // マウス操作の解析・実行 -----------------------------------------------------
@@ -40,16 +40,16 @@ BOOL PPcMouseCommand(PPC_APPINFO *cinfo,const TCHAR *click,const TCHAR *type)
 		i = PtrToValue(type);
 		if ( (i >= PPCR_PATH) && (i <= PPCR_INFOICON) ){
 			type = typestr1[i - PPCR_PATH];
-		}else if ( (i >= PPCR_CELLBLANK) && (i <= PPCR_CELLTEXT) ){
+		}else if ( (i >= PPCR_CELLBLANK) && (i <= PPCR_CELLTAIL) ){
 			type = typestr2[i - PPCR_CELLBLANK];
 		}
 	}
 									// 操作の確定
-	p = PutShiftCode(buf,GetShiftKey());
-	wsprintf(p,T("%s_%s"),click,type);
+	p = PutShiftCode(buf, GetShiftKey());
+	wsprintf(p, T("%s_%s"), click, type);
 									// 実行
-	if ( NO_ERROR == GetCustTable(T("MC_click"),buf,buf,sizeof(buf)) ){
-		ExecDualParam(cinfo,buf);
+	if ( NO_ERROR == GetCustTable(T("MC_click"), buf, buf, sizeof(buf)) ){
+		ExecDualParam(cinfo, buf);
 		if ( IsTrue(cinfo->UnpackFix) ) OffArcPathMode(cinfo);
 		return TRUE;
 	}else{
@@ -215,7 +215,7 @@ void FixWindowSize(PPC_APPINFO *cinfo,int offsetx,int offsety)
 
 BOOL CalcJoinRate(int site,int mode,LONG *thispos,LONG *thissize,LONG *pairpos,LONG *pairsize,int offset,int mintype)
 {
-	int min;
+	int minvalue;
 
 	if ( mode == FPS_RATE ){
 		offset = (*thissize + *pairsize) * offset / 100 - *thissize;
@@ -231,9 +231,9 @@ BOOL CalcJoinRate(int site,int mode,LONG *thispos,LONG *thissize,LONG *pairpos,L
 		*thissize += offset;
 		*pairsize -= offset;
 	}
-	min = GetSystemMetrics(mintype);
-	if ( *thissize < min ) return FALSE; // これ以上はできない
-	if ( *pairsize < min ) return FALSE; // これ以上はできない
+	minvalue = GetSystemMetrics(mintype);
+	if ( *thissize < minvalue ) return FALSE; // これ以上はできない
+	if ( *pairsize < minvalue ) return FALSE; // これ以上はできない
 	return TRUE;
 }
 

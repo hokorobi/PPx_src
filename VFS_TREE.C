@@ -18,7 +18,7 @@
 #define VTM_I_CHANGEPATH_MAIN	(WM_APP + 502) // 更新通知用
 
 enum { TREETYPE_DIRECTORY = 1, TREETYPE_FAVORITE,
-	TREETYPE_PPCLIST, TREETYPE_VFS,
+	TREETYPE_PPCLIST, TREETYPE_VFS, TREETYPE_FOCUSPPC,
 	TREETYPE__CLOSE, TREETYPE__RELOAD,
 	TREETYPE__SHOWICON, TREETYPE__SIMPLEICON, TREETYPE__SHOWOVERLAY,
 	TREETYPE__SHOWTOOLBAR, TREETYPE__SYNCSELECT, TREETYPE__NOLINE,
@@ -129,6 +129,7 @@ LOADWINAPISTRUCT SHChangeNotifyDLL[] = {
 
 #define DefaultTreeListName PathJumpName
 const TCHAR TreePPcListName[] = T("*ppclist");
+const TCHAR TreeFocusPPcName[] = T("*focusppc");
 
 const TCHAR StrTreeProp[] = T("PPxTree");
 typedef struct {
@@ -492,9 +493,9 @@ LRESULT CALLBACK TreeViewProc(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
 	return CallWindowProc(VTS->OldTreeWndProc,hWnd,iMsg,wParam,lParam);
 }
 
-void TreeCommand(VFSTREESTRUCT *VTS,const TCHAR *param)
+void TreeCommand(VFSTREESTRUCT *VTS,const TCHAR *param) // *tree 本体
 {
-	TCHAR code,cmdstr[CMDLINESIZE];
+	TCHAR code, code2, cmdstr[CMDLINESIZE];
 	const TCHAR *treetype;
 
 	GetCommandParameter(&param,cmdstr,TSIZEOF(cmdstr));
@@ -513,6 +514,7 @@ void TreeCommand(VFSTREESTRUCT *VTS,const TCHAR *param)
 	}
 
 	code = cmdstr[0];
+	code2 = cmdstr[1];
 	if ( !tstrcmp(cmdstr,T("off")) || (code == '\0') ){
 		VFSTreeClose(VTS);
 		return;
@@ -521,39 +523,43 @@ void TreeCommand(VFSTREESTRUCT *VTS,const TCHAR *param)
 	if ( (code == 'M') && (cmdstr[1] == '_') ){
 		VTS->TreeType = TREETYPE_FAVORITE;
 		treetype = cmdstr;
-	}else if ( code == '1' ){
+	}else if ( ((code == '1') && (code2 == '\0')) || !tstrcmp(cmdstr,T("favorite")) ){
 		VTS->TreeType = TREETYPE_FAVORITE;
 		treetype = DefaultTreeListName;
-	}else if ( code == '2' ){
+	}else if ( ((code == '2') && (code2 == '\0')) || !tstrcmp(cmdstr,T("ppclist")) ){
 		VTS->TreeType = TREETYPE_PPCLIST;
 		treetype = NilStr;
-	}else if ( (code != '0') && (code != '\0') ){
-		VTS->TreeType = TREETYPE_VFS;
-		treetype = cmdstr;
-	}else{
+	}else if ( !tstrcmp(cmdstr,T("focusppc")) ){
+		VTS->TreeType = TREETYPE_FOCUSPPC;
+		treetype = NilStr;
+	}else if ( ((code == '0') && (code2 == '\0')) || !tstrcmp(cmdstr,T("root"))){
 		VTS->TreeType = TREETYPE_DIRECTORY;
 		treetype = NilStr;
+	}else{
+		VTS->TreeType = TREETYPE_VFS;
+		treetype = cmdstr;
 	}
 	InitTreeViewItems(VTS,treetype);
 }
 
 //-------------------------------------- Command からのコールバック
-DWORD_PTR USECDECL VFSTreeInfo(VFSTREESTRUCT *VTS,DWORD cmdID,PPXAPPINFOUNION *uptr)
+DWORD_PTR USECDECL VFSTreeInfo(VFSTREESTRUCT *VTS, DWORD cmdID, PPXAPPINFOUNION *uptr)
 {
 	switch(cmdID){
 		case 'C':
-			if ( GetSelectedTreePath(VTS,uptr->enums.buffer) == FALSE ){
+			if ( GetSelectedTreePath(VTS, uptr->enums.buffer) == FALSE ){
 				*uptr->enums.buffer = '\0';
 			}
 			break;
 
 		case PPXCMDID_COMMAND:{
-			if ( !tstrcmp(uptr->str,T("TREE")) ){
-				TreeCommand(VTS,uptr->str + tstrlen(uptr->str) + 1);
+			if ( !tstrcmp(uptr->str, T("TREE")) ){
+				TreeCommand(VTS, uptr->str + tstrlen(uptr->str) + 1);
 				break;
 			}
 			return ERROR_INVALID_FUNCTION ^ 1;
 		}
+
 		default:
 			if ( cmdID <= PPXCMDID_FILL ) *uptr->enums.buffer = '\0';
 			return 0;
@@ -631,7 +637,7 @@ void WMTreeCreate(HWND hWnd)
 {
 	VFSTREESTRUCT *VTS;
 
-	if ( (VTS = HeapAlloc(DLLheap,HEAP_ZERO_MEMORY,sizeof(VFSTREESTRUCT))) == NULL ){
+	if ( (VTS = HeapAlloc(DLLheap, HEAP_ZERO_MEMORY, sizeof(VFSTREESTRUCT))) == NULL ){
 		return;
 	}
 	VTS->vtinfo.Function = (PPXAPPINFOFUNCTION)VFSTreeInfo;
@@ -846,8 +852,7 @@ int StartTreeRename(VFSTREESTRUCT *VTS,HTREEITEM hTreeitem,const TCHAR *name)
 			tstrcpy(buf,name);
 
 			for ( ; ; ){
-				tinput.flag = TIEX_USEREFLINE | TIEX_USEINFO | TIEX_SINGLEREF;
-
+				tinput.flag = TIEX_USEREFLINE | TIEX_USEINFO | TIEX_SINGLEREF | TIEX_FIXFORPATH;
 				if ( tInputEx(&tinput) <= 0 ) break;
 				if ( FALSE != TreeRenameMain(VTS,hTreeitem,name,buf) ){
 					break;
@@ -925,9 +930,10 @@ void TreeTypeMenu(VFSTREESTRUCT *VTS,HTREEITEM hTItem,WORD key)
 		AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
 	}
 		// ツリーの表示形式
-	AppendMenuCheckString(hMenu,TREETYPE_DIRECTORY,MES_MTFO,VTS->TreeType == TREETYPE_DIRECTORY);
-	AppendMenuCheckString(hMenu,TREETYPE_FAVORITE,MES_MTFA,VTS->TreeType == TREETYPE_FAVORITE);
-	AppendMenuCheckString(hMenu,TREETYPE_PPCLIST,MES_MTPL,VTS->TreeType == TREETYPE_PPCLIST);
+	AppendMenuCheckString(hMenu, TREETYPE_DIRECTORY, MES_MTFO, VTS->TreeType == TREETYPE_DIRECTORY);
+	AppendMenuCheckString(hMenu, TREETYPE_FAVORITE, MES_MTFA, VTS->TreeType == TREETYPE_FAVORITE);
+	AppendMenuCheckString(hMenu, TREETYPE_PPCLIST, MES_MTPL, VTS->TreeType == TREETYPE_PPCLIST);
+	AppendMenuCheckString(hMenu, TREETYPE_FOCUSPPC, MES_MTFP, VTS->TreeType == TREETYPE_FOCUSPPC);
 
 	while( EnumCustTable(enumcount,T("Mt_type"),keyword,name,sizeof(name)) >= 0 ){
 		AppendMenuString(hMenu,enumcount + TREETYPE__USERLIST,keyword);
@@ -991,6 +997,11 @@ void TreeTypeMenu(VFSTREESTRUCT *VTS,HTREEITEM hTItem,WORD key)
 			Start_InitTreeViewItems(VTS,NilStr);
 			break;
 
+		case TREETYPE_FOCUSPPC:
+			VTS->TreeType = TREETYPE_FOCUSPPC;
+			Start_InitTreeViewItems(VTS,NilStr);
+			break;
+
 		case TREETYPE__RELOAD:
 			TreeKeyCommand(VTS,K_raw | VK_F5);
 			break;
@@ -1045,7 +1056,7 @@ void TreeTypeMenu(VFSTREESTRUCT *VTS,HTREEITEM hTItem,WORD key)
 			TV_ITEM tvi;
 			if ( VTS->TreeType == TREETYPE_DIRECTORY ){
 				if( GetTreePath(VTS, hItem, itemstr) == FALSE ) break;
-				PP_ExtractMacro(VTS->vtinfo.hWnd,&VTS->vtinfo,NULL,MessageText(MES_NWDN),name,0);
+				PP_ExtractMacro(VTS->vtinfo.hWnd, &VTS->vtinfo, NULL, MessageText(MES_NWDN), name, 0);
 				CatPath(NULL,itemstr,name);
 				GetUniqueEntryName(itemstr);
 				if ( IsTrue(CreateDirectoryL(itemstr,NULL)) ){
@@ -1116,7 +1127,7 @@ void FixTreeSize(VFSTREESTRUCT *VTS)
 {
 	RECT box;
 
-	GetClientRect(VTS->vtinfo.hWnd,&box);
+	GetClientRect(VTS->vtinfo.hWnd, &box);
 	if ( VTS->flags & VFSTREE_PPC ) box.top = PPCBUTTON;
 	if ( VTS->flags & VFSTREE_SPLITR ){
 		box.right -= splitbarwide;
@@ -1150,7 +1161,7 @@ void VfsTreeSetFlagFix(VFSTREESTRUCT *VTS)
 		if ( VTS->hBarWnd == NULL ){
 			UINT ID = IDW_INTERNALMIN;
 
-			VTS->hBarWnd = CreateToolBar(&VTS->cmdwork,VTS->vtinfo.hWnd,&ID,
+			VTS->hBarWnd = CreateToolBar(&VTS->cmdwork, VTS->vtinfo.hWnd,&ID,
 					T("B_tree"),DLLpath,
 					(VTS->flags & VFSTREE_PPC) ? 0 : TBSTYLE_WRAPABLE);
 			if ( VTS->hBarWnd != NULL ){
@@ -1309,7 +1320,7 @@ HTREEITEM AddItemToTree(VFSTREESTRUCT *VTS,const TCHAR *itemname,HTREEITEM hPare
 			TVM_INSERTITEM,0,(LPARAM)(LPTV_INSERTSTRUCT)&tvins);
 }
 
-HTREEITEM AppendItemToTreeV(VFSTREESTRUCT *VTS,const TCHAR *itemname,HTREEITEM hParent,int icontype,const TCHAR *datastr)
+HTREEITEM AppendItemToTreeV(VFSTREESTRUCT *VTS, const TCHAR *itemname, HTREEITEM hParent, int icontype, const TCHAR *datastr)
 {
 	TV_ITEM tvi;
 	TV_INSERTSTRUCT tvins;
@@ -1325,7 +1336,7 @@ HTREEITEM AppendItemToTreeV(VFSTREESTRUCT *VTS,const TCHAR *itemname,HTREEITEM h
 	}else{
 		tvi.mask = TVIF_CHILDREN | TVIF_TEXT | TVIF_PARAM;
 	}
-
+	if ( VTS->TreeType == TREETYPE_FOCUSPPC ) resetflag(tvi.mask, TVIF_CHILDREN);
 	if ( datastr == NULL ){
 		tvi.lParam = MAXLPARAM;
 	}else{
@@ -1338,7 +1349,7 @@ HTREEITEM AppendItemToTreeV(VFSTREESTRUCT *VTS,const TCHAR *itemname,HTREEITEM h
 	TreeInsertItemValue(tvins) = tvi;
 
 	return (HTREEITEM)SendMessage(VTS->hTViewWnd,
-			TVM_INSERTITEM,0,(LPARAM)(LPTV_INSERTSTRUCT)&tvins);
+			TVM_INSERTITEM, 0, (LPARAM)(LPTV_INSERTSTRUCT)&tvins);
 }
 
 void SeletTreeItem(VFSTREESTRUCT *VTS,HTREEITEM hItem)
@@ -1534,6 +1545,13 @@ BOOL GetTreePath(VFSTREESTRUCT *VTS, HTREEITEM hTreeitem, TCHAR *buf)
 
 		path = ThPointerT(&VTS->itemdata,tvi.lParam);
 		if ( (*path == '\0') || (*path == '%') ) return FALSE;
+
+		if ( VTS->TreeType == TREETYPE_FOCUSPPC ){
+			wsprintf(tvibuf, T("*focus C%s"), path);
+			PP_ExtractMacro(VTS->vtinfo.hWnd, &VTS->vtinfo, NULL, tvibuf, NULL, 0);
+			return FALSE;
+		}
+
 		VFSFullPath(buf,path,NULL);
 		return TRUE;
 	}
@@ -1695,7 +1713,7 @@ BOOL ExpandTree(VFSTREESTRUCT *VTS,HTREEITEM hTreeitem,const TCHAR *pathptr)
 	if ( TreeView_GetChild(hTWnd,hTreeitem) != NULL ) return TRUE;
 										// パス取得
 	if ( FALSE == GetTreePath(VTS, hTreeitem, path) ) return TRUE;
-	if ( tstrchr(path,'/') != NULL ){
+	if ( (tstrchr(path,'/') != NULL) && (pathptr != NULL) ){
 		 // http:// ftp:// aux:// 等は列挙しない
 		 AddItemToTreeForce(VTS, hTreeitem, pathptr, TRUE);
 		 return TRUE;
@@ -1883,7 +1901,7 @@ void TreeContextMenu(VFSTREESTRUCT *VTS,const TCHAR *cmd,WORD key)
 		TreeTypeMenu(VTS,INVALID_HANDLE_VALUE,key);
 	}
 	GetPopMenuPos(VTS->hTViewWnd,&pos,key);
-	VFSSHContextMenu(VTS->vtinfo.hWnd,&pos,path,T("."),cmd);
+	VFSSHContextMenu(VTS->vtinfo.hWnd, &pos, path,T("."), cmd);
 }
 
 void TreeSendKey(VFSTREESTRUCT *VTS,WORD key)
@@ -1913,7 +1931,7 @@ ERRORCODE TreeKeyCommand(VFSTREESTRUCT *VTS,WORD key)
 			WORD *keyp,keypre;
 
 			if ( (UTCHAR)buf[0] == EXTCMD_CMD ){
-				PP_ExtractMacro(VTS->vtinfo.hWnd,&VTS->vtinfo,NULL,buf + 1,NULL,0);
+				PP_ExtractMacro(VTS->vtinfo.hWnd, &VTS->vtinfo, NULL, buf + 1, NULL, 0);
 				return 0;
 			}
 			keypre = (WORD)K_raw | (key & (WORD)K_mouse);
@@ -1972,7 +1990,7 @@ ERRORCODE TreeKeyCommand(VFSTREESTRUCT *VTS,WORD key)
 				SendMessage(VTS->hNotifyWnd,WM_PPXCOMMAND,KTN_escape,0);
 			}
 			if ( VTS->flags & VFSTREE_MENU ){
-				PostMessage(VTS->vtinfo.hWnd,WM_CLOSE,0,0);
+				PostMessage(VTS->vtinfo.hWnd, WM_CLOSE, 0, 0);
 			}
 			break;
 
@@ -2024,7 +2042,7 @@ ERRORCODE TreeKeyCommand(VFSTREESTRUCT *VTS,WORD key)
 		case K_a | VK_DOWN:
 		case K_a | VK_LEFT:
 		case K_a | VK_RIGHT:
-			PPxCommonCommand(VTS->vtinfo.hWnd,0,key);
+			PPxCommonCommand(VTS->vtinfo.hWnd, 0, key);
 			break;
 
 		case K_s | VK_F10:
@@ -2053,7 +2071,7 @@ ERRORCODE TreeKeyCommand(VFSTREESTRUCT *VTS,WORD key)
 				VTS->resultCodePtr = NULL;
 			}
 			if ( VTS->flags & VFSTREE_MENU ){
-				PostMessage(VTS->vtinfo.hWnd,WM_CLOSE,0,0);
+				PostMessage(VTS->vtinfo.hWnd, WM_CLOSE, 0, 0);
 			}
 			break;
 
@@ -2209,7 +2227,7 @@ void FixTreeHeight(VFSTREESTRUCT *VTS)
 {
 	RECT ParentBox,TreeBox,ItemBox;
 
-	GetWindowRect(VTS->vtinfo.hWnd,&ParentBox);
+	GetWindowRect(VTS->vtinfo.hWnd, &ParentBox);
 	GetClientRect(VTS->hTViewWnd,&TreeBox);
 
 	*(HTREEITEM *)&ItemBox = TreeView_GetRoot(VTS->hTViewWnd);
@@ -2217,7 +2235,7 @@ void FixTreeHeight(VFSTREESTRUCT *VTS)
 	SendMessage(VTS->hTViewWnd,TVM_SELECTITEM,(WPARAM)TVGN_CARET,(LPARAM)*(HTREEITEM *)&ItemBox);
 	SendMessage(VTS->hTViewWnd,TVM_GETITEMRECT,(WPARAM)FALSE,(LPARAM)&ItemBox);
 
-	SetWindowPos(VTS->vtinfo.hWnd,NULL,0,0,
+	SetWindowPos(VTS->vtinfo.hWnd, NULL, 0,0,
 			ParentBox.right - ParentBox.left,
 			(ParentBox.bottom - ParentBox.top) - // 全体の高さ
 			 (TreeBox.bottom - TreeBox.top) + // 元の高さを除去
@@ -2242,7 +2260,7 @@ void PPtToolbarCommand(VFSTREESTRUCT *VTS,int id,int orcode)
 		}
 	}else{
 		if ( (UTCHAR)*param == EXTCMD_CMD ){
-			PP_ExtractMacro(VTS->vtinfo.hWnd,&VTS->vtinfo,NULL,param + 1,NULL,0);
+			PP_ExtractMacro(VTS->vtinfo.hWnd, &VTS->vtinfo, NULL, param + 1, NULL,0);
 		}else{
 			const WORD *key;
 
@@ -2332,7 +2350,7 @@ LRESULT CALLBACK TreeProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		case VTM_SETPATH:
 			if ( VTS->ThreadCount > MaxTreeThreads ) break;
-			if ( VTS->TreeType != TREETYPE_PPCLIST ){
+			if ( (VTS->TreeType != TREETYPE_PPCLIST) && (VTS->TreeType != TREETYPE_FOCUSPPC) ){
 				Start_TreeSetDirPath(VTS, (TCHAR *)lParam);
 			}else{
 				TreeKeyCommand(VTS, K_raw | VK_F5);
@@ -2370,6 +2388,9 @@ LRESULT CALLBACK TreeProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					break;
 				case TREETYPE_PPCLIST:
 					tstrcpy(param, TreePPcListName);
+					break;
+				case TREETYPE_FOCUSPPC:
+					tstrcpy(param, TreeFocusPPcName);
 					break;
 //				case TREETYPE_DIRECTORY:
 				default:
@@ -2777,25 +2798,30 @@ void InitPPcListTree(VFSTREESTRUCT *VTS)
 {
 	int i;
 	int no;
-	TCHAR disp[VFPS];
+	TCHAR disp[VFPS + 16];
 	DWORD useppclist = 0;
 
 	if ( hProcessComboWnd != NULL ){
-		TCHAR *ppclist = (TCHAR *)SendMessage(hProcessComboWnd,WM_PPXCOMMAND,KCW_ppclist,0);
+		TCHAR *ppclist = (TCHAR *)SendMessage(hProcessComboWnd, WM_PPXCOMMAND, KCW_ppclist, 0);
 		if ( ppclist != NULL ){
 			TCHAR *listIDptr, *listPathPtr;
 			HTREEITEM hParentItem = AppendItemToTreeV(VTS,NilStr,TVI_ROOT,0,NULL);
 			listIDptr = ppclist;
 			for ( ; *listIDptr != '\0'; ){
 				listPathPtr = listIDptr + tstrlen(listIDptr) + 1;
-				if ( *listIDptr == '\t' ){
+				if ( *listIDptr == '\t' ){ // タブ区切り
 					TreeView_Expand(VTS->hTViewWnd, hParentItem, TVE_EXPAND);
 					hParentItem = AppendItemToTreeV(VTS, NilStr, TVI_ROOT, 0, NULL);
 				}else{
-					if ( listIDptr[3] == '\0' ){ // C_x\0
+					if ( listIDptr[3] == '\0' ){ // ?Cx\0  CZxx でないとき
 						setflag(useppclist,1 << (listIDptr[2] - 'A'));
 					}
-					AppendItemToTreeV(VTS, listPathPtr, hParentItem, 0, listPathPtr);
+					if ( VTS->TreeType == TREETYPE_PPCLIST ){
+						AppendItemToTreeV(VTS, listPathPtr, hParentItem, 0, listPathPtr);
+					}else{
+						wsprintf( disp, T("[%s] %s"), listIDptr + 2, listPathPtr);
+						AppendItemToTreeV(VTS, disp, hParentItem, 0, listIDptr + 2);
+					}
 				}
 				listIDptr = listPathPtr + tstrlen(listPathPtr) + 1;
 			}
@@ -2809,8 +2835,13 @@ void InitPPcListTree(VFSTREESTRUCT *VTS)
 		if ( useppclist & (1 << (no - 'A')) ) continue;
 		for ( i = 0 ; i < X_Mtask ; i++ ){
 			if ( CheckPPcID(i) && (Sm->P[i].ID[2] == no) ){
-				tstrcpy(disp,Sm->P[i].path);
-				AppendItemToTreeV(VTS,disp,TVI_ROOT,0,NULL);
+				if ( VTS->TreeType == TREETYPE_PPCLIST ){
+					tstrcpy(disp,Sm->P[i].path);
+					AppendItemToTreeV(VTS, disp, TVI_ROOT, 0, NULL);
+				}else{
+					wsprintf(disp,T("[%c] %s"), no, Sm->P[i].path);
+					AppendItemToTreeV(VTS, disp, TVI_ROOT, 0, Sm->P[i].ID + 2);
+				}
 				break;
 			}
 		}
@@ -2857,6 +2888,8 @@ BOOL InitTreeViewItems(VFSTREESTRUCT *VTS,const TCHAR *param)
 			VTS->TreeType = TREETYPE_FAVORITE;
 		}else if ( tstrcmp(param,TreePPcListName) == 0 ){
 			VTS->TreeType = TREETYPE_PPCLIST;
+		}else if ( tstrcmp(param,TreeFocusPPcName) == 0 ){
+			VTS->TreeType = TREETYPE_FOCUSPPC;
 		}else if ( *param == '*' ){
 			param++;
 			VTS->TreeType = TREETYPE_VFS;
@@ -2897,6 +2930,7 @@ BOOL InitTreeViewItems(VFSTREESTRUCT *VTS,const TCHAR *param)
 		case TREETYPE_FAVORITE:
 			AddFavoriteItem(VTS,TVI_ROOT,param);
 			break;
+		case TREETYPE_FOCUSPPC:
 		case TREETYPE_PPCLIST:
 			InitPPcListTree(VTS);
 			break;

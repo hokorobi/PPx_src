@@ -862,18 +862,17 @@ BOOL CheckLoadSize(HWND hWnd,DWORD *sizeL)
 /*-----------------------------------------------------------------------------
 	filename で指定されたファイルをメモリに読み込む
 -----------------------------------------------------------------------------*/
-PPXDLL ERRORCODE PPXAPI LoadFileImage(const TCHAR *filename,DWORD margin,char **image,DWORD *imagesize,DWORD *filesize)
+PPXDLL ERRORCODE PPXAPI LoadFileImage(const TCHAR *filename, DWORD margin, char **image, DWORD *imagesize, DWORD *filesize)
 {
 	BOOL useheap; // ヒープを確保したなら true
 	HANDLE hFile;
-	DWORD imgsize;
 	DWORD sizeL,sizeH;		// ファイルの大きさ
 	ERRORCODE result;
 	HWND hWnd = NULL;
 										// ファイルを開く ---------------------
-	hFile = CreateFileL(filename,GENERIC_READ,
-			FILE_SHARE_WRITE | FILE_SHARE_READ,NULL,
-			OPEN_EXISTING,FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+	hFile = CreateFileL(filename, GENERIC_READ,
+			FILE_SHARE_WRITE | FILE_SHARE_READ, NULL,
+			OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if ( hFile == INVALID_HANDLE_VALUE ){
 		return GetLastError();
 /*
@@ -895,10 +894,12 @@ PPXDLL ERRORCODE PPXAPI LoadFileImage(const TCHAR *filename,DWORD margin,char **
 		return result;
 	}
 
-	if ( sizeH ) sizeL = MAX32;
-	if ( filesize ) *filesize = sizeL;
+	if ( sizeH != 0 ) sizeL = MAX32;
+	if ( filesize != NULL ) *filesize = sizeL;
 										// 読み込み準備 -----------------------
-	if ( *image ){				// メモリは確保済み
+	if ( *image != NULL ){	// メモリは確保済み
+		DWORD imgsize;
+
 		useheap = FALSE;
 		imgsize = *imagesize;
 		if ( imgsize < sizeL ) sizeL = imgsize;
@@ -917,14 +918,14 @@ PPXDLL ERRORCODE PPXAPI LoadFileImage(const TCHAR *filename,DWORD margin,char **
 		}
 	}
 										// 読み込み & 0 padding ---------------
-	result = ReadFile(hFile,*image,sizeL,&sizeL,NULL) ?
+	result = ReadFile(hFile, *image, sizeL, &sizeL, NULL) ?
 			NO_ERROR : GetLastError();
 	CloseHandle(hFile);
 	if ( result != NO_ERROR ){
-		if ( IsTrue(useheap) ) HeapFree(ProcHeap,0,*image);
+		if ( IsTrue(useheap) ) HeapFree(ProcHeap, 0, *image);
 		return result;
 	}
-	if ( margin != 0 ) memset(*image + sizeL,0,margin);
+	if ( margin != 0 ) memset(*image + sizeL, 0, margin);
 	if ( imagesize != NULL ) *imagesize = sizeL;
 	return NO_ERROR;
 }
@@ -1146,7 +1147,8 @@ int FixTextImage(const char *src,DWORD memsize,TCHAR **dest,int usecp)
 					while ( size-- ){
 						WCHAR lc;
 
-						lc = *((WCHAR *)src)++;
+						lc = *((WCHAR *)src);
+						src += sizeof(WCHAR) / sizeof(char);
 						*udest++ = (WCHAR)((lc >> 8) | (lc << 8));
 					}
 					#ifdef UNICODE
@@ -1166,7 +1168,7 @@ int FixTextImage(const char *src,DWORD memsize,TCHAR **dest,int usecp)
 
 		case VTYPE_UTF8: // BOM あり
 		case CP_UTF8: // BOM なし
-			if ( memcmp(src,UTF8HEADER,UTF8HEADERSIZE) == 0 ){
+			if ( memcmp(src, UTF8HEADER, UTF8HEADERSIZE) == 0 ){
 				src += UTF8HEADERSIZE;
 			}
 			break;
@@ -1354,7 +1356,7 @@ PPXDLL ERRORCODE PPXAPI LoadTextImage(const TCHAR *filename,TCHAR **image,TCHAR 
 
 	if ( filename != NULL ){
 		*image = NULL;
-		result = LoadFileImage(filename,0x40,(char **)image,&size,(maxptr != NULL) ? LFI_ALWAYSLIMITLESS : NULL);
+		result = LoadFileImage(filename, 0x40, (char **)image, &size, (maxptr != NULL) ? LFI_ALWAYSLIMITLESS : NULL);
 		if ( result != NO_ERROR ) return result;
 	}else{
 		size = TSTROFF32(*maxptr - *image);
@@ -1626,8 +1628,8 @@ INITCOMMONCONTROLSEXSTRUCT UseCommonControls = {
 //  -------------------------------
 PPXDLL HANDLE PPXAPI LoadCommonControls(DWORD usecontrol)
 {
-	DefineWinAPI(void,InitCommonControls,(void));
-	DefineWinAPI(void,InitCommonControlsEx,(INITCOMMONCONTROLSEXSTRUCT *));
+	DefineWinAPI(void, InitCommonControls, (void));
+	DefineWinAPI(void, InitCommonControlsEx, (INITCOMMONCONTROLSEXSTRUCT *));
 
 	if ( (X_dss == DSS_NOLOAD) && (WinType >= WINTYPE_VISTA) ){
 		GetCustData(T("X_dss"), &X_dss, sizeof(X_dss));
@@ -1636,9 +1638,9 @@ PPXDLL HANDLE PPXAPI LoadCommonControls(DWORD usecontrol)
 	if ( hComctl32 != NULL ){	// 実行済み
 		if ( UseCommonControls.dwICC == 0 ) return hComctl32; // no Ex
 	}else{
-		hComctl32 = LoadLibrary(T("COMCTL32.DLL"));
+		hComctl32 = LoadSystemDLL(SYSTEMDLL_COMCTL32);
 		if ( hComctl32 == NULL ) return NULL;
-		GETDLLPROC(hComctl32,InitCommonControlsEx);
+		GETDLLPROC(hComctl32, InitCommonControlsEx);
 		if ( DInitCommonControlsEx != NULL ){
 			UseCommonControls.dwICC = 0;
 		}else{
@@ -1931,6 +1933,56 @@ PPXDLL HMODULE PPXAPI LoadWinAPI(const char *DLLname,HMODULE hDLL,LOADWINAPISTRU
 	return hDLL;
 }
 
+const TCHAR *SystemDLLlist[] = {
+	T("COMDLG32.DLL"),
+	T("COMCTL32.DLL"),
+	T("OLEAUT32.DLL"),
+	T("MPR.DLL"),
+	T("WINMM.DLL"),
+	T("IMAGEHLP.DLL"),
+//	OLEPRO32
+	T("PSAPI.DLL"),
+	T("shcore.dll"),
+	T("SHLWAPI.DLL"),
+	T("RSTRTMGR.DLL"),
+	T("ATL.DLL"),
+	T("ATL100.DLL"),
+//	T("DwmapiName.DLL");
+	// susie - fullpath - LOAD_WITH_ALTERED_SEARCH_PATH が必要
+	// ppxmodule
+//	shcore
+//	d2d1
+//	dwrite
+//	zip
+};
+#define xLOAD_LIBRARY_SEARCH_SYSTEM32 0x00000800
+int LoadDLLflags = 1;
+PPXDLL HMODULE PPXAPI LoadSystemDLL(DWORD dllID)
+{
+	if ( LoadDLLflags == 1 ){
+		if ( (WinType >= WINTYPE_8) || (GetProcAddress(hKernel32,"SetDefaultDllDirectories") != NULL) ){
+			LoadDLLflags = xLOAD_LIBRARY_SEARCH_SYSTEM32; // SetDefaultDllDirectories がない Win7/Vista では例外が発生する
+		}else{
+			LoadDLLflags = 0;
+		}
+	}
+	return LoadLibraryEx(SystemDLLlist[dllID], NULL, LoadDLLflags);
+}
+
+HMODULE LoadSystemWinAPI(DWORD dllID, LOADWINAPISTRUCT *apis)
+{
+	HMODULE hDLL, hDLLresult;
+
+	hDLL = LoadSystemDLL(dllID);
+	if ( hDLL == NULL ) return NULL;
+	hDLLresult = LoadWinAPI(NULL, hDLL, apis, LOADWINAPI_HANDLE);
+	if ( hDLLresult == NULL ){
+		FreeLibrary(hDLL);
+		hDLL = NULL;
+	}
+	return hDLL;
+}
+
 void USEFASTCALL SetDlgFocus(HWND hDlg,int id)
 {
 	SetFocus(GetDlgItem(hDlg,id));
@@ -2059,12 +2111,16 @@ BOOL WriteFileZT(HANDLE fileh,const WCHAR *str,DWORD *wrote)
 }
 
 // アラインメントがあっていないテキストをリストやコンボボックスに登録
-void SendUTextMessage_U(HWND hWnd,UINT uMsg,WPARAM wParam,const TCHAR *text)
+LRESULT SendUTextMessage_U(HWND hWnd, UINT uMsg, WPARAM wParam, const TCHAR *text)
 {
 	TCHAR buf[0x1000];
 
-	strcpyW(buf,text);
-	SendMessage(hWnd,uMsg,wParam,(LPARAM)buf);
+	if ( !((DWORD)text & 1) ){
+		return SendMessage(hWnd, uMsg, wParam, (LPARAM)text);
+	}else {  // アライメントがずれている
+		strcpyW(buf, text);
+		return SendMessage(hWnd, uMsg, wParam, (LPARAM)buf);
+	}
 }
 #endif
 
@@ -2081,3 +2137,4 @@ void GetPopMenuPos(HWND hWnd,POINT *pos,WORD key)
 		pos->y = (box.top + box.bottom) / 2;
 	}
 }
+

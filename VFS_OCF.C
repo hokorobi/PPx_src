@@ -385,6 +385,7 @@ ERRORCODE DlgCopyFile(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD srcattr
 			  (tryresult == ERROR_FILE_NOT_FOUND)	||
 			  (tryresult == ERROR_SHARING_VIOLATION )  ||
 			  (tryresult == ERROR_LOCK_VIOLATION )  ||
+			  (tryresult == ERROR_CANT_ACCESS_FILE )  || //アクセス権以外の理由で開けない
 			  ((tryresult == ERROR_INVALID_NAME) && tstrchr(src,'?')) ) &&
 			  (opt->fop.flags & VFSFOP_OPTFLAG_SKIPERROR) ){
 			FS->progs.info.LEskips++;
@@ -426,6 +427,7 @@ ERRORCODE DlgCopyFile(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD srcattr
 			  (error == ERROR_PATH_NOT_FOUND)	|| //dir/drive?もファイルも無
 			  (error == ERROR_SHARING_VIOLATION )  ||
 			  (error == ERROR_LOCK_VIOLATION )  ||
+			  (error == ERROR_CANT_ACCESS_FILE )  || //アクセス権以外の理由で開けない
 			  ((error == ERROR_INVALID_NAME) && tstrchr(src,'?')) ) &&
 			  (opt->fop.flags & VFSFOP_OPTFLAG_SKIPERROR) ){
 			FS->progs.info.LEskips++;

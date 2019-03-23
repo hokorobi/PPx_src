@@ -203,7 +203,7 @@ void MakeUserFileType(void)
 	}
 }
 
-void SetUserFileType(VFSFILETYPE *dest,const USERFILETYPE *src)
+void SetUserFileType(VFSFILETYPE *dest, const USERFILETYPE *src)
 {
 	dest->dtype = 2;
 	tstrcpy(dest->type,src->name);
@@ -211,7 +211,7 @@ void SetUserFileType(VFSFILETYPE *dest,const USERFILETYPE *src)
 	if ( dest->flags & VFSFT_EXT      ) tstrcpy(dest->ext,NilStr);
 }
 
-BOOL CheckUserFileType(const char *image,DWORD size,VFSFILETYPE *result)
+BOOL CheckUserFileType(const char *image, DWORD size, VFSFILETYPE *result)
 {
 	USERFILETYPE *ut;
 
@@ -268,7 +268,7 @@ BOOL CheckUserFileType(const char *image,DWORD size,VFSFILETYPE *result)
 }
 
 //================================================================ 詳細チェック
-void SetFileType(VFSFILETYPE *dest,const VFD_HEADERS *src)
+void SetFileType(VFSFILETYPE *dest, const VFD_HEADERS *src)
 {
 	dest->dtype = src->dtype;
 	tstrcpy(dest->type,src->type);
@@ -281,7 +281,7 @@ const VFD_HEADERS vfd_filelinkheader =
 	NH(0,0,NULL,NULL,":FILELINK","File Link","lnk",DT_scp);
 
 #pragma argsused
-ERRORCODE vfd_link(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_link(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	TCHAR orgname[VFPS];
 	UnUsedParam(image);UnUsedParam(size);UnUsedParam(header);
@@ -308,7 +308,7 @@ const VFD_HEADERS vfd_matroskaheader =
 .mks ‐ 字幕を含
 */
 #pragma argsused
-ERRORCODE vfd_HTML2(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_HTML2(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	char c;
 	UnUsedParam(fname); UnUsedParam(image); UnUsedParam(size); UnUsedParam(result);
@@ -319,7 +319,7 @@ ERRORCODE vfd_HTML2(const TCHAR *fname,const char *image,DWORD size,const char *
 }
 
 #pragma argsused
-ERRORCODE vfd_HTML(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_HTML(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	const char *p,*maxptr;
 	UnUsedParam(fname);
@@ -355,7 +355,7 @@ ERRORCODE vfd_HTML(const TCHAR *fname,const char *image,DWORD size,const char *h
 }
 
 #pragma argsused
-ERRORCODE vfd_EBML(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_EBML(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	UnUsedParam(fname); UnUsedParam(header);
 
@@ -398,13 +398,13 @@ ERRORCODE vfd_EBML(const TCHAR *fname,const char *image,DWORD size,const char *h
 }
 // TEXT -----------------------------------------------------------------------
 #pragma argsused
-ERRORCODE vfd_text(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_text(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
-	const char *max;
+	const char *maxptr;
 	UnUsedParam(fname);UnUsedParam(header);UnUsedParam(result);
 
-	max = image + size;
-	for ( ; image < max ; image++ ){
+	maxptr = image + size;
+	for ( ; image < maxptr ; image++ ){
 		if ( ((BYTE)*image < (BYTE)' ') && (*image != '\t') &&
 			 (*image != '\r') && (*image != '\n') ){
 			 return ERROR_NO_DATA_DETECTED;
@@ -419,9 +419,9 @@ const VFD_HEADERS vfd_APNG =
 const VFD_HEADERS vfd_FPNG =
 	NH(0,0,NULL,NULL,":FPNG","firework PNG","png",DT_scp);
 #pragma argsused
-ERRORCODE vfd_PNG(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_PNG(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
-	const char *ptr,*maxptr;
+	const char *ptr, *maxptr;
 	UnUsedParam(fname);UnUsedParam(header);
 
 	ptr = image + 0x21;
@@ -450,7 +450,7 @@ ERRORCODE vfd_PNG(const TCHAR *fname,const char *image,DWORD size,const char *he
 
 // BMP ------------------------------------------------------------------------
 #pragma argsused
-ERRORCODE vfd_BMP(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_BMP(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	UnUsedParam(fname);UnUsedParam(image);UnUsedParam(size);UnUsedParam(result);
 
@@ -471,7 +471,7 @@ const VFD_HEADERS vfd_exFATheader =
 	NH(0,0,NULL,NULL,":EXFAT","exFAT Disk Image","BIN",DT_scp);
 
 #pragma argsused
-ERRORCODE vfd_MBRIMG(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_MBRIMG(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	UnUsedParam(fname);UnUsedParam(size);UnUsedParam(header);UnUsedParam(result);
 
@@ -482,7 +482,7 @@ ERRORCODE vfd_MBRIMG(const TCHAR *fname,const char *image,DWORD size,const char 
 }
 
 #pragma argsused
-ERRORCODE vfd_FATIMG(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_FATIMG(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	int fatresult;
 	UnUsedParam(fname);UnUsedParam(header);
@@ -504,7 +504,7 @@ ERRORCODE vfd_FATIMG(const TCHAR *fname,const char *image,DWORD size,const char 
 }
 
 #pragma argsused
-ERRORCODE vfd_yaffs(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_yaffs(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	UnUsedParam(fname);UnUsedParam(image);UnUsedParam(result);
 	if ( (size >= (0x800 + 64)) &&
@@ -516,7 +516,7 @@ ERRORCODE vfd_yaffs(const TCHAR *fname,const char *image,DWORD size,const char *
 }
 
 #pragma argsused
-ERRORCODE vfd_squashfs(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_squashfs(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	UnUsedParam(fname);UnUsedParam(image);UnUsedParam(result);
 	if ( (size >= 0x800) &&
@@ -531,7 +531,7 @@ ERRORCODE vfd_squashfs(const TCHAR *fname,const char *image,DWORD size,const cha
 
 // LHA ------------------------------------------------------------------------
 #pragma argsused
-ERRORCODE vfd_LHA(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_LHA(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	BYTE sum = 0,*p,chksum;
 	UnUsedParam(fname);UnUsedParam(result);
@@ -550,7 +550,7 @@ ERRORCODE vfd_LHA(const TCHAR *fname,const char *image,DWORD size,const char *he
 }
 // ARJ ------------------------------------------------------------------------
 #pragma argsused
-ERRORCODE vfd_ARJ(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_ARJ(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	UnUsedParam(fname);UnUsedParam(image);UnUsedParam(size);UnUsedParam(result);
 	// 固定値
@@ -567,7 +567,7 @@ ERRORCODE vfd_ARJ(const TCHAR *fname,const char *image,DWORD size,const char *he
 }
 // CAB ------------------------------------------------------------------------
 #pragma argsused
-ERRORCODE vfd_CAB(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_CAB(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	UnUsedParam(fname);UnUsedParam(image);UnUsedParam(size);UnUsedParam(result);
 	// 書庫の実体へのオフセット上位16bit ... 1M 越えはエラー
@@ -596,7 +596,7 @@ const char XPSheader2[] = "[Content_Types].xml";
 const VFD_HEADERS vfd_XPSheader =
 	NH(0,0,NULL,			NULL,":XPS","XPS Document","xps",DT_scp);
 
-ERRORCODE SearchPkExtHeader(const char *header,const VFD_HEADERS *vdh,VFSFILETYPE *result)
+ERRORCODE SearchPkExtHeader(const char *header, const VFD_HEADERS *vdh, VFSFILETYPE *result)
 {
 	for ( ; vdh->flags ; vdh++ ){
 		if ( !memcmp(header,vdh->header,vdh->hsize) ){
@@ -610,12 +610,12 @@ ERRORCODE SearchPkExtHeader(const char *header,const VFD_HEADERS *vdh,VFSFILETYP
 
 
 #pragma argsused
-ERRORCODE vfd_PK(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_PK(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	DWORD neededversion;
 	UnUsedParam(fname);UnUsedParam(image);
 
-	neededversion = *(WORD *)(header + 4);
+	neededversion = *(header + 4);
 	if ( (neededversion < 10/* V1.0*/) ||(neededversion >= 100/* V10.0*/) ){
 		return ERROR_NO_DATA_DETECTED;
 	}
@@ -639,7 +639,7 @@ ERRORCODE vfd_PK(const TCHAR *fname,const char *image,DWORD size,const char *hea
 }
 // MSXBIN ---------------------------------------------------------------------
 #pragma argsused
-ERRORCODE vfd_MSXBIN(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_MSXBIN(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	WORD s,e;
 	UnUsedParam(fname);UnUsedParam(image);UnUsedParam(size);UnUsedParam(result);
@@ -651,7 +651,7 @@ ERRORCODE vfd_MSXBIN(const TCHAR *fname,const char *image,DWORD size,const char 
 }
 // FM-TOWNS MQ ----------------------------------------------------------------
 #pragma argsused
-ERRORCODE vfd_MQ(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_MQ(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	UnUsedParam(fname);UnUsedParam(image);UnUsedParam(result);
 
@@ -660,7 +660,7 @@ ERRORCODE vfd_MQ(const TCHAR *fname,const char *image,DWORD size,const char *hea
 }
 // FM-TOWNS P3 ----------------------------------------------------------------
 #pragma argsused
-ERRORCODE vfd_P3(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_P3(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	UnUsedParam(fname);UnUsedParam(image);UnUsedParam(result);
 
@@ -669,7 +669,7 @@ ERRORCODE vfd_P3(const TCHAR *fname,const char *image,DWORD size,const char *hea
 }
 // MACBIN ---------------------------------------------------------------------
 #pragma argsused
-ERRORCODE vfd_MACBIN(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_MACBIN(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	int len;
 	UnUsedParam(fname);UnUsedParam(image);UnUsedParam(size);UnUsedParam(result);
@@ -711,7 +711,7 @@ char *GetTiffStr(BYTE *base,TIFFDIR *dir,BOOL BE)
 }
 
 #ifdef UNICODE
-void ThCatStringTA(ThSTRUCT *th,const char *str)
+void ThCatStringTA(ThSTRUCT *th, const char *str)
 {
 	WCHAR buf[0x1000];
 
@@ -756,7 +756,7 @@ void GetTiffRate(BYTE *base,TIFFDIR *dir,BOOL BE,TCHAR *buf)
 	tstrcpy(buf,T("?/?\r\n"));
 }
 
-void ThCatTiffData(ThSTRUCT *th,const TCHAR *header,BYTE *base,TIFFDIR *dir,BOOL BE)
+void ThCatTiffData(ThSTRUCT *th, const TCHAR *header,BYTE *base,TIFFDIR *dir,BOOL BE)
 {
 	TCHAR buf[32];
 
@@ -920,7 +920,7 @@ void GetExifInfo(BYTE *base,BYTE *basemax,ThSTRUCT *th)
 
 #define BEWORDPTR(ptr) (WORD)((*(ptr) * 0x100) + *(ptr + 1))
 #define BEDWORDPTR(ptr) (DWORD)((*(ptr) * 0x1000000) + (*(ptr+1) * 0x10000) + (*(ptr+2) * 0x100) + *(ptr+3))
-void AddTTFString(ThSTRUCT *th,const TCHAR *title,BYTE *basestr,BYTE *header)
+void AddTTFString(ThSTRUCT *th, const TCHAR *title,BYTE *basestr,BYTE *header)
 {
 	BYTE *str;
 	DWORD size;
@@ -972,7 +972,7 @@ void AddTTFString(ThSTRUCT *th,const TCHAR *title,BYTE *basestr,BYTE *header)
 }
 
 #pragma argsused
-ERRORCODE vfd_TTF(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_TTF(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	ThSTRUCT th;
 	int headers;
@@ -1024,7 +1024,7 @@ ERRORCODE vfd_TTF(const TCHAR *fname,const char *image,DWORD size,const char *he
 }
 //  ---------------------------------------------------------------------
 #pragma argsused
-ERRORCODE vfd_JPEG(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_JPEG(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	ThSTRUCT th;
 	TCHAR buf[VFPS];
@@ -1110,7 +1110,7 @@ ERRORCODE vfd_JPEG(const TCHAR *fname,const char *image,DWORD size,const char *h
 }
 // .ico / .cur
 #pragma argsused
-ERRORCODE vfd_Icon(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_Icon(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	UnUsedParam(fname);UnUsedParam(size);UnUsedParam(header);UnUsedParam(result);
 
@@ -1121,7 +1121,7 @@ ERRORCODE vfd_Icon(const TCHAR *fname,const char *image,DWORD size,const char *h
 }
 
 #pragma argsused
-ERRORCODE vfd_GIF(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_GIF(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	ThSTRUCT th;
 	TCHAR buf[VFPS];
@@ -1141,7 +1141,7 @@ ERRORCODE vfd_GIF(const TCHAR *fname,const char *image,DWORD size,const char *he
 }
 
 #pragma argsused
-ERRORCODE vfd_EMF(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_EMF(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	UnUsedParam(fname);UnUsedParam(size);UnUsedParam(header);UnUsedParam(result);
 
@@ -1157,7 +1157,7 @@ const VFD_HEADERS JustHeaders[] = {
 	NH   (0,0,NULL,			NULL,":JUST","Justsystem app.","",DT_scp)};
 
 #pragma argsused
-ERRORCODE vfd_JUST(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_JUST(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	const VFD_HEADERS *vdh;
 	UnUsedParam(fname);UnUsedParam(image);UnUsedParam(size);
@@ -1327,12 +1327,12 @@ typedef struct tagSTGOPTIONS
 #endif
 
 #pragma argsused
-void vfd_COMinfo(const TCHAR *fname,const char *image,const char *imagemax,VFSFILETYPE *result)
+void vfd_COMinfo(const TCHAR *fname, const char *image, const char *imagemax, VFSFILETYPE *result)
 {
 	ThSTRUCT th;
 	int cnt = 4;
 	HANDLE hOle32;
-	DefineWinAPI(HRESULT,StgOpenStorageEx,(const WCHAR *pwcsName,DWORD grfMode,DWORD stgfmt,DWORD grfAttrs,STGOPTIONS *pStgOptions,void *reserved,REFIID riid,void **ppObjectOpen));
+	DefineWinAPI(HRESULT,StgOpenStorageEx,(const WCHAR *pwcsName, DWORD grfMode, DWORD stgfmt, DWORD grfAttrs,STGOPTIONS *pStgOptions,void *reserved,REFIID riid,void **ppObjectOpen));
 	DefineWinAPI(HRESULT,PropVariantClear,(PROPVARIANT *pvar));
 	UnUsedParam(fname);UnUsedParam(image);UnUsedParam(result);
 
@@ -1448,7 +1448,7 @@ void vfd_COMinfo(const TCHAR *fname,const char *image,const char *imagemax,VFSFI
 #endif
 
 
-void SetComType(VFSFILETYPE *result,const DOCS *comp)
+void SetComType(VFSFILETYPE *result, const DOCS *comp)
 {
 	result->dtype = comp->dtype;
 	tstrcpy(result->type,comp->type);
@@ -1460,7 +1460,7 @@ void SetComType(VFSFILETYPE *result,const DOCS *comp)
 	}
 }
 
-ERRORCODE vfd_COM(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_COM(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	const DOCS *comp;
 	const char *rootentry;
@@ -1592,7 +1592,7 @@ const TCHAR *exeguitable[] = {
 const TCHAR *execontable[] = {
 	T(":EXE32C"),T(":EXEIA64C"),T(":EXEX64C"),EXE32UCSTR
 };
-const TCHAR *CheckExeMPU(const TCHAR *idtable[],const TCHAR *id)
+const TCHAR *CheckExeMPU(const TCHAR *idtable[], const TCHAR *id)
 {
 	if ( id == X86STR ) return idtable[0];
 	if ( id == IA64STR ) return idtable[1];
@@ -1624,7 +1624,7 @@ struct VERSIONTABLENAMES {
 	{NULL,NULL}
 };
 
-DefineWinAPI(BOOL,GetFileVersionInfo,(LPCTSTR lptstrFilename,DWORD dwHandle,DWORD dwLen,LPVOID lpData));
+DefineWinAPI(BOOL,GetFileVersionInfo,(LPCTSTR lptstrFilename, DWORD dwHandle, DWORD dwLen,LPVOID lpData));
 DefineWinAPI(DWORD,GetFileVersionInfoSize,(LPCTSTR lptstrFilename,LPDWORD lpdwHandle));
 DefineWinAPI(BOOL,VerQueryValue,(LPCVOID pBlock,LPCTSTR lpSubBlock,LPVOID *lplpBuffer,PUINT puLen));
 
@@ -1654,7 +1654,7 @@ void ThWS(char *res,ThSTRUCT *th,TCHAR *base,struct VERSIONTABLENAMES *Vt)
 #define IMAGE_NT_HEADERS32 IMAGE_NT_HEADERS
 #endif
 
-void GetExeVerInfo(const TCHAR *fname,VFSFILETYPE *result,IMAGE_NT_HEADERS32 *xhdr)
+void GetExeVerInfo(const TCHAR *fname, VFSFILETYPE *result,IMAGE_NT_HEADERS32 *xhdr)
 {
 	TCHAR ibuf[MAX_PATH],base[80];
 	char *verres;
@@ -1696,7 +1696,7 @@ void GetExeVerInfo(const TCHAR *fname,VFSFILETYPE *result,IMAGE_NT_HEADERS32 *xh
 	FreeLibrary(hVersionDLL);
 }
 
-ERRORCODE vfd_EXE(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_EXE(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	const TCHAR *p;
 	TCHAR buf[MAX_PATH];
@@ -1919,7 +1919,7 @@ const TCHAR *Elf32_e_machine[] =
 	T("MIPS RS3000"),
 };
 
-int GetElfValue(DWORD value,BYTE EI_DATA,DWORD valuemax)
+int GetElfValue(DWORD value,BYTE EI_DATA, DWORD valuemax)
 {
 	if ( EI_DATA == 2 /* ELFDATA2MSB */ ){
 		value = ((value & 0xff00) >> 8) | ((value & 0xff) << 8);
@@ -1929,7 +1929,7 @@ int GetElfValue(DWORD value,BYTE EI_DATA,DWORD valuemax)
 }
 
 #pragma argsused
-ERRORCODE vfd_ELF(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_ELF(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	UnUsedParam(fname);UnUsedParam(header);
 
@@ -1961,7 +1961,7 @@ const VFD_HEADERS RIFFheaders[] = {
 	NH(0,0,NULL,NULL,	":RIFF","RIFF","RIFF",DT_scp)};
 
 #pragma argsused
-ERRORCODE vfd_RIFF(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_RIFF(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	const VFD_HEADERS *vdh;
 	UnUsedParam(fname);UnUsedParam(image);UnUsedParam(size);
@@ -1974,7 +1974,7 @@ ERRORCODE vfd_RIFF(const TCHAR *fname,const char *image,DWORD size,const char *h
 }
 
 #pragma argsused
-ERRORCODE vfd_ID3(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_ID3(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	UnUsedParam(fname);UnUsedParam(image);UnUsedParam(size);UnUsedParam(result);
 
@@ -2003,7 +2003,7 @@ const VFD_HEADERS QTheaders[] = {
 };
 
 #pragma argsused
-ERRORCODE vfd_qt(const TCHAR *fname,const char *image,DWORD size,const char *header,VFSFILETYPE *result)
+ERRORCODE vfd_qt(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
 	const VFD_HEADERS *vdh;
 	UnUsedParam(fname);UnUsedParam(size);UnUsedParam(result);
@@ -2264,7 +2264,7 @@ const VFD_HEADERS *ReverseList[] = {
 const VFD_HEADERS AllHeader =
 	NH(0,0,NULL,NULL,			"*",		"Default","",DT_scp);
 
-ERRORCODE ReverseGetFileType(const TCHAR *FileName,VFSFILETYPE *result)
+ERRORCODE ReverseGetFileType(const TCHAR *FileName, VFSFILETYPE *result)
 {
 	const VFD_HEADERS **mainlist,*list;
 	int mode;
@@ -2290,7 +2290,7 @@ ERRORCODE ReverseGetFileType(const TCHAR *FileName,VFSFILETYPE *result)
 	return ERROR_NO_DATA_DETECTED;
 }
 
-VFSDLL ERRORCODE PPXAPI VFSGetFileType(const TCHAR *FileName,const char *image,DWORD size,VFSFILETYPE *result)
+VFSDLL ERRORCODE PPXAPI VFSGetFileType(const TCHAR *FileName, const char *image, DWORD size, VFSFILETYPE *result)
 {
 	const VFD_HEADERS *vdh,*vdh_rel = NULL;
 	char buf[VFS_check_size],*p_rel = NULL;
@@ -2397,7 +2397,7 @@ found:
 	return NO_ERROR;
 }
 
-VFSDLL DWORD PPXAPI ReadFileHeader(HANDLE hFile,BYTE *header,DWORD headersize)
+VFSDLL DWORD PPXAPI ReadFileHeader(HANDLE hFile,BYTE *header, DWORD headersize)
 {
 	DWORD size,moreread,fsize; // Readfile用、追加読込サイズ、読込済みサイズ
 

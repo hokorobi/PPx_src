@@ -1,6 +1,6 @@
 @echo off
 rem XVER: 123 or 123p1
-set XVER=165
+set XVER=166
 set RETAIL=1
 set DIR64=PPx64
 rem *** set value ***
@@ -107,7 +107,7 @@ set ppcommon=PPLIB%arcbit%%tail%.DLL
 set ppc=PPC%tail%.EXE
 set ppv=PPV%tail%.EXE
 if %RETAIL%==1 set ppb=PPB%tail%.EXE
-set ppcust=PPCUST%tail%.EXE
+if %RETAIL%==1 set ppcust=PPCUST%tail%.EXE
 if %RETAIL%==1 set pptray=PPTRAY%tail%.EXE
 if %RETAIL%==1 set ppffix=PPFFIX%tail%.EXE
 

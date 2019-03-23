@@ -1802,6 +1802,7 @@ STDMETHODIMP CDropTarget::QueryDrop(DWORD grfKeyState, POINTL *pt, DWORD *pdwEff
 				if ( edge ) setflag(NewDropModeFlags, DROPMODE_EDGE);
 
 				mCinfo->e.cellPoint = cellno;
+				mCinfo->e.cellPointType = PPCR_CELLTEXT;
 				MarkFocusCell(mCinfo, cellno, edge); // •\Ž¦
 				if ( mCEL(cellno).f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY){
 					VFSFullPath(mTargetPath, mCEL(mCell).f.cFileName, targetdir);

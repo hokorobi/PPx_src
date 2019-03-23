@@ -110,6 +110,8 @@ GVAR RECT BoxAllView;	// 表示領域
 GVAR RECT BoxView;	// 表示領域
 GVAR RECT Box2ndView;	// 表示領域
 GVAR CALLBACKMODULEENTRY KeyHookEntry GPARAM(NULL);	// キー入力拡張モジュール
+#define ScrollWidth_MIN 16
+GVAR int ScrollWidth; // WIDTH_NOWARP のときの横幅
 
 //---------------------------------------------------------------------- 描画用
 GVAR HFONT hBoxFont;
@@ -168,6 +170,7 @@ GVAR int VO_Tquoted;	//GPARAM(0);
 GVAR VIEWOPTIONS *VO_opt,VO_optdata;
 GVAR int VO_CodePage GPARAM(0);
 GVAR BOOL VO_CodePageChanged; // テキスト中のコードページ指定による変更済
+GVAR BOOL VO_CodePageValid; // 指定コードページが有効か
 
 #ifdef GLOBALEXTERN
 typedef enum {

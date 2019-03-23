@@ -484,7 +484,7 @@ PPXDLL HWND PPXAPI PPEui(HWND hPWnd, const TCHAR *title, const TCHAR *text)
 		}
 		if ( modify == 0 ) GetWindowRect(hPPeWnd, &WinPos.pos);
 		GetDesktopRect(hFWnd, &deskbox);
-		// C4701ok
+		// C4701ok (modify‚Å‘Î‰ž)
 		if ( (WinPos.pos.left < deskbox.left) ||
 			 (WinPos.pos.left >= deskbox.right) ){
 			WinPos.pos.left = deskbox.left;

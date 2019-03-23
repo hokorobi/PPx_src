@@ -97,7 +97,7 @@ BOOL ClipHexMem(TMS_struct *text,int StartLine,int EndLine)
 		bottom = (char *)vo_.file.image + VOsel.bottom.y.line * 16;
 		size = (VOsel.top.y.line - VOsel.bottom.y.line + 1) * 16;
 
-		if ( !VOsel.line ){
+		if ( !VOsel.linemode ){
 			tsize = CalcHexX(VOsel.bottom.x.offset);
 			bottom += tsize;
 			size -= tsize + (16 - CalcHexX(VOsel.top.x.offset));
@@ -174,7 +174,7 @@ BOOL ClipMem(TMS_struct *text,int StartLine,int EndLine)
 
 				src = (char *)p + 1;
 				copylength = length = strlen32(src);
-				if ( VOsel.line == FALSE ){
+				if ( VOsel.linemode == FALSE ){
 					if ( off == top ){	// ––”ö’²ß
 						if ( (CharX + copylength) > VOsel.top.x.offset ){
 							copylength = VOsel.top.x.offset - CharX;
@@ -216,7 +216,7 @@ BOOL ClipMem(TMS_struct *text,int StartLine,int EndLine)
 
 				src = (WCHAR *)(p + 1);
 				copylength = length = strlenW32(src);
-				if ( VOsel.line == FALSE ){
+				if ( VOsel.linemode == FALSE ){
 					if ( off == top ){	// ––”ö’²ß
 						if ( (CharX + copylength) > VOsel.top.x.offset ){
 							copylength = VOsel.top.x.offset - CharX;
@@ -263,7 +263,7 @@ BOOL ClipMem(TMS_struct *text,int StartLine,int EndLine)
 
 			case VCODE_TAB:				// Tab -------------------------------
 				p++;
-				if ( VOsel.line == FALSE ){
+				if ( VOsel.linemode == FALSE ){
 					if ( off == top ){	// ––”ö’²ß
 						if ( CharX >= VOsel.top.x.offset ) break;
 					}

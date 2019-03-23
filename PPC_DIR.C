@@ -975,23 +975,23 @@ BOOL InitSort(COMPARESTRUCT *cs,XC_SORT *xs)
 	return TRUE;
 }
 
-void MergeCellSort(COMPARESTRUCT *cs,const ENTRYINDEX min,const ENTRYINDEX max)
+void MergeCellSort(COMPARESTRUCT *cs,const ENTRYINDEX mini,const ENTRYINDEX maxi)
 {
 	ENTRYINDEX center,range,orgi,worki;
 	ENTRYINDEX *table,*destp;
 	ENTRYDATAOFFSET *worktbl;
 										// 細切れ処理
-	center = (min + max) / 2;
-	if ( min < (center - 1)) MergeCellSort(cs,min,center);
-	if ( center < (max - 1)) MergeCellSort(cs,center,max);
+	center = (mini + maxi) / 2;
+	if ( mini < (center - 1)) MergeCellSort(cs, mini, center);
+	if ( center < (maxi - 1)) MergeCellSort(cs, center, maxi);
 										// マージ本体
 	table = (ENTRYINDEX *)cs->cinfo->e.INDEXDATA.p;
-	range = center - min;
+	range = center - mini;
 	if ( range ){	// 前半をワークへ
 		ENTRYINDEX i;
 		ENTRYINDEX *dp,*sp;
 
-		sp = table + min;
+		sp = table + mini;
 		dp = cs->worktbl;
 		i = range;
 		do {
@@ -1001,8 +1001,8 @@ void MergeCellSort(COMPARESTRUCT *cs,const ENTRYINDEX min,const ENTRYINDEX max)
 	worktbl = cs->worktbl;	// マージ
 	orgi = center;
 	worki = 0;
-	destp = table + min;
-	while ( orgi < max ){
+	destp = table + mini;
+	while ( orgi < maxi ){
 		cs->SrcCell = &CsCELdata(worktbl[worki]);
 		if ( CmpFunc(orgi,cs) <= 0 ){
 			*destp++ = worktbl[worki++];
@@ -1980,7 +1980,7 @@ void ReadEntryMain(PPC_APPINFO *cinfo,TCHAR *readpath,int *flags,TCHAR *mask)
 
 											// 後回しにしたソートを実行する
 	if ( (cs.SortF != NULL) && (sorttime == MAX32) ){
-		int min;
+		int minc;
 
 		if ( cinfo->e.cellIMax > SORTINFOSIZE ){
 			SetPopMsg(cinfo,POPMSG_NOLOGMSG,SortingStr);
@@ -1991,9 +1991,9 @@ void ReadEntryMain(PPC_APPINFO *cinfo,TCHAR *readpath,int *flags,TCHAR *mask)
 		}
 
 		// . と .. をスキップ
-		for ( min = 0 ; CEL(min).attr & (ECA_PARENT | ECA_THIS) ; min++ );
+		for ( minc = 0 ; CEL(minc).attr & (ECA_PARENT | ECA_THIS) ; minc++ );
 		cs.worktbl = PPcHeapAlloc( ( cinfo->e.cellIMax / 2 + 1 ) * sizeof(ENTRYINDEX));
-		MergeCellSort(&cs,min,cinfo->e.cellIMax);
+		MergeCellSort(&cs, minc, cinfo->e.cellIMax);
 		PPcHeapFree(cs.worktbl);
 		if ( cinfo->e.cellIMax > SORTINFOSIZE ) StopPopMsg(cinfo,PMF_DISPLAYMASK);
 	}

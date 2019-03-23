@@ -175,6 +175,26 @@ VOID CALLBACK PreventSleepProc(HWND hWnd,UINT msg,UINT_PTR id,DWORD time)
 	if ( FS->state != FOP_PAUSE ) DSetThreadExecutionState(ES_SYSTEM_REQUIRED);
 }
 
+void StartPreventSleep(HWND hWnd)
+{
+	if ( DSetThreadExecutionState == INVALID_VALUE(impSetThreadExecutionState) ){
+		GETDLLPROC(hKernel32, SetThreadExecutionState);
+	}
+	if ( DSetThreadExecutionState != NULL ){
+		SetTimer(hWnd, TIMERID_PREVENTSLEEP, TIMERRATE_PREVENTSLEEP, PreventSleepProc);
+		PreventSleepProc(hWnd, WM_TIMER, TIMERID_PREVENTSLEEP, 0);
+	}
+}
+
+void EndPreventSleep(HWND hWnd)
+{
+	if ( (DSetThreadExecutionState != NULL) &&
+		 (DSetThreadExecutionState != INVALID_VALUE(impSetThreadExecutionState)) ){
+		KillTimer(hWnd,TIMERID_PREVENTSLEEP);
+		DSetThreadExecutionState(ES_CONTINUOUS);
+	}
+}
+
 void USEFASTCALL SetHideMode(FOPSTRUCT *FS)
 {
 	if ( (Sm->JobList.hWnd != NULL) &&
@@ -563,7 +583,7 @@ void FullDisplayProgress(struct _ProgressWndInfo *Progs,LARGE_INTEGER TotalTrans
 				Progs->info.donefiles,Progs->info.filesall);
 		SetWindowText(Progs->hProgressWnd,buf);
 		Progs->info.busybar++;
-		if ( Progs->info.busybar > 10) Progs->info.busybar = 1;
+		if ( Progs->info.busybar > 10 ) Progs->info.busybar = 1;
 
 		if ( Progs->srcpath != NULL ){
 			SetWindowText(Progs->hSrcNameWnd,Progs->srcpath);
@@ -696,7 +716,91 @@ ERRORCODE RenameDestFile(FOPSTRUCT *FS,const TCHAR *dst,BOOL addOldStr)
 	return GetLastError();
 }
 
-ERRORCODE SameNameAction(FOPSTRUCT *FS,HANDLE dstH,BY_HANDLE_FILE_INFORMATION *srcfinfo,BY_HANDLE_FILE_INFORMATION *dstfinfo,const TCHAR *src,TCHAR *dst)
+const TCHAR *SameAction_Srclist[] = {
+	T("(move)"),
+	T("(copy)"),
+	T("(copy)"),
+	T("(link)"),
+	T("(link)"),
+	T("(delete)"),
+	T("(restore)"),
+	T("(link)"),
+};
+
+void ChangeEntryActionHelp(FOPSTRUCT *FS, BY_HANDLE_FILE_INFORMATION *srcfinfo, BY_HANDLE_FILE_INFORMATION *dstfinfo)
+{
+	TCHAR buf[VFPS], *lastp;
+	const TCHAR *srcmemo = NULL, *dstmemo = NULL;
+
+	switch ( FS->opt.fop.same ){
+		case FOPSAME_NEWDATE:
+			if ( FuzzyCompareFileTime(&srcfinfo->ftLastWriteTime,
+					&dstfinfo->ftLastWriteTime) > 0){
+				break;
+			}
+			// FOPSAME_SKIP へ
+		case FOPSAME_SKIP:
+			srcmemo = T("(skip)");
+			dstmemo = T("(keep)");
+			break;
+
+		case FOPSAME_ARCHIVE:
+			if ( srcfinfo->dwFileAttributes & FILE_ATTRIBUTE_ARCHIVE ) break;
+			srcmemo = T("(skip)");
+			dstmemo = T("(keep)");
+			break;
+
+		case FOPSAME_RENAME:
+		case FOPSAME_ADDNUMBER:
+			srcmemo = T("(change name)");
+			dstmemo = T("(keep)");
+			break;
+
+		case FOPSAME_APPEND:
+			srcmemo = T("(append)");
+			dstmemo = T("(append)");
+			break;
+
+		case FOPSAME_SIZE:
+			if ( (srcfinfo->nFileSizeLow != dstfinfo->nFileSizeLow) ||
+				 (srcfinfo->nFileSizeHigh != dstfinfo->nFileSizeHigh) ){
+				break;
+			}
+			srcmemo = T("(skip)");
+			dstmemo = T("(keep)");
+			break;
+
+							// これらは常に上書き
+//		case FOPSAME_OVERWRITE:
+//		default:
+//			break;
+	}
+	if ( srcmemo == NULL ){
+		srcmemo = SameAction_Srclist[FS->opt.fop.mode];
+	}
+	GetDlgItemText(FS->hDlg, IDS_FOP_SRCTITLE, buf, VFPS);
+	lastp = tstrrchr(buf ,'(');
+	if ( lastp != NULL ) *lastp = '\0';
+	tstrcpy(buf + tstrlen(buf), srcmemo);
+	SetDlgItemText(FS->hDlg, IDS_FOP_SRCTITLE, buf);
+
+	if ( dstmemo == NULL ){
+		if ( FS->opt.fop.flags & VFSFOP_OPTFLAG_ADDNUMDEST ){
+			dstmemo = T("(add number)");
+		}else if ( FS->opt.fop.flags & VFSFOP_OPTFLAG_BACKUPOLD ){
+			dstmemo = T("(backup)");
+		}else{
+			dstmemo = T("(overwrite)");
+		}
+	}
+	GetDlgItemText(FS->hDlg, IDS_FOP_DESTTITLE, buf, VFPS);
+	lastp = tstrrchr(buf ,'(');
+	if ( lastp != NULL ) *lastp = '\0';
+	tstrcpy(buf + tstrlen(buf), dstmemo);
+	SetDlgItemText(FS->hDlg, IDS_FOP_DESTTITLE, buf);
+}
+
+ERRORCODE SameNameAction(FOPSTRUCT *FS, HANDLE dstH, BY_HANDLE_FILE_INFORMATION *srcfinfo, BY_HANDLE_FILE_INFORMATION *dstfinfo, const TCHAR *src, TCHAR *dst)
 {
 	BOOL samefile = FALSE;
 	HANDLE hDlg = FS->hDlg;
@@ -740,7 +844,9 @@ ERRORCODE SameNameAction(FOPSTRUCT *FS,HANDLE dstH,BY_HANDLE_FILE_INFORMATION *s
 	}
 
 	for ( ; ; ){
-		if ( opt->fop.sameSW == 0 ){		// 対処方法選択 -------------------
+		if ( opt->fop.sameSW == 0 ){		// 対処方法選択UI -----------------
+			int now_same = -1;
+
 			if ( !(GetWindowLongPtr(hDlg,GWL_STYLE) & WS_VISIBLE) ){
 				ShowWindow(hDlg,SW_SHOWNORMAL);
 			}
@@ -770,7 +876,23 @@ ERRORCODE SameNameAction(FOPSTRUCT *FS,HANDLE dstH,BY_HANDLE_FILE_INFORMATION *s
 			}
 
 			if ( FS->progs.info.count_exists >= 2 ){ // 存在一覧を表示
-				wsprintf(pathbuf,MessageText(MES_QSAN),FS->progs.info.count_exists);
+				int pos;
+				pos = wsprintf(pathbuf, MessageText(MES_QSAN), FS->progs.info.count_exists);
+				switch ( opt->fop.same ){
+					case FOPSAME_NEWDATE:
+						wsprintf(pathbuf + pos, T("%d overwrite, %d copy"), FS->progs.info.exists[2], FS->progs.info.filesall - FS->progs.info.count_exists);
+						break;
+					case FOPSAME_RENAME:
+						wsprintf(pathbuf + pos, T("%d rename, %d copy"), FS->progs.info.count_exists, FS->progs.info.filesall - FS->progs.info.count_exists);
+						break;
+					case FOPSAME_SKIP:
+						wsprintf(pathbuf + pos, T("%d copy"), FS->progs.info.filesall - FS->progs.info.count_exists);
+						break;
+					case FOPSAME_ADDNUMBER:
+						wsprintf(pathbuf + pos, T("%d number copy"), FS->progs.info.count_exists);
+						break;
+				}
+
 				SetWindowText(FS->progs.hProgressWnd,pathbuf);
 				SetWindowY(FS,0);
 			}else{ // １ファイルの詳細比較を表示
@@ -783,6 +905,10 @@ ERRORCODE SameNameAction(FOPSTRUCT *FS,HANDLE dstH,BY_HANDLE_FILE_INFORMATION *s
 			for ( ; ; ){
 				MSG msg;
 
+				if ( now_same != opt->fop.same ){
+					now_same = opt->fop.same;
+					ChangeEntryActionHelp(FS, srcfinfo, dstfinfo);
+				}
 				if( (int)GetMessage(&msg,NULL,0,0) <= 0 ){
 					FS->state = FOP_TOBREAK;
 					break;
@@ -847,7 +973,7 @@ ERRORCODE SameNameAction(FOPSTRUCT *FS,HANDLE dstH,BY_HANDLE_FILE_INFORMATION *s
 				tinput.hRtype	= PPXH_NAME_R;
 				tinput.title	= MES_TENN;
 				tinput.buff		= fname;
-				tinput.flag		= TIEX_USEREFLINE | TIEX_SINGLEREF | TIEX_REFEXT | TIEX_USEINFO;
+				tinput.flag		= TIEX_USEREFLINE | TIEX_SINGLEREF | TIEX_REFEXT | TIEX_USEINFO | TIEX_FIXFORPATH;
 				tinput.size		= (int)(VFPS - (fname - pathbuf));
 				tinput.info		= &finfo.info;
 				if ( tinput.size > MAX_PATH ) tinput.size = MAX_PATH;
@@ -1055,15 +1181,15 @@ void CountSub(FOPSTRUCT *FS,COUNTWORKSTRUCT *cws,TCHAR *dir,TCHAR *dest)
 	return;
 }
 
-BOOL CountMain(FOPSTRUCT *FS,const TCHAR *current,const TCHAR *destdir)
+BOOL CountMain(FOPSTRUCT *FS, const TCHAR *current, const TCHAR *destdir)
 {
 	const TCHAR *p;
-	TCHAR src[VFPS],dest[VFPS],*destlast;
+	TCHAR src[VFPS], dest[VFPS], *destlast;
 	int X_cntt;
 	COUNTWORKSTRUCT cws;
 
 	X_cntt = 10;
-	GetCustData(T("X_cntt"),&X_cntt,sizeof X_cntt);
+	GetCustData(T("X_cntt"), &X_cntt, sizeof X_cntt);
 	if ( X_cntt <= 0 ) return TRUE;
 
 	if ( (FS->opt.dtype != VFSDT_PATH) &&
@@ -1079,7 +1205,7 @@ BOOL CountMain(FOPSTRUCT *FS,const TCHAR *current,const TCHAR *destdir)
 		 (FS->opt.dtype == VFSDT_PATH) &&
 		 (destdir != NULL) &&
 		 !FS->opt.fop.sameSW ){
-		CatPath(dest,(TCHAR *)destdir,NilStr);
+		CatPath(dest, (TCHAR *)destdir, NilStr);
 		destlast = dest + tstrlen(dest);
 	}else{
 		dest[0] = '\0';
@@ -1088,8 +1214,8 @@ BOOL CountMain(FOPSTRUCT *FS,const TCHAR *current,const TCHAR *destdir)
 	cws.CountTick = GetTickCount() + X_cntt * 1000;
 	FS->state = FOP_COUNT;
 
-	SetDlgItemText(FS->hDlg,IDOK,MessageText(STR_FOPSKIP));
-	SetWindowText(FS->progs.hProgressWnd,MessageText(MES_IFCN));
+	SetDlgItemText(FS->hDlg, IDOK, MessageText(STR_FOPSKIP));
+	SetWindowText(FS->progs.hProgressWnd, MessageText(MES_IFCN));
 	for ( p = FS->opt.files ; *p ; p = p + tstrlen(p) + 1 ){
 		WIN32_FIND_DATA CountFF[2]; // ファイル情報
 		HANDLE hFF;
@@ -1098,7 +1224,7 @@ BOOL CountMain(FOPSTRUCT *FS,const TCHAR *current,const TCHAR *destdir)
 		if ( FS->opt.dtype == VFSDT_SHN ){
 			tstrcpy(src,p);
 		}else{
-			if ( VFSFullPath(src,(TCHAR *)p,current) == NULL ){
+			if ( VFSFullPath(src, (TCHAR *)p, current) == NULL ){
 				continue;
 			}
 		}
@@ -1113,22 +1239,22 @@ BOOL CountMain(FOPSTRUCT *FS,const TCHAR *current,const TCHAR *destdir)
 			break;
 		}
 
-		hFF = VFSFindFirst(src,&CountSrcFF);
+		hFF = VFSFindFirst(src, &CountSrcFF);
 		if ( hFF != INVALID_HANDLE_VALUE ){
 			VFSFindClose(hFF);
-			if ( dest[0] != '\0' ) tstrcpy(destlast,CountSrcFF.cFileName);
+			if ( dest[0] != '\0' ) tstrcpy(destlast, CountSrcFF.cFileName);
 			if ( CountSrcFF.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ){
-				CountSub(FS,&cws,src,dest);
+				CountSub(FS, &cws, src, dest);
 			}else{
-				AddDD(FS->progs.info.allsize.l,FS->progs.info.allsize.h,
-						CountSrcFF.nFileSizeLow,CountSrcFF.nFileSizeHigh);
+				AddDD(FS->progs.info.allsize.l, FS->progs.info.allsize.h,
+						CountSrcFF.nFileSizeLow, CountSrcFF.nFileSizeHigh);
 				FS->progs.info.filesall++;
 				if ( dest[0] != '\0' ){
 					HANDLE hDestFF;
 
-					if ( (hDestFF = FindFirstFileL(dest,&CountDestFF)) != INVALID_HANDLE_VALUE ){
+					if ( (hDestFF = FindFirstFileL(dest, &CountDestFF)) != INVALID_HANDLE_VALUE ){
 						FindClose(hDestFF);
-						Count_Exists(FS,&cws,CountFF,CountSrcFF.cFileName,src,dest);
+						Count_Exists(FS, &cws, CountFF, CountSrcFF.cFileName, src,dest);
 					}
 				}
 			}
@@ -1137,15 +1263,15 @@ BOOL CountMain(FOPSTRUCT *FS,const TCHAR *current,const TCHAR *destdir)
 	if ( FS->state == FOP_TOBREAK ) return FALSE;
 
 	if ( FS->progs.info.count_exists != 0 ){
-		SendMessage(FS->hEWnd,WM_SETREDRAW,TRUE,0);
-		InvalidateRect(FS->hEWnd,NULL,TRUE);
+		SendMessage(FS->hEWnd, WM_SETREDRAW, TRUE, 0);
+		InvalidateRect(FS->hEWnd, NULL, TRUE);
 		if ( FS->progs.info.count_exists >= 2 ){
-			if ( ShowExistsList(FS,&cws) != NO_ERROR ) return FALSE;
+			if ( ShowExistsList(FS, &cws) != NO_ERROR ) return FALSE;
 		}
 	}
 
-	InvalidateRect(FS->progs.hProgressWnd,NULL,TRUE);
-	SetWindowText(FS->progs.hProgressWnd,NilStr);
+	InvalidateRect(FS->progs.hProgressWnd, NULL, TRUE);
+	SetWindowText(FS->progs.hProgressWnd, NilStr);
 	return TRUE;
 }
 
@@ -1163,13 +1289,13 @@ void USEFASTCALL EndOperation(FOPSTRUCT *FS)
 	if ( FS->hUndoLogFile != NULL ) CloseHandle(FS->hUndoLogFile);
 	if ( FS->opt.fop.flags & VFSFOP_OPTFLAG_LOGWINDOW ){
 		if ( (FS->opt.hReturnWnd != NULL) && IsWindow(FS->opt.hReturnWnd) ){
-			SendMessage(FS->opt.hReturnWnd,WM_PPXCOMMAND,TMAKEWPARAM(K_WINDDOWLOG,2),0);
+			SendMessage(FS->opt.hReturnWnd, WM_PPXCOMMAND, TMAKEWPARAM(K_WINDDOWLOG,2), 0);
 		}
 	}
-	SetJobTask(FS->hDlg,JOBSTATE_ENDJOB);
+	SetJobTask(FS->hDlg, JOBSTATE_ENDJOB);
 }
 
-BOOL Fop_ShellNameSpace(FOPSTRUCT *FS,const TCHAR *srcDIR,const TCHAR *dstDIR)
+BOOL Fop_ShellNameSpace(FOPSTRUCT *FS, const TCHAR *srcDIR, const TCHAR *dstDIR)
 {
 	LPSHELLFOLDER pParentFolder = NULL;
 	LPITEMIDLIST *PIDLs = NULL;
@@ -1179,38 +1305,56 @@ BOOL Fop_ShellNameSpace(FOPSTRUCT *FS,const TCHAR *srcDIR,const TCHAR *dstDIR)
 	BOOL result = FALSE;
 	HRESULT ComInitResult;
 
-	ComInitResult = CoInitializeEx(NULL,COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	ComInitResult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	if ( !((FS->opt.fop.mode == FOPMODE_COPY) ||
 		   (FS->opt.fop.mode == FOPMODE_MOVE)) ){
-		XMessage(FS->hDlg,STR_FOP,XM_FaERRd,T("No support this mode"));
+		XMessage(FS->hDlg, STR_FOP, XM_FaERRd, T("No support this mode"));
 		goto fin;
 	}
-	DropTarget = (IDropTarget *)GetPathInterface(FS->hDlg,dstDIR,&IID_IDropTarget,NULL);
+	DropTarget = (IDropTarget *)GetPathInterface(FS->hDlg, dstDIR, &IID_IDropTarget, NULL);
 	if ( DropTarget == NULL ){
-		XMessage(FS->hDlg,STR_FOP,XM_FaERRd,T("Destination bind error"));
+		XMessage(FS->hDlg, STR_FOP, XM_FaERRd, T("Destination bind error"));
 		goto fin;
 	}
-	count = FopMakePIDLTable(srcDIR,FS->opt.files,&PIDLs,&pParentFolder);
+	count = FopMakePIDLTable(srcDIR, FS->opt.files, &PIDLs, &pParentFolder);
 	if ( count == 0 ) goto fin;
 
-	if ( FAILED(pParentFolder->lpVtbl->GetUIObjectOf(pParentFolder,NULL,count,(LPCITEMIDLIST *)PIDLs,&IID_IDataObject,NULL,(void **)&DataObject) )){
-		XMessage(FS->hDlg,STR_FOP,XM_FaERRd,T("Source bind error"));
+	if ( FAILED(pParentFolder->lpVtbl->GetUIObjectOf(pParentFolder, NULL, count, (LPCITEMIDLIST *)PIDLs, &IID_IDataObject, NULL, (void **)&DataObject) )){
+		XMessage(FS->hDlg, STR_FOP, XM_FaERRd, T("Source bind error"));
 		goto fin;
 	}
-	result = CopyToDropTarget(DataObject,DropTarget,FALSE,FS->hDlg,
+	result = CopyToDropTarget(DataObject, DropTarget, FALSE, FS->hDlg,
 			(FS->opt.fop.mode == FOPMODE_COPY) ?
 				DROPEFFECT_COPY : DROPEFFECT_MOVE);
-	DataObject->lpVtbl->Release(DataObject);
+	{ // DataObject の使用が終わるまで待機する(MTPがバッググラウンドで使用する)
+		ULONG ref;
+		TCHAR progs[] = T("\x1b\x64\x1");
+
+		for ( ;; ){
+			DataObject->lpVtbl->AddRef(DataObject);
+			ref = DataObject->lpVtbl->Release(DataObject); // 使用が終わっていたら、直前の AddRef 分だけ(1)になるはず
+			if ( ref <= 1 ) break;
+			Sleep(100);
+			PeekMessageLoopSub(FS);
+			if ( FS->state == FOP_TOBREAK ) break;
+
+			SetWindowText(FS->progs.hProgressWnd, progs);
+			progs[2] += (TCHAR)1;
+			if ( progs[2] > '\xa' ) progs[2] = '\x1';
+		}
+		if ( ref > 0 ) DataObject->lpVtbl->Release(DataObject);
+	}
+
 
 	if ( result == FALSE ){
-		XMessage(FS->hDlg,STR_FOP,XM_FaERRd,T("Operation fault"));
+		XMessage(FS->hDlg, STR_FOP, XM_FaERRd, T("Operation fault"));
 	}
 	FS->DestroyWait = TRUE; // メディアプレイヤーへ処理を行うとき、メッセージポンプをしばらく動かす対策を有効にする
 fin:
 	if ( pParentFolder != NULL ) pParentFolder->lpVtbl->Release(pParentFolder);
 	if ( PIDLs != NULL ){
-		FreePIDLS(PIDLs,count); // C4701ok
-		HeapFree(ProcHeap,0,PIDLs);
+		FreePIDLS(PIDLs, count); // C4701ok
+		HeapFree(ProcHeap, 0, PIDLs);
 	}
 	if ( DropTarget != NULL ) DropTarget->lpVtbl->Release(DropTarget);
 	if ( SUCCEEDED(ComInitResult) ) CoUninitialize();
@@ -1224,8 +1368,8 @@ fin:
 		TCHAR path[VFPS];
 		PPXCMDENUMSTRUCT IInfo;
 
-		if ( PPxEnumInfoFunc(FS->info,'2',path,&IInfo) ){
-			if ( tstrcmp(path,dstDIR) == 0 ){
+		if ( PPxEnumInfoFunc(FS->info, '2', path, &IInfo) ){
+			if ( tstrcmp(path, dstDIR) == 0 ){
 				PostMessage(
 			}
 		}
@@ -1651,6 +1795,7 @@ HWND FopGetMsgParentWnd(FOPSTRUCT *FS)
 	return hWnd;
 }
 
+
 BOOL OperationStart(FOPSTRUCT *FS)
 {
 	TCHAR srcPath[VFPS],dstPath[VFPS];
@@ -1693,13 +1838,7 @@ BOOL OperationStart(FOPSTRUCT *FS)
 	}
 
 	if ( FS->opt.fop.flags & VFSFOP_OPTFLAG_PREVENTSLEEP ){
-		if ( DSetThreadExecutionState == INVALID_VALUE(impSetThreadExecutionState) ){
-			GETDLLPROC(hKernel32,SetThreadExecutionState);
-		}
-		if ( DSetThreadExecutionState != NULL ){
-			SetTimer(hDlg,TIMERID_PREVENTSLEEP,TIMERRATE_PREVENTSLEEP,PreventSleepProc);
-			PreventSleepProc(hDlg,WM_TIMER,TIMERID_PREVENTSLEEP,0);
-		}
+		StartPreventSleep(hDlg);
 	}
 
 	FS->progs.ProgTick = 0;
@@ -2148,11 +2287,7 @@ void EndingOperation(FOPSTRUCT *FS)
 {
 	SetFopLowPriority(NULL);
 	if ( FS->opt.fop.flags & VFSFOP_OPTFLAG_PREVENTSLEEP ){
-		if ( (DSetThreadExecutionState != NULL) &&
-			 (DSetThreadExecutionState != INVALID_VALUE(impSetThreadExecutionState)) ){
-			KillTimer(FS->hDlg,TIMERID_PREVENTSLEEP);
-			DSetThreadExecutionState(ES_CONTINUOUS);
-		}
+		EndPreventSleep(FS->hDlg);
 	}
 	if ( FS->opt.rexps != NULL ){
 		FreeRegularExpressionReplace(FS->opt.rexps);

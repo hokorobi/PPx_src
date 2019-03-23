@@ -311,7 +311,6 @@ TCHAR *SearchFileInedMain(ESTRUCT *ED, TCHAR *str, int mode)
 		if ( ED->cmdsearch & (CMDSEARCH_FLOAT | CMDSEARCH_ROMA) ){
 			if ( ED->cmdsearch & CMDSEARCH_ROMA ){
 				if ( SearchRomaString(ff.cFileName, ED->Fword, ISEA_ROMA | ISEA_FLOAT | ISEA_FNAME, &ED->romahandle) == FALSE ){
-					if ( ED == NULL ) return NULL; // SearchRomaStringÇÃÇ«Ç±Ç©Ç≈ EDîjâÛÅH
 					continue;
 				}
 			}else{ // CMDSEARCH_FLOAT

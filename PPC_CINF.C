@@ -12,7 +12,6 @@
 #include "PPC_DD.H"
 #pragma hdrstop
 
-const TCHAR PreviewWindowClass[] = T("PPcPreview");
 const TCHAR StrTemp[] = T("temp");
 const TCHAR StrThisPath[] = T("thispath");
 const TCHAR StrThisBranch[] = T("thisbranch");
@@ -21,71 +20,6 @@ const TCHAR StrRegID[] = T("id");
 const TCHAR *StrDSMDlist[] = { NilStr,StrTemp,StrThisPath,StrThisBranch,StrRegID};
 
 ERRORCODE PPcDirOptionCommand(PPC_APPINFO *cinfo,const TCHAR *param);
-
-/*
-BOOL CALLBACK PreviewWndEnumCloseProc(HWND hWnd,LPARAM hParentWnd)
-{
-	if ( GetParent(hWnd) == (HWND)hParentWnd ){
-		SendMessage(hWnd,WM_CLOSE,0,0);
-	}
-	return TRUE;
-}
-*/
-
-LRESULT CALLBACK PreviewWndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
-{
-	if ( message == WM_DESTROY ){
-//		EnumChildWindows(hWnd,PreviewWndEnumCloseProc,(LPARAM)hWnd);
-		hPreviewWnd = NULL;
-	}
-	return DefWindowProc(hWnd,message,wParam,lParam);
-}
-
-void PreviewWindowCommand(PPC_APPINFO *cinfo)
-{
-	WNDCLASS wndClass;
-	DWORD StyleEx = WS_EX_TOOLWINDOW;
-	TCHAR buf[CMDLINESIZE],name[VFPS];
-
-	if ( hPreviewWnd == NULL ){
-		wndClass.style			= CS_DBLCLKS;
-		wndClass.lpfnWndProc	= PreviewWndProc;
-		wndClass.cbClsExtra		= 0;
-		wndClass.cbWndExtra		= 0;
-		wndClass.hInstance		= hInst;
-		wndClass.hIcon			= NULL;
-		wndClass.hCursor		= LoadCursor(NULL,IDC_ARROW);
-		wndClass.hbrBackground	= NULL;
-		wndClass.lpszMenuName	= NULL;
-		wndClass.lpszClassName	= PreviewWindowClass;
-		RegisterClass(&wndClass);
-
-		if ( OSver.dwMajorVersion >= 5 ) StyleEx |= WS_EX_NOACTIVATE;
-
-// ●UIスレッドがないと、任意のPPcを閉じるタイミングで機能しなくなってしまう
-		hPreviewWnd = CreateWindowEx(StyleEx,PreviewWindowClass,NilStr,
-				WS_POPUP | WS_BORDER,0,0,1,1,/*cinfo->info.hWnd*/ NULL,
-				NULL,hInst,NULL);
-		StyleEx = 0;
-	}
-
-	SetWindowPos(hPreviewWnd,HWND_TOP,0,0, 512,512,
-			/*SWP_NOMOVE | SWP_NOSIZE |*/ SWP_NOACTIVATE | SWP_SHOWWINDOW);
-
-	VFSFullPath(name,(TCHAR *)GetCellFileName(cinfo,&CEL(cinfo->e.cellN),buf),cinfo->RealPath);
-
-	if ( StyleEx == 0 ){
-	#ifdef UNICODE
-		wsprintf(buf,L"ppvw.exe"
-	#else
-		wsprintf(buf,"ppv.exe"
-	#endif
-		T(" /r /bootid:P%c /P%u \"%s\""),cinfo->info.RegID[2],hPreviewWnd,name);
-		ComExec(cinfo->info.hWnd,buf,cinfo->RealPath);
-	}else{
-
-	}
-}
 
 typedef struct {
 	HWND hChildWnd;
@@ -1078,11 +1012,13 @@ end:
 	*dest = '\0';
 }
 
-void PPcEntryTip(PPC_APPINFO *cinfo,const TCHAR *param)
+void PPcEntryTip(PPC_APPINFO *cinfo,const TCHAR *param) // *entrytip
 {
 	TCHAR buf[CMDLINESIZE], *more;
-	int mode = -1;
+	int mode = 0;
+	int flags;
 
+	flags = (cinfo->PopupPosType == PPT_FOCUS) ? 0 : STIP_MOUSE;
 	for (;;){
 		TCHAR chr;
 
@@ -1097,26 +1033,19 @@ void PPcEntryTip(PPC_APPINFO *cinfo,const TCHAR *param)
 		if ( tstrcmp(buf, T("filename") ) == 0 ) mode = stip_mode_filename;
 		if ( tstrcmp(buf, T("fileinfo") ) == 0 ) mode = stip_mode_fileinfo;
 		if ( tstrcmp(buf, T("comment") ) == 0 ) mode = stip_mode_comment;
-		if ( tstrcmp(buf, T("hover") ) == 0 ){
-			cinfo->X_stip_hover = 1;
-			return;
-		}
-		if ( tstrcmp(buf, T("close") ) == 0 ){
+		if ( tstrcmp(buf, T("preview") ) == 0 ) mode = stip_mode_preview;
+		if ( tstrcmp(buf + 1, T("MOUSE") ) == 0 ) flags = STIP_MOUSE;
+		if ( tstrcmp(buf + 1, T("CELL") ) == 0 ) flags = 0;
+		if ( tstricmp(buf, T("close") ) == 0 ){
 			HideFileNameTip(cinfo);
 			return;
 		}
 	}
-	if ( mode < 0 ){
-		cinfo->X_stip_mode--;
-		if ( cinfo->X_stip_mode < 0 ){
-			cinfo->X_stip_mode = stip_mode_fileinfo;
-		}
-	}else{
-		cinfo->X_stip_mode = mode;
+	if ( mode <= 0 ){
+		mode = cinfo->Tip.X_stip_mode - 1;
+		if ( mode <= 0 ) mode = stip_mode_togglemax;
 	}
-
-	setflag(X_stip, STIP_NOW);
-	RefleshCell(cinfo, cinfo->e.cellN);
+	ShowTipNow(cinfo, flags, mode, cinfo->e.cellN);
 }
 
 void SetEntryImage(PPC_APPINFO *cinfo,const TCHAR *param)
@@ -1755,8 +1684,8 @@ const TCHAR *GetCellFileName(PPC_APPINFO *cinfo,ENTRYCELL *cell,TCHAR *namebuf)
 		int len = tstrlen32(cinfo->RealPath);
 
 		// 試しに実体化させ、RealPath と name で合成可能なら name を返す
-		VFSGetRealPath(cinfo->info.hWnd,namebuf,namebuf);
-		if ( (memcmp(namebuf,cinfo->RealPath,TSTROFF(len)) == 0) &&
+		VFSGetRealPath(cinfo->info.hWnd, namebuf, namebuf);
+		if ( (memcmp(namebuf, cinfo->RealPath, TSTROFF(len)) == 0) &&
 			 (namebuf[len] == '\\') ){
 			if ( tstrcmp(namebuf + len + 1,name) == 0 ) return name;
 			// RealPath 部は一致するが、name が異なる
@@ -2285,7 +2214,7 @@ ERRORCODE PPcGetIInfo_Command(PPC_APPINFO *cinfo,PPXAPPINFOUNION *uptr)
 		}else if ( !tstrcmp(uptr->str,T("DOCK")) ){
 			PPcDockCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("EXECINARC")) ){
-			if ( cinfo->UnpackFix == FALSE ) OnArcPathMode(cinfo);
+			OnArcPathMode(cinfo);
 		}else if ( !tstrcmp(uptr->str,T("ENTRYTIP")) ){
 			PPcEntryTip(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("HIGHLIGHT")) ){
@@ -2320,16 +2249,6 @@ ERRORCODE PPcGetIInfo_Command(PPC_APPINFO *cinfo,PPXAPPINFOUNION *uptr)
 			PPcFileCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("PPVOPTION")) ){
 			PPvOptionCommand(cinfo, param);
-		}else if ( !tstrcmp(uptr->str,T("PREVIEW")) ){ // ●1.1x試作品
-			PreviewWindowCommand(cinfo);
-		/*
-			if ( PreviewCommand(&cinfo->bg, param,cinfo->RealPath) ){
-				cinfo->FullDraw = X_fles | 1;
-			}else{
-				cinfo->FullDraw = X_fles;
-			}
-			InvalidateRect(cinfo->info.hWnd,NULL,TRUE);
-		*/
 		}else if ( !tstrcmp(uptr->str,T("SENDTO")) ){
 			ExecSendTo(cinfo, param);
 		}else if ( !tstrcmp(uptr->str,T("SETMASKENTRY")) ){

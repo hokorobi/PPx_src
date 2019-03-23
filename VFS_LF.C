@@ -19,10 +19,10 @@ const TCHAR TypeName_ListFile[] = T("List");
 TCHAR *GetListLines(FF_LFILE *list)
 {
 	TCHAR *ptr,*bottom;
-	const TCHAR *max = list->max;
+	const TCHAR *maxptr = list->maxptr;
 
-	bottom = ptr = list->p;
-	while (ptr < max){
+	bottom = ptr = list->readptr;
+	while ( ptr < maxptr ){
 		bottom = ptr = SkipSpaceAndFix(ptr);
 		if ( *ptr == '\0' ){		// ãÛçs?
 			ptr++;
@@ -49,7 +49,7 @@ TCHAR *GetListLines(FF_LFILE *list)
 		}
 		if ( *bottom != '\0' ) break;
 	}
-	list->p = ptr;
+	list->readptr = ptr;
 	return bottom;
 }
 // çsññãÛîíÇèúãéÇQ -----------------------------------------------------------
@@ -62,12 +62,12 @@ void ReadFileTime(TCHAR **ptr,FILETIME *ft)
 
 void GetP(TCHAR **ptr,TCHAR *dest,int size)
 {
-	TCHAR *max;
+	TCHAR *maxptr;
 
-	max = dest + size - 1;
+	maxptr = dest + size - 1;
 	(*ptr)++;
 	while ( (**ptr != '\"') && ((UTCHAR)**ptr) ){
-		if ( dest < max ){
+		if ( dest < maxptr ){
 			*dest++ = *(*ptr)++;
 		}else{
 			(*ptr)++;
@@ -81,7 +81,7 @@ BOOL GetListLine(FF_LFILE *list,WIN32_FIND_DATA *findfile)
 {
 	TCHAR *line;
 
-	if ( list->p >= list->max ) goto EOL;
+	if ( list->readptr >= list->maxptr ) goto EOL;
 	line = GetListLines(list);
 
 	memset(findfile,0,(BYTE *)findfile->cFileName - (BYTE *)findfile + sizeof(TCHAR));
@@ -192,7 +192,7 @@ ERRORCODE InitFindFirstListFile(VFSFINDFIRST *VFF,const TCHAR *Fname,WIN32_FIND_
 {
 	ERRORCODE result;
 
-	result = LoadTextImage(Fname,&VFF->v.LFILE.mem,&VFF->v.LFILE.p,&VFF->v.LFILE.max);
+	result = LoadTextImage(Fname, &VFF->v.LFILE.mem, &VFF->v.LFILE.readptr, &VFF->v.LFILE.maxptr);
 	if ( result == NO_ERROR ){
 		VFF->v.LFILE.type = VFSDT_LFILE_TYPE_PARENT;
 		VFF->v.LFILE.base = NilStr;
@@ -203,11 +203,11 @@ ERRORCODE InitFindFirstListFile(VFSFINDFIRST *VFF,const TCHAR *Fname,WIN32_FIND_
 		findfile->dwReserved0 = 0;
 		findfile->dwReserved1 = 0;
 
-		while ( VFF->v.LFILE.p < (VFF->v.LFILE.max - 2) ){
+		while ( VFF->v.LFILE.readptr < (VFF->v.LFILE.maxptr - 2) ){
 			const TCHAR *line;
 
-			if ( *VFF->v.LFILE.p != ';' ) break;
-			VFF->v.LFILE.p++;
+			if ( *VFF->v.LFILE.readptr != ';' ) break;
+			VFF->v.LFILE.readptr++;
 			line = GetListLines(&VFF->v.LFILE);
 			if ( memcmp(line,T("Base="),5 * sizeof(TCHAR)) == 0 ){
 				VFF->v.LFILE.base = line + 5;

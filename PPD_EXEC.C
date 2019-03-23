@@ -538,6 +538,60 @@ BOOL WaitJobDialog(HWND hWnd,HANDLE handle,const TCHAR *title,DWORD flags)
 	return wds.user;
 }
 
+DefineWinAPI(DWORD, GetProcessId, (HANDLE Process));
+
+#pragma argsused
+void DummyGetProcessID(HANDLE hProcess, DWORD *ExitCode)
+{
+	UnUsedParam(hProcess);
+
+	if ( ExitCode != NULL ) *ExitCode = -1;
+}
+
+void GetProcessIDMain(HANDLE hProcess, DWORD *ExitCode)
+{
+	if ( ExitCode != NULL ) *ExitCode = DGetProcessId(hProcess);
+}
+void InitGetProcessID(HANDLE hProcess, DWORD *ExitCode);
+void (* GetProcessIDx)(HANDLE hProcess, DWORD *ExitCode) = InitGetProcessID;
+
+/*
+BOOL CALLBACK FindProcessWindow(HWND hWnd, LPARAM lParam)
+{
+	DWORD processID;
+
+	if ( 0 != GetWindowThreadProcessId(hWnd, &processID) ){
+		if ( processID == (DWORD)lParam ){
+			Message("!");
+			PostMessage(hWnd, WM_CLOSE, 0, 0);
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+*/
+void InitGetProcessID(HANDLE hProcess, DWORD *ExitCode)
+{
+	DGetProcessId = GETDLLPROC(hKernel32,GetProcessId);
+	if ( DGetProcessId == NULL ){
+		GetProcessIDx = DummyGetProcessID;
+	}else{
+		GetProcessIDx = GetProcessIDMain;
+	}
+	GetProcessIDx(hProcess, ExitCode);
+/*
+	if ( (ExitCode != NULL) && (*ExitCode != 0xffffffff) ){
+		int i;
+		for ( i = 0 ; i < 10000 ; i+= 100 ){
+			if ( FALSE == EnumWindows(FindProcessWindow,(LPARAM)*ExitCode) ){
+				break;
+			}
+			Sleep(100);
+		}
+	}
+*/
+}
+
 BOOL ComExecSelfShell(HWND hOwner,const TCHAR *title,const TCHAR *exename,const TCHAR *param,const TCHAR *path,int flag,DWORD *ExitCode)
 {
 	HANDLE hProcess;
@@ -552,8 +606,10 @@ BOOL ComExecSelfShell(HWND hOwner,const TCHAR *title,const TCHAR *exename,const 
 				result = WaitJobDialog(hOwner,hProcess,title,flag & XEO_WAITQUIET);
 				if ( ExitCode != NULL ){
 					*ExitCode = (DWORD)-1;
-					GetExitCodeProcess(hProcess,ExitCode);
+					GetExitCodeProcess(hProcess, ExitCode);
 				}
+			}else{
+				GetProcessIDx(hProcess, ExitCode);
 			}
 			CloseHandle(hProcess);
 			return result;
@@ -772,8 +828,10 @@ BOOL ComExecSelf(HWND hOwner,const TCHAR *execarg,const TCHAR *path,int flags,DW
 			result = WaitJobDialog(hOwner,pi.hProcess,execarg,flags & XEO_WAITQUIET);
 			if ( ExitCode != NULL ){
 				*ExitCode = (DWORD)-1;
-				GetExitCodeProcess(pi.hProcess,ExitCode);
+				GetExitCodeProcess(pi.hProcess, ExitCode);
 			}
+		}else{
+			GetProcessIDx(pi.hProcess, ExitCode);
 		}
 		CloseHandle(pi.hProcess);
 	}else{

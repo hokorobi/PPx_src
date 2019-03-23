@@ -428,7 +428,7 @@ const TCHAR *GetThreadName(DWORD id)
 void QueryEncode(TCHAR *dst)
 {
 	char bufA[CMDLINESIZE],*srcA;
-	TCHAR *dest,*max;
+	TCHAR *dest, *maxptr;
 
 #ifdef UNICODE
 	WideCharToMultiByteU8(CP_UTF8,0,dst,-1,bufA,CMDLINESIZE,NULL,NULL);
@@ -440,8 +440,8 @@ void QueryEncode(TCHAR *dst)
 #endif
 	srcA = bufA;
 	dest = dst;
-	max = dest + WSSIZE - 100;
-	while ( dest < max ){
+	maxptr = dest + WSSIZE - 100;
+	while ( dest < maxptr ){
 		BYTE c;
 
 		c = (BYTE)*srcA++;
@@ -650,7 +650,7 @@ DWORD WINAPI PPxUnhandledExceptionFilterMain(ExceptionData *EP)
 	hProcess = GetCurrentProcess();
 
 	if ( DSymInitialize == NULL ){
-		LoadWinAPI("IMAGEHLP.DLL",NULL,IMAGEHLPDLL,LOADWINAPI_LOAD);
+		LoadSystemWinAPI(SYSTEMDLL_IMAGEHLP, IMAGEHLPDLL);
 	}
 	if ( DSymInitialize != NULL ){
 		DSymInitialize(hProcess,NULL,TRUE);
@@ -1048,7 +1048,7 @@ void CPUinfo(void)
 
 	hProcess = GetCurrentProcess();
 	if ( DSymInitialize == NULL ){
-		LoadWinAPI("IMAGEHLP.DLL",NULL,IMAGEHLPDLL,LOADWINAPI_LOAD);
+		LoadSystemWinAPI(SYSTEMDLL_IMAGEHLP, IMAGEHLPDLL);
 	}
 	if ( DSymInitialize != NULL ){
 		DSymInitialize(hProcess,NULL,TRUE);
@@ -1157,7 +1157,7 @@ void GetThreadInfo(void)
 		if ( DNtQueryInformationThread == NULL ) return;
 	}
 	if ( DSymInitialize == NULL ){
-		if ( LoadWinAPI("IMAGEHLP.DLL",NULL,IMAGEHLPDLL,LOADWINAPI_LOAD) == NULL ){
+		if ( LoadSystemWinAPI(SYSTEMDLL_IMAGEHLP, IMAGEHLPDLL) == NULL ){
 			return;
 		}
 		DSymInitialize(GetCurrentProcess(),NULL,TRUE);

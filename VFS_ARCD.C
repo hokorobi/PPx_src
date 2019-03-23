@@ -340,7 +340,7 @@ VFSDLL void PPXAPI VFSOff(void)
 	}
 	// ‚Â‚¢‚Å‚É ³‹K•\Œ»,migemo ‚à‰ğ•ú‚·‚é
 	FreeRMatch();
-	if ( hMigemoDLL != NULL ) FreeMigemo();
+	FreeMigemo();
 	FreePPxModule();
 }
 

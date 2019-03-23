@@ -74,6 +74,11 @@ LRESULT ComboGetIDWnd(LPARAM lParam)
 	return (LRESULT)GetHwndFromIDCombo(regid);
 }
 
+/* KCW_ppclist 本体
+?Cxxxx\0path\0 がタブだけある
+\t\0\t\0 がペインの区切り
+? = space / *(focus) / ~(pair) / +(show)
+*/
 LRESULT ComboGetPPcList(DWORD mode)
 {
 	int tabid;

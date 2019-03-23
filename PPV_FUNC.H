@@ -36,7 +36,7 @@ extern void Rotate(HWND hWnd,int d);
 extern void ModifyAlpha(HWND hWnd);
 
 //------------------------------------------------------------------ ppv_init.c
-extern BOOL InitializePPv(int *result,const TCHAR *lpszCmdLine);
+extern BOOL InitializePPv(int *result);
 extern void PPvLoadCust(void);
 extern void PPvSaveCust(void);
 extern void DeleteFonts(void);
@@ -116,7 +116,7 @@ extern void DoFind(HWND hWnd,int mode);
 extern void JumpLine(const TCHAR *linestr);
 extern void ResetSelect(BOOL csrOff);
 extern void FixSelectRange(void);
-extern void InitCursorMode(HWND hWnd);
+extern void InitCursorMode(HWND hWnd, BOOL initpos);
 extern int PPvTrackPopupMenu(HMENU hMenu);
 extern void GetPopupPosition(POINT *pos);
 extern void PPvMinimize(HWND hWnd);

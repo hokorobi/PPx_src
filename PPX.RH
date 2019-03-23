@@ -206,12 +206,12 @@
 //
 #define IDD_FOP_OPTION		0x705b	// ID-オプションシート -----
 #define IDX_FOP_NOWCREATEDIR 0x7054	// VFSFOP_OPTFLAG_NOWCREATEDIR
-#define IDX_FOP_SKIP		0x7035		// VFSFOP_OPTFLAG_SKIPERROR
+#define IDX_FOP_SKIP		0x7035	// VFSFOP_OPTFLAG_SKIPERROR
 #define IDX_FOP_LOGRWAIT	0x7059	// VFSFOP_OPTFLAG_LOGRWAIT
 #define IDX_FOP_BACKUPOLD	0x7050	// VFSFOP_OPTFLAG_BACKUPOLD
 #define IDX_FOP_USELOGWINDOW 0x704c	// VFSFOP_OPTFLAG_LOGWINDOW
-#define IDX_FOP_UNDOLOG		0x704d		// VFSFOP_OPTFLAG_UNDOLOG
-#define IDX_FOP_LOWPRI		0x7055		// VFSFOP_OPTFLAG_LOWPRI
+#define IDX_FOP_UNDOLOG		0x704d	// VFSFOP_OPTFLAG_UNDOLOG
+#define IDX_FOP_LOWPRI		0x7055	// VFSFOP_OPTFLAG_LOWPRI
 #define IDX_FOP_PREVENTSLEEP 0x7070	// VFSFOP_OPTFLAG_PREVENTSLEEP
 #define IDX_FOP_ALLOWDECRYPT 0x7071	// VFSFOP_OPTFLAG_ALLOWDECRYPT
 #define IDX_FOP_COUNTSIZE	0x7074	// !VFSFOP_OPTFLAG_NOCOUNT
@@ -229,7 +229,7 @@
 //============================================================== CUST 74xx-77xx
 //									74xx
 #define IDB_TEST		0x7400
-#define IDB_INSMAC		0x7401
+//#define IDB_INSMAC		0x7401
 //#define IDD_BLANK		0x7402
 #define IDD_CMDTREE		0x7402
 //-------------------------------------- list
@@ -238,35 +238,35 @@
 //------------------------------------------------------------- File tab
 #define IDD_INFO		0x7410
 #define IDD_INFOE		0x7420
-#define IDG_cust		0x7411
+#define IDG_cust		0x7411	// カスタマイズ設定
 #define IDB_CS			0x7412
 #define IDB_CA			0x7413
 #define IDB_CU			0x7414
 #define IDB_CD			0x7415
 #define IDB_CINIT		0x7416
-#define IDG_hist		0x7417
+#define IDG_hist		0x7417	// ヒストリ
 #define IDB_HD			0x7418
 #define IDB_HINIT		0x7419
-#define IDB_TESTKEY		0x741a
-#define IDS_INFO		0x741b
-#define IDB_REGPPC		0x741c
+#define IDB_TESTKEY		0x741a	// キー調査
+#define IDS_INFO		0x741b	// カスタマイズ領域情報
+#define IDB_REGPPC		0x741c	// 関連付
 #define IDB_UNREGPPC	0x741d
 #define IDB_REGOPEN		0x741e
-#define IDX_CONSOLE		0x741f
-#define IDB_TEXTCUST	0x7421
+#define IDX_CONSOLE		0x741f	// コンソールウィンドウ表示
+#define IDB_TEXTCUST	0x7421	// text cust
 
 //------------------------------ File tab - text cust
 #define IDD_TEXTCUST	0x7428
 #define IDD_TEXTCUSTE	0x7429
-#define IDE_CUSTEDIT	0x742a
-#define IDE_CUSTLOG		0x742b
+#define IDE_CUSTEDIT	0x742a	// 編集欄
+#define IDE_CUSTLOG		0x742b	// ログ
 #define IDX_APPEND		0x742c
 
 //------------------------------------------------------------- General
 #define IDD_GENERAL		0x74F0
 #define IDD_GENERALE	0x74F8
-#define IDT_GENERAL		0x74F1
-#define IDT_GENERALITEM	0x74F2
+#define IDT_GENERAL		0x74F1	// 分類
+#define IDT_GENERALITEM	0x74F2	// 各項目
 #define IDE_FLOAT		0x74ff
 #define IDB_FLOAT		0x74fe
 #define IDE_FIND		0x74fd
@@ -274,24 +274,50 @@
 
 //------------------------------------------------------------- Ext,Key等共通
 //#define IDR_ALCKEY		0x74e0	// キー割当てラジオ
-//#define IDR_ALCCMD		0x74e1	// コマンドラジオ
-#define IDB_ALCSET		0x74e2	// 設定
-#define IDB_ALCDEL		0x74e3	// 削除
+#define IDB_TB_SETITEM	0x74e2	// 設定
+#define IDB_TB_DELITEM	0x74e3	// 削除
 #define IDB_ALCKEY		0x7464	// 割当先キー
 #define IDB_ALCNEW		0x74e4	// 新規設定
 
-//#define IDE_ALCKEY		0x74e5	// キー割当て
-#define IDE_ALCKEYNAME	0x7467	// 割当て名称
+								// 割当ての種類一覧 ---
+#define IDV_EXTYPE		0x7452	// 割当て種類一覧
+#define IDS_EXTYPE		0x7457
+#define IDE_EXTYPE		0x7451	// 割当て種類名
+#define IDC_TB_TYPEMASK	0x74e1	// 割当て種類名のマスク
+
+#define IDV_ALCLIST		0x746f	// IDE_EXTYPE で指定した種類のITEM一覧 ---
+#define IDL_EXITEM		0x7454	// IDV_ALCLIST の ListBox版
+#define IDS_EXITEML		0x7458
+#define IDE_EXITEM		0x7453	// ITEM名
+
+#define IDB_MEUP		0x7491	// ITEM位置移動
+#define IDB_MEDW		0x7492
+
+								// ITEM 内容関連
+//#define IDE_ALCKEY		0x74e5	// キー割当て一覧からの選択入力
+//#define IDE_ALCKEYNAME	0x7467	// 割当て名称
 #define IDC_ALCKEYG		0x74e7	// キー割当て-グループ
 #define IDC_ALCKEYS		0x74e8	// キー割当て-サブグループ
 
-#define IDG_ALCCMD		0x74e6
+#define IDG_ALCCMD		0x74e6	// 登録内容詳細 ---
 #define IDE_ALCCMD		0x74e9	// コマンドライン
 #define IDB_ALCCMDI		0x74ea	// よく使うマクロ文字挿入
 
-#define IDE_ALCCMT		0x74eb	// コメント
-#define IDB_ALCCMT		0x74ec	// コメント
-#define IDB_ALCCMDLIST	0x74ed	// コマンド一覧
+#define IDE_ALCCMT		0x74eb	// コメント欄
+#define IDB_ALCCMT		0x74ec	// コメント登録
+#define IDB_ALCCMDLIST	0x74ed	// コマンド一覧表示
+
+#define IDX_ALCEXLIST	0x746e	// 既定の割当ても一覧に表示
+//------------------------------------------------------------- ファイル判別
+#define IDD_EXT			0x7450
+#define IDD_EXTE		0x7456
+#define IDS_EXITEM		0x7455	// ファイル判別名の Windows 登録名称
+//------------------------------------------------------------- Key
+#define IDD_KEYD		0x7460
+#define IDD_KEYDE		0x7463
+//------------------------------------------------------------- Mouse
+#define IDD_MOUSED		0x7461
+#define IDD_MOUSEDE		0x7464
 
 #define IDC_ALCMOUSEB	0x7468	// マウスのボタンの種類
 #define IDC_ALCMOUSET	0x7469	// マウスの場所の種類
@@ -299,64 +325,46 @@
 #define IDB_ALCMOUSEU	0x746b	// マウスジェスチャー↑
 #define IDB_ALCMOUSED	0x746c	// マウスジェスチャー↓
 #define IDB_ALCMOUSER	0x746d	// マウスジェスチャー→
-
-#define IDX_ALCEXLIST	0x746e	// 既定の割当ても一覧に表示
-#define IDV_ALCLIST		0x746f	// 割当て一覧
-//------------------------------------------------------------- Ext
-#define IDD_EXT			0x7450
-#define IDD_EXTE		0x7456
-#define IDE_EXTYPE		0x7451
-#define IDV_EXTYPE		0x7452
-#define IDS_EXTYPE		0x7457
-#define IDE_EXITEM		0x7453
-#define IDL_EXITEM		0x7454
-#define IDS_EXITEM		0x7455
-#define IDS_EXITEML		0x7458
-//------------------------------------------------------------- Key/Mouse/Bar
-#define IDD_KEYD		0x7460
-#define IDD_KEYDE		0x7463
-#define IDD_MOUSED		0x7461
-#define IDD_MOUSEDE		0x7464
-#define IDD_BARD		0x7462
-#define IDD_BARDE		0x7465
 //------------------------------------------------------------- Menu
 #define IDD_MENUD		0x7490
 #define IDD_MENUDE		0x749a
-#define IDB_MEUP		0x7491
-#define IDB_MEDW		0x7492
-#define IDB_MEKEY		0x7493
-#define IDB_MESEP		0x7494
+#define IDB_MEKEY		0x7493	// キー割当て表記を更新
+//#define IDB_MESEP		0x7494
 #define IDB_MECKEYS		0x7495	// 区切り文字挿入
-#define IDB_HMCHARC		0x7496
-#define IDB_HMBACKC		0x7497
-#define IDB_BREF		0x7498
-#define IDL_BLIST		0x7499
-#define IDX_BNOBMP		0x749b
+//#define IDX_BNOBMP		0x749b
+//------------------------------------------------------------- ToolBar/Hidmenu
+#define IDD_BARD		0x7462
+#define IDD_BARDE		0x7465
+
+#define IDB_HMCHARC		0x7496	// 文字色
+#define IDB_HMBACKC		0x7497	// 背景色
+#define IDB_BREF		0x7498	// ボタン編集
+#define IDL_BLIST		0x7499	// 既定ボタン一覧
 //------------------------------------------------------------- Color
 #define IDD_COLOR		0x7430
 #define IDD_COLORE		0x743d
 #define IDS_GCTYPE		0x7431
-#define IDL_GCTYPE		0x7432
-#define IDS_GCITEM		0x7433
-#define IDL_GCITEM		0x7434
-#define IDE_GCEDIT		0x7435
+#define IDL_GCTYPE		0x7432	// 色種類一覧
+#define IDS_GCITEM		0x7433	// ITEM名
+#define IDL_GCITEM		0x7434	// ITEM一覧
+#define IDE_GCEDIT		0x7435	// ITEM名入力欄
 #define IDB_GCADD		0x7436
 #define IDB_GCDEL		0x7437
-#define IDS_GCOLOR		0x7439
+#define IDS_GCOLOR		0x7439	// 色一覧
 #define IDL_GCOLOR		0x743a
-#define IDB_GCSEL		0x743b
-#define IDX_GCULINE		0x743c
-#define IDB_GCSORTN		0x743e
-#define IDB_GCSORTC		0x743f
+#define IDB_GCSEL		0x743b	// その他の色選択
+#define IDX_GCULINE		0x743c	// console underline
+#define IDB_GCSORTN		0x743e	// sort - ext
+#define IDB_GCSORTC		0x743f	// sort - color
 //------------------------------------------------------------- Addon
 #define IDD_ADDON		0x7470
 #define IDD_ADDONE		0x7476
 #define IDL_AOSUSIE		0x7471
-#define IDE_AOSINFO		0x7472
+#define IDE_AOSINFO		0x7472	// addon が出力する情報
 #define IDX_AOSUSE		0x7473
 #define IDB_AOSSETTING	0x7474
-#define IDE_AOSMASK		0x7475
-#define IDB_ADDDEFEXT	0x7477
+#define IDE_AOSMASK		0x7475	// addon を有効にするファイル種類
+#define IDB_ADDDEFEXT	0x7477	// addon から有効拡張子を取得
 #define IDX_AOSDETECT	0x7478
 //------------------------------------------------------------- Etc
 #define IDD_ETCTREE		0x7480

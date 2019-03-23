@@ -13,18 +13,18 @@
 const TCHAR StrInvokeFind[] = T("find");
 const TCHAR StrInvokeProperties[] = T("properties");
 
-ERRORCODE PPXAPI PPcCommand(PPC_APPINFO *cinfo,WORD key)
+ERRORCODE PPXAPI PPcCommand(PPC_APPINFO *cinfo, WORD key)
 {
-	if ( !(key & K_raw) ) return ExecKeyCommand(&PPcExecKey,&cinfo->info,key);
+	if ( !(key & K_raw) ) return ExecKeyCommand(&PPcExecKey, &cinfo->info, key);
 
-	resetflag(key,K_raw);	// エイリアスビットを無効にする
-	DEBUGLOGC("PPcCommand:%04x",key);
+	resetflag(key, K_raw);	// エイリアスビットを無効にする
+	DEBUGLOGC("PPcCommand:%04x", key);
 	switch ( key ){
 //----------------------------------------------- 例外テスト用
 #if 0
 /*
 case '!': // 一般の例外 ... PPxでは無視
-	RaiseException(0x87654321,0,0,NULL);
+	RaiseException(0x87654321, 0, 0, NULL);
 	break;
 case '\"': // 書き込み違反
 	void t(void){ t(); }
@@ -40,16 +40,16 @@ case '$': // 読み込み違反
 case '%': { // 0割
 	int z = 0;
 	TCHAR a[1];
-	wsprintf(a,NilStr,1/z);
+	wsprintf(a, NilStr, 1/z);
 	break;
 }
 case '&': // 報告
-	PPxCommonExtCommand(K_SENDREPORT,(WPARAM)T("テスト"));
+	PPxCommonExtCommand(K_SENDREPORT, (WPARAM)T("テスト"));
 	break;
 #endif
 //----------------------------------------------- D&D
 case K_c | 'D':
-	AutoDDDialog(cinfo,NULL,AUTODD_HOOK | AUTODD_LEFT);
+	AutoDDDialog(cinfo, NULL, AUTODD_HOOK | AUTODD_LEFT);
 	break;
 //----------------------------------------------- Attribute
 case 'A':
@@ -62,23 +62,23 @@ case K_c | 'A':
 	break;
 //----------------------------------------------- Mark
 case K_s | K_c | 'A':
-	setflag(cinfo->DrawTargetFlags,DRAWT_ENTRY);
+	setflag(cinfo->DrawTargetFlags, DRAWT_ENTRY);
 	cinfo->MarkMask = 0x1f;
-	CellMark(cinfo,cinfo->e.cellN,MARK_REVERSE);
-	RefleshCell(cinfo,cinfo->e.cellN);
-	RefleshInfoBox(cinfo,DE_ATTR_MARK);
+	CellMark(cinfo, cinfo->e.cellN,  MARK_REVERSE);
+	RefleshCell(cinfo, cinfo->e.cellN);
+	RefleshInfoBox(cinfo, DE_ATTR_MARK);
 	break;
 //----------------------------------------------- Copy
 case 'C':
-	PPcFileOperation(cinfo,FileOperationMode_Copy,NULL,NULL);
+	PPcFileOperation(cinfo, FileOperationMode_Copy, NULL, NULL);
 	break;
 //----------------------------------------------- Copy
 case K_s | 'C':
-	return PPC_ExplorerCopy(cinfo,FALSE);
+	return PPC_ExplorerCopy(cinfo, FALSE);
 //----------------------------------------------- Clip Files
 case K_c | 'C':
-	ClipFiles(cinfo,DROPEFFECT_COPY | DROPEFFECT_LINK,CFT_FILE | CFT_TEXT);
-	SetPopMsg(cinfo,POPMSG_MSG,MES_CPDN);
+	ClipFiles(cinfo, DROPEFFECT_COPY | DROPEFFECT_LINK, CFT_FILE | CFT_TEXT);
+	SetPopMsg(cinfo, POPMSG_MSG, MES_CPDN);
 	break;
 //----------------------------------------------- Clip Directory
 case K_c | K_s | 'C':
@@ -103,17 +103,17 @@ case K_c | 'E':
 	break;
 //----------------------------------------------- Find
 case 'F':
-	return MaskEntry(cinfo,DSMD_TEMP,NULL,NULL);
+	return MaskEntry(cinfo, DSMD_TEMP, NULL, NULL);
 //----------------------------------------------- wildcard
 case K_s | 'F':
-	return MaskEntry(cinfo,DSMD_REGID,NULL,NULL);
+	return MaskEntry(cinfo, DSMD_REGID, NULL, NULL);
 //----------------------------------------------- File find
 case K_c | 'F':
 case K_F3:
 	if ( (OSver.dwMajorVersion >= 7) ||
 		 ((OSver.dwMajorVersion == 6) && (OSver.dwMinorVersion > 0)) ||
-		 (PPcSHContextMenu(cinfo,StrThisDir,StrInvokeFind) == FALSE) ){
-		return WhereIs(cinfo,0);
+		 (PPcSHContextMenu(cinfo, StrThisDir, StrInvokeFind) == FALSE) ){
+		return WhereIs(cinfo, 0);
 	}
 	break;
 //----------------------------------------------- Swap
@@ -139,7 +139,7 @@ case 'J':
 	break;
 //----------------------------------------------- Jump/Mode type
 case K_s | 'J':
-	InitIncSearch(cinfo,'\0');
+	InitIncSearch(cinfo, '\0');
 	cinfo->IncSearchTick = INCSEARCH_NOTICK;
 	ShowSearchState(cinfo);
 	break;
@@ -167,11 +167,11 @@ case K_c | 'L':
 	break;
 //----------------------------------------------- Move
 case 'M':
-	PPcFileOperation(cinfo,FileOperationMode_Move,NULL,NULL);
+	PPcFileOperation(cinfo, FileOperationMode_Move, NULL, NULL);
 	break;
 //----------------------------------------------- Move
 case K_s | 'M':
-	return PPC_ExplorerCopy(cinfo,TRUE);
+	return PPC_ExplorerCopy(cinfo, TRUE);
 //----------------------------------------------- PPV
 case K_s | 'V':
 case 'N':
@@ -179,13 +179,13 @@ case 'N':
 	break;
 //----------------------------------------------- Compare
 case 'O':
-	return PPcCompare(cinfo,0);
+	return PPcCompare(cinfo, 0);
 //----------------------------------------------- Comment option
 case K_s | 'O':
-	return Comments(cinfo,NULL);
+	return Comments(cinfo, NULL);
 //----------------------------------------------- Quit PPC
 case K_esc:			// [ESC]
-	if ( PMessageBox(cinfo->info.hWnd,MES_QPPC,T("Quit"),MB_APPLMODAL |
+	if ( PMessageBox(cinfo->info.hWnd, MES_QPPC, T("Quit"), MB_APPLMODAL |
 		 MB_OKCANCEL | MB_DEFBUTTON1 | MB_ICONQUESTION) != IDOK ){
 		 return ERROR_CANCELLED;
 	}
@@ -193,44 +193,44 @@ case K_esc:			// [ESC]
 //----------------------------------------------- Quit PPC
 case K_a | K_F4:
 	if ( cinfo->combo ){
-		PostMessage(cinfo->hComboWnd,WM_CLOSE,0,0);
+		PostMessage(cinfo->hComboWnd, WM_CLOSE, 0, 0);
 		break;
 	}
 // 'Q' へ続く
 case 'Q':
-	PostMessage(cinfo->info.hWnd,WM_CLOSE,0,0);
+	PostMessage(cinfo->info.hWnd, WM_CLOSE, 0, 0);
 	break;
 
 //----------------------------------------------- Rename
 case K_F2:
 case 'R':
-	return PPC_Rename(cinfo,FALSE);
+	return PPC_Rename(cinfo, FALSE);
 case K_c | 'R':
-	return PPC_Rename(cinfo,TRUE);
+	return PPC_Rename(cinfo, TRUE);
 //----------------------------------------------- Rename with mark
 case K_s | 'R':
-	PPcFileOperation(cinfo,FileOperationMode_Rename,NULL,NULL);
+	PPcFileOperation(cinfo, FileOperationMode_Rename, NULL, NULL);
 	break;
 //----------------------------------------------- Sort
 case 'S':
-	return SortKeyCommand(cinfo,0);
+	return SortKeyCommand(cinfo, 0);
 //----------------------------------------------- Hold Sort
 case K_s | 'S':
-	return SortKeyCommand(cinfo,1);
+	return SortKeyCommand(cinfo, 1);
 //----------------------------------------------- Tree (once)
 case K_F4:
 case 'T':
-	PPC_Tree(cinfo,PPCTREE_SELECT);
+	PPC_Tree(cinfo, PPCTREE_SELECT);
 	if ( cinfo->hTreeWnd != NULL ) SetFocus(cinfo->hTreeWnd);
 	break;
 //----------------------------------------------- Tree
 case K_s | 'T':
-	PPC_Tree(cinfo,PPCTREE_SYNC);
+	PPC_Tree(cinfo, PPCTREE_SYNC);
 	if ( cinfo->hTreeWnd != NULL ) SetFocus(cinfo->hTreeWnd);
 	break;
 //----------------------------------------------- Unpack
 case 'U':
-	return PPC_Unpack(cinfo,NULL);
+	return PPC_Unpack(cinfo, NULL);
 case K_s | 'U':
 	return UnpackMenu(cinfo);
 //----------------------------------------------- PPv
@@ -239,29 +239,29 @@ case 'V':
 	break;
 //----------------------------------------------- Paste
 case K_c | 'V':
-	PPcPaste(cinfo,FALSE);
+	PPcPaste(cinfo, FALSE);
 	break;
 //----------------------------------------------- Short cut
 case K_c | K_s | 'V':
-	PPcPaste(cinfo,TRUE);
+	PPcPaste(cinfo, TRUE);
 	break;
 //----------------------------------------------- Write
 case 'W':
 	return PPC_WriteDir(cinfo);
 //----------------------------------------------- Write Comment
 case K_s | 'W':
-	WriteComment(cinfo,NULL);
+	WriteComment(cinfo, NULL);
 	break;
 //----------------------------------------------- Where is
 case K_c | 'W':
-	return WhereIs(cinfo,0);
+	return WhereIs(cinfo, 0);
 //----------------------------------------------- Where is archive
 case K_c | K_s | 'W':
-	return WhereIs(cinfo,1);
+	return WhereIs(cinfo, 1);
 //----------------------------------------------- Cut Files
 case K_c | 'X':
-	ClipFiles(cinfo,DROPEFFECT_MOVE,CFT_FILE | CFT_TEXT);
-	SetPopMsg(cinfo,POPMSG_MSG,MES_CUTR);
+	ClipFiles(cinfo, DROPEFFECT_MOVE, CFT_FILE | CFT_TEXT);
+	SetPopMsg(cinfo, POPMSG_MSG, MES_CUTR);
 	break;
 //----------------------------------------------- sHell
 case 'H':
@@ -271,11 +271,11 @@ case 'X':
 	return ExecuteEntry(cinfo);
 //----------------------------------------------- PPc(hold)
 case 'Y':
-	ViewOnCursor(cinfo,PPV_NOFOREGROUND | cinfo->NormalViewFlag);
+	ViewOnCursor(cinfo, PPV_NOFOREGROUND | cinfo->NormalViewFlag);
 	break;
 //----------------------------------------------- PPc(hold sw)
 case K_s | 'Y':
-	SetSyncView(cinfo,cinfo->SyncViewFlag ? 0 : 1);
+	SetSyncView(cinfo, cinfo->SyncViewFlag ? 0 : 1);
 	break;
 //----------------------------------------------- exec
 case 'Z':
@@ -292,10 +292,10 @@ case '*':
 	break;
 //----------------------------------------------- AddMark
 case '+':
-	return PPC_FindMark(cinfo,NULL,1);
+	return PPC_FindMark(cinfo, NULL, 1);
 //----------------------------------------------- DelMark
 case '-':
-	return PPC_FindMark(cinfo,NULL,0);
+	return PPC_FindMark(cinfo, NULL, 0);
 //----------------------------------------------- Reload
 case K_F5:
 case '.':
@@ -303,7 +303,7 @@ case '.':
 	break;
 //----------------------------------------------- Update
 case K_c | K_F5:
-	read_entry(cinfo,RENTRY_SAVEOFF | RENTRY_UPDATE | RENTRY_MODIFYUP);
+	read_entry(cinfo, RENTRY_SAVEOFF | RENTRY_UPDATE | RENTRY_MODIFYUP);
 	break;
 //----------------------------------------------- A/B Mark
 case '/':
@@ -311,10 +311,10 @@ case '/':
 	break;
 //----------------------------------------------- Width
 case ';':
-	return SetCellDisplayFormat(cinfo,0);
+	return SetCellDisplayFormat(cinfo, 0);
 //----------------------------------------------- Copy Path
 case '=':
-	SetPairPath(cinfo,NULL,NULL);
+	SetPairPath(cinfo, NULL, NULL);
 	break;
 //----------------------------------------------- New Pane / Join
 case '_':
@@ -323,15 +323,15 @@ case '_':
 	}else{
 		cinfo->swin ^= SWIN_JOIN;
 		if ( cinfo->swin & SWIN_JOIN ){
-			setflag(cinfo->swin,SWIN_WBOOT);
+			setflag(cinfo->swin, SWIN_WBOOT);
 			SendX_win(cinfo);
 			JoinWindow(cinfo);
-			SetPopMsg(cinfo,POPMSG_MSG,MES_JWON);
+			SetPopMsg(cinfo, POPMSG_MSG, MES_JWON);
 			BootPairPPc(cinfo);
 		}else{
-			resetflag(cinfo->swin,SWIN_WBOOT);
+			resetflag(cinfo->swin, SWIN_WBOOT);
 			SendX_win(cinfo);
-			SetPopMsg(cinfo,POPMSG_MSG,MES_JWOF);
+			SetPopMsg(cinfo, POPMSG_MSG, MES_JWOF);
 		}
 	}
 	break;
@@ -340,7 +340,7 @@ case KC_PTOP: {
 	HWND hPairWnd;
 
 	hPairWnd = GetPairWnd(cinfo);
-	if ( hPairWnd != NULL ) PPxCommonCommand(hPairWnd,0,K_WTOP);
+	if ( hPairWnd != NULL ) PPxCommonCommand(hPairWnd, 0, K_WTOP);
 	break;
 }
 //----------------------------------------------- Bottom Window
@@ -348,7 +348,7 @@ case KC_PBOT: {
 	HWND hPairWnd;
 
 	hPairWnd = GetPairWnd(cinfo);
-	if ( hPairWnd != NULL ) PPxCommonCommand(hPairWnd,0,K_WBOT);
+	if ( hPairWnd != NULL ) PPxCommonCommand(hPairWnd, 0, K_WBOT);
 	break;
 }
 //----------------------------------------------- Window
@@ -357,19 +357,19 @@ case KC_WIND:
 	break;
 //----------------------------------------------- Layout
 case K_layout:
-	PPcLayoutCommand(cinfo,NilStr);
+	PPcLayoutCommand(cinfo, NilStr);
 	break;
 //----------------------------------------------- Bottom Cell
 case K_c | K_Pup:	// ^[PgUP]
 case K_s | K_Pup:	// \[PgUP]
 case '<':
-	MoveCellCsr(cinfo,-cinfo->e.cellN,NULL);
+	MoveCellCsr(cinfo, -cinfo->e.cellN, NULL);
 	break;
 //----------------------------------------------- Top Cell
 case K_c | K_Pdw:	// ^[PgDW]
 case K_s | K_Pdw:	// \[PgDW]
 case '>':
-	MoveCellCsr(cinfo,cinfo->e.cellIMax - cinfo->e.cellN,NULL);
+	MoveCellCsr(cinfo, cinfo->e.cellIMax - cinfo->e.cellN, NULL);
 	break;
 //----------------------------------------------- Root
 case '\\':
@@ -380,7 +380,7 @@ case '|':
 	if ( cinfo->path[0] != ':' ){
 		SetPPcDirPos(cinfo);
 		FixRootEntryCursor(cinfo);
-		read_entry(cinfo,RENTRY_JUMPNAME | RENTRY_JUMPNAME_INC);
+		read_entry(cinfo, RENTRY_JUMPNAME | RENTRY_JUMPNAME_INC);
 	}
 	break;
 //----------------------------------------------- Menu Bar On/Off
@@ -389,35 +389,35 @@ case '^':
 	break;
 //----------------------------------------------- Help
 case K_F1:
-	PPxHelp(cinfo->info.hWnd,HELP_CONTEXT,IDH_PPC);
+	PPxHelp(cinfo->info.hWnd, HELP_CONTEXT, IDH_PPC);
 	break;
 //----------------------------------------------- Pair Window
 case K_s | K_ri:
 case K_s | K_lf:
-	PPcChangeWindow(cinfo,PPCHGWIN_PAIR);
+	PPcChangeWindow(cinfo, PPCHGWIN_PAIR);
 	break;
 //----------------------------------------------- Next Window
 case K_tab:
 case K_F6:
-	PPcChangeWindow(cinfo,PPCHGWIN_NEXT);
+	PPcChangeWindow(cinfo, PPCHGWIN_NEXT);
 	break;
 //----------------------------------------------- Previous Window
 case K_s | K_tab:
 case K_s | K_F6:
-	PPcChangeWindow(cinfo,PPCHGWIN_BACK);
+	PPcChangeWindow(cinfo, PPCHGWIN_BACK);
 	break;
 //----------------------------------------------- Fix WindowFrame
 case K_a | K_F6:
-	FixWindowSize(cinfo,0,0);
+	FixWindowSize(cinfo, 0, 0);
 	break;
 
 //----------------------------------------------- CPU info
 case K_s | K_F8:
-	return PP_ExtractMacro(cinfo->info.hWnd,&cinfo->info,NULL,T("*cpu"),NULL,0);
+	return PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, T("*cpu"), NULL, 0);
 //----------------------------------------------- Memu
 case K_F10:
 	if ( cinfo->X_win & XWIN_MENUBAR ) return ERROR_INVALID_FUNCTION;	// メニューバーへ移動
-//	PP_ExtractMacro(cinfo->info.hWnd,&cinfo->info,NULL,T("%k\"down"),NULL,0);
+//	PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, T("%k\"down"), NULL, 0);
 	PPcSystemMenu(cinfo);	// &SPACE で表示
 	break;
 //----------------------------------------------- ContextMenu(dir)
@@ -427,24 +427,24 @@ case K_c | K_apps:
 case K_apps:
 case K_s | K_F10:
 case K_c | K_cr:
-	CrMenu(cinfo,TRUE);
+	CrMenu(cinfo, TRUE);
 	break;
 //----------------------------------------------- ShellContextMenu
 case K_s | K_apps:
 case (K_c | K_s | K_F10):
-	SCmenu(cinfo,NULL);
+	SCmenu(cinfo, NULL);
 	break;
 //----------------------------------------------- More PPC
 case K_F11:
-	PPCui(cinfo->info.hWnd,NULL);
+	PPCui(cinfo->info.hWnd, NULL);
 	break;
 //----------------------------------------------- Dup PPC
 case K_s | K_F11:
-	PPCuiWithPath(cinfo->info.hWnd,cinfo->path);
+	PPCuiWithPath(cinfo->info.hWnd, cinfo->path);
 	break;
 //----------------------------------------------- Runas PPC
 case K_c | K_F11:
-	return PP_ExtractMacro(cinfo->info.hWnd,&cinfo->info,NULL,T("*ppc -runas \"%1\""),NULL,0);
+	return PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, T("*ppc -runas \"%1\""), NULL, 0);
 //----------------------------------------------- Dup File
 case K_F12:
 	return PPcDupFile(cinfo);
@@ -454,11 +454,11 @@ case K_s | K_F12:
 	break;
 //----------------------------------------------- Properties
 case K_a | K_cr:
-	SCmenu(cinfo,StrInvokeProperties);
+	SCmenu(cinfo, StrInvokeProperties);
 	break;
 //----------------------------------------------- Sync Properties
 case K_a | K_s | K_cr:
-	PPcSyncProperties(cinfo,NilStr);
+	PPcSyncProperties(cinfo, NilStr);
 	break;
 //----------------------------------------------- Invert Mark(F)
 case K_s | K_home:		// \[home]
@@ -472,17 +472,17 @@ case K_s | K_end:
 	break;
 //-----------------------------------------------
 case K_c | K_home:
-	setflag(cinfo->DrawTargetFlags,DRAWT_ENTRY);
+	setflag(cinfo->DrawTargetFlags, DRAWT_ENTRY);
 	cinfo->MarkMask = 0xf;
 	ClearMark(cinfo);
-	RefleshInfoBox(cinfo,DE_ATTR_MARK);
+	RefleshInfoBox(cinfo, DE_ATTR_MARK);
 	break;
 //-----------------------------------------------
 case K_c | K_end:
-	setflag(cinfo->DrawTargetFlags,DRAWT_ENTRY);
+	setflag(cinfo->DrawTargetFlags, DRAWT_ENTRY);
 	cinfo->MarkMask = 0x1f;
 	ClearMark(cinfo);
-	RefleshInfoBox(cinfo,DE_ATTR_MARK);
+	RefleshInfoBox(cinfo, DE_ATTR_MARK);
 	break;
 //----------------------------------------------- jumpposition
 case K_a | K_home:
@@ -496,20 +496,20 @@ case K_a | K_s | K_home:
 case KC_Tvfs:
 	X_vfs = !X_vfs;
 	if ( X_vfs ){
-		PPxSendMessage(WM_PPXCOMMAND,K_Lvfs,0);
-		SetPopMsg(cinfo,POPMSG_MSG,MES_VFSL);
+		PPxSendMessage(WM_PPXCOMMAND, K_Lvfs, 0);
+		SetPopMsg(cinfo, POPMSG_MSG, MES_VFSL);
 	}else{
-		PPxSendMessage(WM_PPXCOMMAND,K_Fvfs,0);
-		SetPopMsg(cinfo,POPMSG_MSG,MES_VFSU);
+		PPxSendMessage(WM_PPXCOMMAND, K_Fvfs, 0);
+		SetPopMsg(cinfo, POPMSG_MSG, MES_VFSU);
 	}
 	break;
 //----------------------------------------------- Enter Directory
 case KC_Edir:
-	CellLook(cinfo,-1);
+	CellLook(cinfo, -1);
 	break;
 //----------------------------------------------- Jump Entry
 case KC_JMPE:
-	JumpPathEntry(cinfo,CEL(cinfo->e.cellN).f.cFileName,RENTRY_JUMPNAME);
+	JumpPathEntry(cinfo, CEL(cinfo->e.cellN).f.cFileName, RENTRY_JUMPNAME);
 	break;
 //----------------------------------------------- Update Entry Data
 case KC_UpdateEntryData:
@@ -536,35 +536,35 @@ case K_Scust:
 	break;
 //----------------------------------------------- Reload Cust
 case K_Lcust: // ※ WM_PPXCOMMAND は、WmPPxCommand で処理する
-	PPcReloadCustomize(cinfo, 0);
+	PPcReloadCustomize(cinfo,  0);
 	break;
 //----------------------------------------------- About
 case K_about:
-	SetPopMsg(cinfo,POPMSG_MSG,T(" Paper Plane cUI Version ")
+	SetPopMsg(cinfo, POPMSG_MSG, T(" Paper Plane cUI Version ")
 			T(FileProp_Version) T("(") T(__DATE__) T(",")
 			T(DRAWSTRING) T(BITSTRING) T(",")
 			T(CODETYPESTRING) T(") (c)TORO "));
 	break;
 //----------------------------------------------- cinfo->swin の更新通信
 case KC_Join:
-	IOX_win(cinfo,FALSE);
+	IOX_win(cinfo, FALSE);
 	break;
 //----------------------------------------------- Zoom in
 case K_s | K_ins:
 case K_c | K_v | VK_ADD:
 case K_c | K_v | VK_OEM_PLUS: // US[=/+] JIS[;/+]
-	SetMag(cinfo,10);
+	SetMag(cinfo, 10);
 	break;
 //----------------------------------------------- Zoom out
 case K_s | K_del:
 case K_c | K_v | VK_SUBTRACT:
 case K_c | K_v | VK_OEM_MINUS: // US[-/_] JIS[-/=]
-	SetMag(cinfo,-10);
+	SetMag(cinfo, -10);
 	break;
 //----------------------------------------------- Zoom 100%
 case K_c | K_v | '0':
 case K_c | K_v | VK_NUMPAD0:
-	SetMag(cinfo,0);
+	SetMag(cinfo, 0);
 	break;
 //----------------------------------------------- Pop cell
 case K_ins:
@@ -577,39 +577,39 @@ case K_del:
 //----------------------------------------------- Iconic/Minimize
 case K_s | K_esc:
 	if ( cinfo->combo ){
-		SendMessage(cinfo->hComboWnd,WM_SYSCOMMAND,SC_MINIMIZE,0);
+		SendMessage(cinfo->hComboWnd, WM_SYSCOMMAND, SC_MINIMIZE, 0);
 	}else if ( cinfo->hTrayWnd != NULL ){
-		ShowWindow(cinfo->hTrayWnd,SW_MINIMIZE); // 他のPPxをまとめて最小化
+		ShowWindow(cinfo->hTrayWnd, SW_MINIMIZE); // 他のPPxをまとめて最小化
 	}else{
-		ShowWindow(cinfo->info.hWnd,SW_MINIMIZE);
+		ShowWindow(cinfo->info.hWnd, SW_MINIMIZE);
 	}
 	cinfo->Mpos = -1;
 	break;
 //----------------------------------------------- Mark & [↓]
 case K_space:
 	cinfo->MarkMask = 0x1f;
-	CellMark(cinfo,cinfo->e.cellN,MARK_REVERSE);
+	CellMark(cinfo, cinfo->e.cellN, MARK_REVERSE);
 	if ( cinfo->e.cellN >= (cinfo->e.cellIMax - 1) ){
-		RefleshCell(cinfo,cinfo->e.cellN);
+		RefleshCell(cinfo, cinfo->e.cellN);
 	}
-	MoveCellCursor(cinfo,&XC_mvUD);
-	RefleshInfoBox(cinfo,DE_ATTR_MARK);
+	MoveCellCursor(cinfo, &XC_mvUD);
+	RefleshInfoBox(cinfo, DE_ATTR_MARK);
 	break;
 //----------------------------------------------- Mark & [↑]
 case K_s | K_space:
 	cinfo->MarkMask = 0x1f;
-	CellMark(cinfo,cinfo->e.cellN,MARK_REVERSE);
-	if ( cinfo->e.cellN == 0 ) RefleshCell(cinfo,cinfo->e.cellN);
-	MoveCellCursorR(cinfo,&XC_mvUD);
-	RefleshInfoBox(cinfo,DE_ATTR_MARK);
+	CellMark(cinfo, cinfo->e.cellN, MARK_REVERSE);
+	if ( cinfo->e.cellN == 0 ) RefleshCell(cinfo, cinfo->e.cellN);
+	MoveCellCursorR(cinfo, &XC_mvUD);
+	RefleshInfoBox(cinfo, DE_ATTR_MARK);
 	break;
 //----------------------------------------------- System Memu
 case K_a | '-':
 	if ( cinfo->combo ){
-		SendMessage(cinfo->hComboWnd,WM_PPXCOMMAND,K_a | '-',(LPARAM)cinfo->info.hWnd);
+		SendMessage(cinfo->hComboWnd, WM_PPXCOMMAND, K_a | '-', (LPARAM)cinfo->info.hWnd);
 		break;
 	}
-	PP_ExtractMacro(cinfo->info.hWnd,&cinfo->info,NULL,T("%k\"down"),NULL,0);
+	PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, T("%k\"down"), NULL, 0);
 	// case K_a | K_space: へ
 //----------------------------------------------- System Memu
 case K_a | K_space:
@@ -617,77 +617,77 @@ case K_a | K_space:
 	break;
 //----------------------------------------------- [↑]
 case K_up:
-	MoveCellCursorR(cinfo,&XC_mvUD);
+	MoveCellCursorR(cinfo, &XC_mvUD);
 	break;
 //----------------------------------------------- [↓]
 case K_dw:
-	MoveCellCursor(cinfo,&XC_mvUD);
+	MoveCellCursor(cinfo, &XC_mvUD);
 	break;
 //----------------------------------------------- [←]
 case K_lf:
-	MoveCellCursorR(cinfo,&XC_mvLR);
+	MoveCellCursorR(cinfo, &XC_mvLR);
 	break;
 //----------------------------------------------- [→]
 case K_ri:
-	MoveCellCursor(cinfo,&XC_mvLR);
+	MoveCellCursor(cinfo, &XC_mvLR);
 	break;
 //----------------------------------------------- ^[←]
 case K_c | K_lf:
-	JumpPathTrackingList(cinfo,-1);
+	JumpPathTrackingList(cinfo, -1);
 	break;
 //----------------------------------------------- ^[→]
 case K_c | K_ri:
-	JumpPathTrackingList(cinfo,1);
+	JumpPathTrackingList(cinfo, 1);
 	break;
 //----------------------------------------------- ^\[←]
 case K_c | K_s | K_lf:
-	PathTrackingListMenu(cinfo,-1);
+	PathTrackingListMenu(cinfo, -1);
 	break;
 //----------------------------------------------- ^\[→]
 case K_c | K_s | K_ri:
-	PathTrackingListMenu(cinfo,1);
+	PathTrackingListMenu(cinfo, 1);
 	break;
 //----------------------------------------------- &\[↑] size
 case K_s | K_a | K_up:
-	FixWindowSize(cinfo,0,-1);
+	FixWindowSize(cinfo, 0, -1);
 	break;
 //----------------------------------------------- &\[↓] size
 case K_s | K_a | K_dw:
-	FixWindowSize(cinfo,0,1);
+	FixWindowSize(cinfo, 0, 1);
 	break;
 //----------------------------------------------- &\[←] size
 case K_s | K_a | K_lf:
-	FixWindowSize(cinfo,-1,0);
+	FixWindowSize(cinfo, -1, 0);
 	break;
 //----------------------------------------------- &\[→] size
 case K_s | K_a | K_ri:
-	FixWindowSize(cinfo,1,0);
+	FixWindowSize(cinfo, 1, 0);
 	break;
 //----------------------------------------------- ^&[↑] rate
 case K_c | K_a | K_up:
-	FixPaneSize(cinfo,0,-1,FPS_KEYBOARD);
+	FixPaneSize(cinfo, 0, -1, FPS_KEYBOARD);
 	break;
 //----------------------------------------------- ^&[↓] rate
 case K_c | K_a | K_dw:
-	FixPaneSize(cinfo,0,1,FPS_KEYBOARD);
+	FixPaneSize(cinfo, 0, 1, FPS_KEYBOARD);
 	break;
 //----------------------------------------------- ^&[←] rate
 case K_c | K_a | K_lf:
-	FixPaneSize(cinfo,-1,0,FPS_KEYBOARD);
+	FixPaneSize(cinfo, -1, 0, FPS_KEYBOARD);
 	break;
 //----------------------------------------------- ^&[→] rate
 case K_c | K_a | K_ri:
-	FixPaneSize(cinfo,1,0,FPS_KEYBOARD);
+	FixPaneSize(cinfo, 1, 0, FPS_KEYBOARD);
 	break;
 //----------------------------------------------- back page
 case K_s | K_up:	// \[↑]
 case K_Pup:			// [PgUP]
-	MoveCellCursorR(cinfo,&XC_mvPG);
+	MoveCellCursorR(cinfo, &XC_mvPG);
 	break;
 //----------------------------------------------- next page
 case K_s | K_dw:	// \[↓]
 case K_Pdw:			// [PgDW]
-	MoveCellCursor(cinfo,&XC_mvPG);
+	MoveCellCursor(cinfo, &XC_mvPG);
 	break;
 //----------------------------------------------- up directory
 case K_bs:
@@ -707,7 +707,7 @@ case K_s | K_cr:
 	break;
 //----------------------------------------------- go directory / exec
 case K_cr:
-	CrMenu(cinfo,FALSE);
+	CrMenu(cinfo, FALSE);
 	break;
 //----------------------------------------------- Enter PAUSE
 case K_v | VK_PAUSE:
@@ -724,35 +724,35 @@ case K_SETGRAYSTATUS:
 
 //----------------------------------------------- アクティブ化時の一覧更新
 case KC_CHECKRELOAD:
-	RefreshAfterList(cinfo,ALST_ACTIVATE);
+	RefreshAfterList(cinfo, ALST_ACTIVATE);
 	break;
 
 //=============================================================================
 default:
-	if ( !PPxCommonCommand(cinfo->info.hWnd,0,key) ) break;
+	if ( !PPxCommonCommand(cinfo->info.hWnd, 0, key) ) break;
 //----------------------------------------------- Menu
 	if ( (!(cinfo->X_win & XWIN_MENUBAR) || cinfo->combo) && !(key & K_v) &&
 				((key & (K_e | K_s | K_c | K_a)) == (K_a)) ){
 		SystemDynamicMenu(!(cinfo->combo) ? &cinfo->DynamicMenu : &ComboDMenu,
-				&cinfo->info,key);
+				&cinfo->info, key);
 		break;
 //----------------------------------------------- Search
 	}else if (!(key & K_v) &&
 		(((key & (K_e | K_s | K_c | K_a)) == (K_a | K_s)) ||
 		 ((key & (K_e | K_c | K_a)) == K_e) ) ){
-		SearchEntryOnekey(cinfo,key);
+		SearchEntryOnekey(cinfo, key);
 		break;
 //----------------------------------------------- Drive jump
 	}else if ( !(key & K_v) && IsdigitA(key) ){
-		JumpDrive(cinfo,key);
+		JumpDrive(cinfo, key);
 		break;
 //----------------------------------------------- 該当無し
 	}else{
-		DEBUGLOGC("PPcCommand:%04x unknown end",key);
+		DEBUGLOGC("PPcCommand:%04x unknown end", key);
 		return ERROR_INVALID_FUNCTION;
 	}
 }
 	cinfo->PrevCommand = key;
-	DEBUGLOGC("PPcCommand:%04x end",key);
+	DEBUGLOGC("PPcCommand:%04x end", key);
 	return NO_ERROR;
 }

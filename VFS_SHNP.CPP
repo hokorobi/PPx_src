@@ -812,3 +812,68 @@ void * GetPathInterface(HWND hWnd,const TCHAR *name,REFIID riid,const TCHAR *pat
 	pSF->Release();
 	return ifptr;
 }
+
+VFSDLL ERRORCODE PPXAPI VFSLoadFileImage(const TCHAR *filename, DWORD margin, char **image, DWORD *imagesize, DWORD *filesize)
+{
+	ERRORCODE result;
+	IStream *pStream;
+	STATSTG sstat;
+	HWND hWnd = GetFocus();
+
+	result = LoadFileImage(filename, margin, image, imagesize, filesize);
+	if ( result == NO_ERROR ) return NO_ERROR;
+
+	LPSHELLFOLDER pSF;
+	LPITEMIDLIST pidl;
+
+	// IStream ÇéÊìæÇ∑ÇÈ
+	if ( VFSMakeIDL(NULL, &pSF, &pidl, filename) == FALSE ) return result;
+	if ( FAILED(pSF->BindToObject(pidl, NULL, IID_IStream, (void **)&pStream)) ){
+		pStream = NULL;
+	}
+	FreePIDL(pidl);
+	pSF->Release();
+	if ( pStream == NULL ) return result;
+
+	// IStream Ç©ÇÁì‡óeÇéÊìæÇ∑ÇÈ
+	if ( SUCCEEDED(pStream->Stat(&sstat, STATFLAG_NONAME)) ){
+		for (;;){
+			BOOL freeheap = FALSE;
+			DWORD sizeL = sstat.cbSize.u.LowPart;
+
+			if ( sstat.cbSize.u.HighPart != 0 ) break;
+
+			if ( (filesize == LFI_ALWAYSLIMIT) ||
+				 (filesize == LFI_ALWAYSLIMITLESS) ){
+				hWnd = (HWND)filesize;
+				filesize = NULL;
+			}
+			if ( filesize != NULL ) *filesize = sizeL;
+
+			if ( *image != NULL ){				// ÉÅÉÇÉäÇÕämï€çœÇ›
+				DWORD imgsize;
+
+				imgsize = *imagesize;
+				if ( imgsize < sizeL ) sizeL = imgsize;
+				if ( imgsize < (sizeL + margin) ) margin = imgsize - sizeL;
+			}else{
+				if ( CheckLoadSize(hWnd, &sizeL) == FALSE ) break;
+
+				if ( (*image = static_cast<char *>(HeapAlloc(ProcHeap, 0, sizeL + margin))) == NULL ){
+					break;
+				}
+				freeheap = TRUE;
+			}
+			if ( FAILED(pStream->Read(*image, sizeL, &sizeL)) ){
+				if ( IsTrue(freeheap) ) HeapFree(ProcHeap, 0, *image);
+				break;
+			}
+			result = NO_ERROR;
+			if ( margin != 0 ) memset(*image + sizeL, 0, margin);
+			if ( imagesize != NULL ) *imagesize = sizeL;
+			break;
+		}
+	}
+	pStream->Release();
+	return result;
+}

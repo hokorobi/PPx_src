@@ -283,7 +283,7 @@ PPXDLL void USECDECL XMessage(HWND hWnd, const TCHAR *title, UINT type, const TC
 					ltime.wMilliseconds, MessageType[type]);
 			WriteFile(hFile, temp, TSTRLENGTH32(temp), &size, NULL);
 												// “à—e‚ðo—Í -----------------
-			len = TSTRLENGTH32(buf);
+			len = TSTRLENGTH32(buf); // C6001 XM_DUMPLOG,size = 0 ‚ÌŽž‚ÉB–³Ž‹
 			if ( (len > 4) && (buf[(len / sizeof(TCHAR)) - 2] == '\r') ){
 				len -= sizeof(TCHAR) * 2;
 			}
@@ -345,7 +345,7 @@ UINT GetMonitorDPI(HWND hWnd)
 		if ( DMonitorFromWindow == NULL ){
 			LoadWinAPI(User32DLL,NULL,MONITORDLL,LOADWINAPI_GETMODULE);
 		}
-		hShcore = LoadLibrary(T("shcore.dll"));
+		hShcore = LoadSystemDLL(SYSTEMDLL_SHCORE);
 		if ( hShcore != NULL ){
 			GETDLLPROC(hShcore,GetDpiForMonitor);
 		}else{
@@ -665,7 +665,7 @@ void PlayWave(const TCHAR *name)
 
 	if ( name[0] == '\0' ) name = NULL; // Ä¶’âŽ~
 	if ( hWinmm == NULL ){
-		hWinmm = LoadLibrary(T("winmm.dll"));
+		hWinmm = LoadSystemDLL(SYSTEMDLL_WINMM);
 		if ( hWinmm != NULL ) GETDLLPROCT(hWinmm,PlaySound);
 	}
 	if ( hWinmm != NULL ){
@@ -1312,7 +1312,7 @@ PPXDLL int PPXAPI GetAccessApplications(const TCHAR *checkpath,TCHAR *text)
 	WCHAR SessionKey[CCH_RM_SESSION_KEY + 1];
 	DWORD hRm;
 	int infocount = 0;
-	HANDLE hRSTRTMGR = LoadWinAPI("RSTRTMGR.DLL",NULL,RSTRTMGRDLL,LOADWINAPI_LOAD);
+	HANDLE hRSTRTMGR = LoadSystemWinAPI(SYSTEMDLL_RSTRTMGR ,RSTRTMGRDLL);
 
 #ifdef UNICODE
 	#define path checkpath
@@ -1341,8 +1341,8 @@ PPXDLL int PPXAPI GetAccessApplications(const TCHAR *checkpath,TCHAR *text)
 						sizeof(RM_PROCESS_INFO) * pnProcInfoNeeded);
 
 				if ( processInfo != NULL ) {
-					if (( pnProcInfo > 0) &&
-						(NO_ERROR == DRmGetList(hRm, &pnProcInfoNeeded,
+					if ( (pnProcInfo > 0) &&
+						 (NO_ERROR == DRmGetList(hRm, &pnProcInfoNeeded,
 							&pnProcInfo, processInfo, &lpdwRebootReasons)) ) {
 						DWORD i;
 						TCHAR *textmax = text + VFPS;

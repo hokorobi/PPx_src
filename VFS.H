@@ -432,6 +432,8 @@ typedef struct {
 
 extern VFSDLL ERRORCODE PPXAPI VFSDeleteEntry(DELETESTATUS *dinfo,const TCHAR *path,DWORD attr);
 
+extern VFSDLL ERRORCODE PPXAPI VFSLoadFileImage(const TCHAR *filename, DWORD margin, char **image, DWORD *imagesize, DWORD *filesize);
+
 /*=============================================================================
 ============================================================= Tree */
 #define VFSTREECLASS	"VfsTreeClass"

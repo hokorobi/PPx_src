@@ -15,19 +15,19 @@
 	\\(unc name)			PIDL(unc参照)			※
 	\\				network root			※
 	\\+				network root(extra)		※
-	http://[user[:pass]@]host[:port]/dir	http url		※
-	ftp://[user[:pass]@]host[:port]/dir	ftp url			※
-	mailto://			pop3 address			※
-	file://drivename:/dir		local drive
-	file://computername/sharename	unc drive
-	shell://pidlname		PIDL SpecialFolder
+	\\.\Harddisk(n)Partition(n)	storage
+	\\.\HarddiskVolumeShadowCopy(n)	storage
+	\\.\HarddiskVolume(n)		storage
+	\\.\Volume{uid}			storage
 	aux:[user:pass]@aux name\path	Auxiliary Operation Path	※
 	aux://[user:pass]@aux name/path	Auxiliary Operation Path	※
-	\\.\Harddisk(n)Partition(n)
-	\\.\HarddiskVolumeShadowCopy(n)
-	\\.\HarddiskVolume(n)
+	file://drivename:/dir		local drive
+	file://computername/sharename	unc drive
+	ftp://[user[:pass]@]host[:port]/dir	ftp url			※
+	http://[user[:pass]@]host[:port]/dir	http url		※
+	mailto://			pop3 address			※
+	shell://pidlname		PIDL SpecialFolder
 参考
-	\\.\Volume{uid}
 	\\.\TAPE(n)			Device名
 	\\.\CdRom(n)			Device名
 	\\.\COM(nn)  			Device名(nnは２桁以上)
@@ -62,9 +62,24 @@
 [注]
 	末尾「.」は許されていない
 
+●設定名
+A_	table エイリアス A_color, A_exec
+B_	table ツールバー B_cdef, B_flm
+C_	one / struct / table 色定義
+D_	D_uwid
+E_	table ファイル判別
+F_	structフォント
+HM_	table 隠しメニュー
+K_	table キー割当て
+M_	table メニュー等
+P_	one / struct / table プラグイン関係
+S_	table その他設定
+V_	one ネットワーク設定 V_proxy, V_http
+X_	one / struct / table 各種設定
+_	table その他設定 _Path, _User
+
 ●レジストリ
-※基本設定
-	HKEY_CURRENT_USER\Software\TOROid\PPX 内に保存される
+	HKEY_CURRENT_USER\Software\TOROid\PPX 内に設定ファイルへのパスを保存可
 
 	アンインストール用に
 	HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\

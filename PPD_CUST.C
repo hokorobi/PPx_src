@@ -78,6 +78,7 @@ CLABEL userext	= {NULL,f_EXT ,"/X",NilStr};	// ファイル判別
 CLABEL userlang	= {NULL,f_MES ,"=s",NilStr};	// メッセージ
 CLABEL userbar	= {NULL,f_TBAR,",d4x",NilStr};	// ツールバー
 CLABEL userkey	= {NULL,f_KEY ,"/X",NilStr};	// キー割当て
+CLABEL usersettings	= {NULL,fT ,"=s",NilStr};	// 任意設定
 
 typedef struct {
 	ThSTRUCT UsersIndex,UsersNames;
@@ -975,6 +976,9 @@ PPXDLL int PPXAPI PPcustCStore(TCHAR *mem,TCHAR *memmax,int appendmode,TCHAR **l
 										// ユーザ定義キー割当て --------
 			}else if ( (ck[0] == 'K') && (ck[1] == '_') ){
 				result = CSitem(&PCS,&userkey,sepC,kword,p,&mem,memmax);
+										// 任意設定 --------
+			}else if ( (ck[0] == 'S') && (ck[1] == '_') ){
+				result = CSitem(&PCS,&usersettings,sepC,kword,p,&mem,memmax);
 										// 削除 ------------------------
 			}else{
 											// update時は古いバージョンが対象
@@ -1340,7 +1344,7 @@ void MakeUserCustNames(USERCUSTNAMES *ucndata)
 		if ( EnumCustData(count++,name,bin,0) < 0 ) break;
 		if ( memcmp(name,T("Mes"),TSTROFF(3)) &&
 			((name[1] != '_') ||
-			 !((name[0] == 'M') || (name[0] == 'E') ||
+			 !((name[0] == 'M') || (name[0] == 'E') || (name[0] == 'S') ||
 			   (name[0] == 'B') || (name[0] == 'K')) ) ){
 			continue;
 		}
@@ -1470,6 +1474,10 @@ PPXDLL TCHAR * PPXAPI PPcustCDump(void)
 				DumpUserCusts(&PCS,&ucn,&userkey,T("K_"));
 				break;
 
+			case 6:						// 任意設定 -----------------
+				DumpUserCusts(&PCS,&ucn,&usersettings,T("S_"));
+				break;
+
 			default:					// 本体 -------------------------------
 				if ( clbl->flag & fSort ) SortCustTable(clbl->name,NULL);
 				CDitem(&PCS,clbl);
@@ -1482,7 +1490,7 @@ PPXDLL TCHAR * PPXAPI PPcustCDump(void)
 		if ( 0 > size ) break;
 
 		if ( name[1] == '_' ){
-			if ( (name[0] == 'M') || (name[0] == 'E') || (name[0] == 'B') || (name[0] == 'K') ){
+			if ( (name[0] == 'M') || (name[0] == 'E') || (name[0] == 'B') || (name[0] == 'K') || (name[0] == 'S') ){
 				continue;
 			}
 		}

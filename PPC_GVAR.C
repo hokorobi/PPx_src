@@ -71,6 +71,7 @@ extern "C" {
 #define IDW_DOCKPPCINFO		(IDW_CONTROLMIN + 12) // Dock内情報窓
 #define IDW_DOCKPPCSTATUS	(IDW_CONTROLMIN + 13) // Dock内ステータス窓
 #define IDW_DOCKINPUT		(IDW_CONTROLMIN + 14) // Dock内汎用入力
+#define IDW_TIPTREE			(IDW_CONTROLMIN + 15) // チップで表示するツリー
 #define IDW_ADRBCL			(IDW_CONTROLMIN + 0x0e00) // パン屑アドレスバー
 #define IDW_DRIVES			(IDW_CONTROLMIN + 0x0f60) // ドライブバー内ドライブ
 // TipText(TTN_NEEDTEXT) / ToolBar / TAB 識別用ID
@@ -536,10 +537,30 @@ GVAR int XC_ifix GPARAM(0);
 GVAR BOOL XC_fexc GPARAM(FALSE);
 GVAR int XC_cdc GPARAM(B3 | B4);
 
-#define STIP_HOVER	B31 //
-#define STIP_NOW	B30 // 即時に表示
+#define STIP_DELAY	B27 // 遅らせて表示
+#define STIP_NOW	B26 // 即時に表示
+#define STIP_HOVER	B25 // ホバーによる表示開始
+#define STIP_TAIL	B24 // 末尾(TAIL)クリックによる表示開始
+#define STIP_MOUSE	B20 // マウス操作(HOVER/TAIL)による表示のため、表示位置をマウスに合わせる
+#define STIP_SHOWTAILAREA	B21
 #define STIP_MASK	0xffff
-GVAR DWORD X_stip GPARAM(1000);
+#define STIP_FLAGSMASK	0xffff0000
+#define TIP_LONG_TIME 0
+#define TIP_LONG_MODE 1
+#define TIP_HOVER_TIME 2
+#define TIP_HOVER_MODE 3
+#define TIP_TAIL_WIDTH 4
+#define TIP_TAIL_MODE 5
+#define TIP_PV_WIDTH 6
+#define TIP_PV_HEIGHT 7
+GVAR DWORD X_stip[8]
+#ifndef GLOBALEXTERN
+= { 2000, stip_mode_filename,
+	 0, stip_mode_fileinfo,
+	 32, stip_mode_preview,
+	 256, 256};
+#endif
+;
 
 //GVAR int X_lspc GPARAM(0);
 GVAR int XC_ulh GPARAM(2);

@@ -608,23 +608,23 @@ PPXDLL void PPXAPI PutKeyCode(TCHAR *str,int key)
 		resetflag(key,K_raw | K_e | K_a | K_c | K_s);
 	}
 	if ( key & (K_v | K_ex) ){
-		int min,max;
+		int mini, maxi;
 		if ( key & K_ex ){
-			min = EKEY_INTERNAL;
-			max = EKEY_MAX;
+			mini = EKEY_INTERNAL;
+			maxi = EKEY_MAX;
 		}else{
-			min = 0;
-			max = EKEY_INTERNAL;
+			mini = 0;
+			maxi = EKEY_INTERNAL;
 		}
-		while ( min < max ){
-			int mid,result;
+		while ( mini < maxi ){
+			int mid, result;
 
-			mid = (min + max) / 2;
+			mid = (mini + maxi) / 2;
 			result = s_ekey[mid].num - key;
 			if ( result < 0 ){
-				min = mid + 1;
+				mini = mid + 1;
 			}else if ( result > 0 ){
-				max = mid;
+				maxi = mid;
 			}else{
 				if ( (mid > 0) && (s_ekey[mid - 1].num == key ) ) mid--;
 				tstrcpy(str,s_ekey[mid].str);

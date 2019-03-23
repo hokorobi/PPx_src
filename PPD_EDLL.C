@@ -43,9 +43,9 @@ void TinputExtractMacro(TINPUTSTRUCT *ts,const TCHAR *param/*,TCHAR *extract,int
 
 void FixInputbox(HWND hDlg,HWND hEdWnd,TINPUT *tinput)
 {
-	HWND hRefWnd,hTreeWnd = NULL;
-	RECT ncbox,box,refbox;
-	int width,dpi;
+	HWND hRefWnd, hTreeWnd = NULL;
+	RECT ncbox, clientbox, refbox;
+	int editwidth, editheight, dpi;
 	PPxEDSTRUCT *PES;
 
 	PES = (PPxEDSTRUCT *)GetProp(hEdWnd,PPxED);
@@ -54,7 +54,7 @@ void FixInputbox(HWND hDlg,HWND hEdWnd,TINPUT *tinput)
 	}
 
 	GetWindowRect(hEdWnd,&ncbox);
-	GetClientRect(hEdWnd,&box);
+	GetClientRect(hEdWnd,&clientbox);
 	dpi = GetMonitorDPI(hDlg);
 
 	hRefWnd = GetDlgItem(hDlg,IDB_REF);
@@ -63,93 +63,99 @@ void FixInputbox(HWND hDlg,HWND hEdWnd,TINPUT *tinput)
 	refbox.top -= ncbox.top;
 	refbox.right -= refbox.left;
 	ncbox.bottom -= ncbox.top;
+	editheight = ncbox.bottom;
 
-	GetClientRect(hDlg,&box);
-	width = box.right;
+	GetClientRect(hDlg,&clientbox);
+	editwidth = clientbox.right;
 
 	if ( !(tinput->flag & (TIEX_USEREFLINE | TIEX_USEOPTBTN)) ){
+		// ボタンは右
 		if ( TouchMode & TOUCH_LARGEWIDTH ){
 			refbox.right = (dpi * 120) >> 8; // 12.0mm ( 120 / 254 ) の近似値
-
-			width -= /* OK */ refbox.right + /* X */ refbox.bottom;
+			editwidth -= /* OK */ refbox.right + /* X */ refbox.bottom;
 		}else{
-			width -= refbox.right * 3;
+			editwidth -= refbox.right * 3;
 		}
 	}else{
+		// ボタンは下
 		if ( TouchMode & TOUCH_LARGEWIDTH ){
 			int nw = (dpi * 120) >> 8; // 12.0mm ( 120 / 254 ) の近似値
 			if ( refbox.right < nw ) refbox.right = nw;
 		}
 	}
-	if ( width < 64 ) width = 64;
+	if ( editwidth < 64 ) editwidth = 64;
 
 		// 大きさ変更不要 ?
-	if ( (hTreeWnd == NULL) && (width == (ncbox.right - ncbox.left)) ) return;
+	if ( (hTreeWnd == NULL) && (editwidth == (ncbox.right - ncbox.left)) ){
+		return;
+	}
 
 	if ( (TouchMode & TOUCH_LARGEWIDTH) &&
-		!(tinput->flag & (TIEX_USEREFLINE | TIEX_USEOPTBTN)) ){ // ボタンは右
-
-		SetWindowPos(GetDlgItem(hDlg,IDOK),NULL,
-				width,refbox.top,
-				refbox.right,refbox.bottom,
+		!(tinput->flag & (TIEX_USEREFLINE | TIEX_USEOPTBTN)) ){
+		// タッチ用ボタン(ボタンは右)
+		SetWindowPos(GetDlgItem(hDlg,IDOK), NULL,
+				editwidth, refbox.top,
+				refbox.right, refbox.bottom,
 				SWP_NOACTIVATE | SWP_NOREDRAW | SWP_NOZORDER);
-		SetWindowText(GetDlgItem(hDlg,IDCANCEL),T("×"));
-		SetWindowPos(GetDlgItem(hDlg,IDCANCEL),NULL,
-				width + refbox.right,refbox.top,
-				refbox.bottom,refbox.bottom,
+		SetWindowText(GetDlgItem(hDlg,IDCANCEL), T("×"));
+		SetWindowPos(GetDlgItem(hDlg,IDCANCEL), NULL,
+				editwidth + refbox.right, refbox.top,
+				refbox.bottom, refbox.bottom,
 				SWP_NOACTIVATE | SWP_NOREDRAW | SWP_NOZORDER);
 		SetWindowPos(hRefWnd,NULL,
-				width + refbox.right + refbox.bottom,refbox.top,
-				0,refbox.bottom,
+				editwidth + refbox.right + refbox.bottom, refbox.top,
+				0, refbox.bottom,
 				SWP_NOACTIVATE | SWP_NOREDRAW | SWP_NOZORDER);
-	}else{ // ボタンの位置は下
+	}else{
+		int buttonleft;
+
 		if ( tinput->flag & TIEX_LINE_MULTI ){ // 行数が変化することあるので再取得
-			GetWindowRect(hRefWnd,&refbox);
+			GetWindowRect(hRefWnd, &refbox);
 			refbox.bottom -= refbox.top;
 			refbox.top -= ncbox.top;
 			refbox.right -= refbox.left;
 		}
-
-		if ( tinput->flag & (TIEX_USEREFLINE | TIEX_USEOPTBTN) ){
+		buttonleft = editwidth;
+		if ( tinput->flag & (TIEX_USEREFLINE | TIEX_USEOPTBTN) ){ // ボタンは下
 			if ( tinput->flag & TIEX_USEREFLINE ){
 				RECT reflinebox;
 				HWND hEref = GetDlgItem(hDlg,IDE_INPUT_REF);
 
 				GetWindowRect(hEref,&reflinebox);
 				reflinebox.bottom -= reflinebox.top;
-				SetWindowPos(hEref,NULL,0,0,width,reflinebox.bottom,
+				SetWindowPos(hEref, NULL, 0,0, buttonleft,reflinebox.bottom,
 					SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOREDRAW | SWP_NOZORDER);
 				refbox.top += reflinebox.bottom;
 			}
-			width -= refbox.right * 3;
-			ncbox.bottom = ncbox.bottom * 2 + refbox.bottom + 4;
+			buttonleft -= refbox.right * 3;
+			ncbox.bottom = refbox.top + refbox.bottom + 4; // ツリーY 修正
 		}
 									// ボタンの位置修正
 		SetWindowPos(GetDlgItem(hDlg,IDOK), NULL,
-				width, refbox.top, 0,0,
+				buttonleft, refbox.top, 0,0,
 				SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOREDRAW | SWP_NOZORDER);
 		SetWindowPos(GetDlgItem(hDlg,IDCANCEL),NULL,
-				width + refbox.right,refbox.top, 0,0,
+				buttonleft + refbox.right,refbox.top, 0,0,
 				SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOREDRAW | SWP_NOZORDER);
 		SetWindowPos(hRefWnd,NULL,
-				width + refbox.right * 2,refbox.top, 0,0,
+				buttonleft + refbox.right * 2,refbox.top, 0,0,
 				SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOREDRAW | SWP_NOZORDER);
 	}
 
 	if ( hTreeWnd != NULL ){
-		int height;
+		int treeheight;
 
-		height = (box.bottom - box.top) - ncbox.bottom;
-		if ( height < 8 ) height = 8;
-		SetWindowPos(hTreeWnd,NULL,0,0,width + refbox.right * 3,height,
-			SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOREDRAW | SWP_NOZORDER);
+		treeheight = (clientbox.bottom - clientbox.top) - ncbox.bottom;
+		if ( treeheight < 8 ) treeheight = 8;
+		SetWindowPos(hTreeWnd, NULL, 0,0,
+				clientbox.right - clientbox.left, treeheight,
+				SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOREDRAW | SWP_NOZORDER);
 	}
 	// EditBox の大きさ修正(複数行の時は、ここでDlgの変更が起きることがあり、
 	// コントロールの再配置の考慮を不要にするため、最後に修正が必要)
-	SetWindowPos(hEdWnd, NULL, 0,0, width,ncbox.bottom,
-		SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOREDRAW | SWP_NOZORDER);
-
-	InvalidateRect(hDlg,NULL,TRUE);
+	SetWindowPos(hEdWnd, NULL, 0,0, editwidth, editheight,
+			SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOREDRAW | SWP_NOZORDER);
+	InvalidateRect(hDlg, NULL, TRUE);
 }
 
 int tInputSeparateExt(HWND hDlg,TCHAR *text)
@@ -343,6 +349,54 @@ void USEFASTCALL tInputInitDialog(HWND hDlg, TINPUTSTRUCT *ts)
 					if ( X_esel[1] == 0 ) tinput->firstC = tinput->lastC;
 			}
 		}
+
+		if ( tinput->flag & TIEX_USEPNBTN ){ // アシストリスト
+			PPxEDSTRUCT *PES;
+			int itemcount = 0;
+			int index = 0;
+			TCHAR keyword[CMDLINESIZE], param[CMDLINESIZE], buf[CMDLINESIZE];
+
+			PES = (PPxEDSTRUCT *)GetProp(ts->hEdWnd, PPxED);
+			while(EnumCustTable(index++, T("M_path"), keyword, param, sizeof(param)) >= 0){
+				if ( keyword[0] == '\0' ) continue;
+				if ( tstrstr(tinput->buff, keyword) != NULL ){
+					if ( itemcount == 0 ) CreateMainListWindow(PES, 1);
+					tstrcpy(buf, tinput->buff);
+					tstrreplace(buf, keyword, param);
+					SendMessage(PES->list.hWnd, LB_ADDSTRING, (WPARAM)0, (LPARAM)buf);
+					itemcount++;
+				}
+			}
+			if ( itemcount > 0 ) ShowWindow(PES->list.hWnd,SW_SHOWNA);
+#if 0
+			{
+			/*
+				int mov;
+				FN_REGEXP fn;
+
+				MakeFN_REGEXP(&fn, param);
+				mov = FilenameRegularExpression(line, &fn);
+				FreeFN_REGEXP(&fn);
+				if ( mov ){
+					RXPREPLACESTRING *rexps;
+					if ( IsTrue(InitRegularExpressionReplace(&rexps,keyword,FALSE)) ){
+						RegularExpressionReplace(rexps, line;
+						FreeRegularExpressionReplace(rexps);
+					}
+				}
+			*/
+			/*
+				RXPREPLACESTRING *rexps;
+				if ( IsTrue(InitRegularExpressionReplace(&rexps, param,FALSE)) ){
+					RegularExpressionReplace(rexps, line);
+					FreeRegularExpressionReplace(rexps);
+					SendMessage(mainlist.hWnd, mainlist.msg, (WPARAM)mainlist.wParam, (LPARAM)line);
+					mainlist.items++;
+				}
+			*/
+			}
+#endif
+		}
 	}
 	SetWindowText(hDlg, MessageText(tinput->title));
 	SetFocus(ts->hEdWnd);
@@ -389,6 +443,42 @@ void USEFASTCALL tInputInitDialog(HWND hDlg, TINPUTSTRUCT *ts)
 	}
 }
 
+void tInputPathFix(TCHAR *buff)
+{
+	const TCHAR *src;
+	TCHAR *dst;
+
+	src = dst = buff;
+	for ( ;; ){
+		TCHAR c;
+
+		c = *src;
+		switch ( c ){
+			case '\0':
+				*dst = '\0';
+				return;
+			case '\n':
+			case '\r':
+			case '<':
+			case '>':
+			case '|':
+				break;
+			default:
+				*dst++ = c;
+				#ifndef UNICODE
+					if ( IskanjiA(c) ){
+						c = *(src + 1);
+						*dst++ = c;
+						if ( c == '\0' ) return;
+						src += 2;
+						continue;
+					}
+				#endif
+		}
+		src++;
+	}
+}
+
 void tInputContinuousMenu(HWND hDlg, LPARAM lParam)
 {
 	HMENU hPopupMenu = CreatePopupMenu();
@@ -419,6 +509,7 @@ void USEFASTCALL SaveInputText(HWND hDlg, TINPUTSTRUCT *ts, INT_PTR result)
 	if ( tinput->flag & TIEX_USEREFLINE ){
 		tInputConnectExt(hDlg, tinput->buff, tinput->size, TRUE);
 	}
+	if ( tinput->flag & TIEX_FIXFORPATH ) tInputPathFix(tinput->buff);
 	EndDialog(hDlg, result);
 }
 

@@ -43,10 +43,10 @@ typedef enum {
 #define LISTU_FOCUSSUB 2	// 第２リストにフォーカス
 
 struct ComboList {	// コンボボックス処理用リストボックス
-	HWND	hWnd,hSubWnd;	// 第１リスト用 hWnd と 第２リスト用 hWnd
-	WNDPROC	OldProc,OldSubProc;	// 元 WndProc
+	HWND	hWnd, hSubWnd;	// 第１リスト用 hWnd と 第２リスト用 hWnd
+	WNDPROC	OldProc, OldSubProc;	// 元 WndProc
 	TCHAR	*OldString;		// リストボックス起動前のエディットボックスの内容
-	DWORD	OldStart,OldEnd;// ↑の選択範囲
+	DWORD	OldStart, OldEnd;// ↑の選択範囲
 	int		ListWindow;		// LISTU_
 	int		index;			// リスト非表示時に使用するヒストリ参照index
 	ECURSOR	select;			// 書き換える範囲
@@ -70,7 +70,7 @@ typedef struct tagPPxEDSTRUCT {
 	HWND	hWnd;		// 自分自身の hWnd
 	HWND	hTreeWnd;	// ツリー表示用ウィンドウ
 	struct {
-		HWND	hWnd,hToolBarWnd;	// 浮遊ツールバー用ウィンドウ
+		HWND	hWnd, hToolBarWnd;	// 浮遊ツールバー用ウィンドウ
 		ThSTRUCT Cmd;
 	} FloatBar;
 	WNDPROC hOldED;		// 元のウィンドウプロージャ
@@ -120,21 +120,21 @@ typedef struct {
 	ECURSOR	cursor,cursororg;	// 選択範囲
 } TEXTSEL;
 
-enum { TEXTSEL_ALL = 0,TEXTSEL_CHAR = 1,TEXTSEL_BACK,TEXTSEL_WORD,TEXTSEL_BEFORE,TEXTSEL_AFTER };
+enum { TEXTSEL_ALL = 0, TEXTSEL_CHAR = 1, TEXTSEL_BACK, TEXTSEL_WORD, TEXTSEL_BEFORE, TEXTSEL_AFTER };
 
 //--------------------------------------------------------------- PPD_EDL.C
 extern int xpbug;
 
-LRESULT CALLBACK EDsHell(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam);
+LRESULT CALLBACK EDsHell(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
 extern void InitExEdit(PPxEDSTRUCT *PES);
 extern const TCHAR PPxED[];
 
 #define BRAKET_NONE 0
 #define BRAKET_LEFT 1
 #define BRAKET_LEFTRIGHT 2
-extern int GetWordStrings(TCHAR *line,ECURSOR *cursor);
+extern int GetWordStrings(TCHAR *line, ECURSOR *cursor);
 
-extern ERRORCODE PPXAPI EditExtractMacro(PPxEDSTRUCT *PES,const TCHAR *param,TCHAR *extract,int flags);
+extern ERRORCODE PPXAPI EditExtractMacro(PPxEDSTRUCT *PES, const TCHAR *param, TCHAR *extract, int flags);
 
 typedef struct {
 	int codepage;
@@ -143,8 +143,8 @@ typedef struct {
 } EDITMODESTRUCT;
 #define EDITMODESTRUCT_DEFAULT 0,-1,-1
 
-extern void PPeSetTab(PPxEDSTRUCT *PES,int usetab);
-extern BOOL EditModeParam(EDITMODESTRUCT *ems,const TCHAR *param,const TCHAR *more);
+extern void PPeSetTab(PPxEDSTRUCT *PES, int usetab);
+extern BOOL EditModeParam(EDITMODESTRUCT *ems, const TCHAR *param, const TCHAR *more);
 extern void XEditSetModify(PPxEDSTRUCT *PES);
 extern void XEditClearModify(PPxEDSTRUCT *PES);
 
@@ -155,16 +155,16 @@ extern PPXINMENU returnmenu[];
 extern PPXINMENU charmenu[charmenu_items];
 //--------------------------------------------------------------- PPD_EDLC.C
 extern void FreeBackupText(PPxEDSTRUCT *PES);
-extern void FloatList(PPxEDSTRUCT *PES,int direction/*,const TCHAR *text*/);
-extern BOOL ListUpDown(HWND hWnd,PPxEDSTRUCT *PES,int offset,int repeat);
-extern ERRORCODE ListPageUpDown(PPxEDSTRUCT *PES,int offset);
-extern void ListSearch(HWND hWnd,PPxEDSTRUCT *PES,int len);
-extern void KeyStepFill(PPxEDSTRUCT *PES,BOOL histmode);
-extern void FixListPosition(PPxEDSTRUCT *PES,HWND hWnd);
-extern void ListSelect(PPxEDSTRUCT *PES,HWND hListWnd);
-extern HWND PPxRegistExEditCombo(HWND hED,int max,const TCHAR *defstr,WORD rHist,WORD wHist);
+extern void FloatList(PPxEDSTRUCT *PES, int direction);
+extern BOOL ListUpDown(HWND hWnd, PPxEDSTRUCT *PES, int offset, int repeat);
+extern ERRORCODE ListPageUpDown(PPxEDSTRUCT *PES, int offset);
+extern void ListSearch(HWND hWnd, PPxEDSTRUCT *PES, int len);
+extern void KeyStepFill(PPxEDSTRUCT *PES, BOOL histmode);
+extern void FixListPosition(PPxEDSTRUCT *PES, HWND hWnd);
+extern void ListSelect(PPxEDSTRUCT *PES, HWND hListWnd);
+extern HWND PPxRegistExEditCombo(HWND hED, int maxlen, const TCHAR *defstr, WORD rHist,WORD wHist);
 
-extern void CreateMainListWindow(PPxEDSTRUCT *PES,int direction);
+extern void CreateMainListWindow(PPxEDSTRUCT *PES, int direction);
 extern void CreateSubListWindow(PPxEDSTRUCT *PES);
 extern void CancelListThread(PPxEDSTRUCT *PES);
 
@@ -179,41 +179,41 @@ extern void PPeTreeWindow(PPxEDSTRUCT *PES);
 #define PPE_OPEN_MODE_CMDOPEN	2
 #define PPE_OPEN_MODE_CMDINSERT	3
 #define PPE_OPEN_MODE_EXCMDOPEN	4
-extern BOOL OpenFromFile(PPxEDSTRUCT *PES,int openmode,const TCHAR *fname);
-extern void OpenMainFromMem(PPxEDSTRUCT *PES,int openmode,const TCHAR *filename,const TCHAR *textimage,DWORD memsize,int usecp);
+extern BOOL OpenFromFile(PPxEDSTRUCT *PES, int openmode, const TCHAR *fname);
+extern void OpenMainFromMem(PPxEDSTRUCT *PES, int openmode, const TCHAR *filename, const TCHAR *textimage, DWORD memsize, int usecp);
 
 #define EDL_FILEMODE_APPEND		B0
 #define EDL_FILEMODE_NODIALOG	B1
 #define EDL_FILEMODE_DIALOG		B2
 
-extern BOOL FileSave(PPxEDSTRUCT *PES,int mode);
-extern void FileOpen(PPxEDSTRUCT *PES,int mode);
-extern void JumptoLine(HWND hWnd,int line);
+extern BOOL FileSave(PPxEDSTRUCT *PES, int mode);
+extern void FileOpen(PPxEDSTRUCT *PES, int mode);
+extern void JumptoLine(HWND hWnd, int line);
 extern void InitEditCharCode(PPxEDSTRUCT *PES);
 
 //--------------------------------------------------------------- PPD_EDLS.C
 #ifndef UNICODE
-extern void USEFASTCALL CaretFixToW(const char *str,DWORD *of);
-extern void USEFASTCALL CaretFixToA(const char *str,DWORD *of);
+extern void USEFASTCALL CaretFixToW(const char *str, DWORD *of);
+extern void USEFASTCALL CaretFixToA(const char *str, DWORD *of);
 #else
-#define CaretFixToW(str,of)
-#define CaretFixToA(str,of)
+#define CaretFixToW(str, of)
+#define CaretFixToA(str, of)
 #endif
 extern BOOL InitPPeFindReplace(PPxEDSTRUCT *PES);
-extern BOOL SelectEditStrings(PPxEDSTRUCT *PES,TEXTSEL *ts,int mode);
-extern TCHAR *SearchFileInedMain(ESTRUCT *ED,TCHAR *str,int mode);
-extern BOOL SearchStr(PPxEDSTRUCT *PES,int mode);
+extern BOOL SelectEditStrings(PPxEDSTRUCT *PES, TEXTSEL *ts, int mode);
+extern TCHAR *SearchFileInedMain(ESTRUCT *ED, TCHAR *str, int mode);
+extern BOOL SearchStr(PPxEDSTRUCT *PES, int mode);
 extern int CheckXPbug(void);
-extern void GetHeight(PPxEDSTRUCT *PES,HFONT hFont);
-extern void LineCursor(PPxEDSTRUCT *PES,DWORD mes);
-extern void USEFASTCALL SetMessageForEdit(HWND hWnd,const TCHAR *message);
+extern void GetHeight(PPxEDSTRUCT *PES, HFONT hFont);
+extern void LineCursor(PPxEDSTRUCT *PES, DWORD mes);
+extern void USEFASTCALL SetMessageForEdit(HWND hWnd, const TCHAR *message);
 
 #ifndef UNICODE
-extern void GetEditSel(HWND hWnd,TCHAR *buf,ECURSOR *cursor);
-extern void SetEditSel(HWND hWnd,TCHAR *buf,DWORD start,DWORD end);
+extern void GetEditSel(HWND hWnd, TCHAR *buf, ECURSOR *cursor);
+extern void SetEditSel(HWND hWnd, TCHAR *buf, DWORD start, DWORD end);
 #else
-#define GetEditSel(hWnd,buf,cursor) SendMessage(hWnd,EM_GETSEL,(WPARAM)cursor.start,(LPARAM)cursor.end)
-#define SetEditSel(hWnd,buf,start,end) SendMessage(hWnd,EM_SETSEL,start,end)
+#define GetEditSel(hWnd, buf, cursor) SendMessage(hWnd, EM_GETSEL, (WPARAM)cursor.start, (LPARAM)cursor.end)
+#define SetEditSel(hWnd, buf, start, end) SendMessage(hWnd, EM_SETSEL, start, end)
 #endif
 
 #ifdef __cplusplus

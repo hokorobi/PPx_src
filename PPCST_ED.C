@@ -673,11 +673,11 @@ INT_PTR CALLBACK DispFormatDialogBox(HWND hDlg,UINT iMsg,WPARAM wParam,LPARAM lP
 					SeletctNowDispFormat(hDlg,wParam,lParam);
 					break;
 
-				case IDB_ALCSET:
+				case IDB_TB_SETITEM:
 					InsertDispFormat(hDlg);
 					break;
 
-				case IDB_ALCDEL:
+				case IDB_TB_DELITEM:
 					DeleteDispFormat(hDlg);
 					break;
 

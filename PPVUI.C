@@ -11,7 +11,8 @@
 #include "PPV_FUNC.H"
 #pragma hdrstop
 #include "PPV_GVAR.C"	// グローバルの実体定義
-#define CARETSCROLLMARGIN 1 // キャレットのスクロール開始する行／桁
+#define CARETSCROLLMARGINX 4 // キャレットのスクロール開始する桁
+#define CARETSCROLLMARGINY 1 // キャレットのスクロール開始する行
 
 int GetPointY(int posY);
 
@@ -78,14 +79,14 @@ void GetSelectText(TCHAR *destptr)
 {
 	const TCHAR *src;
 	TMS_struct text = {{NULL,0,NULL},0};
-	TCHAR *dest,*max;
+	TCHAR *dest, *maxptr;
 
 	if ( vo_.DModeBit & VO_dmode_SELECTABLE ){
 		ClipMem(&text,-1,-1);
 		src = text.p ? text.tm.p : NilStr;
 		dest = destptr;
-		max = destptr + CMDLINESIZE / 2;
-		while ( dest < max ){
+		maxptr = destptr + CMDLINESIZE / 2;
+		while ( dest < maxptr ){
 			TCHAR c;
 
 			c = *src++;
@@ -676,7 +677,9 @@ void MoveCsrkey(int offx, int offy, BOOL select)
 			ResetSelect(FALSE);
 			InvalidateRect(vinfo.info.hWnd, NULL, TRUE);
 			if ( VOsel.cursor != FALSE ){	// カーソルが外なら呼び戻す
-				if ( VOsel.now.y.line < VOi->offY ) VOsel.now.y.line = VOi->offY;
+				if ( VOsel.now.y.line < VOi->offY ){
+					VOsel.now.y.line = VOi->offY;
+				}
 				if ( VOsel.now.y.line >= (VOi->offY + VO_sizeY - 1) ){
 					VOsel.now.y.line = (VOi->offY + VO_sizeY - 1);
 				}
@@ -691,7 +694,7 @@ void MoveCsrkey(int offx, int offy, BOOL select)
 		}
 	}
 									// y 範囲検査
-	newY = offy + VOsel.now.y.line;
+	newY = VOsel.now.y.line + offy;
 	if ( newY >= VOi->line ) newY = VOi->line - 1;
 	if ( newY < VO_minY ) newY = VO_minY;
 
@@ -702,8 +705,8 @@ void MoveCsrkey(int offx, int offy, BOOL select)
 		BOOL newlinemode;
 
 		newlinemode = offx ? FALSE : X_vzs;
-		if ( VOsel.line != newlinemode ){
-			VOsel.line = newlinemode;
+		if ( VOsel.linemode != newlinemode ){
+			VOsel.linemode = newlinemode;
 			InvalidateRect(vinfo.info.hWnd, NULL, FALSE);
 		}
 		// 表示を更新する領域を決定
@@ -711,7 +714,7 @@ void MoveCsrkey(int offx, int offy, BOOL select)
 
 		VOsel.now.y.pix  = newY * LineY;
 		VOsel.now.y.line = newY;
-		if ( newY != oldY ){ // Y
+		if ( newY != oldY ){ // Y変更
 			int oldpixx;
 
 			oldpixx = VOsel.now.x.pix;
@@ -719,7 +722,7 @@ void MoveCsrkey(int offx, int offy, BOOL select)
 			VOsel.now.x.pix = oldpixx; // キャレットのX座標を維持する
 			// ↓選択しているときは、キャレット位置の補正をした方がよいか？
 //			if ( (VOsel.select != FALSE) && !X_vzs ) VOsel.posdiffX = 0;
-		}else{ // X
+		}else{ // X変更
 			if ( (vo_.DModeBit & DOCMODE_TEXT) && ((VOsel.now.x.offset + offx) < 0) ){ // 上の行に移動する？
 				if ( VOsel.now.y.line <= VO_minY ){ // 最上位行
 					VOsel.now.x.offset = 0;
@@ -763,37 +766,47 @@ void MoveCsrkey(int offx, int offy, BOOL select)
 		}
 		// 表示範囲チェック
 		{
-			int cX;
+			int cX, leftbottom;
 
-			cX = (VOsel.now.x.pix + XV_left + XV_lleft) / fontX;
-			if( cX < (VOi->offX + CARETSCROLLMARGIN) ){
-				int delta = cX - (VOi->offX + CARETSCROLLMARGIN);
-				if ( delta < offx ) offx = delta;
-			}else if ( cX >= (VOi->offX + VO_sizeX - 1 - CARETSCROLLMARGIN) ){
-				int delta = cX - (VOi->offX + VO_sizeX - 1 - CARETSCROLLMARGIN);
-				if ( delta > offx ) offx = delta;
+			cX = (XV_lleft + VOsel.now.x.pix + XV_left) / fontX;
+			if ( vo_.DModeBit == DOCMODE_HEX ){
+				leftbottom = HEXADRWIDTH;
 			}else{
+				leftbottom = XV_lleft / fontX;
+			}
+			if ( cX < (VOi->offX + leftbottom + CARETSCROLLMARGINX) ){ // 表示範囲より左
+				int delta = cX - (VOi->offX + leftbottom + CARETSCROLLMARGINX);
+				if ( delta < offx ) offx = delta;
+			}else if ( cX >= (VOi->offX + VO_sizeX - 1 - CARETSCROLLMARGINX) ){ // 表示範囲より右
+				int delta = cX - (VOi->offX + VO_sizeX - 1 - CARETSCROLLMARGINX);
+				// カーソルの表示X をできるだけ変えないように調整
+				if ( (delta > offx) || (offx == MAX_MOVE_X) ){
+					offx = delta;
+				}
+			}else{ // 表示範囲内
 				offx = 0;
 			}
 		}
-		if( newY < (VOi->offY + CARETSCROLLMARGIN) ){
-			int delta = newY - (VOi->offY + CARETSCROLLMARGIN);
+		if ( newY < (VOi->offY + CARETSCROLLMARGINY) ){ // 表示範囲より上
+			// カーソルの表示Y をできるだけ変えないように調整
+			int delta = newY - (VOi->offY + CARETSCROLLMARGINY);
 			if ( delta < offy ) offy = delta;
-		}else if ( newY >= (VOi->offY + VO_sizeY - 1 - CARETSCROLLMARGIN) ){
-			int delta = newY - (VOi->offY + VO_sizeY - 1 - CARETSCROLLMARGIN);
+		}else if ( newY >= (VOi->offY + VO_sizeY - 2 - CARETSCROLLMARGINY) ){ // 表示範囲より下
+			// カーソルの表示Y をできるだけ変えないように調整
+			int delta = newY - (VOi->offY + VO_sizeY - 2 - CARETSCROLLMARGINY);
 			if ( delta > offy ) offy = delta;
 		}else{
 			offy = 0;
 		}
 		if( offy || offx ){ // スクロール有り
-			InvalidateRect(vinfo.info.hWnd,&box,FALSE);
-			MoveCsr(offx,offy,FALSE);	// スクロール
+			InvalidateRect(vinfo.info.hWnd, &box, FALSE);
+			MoveCsr(offx, offy, FALSE);	// スクロール
 		}
 		box.top = (newY - VOi->offY) * LineY + BoxView.top;
 		box.bottom = box.top + LineY;
-		InvalidateRect(vinfo.info.hWnd,&box,FALSE); // 新カーソルを表示
+		InvalidateRect(vinfo.info.hWnd, &box, FALSE); // 新カーソルを表示
 		if ( !FullDraw ) UpdateWindow_Part(vinfo.info.hWnd);
-		InvalidateRect(vinfo.info.hWnd,&BoxStatus,FALSE); // ステータス変更
+		InvalidateRect(vinfo.info.hWnd, &BoxStatus, FALSE); // ステータス変更
 		if ( FullDraw ) UpdateWindow_Part(vinfo.info.hWnd);
 	}
 	SetCursorCaret(&VOsel.now);
@@ -845,13 +858,17 @@ void CALLBACK DragProc(HWND hWnd,UINT msg,UINT_PTR id,DWORD work)
 					return;
 				case -2:	// 上にはみ出している
 					newline = VOi->offY;
-					if ( VOsel.line == FALSE ) InvalidateRect(hWnd,NULL,FALSE);
-					VOsel.line = X_vzs;
+					if ( VOsel.linemode == FALSE ){
+						InvalidateRect(hWnd,NULL,FALSE);
+					}
+					VOsel.linemode = X_vzs;
 					break;
 				case -3:	// 下にはみ出している
 				case -4:
-					if ( VOsel.line == FALSE ) InvalidateRect(hWnd,NULL,FALSE);
-					VOsel.line = X_vzs;
+					if ( VOsel.linemode == FALSE ){
+						InvalidateRect(hWnd,NULL,FALSE);
+					}
+					VOsel.linemode = X_vzs;
 					newline = VOi->offY + VO_sizeY - 1;
 					if ( newline >= VOi->line ){
 						newline = VOi->line - 1;
@@ -872,8 +889,8 @@ void CALLBACK DragProc(HWND hWnd,UINT msg,UINT_PTR id,DWORD work)
 			if ( oldline != VOsel.now.y.line ){
 				RECT box;
 
-				if ( VOsel.line == FALSE ) InvalidateRect(hWnd,NULL,FALSE);
-				VOsel.line = X_vzs;
+				if ( VOsel.linemode == FALSE ) InvalidateRect(hWnd,NULL,FALSE);
+				VOsel.linemode = X_vzs;
 				box.left = 0;
 				box.right = WndSize.cx;
 				if ( oldline < VOsel.now.y.line ){
@@ -885,9 +902,9 @@ void CALLBACK DragProc(HWND hWnd,UINT msg,UINT_PTR id,DWORD work)
 				}
 				InvalidateRect(hWnd,&box,TRUE);
 			}else{
-				if ( pointX ) VOsel.line = FALSE;
+				if ( pointX ) VOsel.linemode = FALSE;
 			}
-			if ( !VOsel.line && pointX ){
+			if ( !VOsel.linemode && pointX ){
 				InvalidateRect(hWnd,NULL,FALSE);
 			}
 			FixSelectRange();
@@ -1174,7 +1191,7 @@ void USEFASTCALL RunGesture(PPV_APPINFO *vinfo, MOUSESTATE *ms)
 	}
 }
 
-void DownMouse(HWND hWnd,MOUSESTATE *ms,WPARAM wParam)
+void PPvDownMouse(HWND hWnd,MOUSESTATE *ms,WPARAM wParam)
 {
 	if ( ms->PushButton <= MOUSEBUTTON_CANCEL ){
 		CancelMouse(hWnd);
@@ -1193,7 +1210,7 @@ void DownMouse(HWND hWnd,MOUSESTATE *ms,WPARAM wParam)
 	}
 	KillTimer(hWnd,TIMERID_DRAGSCROLL);
 	StopPopMsg(PMF_PROGRESS | PMF_WAITKEY);
-	if ( (GetFocus() != hWnd) && (hViewParentWnd == NULL) ){ // hParentWndは暫定
+	if ( (GetFocus() != hWnd) && (hViewParentWnd == NULL) ){
 		PPxCancelMouseButton(ms);
 		return;
 	}
@@ -1212,7 +1229,7 @@ void DownMouse(HWND hWnd,MOUSESTATE *ms,WPARAM wParam)
 				ms->mode = MOUSEMODE_DRAG;
 				SetCursorIcon(NULL,IDC_IBEAM);
 
-				VOsel.line = X_vzs;
+				VOsel.linemode = X_vzs;
 				VOsel.cursor = TRUE;
 				VOsel.select = TRUE;
 
@@ -1265,7 +1282,7 @@ void DownMouse(HWND hWnd,MOUSESTATE *ms,WPARAM wParam)
 	}
 }
 
-void UpMouse(HWND hWnd,MOUSESTATE *ms,int button,int oldmode,LPARAM lParam)
+void PPvUpMouse(HWND hWnd,MOUSESTATE *ms,int button,int oldmode,LPARAM lParam)
 {
 	TCHAR click[4];
 	POINT pos;
@@ -1273,10 +1290,7 @@ void UpMouse(HWND hWnd,MOUSESTATE *ms,int button,int oldmode,LPARAM lParam)
 
 	if ( button <= MOUSEBUTTON_CANCEL ) return;
 	CancelMouse(hWnd);
-	if ( GetFocus() != hWnd ){
-		if ( hViewParentWnd == NULL ) return;
-		SetFocus(hWnd);
-	}
+	if ( GetFocus() != hWnd ) SetFocus(hWnd);
 	LPARAMtoPOINT(pos,lParam);
 	posY = pos.y;
 	ClientToScreen(hWnd,&pos);
@@ -1393,10 +1407,7 @@ void DoubleClickMouse(HWND hWnd,MOUSESTATE *ms)
 
 	CursorTimerMode = CSRTM_OFF;
 	KillTimer(hWnd,TIMERID_DRAGSCROLL);
-	if ( GetFocus() != hWnd ){
-		if ( hViewParentWnd == NULL ) return;
-		SetFocus(hWnd);
-	}
+	if ( GetFocus() != hWnd ) SetFocus(hWnd);
 	if ( (ms->PushClientPoint.x < 0) ||
 		 (ms->PushClientPoint.y < 0) ||
 		 (ms->PushClientPoint.x >= WndSize.cx) ||
@@ -1637,23 +1648,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	THREADSTRUCT threadstruct = {PPvMainThreadName,XTHREAD_ROOT,NULL,0,0};
 	UnUsedParam(hPrevInstance);UnUsedParam(lpCmdLine);
 
+	hInst = hInstance;
 #if NODLL
 	InitCommonDll((HINSTANCE)hInst);
 #endif
 	PPxRegisterThread(&threadstruct);
 	CoInitializeEx(NULL,COINIT_APARTMENTTHREADED);
-	hInst = hInstance;					// ウインドウ関数で使用するために保存
 	WinPos.show = (BYTE)nShowCmd;
 	PPvHeap = GetProcessHeap();
 
-#ifdef UNICODE
-	if ( InitializePPv(&result,GetCommandLine()) == FALSE ) return result;
-#else
-	if ( InitializePPv(&result,lpCmdLine) == FALSE ) return result;
-#endif
+	if ( InitializePPv(&result) == FALSE ) return result;
 	PPxCommonExtCommand(K_TBB_INIT,1);
 #if USEDELAYCURSOR || SHOWFRAMERATE
-	SetTimer(vinfo.info.hWnd,TIMERID_DRAW,TIMERRATE_DRAW,DrawTimerProc);
+	SetTimer(vinfo.info.hWnd, TIMERID_DRAW, TIMERRATE_DRAW, DrawTimerProc);
 #endif
 	if ( FirstCommand != NULL ){
 		PostMessage(vinfo.info.hWnd,WM_PPXCOMMAND,K_FIRSTCMD,0);
@@ -1773,7 +1780,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 		case WM_XBUTTONDOWN:
 			DxTransformPoint(DxDraw,&lParam);
 			PPxDownMouseButton(&MouseStat,hWnd,wParam,lParam);
-			DownMouse(hWnd,&MouseStat,wParam);
+			PPvDownMouse(hWnd,&MouseStat,wParam);
 			break;
 
 		case WM_CAPTURECHANGED:
@@ -1787,9 +1794,9 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 			int oldmode,i;
 
 			oldmode = MouseStat.mode;
-			DxTransformPoint(DxDraw,&lParam);
-			i = PPxUpMouseButton(&MouseStat,wParam);
-			UpMouse(hWnd,&MouseStat,i,oldmode,lParam);
+			DxTransformPoint(DxDraw, &lParam);
+			i = PPxUpMouseButton(&MouseStat, wParam);
+			PPvUpMouse(hWnd, &MouseStat, i, oldmode, lParam);
 			break;
 		}
 		case WM_LBUTTONDBLCLK:

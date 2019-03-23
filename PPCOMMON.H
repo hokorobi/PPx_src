@@ -533,6 +533,22 @@ typedef struct {
 #define LOADWINAPI1T(name)	{(void (WINAPI **)())&(D ## name),#name TAPITAIL}
 extern PPXDLL HMODULE PPXAPI LoadWinAPI(const char *DLLname, HMODULE hDLL, LOADWINAPISTRUCT *apis, int mode);
 
+enum {
+	SYSTEMDLL_COMDLG32 = 0,
+	SYSTEMDLL_COMCTL32,
+	SYSTEMDLL_OLEAUT32,
+	SYSTEMDLL_MPR,
+	SYSTEMDLL_WINMM,
+	SYSTEMDLL_IMAGEHLP,
+	SYSTEMDLL_PSAPI,
+	SYSTEMDLL_SHCORE,
+	SYSTEMDLL_SHLWAPI,
+	SYSTEMDLL_RSTRTMGR,
+	SYSTEMDLL_ATL,
+	SYSTEMDLL_ATL100,
+};
+PPXDLL HMODULE PPXAPI LoadSystemDLL(DWORD dllID);
+
 extern PPXDLL int PPXAPI GetAccessApplications(const TCHAR *checkpath, TCHAR *text);
 
 //============================================================== 文字列操作関連
@@ -618,6 +634,7 @@ typedef struct tagTINPUT {
 #define TIEX_INSTRSEL	B12	// "|"による範囲指定を有効にする(PPXEDIT_INSTRSELと同じ)
 #define TIEX_NCHANGE	B13	// 更新通知有り。更新があったらK_EDITCHANGEが送信
 #define TIEX_LINE_MULTI	B14	// １行編集の複数行版(PPXEDIT_LINE_MULTIと同じ)
+#define TIEX_FIXFORPATH	B16	// ファイル名に使用できない文字を除去する
 	int firstC;		// 選択開始位置
 	int lastC;		// 選択終了位置
 	PPXAPPINFO *info;	// TIEX_USEINFOで有効 ( flag !TIEX_USEINFO のとき、tInputExで値がNULLに変更される) (0.37追加)
@@ -1322,6 +1339,7 @@ enum {
 	VTYPE_MAX,		// text code の種類の数
 	// VTYPE_MAX 以上は codepage を使用(codepage の最小値は37)
 };
+#define VTypeToCPlist_max (VTYPE_UTF7 + 1)
 
 enum {
 	VTYPE_CRLF = 0,

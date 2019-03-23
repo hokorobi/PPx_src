@@ -69,6 +69,7 @@ const TCHAR *OptionNames[] = {
 	T("LATIN1"),
 	T("UTF16"),
 	T("UTF16BE"),
+	T("PARENT"),
 //	T("FILECASE"),
 	NULL
 };
@@ -229,14 +230,13 @@ BOOL CheckParam(VIEWOPTIONS *viewopts,const TCHAR *param,TCHAR *filename)
 			}
 			continue;
 		}
-		{
+			// "-Pn" : 組み込み時の親ウィンドウ指定 / スクリーンセーバー指定
+		if ( (*(buf + 1) == 'P') && Isdigit(*(buf + 2)) ){
 			TCHAR *ptr;
 
-			if ( (*(buf + 1) == 'P') && Isdigit(*(buf + 2)) ){ //連動モードの復帰先（フォーカス設定先）
-				ptr = buf + 2;
-				hViewParentWnd = (HWND)GetNumber((const TCHAR **)&ptr);
-				continue;
-			}
+			ptr = buf + 2;
+			hViewParentWnd = (HWND)GetNumber((const TCHAR **)&ptr);
+			continue;
 		}
 		{								// ラベルを調べる
 			const TCHAR **label;
@@ -244,7 +244,7 @@ BOOL CheckParam(VIEWOPTIONS *viewopts,const TCHAR *param,TCHAR *filename)
 			label = OptionNames;
 			id = 0;
 			while ( *label ){
-				if ( !tstrcmp( buf + 1,*label )) break;
+				if ( !tstrcmp( buf + 1, *label ) ) break;
 				label++;
 				id++;
 			}
@@ -384,7 +384,10 @@ BOOL CheckParam(VIEWOPTIONS *viewopts,const TCHAR *param,TCHAR *filename)
 			case 47:			//	"UTF16BE"
 				viewopts->T_code = VTYPE_UNICODEB;
 				break;
-//			case 48:			//	filecase
+			case 48:			//	"PARENT"
+				hViewParentWnd = (HWND)GetNumber((const TCHAR **)&more);
+				break;
+//			case 49:			//	filecase
 //				FileCase = CheckSubParam(more,OffOn,1);
 //				break;
 			default:
@@ -404,29 +407,29 @@ void InitGui(void)
 		hToolBarWnd = NULL;
 	}
 	if ( X_win & XWIN_TOOLBAR ){
-		hToolBarWnd = CreateToolBar(&thGuiWork,vinfo.info.hWnd,&ID,T("B_vdef"),PPvPath,0);
+		hToolBarWnd = CreateToolBar(&thGuiWork, vinfo.info. hWnd, &ID, T("B_vdef"), PPvPath, 0);
 	}
 }
 
-BOOL InitializePPv(int *result,const TCHAR *lpszCmdLine)
+BOOL InitializePPv(int *result)
 {
 	BOOL reuse;
 	TCHAR name[VFPS];
 	TCHAR cmd[CMDLINESIZE];
 	const TCHAR *cmdptr;
+	const TCHAR *lpszCmdLine;
 	int viewflag;
 
-	PPxCommonExtCommand(K_CHECKUPDATE,0);
+	PPxCommonExtCommand(K_CHECKUPDATE, 0);
 	FixCharlengthTable(T_CHRTYPE);
 	if ( GetACP() != CP__SJIS ) VO_textS[VTYPE_SYSTEMCP] = textcp_systemcp;
 
-	GetModuleFileName(hInst,PPvPath,MAX_PATH);
+	GetModuleFileName(hInst, PPvPath, MAX_PATH);
 	*VFSFindLastEntry(PPvPath) = '\0';
 										// オプション解析 ---------------------
-#ifdef UNICODE
-	GetLineParam(&lpszCmdLine,name);
-#endif
-	reuse = CheckParam(&viewopt_def,lpszCmdLine,name);
+	lpszCmdLine = GetCommandLine();
+	GetLineParam(&lpszCmdLine, name);
+	reuse = CheckParam(&viewopt_def, lpszCmdLine, name);
 										// -R 処理 ----------------------------
 	if ( reuse ){
 		viewflag = ((WinPos.show == SW_SHOWNOACTIVATE) ||
@@ -441,36 +444,38 @@ BOOL InitializePPv(int *result,const TCHAR *lpszCmdLine)
 			size_t size;
 
 			size = NameFirst - lpszCmdLine;
-			memcpy(cmd,lpszCmdLine,size * sizeof(TCHAR));
+			memcpy(cmd, lpszCmdLine, size * sizeof(TCHAR));
 			p = cmd + size;
 			*p++ = '\"';
-			tstrcpy(p,name);
+			tstrcpy(p, name);
 			p += tstrlen(p);
 			*p++ = '\"';
 			*p++ = ' ';
-			tstrcpy(p,NameLast);
+			tstrcpy(p, NameLast);
 			cmdptr = cmd;
 		}
 		if ( MultiBootMode == PPXREGIST_NORMAL ){
 			*result = 1;
-			if ( PPxView(NULL,cmdptr,viewflag) ){
+			if ( PPxView(NULL, cmdptr, viewflag) ){
 				*result = 0;
 				return FALSE;
 			}
 		}
 	}
-	if ( PPxRegist(PPXREGIST_DUMMYHWND,RegID,MultiBootMode) < 0 ){
-		*result = 1;
-		if ( reuse ){
-			if ( MultiBootMode == PPXREGIST_IDASSIGN ){
-				setflag(viewflag,PPV_BOOTID | ((int)RegID[2] << 24));
+	if ( PPxRegist(PPXREGIST_DUMMYHWND, RegID, MultiBootMode) < 0 ){
+		if ( hViewParentWnd == NULL ){
+			*result = 1;
+			if ( reuse ){
+				if ( MultiBootMode == PPXREGIST_IDASSIGN ){
+					setflag(viewflag,PPV_BOOTID | ((int)RegID[2] << 24));
+				}
+				if ( PPxView(NULL,cmd,viewflag) ) *result = 0;
+			}else{
+				SetForegroundWindow(PPxGetHWND(RegID));
+				*result = 0;
 			}
-			if ( PPxView(NULL,cmd,viewflag) ) *result = 0;
-		}else{
-			SetForegroundWindow(PPxGetHWND(RegID));
-			*result = 0;
+			return FALSE;
 		}
-		return FALSE;
 	}
 
 	InitPPvWindow();
@@ -700,8 +705,11 @@ void PPvLoadCust(void)
 	GetCustData (T("CV_hili")	,&CV_hili,sizeof(CV_hili));
 	CV_char[CV__highlight] = CV_hili[0];
 	GetCustData (T("CV_lcsr")	,&CV_lcsr,sizeof(CV_lcsr));
-	XV.img.MagMode = IMGD_MM_FULLSCALE;
-	GetCustTableCID(T("XV_imgD"),RegCID,&XV.img.imgD,sizeof(XV.img.imgD));
+
+	if ( hViewParentWnd == NULL ){
+		XV.img.MagMode = IMGD_MM_FULLSCALE;
+		GetCustTableCID(T("XV_imgD"),RegCID,&XV.img.imgD,sizeof(XV.img.imgD));
+	}
 	GetCustData (T("XV_dds")	,&X_dds,sizeof(X_dds));
 	GetCustData (T("X_awhel")	,&X_awhel,sizeof(X_awhel));
 	GetCustData (T("XV_bctl")	,&XV_bctl,sizeof(XV_bctl));
@@ -900,12 +908,15 @@ void InitPPvWindow(void)
 		WinPos.pos.bottom -= WinPos.pos.top;
 		WinPos.pos.left = WinPos.pos.top = 0;
 		hUseParentWnd = hViewParentWnd;
+		setflag(X_win,XWIN_HIDESCROLL);
+		XV.img.MagMode = IMGD_AUTOWINDOWSIZE;
+		viewopt_def.I_animate = 1;
 	}
-	vinfo.info.hWnd = CreateWindowEx(0,T(PPVWinClass),NilStr,style,
-		WinPos.pos.left,WinPos.pos.top,
-		WinPos.pos.right - WinPos.pos.left,WinPos.pos.bottom - WinPos.pos.top,
-		hUseParentWnd,NULL,hInst,NULL);
-	PPxRegist(vinfo.info.hWnd,RegID,PPXREGIST_SETHWND);
+	vinfo.info.hWnd = CreateWindowEx(0, T(PPVWinClass), NilStr, style,
+		WinPos.pos.left, WinPos.pos.top,
+		WinPos.pos.right - WinPos.pos.left, WinPos.pos.bottom - WinPos.pos.top,
+		hUseParentWnd, NULL, hInst, NULL);
+	PPxRegist(vinfo.info.hWnd, RegID, PPXREGIST_SETHWND);
 	wsprintf(buf,T("PPV[%c]"),RegID[2]);
 	SetWindowText(vinfo.info.hWnd,buf);
 

@@ -300,11 +300,11 @@ void EnumEtcItem(HWND hDlg)
 	if ( !tstrcmp(p,T("_Execs")) ) EtcEditFormat = ETC_EXECS;
 	if ( !tstrcmp(p,T("X_fopt")) ) EtcEditFormat = ETC_NOPARAM;
 */
-	EnableDlgWindow(hDlg,IDB_ALCSET,EtcEditFormat < ETC__VIEW);
-	SetDlgItemText(hDlg,IDB_ALCSET,GetCText(
+	EnableDlgWindow(hDlg,IDB_TB_SETITEM,EtcEditFormat < ETC__VIEW);
+	SetDlgItemText(hDlg,IDB_TB_SETITEM,GetCText(
 		((EtcEditFormat > ETC__EDITBUTTON) && (EtcEditFormat < ETC__VIEW)) ?
 			StrAddLabel_Edit : StrAddLabel_Add) );
-	ShowDlgWindow(hDlg,IDB_ALCDEL,EtcEditFormat != ETC_INFODISP);
+	ShowDlgWindow(hDlg, IDB_TB_DELITEM, EtcEditFormat != ETC_INFODISP);
 	if ( EtcEditFormat == ETC_INFODISP ){
 		FormatCellDispSample(data,key,1);
 		SendMessage(hListWnd,LB_ADDSTRING,0,(LPARAM)data);
@@ -462,7 +462,7 @@ void EtcSelectType(HWND hDlg,HWND hTwnd)
 	TreeView_GetItem(hTwnd,&tvi);
 	seltree = tvi.lParam;
 	etc = seltree >= ETCID;
-	ShowDlgWindow(hDlg,IDB_ALCSET,etc);
+	ShowDlgWindow(hDlg,IDB_TB_SETITEM,etc);
 	ShowDlgWindow(hDlg,IDB_MEUP,etc);
 	ShowDlgWindow(hDlg,IDB_MEDW,etc);
 	if ( etc ){ // Etc
@@ -513,7 +513,7 @@ BOOL EtcTreeNotify(HWND hDlg,NMHDR *nmh)
 {
 	switch (nmh->code){
 		case PSN_SETACTIVE:
-			InitWndIcon(hDlg,IDB_ALCDEL);
+			InitWndIcon(hDlg, IDB_TB_DELITEM);
 			break;
 
 		case PSN_APPLY:
@@ -561,11 +561,11 @@ INT_PTR CALLBACK EtcPage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 					if ( seltree >= ETCID ) EtcSelectItem(hDlg,wParam,lParam);
 					break;
 
-				case IDB_ALCSET:
+				case IDB_TB_SETITEM:
 					if ( seltree >= ETCID ) AddEtcItem(hDlg);
 					break;
 
-				case IDB_ALCDEL:
+				case IDB_TB_DELITEM:
 					if ( seltree >= ETCID ){
 						DeleteEtcItem(hDlg);
 					}else{

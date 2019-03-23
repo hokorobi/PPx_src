@@ -74,14 +74,17 @@ VOID CALLBACK HoverTipTimerProc(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dw
 	PPC_APPINFO *cinfo;
 	UnUsedParam(uMsg);UnUsedParam(dwTime);
 
-	KillTimer(hWnd,idEvent);
-	cinfo = (PPC_APPINFO *)GetWindowLongPtr(hWnd,GWLP_USERDATA);
+	KillTimer(hWnd, idEvent);
+	cinfo = (PPC_APPINFO *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+
+	if ( (cinfo->Tip.hTipWnd != NULL) && (cinfo->Tip.X_stip_mode == stip_mode_preview) ){
+		return;
+	}
+
 	if ( cinfo->e.cellPoint >= 0 ){
-		setflag(X_stip,(STIP_NOW | STIP_HOVER));
-		cinfo->X_stip_mode = stip_mode_fileinfo;
-		// 仮。dw版だと合わない
-		RefleshCell(cinfo,cinfo->e.cellPoint);
-		UpdateWindow_Part(cinfo->info.hWnd);
+		int mode = X_stip[TIP_HOVER_MODE];
+		if ( mode == 0 ) mode = stip_mode_fileinfo;
+		ShowTipNow(cinfo, STIP_HOVER | STIP_MOUSE, mode, cinfo->e.cellPoint);
 	}
 	return;
 }
@@ -316,12 +319,12 @@ void HeaderRClick(PPC_APPINFO *cinfo)
 			hdi.lParam = 0xffff; // -1,-1
 		}
 	}
-	wsprintf(buf,T("%d"),(char)hdi.lParam);
-	ThSetString(&cinfo->StringVariable,T("HeaderSortU"),buf);
-	wsprintf(buf,T("%d"),(char)(hdi.lParam >> 8));
-	ThSetString(&cinfo->StringVariable,T("HeaderSortD"),buf);
+	wsprintf(buf, T("%d"), (char)hdi.lParam);
+	ThSetString(&cinfo->StringVariable, T("HeaderSortU"),buf);
+	wsprintf(buf, T("%d"), (char)(hdi.lParam >> 8));
+	ThSetString(&cinfo->StringVariable, T("HeaderSortD"),buf);
 
-	if ( IsTrue(PPcMouseCommand(cinfo,T("R"),T("HEAD"))) ) return;
+	if ( IsTrue(PPcMouseCommand(cinfo, T("R"), T("HEAD"))) ) return;
 	PPcDirContextMenu(cinfo);
 }
 
@@ -380,16 +383,16 @@ void SetCaptionCombo(PPC_APPINFO *cinfo,HWND hWnd)
 }
 
 #pragma argsused
-void CALLBACK DDTimerProc(HWND hWnd,UINT uMsg,UINT_PTR idEvent,DWORD dwTime)
+void CALLBACK DDTimerProc(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 {
 	PPC_APPINFO *cinfo;
-	UnUsedParam(uMsg);UnUsedParam(idEvent);UnUsedParam(dwTime);
+	UnUsedParam(uMsg); UnUsedParam(idEvent); UnUsedParam(dwTime);
 
 	cinfo = (PPC_APPINFO *)GetWindowLongPtr(hWnd,GWLP_USERDATA);
 	if ( !cinfo->DDpagemode ){
-		MoveWinOff(cinfo,cinfo->DDpage);
+		MoveWinOff(cinfo, cinfo->DDpage);
 	}else{
-		SendMessage(cinfo->hTreeWnd,VTM_SCROLL,0,0);
+		SendMessage(cinfo->hTreeWnd, VTM_SCROLL, 0, 0);
 	}
 }
 
@@ -428,7 +431,7 @@ void SetDDScroll(PPC_APPINFO *cinfo,POINT *pos)
 		cinfo->DDpage = ddpage;
 		if ( cinfo->ddtimer_id == 0 ){
 			cinfo->ddtimer_id = SetTimer(cinfo->info.hWnd,
-					TIMERID_DRAGSCROLL,TIMER_DRAGSCROLL,DDTimerProc);
+					TIMERID_DRAGSCROLL, TIMER_DRAGSCROLL, DDTimerProc);
 		}
 	}else{
 		if ( cinfo->ddtimer_id != 0 ){
@@ -443,18 +446,18 @@ BOOL USEFASTCALL MoveWinOff(PPC_APPINFO *cinfo,int offset)
 	return MoveCellCsr(cinfo,offset,&XC_mvSC);
 }
 
-void DoMouseAction(PPC_APPINFO *cinfo,const TCHAR *button,LPARAM lParam)
+void DoMouseAction(PPC_APPINFO *cinfo, const TCHAR *button, LPARAM lParam)
 {
 	POINT pos;
 	int area;
 
 	cinfo->PopupPosType = PPT_MOUSE;
 	if ( GetFocus() != cinfo->info.hWnd ) return;
-	LPARAMtoPOINT(pos,lParam);
-	area = GetItemTypeFromPoint(cinfo,&pos,NULL);
+	LPARAMtoPOINT(pos, lParam);
+	area = GetItemTypeFromPoint(cinfo, &pos, NULL);
 
 	if ( cinfo->PushArea != area ) return;
-	PPcMouseCommand(cinfo,button,(const TCHAR *)area);
+	PPcMouseCommand(cinfo, button, (const TCHAR *)area);
 }
 
 void H_WheelMouse(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
@@ -1054,6 +1057,13 @@ void UpMouse(PPC_APPINFO *cinfo,int button,int oldmode,WPARAM wParam,LPARAM lPar
 	POINT uppos;
 	int newMpos;
 
+	if ( cinfo->Tip.WndState >= TWS_READY ){
+		if ( (cinfo->Tip.hTipWnd != NULL) && (cinfo->Tip.X_stip_mode == stip_mode_preview) ){ //preview は DestroyWindow で ReleaseCapture が生じるのでここで処理
+			 HideFileNameTip(cinfo);
+		}
+	}
+
+
 	if ( cinfo->EntriesOffset.x | cinfo->EntriesOffset.y ){
 		if ( button > MOUSEBUTTON_CANCEL ){
 			if ( XC_page ){
@@ -1138,12 +1148,17 @@ void UpMouse(PPC_APPINFO *cinfo,int button,int oldmode,WPARAM wParam,LPARAM lPar
 			}
 		}
 		// ダブルクリック / タッチ時タップ解除
-		if ( (PPcMouseCommand(cinfo,click,(const TCHAR *)cinfo->PushArea) == FALSE) &&
-				(TouchMode & TOUCH_DBLCLICKTOSINGLE) &&
-				IsTouchMessage() &&
-				(cinfo->PushArea == PPCR_CELLTEXT) &&
-				(cinfo->e.cellN == cinfo->cellNbeforePush) ){ // タッチをダブルクリックに変換
-			PPcMouseCommand(cinfo,T("LD"),(const TCHAR *)cinfo->PushArea);
+		if ( PPcMouseCommand(cinfo, click, (const TCHAR *)cinfo->PushArea) == FALSE ){
+			if ( (TouchMode & TOUCH_DBLCLICKTOSINGLE) &&
+				 IsTouchMessage() &&
+				 (cinfo->PushArea == PPCR_CELLTEXT) &&
+				 (cinfo->e.cellN == cinfo->cellNbeforePush) ){ // タッチをダブルクリックに変換
+				PPcMouseCommand(cinfo,T("LD"),(const TCHAR *)cinfo->PushArea);
+			}else if ( cinfo->PushArea == PPCR_CELLTAIL ){
+				int mode = X_stip[TIP_TAIL_MODE];
+				if ( mode == 0 ) mode = stip_mode_preview;
+				ShowTipNow(cinfo, STIP_TAIL | STIP_MOUSE, mode, cinfo->e.cellPoint);
+			}
 		}
 		return;
 	}
@@ -1173,36 +1188,43 @@ void UpMouse(PPC_APPINFO *cinfo,int button,int oldmode,WPARAM wParam,LPARAM lPar
 	PPcMouseCommand(cinfo,click,(const TCHAR *)cinfo->PushArea);
 }
 
-void WMMouseMove(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
+void WMMouseMove(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 {
 	POINT pos;
 	int posType;
-	ENTRYINDEX itemNo,pn;
+	ENTRYINDEX itemNo, pn;
 
-	LPARAMtoPOINT(pos,lParam);
+	LPARAMtoPOINT(pos, lParam);
 
 	if ( (cinfo->oldmousemvpos.x == pos.x) &&
 		 (cinfo->oldmousemvpos.y == pos.y) ){
 		if ( cinfo->MouseStat.mode != MOUSEMODE_DRAG ) return;
 	}else{
 		cinfo->oldmousemvpos = pos;
-		posType = GetItemTypeFromPoint(cinfo,&pos,&itemNo);
+		posType = GetItemTypeFromPoint(cinfo, &pos, &itemNo);
 
 		if ( X_poshl != 0 ){ // マウスカーソル上のエントリ背景色変更
-			pn = ( posType == PPCR_CELLTEXT ) ? itemNo : -1;
+//			setflag(cinfo->Tip.mode, STIP_SHOWTAILAREA);
+			if ( (posType == PPCR_CELLMARK) ||
+				 (posType == PPCR_CELLTEXT) ||
+				 (posType == PPCR_CELLTAIL) ){
+				pn = itemNo;
+			}else{
+				pn = -1;
+			}
 			if ( cinfo->e.cellPoint != pn ){
 				ENTRYINDEX oldn;
 
 				oldn = cinfo->e.cellPoint;
 				cinfo->e.cellPoint = pn;
+				cinfo->e.cellPointType = posType;
 
-				if ( pn >= 0 ) RefleshCell(cinfo,pn);
-				if ( oldn >= 0 ) RefleshCell(cinfo,oldn);
-				if ( cinfo->X_stip_hover ){
+				if ( pn >= 0 ) RefleshCell(cinfo, pn);
+				if ( oldn >= 0 ) RefleshCell(cinfo, oldn);
+				if ( X_stip[TIP_HOVER_TIME] ){
 					HideFileNameTip(cinfo);
-					KillTimer(cinfo->info.hWnd, TIMERID_HOVERTIP);
 					if ( pn >= 0 ){
-						SetTimer(cinfo->info.hWnd, TIMERID_HOVERTIP, 500,HoverTipTimerProc);
+						SetTimer(cinfo->info.hWnd, TIMERID_HOVERTIP, X_stip[TIP_HOVER_TIME], HoverTipTimerProc);
 					}
 				}
 				pn = -2;
@@ -1323,6 +1345,12 @@ void WMMouseMove(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo,WPARAM wParam)
 {
 	int area,n;
+
+	if ( cinfo->Tip.WndState >= TWS_READY ){
+		if ( (cinfo->Tip.hTipWnd == NULL) || (cinfo->Tip.X_stip_mode != stip_mode_preview) ){ //preview は DestroyWindow で ReleaseCapture が生じるので無視
+			 HideFileNameTip(cinfo);
+		}
+	}
 
 	if ( cinfo->MouseStat.PushButton <= MOUSEBUTTON_CANCEL ){
 		if ( cinfo->MousePush != MOUSE_NONE ){
@@ -1552,13 +1580,13 @@ LRESULT WMTouch(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 	SetPopMsg(cinfo,POPMSG_MSG,T("WMTouch"));
 	if ( Touchs == 0 ){
 		if ( Touch.touchs != 0 ){
-			int oldmode,i;
+			int oldmode, button;
 
 			Touch.touchs = 0;
 
 			oldmode = cinfo->MouseStat.mode;
-			i = PPxUpMouseButton(&cinfo->MouseStat,0);
-			UpMouse(cinfo,i,oldmode,0,TMAKELPARAM(pos.x,pos.y));
+			button = PPxUpMouseButton(&cinfo->MouseStat, 0);
+			UpMouse(cinfo, button, oldmode, 0, TMAKELPARAM(0, 0));
 			cinfo->MousePush = MOUSE_CANCEL;
 		}
 	}else{
@@ -2054,7 +2082,7 @@ void WmWindowPosChanged(PPC_APPINFO *cinfo)
 				cinfo->docks.b.client.bottom,TRUE);
 	}
 	ResizeGuiParts(cinfo);
-	HideFileNameTip(cinfo);
+	// HideFileNameTip(cinfo);
 	ChangeSizeDxDraw(cinfo->DxDraw,cinfo->BackColor);
 }
 
@@ -2362,9 +2390,9 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 		case WM_RBUTTONDOWN:
 		case WM_MBUTTONDOWN:
 		case WM_XBUTTONDOWN:
-			DxTransformPoint(cinfo->DxDraw,&lParam);
-			PPxDownMouseButton(&cinfo->MouseStat,hWnd,wParam,lParam);
-			WmMouseDown(cinfo,wParam);
+			DxTransformPoint(cinfo->DxDraw, &lParam);
+			PPxDownMouseButton(&cinfo->MouseStat, hWnd, wParam, lParam);
+			WmMouseDown(cinfo, wParam);
 			break;
 							// キャプチャ解除(ReleaseCapture実行時に来る) -----
 		case WM_CAPTURECHANGED:
@@ -2375,12 +2403,12 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 		case WM_MBUTTONUP:
 		case WM_RBUTTONUP:
 		case WM_XBUTTONUP: {
-			int oldmode,i;
+			int oldmode, button;
 
-			DxTransformPoint(cinfo->DxDraw,&lParam);
+			DxTransformPoint(cinfo->DxDraw, &lParam);
 			oldmode = cinfo->MouseStat.mode;
-			i = PPxUpMouseButton(&cinfo->MouseStat,wParam);
-			UpMouse(cinfo,i,oldmode,wParam,lParam);
+			button = PPxUpMouseButton(&cinfo->MouseStat, wParam);
+			UpMouse(cinfo, button, oldmode, wParam, lParam);
 			cinfo->MousePush = MOUSE_CANCEL;
 			break;
 		}

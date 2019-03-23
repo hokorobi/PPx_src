@@ -603,9 +603,11 @@ BOOL FindEntryUDFImage(CDS *cds,const TCHAR *fname,WIN32_FIND_DATA *ff)
 					}else if ( febuf.fe.tag.id == UDF_EFE_ID ){
 						len = febuf.efe.L_AD;
 						usadr = (UDFSHORTAD *)&(febuf.efe.EA[febuf.efe.L_EA]);
+					} else{
+						return FALSE;
 					}
 					while ( len >= sizeof(UDFSHORTAD) ){
-						AddDD(sizeL,sizeH,usadr->length,0);
+						AddDD(sizeL, sizeH, usadr->length, 0);
 						usadr++;
 						len -= sizeof(UDFSHORTAD);
 					}

@@ -203,7 +203,10 @@ void USEFASTCALL IntervalSubThread(PPC_APPINFO *cinfo,SUBTHREADSTRUCT *sts)
 		GetCursorPos(&pos);
 		ScreenToClient(cinfo->info.hWnd,&pos);
 		posType = GetItemTypeFromPoint(cinfo,&pos,NULL);
-		if ( (cinfo->e.cellPoint >= 0) && (posType != PPCR_CELLTEXT) ){
+		if ( (cinfo->e.cellPoint >= 0) &&
+			 !( (posType == PPCR_CELLMARK) ||
+			 	(posType == PPCR_CELLTEXT) ||
+			 	(posType == PPCR_CELLTAIL) ) ){
 			ENTRYINDEX oldn;
 
 			oldn = cinfo->e.cellPoint;

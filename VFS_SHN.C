@@ -424,31 +424,32 @@ VFSDLL LPSHELLFOLDER PPXAPI PidlToIShell(LPCITEMIDLIST pidl)
 									// shell name space のroot(desktop)を取得
 	if ( FAILED(SHGetDesktopFolder(&piDesktop)) ) return NULL;
 									// BindToObject を使って関連付け
-	hr = piDesktop->lpVtbl->BindToObject(piDesktop,pidl, NULL,
-							&XIID_IShellFolder,(LPVOID *)&pParent);
+	hr = piDesktop->lpVtbl->BindToObject(piDesktop,
+			pidl, NULL, &XIID_IShellFolder, (LPVOID *)&pParent);
 	piDesktop->lpVtbl->Release(piDesktop);
 
 	if ( FAILED(hr) ) return NULL;
 	return pParent;
 }
 //-------------------------------------- SHN パスなら、実体パスを取得
-VFSDLL BOOL PPXAPI VFSGetRealPath(HWND hWnd,TCHAR *path,const TCHAR *vfs)
+VFSDLL BOOL PPXAPI VFSGetRealPath(HWND hWnd, TCHAR *path, const TCHAR *vfs)
 {
 	LPITEMIDLIST idl = NULL,idl2,idlc;
 	LPSHELLFOLDER pSF;
 	LPMALLOC pMA;
 	BOOL result;
-	TCHAR tempdir[VFPS],*p;
+	TCHAR tempdir[VFPS], *p;
 
-	pSF = VFPtoIShell(hWnd,vfs,&idl);
+	pSF = VFPtoIShell(hWnd, vfs, &idl);
 	if ( pSF == NULL ){ // 最後のエントリがbindできないと思われるので試行する
 		TCHAR c;
 
-		tstrcpy(tempdir,vfs);
+		path[0] = '\0';
+		tstrcpy(tempdir, vfs);
 		p = VFSFindLastEntry(tempdir);
 		if ( (c = *p) == '\0' ) return FALSE; // エントリがない
 		*p = '\0';
-		pSF = VFPtoIShell(hWnd,tempdir,&idl); // 最終エントリ以外で取得
+		pSF = VFPtoIShell(hWnd, tempdir, &idl); // 最終エントリ以外で取得
 		if ( pSF == NULL ) return FALSE;
 									// 最終エントリを処理
 		if ( c == '\\' ){
@@ -456,19 +457,19 @@ VFSDLL BOOL PPXAPI VFSGetRealPath(HWND hWnd,TCHAR *path,const TCHAR *vfs)
 		}else{
 			*p = c;
 		}
-		idl2 = BindIShellAndFname(pSF,p);
+		idl2 = BindIShellAndFname(pSF, p);
 		if ( idl2 == NULL ){
 			pSF->lpVtbl->Release(pSF);
 			return FALSE;
 		}
 		SHGetMalloc(&pMA);
-		idlc = CatPidl(pMA,idl,idl2);
-		pMA->lpVtbl->Free(pMA,idl2);
-		pMA->lpVtbl->Free(pMA,idl);
+		idlc = CatPidl(pMA, idl, idl2);
+		pMA->lpVtbl->Free(pMA, idl2);
+		pMA->lpVtbl->Free(pMA, idl);
 		pMA->lpVtbl->Release(pMA);
 		idl = idlc;
 	}
-	result = SHGetPathFromIDList(idl,path);
+	if ( (result = SHGetPathFromIDList(idl, path)) == FALSE ) path[0] = '\0';
 	FreePIDL(idl);
 	return result;
 }

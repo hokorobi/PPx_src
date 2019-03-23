@@ -212,18 +212,18 @@ BOOL FileMatch(const TCHAR *name,WHERESTRING *sm)
 TCHAR *tstristr(const TCHAR *target,const TCHAR *findstr)
 {
 	size_t len,flen;
-	const TCHAR *p,*max;
+	const TCHAR *p, *maxptr;
 
 	flen = tstrlen(findstr);
 	len = tstrlen(target);
-	max = target + len - flen;
+	maxptr = target + len - flen;
 
 #ifdef UNICODE
-	for ( p = target ; p <= max ; p++ ){
+	for ( p = target ; p <= maxptr ; p++ ){
 #else
-	for ( p = target ; p <= max ; p += Chrlen(*p) ){
+	for ( p = target ; p <= maxptr ; p += Chrlen(*p) ){
 #endif
-		if ( !tstrnicmp(p,findstr,flen) ){
+		if ( !tstrnicmp(p, findstr, flen) ){
 			return (TCHAR *)p;
 		}
 	}

@@ -116,17 +116,17 @@ PPXDLL UTCHAR PPXAPI GetOptionParameter(LPCTSTR *commandline,TCHAR *optionname,T
 	code = SkipSpace(commandline);
 	if ( (code == '-') || (code == '/') ){
 		const TCHAR *src;
-		TCHAR *dest,*max;
+		TCHAR *dest, *maxptr;
 
 		dest = optionname;
 		*dest++ = code;
-		max = dest + CMDLINESIZE - 1;
+		maxptr = dest + CMDLINESIZE - 1;
 		src = *commandline + 1;
 		for ( ;; ){
 			code = *src;
 			if ( Isalnum(code) == FALSE ) break;
 			*dest++ = code;
-			if ( dest >= max ) break;
+			if ( dest >= maxptr ) break;
 			src++;
 		}
 		*dest = '\0';

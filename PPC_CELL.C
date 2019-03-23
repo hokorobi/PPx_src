@@ -42,7 +42,9 @@ BOOL IsFileDir(PPC_APPINFO *cinfo,const TCHAR *filename,TCHAR *newpath,TCHAR *ne
 
 		pathbuf[0] = '\0';
 		if ( VFSFullPath(pathbuf,(TCHAR *)filename,cinfo->path) != NULL ){
-			VFSGetRealPath(cinfo->info.hWnd,pathbuf,pathbuf);
+			if( VFSGetRealPath(cinfo->info.hWnd,pathbuf,pathbuf) == FALSE ){
+				return FALSE;
+			}
 		}
 		if ( pathbuf[0] == '\0' ) return FALSE;
 	}
@@ -277,7 +279,7 @@ BOOL CellLook(PPC_APPINFO *cinfo,int IsFileRead)
 			TCHAR buf[VFPS];
 
 			buf[0] = '\0';
-			VFSGetRealPath(cinfo->info.hWnd,buf,cinfo->path);
+			VFSGetRealPath(cinfo->info.hWnd, buf, cinfo->path);
 			if( (buf[0] == '\\') && !tstrstr(buf,T("::")) ){
 				tstrcpy(cinfo->path,buf);
 			}

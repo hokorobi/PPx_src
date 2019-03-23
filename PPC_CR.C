@@ -29,6 +29,7 @@ const TCHAR MES_MCRDstr[] = MES_MCRD;
 const TCHAR MES_MCREstr[] = MES_MCRE;
 const TCHAR MES_MCRXstr[] = MES_MCRX;
 const TCHAR MES_MEMDstr[] = MES_MEMD;
+CRMENUSTACKCHECK DummyCrmCheck;
 
 #define CRMOM_DEFAULTSELECT 1
 #define CRMOM_DEFAULTEXECUTE 2
@@ -609,28 +610,23 @@ int reglist(PPC_APPINFO *cinfo,HMENU hMenu,PPCMENUINFO *cminfo,PPXMENUDATAINFO *
 	return cnt;
 }
 
-/*
-	always = TRUE : CR メニューを常に表示する
-*/
 //const TCHAR CrMenuR_str[] = T("ファイル判別メニューの再帰が起きている恐れがあります。\nE_crの内容を見直してください。");
-	CRMENUSTACKCHECK *DummyCrmCheck;
-
-void CrMenu(PPC_APPINFO *cinfo,BOOL ShowMenu)
+void CrMenu(PPC_APPINFO *cinfo, BOOL ShowMenu)
 {
-	TCHAR Param[CMDLINESIZE],Kword[MAX_PATH];
+	TCHAR Param[CMDLINESIZE], Kword[MAX_PATH];
 	HMENU hMenu;
 	int TypeFlag; // PPEXTRESULT_xxx
 	PPCMENUINFO cminfo;
 	PPXMENUDATAINFO pmdi;
 	POINT pos;
 	BOOL popmode,LongParam = FALSE;
-	DelayLoadMenuStruct *OldDelayMenus,DelayMenus[DelayMenus_MAX];
+	DelayLoadMenuStruct *OldDelayMenus, DelayMenus[DelayMenus_MAX];
 
-	CRMENUSTACKCHECK *CrmCheck;
+	CRMENUSTACKCHECK *CrmCheck; // スタック異常等の検出用
 
-	CrmCheck = (CRMENUSTACKCHECK *)PPxCommonExtCommand(KC_GETCRCHECK,0);
+	CrmCheck = (CRMENUSTACKCHECK *)PPxCommonExtCommand(KC_GETCRCHECK, 0);
 	if ( CrmCheck == (CRMENUSTACKCHECK *)ERROR_INVALID_FUNCTION ){
-		CrmCheck = DummyCrmCheck;
+		CrmCheck = &DummyCrmCheck;
 	}
 /*
 	if ( cinfo->Ref > 25 ){
@@ -640,12 +636,12 @@ void CrMenu(PPC_APPINFO *cinfo,BOOL ShowMenu)
 */
 	ThInit(&cminfo.x.th);
 	ThInit(&pmdi.th);
-	memset(DelayMenus,0,sizeof(DelayMenus));
+	memset(DelayMenus, 0, sizeof(DelayMenus));
 										// SHN 用 ----------------------------
 	if ( (cinfo->RealPath[0] == '?') ||
 		 (CEL(cinfo->e.cellN).f.dwFileAttributes & FILE_ATTRIBUTEX_VIRTUAL) ){
-		if ( !ShowMenu && IsTrue(CellLook(cinfo,-1)) ) return;
-		SCmenu(cinfo,NULL);
+		if ( !ShowMenu && IsTrue(CellLook(cinfo, -1)) ) return;
+		SCmenu(cinfo, NULL);
 		return;
 	}
 	cminfo.comID = CRID_EXTMENU;
@@ -657,31 +653,31 @@ void CrMenu(PPC_APPINFO *cinfo,BOOL ShowMenu)
 		if ( newindex >= 0 ) cminfo.cellindex = newindex;
 	}
 
-	if ( VFSFullPath(cminfo.PathName,CEL(cminfo.cellindex).f.cFileName,cinfo->RealPath) == NULL ){
-		SetPopMsg(cinfo,ERROR_PATH_NOT_FOUND,NULL);
+	if ( VFSFullPath(cminfo.PathName, CEL(cminfo.cellindex).f.cFileName, cinfo->RealPath) == NULL ){
+		SetPopMsg(cinfo, ERROR_PATH_NOT_FOUND, NULL);
 		return;
 	}
 	if ( !ShowMenu ){ // ディレクトリ移動
-		if ( (X_ChooseMode == CHOOSEMODE_NONE) || !cinfo->e.markC ){
+		if ( (X_ChooseMode == CHOOSEMODE_NONE) || (cinfo->e.markC == 0) ){
 			if ( CEL(cinfo->e.cellN).attr & ECA_THIS ){	// "." ----------------
 				if ( X_ChooseMode == CHOOSEMODE_NONE ){
 					PPC_RootDir(cinfo);
 					return;
 				}
-			}else if ( CEL(cinfo->e.cellN).attr & ECA_PARENT ){ // ".." ---------
+			}else if ( CEL(cinfo->e.cellN).attr & ECA_PARENT ){ // ".." -------
 				PPC_UpDir(cinfo);
 				return;
 														// <dir> --------------
 			}else if ( CEL(cinfo->e.cellN).f.dwFileAttributes &
 						(FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTEX_FOLDER) ){
 				if ( (X_ChooseMode != CHOOSEMODE_NONE) ||
-					 !IsExistCustTable(ExtTableID,T(":DIR")) ){
-					if ( IsTrue(CellLook(cinfo,-1)) ) return;
+					 !IsExistCustTable(ExtTableID, T(":DIR")) ){
+					if ( IsTrue(CellLook(cinfo, -1)) ) return;
 				}
 			}
 		}
 		if ( X_ChooseMode != CHOOSEMODE_NONE ){ // Choose Mode の確定処理
-			DoChooseResult(cinfo,Param);
+			DoChooseResult(cinfo, Param);
 			return;
 		}
 	}
@@ -694,7 +690,7 @@ void CrMenu(PPC_APPINFO *cinfo,BOOL ShowMenu)
 		TypeFlag = GetCustTable(ExtTableID,T(":DIR"),Param,sizeof(Param));
 		if ( TypeFlag != 0 ) TypeFlag = PPEXTRESULT_NONE;
 	}else{
-		TypeFlag = PP_GetExtCommand(cminfo.PathName,ExtTableID,Param,cminfo.TypeName);
+		TypeFlag = PP_GetExtCommand(cminfo.PathName, ExtTableID, Param, cminfo.TypeName);
 	}
 	if ( Param[CMDLINESIZE - 1] != '\0' ){
 		LongParam = TRUE;
@@ -1078,7 +1074,11 @@ void DoActionMenu_OpenWith(PPC_APPINFO *cinfo,HMENU hMenu,UINT crID,ENTRYINDEX c
 	tstrcpy( newpath,cinfo->RealPath );
 
 	cfilename = CEL(cellindex).f.cFileName;
-	archivemode = PPcUnpackForAction(cinfo,newpath,UFA_ALL);
+	if ( IsTrue(cinfo->UnpackFix) ){
+		archivemode = FALSE;
+	}else{
+		archivemode = PPcUnpackForAction(cinfo, newpath, UFA_ALL);
+	}
 	if ( IsTrue(archivemode) ){
 		cfilename = FindLastEntryPoint(cfilename);
 	}
@@ -1176,7 +1176,7 @@ void DoActionMenu_OpenWith(PPC_APPINFO *cinfo,HMENU hMenu,UINT crID,ENTRYINDEX c
 	}
 }
 
-void DoActionMenu(PPC_APPINFO *cinfo,HMENU hMenu,UINT crID,ENTRYINDEX cellindex,ThSTRUCT *THmenu,PPXMENUDATAINFO *pmdi,DWORD extmenuID)
+void DoActionMenu(PPC_APPINFO *cinfo, HMENU hMenu, UINT crID, ENTRYINDEX cellindex, ThSTRUCT *THmenu, PPXMENUDATAINFO *pmdi, DWORD extmenuID)
 {
 	if ( crID > CRID_MAX ) return;
 	if ( crID == CRID_NEWTAB ){	// 新規タブ
@@ -1189,24 +1189,24 @@ void DoActionMenu(PPC_APPINFO *cinfo,HMENU hMenu,UINT crID,ENTRYINDEX cellindex,
 	}
 	DxSetMotion(cinfo->DxDraw,DXMOTION_Launch);
 	if ( crID >= CRID_OPENWITH ){
-		DoActionMenu_OpenWith(cinfo,hMenu,crID,cellindex,pmdi);
+		DoActionMenu_OpenWith(cinfo, hMenu, crID, cellindex, pmdi);
 		return;
 	}
 	if ( crID >= CRID_EXTMENU ){ // CRID_EXTMENU ～  拡張子別メニュー等 ======
-		const TCHAR *p;
+		const TCHAR *menucmd;
 
-		GetMenuDataMacro2(p,THmenu,crID - CRID_EXTMENU);
-		if ( p != NULL ){
+		GetMenuDataMacro2(menucmd, THmenu, crID - CRID_EXTMENU);
+		if ( menucmd != NULL ){
 			if ( crID < extmenuID ){
-				UnpackExec(cinfo,p);
+				UnpackExec(cinfo, menucmd);
 			}else{
-				PP_ExtractMacro(cinfo->info.hWnd,&cinfo->info,NULL,p,NULL,0);
+				PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, menucmd, NULL, 0);
 			}
 		}
 		return;
 	}
 	if ( crID >= K_M ){	// 内蔵コマンド
-		PPcCommand(cinfo,(WORD)((crID - K_M) | K_raw));
+		PPcCommand(cinfo, (WORD)((crID - K_M) | K_raw));
 		return;
 	}
 	SetPopMsg(cinfo,POPMSG_MSG,T("action id error"));

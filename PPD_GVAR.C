@@ -220,7 +220,7 @@ GVAR int X_combos_[2] GPARAM2(-1,-1);
 #define CMBS_THREAD			B7	// メインスレッド共通化
 #define CMBS1_DIALOGNOPANE	B4	// ダイアログを一体化窓の中心に
 
-GVAR CRMENUSTACKCHECK CrmenuCheck
+GVAR CRMENUSTACKCHECK CrmenuCheck // スタック異常等の検出用
 #ifndef GLOBALEXTERN
 = {0,0}
 #endif

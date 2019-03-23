@@ -62,11 +62,11 @@ STDMETHODIMP CImpIDataObject::GetData(LPFORMATETC pFE, LPSTGMEDIUM pSM)
 		if ( (pFE->cfFormat == m_strFormatEtc[i].cfFormat) &&
 			(pFE->tymed & m_strFormatEtc[i].tymed) ){
 			// 未展開 && マウスボタンが離れていたら展開する
-			if ( (arcmode == TRUE) &&
+			if ( (m_arcmode == TRUE) &&
 				!((::GetAsyncKeyState(VK_LBUTTON) |
 					::GetAsyncKeyState(VK_RBUTTON)) & KEYSTATE_PUSH) ){
-				arcmode = -1;
-				PPcUnpackForAction(cinfo, arctemp, UFA_EXTRACT);
+				m_arcmode = -1;
+				PPcUnpackForAction(m_cinfo, m_arctemp, UFA_EXTRACT);
 			}
 			if ( m_strStgMedium[i].tymed ){
 				pSM->tymed = m_strStgMedium[i].tymed;
@@ -80,26 +80,26 @@ STDMETHODIMP CImpIDataObject::GetData(LPFORMATETC pFE, LPSTGMEDIUM pSM)
 				pSM->tymed = TYMED_HGLOBAL;
 				pSM->pUnkForRelease = NULL;
 
-				if ( IsTrue(arcmode) ){
-					cinfo->UnpackFix = TRUE;
-					tstrcpy(backpath, cinfo->RealPath);
-					tstrcpy(cinfo->RealPath, arctemp);
+				if ( IsTrue(m_arcmode) ){
+					m_cinfo->UnpackFix = TRUE;
+					tstrcpy(backpath, m_cinfo->RealPath);
+					tstrcpy(m_cinfo->RealPath, m_arctemp);
 				}
 
 				if ( (UINT)pFE->cfFormat == CF_xSHELLIDLIST ){
-					pSM->hGlobal = ::CreateShellIdList(cinfo);
+					pSM->hGlobal = ::CreateShellIdList(m_cinfo);
 
 				} else if ( pFE->cfFormat == CF_HDROP ){
-					pSM->hGlobal = ::CreateHDrop(cinfo);
+					pSM->hGlobal = ::CreateHDrop(m_cinfo);
 				} else if ( pFE->cfFormat == CF_TTEXT ){
-					pSM->hGlobal = ::CreateHText(cinfo);
+					pSM->hGlobal = ::CreateHText(m_cinfo);
 				} else{
 					return DV_E_FORMATETC;
 				}
 
-				if ( IsTrue(arcmode) ){
-					cinfo->UnpackFix = FALSE;
-					tstrcpy(cinfo->RealPath, backpath);
+				if ( IsTrue(m_arcmode) ){
+					m_cinfo->UnpackFix = FALSE;
+					tstrcpy(m_cinfo->RealPath, backpath);
 				}
 
 				if ( pSM->hGlobal == NULL ) return E_OUTOFMEMORY;

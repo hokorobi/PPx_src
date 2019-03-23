@@ -289,8 +289,9 @@ extern void FindCloseAsync(HANDLE hFF,int flag);
 extern BOOL FindOptionDataAsync(HANDLE hFF,DWORD optionID,void *data,int flag);
 extern DWORD MiniHash(TCHAR *name);
 //------------------------------------------------------------------ ppc_disp.c
-#define HideFileNameTip(cinfo) {if (cinfo->TipWndState >= TWS_READY ) HideFileNameTipMain(cinfo);}
+#define HideFileNameTip(cinfo) {if (cinfo->Tip.WndState >= TWS_READY ) HideFileNameTipMain(cinfo);}
 extern void HideFileNameTipMain(PPC_APPINFO *cinfo);
+extern void ShowTipNow(PPC_APPINFO *cinfo, DWORD flags, int mode, ENTRYINDEX tagetcell);
 extern int USEFASTCALL GetDispFormatSkip(const BYTE *fmt);
 #define GetDispFormatSkip_string(fmt) (1 + TSTRSIZE((TCHAR *)(fmt + 1)))
 #define GetDispFormatSkip_time2(fmt) (2 + strlen((char *)fmt + 2) + 1)
@@ -443,10 +444,11 @@ extern HWND USEFASTCALL GetJoinWnd(PPC_APPINFO *cinfo);
 #define PPCR_STATUS		0x10	//LINE Status line	1行目
 #define PPCR_MENU		0x11	//HMNU Hidden Menu	2,3行目、マウス有り
 #define PPCR_INFOTEXT	0x12	//INFO Info line	2,3行目、マウスなし
-#define PPCR_INFOICON	0x13	//INFO Info icon	2,3行目、左端
+#define PPCR_INFOICON	0x13	//ICON Info icon	2,3行目、左端
 #define PPCR_CELLBLANK	0x20	//SPC  cell blank	セル領域、該当セルなし
-#define PPCR_CELLMARK	0x21	//MARK cell Mark	セル、左端
+#define PPCR_CELLMARK	0x21	//MARK cell Mark	セル、左端(マーク用)
 #define PPCR_CELLTEXT	0x22	//ENT  cell cell	セル、テキスト部分
+#define PPCR_CELLTAIL	0x23	//TAIL  cell tail	セル、右端(ボタン用)
 extern int GetItemTypeFromPoint(PPC_APPINFO *cinfo,POINT *pos,ENTRYINDEX *ItemNo);
 extern void IOX_win(PPC_APPINFO *cinfo,BOOL save);
 

@@ -26,7 +26,7 @@ PPx‚Ì‘Og‚Æ‚µ‚Ä K-Launcher ‚Æ‚¢‚¤ƒtƒ@ƒCƒ‰‚ª‚ ‚è‚Ü‚·B‚±‚¿‚ç‚Í MS-DOS —p‚È‚Ì‚Å‚·‚
 @Windows XP, 2003(R2), Vista, 2008(R2), 7, 8, 8.1, 2012(R2), 10, 2016 ‚Ì 64bit”Å ‚Å“®ì‚µ‚Ü‚·B
 @32bit”Å Windows ‚Å‚Í“®ì‚µ‚Ü‚¹‚ñB
 
-EŠJ”­‚âå‚È“®ìŠm”F‚Í Windows 10 Pro(1803,RS4) 64bit”Å ‚Ås‚Á‚Ä‚¢‚Ü‚·B
+EŠJ”­‚âå‚È“®ìŠm”F‚Í Windows 10 Pro(1809,RS5) 64bit”Å ‚Ås‚Á‚Ä‚¢‚Ü‚·B
 EPPx‚ÌÀsƒtƒ@ƒCƒ‹‚ª‚ ‚éƒfƒBƒŒƒNƒgƒŠ/ƒtƒHƒ‹ƒ_‚ª‘‚«‚İ‹Ö~‚Å‚ ‚Á‚Ä‚àxá‚ªo‚È‚¢‚æ‚¤‚Él—¶‚µ‚Ä‚¢‚Ü‚·B
 <key:(Limit)><key:Limit><key:(Elevate)><a:Elevate>E•Ê‚Ìƒ†[ƒU‚Æ‚µ‚ÄÀs / RUNAS ‚ğl—¶‚µ‚Ä‚¨‚èAg—p’†‚ÌƒfƒXƒNƒgƒbƒv‚Ìƒ†[ƒU‚ÆˆÙ‚È‚éê‡‚ÍAƒ^ƒCƒgƒ‹ƒo[(ƒLƒƒƒvƒVƒ‡ƒ“)‚É‚»‚ÌPPx‚ª‘®‚·‚éƒ†[ƒU–¼‚ª•\¦‚³‚ê‚Ü‚·B
   —á) PPC[A](username)C:\\
@@ -459,70 +459,87 @@ shell:ControlPanelFolder ¨ƒRƒ“ƒgƒ[ƒ‹ƒpƒlƒ‹
 ¦ushell:vŒ`®‚ÍAWindows2000ˆÈ~‚ÌExplorer‚Åg—p‚Å‚«‚é‚æ‚¤‚É‚È‚Á‚½Œ`®‚Å‚·Bw’è‚Å‚«‚éname‚ÍAŠî–{“I‚ÉExplorer‚Åw’è‚Å‚«‚éŒ`®‚Æ“¯ˆê‚Å‚·‚ªADesktopFolder“™‚Ìˆê•”‚Ì–¼‘O‚Í‘Î‰WindowsˆÈŠO‚ÌWindows‚Å‚àw’è‚Å‚«‚é‚æ‚¤‚É‚µ‚Ä‚ ‚è‚Ü‚·B
 
 <tb:800>
-#n:	shell:Œ`®‚Ìname, êŠ(WinVista,7 ‚Ì•W€İ’è‚Ìê‡)
+#n:	shell:Œ`®‚Ìname, êŠ(WinVista,7,8,10 ‚Ì•W€İ’è‚Ìê‡)
 	¦(user)‚Íƒ†[ƒU–¼‚Å‚·
 --------------------------------
-#0:/#:	Desktop(VistaˆÈ~),DesktopFolder(XPˆÈ‘O) ƒfƒXƒNƒgƒbƒv(C:\\Users\\(user)\\Desktop)
+#0:/#:	Desktop(VistaˆÈ~),DesktopFolder(XPˆÈ‘O) ƒfƒXƒNƒgƒbƒv( C:\\Users\\(user)\\Desktop )
 #1:	InternetFolder, uƒCƒ“ƒ^[ƒlƒbƒgvƒAƒCƒRƒ“
-#2:	Programs, ƒXƒ^[ƒgƒƒjƒ…[‚ÌƒvƒƒOƒ‰ƒ€(C:\\Users\\(user)\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs)
-#3:	ControlPanelFolder, ƒRƒ“ƒgƒ[ƒ‹ƒpƒlƒ‹(C:\\Windows\\System32\\*.cpl)
+#2:	Programs, ƒXƒ^[ƒgƒƒjƒ…[‚ÌƒvƒƒOƒ‰ƒ€( %AppData%\\Microsoft\\Windows\\Start Menu\\Programs )
+#3:	ControlPanelFolder, ƒRƒ“ƒgƒ[ƒ‹ƒpƒlƒ‹( C:\\Windows\\System32\\*.cpl )
 #4:	PrintersFolder, ƒvƒŠƒ“ƒ^
-#5:	Personal, ƒ}ƒCƒhƒLƒ…ƒƒ“ƒg(C:\\Users\\(user)\\Documents)
-#6:	Favorites, ‚¨‹C‚É“ü‚è(C:\\Users\\(user)\\Favorites)
-#7:	Startup, ƒXƒ^[ƒgƒƒjƒ…[‚ÌƒXƒ^[ƒgƒAƒbƒv(C:\\Users\\(user)\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup)
-#8:	Recent, Å‹ßg‚Á‚½ƒtƒ@ƒCƒ‹(C:\\Users\\(user)\\AppData\\Roaming\\Microsoft\\Windows\\Recent)
-#9:	SendTo, ‘—‚é(C:\\Users\\(user)\\AppData\\Roaming\\Microsoft\\Windows\\SendTo)
-#10:	RecycleBinFolder, ‚²‚İ” (C:\\$Recycle.Bin)
-#11:	Start Menu, ƒXƒ^[ƒgƒƒjƒ…[(C:\\Users\\(user)\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu)
-#13:	My Music, ƒ}ƒCƒ~ƒ…[ƒWƒbƒN(C:\\Users\\(user)\\Music)
-#14:	My Video, ƒ}ƒCƒrƒfƒI(C:\\Users\\(user)\\Videos)
-#16:	ƒfƒXƒNƒgƒbƒv(ƒtƒHƒ‹ƒ_œ‚­)(C:\\Users\\(user)\\Desktop) ¦WinXP‚Å‚Í‚±‚ê‚ª shell:Desktop ‘Š“–
+#5:	Personal, ƒ}ƒCƒhƒLƒ…ƒƒ“ƒg( C:\\Users\\(user)\\Documents )
+#6:	Favorites, ‚¨‹C‚É“ü‚è( C:\\Users\\(user)\\Favorites )
+#7:	Startup, ƒXƒ^[ƒgƒƒjƒ…[‚ÌƒXƒ^[ƒgƒAƒbƒv( %AppData%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup )
+#8:	Recent, Å‹ßg‚Á‚½ƒtƒ@ƒCƒ‹( %AppData%\\Microsoft\\Windows\\Recent )
+#9:	SendTo, ‘—‚é( %AppData%\\Microsoft\\Windows\\SendTo )
+#10:	RecycleBinFolder, ‚²‚İ” ( C:\\$Recycle.Bin )
+#11:	Start Menu, ƒXƒ^[ƒgƒƒjƒ…[( %AppData%\\Microsoft\\Windows\\Start Menu )
+#13:	My Music, ƒ}ƒCƒ~ƒ…[ƒWƒbƒN( C:\\Users\\(user)\\Music )
+#14:	My Video, ƒ}ƒCƒrƒfƒI( C:\\Users\\(user)\\Videos )
+#16:	ƒfƒXƒNƒgƒbƒv(ƒtƒHƒ‹ƒ_œ‚­)( C:\\Users\\(user)\\Desktop ) ¦WinXP‚Å‚Í‚±‚ê‚ª shell:Desktop ‘Š“–
 #17:	MyComputerFolder/DriveFolder(XP), ƒ}ƒCƒRƒ“ƒsƒ…[ƒ^
 #18:	NetworkFolder, ƒlƒbƒgƒ[ƒN ƒRƒ“ƒsƒ…[ƒ^(\\\\)
-#19:	NetHood, ƒlƒbƒgƒ[ƒNƒRƒ“ƒsƒ…[ƒ^ƒfƒBƒŒƒNƒgƒŠ(C:\\Users\\(user)\\AppData\\Roaming\\Microsoft\\Windows\\Network Shortcuts)
-#20:	Fonts, ƒtƒHƒ“ƒg(c:\\Windows\\Fonts)
-#21:	Templates, ƒeƒ“ƒvƒŒ[ƒg(C:\\Users\\(user)\\AppData\\Roaming\\Microsoft\\Windows\\Templates)
-#22:	Common Start Menu, ‘S‚Ä‚Ìƒ†[ƒU—p‚ÌƒXƒ^[ƒgƒƒjƒ…[(C:\\ProgramData\\Microsoft\\Windows\\Start Menu)
-#23:	Common Programs, ‘S‚Ä‚Ìƒ†[ƒU—p‚ÌƒXƒ^[ƒgƒƒjƒ…[‚ÌƒvƒƒOƒ‰ƒ€(C:\\ProgramData\\Microsoft\\Windows\\Programs)
-#24:	Common Startup, ‘S‚Ä‚Ìƒ†[ƒU—p‚ÌƒXƒ^[ƒgƒƒjƒ…[‚ÌƒXƒ^[ƒgƒAƒbƒv(C:\\ProgramData\\Microsoft\\Windows\\Programs\\Startup)
-#25:	Common Desktop, ‘S‚Ä‚Ìƒ†[ƒU—p‚ÌƒfƒXƒNƒgƒbƒv(ƒtƒHƒ‹ƒ_œ‚­)(C:\\Users\\Public\\Desktop)
-#26:	Appdata, %APPDATA%(C:\\Users\\(user)\\AppData\\Roaming)
-#27:	Printhood, Printhood(C:\\Users\\(user)\\AppData\\Roaming\\Microsoft\\Windows\\Printer Shortcuts)
-#28:	Local AppData, (C:\\Users\\(user)\\AppData\\Local)
-#29:	(ALTSTARTUP), –¼‘O‚ğ‰ÁH‚µ‚Ä‚¢‚È‚¢ƒXƒ^[ƒgƒAƒbƒv?(C:\\Users\\(user)\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Startup)
-#30:	(COMMON_ALTSTARTUP), –¼‘O‚ğ‰ÁH‚µ‚Ä‚¢‚È‚¢‘S‚Ä‚Ìƒ†[ƒU—p‚ÌƒXƒ^[ƒgƒAƒbƒv?(C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup)
-#31:	Common Favorites(XP), %ALLUSERPROFILE%\\Favorites(C:\\Users\\(user)\\Favorites)
-#32:	Cache, (C:\\Users\\(user)\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files)
-#33:	Cookies, (C:\\Users\\(user)\\AppData\\Roaming\\Microsoft\\Windows\\Cookies)
-#34:	History, (C:\\Users\\(user)\\AppData\\Local\\Microsoft\\Windows\\History)
-#35:	Common AppData, (C:\\ProgramData)
-#36:	Windows, %SystemRoot% (C:\\Windows)
-#37:	System, %SystemRoot%\\System32 (C:\\Windows\\System32)
-#38:	ProgramFiles, %ProgramFiles% (C:\\Program Files)
-#39:	My Pictures, (C:\\Users\\(user)\\Pictures)
-#40:	Profile, %USERPROFILE% (C:\\Users\\(user))
-#41:	SystemX86,  (C:\\Windows\SysWOW64)
-#42:	ProgramFilesX86, (C:\\Program Files (x86))
-#43:	ProgramFilesCommon, %CommonProgramFiles% (C:\\Program Files\\Common Files)
-#44:	ProgramFilesCommonX86, (C:\\Program Files (x86)\\Common Files)
-#45:	Common Templates, (C:\\ProgramData\\Microsoft\\Windows\\Templates)
-#46:	Common Documents, (C:\\Users\\Public\\Documents)
-#47:	Common Administrative Tools, ŠÇ—ƒc[ƒ‹(C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Administrative Tools)
-#48:	Administrative Tools, ƒ†[ƒU[‚ÌŠÇ—ƒc[ƒ‹(C:\\Users\\(user)\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Administrative Tools)
+#19:	NetHood, ƒlƒbƒgƒ[ƒNƒRƒ“ƒsƒ…[ƒ^ƒfƒBƒŒƒNƒgƒŠ( %AppData%\\Microsoft\\Windows\\Network Shortcuts )
+#20:	Fonts, ƒtƒHƒ“ƒg( c:\\Windows\\Fonts )
+#21:	Templates, ƒeƒ“ƒvƒŒ[ƒg( %AppData%\\Microsoft\\Windows\\Templates )
+#22:	Common Start Menu, ‘S‚Ä‚Ìƒ†[ƒU—p‚ÌƒXƒ^[ƒgƒƒjƒ…[( C:\\ProgramData\\Microsoft\\Windows\\Start Menu )
+#23:	Common Programs, ‘S‚Ä‚Ìƒ†[ƒU—p‚ÌƒXƒ^[ƒgƒƒjƒ…[‚ÌƒvƒƒOƒ‰ƒ€( C:\\ProgramData\\Microsoft\\Windows\\Programs )
+#24:	Common Startup, ‘S‚Ä‚Ìƒ†[ƒU—p‚ÌƒXƒ^[ƒgƒƒjƒ…[‚ÌƒXƒ^[ƒgƒAƒbƒv( C:\\ProgramData\\Microsoft\\Windows\\Programs\\Startup )
+#25:	Common Desktop, ‘S‚Ä‚Ìƒ†[ƒU—p‚ÌƒfƒXƒNƒgƒbƒv(ƒtƒHƒ‹ƒ_œ‚­)( C:\\Users\\Public\\Desktop )
+#26:	Appdata, %APPDATA% ( C:\\Users\\(user)\\AppData\\Roaming )
+#27:	Printhood, Printhood ( %AppData%\\Microsoft\\Windows\\Printer Shortcuts )
+#28:	Local AppData, %LOCALAPPDATA% ( C:\\Users\\(user)\\AppData\\Local )
+#29:	(ALTSTARTUP), –¼‘O‚ğ‰ÁH‚µ‚Ä‚¢‚È‚¢ƒXƒ^[ƒgƒAƒbƒv?( %AppData%\\Microsoft\\Windows\\Start Menu\\Startup )
+#30:	(COMMON_ALTSTARTUP), –¼‘O‚ğ‰ÁH‚µ‚Ä‚¢‚È‚¢‘S‚Ä‚Ìƒ†[ƒU—p‚ÌƒXƒ^[ƒgƒAƒbƒv?( C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup )
+#31:	Common Favorites(XP), %ALLUSERPROFILE%\\Favorites ( C:\\Users\\(user)\\Favorites )
+#32:	Cache, ( %LocalAppData%\\Microsoft\\Windows\\Temporary Internet Files )
+#33:	Cookies, ( %AppData%\\Microsoft\\Windows\\Cookies )
+#34:	History, ( %LocalAppData%\\Microsoft\\Windows\\History )
+#35:	Common AppData, %ALLUSERSPROFILE% %ProgramData% ( C:\\ProgramData )
+#36:	Windows, %SystemRoot% ( C:\\Windows )
+#37:	System, %SystemRoot%\\System32 ( C:\\Windows\\System32 )
+#38:	ProgramFiles, %ProgramFiles% ( C:\\Program Files )
+#39:	My Pictures, ( C:\\Users\\(user)\\Pictures )
+#40:	Profile, %USERPROFILE% ( C:\\Users\\(user) )
+#41:	SystemX86,  ( C:\\Windows\SysWOW64 )
+#42:	ProgramFilesX86, %ProgramFiles(x86)% ( C:\\Program Files (x86) )
+#43:	ProgramFilesCommon, %CommonProgramFiles% ( C:\\Program Files\\Common Files )
+#44:	ProgramFilesCommonX86, %CommonProgramFiles(x86)% ( C:\\Program Files (x86)\\Common Files )
+#45:	Common Templates, ( C:\\ProgramData\\Microsoft\\Windows\\Templates )
+#46:	Common Documents, ( C:\\Users\\Public\\Documents )
+#47:	Common Administrative Tools, ŠÇ—ƒc[ƒ‹ ( C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Administrative Tools )
+#48:	Administrative Tools, ƒ†[ƒU[‚ÌŠÇ—ƒc[ƒ‹ ( %AppData%\\Microsoft\\Windows\\Start Menu\\Programs\\Administrative Tools )
 #49:	ConnectionsFolder, ƒlƒbƒgƒ[ƒNÚ‘±
 #53:	CommonMusic, ‘S‚Ä‚Ìƒ†[ƒU—p‚Ìƒ~ƒ…[ƒWƒbƒN
 #54:	CommonPictures, ‘S‚Ä‚Ìƒ†[ƒU—p‚ÌƒsƒNƒ`ƒƒ[
 #55:	CommonVideo, ‘S‚Ä‚Ìƒ†[ƒU—p‚ÌƒrƒfƒI
-#56:	(Resources), (C:\\Windows\\Resources)
+#56:	(Resources), ( C:\\Windows\\Resources )
 #57:	(Localized Resources)
 #58:	(Common oem links)
-#59:	CD Burning, (%LocalAppData%\\Microsoft\\Windows\\Burn\\Burn1)
+#59:	CD Burning, ( %LocalAppData%\\Microsoft\\Windows\\Burn\\Burn1 )
 #61:	(ComputersNearMe)
+-	Contacts, ƒAƒhƒŒƒX’  ( C:\\Users\\(user)\\Contacts )
+-	Downloads, ƒ_ƒEƒ“ƒ[ƒh ( C:\\Users\\(user)\\Downloads )
+-	CommonDownloads, ‘S‚Ä‚Ìƒ†[ƒU—p‚Ìƒ_ƒEƒ“ƒ[ƒh
+-	3D Objects, 3D ƒIƒuƒWƒFƒNƒg ( C:\\Users\\(user)\\3D Objects )
+-	Links, ƒŠƒ“ƒN ( C:\\Users\\(user)\\Links )
+-	SavedGames, •Û‘¶‚µ‚½ƒQ[ƒ€( C:\\Users\\(user)\\SavedGames )
+-	Searches, ŒŸõ( C:\\Users\\(user)\\Searches )
+-	Quick Launch, ƒNƒCƒbƒN‹N“® ( %AppData%\\Microsoft\\Internet Explorer\\Quick Launch )
+-	User Pinned, ƒWƒƒƒ“ƒvƒŠƒXƒg ( %AppData%\\Microsoft\\Internet Explorer\\Quick Launch\\User Pinned )
 -	AddNewProgramsFolder, ƒvƒƒOƒ‰ƒ€‚Ìæ“¾
 -	AppUpdatesFolder, ƒvƒƒOƒ‰ƒ€‚Æ‹@”\\\ƒCƒ“ƒXƒg[ƒ‹‚³‚ê‚½XVƒvƒƒOƒ‰ƒ€
 -	ChangeRemoveProgramsFolder, ƒvƒƒOƒ‰ƒ€‚Æ‹@”\
 -	ConflictFolder, “¯ŠúƒZƒ“ƒ^[\\‹£‡
 -	SyncCenterFolder, “¯ŠúƒZƒ“ƒ^[
+-	Libraries, ƒ‰ƒCƒuƒ‰ƒŠ
+-	UsersLibrariesFolder, ƒ‰ƒCƒuƒ‰ƒŠ(ƒ†[ƒU)
+-	DocumentsLibrary, ƒhƒLƒ…ƒƒ“ƒg ƒ‰ƒCƒuƒ‰ƒŠ
+-	MusicLibrary, ƒ~ƒ…[ƒWƒbƒN ƒ‰ƒCƒuƒ‰ƒŠ
+-	PicturesLibrary, ƒsƒNƒ`ƒƒ ƒ‰ƒCƒuƒ‰ƒŠ
+-	VideosLibrary, ƒrƒfƒI ƒ‰ƒCƒuƒ‰ƒŠ
+-	UserProfiles, ƒ†[ƒU ( C:\\Users )
+-	Public, ƒpƒuƒŠƒbƒN %PUBLIC% ( C:\\Users\\Public )
 <tb:0>
 <group:#ƒ_ƒCƒŒƒNƒgƒfƒBƒXƒNƒAƒNƒZƒXŒ`®¦>
 
@@ -753,7 +770,25 @@ option:d,option:x ‚Æw’è‚µ‚½‚Æ‚«‚ÍÅŒã‚Ìuxv‚Ì‚İ—LŒø‚É‚È‚è‚Ü‚·B
 
 <group:dump>
 }\page
-.2:MultiByte”Å‚ÆUNICODE”Å‚Ìˆá‚¢=unicode
+.2:PPx ‚Ì ID=ppxid
+<a:ppxidinfo>Še PPx ‚ÍA‚»‚ê‚¼‚ê ID ‚ªŠ„‚èU‚ç‚ê‚Ä‚¨‚èAPPx ŠÔ‚âŠO•”‚©‚çƒRƒ}ƒ“ƒh‚ğÀs‚³‚¹‚½‚èî•ñ‚ğæ“¾‚µ‚½‚è‚Å‚«‚Ü‚·B
+
+EPPc
+CA`CZ ‚Ì 26 í‚Ì ID ‚ªŠ„‚è“–‚Ä‚ç‚ê‚Ü‚·Bˆê‘Ì‰»‘‹‚Ì‚ÍAˆê‘Ì‰»‘‹©‘Ì‚ğ¦‚· CBA#`CBZ# ‚Ì‘¼Aˆê‘Ì‰»‘‹“à‚ÌƒyƒCƒ“‚ğ¦‚· CZaa`CZzzz ‚Ì ID ‚ªŠ„‚è“–‚Ä‚ç‚ê‚Ü‚·B
+PPc ‚É‘Î‚·‚é‘€ì‚Í’Êí CA`CZACZaa`CZzzz ‚ğ—p‚¢‚Ü‚·B
+
+EPPb
+BA`BZ ‚Ì ID ‚ªŠ„‚è“–‚Ä‚ç‚ê‚Ü‚·‚ªAŒ»İ‚±‚ê‚ç‚ÌID‚ğg‚Á‚½‚â‚è‚Æ‚è‚Í—pˆÓ‚³‚ê‚Ä‚¢‚Ü‚¹‚ñB
+
+EPPv
+VA`VZ ‚Ì ID ‚ªŠ„‚è“–‚Ä‚ç‚ê‚Ü‚·B
+
+EPPtray
+í’“’†‚Ì PPtray ‚É‚Í TRA ‚ªŠ„‚è“–‚Ä‚ç‚ê‚Ü‚·B
+
+IDw’è‚ÌÚ×‚ÍA<jmpa:PPx‚ÌIDw’è•û–@:ppxidformat> ‚ğQÆ‚µ‚Ä‚­‚¾‚³‚¢B
+}\page
+.2:MultiByte ”Å‚Æ UNICODE ”Å‚Ìˆá‚¢=unicode
 <key:MultiByte><key:UNICODE>MultiByte”Å‚ÆUNICODE”Å‚Æ‚Ìˆá‚¢‚ÍAŠî–{“I‚É‚ÍƒpƒX‚âƒtƒ@ƒCƒ‹–¼“™‚Ì•¶š‚ğˆµ‚¤•û–@‚ªMultiByte‚©UNICODE‚©‚Å‚ ‚é‚Æ‚¢‚¤“_‚Å‚·B‚µ‚©‚µA‚±‚ê‚É”º‚Á‚Ä×‚©‚È‘Šˆá“_‚â”ÅŠÔ‚ÌŒİŠ·«‚ª‚ ‚é‚Ì‚Å‚±‚±‚Éà–¾‚µ‚Ü‚·B
 
 ¦MultiByte”Å‚ÆUNICODE”Å‚Ì‚Ç‚¿‚ç‚©‚ğg‚¤‚Æ‚¢‚¢‚Ì‚©‚ª‚æ‚­•ª‚©‚ç‚È‚¢ê‡AŸ‚ğ–ÚˆÀ‚É‚µ‚Ä‚­‚¾‚³‚¢B
@@ -1270,9 +1305,11 @@ PPc ‚ªŠù‚É‚ ‚éê‡‚Í‚»‚ê‚ğ—˜—p‚µ‚ÄƒfƒBƒŒƒNƒgƒŠ‚ğ•\¦‚µ‚Ü‚·B‚Ü‚½AŠY“– PPc ‚ğƒAƒ
 
 <b>-combo</b>
 <b>-combo:<i>ID</i></b>
+<b>-combo:<i>+</i></b>
 ‘¼‚Ì -combo w’è‚ª‚³‚ê‚½PPc‚ÆAˆê‘Ì‚Ì‘‹‚É‚µ‚½<jmpa:ˆê‘Ì‰»:X_combo>ó‘Ô‚É‚µ‚Ü‚·B
 ID‚ğw’è‚µ‚È‚¢ê‡‚ÍAA (CBA)‚ğg—p‚µ‚Ü‚·B
-A`Z ‚Ì ID ‚ğ•t‚¯‚½ê‡‚ÍA‚»‚Ì ID ‚ğg—p‚µ‚Ü‚·B
+A`Z ‚Ì ID ‚ğ•t‚¯‚½ê‡‚ÍA‚»‚Ì ID (CBA`CBZ)‚ğg—p‚µ‚Ü‚·B
++ ‚ğw’è‚µ‚½ê‡‚ÍA–¢g—p‚ÌÅ‚àá‚¢ ID (<b>CBB</b>`CBZ)‚ğg—p‚µ‚Ü‚·B
 
 <b>-lock</b>
 w’è‚µ‚½ID‚ÌƒJƒŒƒ“ƒgƒfƒBƒŒƒNƒgƒŠ‚Ì•ÏX‚ğ‹Ö~‚·‚éƒƒbƒNó‘Ô‚É‚µ‚Ü‚·B
@@ -1281,7 +1318,8 @@ A`Z ‚Ì ID ‚ğ•t‚¯‚½ê‡‚ÍA‚»‚Ì ID ‚ğg—p‚µ‚Ü‚·B
 
 <b>-alone</b>
 <b>-alone:<i>ID</i></b>
--combo‚Æ“¯—l‚É<jmpa:ˆê‘Ì‰»:X_combo>ó‘Ô‚É‚µ‚Ü‚·Bˆá‚¢‚ÍAƒ^ƒuEƒyƒCƒ“‚ª•K‚¸‰Šú‰»‚³‚ê‚Ä‚¢‚é‚±‚Æ‚Å‚·B
+-combo ‚Æ“¯—l‚É<jmpa:ˆê‘Ì‰»:X_combo>ó‘Ô‚É‚µ‚Ü‚·B
+-combo ‚ÍAƒ^ƒuEƒyƒCƒ“‚Ìó‘Ô‚ğÄŒ»‚µ‚Ü‚·‚ªA-alone ‚Íƒ^ƒuEƒyƒCƒ“‚ª•K‚¸‰Šú‰»‚³‚ê‚Ü‚·B
 ID ‚ğw’è‚µ‚È‚¢ê‡‚ÍA–¢g—p‚ÌÅ‚àá‚¢ ID ‚ğg—p‚µ‚Ü‚·B
 A`Z ‚Ì ID ‚ğ•t‚¯‚½ê‡‚ÍA‚»‚Ì ID ‚ğg—p‚µ‚Ü‚·B‚±‚Ì‚Æ‚«A-r ƒIƒvƒVƒ‡ƒ“‚ğw’è‚µ‚È‚¢‚ÆAˆê‘Ì‘‹‚Ì ID ‚ªd•¡‚µ‚Ä‚àŠJ‚«‚Ü‚·B
 
@@ -2400,6 +2438,10 @@ html“™‚ÌTAGu< ` >v‚ğ‰½‚à‚µ‚È‚¢^‰B‚·^’…F‚Åw’è‚µ‚Ü‚·B
 <b>-k</b>
 ‹N“®ŒãAÀs‚·‚éƒRƒ}ƒ“ƒh‚ğw’è‚µ‚Ü‚·B‚±‚ÌƒIƒvƒVƒ‡ƒ“ˆÈ~‚Í‘S‚ÄÀs‚·‚éƒRƒ}ƒ“ƒh‚Æ‰ğß‚µ‚Ü‚·‚Ì‚ÅAÅŒã‚Éw’è‚·‚é•K—v‚ª‚ ‚è‚Ü‚·B
 <i>—á) ppv -r dest.bmp -k ppcust cs printmodeset.cfg %: %K"^P"</i>
+
+<b>/Pn</b> ‚Ü‚½‚Í <b>-parent:n</b>
+w’è‚³‚ê‚½”’l n ‚ğeƒEƒBƒ“ƒhƒE‚Ìƒnƒ“ƒhƒ‹‚Æ‚µ‚Ä‘g‚İ‚Ü‚ê‚Ü‚·B
+‘g‚İ‚İ PPv ‚ÍAƒ^ƒCƒgƒ‹ƒo[‚ÆƒXƒNƒ[ƒ‹ƒo[‚ª”ñ•\¦‚Æ‚È‚è‚Ü‚·B
 }\page
 .2:d—l
 <b>ƒtƒ@ƒCƒ‹“Ç‚İ‚İ•û–@</b>
@@ -3905,6 +3947,7 @@ PPx‚ÌID‚ÍŸ‚Ìw’è‚ª‰Â”\‚Å‚·B
 <b>CBA#R`CBZ#R</b>	w’èˆê‘Ì‰»‘‹“à‚Ì‰E/‰º‘¤‘‹‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B
 <b>CBA#”’l</b>	w’èˆê‘Ì‰»‘‹‚Ì¶’[‚©‚ç‚ÌˆÊ’u‚Ì•\¦‘‹(0:¶’[A1:¶‚©‚ç‚Q”Ô–Ú...)‚Å‚·B
 <b>TRA</b>	í’“‚µ‚Ä‚¢‚éPPtray‚ª‘ÎÛ‚É‚È‚è‚Ü‚·B
+<jmpa:PPx ‚Ì ID:ppxidinfo>
 <group:#%*exitcode::ƒvƒƒZƒXI—¹ƒR[ƒh>
 <group:#%*errorlevel::ƒvƒƒZƒXI—¹ƒR[ƒh>
 
@@ -4450,8 +4493,14 @@ X_stip ‚Ìİ’è‚É‚©‚©‚í‚ç‚¸A‘¦‚É•\¦‚µ‚Ü‚·B
 *entrytip filename	ƒtƒ@ƒCƒ‹–¼‚ğ•\¦‚µ‚Ü‚·B
 *entrytip fileinfo	ƒtƒ@ƒCƒ‹î•ñ‚ğ•\¦‚µ‚Ü‚·B
 *entrytip comment	ƒRƒƒ“ƒg‚ğ•\¦‚µ‚Ü‚·B
+*entrytip preview	ƒvƒŒƒrƒ…[‚ğ•\¦‚µ‚Ü‚·Bi<jmpa:ƒvƒŒƒrƒ…[Ú×:previewtip>j
 *entrytip "text"	w’è‚³‚ê‚½ text ‚ğ•\¦‚µ‚Ü‚·B
 <jmpa:‰üs“™‚ğŠÜ‚Ş text ‚Ì‹LÚ•û–@:mutilineparam>
+
+ƒIƒvƒVƒ‡ƒ“
+-cell ƒ`ƒbƒv‚Ì•\¦ˆÊ’u‚ğƒGƒ“ƒgƒŠ‚Ì•\¦ˆÊ’u‚É‚µ‚Ü‚·B
+-mouse ƒ`ƒbƒv‚Ì•\¦ˆÊ’u‚ğƒ}ƒEƒXƒJ[ƒ\ƒ‹‚ÌˆÊ’u‚É’²®‚µ‚Ü‚·B
+
 <groupa:#*diroption::ƒfƒBƒŒƒNƒgƒŠ•Ê‚Ìİ’è‚Ìƒƒjƒ…[E•ÏX::diroption>
 
 ƒpƒXEƒfƒBƒŒƒNƒgƒŠ•Ê‚Ìİ’è(<jmpa:XC_dset>)‚ğQÆE•ÏX‚µ‚Ü‚·B
@@ -5038,9 +5087,11 @@ PPc‚Æˆês•ÒW‚Åg—p‰Â”\‚ÈƒcƒŠ[‘‹‚Ì•\¦‚ğAw’è‚µ‚½í—Ş‚É•ÏX‚µ‚½‚è‚·‚é‘€ì‚ğs‚
 
 type‚Ì’l
 ‹ó—“	•\¦ƒgƒOƒ‹
-0	ƒtƒHƒ‹ƒ_ƒcƒŠ[
-1	‚¨‹C‚É“ü‚èƒƒjƒ…[(M_pjump)
-2	Œ»İŠJ‚¢‚Ä‚¢‚éPPc‘‹‚ÌƒfƒBƒŒƒNƒgƒŠˆê——
+0 –”‚Í root	ƒtƒHƒ‹ƒ_ƒcƒŠ[‚ğ•\¦
+1 –”‚Í favorite	‚¨‹C‚É“ü‚èƒƒjƒ…[(M_pjump)‚ğ•\¦
+2 –”‚Í ppclist	ŠePPc‚ÌŒ»İŠJ‚¢‚Ä‚¢‚éƒfƒBƒŒƒNƒgƒŠˆê——‚ğ•\¦
+focusppc	ƒtƒH[ƒJƒX•ÏX—p‚ÌŠePPcˆê——‚ğ•\¦
+
 on	ƒcƒŠ[‘‹‚ğ•\¦
 once	ƒcƒŠ[‘‹‚ğ•\¦(PPc‚Å‘I‘ğŒã‚ÍƒcƒŠ[‘‹‚ğÁ‹)
 off	ƒcƒŠ[‘‹‚ğ•Â‚¶‚é
@@ -5550,9 +5601,9 @@ WSH VBScript‚Ìê‡‚ÍA’uŠ·(s/src/dest/)‚Ì‚İg—p‚Å‚«‚Ü‚·BCüq‚Ígi‚ªw’è‚Å‚«‚Ü‚
 EŠg’£qÀs‚âƒƒjƒ…[‚Ì”‚É‚Â‚¢‚Ä‚Í“Á‚É§ŒÀ‚ª‚ ‚è‚Ü‚¹‚ñB
 
 E•¶’†‚È‚Ç‚ÅuB?v‚Æ•\‹L‚³‚ê‚Ä‚¢‚éê‡‚ª‚ ‚è‚Ü‚·‚ª ? ‚Íƒrƒbƒg‚ÌˆÊ’u‚ğ•\‚µAŸ‚Ì‚æ‚¤‚È‘Î‰‚Æ‚È‚Á‚Ä‚¢‚Ü‚·B‰E‚Ì•û‚ª¬‚³‚¢‚±‚Æ‚É’ˆÓB
- 76543210
+<pre> 76543210
 B00000000
-
+</pre>
 E€–Ú–¼‚Ì“ª‚É‚ÍAˆÈ‰º‚Ìw’è‚ª‰Â”\‚Å‚·B‚±‚ê‚ç‚ğg‚¤‚±‚Æ‚ÅA‚“x‚È“o˜^ˆ—‚ªs‚¦‚Ü‚·B(å‚Éƒo[ƒWƒ‡ƒ“ƒAƒbƒv‚Ì©“®İ’èXV‚Ì‚½‚ß‚Ég—p‚µ‚Ä‚¢‚Ü‚·B)
  u-|v	w’è‚Ì€–Ú‚ğíœ‚µ‚Ü‚·B“à—e‚Í‹ó—“‚Å‚©‚Ü‚¢‚Ü‚¹‚ñ‚ªAu=v‚Í•K—v‚Å‚·B
  u+|v	w’è‚Ì€–Ú‚ğ update ‚Å‚àí‚É“o˜^‚µ‚Ü‚·B
@@ -5987,6 +6038,7 @@ IDw’è‚ª‚È‚¯‚ê‚ÎÀsŒ³‚ÌPPx‚É‚È‚è‚Ü‚·B
 í•\¦‚ÌƒcƒŠ[‚Í<jmpa:*tree:treecmd>‚ğ—p‚¢‚Ü‚·B
 
 type ‚Íg—p‚·‚éƒƒjƒ…[–¼“™‚ğw’è‚µ‚Ü‚·B
+—á) %*tree(0)
 ¦ ?drivemenu “™‚Ì ?‚â??‚Ån‚Ü‚é“Á•Ê‚Èw’è‚ÍAtype‚Ìw’èAƒƒjƒ…[“à‚Ìw’è‚Ì‚Ç‚¿‚ç‚É‚à‘Î‰‚µ‚Ä‚¢‚Ü‚¹‚ñB
 
 ‹ó—“‚È‚çA‚¨‹C‚É“ü‚èƒƒjƒ…[(M_pjump)‚ğƒcƒŠ[•\¦‚µ‚Ü‚·B
@@ -6217,8 +6269,8 @@ runasuser	•Ê‚Ìƒ†[ƒU‚ÅÀs
 “à—etext‚ğƒƒbƒZ[ƒWƒ{ƒbƒNƒX‚Å•\¦‚µ‚Ü‚·([OK]ƒ{ƒ^ƒ“•t‚«)
 
 <a:mutilineparam>text ‚ÍŸ‚Ì‚æ‚¤‚È‹LÚ‚ª‰Â”\‚Å‚·B
-(1)ƒ^ƒu‚âA‰üs‚ğŠÜ‚ß‚é‚Æ‚«‚ÍA%bt, %bn ‚ğw’è‚µ‚Ü‚·B line1%bnline2
-(2)Ÿ‚Ì‚æ‚¤‚È‰üs‚ğŠÜ‚ß‚½‹LÚ‚ª‚Å‚«‚Ü‚·B
+<b>(1)</b>ƒ^ƒu‚âA‰üs‚ğŠÜ‚ß‚é‚Æ‚«‚ÍA%bt, %bn ‚ğw’è‚µ‚Ü‚·B line1%bnline2
+<b>(2)</b>Ÿ‚Ì‚æ‚¤‚È‰üs‚ğŠÜ‚ß‚½‹LÚ‚ª‚Å‚«‚Ü‚·B
 <pre>
 <b>(a)</b>
 text line1%b
@@ -7536,10 +7588,33 @@ XC_isea=2‚Ì‚Æ‚«‚Ìƒ[ƒ}š“Ç‚İƒCƒ“ƒNƒŠƒƒ“ƒ^ƒ‹ƒT[ƒ`‚ÅAn‚ß‚Ì”•¶š‚ğ“ü—Í‚µ‚Ä‚¢‚
 
   ƒtƒH[ƒJƒX‚ª“–‚½‚Á‚Ä‚¢‚È‚¢‘‹‚ÌFÊ‚ğŒ¸‚ç‚µ‚ÄƒOƒŒ[’²‚É‚µ‚Ü‚·BƒfƒBƒXƒvƒŒƒC‚Ì•\¦‰Â”\F‚ª256F/8bitˆÈ‰º‚Ì‚Í³í‚É•\¦‚Å‚«‚Ü‚¹‚ñB
 <hr>
-<tk:X_stip> ƒtƒ@ƒCƒ‹–¼‚ª•\¦‚µ‚«‚ê‚È‚¢‚Æ‚«ƒ`ƒbƒv•\¦
+<tk:X_stip> (1)ƒtƒ@ƒCƒ‹–¼‚ª•\¦‚µ‚«‚ê‚È‚¢‚Æ‚«ƒ`ƒbƒv•\¦
+(2)ƒ}ƒEƒXƒJ[ƒ\ƒ‹‚ª‘Øİ‚µ‚Ä‚¢‚éƒGƒ“ƒgƒŠ‚Ìî•ñ‚ğƒ`ƒbƒv•\¦
+(3)ƒGƒ“ƒgƒŠ‰E’[ƒNƒŠƒbƒN‚ÅƒvƒŒƒrƒ…[•\¦
 
-ƒtƒ@ƒCƒ‹–¼‚ª’·‚­‚ÄÈ—ª‚³‚ê‚éê‡Aƒtƒ@ƒCƒ‹–¼‚ğƒ`ƒbƒv•\¦‚·‚é‚©‚Ç‚¤‚©‚Ìw’è‚Å‚·B
-0‚È‚çg—p‚³‚ê‚¸A1ˆÈã‚È‚çA‘I‘ğ‚µ‚Ä‚©‚ç•\¦‚³‚ê‚é‚Ü‚Å‚ÌŠÔ(ms)‚É‚È‚è‚Ü‚·B
+x_stip = (1)•\¦ŠÔ, (1)–¢g—p, (2)•\¦ŠÔ, (2)•\¦•û–@, (3)ƒ{ƒ^ƒ“•, (3)•\¦•û–@
+
+(1)ƒtƒ@ƒCƒ‹–¼‚ª’·‚­‚ÄÈ—ª‚³‚ê‚éê‡Aƒtƒ@ƒCƒ‹–¼‚ğƒ`ƒbƒv•\¦‚·‚é‚©‚Ç‚¤‚©‚Ìw’è‚Å‚·B
+(1)•\¦ŠÔ‚ª 0 ‚È‚çg—p‚³‚ê‚¸A1 ˆÈã‚È‚çA‘I‘ğ‚µ‚Ä‚©‚ç•\¦‚³‚ê‚é‚Ü‚Å‚ÌŠÔ(ms)‚É‚È‚è‚Ü‚·B
+
+
+(2)‚ ‚éƒGƒ“ƒgƒŠã‚Éƒ}ƒEƒXƒJ[ƒ\ƒ‹‚ªw’è‚µ‚½•\¦ŠÔˆÈã‘Øİ‚µ‚Ä‚¢‚é‚Æ‚«A(2)•\¦•û–@‚Åw’è‚µ‚½ƒ`ƒbƒv•\¦‚ğs‚¢‚Ü‚·B
+
+(3)ƒGƒ“ƒgƒŠ‰E’[•”•ª‚ğƒNƒŠƒbƒN‚·‚é‚ÆA(3)•\¦•û–@‚Åw’è‚µ‚½ƒ`ƒbƒv•\¦‚ğs‚¢‚Ü‚·BƒNƒŠƒbƒN‰Â”\‚È‰E’[•”•ª‚Ì•‚ÍAƒsƒNƒZƒ‹’PˆÊ‚Å(3)ƒ{ƒ^ƒ“•‚Éw’è‚µ‚Ü‚·B
+
+(2)/(3)‚Ì•\¦•û–@‚ÍŸ‚Ìˆê——‚©‚ç‘I‘ğ‚Å‚«‚Ü‚·B
+0 ‰Šú’l
+1 ƒtƒ@ƒCƒ‹–¼‚Ì‚İ(’·‚¢ƒtƒ@ƒCƒ‹–¼‚Ì•\¦—p)
+2 ƒtƒ@ƒCƒ‹î•ñ
+3 ƒtƒ@ƒCƒ‹ƒRƒƒ“ƒg
+4 ƒvƒŒƒrƒ…[•\¦
+<a:previewtip>
+ ƒvƒŒƒrƒ…[•\¦‚ÍAƒtƒ@ƒCƒ‹í—Ş”»•Ê E_TipView ‚ÉŠY“–ƒtƒ@ƒCƒ‹í—Ş‚ªw’è‚³‚ê‚Ä‚¢‚ê‚Î‚»‚Ì“à—e‚ğÀs‚µA–³‚¯‚ê‚Î PPv / ƒcƒŠ[ / Windows Media Player(VistaˆÈ~) ‚Åg‚Á‚Ä•\¦EÄ¶‚µ‚Ü‚·B
+ƒtƒ@ƒCƒ‹í—Ş”»•Ê E_TipView ‚Å‚ÍAŸ‚Ì“ÁêŠÂ‹«•Ï”‚ªg—p‚Å‚«‚Ü‚·B
+ %si"TipTarget" ƒ`ƒbƒv•\¦‚·‚éƒtƒ@ƒCƒ‹‚Ìƒtƒ‹ƒpƒXi“K‹X " “™‚ÅŠ‡‚é•K—v‚ª‚ ‚è‚Ü‚·Bj
+ %si"TipWnd" ƒ`ƒbƒv•\¦ƒEƒBƒ“ƒhƒE‚ÌƒEƒBƒ“ƒhƒEƒnƒ“ƒhƒ‹B‚±‚Ì’l‚ğ—p‚¢‚ÄA”CˆÓ‚ÌƒEƒBƒ“ƒhƒE‚ğƒ`ƒbƒv•\¦ƒEƒBƒ“ƒhƒE“à‚É–„‚ß‚Ş‚±‚Æ‚ª‚Å‚«‚Ü‚·B‚Ü‚½A‚±‚ÌƒEƒBƒ“ƒhƒE‚ÌƒEƒBƒ“ƒhƒEƒ^ƒCƒgƒ‹‚É•¶š—ñ‚ğİ’è‚·‚é‚ÆAƒ`ƒbƒv•\¦ƒEƒBƒ“ƒhƒE“à‚É•\¦‚³‚ê‚Ü‚·B
+—á) ppvw.exe "%si"TipTarget"" /P%si"TipWnd"
+
 <hr>
 <atk:X_poshl> ƒ}ƒEƒXƒJ[ƒ\ƒ‹‰º‚ÌƒGƒ“ƒgƒŠ”wŒiF‚ğ•Ï‰»‚³‚¹‚é
 
@@ -8310,6 +8385,7 @@ PPx          :TC1 :TH1 :XCFG
 <tk:E_scr>		PPc/PPv ‚Ì \\[Enter] ‚Åg—p‚³‚ê‚Ü‚·B
 <tk:E_unpack2>	PPc ‚Ì [U] ‚ÅAg—p‚Å‚«‚é DLL ‚ªŒ©‚Â‚©‚ç‚È‚¢‚Ég—p‚³‚ê‚Ü‚·B
 ®A<i>%ME_cr</i>“™‚ÆAQÆ‚·‚é‚±‚Æ‚à‚Å‚«‚Ü‚·B
+<tk:E_TipView>		PPc ‚ÌƒGƒ“ƒgƒŠƒ`ƒbƒv•\¦(<jmpa:ƒvƒŒƒrƒ…[Ú×:previewtip>j
 
 <b>”CˆÓ’Ç‰Á€–Ú</b>
 ã‹L‚Ì‰Šú“o˜^‚Ì‘¼‚ÉAƒ†[ƒU’è‹`‚Æ‚µ‚Ä”CˆÓ‚ÌŒÂ”‚¾‚¯’Ç‰Á‹LÚ‚ª‚Å‚«‚Ü‚·B
@@ -8682,6 +8758,7 @@ INFO	î•ñs ‚Qs•ª‚ÌƒGƒ“ƒgƒŠ‚ÌÚ×‚ğ•\¦‚·‚é
 ICON	ƒAƒCƒRƒ“•\¦ î•ñs‚Ì¶’[‚É•\¦‚³‚ê‚éƒAƒCƒRƒ“
 MARK	ƒ}[ƒN ƒGƒ“ƒgƒŠ•\¦s‚Ì¶’[–ñ‚Q•¶š•ª‚Ìƒ}[ƒNƒ`ƒFƒbƒN—p
 ENT	ƒGƒ“ƒgƒŠ ƒJ[ƒ\ƒ‹ˆÚ“®‰Â”\‚Ès
+TAIL	ƒGƒ“ƒgƒŠ‚Ì‰E’[
 TABB	ƒ^ƒuƒ{ƒ^ƒ“
 TABS	ƒ^ƒuƒ{ƒ^ƒ“ˆê——‚Ì‹ó—“•”•ª
 HEAD	ƒJƒ‰ƒ€ƒwƒbƒ_(R_HEAD‚Ì‚İw’è‰Â”\A%si"HeaderSortU"‚ÅƒNƒŠƒbƒN‚µ‚½ƒJƒ‰ƒ€‚Ì¸‡A%si"HeaderSortD"‚Å~‡‚Ì’l‚ğæ“¾‚Å‚«A*sortentry “™‚Åg—p‚Å‚«‚Ü‚·B)

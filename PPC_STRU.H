@@ -34,6 +34,7 @@ extern "C" {
 #define WM_PPCSETCOMMENT	(WM_APP+1067) // コメント登録
 // TipWndProc
 #define WM_PPCTIPPOS	(WM_APP+1071) // チップの表示位置を通知
+#define WM_PPCPREVIEWPOS	(WM_APP+1072) // プレビューチップの表示位置を通知
 // ComboProcMain
 #define WM_PPCOMBO_NESTED_ENTRY (WM_APP+1075) // KCW_entry で再入になってしまった窓を再登録させる
 #define WM_PPCOMBO_NESTED_DESTROY (WM_APP+1076) // destroy window で再入になってしまった窓を再登録解除させる
@@ -616,6 +617,7 @@ typedef struct { // ディレクトリの情報
 	ENTRYDATAOFFSET cellDataMax; // Cell の個数、CELLDATA の有効数、格納数
 	ENTRYINDEX cellStack;	// スタックされたセルの数
 	ENTRYINDEX cellPoint;	// マウスカーソルが示す位置
+	int cellPointType; // マウスカーソルが示す位置の種類 PPCR_xxx
 	D_DWORD MarkSize;
 
 	 //マークリスト管理。-1:なし,-2:最終,他:そこへ繋がる
@@ -772,18 +774,23 @@ typedef struct tagPPC_APPINFO {
 	int			NowJoint;		// 連結作業中は偽
 	HWND		hSyncInfoWnd;
 
-	HWND		hTipWnd;
-	int			TipWndState;
-#define TWS_HIDE 0  // 非表示中
-#define TWS_SHOWNOW 1 // すぐに表示
-#define TWS_READY 2 // 表示のタイミング待ち
-#define TWS_SHOW 3 // 表示中
-	int			X_stip_mode;
-#define stip_mode_filename	0
-#define stip_mode_fileinfo	1
-#define stip_mode_comment	2
-#define stip_mode_text		3
-	int			X_stip_hover;
+	struct {
+		HWND hTipWnd;
+			#define TWS_HIDE 0  // 非表示中
+			#define TWS_SHOWNOW 1 // すぐに表示
+			#define TWS_READY 2 // 表示のタイミング待ち
+			#define TWS_SHOW 3 // 表示中
+		int WndState;
+			#define stip_mode_filename	1
+			#define stip_mode_fileinfo	2
+			#define stip_mode_comment	3
+			#define stip_mode_preview	4
+			#define stip_mode_text		5
+			#define stip_mode_togglemax	stip_mode_preview
+		int X_stip_mode;
+		DWORD mode;
+		ENTRYINDEX target; // stip_mode_preview 用
+	} Tip;
 
 	BOOL		ModifyComment;	// コメント編集がされたかどうか
 	PPCSTARTPARAM *FirstCommand; // /k で実行する内容を参照する
@@ -793,7 +800,7 @@ typedef struct tagPPC_APPINFO {
 	ENTRYINDEX	MouseDragWMin;	// ドラッグ開始位置のWmin(ドラッグ選択用)
 	POINT		MouseDragPoint;	// 前回の枠(ドラッグ選択用)
 	POINT		oldmousemvpos;	// 直前の隠しメニューの項目
-	int			MousePush;		// D&D動作の種類
+	int			MousePush;		// D&D動作の種類 MOUSE_xxx
 	int			MouseUpFG;		// Button Up 時に SetFG が必要なら 1
 	int			PushArea;		// 押下位置の種類の保存
 	int			KeyChar;		// WM_KEYUP 中は 1

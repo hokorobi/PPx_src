@@ -72,6 +72,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <STYLE type="text/css">
 <!--
+hr { border:solid 1px; }
 pre { font-size:100%; }
 }
 -->

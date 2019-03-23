@@ -245,7 +245,7 @@ HWND *CreateDialogWindow(HANDLE hinst,LPCTSTR lpszTemplate,HWND hParentWnd)
 		WORD extrasize;
 		HWND hCtrlWnd;
 
-		if (ALIGNMENT_BITS(dpitem) & 3 ) dpitem += sizeof(WORD); // アライメント補正
+		if ( ALIGNMENT_BITS(dpitem) & 3 ) dpitem += sizeof(WORD); // アライメント補正
 
 		dtp = (DLGITEMTEMPLATE *)dpitem;
 		box.left	= dtp->x;
@@ -294,19 +294,19 @@ HWND *CreateDialogWindow(HANDLE hinst,LPCTSTR lpszTemplate,HWND hParentWnd)
 void PaintPPxStatic(HWND hWnd)
 {
 	PAINTSTRUCT ps;
-	TCHAR buf[0x800],*max;
+	TCHAR buf[0x800], *maxptr;
 	RECT rect;
 
 	BeginPaint(hWnd,&ps);
-	max = buf + GetWindowText(hWnd,buf,TSIZEOF(buf));
+	maxptr = buf + GetWindowText(hWnd, buf, TSIZEOF(buf));
 
-	if ( max != buf ){
-		TCHAR *first,*p;
-		int X = 0,Y = 0;
-		int align = 0;
+	if ( maxptr != buf ){
+		TCHAR *first, *format;
+		POINT Draw = {0, 0};
+		int align = 0; // はみ出したときの揃え方
 		HGDIOBJ hOldFont;
 		TEXTMETRIC tm;
-		int baseW,baseH;
+		int baseW, baseH;
 
 		#if 0
 		{	// 呼び出し間隔計測用
@@ -324,67 +324,67 @@ void PaintPPxStatic(HWND hWnd)
 		rect.bottom = 0;
 		rect.left = 0;
 		rect.right = 1;
-		MapDialogRect(GetParent(hWnd),&rect);
+		MapDialogRect(GetParent(hWnd), &rect);
 		baseW = rect.right;
-		GetClientRect(hWnd,&rect);
+		GetClientRect(hWnd, &rect);
 		rect.left += 2;
-		SetTextColor(ps.hdc,GetSysColor(COLOR_WINDOWTEXT));
-		SetBkColor(ps.hdc,GetSysColor(COLOR_3DFACE));
+		SetTextColor(ps.hdc, GetSysColor(COLOR_WINDOWTEXT));
+		SetBkColor(ps.hdc, GetSysColor(COLOR_3DFACE));
 		hOldFont = SelectObject(ps.hdc,
-				(HFONT)GetWindowLongPtr(hWnd,GWLP_USERDATA));
+				(HFONT)GetWindowLongPtr(hWnd, GWLP_USERDATA));
 
-		GetTextMetrics(ps.hdc,&tm);
+		GetTextMetrics(ps.hdc, &tm);
 		baseH = tm.tmHeight;
 
-		p = buf;
-		while ( p < max ){
+		format = buf;
+		while ( format < maxptr ){
 			SIZE ssize;
 			int strlength;
 
-			first = p;
-			while ( p < max ){
-				if ( (UTCHAR)*p < ' ' ) break;
-				p++;
+			first = format;
+			while ( format < maxptr ){
+				if ( (UTCHAR)*format < ' ' ) break;
+				format++;
 			}
-			strlength = p - first;
+			strlength = format - first;
 			if ( strlength ){
 				RECT box;
 
-				GetTextExtentPoint32(ps.hdc,first,strlength,&ssize);
-				if ( align == 0 ){
-					ssize.cx = ( ssize.cx >= (rect.right - X) ) ?
-							rect.right - X - ssize.cx :	// はみ出す時
-							X;							// はみ出さない時
-				}else{
-					ssize.cx = ( ssize.cx >= (rect.right - X) ) ?
-							X :							// はみ出す時
-							rect.right - X - ssize.cx;	// はみ出さない時
+				GetTextExtentPoint32(ps.hdc, first, strlength, &ssize);
+				if ( align == 0 ){ // 左揃え
+					ssize.cx = ( ssize.cx >= (rect.right - Draw.x) ) ?
+							/*Draw.x +*/ rect.right /*- Draw.x*/ - ssize.cx :	// はみ出す時
+							Draw.x;
+				}else{ // 右揃え
+					ssize.cx = ( ssize.cx >= (rect.right - Draw.x) ) ?
+							Draw.x :							// はみ出す時
+							/*Draw.x +*/ rect.right /*- Draw.x*/ - ssize.cx;	// はみ出さない時
 				}
-				box.left = X;
-				box.top = Y;
+				box.left = Draw.x;
+				box.top = Draw.y;
 				box.right = rect.right;
-				box.bottom = min(rect.bottom,Y + baseH);
+				box.bottom = min(rect.bottom, Draw.y + baseH);
 
-				ExtTextOut(ps.hdc,ssize.cx,Y,ETO_CLIPPED | ETO_OPAQUE,
-						&box,first,strlength,NULL);
-				if ( p == max ) break;
+				ExtTextOut(ps.hdc, ssize.cx, Draw.y, ETO_CLIPPED | ETO_OPAQUE,
+						&box, first, strlength, NULL);
+				if ( format == maxptr ) break;
 			}
-			switch ( *p ){
+			switch ( *format ){
 				case PXSC_NORMAL: {				// 通常
-					SetTextColor(ps.hdc,GetSysColor(COLOR_WINDOWTEXT));
-					SetBkColor(ps.hdc,GetSysColor(COLOR_3DFACE));
+					SetTextColor(ps.hdc, GetSysColor(COLOR_WINDOWTEXT));
+					SetBkColor(ps.hdc, GetSysColor(COLOR_3DFACE));
 					break;
 				}
 				case PXSC_HILIGHT: {
-					SetTextColor(ps.hdc,GetSysColor(COLOR_HIGHLIGHTTEXT));
-					SetBkColor(ps.hdc,GetSysColor(COLOR_HIGHLIGHT));
+					SetTextColor(ps.hdc, GetSysColor(COLOR_HIGHLIGHTTEXT));
+					SetBkColor(ps.hdc, GetSysColor(COLOR_HIGHLIGHT));
 					break;
 				}
 				case '\n':			// 改行
-					X = 0;
-					Y += baseH;
+					Draw.x = 0;
+					Draw.y += baseH;
 					break;
-				case PXSC_PAR: {
+				case PXSC_PAR: {	// プログレス表示
 /*
 ----------------------+
 3                     |
@@ -394,31 +394,41 @@ x1| x10|x1|…|x2|…|x1|
 2                     |
 ----------------------+
 */
+					// PAR_ALLBLOCKS * PAR_BLOCKRANGE = 100
+					#define PAR_ALLBLOCKS 10 // 全ブロック数
+					#define PAR_BLOCKRANGE 10 // ブロックの単位
+					#define PAR_BLOCKSIZE 10 // 1ブロックの描画幅
+					#define PAR_BLOCKSBLANK 1 // ブロック間の空白
+					#define PAR_BLOCKSPACING (PAR_BLOCKSIZE + PAR_BLOCKSBLANK)
+					#define PAR_WIDTH (PAR_BLOCKSBLANK + PAR_BLOCKSPACING * PAR_ALLBLOCKS + PAR_BLOCKSBLANK + PAR_BLOCKSBLANK ) // プログレス表示幅
 					int i;
 					RECT box;
 					HBRUSH hB;
-					int count,par,drawbar;
+					int count, par, drawbar;
 
-					par = (DWORD)*((BYTE *)(p + 1)) - 1;	// 1-100(-1)
-					count = *(BYTE *)(p + 2) - 1;			// 1-11(-1)
-					p += 2;
+					par = (DWORD)*((BYTE *)(format + 1)) - 1;	// 1-100(-1)
+					count = *(BYTE *)(format + 2) - 1;			// 1-11(-1)
+					format += 2;
 
 					box.top = rect.top + (baseW + (baseW / 2));
-					box.bottom = min(rect.bottom,Y + baseH) - baseW;
-											// 進捗グラフ(プログレスバー) -----
+					box.bottom = min(rect.bottom, Draw.y + baseH) - baseW;
+
 					hB = CreateSolidBrush(GetSysColor((count <= 10) ? COLOR_HIGHLIGHT : COLOR_GRAYTEXT ));
 														// 最後直前まで
-					box.left  = X + baseW;
-					box.right = X + baseW * 11;
-					for ( i = 0 ; (i + 10) < par ; i += 10 ){
-						FillBox(ps.hdc,&box,hB);
+					box.left  = Draw.x + baseW;
+					box.right = Draw.x + baseW * PAR_BLOCKSPACING;
+					for ( i = 0 ; (i + PAR_BLOCKRANGE) < par ; i += PAR_BLOCKRANGE ){
+						FillBox(ps.hdc, &box, hB);
 						box.left = box.right + baseW;
-						if ( i == 40 ) box.left += baseW;
-						box.right = box.left + baseW * 10;
+						// 50% 境界は空白幅が倍
+						if ( i == (PAR_BLOCKRANGE * (5 - 1)) ){
+							box.left += baseW; // * PAR_BLOCKSBLANK
+						}
+						box.right = box.left + baseW * PAR_BLOCKSIZE;
 					}
 														// 最後
 					box.right = box.left + ((par - i) * baseW);
-					FillBox(ps.hdc,&box,hB);
+					FillBox(ps.hdc, &box,hB);
 					DeleteObject(hB);
 													// 空白 -------------------
 					hB = CreateSolidBrush(GetSysColor(COLOR_3DFACE));
@@ -426,29 +436,29 @@ x1| x10|x1|…|x2|…|x1|
 					box.top = rect.top;
 					box.bottom += baseW;
 					box.left = box.right;
-					box.right = X + baseW * 112;
-					FillBox(ps.hdc,&box,hB);
+					box.right = Draw.x + baseW * PAR_WIDTH;
+					FillBox(ps.hdc, &box, hB);
 
-					drawbar = (int)GetWindowLongPtr(hWnd,0);
+					drawbar = (int)GetWindowLongPtr(hWnd, 0);
 					if ( (drawbar > 0) && (drawbar < box.left) ){
 						// 直前の処理中バーを消去
 						box.left = drawbar;
 						box.right = drawbar + baseW;
-						FillBox(ps.hdc,&box,hB);
+						FillBox(ps.hdc, &box, hB);
 					}
 					DeleteObject(hB);
 											// 処理中バー -----------
 					if ( (count >= 0) && (count <= 10) ){
 						hB = CreateSolidBrush(GetSysColor(COLOR_WINDOWTEXT));
-						box.left = X + ( count * 11 + 11 ) * baseW;
+						box.left = Draw.x + ( count * PAR_BLOCKSPACING + PAR_BLOCKSPACING ) * baseW;
 						if ( count >= 4 ) box.left += baseW;
 						box.right = box.left + baseW;
-						FillBox(ps.hdc,&box,hB);
+						FillBox(ps.hdc, &box,hB);
 						DeleteObject(hB);
-						SetWindowLongPtr(hWnd,0,(LONG_PTR)box.left);
+						SetWindowLongPtr(hWnd, 0, (LONG_PTR)box.left);
 					}
 
-					X += baseW * 112;
+					Draw.x += baseW * PAR_WIDTH;
 					break;
 				}
 				case PXSC_LEFT:
@@ -458,16 +468,16 @@ x1| x10|x1|…|x2|…|x1|
 					align = 1;
 					break;
 				default:	// 未定義
-					p = max;
+					format = maxptr;
 			}
-			p++;
+			format++;
 		}
-		SelectObject(ps.hdc,hOldFont);
+		SelectObject(ps.hdc, hOldFont);
 	}
-	EndPaint(hWnd,&ps);
+	EndPaint(hWnd, &ps);
 }
 
-LRESULT CALLBACK PPxStaticProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
+LRESULT CALLBACK PPxStaticProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch ( message ){
 		case WM_PAINT:
@@ -476,35 +486,35 @@ LRESULT CALLBACK PPxStaticProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lPara
 
 		case WM_LBUTTONUP:
 		case WM_RBUTTONUP:
-			PostMessage(GetParent(hWnd),WM_COMMAND,GetDlgCtrlID(hWnd) | (WM_CONTEXTMENU << 16),(LPARAM)hWnd);
+			PostMessage(GetParent(hWnd), WM_COMMAND, GetDlgCtrlID(hWnd) | (WM_CONTEXTMENU << 16), (LPARAM)hWnd);
 			return 0;
 
 		case WM_SETTEXT:
-			InvalidateRect(hWnd,NULL,FALSE);
+			InvalidateRect(hWnd, NULL, FALSE);
 			break;
 
 		case WM_SETFONT:
-			SetWindowLongPtr(hWnd,GWLP_USERDATA,(LONG_PTR)wParam);
-			if ( LOWORD(lParam) ) InvalidateRect(hWnd,NULL,FALSE);
+			SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)wParam);
+			if ( LOWORD(lParam) ) InvalidateRect(hWnd, NULL, FALSE);
 			break;
 	}
-	return DefWindowProc(hWnd,message,wParam,lParam);
+	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
-void ShowDlgWindow(const HWND hDlg,const UINT id,BOOL show)
+void ShowDlgWindow(const HWND hDlg, const UINT id, BOOL show)
 {
 	HWND hControlWnd;
 
-	hControlWnd = GetDlgItem(hDlg,id);
+	hControlWnd = GetDlgItem(hDlg, id);
 	if ( hControlWnd == NULL ) return;
-	ShowWindow(hControlWnd,show ? SW_SHOW : SW_HIDE);
+	ShowWindow(hControlWnd, show ? SW_SHOW : SW_HIDE);
 }
 
-void EnableDlgWindow(HWND hDlg,int id,BOOL state)
+void EnableDlgWindow(HWND hDlg, int id, BOOL state)
 {
 	HWND hControlWnd;
 
-	hControlWnd = GetDlgItem(hDlg,id);
+	hControlWnd = GetDlgItem(hDlg, id);
 	if ( hControlWnd == NULL ) return;
-	EnableWindow(hControlWnd,state);
+	EnableWindow(hControlWnd, state);
 }

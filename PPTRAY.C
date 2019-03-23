@@ -69,15 +69,15 @@ void SetHotKey(HWND hWnd)
 {
 	TCHAR key[MAX_PATH],buf[MAX_PATH];
 	CTCHAR *p;
-	int keycode,vkey,i,max;
+	int keycode, vkey, i, maxi;
 	UINT *hk;
 
 	HotKeys = NULL;
-	max = CountCustTable(T("K_tray"));
-	if ( max == 0 ) return;
-	hk = HotKeys = HeapAlloc(GetProcessHeap(),0,(max + 1) * sizeof hk[0]);
+	maxi = CountCustTable(T("K_tray"));
+	if ( maxi == 0 ) return;
+	hk = HotKeys = HeapAlloc(GetProcessHeap(),0,(maxi + 1) * sizeof hk[0]);
 
-	for ( i = 0 ; i < max ; i++ ){
+	for ( i = 0 ; i < maxi ; i++ ){
 		if ( EnumCustTable(i,T("K_tray"),key,buf,0) < 0 ) break;
 		p = key;
 		*hk++ = keycode = GetKeyCode(&p);

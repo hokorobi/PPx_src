@@ -127,7 +127,7 @@ typedef struct _GRADIENT_RECT{
 #define GRADIENT_FILL_OP_FLAG	0x000000ff
 #endif
 
-DefinefWinAPI(BOOL, GradientFill, (HDC hdc, const PTRIVERTEX pVertex, ULONG nVertex, PVOID pMesh, ULONG nMesh, ULONG ulMode));
+DefineWinAPI(BOOL, GradientFill, (HDC hdc, const PTRIVERTEX pVertex, ULONG nVertex, PVOID pMesh, ULONG nMesh, ULONG ulMode));
 LOADWINAPISTRUCT GradientFillAPI[] = {
 	LOADWINAPI1(GradientFill),
 {NULL, NULL}
@@ -145,17 +145,189 @@ LOADWINAPISTRUCT GradientFillAPI[] = {
 
 void DrawTextRight(DISPSTRUCT *disp, const TCHAR *str, int len);
 
+HMODULE hATL = NULL;
+const WCHAR *AtlClass;
+const WCHAR WMPplayer4IID[] = L"{6BF52A52-394A-11D3-B153-00C04F79FAA6}";
+
+DefineWinAPI(BOOL, AtlAxWinInit, (void)) = NULL;
+DefineWinAPI(HRESULT, AtlAxGetControl, (HWND, IUnknown **)) = NULL;
+
 // Tip 関連 ===================================================================
+#define TIPMARGINWIDTH 2
+#define TIPBORDERWIDTH 1
+#define TIPTEXTLENGTH 0x400
+
 const TCHAR FileTipClass[] = T("PPcTip");
-#define TIPSPACEWIDTH 2
 #define TIP_DRAW_FLAGS (DT_LEFT | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL | DT_EXPANDTABS)
-#define TIPBORDER 1
 LRESULT CALLBACK TipWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+#define WMPOpenState void
+#define WMPPlayState void
+#define IWMPCdromCollection void
+#define IWMPClosedCaption void
+#define IWMPControls void
+#define IWMPDVD void
+#define IWMPError void
+#define IWMPMedia void
+#define IWMPMediaCollection void
+#define IWMPNetwork void
+#define IWMPPlayerApplication void
+#define IWMPPlaylist void
+#define IWMPPlaylistCollection void
+#define IWMPSettings void
+
+const IID XIID_IWMPPlayer4 =
+	{0x6C497D62, 0x8919, 0x413c, {0x82, 0xDB, 0xE9, 0x35, 0xFB, 0x3E, 0xC5, 0x84}};
+#undef  INTERFACE
+#define INTERFACE xIWMPPlayer4
+DECLARE_INTERFACE_(xIWMPPlayer4, IUnknown)
+{
+	STDMETHOD(QueryInterface)(THIS_ REFIID, void **) PURE;
+	STDMETHOD_(ULONG, AddRef) (THIS)  PURE;
+	STDMETHOD_(ULONG, Release) (THIS) PURE;
+
+	STDMETHOD(GetTypeInfoCount)(THIS_ UINT *pctinfo);
+	STDMETHOD(GetTypeInfo)(THIS_ UINT iTInfo, LCID lcid, ITypeInfo **ppTInfo);
+	STDMETHOD(GetIDsOfNames)(THIS_ REFIID riid, LPOLESTR *rgszNames,
+			UINT cNames, LCID lcid, DISPID *rgDispId);
+	STDMETHOD(Invoke)(THIS_ DISPID dispIdMember, REFIID riid, LCID lcid,
+			WORD wFlags, DISPPARAMS *pDispParams, VARIANT *pVarResult,
+			EXCEPINFO *pExcepInfo, UINT *puArgErr);
+	STDMETHOD(close)(void);
+	STDMETHOD(get_URL)(THIS_ BSTR *pbstrURL);
+	STDMETHOD(put_URL)(THIS_ BSTR bstrURL);
+	STDMETHOD(get_openState)(THIS_ WMPOpenState *pwmpos);
+	STDMETHOD(get_playState)(THIS_ WMPPlayState *pwmpps);
+	STDMETHOD(get_controls)(THIS_ IWMPControls **ppControl);
+	STDMETHOD(get_settings)(THIS_ IWMPSettings **ppSettings);
+	STDMETHOD(get_currentMedia)(THIS_ IWMPMedia **ppMedia);
+	STDMETHOD(put_currentMedia)(THIS_ IWMPMedia *pMedia);
+	STDMETHOD(get_mediaCollection)(THIS_
+			IWMPMediaCollection **ppMediaCollection);
+	STDMETHOD(get_playlistCollection)(THIS_
+			IWMPPlaylistCollection **ppPlaylistCollection);
+	STDMETHOD(get_versionInfo)(THIS_ BSTR *pbstrVersionInfo);
+	STDMETHOD(launchURL)(THIS_ BSTR bstrURL);
+	STDMETHOD(get_network)(THIS_ IWMPNetwork **ppQNI);
+	STDMETHOD(get_currentPlaylist)(THIS_ IWMPPlaylist **ppPL);
+	STDMETHOD(put_currentPlaylist)(THIS_ IWMPPlaylist *pPL);
+	STDMETHOD(get_cdromCollection)(THIS_
+			IWMPCdromCollection **ppCdromCollection);
+	STDMETHOD(get_closedCaption)(THIS_ IWMPClosedCaption **ppClosedCaption);
+	STDMETHOD(get_isOnline)(THIS_ VARIANT_BOOL *pfOnline);
+	STDMETHOD(get_error)(THIS_ IWMPError **ppError);
+	STDMETHOD(get_status)(THIS_ BSTR *pbstrStatus);
+	STDMETHOD(get_dvd)(THIS_ IWMPDVD **ppDVD);
+	STDMETHOD(newPlaylist)(THIS_ BSTR bstrName, BSTR bstrURL,
+			IWMPPlaylist **ppPlaylist);
+	STDMETHOD(newMedia)(THIS_ BSTR bstrURL, IWMPMedia **ppMedia);
+	STDMETHOD(get_enabled)(THIS_ VARIANT_BOOL *pbEnabled);
+	STDMETHOD(put_enabled)(THIS_ VARIANT_BOOL bEnabled);
+	STDMETHOD(get_fullScreen)(THIS_ VARIANT_BOOL *pbFullScreen);
+	STDMETHOD(put_fullScreen)(THIS_ VARIANT_BOOL bFullScreen);
+	STDMETHOD(get_enableContextMenu)(THIS_ VARIANT_BOOL *pbEnableContextMenu);
+	STDMETHOD(put_enableContextMenu)(THIS_ VARIANT_BOOL bEnableContextMenu);
+	STDMETHOD(put_uiMode)(THIS_ BSTR bstrMode);
+	STDMETHOD(get_uiMode)(THIS_ BSTR *pbstrMode);
+	STDMETHOD(get_stretchToFit)(THIS_ VARIANT_BOOL *pbEnabled);
+	STDMETHOD(put_stretchToFit)(THIS_ VARIANT_BOOL bEnabled);
+	STDMETHOD(get_windowlessVideo)(THIS_ VARIANT_BOOL *pbEnabled);
+	STDMETHOD(put_windowlessVideo)(THIS_ VARIANT_BOOL bEnabled);
+	STDMETHOD(get_isRemote)(THIS_ VARIANT_BOOL *pvarfIsRemote);
+	STDMETHOD(get_playerApplication)(THIS_
+			IWMPPlayerApplication **ppIWMPPlayerApplication);
+	STDMETHOD(openPlayer)(THIS_ BSTR bstrURL);
+};
+
+BOOL LoadOcx(HWND hParentWnd, TCHAR *filename)
+{
+	HWND hOcxWnd;
+
+	if ( hATL == INVALID_HANDLE_VALUE ) return FALSE;
+	if ( hATL == NULL ){
+		hATL = LoadLibrary(T("atl110.dll"));
+		if ( hATL == NULL ){
+			hATL = LoadLibrary(T("atl.dll"));
+			if ( hATL == NULL ) return FALSE;
+			AtlClass = L"AtlAxWin";
+		}else{
+			AtlClass = L"AtlAxWin110";
+		}
+		GETDLLPROC(hATL, AtlAxWinInit);
+		GETDLLPROC(hATL, AtlAxGetControl);
+		if ( (DAtlAxGetControl == NULL) || (DAtlAxWinInit() == FALSE) ){
+			FreeLibrary(hATL);
+			hATL = INVALID_HANDLE_VALUE;
+			return FALSE;
+		}
+	}
+
+	hOcxWnd = CreateWindowExW(0, AtlClass, WMPplayer4IID,
+			WS_CHILD | WS_CLIPCHILDREN, 0, 0, 0x100, 0x100, hParentWnd,
+			NULL, hInst, NULL);
+	if ( hOcxWnd != NULL ){
+		IUnknown *pUnknown;
+
+		ShowWindow(hOcxWnd,SW_SHOWNORMAL);
+		if ( SUCCEEDED(DAtlAxGetControl(hOcxWnd, &pUnknown)) ){
+			xIWMPPlayer4 *pWMPPlayer4;
+			if ( SUCCEEDED(pUnknown->lpVtbl->QueryInterface(pUnknown, &XIID_IWMPPlayer4, (void**)&pWMPPlayer4)) ){
+				#ifdef UNICODE
+					pWMPPlayer4->lpVtbl->put_URL(pWMPPlayer4, filename);
+				#else
+					WCHAR filenameW[0x2000];
+					AnsiToUnicode(filename, filenameW, 0x2000);
+
+					pWMPPlayer4->lpVtbl->put_URL(pWMPPlayer4, filenameW);
+				#endif
+				pWMPPlayer4->lpVtbl->Release(pWMPPlayer4);
+			}
+			pUnknown->lpVtbl->Release(pUnknown);
+		}
+	}
+	return TRUE;
+}
+
+BOOL CheckOcx(const TCHAR *filepath)
+{
+	TCHAR buf[0x1000];
+	const TCHAR *ext = tstrrchr(filepath, '.');
+	HKEY hReg;
+	int cnt = 0;
+	BOOL result = FALSE;
+
+	if ( ext == NULL ) return FALSE;
+	wsprintf(buf, T("%s\\OpenWithProgids"), ext);
+	if ( ERROR_SUCCESS != RegOpenKeyEx(HKEY_CLASSES_ROOT, buf, 0, KEY_READ, &hReg) ){
+		return FALSE;
+	}
+
+	for ( ; ; cnt++ ){			// 設定を取り出す ---------------------
+		DWORD keySize, valueSize;
+		TCHAR keyName[MAX_PATH];
+		DWORD Rtyp;
+
+		keySize = TSIZEOF(keyName);
+		valueSize = TSIZEOF(buf);
+		if ( ERROR_SUCCESS != RegEnumValue(hReg, cnt, keyName, &keySize, NULL,
+			&Rtyp, (BYTE *)buf, &valueSize) ){
+			break;
+		}
+		if ( (keyName[0] == 'W') && (keyName[1] == 'M') &&
+			 (keyName[2] == 'P') && Isdigit(keyName[3]) ){
+			result = TRUE;
+			break;
+		}
+	}
+	RegCloseKey(hReg);
+	return result;
+}
 
 void CreateTipWnd(PPC_APPINFO *cinfo)
 {
 	WNDCLASS wndClass;
 	DWORD StyleEx = WS_EX_TOOLWINDOW;
+	DWORD Style = WS_POPUP | WS_BORDER | WS_CLIPCHILDREN;
 
 	wndClass.style = CS_DBLCLKS;
 	wndClass.lpfnWndProc = TipWndProc;
@@ -179,17 +351,23 @@ void CreateTipWnd(PPC_APPINFO *cinfo)
 		if ( C_tip[1] == C_AUTO ) C_tip[1] = GetSysColor(COLOR_INFOBK);
 	}
 
-	if ( OSver.dwMajorVersion >= 5 ) StyleEx |= WS_EX_NOACTIVATE;
-	cinfo->hTipWnd = CreateWindowEx(StyleEx, FileTipClass, NilStr,
-		WS_POPUP | WS_BORDER, 0, 0, 1, 1, cinfo->info.hWnd,
-		NULL, hInst, NULL);
+	if ( cinfo->Tip.X_stip_mode != stip_mode_preview ){
+	if ( OSver.dwMajorVersion >= 5 ) setflag(StyleEx, WS_EX_NOACTIVATE);
+	}
+/*
+		setflag(Style, WS_THICKFRAME);
+	}
+*/
+	cinfo->Tip.hTipWnd = CreateWindowEx(StyleEx, FileTipClass, NilStr,
+		Style, 0, 0, 1, 1, cinfo->info.hWnd,
+		NULL, hInst, cinfo);
 
-	cinfo->TipWndState = TWS_SHOWNOW;
-	RefleshCell(cinfo, cinfo->e.cellN);
+	cinfo->Tip.WndState = TWS_SHOWNOW;
 }
 
+// 選択カーソル移動後表示するタイマ
 #pragma argsused
-VOID CALLBACK ShowTipTimerProc(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
+VOID CALLBACK ShowTipDelayTimerProc(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 {
 	PPC_APPINFO *cinfo;
 	UnUsedParam(uMsg); UnUsedParam(dwTime);
@@ -199,18 +377,98 @@ VOID CALLBACK ShowTipTimerProc(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwT
 	cinfo = (PPC_APPINFO *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 	if ( GetFocus() != hWnd ) return;
 
-	if ( cinfo->hTipWnd == NULL ){
-		CreateTipWnd(cinfo);
-		return;
+	if ( cinfo->Tip.mode & STIP_DELAY ){
+		ShowWindow(cinfo->Tip.hTipWnd, SW_SHOWNA);
+		cinfo->Tip.WndState = TWS_SHOW;
+		cinfo->Tip.target = cinfo->e.cellN;
 	}
-
-	SetWindowPos(cinfo->hTipWnd, HWND_TOP, 0, 0, 0, 0,
-		SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW);
-	cinfo->TipWndState = TWS_SHOW;
-	resetflag(X_stip,(STIP_NOW | STIP_HOVER));
+	resetflag(cinfo->Tip.mode, STIP_DELAY);
 }
 
-#define TIPTEXTLENGTH 0x400
+void WmPPcTipPos(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	int x,y, w,h;
+#if DRAWMODE == DRAWMODE_DW
+	DXDRAWSTRUCT *DxDraw;
+#endif
+
+	x = (short)LOWORD(wParam);
+	y = (short)HIWORD(wParam);
+	w = (short)LOWORD(lParam);
+	h = (short)HIWORD(lParam);
+
+	if ( message == WM_PPCPREVIEWPOS ){
+		TCHAR filepath[0x1000], execpath[0x2000];
+		PPC_APPINFO *cinfo;
+
+		w = X_stip[TIP_PV_WIDTH];
+		h = X_stip[TIP_PV_HEIGHT];
+		cinfo = (PPC_APPINFO *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+
+		GetWindowText(hWnd, filepath, 0x1000);
+
+		// 特殊環境変数 TipWnd に hWnd を保存
+		wsprintf(execpath, T("%u"), hWnd);
+		ThSetString(&cinfo->StringVariable, T("TipWnd"), execpath);
+		if ( 0 <= PP_GetExtCommand(filepath, T("E_TipView"), execpath, NULL) ){
+			ThSetString(&cinfo->StringVariable, T("TipTarget"), filepath);
+			PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, execpath + 1,NULL,0);
+		}else if ( GetFileAttributesL(filepath) & FILE_ATTRIBUTE_DIRECTORY ){
+			HWND hTreeWnd;
+			InitVFSTree();
+
+			hTreeWnd = CreateWindowEx(0, Str_TreeClass, Str_TreeClass,
+				WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
+				0, 0, w, h,
+				hWnd, (HMENU)IDW_TIPTREE, hInst, 0);
+			SendMessage(hTreeWnd, VTM_SETFLAG, (WPARAM)hWnd, (LPARAM)(VFSTREE_PATHNOTIFY));
+
+			SendMessage(hTreeWnd,VTM_TREECOMMAND,0,(LPARAM)filepath);
+			SetWindowText(hWnd, NilStr);
+		}else if ( CheckOcx(filepath) && LoadOcx(hWnd, filepath) ){
+			// LoadOcx
+		}else{
+			#ifdef UNICODE
+				wsprintf(execpath, L"ppvw.exe"
+			#else
+				wsprintf(execpath, "ppv.exe"
+			#endif
+					T(" -r -bootid:PX -P%u \"%s\""),hWnd,filepath);
+			ComExec(hWnd, execpath, PPcPath);
+		}
+	}
+//	XMessage(NULL,NULL,XM_DbgDIA,T("%d %d"),x,y);
+	SetWindowPos(hWnd, NULL, x,y, w,h, SWP_NOACTIVATE | SWP_NOREDRAW | SWP_NOZORDER);
+	#if DRAWMODE == DRAWMODE_DW
+		DxDraw = (DXDRAWSTRUCT *)GetWindowLongPtr(hWnd, 0);
+{
+		PPC_APPINFO *cinfo;
+		cinfo = (PPC_APPINFO *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+		SetFontDxDraw(DxDraw, cinfo->hBoxFont , 0);
+}
+	#endif
+}
+
+LRESULT WmTipPPXCOMMAND(HWND hWnd, WPARAM wParam, LPARAM lParam)
+{
+	PPC_APPINFO *cinfo;
+	cinfo = (PPC_APPINFO *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+
+	switch (LOWORD(wParam)){
+		case KTN_escape:
+			PostMessage(hWnd, WM_CLOSE, 0, 0);
+			// KTN_focus へ
+		case KTN_focus:
+			SetFocus(cinfo->info.hWnd);
+			break;
+
+		case KTN_selected:
+			// KTN_selected(本来のツリーを閉じる)は実行しない
+			return SendMessage(cinfo->info.hWnd, WM_PPXCOMMAND, KTN_select, lParam);
+		// default:
+	}
+	return NO_ERROR;
+}
 
 LRESULT CALLBACK TipWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -219,14 +477,8 @@ LRESULT CALLBACK TipWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 #endif
 	switch ( message ){
 		case WM_PPCTIPPOS:
-			SetWindowPos(hWnd, NULL,
-				(short)LOWORD(wParam), (short)HIWORD(wParam),
-				(short)LOWORD(lParam), (short)HIWORD(lParam),
-				SWP_NOACTIVATE | SWP_NOREDRAW | SWP_NOZORDER);
-		#if DRAWMODE == DRAWMODE_DW
-			DxDraw = (DXDRAWSTRUCT *)GetWindowLongPtr(hWnd, 0);
-			SetFontDxDraw(DxDraw, (HFONT)GetWindowLongPtr(hWnd, GWLP_USERDATA), 0);
-		#endif
+		case WM_PPCPREVIEWPOS:
+			WmPPcTipPos(hWnd, message, wParam, lParam);
 			return 0;
 
 		case WM_LBUTTONDOWN:
@@ -250,13 +502,17 @@ LRESULT CALLBACK TipWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		case WM_MOUSEACTIVATE:
 			return MA_NOACTIVATE;
 
-		#if DRAWMODE == DRAWMODE_DW
 		case WM_CREATE:
+			SetWindowLongPtr(hWnd, GWLP_USERDATA,
+					(LONG_PTR)((CREATESTRUCT *)lParam)->lpCreateParams);
+		#if DRAWMODE == DRAWMODE_DW
 			CreateDxDraw(&DxDraw, hWnd);
 			// ChangeSizeDxDraw(DxDraw,C_tip[1]);
 			SetWindowLongPtr(hWnd, 0, (LONG_PTR)DxDraw);
+		#endif
 			return 0;
 
+		#if DRAWMODE == DRAWMODE_DW
 		case WM_DESTROY:
 			DxDraw = (DXDRAWSTRUCT *)GetWindowLongPtr(hWnd, 0);
 			CloseDxDraw(&DxDraw);
@@ -275,12 +531,15 @@ LRESULT CALLBACK TipWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			RECT box;
 			HBRUSH hBackBrush;
 			PAINTSTRUCT ps;
+			PPC_APPINFO *cinfo;
 
+			cinfo = (PPC_APPINFO *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+			GetWindowText(hWnd, text, TSIZEOF(text));
+			if ( text[0] == '\0') return 0;
 			DxDraw = (DXDRAWSTRUCT *)GetWindowLongPtr(hWnd, 0);
 			GetClientRect(hWnd, &box);
-			box.left += TIPSPACEWIDTH;
-			box.top += TIPSPACEWIDTH;
-			GetWindowText(hWnd, text, TSIZEOF(text));
+			box.left += TIPMARGINWIDTH;
+			box.top += TIPMARGINWIDTH;
 
 			if ( DxDraw == NULL ) BeginPaint(hWnd, &ps);
 			if ( BeginDrawDxDraw(DxDraw, &ps) == DXSTART_NODRAW ) return 0;
@@ -294,7 +553,7 @@ LRESULT CALLBACK TipWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			} else{
 				HGDIOBJ hOldFont;
 
-				hOldFont = SelectObject(ps.hdc, (HFONT)GetWindowLongPtr(hWnd, GWLP_USERDATA));
+				hOldFont = SelectObject(ps.hdc, cinfo->hBoxFont);
 				hBackBrush = CreateSolidBrush(C_tip[1]);
 				FillBox(ps.hdc, &ps.rcPaint, hBackBrush);
 				DeleteObject(hBackBrush);
@@ -315,14 +574,17 @@ LRESULT CALLBACK TipWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			RECT box;
 			HGDIOBJ hOldFont;
 			HBRUSH hBackBrush;
+			PPC_APPINFO *cinfo;
+
+			cinfo = (PPC_APPINFO *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 
 			BeginPaint(hWnd, &ps);
 			GetClientRect(hWnd, &box);
-			box.left += TIPSPACEWIDTH;
-			box.top += TIPSPACEWIDTH;
+			box.left += TIPMARGINWIDTH;
+			box.top += TIPMARGINWIDTH;
 
 			GetWindowText(hWnd, text, TSIZEOF(text));
-			hOldFont = SelectObject(ps.hdc, (HFONT)GetWindowLongPtr(hWnd, GWLP_USERDATA));
+			hOldFont = SelectObject(ps.hdc, cinfo->hBoxFont);
 			hBackBrush = CreateSolidBrush(C_tip[1]);
 			FillBox(ps.hdc, &ps.rcPaint, hBackBrush);
 			DeleteObject(hBackBrush);
@@ -335,61 +597,87 @@ LRESULT CALLBACK TipWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			return 0;
 		}
 		#endif
+
+		default:
+			if ( message == WM_PPXCOMMAND ){
+				return WmTipPPXCOMMAND(hWnd, wParam, lParam);
+			}
+			break;
 	}
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
-void InitTipWnd(PPC_APPINFO *cinfo, const TCHAR *text, int x, int y, int w, int h)
+void InitTipWnd(PPC_APPINFO *cinfo, const TCHAR *text, POINT *showpos, int w, int h)
 {
 	DWORD showtime;
+	UINT message;
+	RECT deskbox;
 
-	showtime = (X_stip & STIP_NOW) ? 100 : (X_stip & STIP_MASK);
-	if ( cinfo->hTipWnd == NULL ){
-		SetTimer(cinfo->info.hWnd, TIMERID_ENTRYTIP, showtime, ShowTipTimerProc);
-		return;
+	message = (cinfo->Tip.X_stip_mode == stip_mode_preview) ? WM_PPCPREVIEWPOS : WM_PPCTIPPOS;
+
+	GetDesktopRect(cinfo->info.hWnd, &deskbox);
+	if ( (showpos->x + w) > deskbox.right ) showpos->x = deskbox.right - w;
+	if ( showpos->x < deskbox.left ) showpos->x = deskbox.left;
+	if ( (showpos->y + h) > deskbox.bottom ) showpos->y = showpos->y - cinfo->cel.Size.cy - h - (TIPMARGINWIDTH * 2 + TIPBORDERWIDTH);
+
+	if ( cinfo->Tip.hTipWnd == NULL ) CreateTipWnd(cinfo);
+
+	SetWindowText(cinfo->Tip.hTipWnd, text);
+
+	if ( cinfo->Tip.mode & STIP_NOW ){
+		SendMessage(cinfo->Tip.hTipWnd, message, TMAKEWPARAM(showpos->x, showpos->y), TMAKELPARAM(w, h));
+		cinfo->Tip.WndState = TWS_SHOW;
+		resetflag(cinfo->Tip.mode, STIP_FLAGSMASK);
+		ShowWindow(cinfo->Tip.hTipWnd, SW_SHOWNA);
+	}else{
+		PostMessage(cinfo->Tip.hTipWnd, message, TMAKEWPARAM(showpos->x, showpos->y), TMAKELPARAM(w, h));
+		showtime = X_stip[TIP_LONG_TIME];
+
+		SetTimer(cinfo->info.hWnd, TIMERID_ENTRYTIP, showtime, ShowTipDelayTimerProc);
+		cinfo->Tip.WndState = TWS_READY;
 	}
-	SetWindowText(cinfo->hTipWnd, text);
-	SetWindowLongPtr(cinfo->hTipWnd, GWLP_USERDATA, (LONG_PTR)cinfo->hBoxFont);
-	PostMessage(cinfo->hTipWnd, WM_PPCTIPPOS,
-			TMAKEWPARAM(x, y), TMAKELPARAM(w, h));
-	SetTimer(cinfo->info.hWnd, TIMERID_ENTRYTIP,
-			(cinfo->TipWndState == TWS_SHOWNOW) ? 1 : showtime, ShowTipTimerProc);
-	cinfo->TipWndState = TWS_READY;
 }
 
-void SetFileNameTipMain(DISPSTRUCT *disp, const TCHAR *filep, int nwid, int ext)
+void SetFileNameTipMain(PPC_APPINFO *cinfo, HDC hDC, const TCHAR *filep, int nwid, int ext, POINT *showpos)
 {
 	RECT wbox;
 	int length, result;
-	POINT pos;
 	SIZE textsize;
 #ifdef USEDIRECTX
 	BOOL gettdc = FALSE;
 	HGDIOBJ hOldFont;
 #endif
-	PPC_APPINFO *cinfo = disp->cinfo;
-	HDC hDC;
 
-	hDC = disp->hDC;
-#ifdef USEDIRECTX
-	IfDXmode(hDC)
-	{ // DirectX なら算出用のHDCを用意する
-		gettdc = TRUE;
-		hDC = GetDC(cinfo->info.hWnd);
-		hOldFont = SelectObject(hDC, cinfo->hBoxFont);
-	}
-#endif
 	length = tstrlen32(filep);
-	// nwid に収まる文字数と、全体のピクセル幅を算出
-	GetTextExtentExPoint(hDC, filep, length,
-		nwid * cinfo->fontX, &result, NULL, &textsize);
-	wbox.left = 0;
-	wbox.top = 0;
-	wbox.right = textsize.cx;
-	wbox.bottom = textsize.cy;
 
-	// エントリ名がはみ出すときだけ表示
-	if ( (result < ext) || (X_stip & STIP_NOW) ){
+	if ( cinfo->Tip.X_stip_mode != stip_mode_preview ){
+		#ifdef USEDIRECTX
+			IfDXmode(hDC)
+			{ // DirectX なら算出用のHDCを用意する
+				gettdc = TRUE;
+				hDC = GetDC(cinfo->info.hWnd);
+				hOldFont = SelectObject(hDC, cinfo->hBoxFont);
+			}
+		#endif
+		// nwid に収まる文字数と、全体のピクセル幅を算出
+		GetTextExtentExPoint(hDC, filep, length,
+				nwid * cinfo->fontX, &result, NULL, &textsize);
+		wbox.left = 0;
+		wbox.top = 0;
+		wbox.right = textsize.cx;
+		wbox.bottom = textsize.cy;
+		if ( cinfo->Tip.X_stip_mode == stip_mode_filename ){
+			if ( result < ext ){ // エントリ名がはみ出すときだけ表示
+				setflag( cinfo->Tip.mode, STIP_DELAY );
+			}else{ // 表示の必要が無い
+				resetflag( cinfo->Tip.mode, STIP_DELAY );
+			}
+		}
+	}else{
+		wbox.right = X_stip[TIP_PV_WIDTH];
+		wbox.bottom = X_stip[TIP_PV_HEIGHT];
+	}
+	if ( cinfo->Tip.mode & (STIP_NOW | STIP_DELAY) ){
 		int width = cinfo->cel.Size.cx - cinfo->fontX;
 		if ( cinfo->celF.width < 41 ) width = cinfo->fontX * (41 - 1);
 		// cell １つ分の幅よりはみ出すなら複数行表示
@@ -397,16 +685,20 @@ void SetFileNameTipMain(DISPSTRUCT *disp, const TCHAR *filep, int nwid, int ext)
 			wbox.right = width;
 			DrawText(hDC, filep, length, &wbox, DT_CALCRECT | TIP_DRAW_FLAGS);
 		}
-		pos.x = disp->Xd - TIPSPACEWIDTH - TIPBORDER;
-		pos.y = disp->backbox.top + cinfo->cel.Size.cy + 3;
 // ↓状況判断して上にも表示する例…違和感一杯のためやめた
 //		pos.y = disp->backbox.top + ((cinfo->e.cellN >= cinfo->e.cellNold) ?
 //				- wbox.bottom - 3 : cinfo->cel.Size.y + 3);
-		ClientToScreen(cinfo->info.hWnd, &pos);
+		ClientToScreen(cinfo->info.hWnd, showpos);
+//			XMessage(NULL,NULL,XM_DbgLOG,T(" %d,%d"),pos.x,pos.y);
 
-		InitTipWnd(cinfo, filep, pos.x, pos.y,
-			wbox.right + TIPSPACEWIDTH * 2 + TIPBORDER,
-			wbox.bottom + TIPSPACEWIDTH * 2 + TIPBORDER);
+		if ( cinfo->Tip.mode & STIP_MOUSE ){
+			showpos->x = (SHORT)GetMessagePos() - (wbox.right / 2);
+			showpos->y += 32; // マウスカーソルの大きさ分下げる
+		}
+
+		InitTipWnd(cinfo, filep, showpos,
+				wbox.right + TIPMARGINWIDTH * 2 + TIPBORDERWIDTH,
+				wbox.bottom + TIPMARGINWIDTH * 2 + TIPBORDERWIDTH);
 	}
 #ifdef USEDIRECTX
 	if ( IsTrue(gettdc) ){
@@ -416,18 +708,17 @@ void SetFileNameTipMain(DISPSTRUCT *disp, const TCHAR *filep, int nwid, int ext)
 #endif
 }
 
-void SetFileNameTipExt(DISPSTRUCT *disp, const TCHAR *filep, int nwid)
+void SetFileNameTipExt(PPC_APPINFO *cinfo, HDC hDC, const TCHAR *filep, int nwid, ENTRYCELL *cell, POINT *showpos)
 {
 	TCHAR buf[TIPTEXTLENGTH],buf2[0x400];
 	TCHAR fsize[32];
 	TCHAR Create[32],Write[32],Access[32];
 	size_t len;
 	DWORD CommentOffset;
-	PPC_APPINFO *cinfo = disp->cinfo;
-	ENTRYCELL *cell = disp->cell;
 
-	switch ( cinfo->X_stip_mode ){ // 消去
+	switch ( cinfo->Tip.X_stip_mode ){ // 消去
 		case stip_mode_fileinfo:
+			if ( filep == NULL ) filep = cell->f.cFileName;
 			tstrlimcpy(buf, filep, TIPTEXTLENGTH);
 			len = tstrlen(buf);
 			tstrlimcpy(buf + len, T("\r\n"), TIPTEXTLENGTH - len);
@@ -440,7 +731,7 @@ void SetFileNameTipExt(DISPSTRUCT *disp, const TCHAR *filep, int nwid)
 				len += tstrlen(buf + len);
 			}
 			if ( !(cell->f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ||
-				 (disp->cell->attr & ECA_DIRC) ){
+				 (cell->attr & ECA_DIRC) ){
 				FormatNumber(fsize, XFN_SEPARATOR, 26,
 						cell->f.nFileSizeLow,cell->f.nFileSizeHigh);
 				wsprintf(buf2,T("Size   \t%s\r\n"), fsize);
@@ -466,37 +757,85 @@ void SetFileNameTipExt(DISPSTRUCT *disp, const TCHAR *filep, int nwid)
 		case stip_mode_text:
 			ThGetString(&cinfo->StringVariable, T("TipText"), buf, TIPTEXTLENGTH);
 			break;
+
+//		case stip_mode_preview:
+		default:
+			VFSFullPath(buf,
+					(TCHAR *)GetCellFileName(cinfo, cell, buf2), cinfo->path);
+			break;
 	}
 	if ( buf[0] == '\0' ) return;
-	SetFileNameTipMain(disp, buf, nwid, 0xfff);
-}
-
-void SetFileNameTip(DISPSTRUCT *disp, const TCHAR *filep, int nwid, int ext)
-{
-	if ( TinyCheckCellEdit(disp->cinfo) ) return;
-
-	// 表示準備済みなら処理しない
-	if ( disp->cinfo->TipWndState >= TWS_READY ) return;
-
-	if ( !(X_stip & STIP_NOW) ) disp->cinfo->X_stip_mode = 0;
-// Multibyte 向け旧処理
-//	if ( ((ext <= nwid) && (UsePFont == FALSE) && !(X_stip & STIP_NOW)) ||
-//		(cinfo->TipWndState >= TWS_READY) ){
-//		return;
-//	}
-
-	if ( disp->cinfo->X_stip_mode == stip_mode_filename ){
-		SetFileNameTipMain(disp, filep, nwid, ext);
-	}else{
-		SetFileNameTipExt(disp, filep, nwid);
-	}
+	SetFileNameTipMain(cinfo, hDC, buf, nwid, 0xfff, showpos);
 }
 
 void HideFileNameTipMain(PPC_APPINFO *cinfo)
 {
 	KillTimer(cinfo->info.hWnd, TIMERID_ENTRYTIP);
-	if ( cinfo->hTipWnd != NULL ) ShowWindow(cinfo->hTipWnd, SW_HIDE);
-	cinfo->TipWndState = TWS_HIDE;
+	KillTimer(cinfo->info.hWnd, TIMERID_HOVERTIP);
+	if ( cinfo->Tip.hTipWnd != NULL ){
+		if ( cinfo->Tip.X_stip_mode == stip_mode_preview ){
+			DestroyWindow(cinfo->Tip.hTipWnd);
+			cinfo->Tip.hTipWnd = NULL;
+		}else{
+			ShowWindow(cinfo->Tip.hTipWnd, SW_HIDE);
+		}
+	}
+	cinfo->Tip.WndState = TWS_HIDE;
+}
+
+// WM_PAINT 経由でチップ表示の準備をする
+void SetTipShow(DISPSTRUCT *disp, const TCHAR *filep, int nwid, int ext)
+{
+	POINT showpos;
+
+	if ( TinyCheckCellEdit(disp->cinfo) ) return;
+
+	// 表示準備済みなら処理しない
+	if ( disp->cinfo->Tip.WndState >= TWS_READY ) return;
+
+	if ( !(disp->cinfo->Tip.mode & STIP_NOW) ){
+		disp->cinfo->Tip.X_stip_mode = stip_mode_filename;
+	}
+
+	showpos.x = disp->Xd - TIPMARGINWIDTH - TIPBORDERWIDTH;
+	showpos.y = disp->backbox.top + disp->cinfo->cel.Size.cy + 3;
+
+	if ( disp->cinfo->Tip.X_stip_mode == stip_mode_filename ){
+		SetFileNameTipMain(disp->cinfo, disp->hDC, filep, nwid, ext, &showpos);
+	}else{
+		SetFileNameTipExt(disp->cinfo, disp->hDC, filep, nwid, disp->cell, &showpos);
+	}
+}
+
+// すぐにチップ表示する
+void ShowTipNow(PPC_APPINFO *cinfo, DWORD flags, int mode, ENTRYINDEX targetcell)
+{
+	POINT showpos;
+
+	HideFileNameTip(cinfo);
+	cinfo->Tip.X_stip_mode = mode;
+	cinfo->Tip.target = targetcell;
+	setflag(cinfo->Tip.mode, flags | STIP_NOW);
+
+	if ( mode == stip_mode_filename ){
+		// 仮。dw版だと合わない
+		RefleshCell(cinfo, targetcell);
+		UpdateWindow_Part(cinfo->info.hWnd);
+	}else{
+		HGDIOBJ hOldFont;
+		HDC hDC;
+		int deltaNo;
+
+		deltaNo = targetcell - cinfo->cellWMin;
+		showpos.x = CalcCellX(cinfo, deltaNo);
+		showpos.y = CalcCellY(cinfo, deltaNo);
+
+		hDC = GetDC(cinfo->info.hWnd);
+		hOldFont = SelectObject(hDC, cinfo->hBoxFont);
+		SetFileNameTipExt(cinfo, hDC, CEL(targetcell).f.cFileName , 0, &CEL(targetcell), &showpos);
+		SelectObject(hDC, hOldFont);
+		ReleaseDC(cinfo->info.hWnd, hDC);
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -1161,6 +1500,11 @@ void PaintImageIcon(DISPSTRUCT *disp, const BYTE *fmt, int CheckM, int Ytop, int
 		}
 		box.left += disp->IsCursor ? 1 : 0;
 		DxMoveToEx(disp->DxDraw, hDC, box.left, box.top);
+
+		if ( disp->cinfo->Tip.mode && disp->IsCursor ){
+			SetTipShow(disp, disp->cell->f.cFileName, disp->Xd / disp->fontX, disp->cell->ext);
+		}
+
 		// ※ DrawTextもSetTextAlignの影響を受ける
 		DxDrawText(disp->DxDraw, hDC, disp->cell->f.cFileName, -1, &box,
 			DT_NOCLIP | DT_NOPREFIX | DT_SINGLELINE | DT_PATH_ELLIPSIS);
@@ -2125,8 +2469,8 @@ void PaintMultiLineFilename(DISPSTRUCT *disp, const BYTE *fmt)
 			DxDrawText(disp->DxDraw, disp->hDC, filep, length, &disp->backbox,
 				DT_NOCLIP | DT_NOPREFIX | DT_SINGLELINE | DT_END_ELLIPSIS);
 
-			if ( X_stip && ((X_stip & STIP_HOVER) ? 1 : disp->IsCursor) ){
-				SetFileNameTip(disp, disp->cell->f.cFileName, nwid, disp->cell->ext);
+			if ( disp->cinfo->Tip.mode && disp->IsCursor ){
+				SetTipShow(disp, disp->cell->f.cFileName, nwid, disp->cell->ext);
 			}
 
 		} else{
@@ -2251,8 +2595,8 @@ void PaintFilename(DISPSTRUCT *disp, const BYTE *fmt, int Xe)
 	if ( XC_fexc ) SetTextOtherColor(disp); // 拡張子別色を使用する
 
 	// Tip 表示
-	if ( X_stip && ((X_stip & STIP_HOVER) ? 1 : disp->IsCursor) ){
-		SetFileNameTip(disp, fileptr, nwid, extoffset);
+	if ( cinfo->Tip.mode && disp->IsCursor ){
+		SetTipShow(disp, fileptr, nwid, extoffset);
 	}
 									// ファイル名 表示 ============
 	if ( cinfo->UseSplitPathName ){
@@ -2423,7 +2767,7 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 	BOOL bkdraw = FALSE;	// 背景描画が必要なら TRUE
 	int Check[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 	int cellno, oldBkMode = 0;
-	int line = 0; // 描画行
+	int line = 0; // 描画行(複数行時)
 
 	disp.hDC = hDC;
 	disp.cinfo = cinfo;
@@ -2536,9 +2880,9 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 		disp.IsCursor = TRUE;
 
 		if ( ((cinfo->XC_tree.mode == PPCTREE_OFF) && !cinfo->combo) ?
-			(GetForegroundWindow() != cinfo->info.hWnd) :
+				(GetForegroundWindow() != cinfo->info.hWnd) :
 //				!GetFocus() :	←これだとIME等にスレッドが行くとGrayになる
-(GetFocus() != cinfo->info.hWnd) ){ // 非アクティブ時
+				(GetFocus() != cinfo->info.hWnd) ){ // 非アクティブ時
 		#if USEDELAYCURSOR
 			Check_Line = ECS_NOFOCUS;
 		#if DRAWMODE != DRAWMODE_GDI
@@ -2597,14 +2941,30 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 	}
 										// マウスホバ－ハイライト ============
 	if ( (EI_No >= 0) && (cellno == cinfo->e.cellPoint) ){
-		COLORREF usecolor;
+		if ( cinfo->e.cellPointType == PPCR_CELLTEXT ){
+			COLORREF usecolor;
 
-		bkdraw = TRUE;
-		usecolor = (C_eInfo[ECS_HOVER] != C_AUTO) ? C_eInfo[ECS_HOVER] : disp.fc;
-		disp.bc = (X_poshl > 1) ? usecolor :
-			RGB(GetPointColor(GetRValue(disp.bc), GetRValue(usecolor)),
-				GetPointColor(GetRValue(disp.bc), GetGValue(usecolor)),
-				GetPointColor(GetBValue(disp.bc), GetBValue(usecolor)));
+			bkdraw = TRUE;
+			usecolor = (C_eInfo[ECS_HOVER] != C_AUTO) ? C_eInfo[ECS_HOVER] : disp.fc;
+			disp.bc = (X_poshl > 1) ? usecolor :
+				RGB(GetPointColor(GetRValue(disp.bc), GetRValue(usecolor)),
+					GetPointColor(GetRValue(disp.bc), GetGValue(usecolor)),
+					GetPointColor(GetBValue(disp.bc), GetBValue(usecolor)));
+		}
+/*
+		if ( X_stip[TIP_POP_WIDTH] ){
+			HBRUSH hB;
+
+			tempbox.right = BaseBox->right;
+			tempbox.left = tempbox.right - X_stip[TIP_POP_WIDTH];
+			tempbox.top = BaseBox->top;
+			tempbox.bottom = BaseBox->bottom;
+
+			hB = CreateSolidBrush(C_eInfo[ECS_UDCSR]);
+			DxFillRectColor(disp.DxDraw, hDC, &tempbox, hB, color);
+			DeleteObject(hB);
+		}
+*/
 	}
 
 	disp.textc = disp.fc;
@@ -2643,7 +3003,7 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 #endif
 	if ( Check_Line ){	// 下線 (b)
 	#if USEGRADIENTFILL // グラデーション表示
-	#if USEDELAYCURSOR
+		#if USEDELAYCURSOR
 		cinfo->e.cellNbc = disp.bc;
 		if ( IsTrue(cinfo->freeCell) || DrawGradientBox(hDC, disp.LineTopX, disp.backbox.top, Xe, disp.backbox.bottom, disp.bc, C_eInfo[ECS_UDCSR]) )
 		#else
@@ -2736,6 +3096,9 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 			disp.backbox.top = Ytop;
 		}
 		fmt = endofformat;
+		// 枠表示のための表示位置調整
+		disp.LineTopX += disp.fontX / 2;
+		Xright -= disp.fontX / 2;
 	} else while ( *fmt ){
 		DxMoveToEx(disp.DxDraw, hDC, disp.Xd, disp.lbox.top); // ●1.61ここに必要？
 		switch ( *fmt++ ){
@@ -3353,6 +3716,36 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 			DxDrawFrameRect(disp.DxDraw, hDC, &disp.backbox, C_eInfo[ECS_BOX]);
 		}
 	#endif
+	}
+			// エントリ末尾のクリック可能エリア表示
+	if ( X_stip[TIP_TAIL_WIDTH] /*&& ((cinfo->PopupPosType != PPT_FOCUS) || (cinfo->Tip.mode & STIP_SHOWTAILAREA))*/ ){
+//		resetflag(cinfo->Tip.mode, STIP_SHOWTAILAREA);
+		if ( (EI_No >= 0) && (cellno == cinfo->e.cellPoint) && (cinfo->MouseStat.mode != MOUSEMODE_DRAG) ){
+			HBRUSH hB;
+//			COLORREF usecolor;
+			int w;
+
+			tempbox.right = BaseBox->right - cinfo->fontX - cinfo->fontX / 2;
+			tempbox.left = tempbox.right - X_stip[TIP_TAIL_WIDTH] + cinfo->fontX / 2;
+		#if 1 // 色固定
+			hB = CreateSolidBrush( C_eInfo[ECS_UDCSR] );
+			w = 1;
+		#else // 色混合
+			usecolor = C_eInfo[ECS_UDCSR];
+			hB = CreateSolidBrush( usecolor,
+				RGB(GetPointColor(GetRValue(disp.bc), GetRValue(usecolor)),
+					GetPointColor(GetRValue(disp.bc), GetGValue(usecolor)),
+					GetPointColor(GetBValue(disp.bc), GetBValue(usecolor))));
+			w = (Check_Focusbox || Check_Box) ? XC_ulh : 1;
+		#endif
+			tempbox.top = BaseBox->top;
+			tempbox.bottom = BaseBox->top + w;
+			DxFillRectColor(disp.DxDraw, hDC, &tempbox, hB, C_eInfo[ECS_UDCSR]);
+			tempbox.top = BaseBox->bottom - w;
+			tempbox.bottom = BaseBox->bottom;
+			DxFillRectColor(disp.DxDraw, hDC, &tempbox, hB, C_eInfo[ECS_UDCSR]);
+			DeleteObject(hB);
+		}
 	}
 
 	if ( disp.bc != cinfo->BackColor ) DeleteObject(disp.hbbr);

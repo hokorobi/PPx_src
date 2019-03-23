@@ -477,7 +477,7 @@ BOOL OpenFromFile(PPxEDSTRUCT *PES, int openmode, const TCHAR *fname)
 	if ( filename[0] != '\0' ){	// ÉtÉ@ÉCÉãÇÃì«Ç›çûÇ›
 		ERRORCODE result;
 
-		result = LoadFileImage(filename,0x40,(char **)&textimage,&memsize,NULL);
+		result = VFSLoadFileImage(filename, 0x40, (char **)&textimage, &memsize, NULL);
 		if ( result != NO_ERROR ){
 			if ( newmode == FALSE ){
 				HWND hParentWnd;

@@ -85,8 +85,8 @@ typedef struct {
 typedef struct {
 	DWORD type;	// VFSDT_LFILE_TYPE_xxx
 	TCHAR *mem;	// ファイルイメージの先頭
-	TCHAR *p;		// 読込み位置
-	TCHAR *max;	// 最大位置
+	TCHAR *readptr;	// 読込み位置
+	TCHAR *maxptr;	// 最大位置
 	const TCHAR *base; // ;BASE= の位置
 	const TCHAR *search; // ;Search= の位置
 	const TCHAR *longname; // MAX_PATH越えファイル名

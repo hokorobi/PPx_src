@@ -328,7 +328,7 @@ void DestroyPPcDataObject(PPcDataObject &pdo)
 	}
 }
 
-BOOL CreatePPcDataObject(PPC_APPINFO *cinfo,PPcDataObject &pdo,const TCHAR *src)
+BOOL CreatePPcDataObject(PPC_APPINFO *cinfo, PPcDataObject &pdo, const TCHAR *src)
 {
 	pdo.DataObject = NULL;
 	pdo.CDataObject = NULL;
@@ -337,7 +337,7 @@ BOOL CreatePPcDataObject(PPC_APPINFO *cinfo,PPcDataObject &pdo,const TCHAR *src)
 	if ( src != NULL ){ // 直接指定
 		LPITEMIDLIST idl;
 
-		if ( FALSE == VFSMakeIDL(cinfo->path,&pdo.pSF,&idl,src) ){
+		if ( FALSE == VFSMakeIDL(cinfo->path, &pdo.pSF, &idl,src) ){
 			return FALSE;
 		}
 		if ((pdo.pidls = (LPITEMIDLIST *)HeapAlloc(hProcessHeap, 0, 2 * sizeof(LPITEMIDLIST *))) == NULL) {
@@ -345,20 +345,20 @@ BOOL CreatePPcDataObject(PPC_APPINFO *cinfo,PPcDataObject &pdo,const TCHAR *src)
 		}
 		pdo.pidls[0] = idl;
 		pdo.count = 1;
-		if ( FAILED(pdo.pSF->GetUIObjectOf(cinfo->info.hWnd,pdo.count,
-				(LPCITEMIDLIST *)pdo.pidls,IID_IDataObject,
-				NULL,(void **)&pdo.DataObject) )){
+		if ( FAILED(pdo.pSF->GetUIObjectOf(cinfo->info.hWnd, pdo.count,
+				(LPCITEMIDLIST *)pdo.pidls, IID_IDataObject,
+				NULL, (void **)&pdo.DataObject) )){
 			pdo.DataObject = NULL;
 			DestroyPPcDataObject(pdo);
 			return FALSE;
 		}
 	}else if ( IsNodirShnPath(cinfo) ){ // SHN 形式
-		pdo.count = MakePIDLTable(cinfo,&pdo.pidls,&pdo.pSF);
+		pdo.count = MakePIDLTable(cinfo, &pdo.pidls, &pdo.pSF);
 		if ( pdo.count == 0 ) return FALSE;
 
-		if ( FAILED(pdo.pSF->GetUIObjectOf(cinfo->info.hWnd,pdo.count,
-				(LPCITEMIDLIST *)pdo.pidls,IID_IDataObject,
-				NULL,(void **)&pdo.DataObject) )){
+		if ( FAILED(pdo.pSF->GetUIObjectOf(cinfo->info.hWnd, pdo.count,
+				(LPCITEMIDLIST *)pdo.pidls, IID_IDataObject,
+				NULL, (void **)&pdo.DataObject) )){
 			pdo.DataObject = NULL;
 			DestroyPPcDataObject(pdo);
 			return FALSE;
@@ -370,9 +370,9 @@ BOOL CreatePPcDataObject(PPC_APPINFO *cinfo,PPcDataObject &pdo,const TCHAR *src)
 		CF_xSHELLIDLIST = ::RegisterClipboardFormat(CFSTR_SHELLIDLIST);
 										// ドラッグ対象を準備
 		pdo.CDataObject = new CImpIDataObject;
-		pdo.CDataObject->cinfo = cinfo;
+		pdo.CDataObject->m_cinfo = cinfo;
 										// アーカイブモードの判定
-		pdo.CDataObject->arcmode = PPcUnpackForAction(cinfo,pdo.CDataObject->arctemp,UFA_PATH);
+		pdo.CDataObject->m_arcmode = PPcUnpackForAction(cinfo, pdo.CDataObject->m_arctemp, UFA_PATH);
 
 		stm.tymed = 0;		// Local仕様：GetData時に生成
 		fe.tymed = TYMED_HGLOBAL;
@@ -381,15 +381,15 @@ BOOL CreatePPcDataObject(PPC_APPINFO *cinfo,PPcDataObject &pdo,const TCHAR *src)
 		fe.dwAspect = DVASPECT_CONTENT;
 
 		fe.cfFormat = (WORD)CF_xSHELLIDLIST;	// ShellIDList 形式
-		pdo.CDataObject->SetData(&fe,&stm,TRUE);
+		pdo.CDataObject->SetData(&fe, &stm, TRUE);
 
 		if ( cinfo->RealPath[0] != '?' ){			// CF_HDROP 形式
 			fe.cfFormat = CF_HDROP;
-			pdo.CDataObject->SetData(&fe,&stm,TRUE);
+			pdo.CDataObject->SetData(&fe, &stm, TRUE);
 		}
-		if ( GetCustXDword(T("X_tdd"),NULL,1) ){	// CF_TEXT 形式
+		if ( GetCustXDword(T("X_tdd"), NULL, 1) ){	// CF_TEXT 形式
 			fe.cfFormat = CF_TTEXT;
-			pdo.CDataObject->SetData(&fe,&stm,TRUE);
+			pdo.CDataObject->SetData(&fe, &stm, TRUE);
 		}
 		pdo.DataObject = pdo.CDataObject;
 	}

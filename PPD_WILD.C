@@ -373,8 +373,7 @@ BOOL LoadRegExp(void)
 	}
 							// IRegExp
 	if ( hOleaut32DLL == NULL ){
-		hOleaut32DLL = LoadWinAPI("OLEAUT32.DLL",
-				NULL,OLEAUT32_SysStr,LOADWINAPI_LOAD);
+		hOleaut32DLL = LoadSystemWinAPI(SYSTEMDLL_OLEAUT32, OLEAUT32_SysStr);
 		if ( hOleaut32DLL == NULL ) goto loaderror;
 
 		LoadWinAPI(NULL,hOleaut32DLL,OLEAUT32_Variant,LOADWINAPI_HANDLE);
@@ -421,13 +420,15 @@ void WaitMigemoLoad(void)
 void FreeMigemo(void)
 {
 	if ( LoadMigemo == MIGEMO_LOADING ) WaitMigemoLoad();
-	if ( hMigemoDLL != NULL ) {
-		LoadMigemo = MIGEMO_LOADING;
-		if ( migemodic != NULL ) migemo_close(migemodic);
-		FreeLibrary(hMigemoDLL);
-		hMigemoDLL = NULL;
-		LoadMigemo = MIGEMO_FREE;
+	if ( hMigemoDLL == NULL ) return;
+	LoadMigemo = MIGEMO_LOADING;
+	if ( migemodic != NULL ){
+		migemo_close(migemodic);
+		migemodic = NULL;
 	}
+	FreeLibrary(hMigemoDLL);
+	hMigemoDLL = NULL;
+	LoadMigemo = MIGEMO_FREE;
 }
 
 BOOL InitMigemo(void)
@@ -480,11 +481,13 @@ BOOL InitMigemo(void)
 			migemodic = migemo_open_fix(migemodicpathA);
 			if ( migemodic != NULL ){
 				GetCustData(T("X_rscah"),&X_rscah,sizeof X_rscah);
+				LoadMigemo = MIGEMO_READY;
 				return TRUE;
 			}
 		}
 		PMessageBox(GetFocus(),T("migemo-dict open error"),NULL,MB_APPLMODAL | MB_OK);
 	}
+	LoadMigemo = MIGEMO_FREE;
 	FreeMigemo();
 	PMessageBox(GetFocus(),MES_MIGE,NULL,MB_APPLMODAL | MB_OK);
 	return FALSE;
@@ -554,9 +557,7 @@ PPXDLL BOOL PPXAPI SearchRomaString(const TCHAR *text, const TCHAR *searchstr, D
 
 		if ( LoadRegExp() == FALSE ) return TRUE;	// RegExp “Ç‚Ýž‚ÝŽ¸”s
 													// Migemo ‚ð€”õ
-		if ( hMigemoDLL == NULL ){
-			if ( InitMigemo() == FALSE ) return TRUE;
-		}
+		if ( InitMigemo() == FALSE ) return TRUE;
 
 		if ( RMatch == EX_IREGEXP ){ // IRegExp
 			if ( FAILED(CoCreateInstance(&XCLSID_RegExp,NULL,
@@ -2403,9 +2404,7 @@ int CheckExtMode(EXSMEM *exm, MAKEFNSTRUCT *mfs)
 			DWORD size,structsize;
 
 			if ( LoadRegExp() == FALSE ) return CEM_ERROR; // DLL “Ç‚Ýž‚ÝŽ¸”s
-			if ( hMigemoDLL == NULL ){
-				if ( InitMigemo() == FALSE ) return CEM_ERROR;
-			}
+			if ( InitMigemo() == FALSE ) return CEM_ERROR;
 
 			size = tstrlen32(mfs->param);
 			structsize = sizeof(EXS_ROMA) + size * sizeof(TCHAR) + sizeof(TCHAR);

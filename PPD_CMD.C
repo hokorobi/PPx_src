@@ -970,8 +970,10 @@ PPXDLL HWND PPXAPI GetPPxhWndFromID(PPXAPPINFO *ppxa, const TCHAR **src, TCHAR *
 		}
 		hWnd = Sm->ppc.hComboWnd[TinyCharUpper(buf[2]) - 'A'];
 		if ( hWnd == hProcessComboWnd ){
-			hWnd = (HWND)PPxInfoFunc(ppxa, PPXCMDID_COMBOGETHWNDEX, bufp);
-		}else{
+			HWND hGetWnd = (HWND)PPxInfoFunc(ppxa, PPXCMDID_COMBOGETHWNDEX, bufp);
+			if ( hGetWnd != NULL ) return hGetWnd;
+		}
+		{
 			LPARAM lParam;
 
 			if ( (hWnd == NULL) || (hWnd == BADHWND) ) return BADHWND;
@@ -1481,19 +1483,19 @@ void GetPPxPath(EXECSTRUCT *Z)
 
 int FindSearch(const TCHAR *structs[],int structmax,const TCHAR *str)
 {
-	int min,max;
+	int mini, maxi;
 
-	min = 0;
-	max = structmax;
-	while ( min < max ){
-		int mid,result;
+	mini = 0;
+	maxi = structmax;
+	while ( mini < maxi ){
+		int mid, result;
 
-		mid = (min + max) / 2;
+		mid = (mini + maxi) / 2;
 		result = tstrcmp(structs[mid],str);
 		if ( result < 0 ){
-			min = mid + 1;
+			mini = mid + 1;
 		}else if ( result > 0 ){
-			max = mid;
+			maxi = mid;
 		}else{
 			return mid;
 		}
@@ -1613,7 +1615,7 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd, PPXAPPINFO *ParentInfo, POINT
 	TCHAR *funcstart = NULL;
 
 #ifdef WINEGCC
-	setflag(flag,XEO_NOUSEPPB);
+	setflag(flags, XEO_NOUSEPPB);
 #endif
 										// ç≈èâÇÃèâä˙âª -----------------------
 	ThInit(&Z.ExtendDst);

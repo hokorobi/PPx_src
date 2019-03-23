@@ -481,18 +481,18 @@ extern DWORD ReadEString(TCHAR **string,void *ptr,DWORD maxsize);
 extern void WriteEString(TCHAR *string,BYTE *ptr,DWORD size);
 extern WORD FixCharKeycode(WORD key);
 extern DWORD crc32(const BYTE *bin,DWORD size,DWORD r);
-#define VTypeToCPlist_max (VTYPE_UTF7 + 1)
 extern UINT VTypeToCPlist[VTypeToCPlist_max];
 
 #ifdef UNICODE
 	#define WriteFileZTSIZE (VFPS * 3) // この長さまでの文字列に対応
-	extern BOOL WriteFileZT(HANDLE fileh,const WCHAR *str,DWORD *wrote);
-	extern void SendUTextMessage_U(HWND hWnd,UINT uMsg,WPARAM wParam,const TCHAR *text);
+	extern BOOL WriteFileZT(HANDLE fileh, const WCHAR *str, DWORD *wrote);
+	extern LRESULT SendUTextMessage_U(HWND hWnd, UINT uMsg, WPARAM wParam, const TCHAR *text);
 #else
 	#define WriteFileZT(fileh,str,wrote) WriteFile(fileh,str,strlen(str),wrote,NULL)
 #endif
 #define K_mouse K_internal // マウスによる操作(メニュー位置判定用)
 extern void GetPopMenuPos(HWND hWnd,POINT *pos,WORD key);
+extern HMODULE LoadSystemWinAPI(DWORD dllID, LOADWINAPISTRUCT *apis);
 
 //------------------------------------------------------------------ ppd_task.c
 extern void FixTask(void);
@@ -556,7 +556,7 @@ extern void FreeRMatch(void);
 #ifndef REXPREPLACE
 typedef struct {int dummy;} RXPREPLACESTRING;
 
-extern BOOL InitRegularExpressionReplace(RXPREPLACESTRING **rxps,TCHAR *rxstring,BOOL slash);
+extern BOOL InitRegularExpressionReplace(RXPREPLACESTRING **rxps, TCHAR *rxstring, BOOL slash);
 extern BOOL RegularExpressionReplace(RXPREPLACESTRING *rxps,TCHAR *target);
 extern void FreeRegularExpressionReplace(RXPREPLACESTRING *rxps);
 extern void GetRegularExpressionName(TCHAR *str);

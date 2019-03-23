@@ -45,6 +45,9 @@
 #ifndef ERROR_ELEVATION_REQUIRED
  #define ERROR_ELEVATION_REQUIRED 740
 #endif
+#ifndef ERROR_CANT_ACCESS_FILE
+ #define ERROR_CANT_ACCESS_FILE 1920
+#endif
 
 #ifndef GetCompressedFileSize // WINVER > 500 ‚É‚È‚Á‚Ä‚¢‚é SDK ‚ª‚ ‚é
  WINBASEAPI DWORD WINAPI GetCompressedFileSizeA(LPCSTR,LPDWORD);
