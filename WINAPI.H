@@ -11,7 +11,7 @@
 #include <windows.h>
 
 #ifndef CREATE_PROTECTED_PROCESS
-#define CREATE_PROTECTED_PROCESS 0x40000 // 保護モードで実行(Vista以降,DRMを扱うソフト用)
+#define CREATE_PROTECTED_PROCESS 0x40000 // 保護モードで実行(Vista以降, DRMを扱うソフト用)
 #endif
 
 #ifndef FILE_ATTRIBUTE_INTEGRITY_STREAM
@@ -50,8 +50,8 @@
 #endif
 
 #ifndef GetCompressedFileSize // WINVER > 500 になっている SDK がある
- WINBASEAPI DWORD WINAPI GetCompressedFileSizeA(LPCSTR,LPDWORD);
- WINBASEAPI DWORD WINAPI GetCompressedFileSizeW(LPCWSTR,LPDWORD);
+ WINBASEAPI DWORD WINAPI GetCompressedFileSizeA(LPCSTR, LPDWORD);
+ WINBASEAPI DWORD WINAPI GetCompressedFileSizeW(LPCWSTR, LPDWORD);
  #ifdef UNICODE
   #define GetCompressedFileSize  GetCompressedFileSizeW
  #else

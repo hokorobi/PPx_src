@@ -52,7 +52,7 @@ extern "C" { // Assume C declarations for C++
 
 #define LHEADER	";ListFile\r\n"
 
-#define X_wdel_default {1,0,1,1}
+#define X_wdel_default {1, 0, 1, 1}
 //--------------------------------------------------------- 旧SDKにない定義
 #ifndef COPY_FILE_FAIL_IF_EXISTS
 #define COPY_FILE_FAIL_IF_EXISTS        0x00000001
@@ -92,7 +92,7 @@ typedef DWORD (WINAPI *LPPROGRESS_ROUTINE)(
 #define VFSFILETYPE_EXTSIZE		16
 typedef struct {
 	DWORD flags;		// どの情報を取得するかの指定
-	DWORD dtype;		// PPv 用情報(LOWORD:DISPT_xx,HIWORD:VD_xx)
+	DWORD dtype;		// PPv 用情報(LOWORD:DISPT_xx, HIWORD:VD_xx)
 	TCHAR type[VFSFILETYPE_TYPESIZE];		// VFSFT_TYPE の結果
 	TCHAR typetext[VFSFILETYPE_TEXTSIZE];	// VFSFT_TYPETEXT の結果
 	TCHAR ext[VFSFILETYPE_EXTSIZE];			// VFSFT_EXT の結果
@@ -108,35 +108,35 @@ typedef struct {
 				(!0)FileNameとheaderを元に判別
 	result		結果を書きこむ構造体
 -----------------------------------------------------------------------------*/
-extern VFSDLL ERRORCODE PPXAPI VFSGetFileType(const TCHAR *FileName,const char *image,SIZE32_T imagesize,VFSFILETYPE *result);
-extern VFSDLL BOOL PPXAPI VFSCheckFileByExt(const TCHAR *FileName,TCHAR *result);
-extern VFSDLL DWORD PPXAPI ReadFileHeader(HANDLE hFile,BYTE *header,SIZE32_T headersize);
+extern VFSDLL ERRORCODE PPXAPI VFSGetFileType(const TCHAR *FileName, const char *image, SIZE32_T imagesize, VFSFILETYPE *result);
+extern VFSDLL BOOL PPXAPI VFSCheckFileByExt(const TCHAR *FileName, TCHAR *result);
+extern VFSDLL DWORD PPXAPI ReadFileHeader(HANDLE hFile, BYTE *header, SIZE32_T headersize);
 
-extern VFSDLL TCHAR * PPXAPI GetDriveName(_Out_writes_z_(VFPS) TCHAR *dst,_In_z_ const TCHAR *src);
-extern VFSDLL ERRORCODE PPXAPI CreateJunction(const TCHAR *FileName,const TCHAR *ExistingFileName,SECURITY_ATTRIBUTES *sa);
+extern VFSDLL TCHAR * PPXAPI GetDriveName(_Out_writes_z_(VFPS) TCHAR *dst, _In_z_ const TCHAR *src);
+extern VFSDLL ERRORCODE PPXAPI CreateJunction(const TCHAR *FileName, const TCHAR *ExistingFileName, SECURITY_ATTRIBUTES *sa);
 /*=============================================================================
 =============================================== 極長パス対応Win32API互換関数 */
-extern VFSDLL HANDLE PPXAPI CreateFileL(const TCHAR *FileName,DWORD Access,
-		DWORD ShareMode,LPSECURITY_ATTRIBUTES SecurityAttributes,
-		DWORD CreationDisposition,DWORD FlagsAndAttributes,
+extern VFSDLL HANDLE PPXAPI CreateFileL(const TCHAR *FileName, DWORD Access,
+		DWORD ShareMode, LPSECURITY_ATTRIBUTES SecurityAttributes,
+		DWORD CreationDisposition, DWORD FlagsAndAttributes,
 		HANDLE hTemplateFile);
 
 extern VFSDLL BOOL PPXAPI DeleteFileL(const TCHAR *FileName);
 extern VFSDLL BOOL PPXAPI CreateDirectoryL(const TCHAR *FileName,
 		LPSECURITY_ATTRIBUTES sa);
 extern VFSDLL BOOL PPXAPI RemoveDirectoryL(const TCHAR *FileName);
-extern VFSDLL HANDLE PPXAPI FindFirstFileL(_In_z_ const TCHAR *dir,_Out_ WIN32_FIND_DATA *findfile);
+extern VFSDLL HANDLE PPXAPI FindFirstFileL(_In_z_ const TCHAR *dir, _Out_ WIN32_FIND_DATA *findfile);
 extern VFSDLL DWORD PPXAPI GetFileAttributesL(const TCHAR *FileName);
-extern VFSDLL BOOL PPXAPI SetFileAttributesL(const TCHAR *FileName,DWORD attributes);
+extern VFSDLL BOOL PPXAPI SetFileAttributesL(const TCHAR *FileName, DWORD attributes);
 
 extern VFSDLL BOOL PPXAPI MoveFileWithProgressL(const TCHAR *ExistingFileName,
 		const TCHAR *NewFileName,
-		LPPROGRESS_ROUTINE ProgressRoutine,LPVOID Data,DWORD dwFlags);
-#define MoveFileL(ExistingFileName,NewFileName) MoveFileWithProgressL((ExistingFileName),(NewFileName),NULL,NULL,0)
+		LPPROGRESS_ROUTINE ProgressRoutine, LPVOID Data, DWORD dwFlags);
+#define MoveFileL(ExistingFileName, NewFileName) MoveFileWithProgressL((ExistingFileName), (NewFileName), NULL, NULL, 0)
 
 extern VFSDLL BOOL PPXAPI CopyFileExL(const TCHAR *ExistingFileName,
-		const TCHAR *NewFileName,LPPROGRESS_ROUTINE ProgressRoutine,
-		LPVOID Data,LPBOOL Cancel,DWORD CopyFlags);
+		const TCHAR *NewFileName, LPPROGRESS_ROUTINE ProgressRoutine,
+		LPVOID Data, LPBOOL Cancel, DWORD CopyFlags);
 
 /*=============================================================================
 ==================================================================  一般関数 */
@@ -157,13 +157,13 @@ extern VFSDLL void PPXAPI VFSOn(int mode);
 extern VFSDLL void PPXAPI VFSOff(void);
 
 //-------------------------------------- 指定URLのイメージを取得
-extern VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr,ThSTRUCT *th);
-extern VFSDLL HRESULT PPXAPI MakeShortCut(const TCHAR *LinkedFile,const TCHAR *LinkFname,const TCHAR *DestPath);
+extern VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr, ThSTRUCT *th);
+extern VFSDLL HRESULT PPXAPI MakeShortCut(const TCHAR *LinkedFile, const TCHAR *LinkFname, const TCHAR *DestPath);
 
-extern VFSDLL ERRORCODE PPXAPI VFSGetArchivefileImage(HWND hWnd,HANDLE hFile,const TCHAR *ArchiveName,const TCHAR *EntryName,SIZE32_T *sizeL,SIZE32_T *sizeH,HANDLE *hMap,BYTE **mem);
+extern VFSDLL ERRORCODE PPXAPI VFSGetArchivefileImage(HWND hWnd, HANDLE hFile, const TCHAR *ArchiveName, const TCHAR *EntryName, SIZE32_T *sizeL, SIZE32_T *sizeH, HANDLE *hMap, BYTE **mem);
 
 // ↓アラインメントがおかしいことがあったので固定にした on X64
-#pragma pack(push,4)
+#pragma pack(push, 4)
 typedef struct {
 	WIN32_FIND_DATA ff;
 	TCHAR dest[VFPS];
@@ -182,13 +182,13 @@ typedef struct {
 #define FILE_ATTRIBUTEX_NODETAIL	B29	// ファイル名以外の情報がない。独自拡張
 #define FILE_ATTRIBUTEX_MESSAGE (FILE_ATTRIBUTE_LABEL | FILE_ATTRIBUTE_TEMPORARY)	// Listfile内限定。メッセージエントリ
 
-extern VFSDLL HANDLE PPXAPI VFSFindFirst(const TCHAR *dir,WIN32_FIND_DATA *findfile);
-extern VFSDLL BOOL PPXAPI VFSFindNext(HANDLE hFF,WIN32_FIND_DATA *findfile);
+extern VFSDLL HANDLE PPXAPI VFSFindFirst(const TCHAR *dir, WIN32_FIND_DATA *findfile);
+extern VFSDLL BOOL PPXAPI VFSFindNext(HANDLE hFF, WIN32_FIND_DATA *findfile);
 extern VFSDLL BOOL PPXAPI VFSFindClose(HANDLE hFF);
 
 #define FINDOPTIONDATA_LONGNAME	1
 #define FINDOPTIONDATA_COMMENT	2
-extern VFSDLL BOOL PPXAPI VFSFindOptionData(HANDLE hFF,DWORD optionID,void *data);
+extern VFSDLL BOOL PPXAPI VFSFindOptionData(HANDLE hFF, DWORD optionID, void *data);
 
 // VFSFind 中に読み込み対象の詳細情報を取得する
 // ftable
@@ -216,7 +216,7 @@ extern VFSDLL BOOL PPXAPI VFSFindOptionData(HANDLE hFF,DWORD optionID,void *data
 #define VFSFFTYPENAME_exFAT 	T("exFAT")
 #define VFSFFTYPENAME_NTFS		T("NTFS")
 
-extern VFSDLL void PPXAPI VFSGetFFInfo(HANDLE hFF,int *mode,TCHAR *type,void **dt_opt);
+extern VFSDLL void PPXAPI VFSGetFFInfo(HANDLE hFF, int *mode, TCHAR *type, void **dt_opt);
 
 // VFSFindFirst の対象であるかを調べる
 // filename は変更する場合もある
@@ -225,14 +225,14 @@ extern VFSDLL void PPXAPI VFSGetFFInfo(HANDLE hFF,int *mode,TCHAR *type,void **d
 #define VFSCHKDIR_GETDIRMENU B31		// dir移動用
 #define VFSCHKDIR_GETEXTRACTMENU B30	// 展開用
 #define VFSCHK_MENUID 0xe200 // VFSCheckDir / VFSCheckImage で追加する先頭 ID
-extern VFSDLL int PPXAPI VFSCheckDir(const TCHAR *filename,BYTE *header,SIZE32_T headersize,void **dt_opt);
-extern VFSDLL int PPXAPI VFSCheckImage(const TCHAR *filename,BYTE *header,SIZE32_T headersize,HMENU hPopupMenu);
+extern VFSDLL int PPXAPI VFSCheckDir(const TCHAR *filename, BYTE *header, SIZE32_T headersize, void **dt_opt);
+extern VFSDLL int PPXAPI VFSCheckImage(const TCHAR *filename, BYTE *header, SIZE32_T headersize, HMENU hPopupMenu);
 
 // 各種プラグインを使ってビットマップを取得する
-extern VFSDLL BOOL PPXAPI VFSGetDib(const TCHAR *filename,void *image,SIZE32_T sizeL,TCHAR *type,HANDLE *Info,HANDLE *Bm);
-extern VFSDLL int PPXAPI VFSGetDibDelay(const TCHAR *filename,void *image,SIZE32_T sizeL,TCHAR *type,HANDLE *Info,HANDLE *Bm,DWORD (*AllReadProc)(void));
+extern VFSDLL BOOL PPXAPI VFSGetDib(const TCHAR *filename, void *image, SIZE32_T sizeL, TCHAR *type, HANDLE *Info, HANDLE *Bm);
+extern VFSDLL int PPXAPI VFSGetDibDelay(const TCHAR *filename, void *image, SIZE32_T sizeL, TCHAR *type, HANDLE *Info, HANDLE *Bm, DWORD (*AllReadProc)(void));
 // 指定したドライブのSHN表示名を取得する ※フロッピーアクセスしない
-extern VFSDLL void PPXAPI GetDriveNameTitle(TCHAR *buf,TCHAR drive);
+extern VFSDLL void PPXAPI GetDriveNameTitle(TCHAR *buf, TCHAR drive);
 
 /*=============================================================================
 ======================================================== Path 文字列操作関係 */
@@ -302,7 +302,7 @@ extern VFSDLL TCHAR * PPXAPI VFSFindLastEntry(const TCHAR *src);
 #define VFSPTF_FS		1		// -:常に UNC/DN を使用する
 #define VFSPTF_SHN		2		// +:常に Shell's Namespace を使用する
 _Success_(return != NULL)
-extern VFSDLL TCHAR * PPXAPI VFSGetDriveType(_In_z_ const TCHAR *vfp,_Out_opt_ int *resultmode,_Out_opt_ int *force);
+extern VFSDLL TCHAR * PPXAPI VFSGetDriveType(_In_z_ const TCHAR *vfp, _Out_opt_ int *resultmode, _Out_opt_ int *force);
 
 /*-----------------------------------------------------------------------------
 	src と fname の間に「\」 が入った文字列を生成する
@@ -313,7 +313,7 @@ extern VFSDLL TCHAR * PPXAPI VFSGetDriveType(_In_z_ const TCHAR *vfp,_Out_opt_ i
 	fname:	後側に配置する文字列
 	->		void
 -----------------------------------------------------------------------------*/
-extern VFSDLL void PPXAPI CatPath(_Out_writes_opt_z_(VFPS) TCHAR *dst,TCHAR *src,_In_z_ const TCHAR *fname);
+extern VFSDLL void PPXAPI CatPath(_Out_writes_opt_z_(VFPS) TCHAR *dst, TCHAR *src, _In_z_ const TCHAR *fname);
 
 /*-----------------------------------------------------------------------------
 	src を正規化したパスに変換する
@@ -329,7 +329,7 @@ extern VFSDLL void PPXAPI CatPath(_Out_writes_opt_z_(VFPS) TCHAR *dst,TCHAR *src
 -----------------------------------------------------------------------------*/
 // flag 用定数
 #define VFSFIX_DRIVE		B0	// １文字ドライブ指定の補正（"A"→"A:"）
-#define VFSFIX_SEPARATOR	B1	// セパレータ"\","/" の補正（"/"→"\"）
+#define VFSFIX_SEPARATOR	B1	// セパレータ"\", "/" の補正（"/"→"\"）
 // #define VFSFIX_CASE		B2	// 大文字化(1.12より無効化中)
 #define VFSFIX_FULLPATH		B3	// 絶対指定に変換（"A:"→"A:\WINDOWS"）
 #define VFSFIX_REALPATH		B4	// 仮想パスの実体化
@@ -339,7 +339,7 @@ extern VFSDLL void PPXAPI CatPath(_Out_writes_opt_z_(VFPS) TCHAR *dst,TCHAR *src
 
 #define VFSFIX_VFPS			(VFSFIX_DRIVE | VFSFIX_SEPARATOR | VFSFIX_FULLPATH)
 #define VFSFIX_PATH			(VFSFIX_VFPS | VFSFIX_REALPATH)
-extern VFSDLL TCHAR * PPXAPI VFSFixPath(TCHAR *dst,TCHAR *src,_In_opt_z_ const TCHAR *cur,int flag);
+extern VFSDLL TCHAR * PPXAPI VFSFixPath(TCHAR *dst, TCHAR *src, _In_opt_z_ const TCHAR *cur, int flag);
 
 /*-----------------------------------------------------------------------------
 	相対指定の src を絶対指定の cur より絶対指定に変換する
@@ -353,41 +353,41 @@ extern VFSDLL TCHAR * PPXAPI VFSFixPath(TCHAR *dst,TCHAR *src,_In_opt_z_ const T
 			!NULL			最下層のエントリを示すポインタ
 			※末尾は、rootなら「***\」、dirなら「***」
 -----------------------------------------------------------------------------*/
-extern VFSDLL TCHAR * PPXAPI VFSFullPath(_Out_writes_opt_z_(VFPS) TCHAR *dst,TCHAR *src,_In_opt_z_ const TCHAR *cur);
+extern VFSDLL TCHAR * PPXAPI VFSFullPath(_Out_writes_opt_z_(VFPS) TCHAR *dst, TCHAR *src, _In_opt_z_ const TCHAR *cur);
 
 /*-----------------------------------------------------------------------------
 	仮想ディレクトリを実体化させる
 -----------------------------------------------------------------------------*/
-extern VFSDLL BOOL PPXAPI VFSGetRealPath(HWND hWnd,TCHAR *path,const TCHAR *vfs);
+extern VFSDLL BOOL PPXAPI VFSGetRealPath(HWND hWnd, TCHAR *path, const TCHAR *vfs);
 
 /*-----------------------------------------------------------------------------
 	指定パスを一括作成する
 -----------------------------------------------------------------------------*/
-extern VFSDLL ERRORCODE PPXAPI MakeDirectories(const TCHAR *dst,const TCHAR *src);
+extern VFSDLL ERRORCODE PPXAPI MakeDirectories(const TCHAR *dst, const TCHAR *src);
 
-extern VFSDLL ERRORCODE PPXAPI VFSChangeDirectory(HWND hWnd,const TCHAR *path);
-extern VFSDLL ERRORCODE PPXAPI VFSTryDirectory(HWND hWnd,const TCHAR *path,BOOL trymode);
+extern VFSDLL ERRORCODE PPXAPI VFSChangeDirectory(HWND hWnd, const TCHAR *path);
+extern VFSDLL ERRORCODE PPXAPI VFSTryDirectory(HWND hWnd, const TCHAR *path, BOOL trymode);
 
 // 必要なら「-n」を付加して、重複のない名前にする
 extern VFSDLL BOOL PPXAPI GetUniqueEntryName(TCHAR *src);
 /*=============================================================================
 ================================ Shell's Namespace IDL 操作関係、要 shlobj.h */
 #ifdef _SHLOBJ_H_
-extern VFSDLL BOOL PPXAPI PIDL2DisplayNameOf(TCHAR *name,LPSHELLFOLDER sfolder,LPCITEMIDLIST pidl);
-extern VFSDLL LPSHELLFOLDER PPXAPI VFPtoIShell(HWND hWnd,const TCHAR *vfp,LPITEMIDLIST *idl);
+extern VFSDLL BOOL PPXAPI PIDL2DisplayNameOf(TCHAR *name, LPSHELLFOLDER sfolder, LPCITEMIDLIST pidl);
+extern VFSDLL LPSHELLFOLDER PPXAPI VFPtoIShell(HWND hWnd, const TCHAR *vfp, LPITEMIDLIST *idl);
 extern VFSDLL UINT PPXAPI GetPidlSize(LPCITEMIDLIST pidl);
 extern VFSDLL LPITEMIDLIST PPXAPI PathToPidl(LPCTSTR pszFile);
 extern VFSDLL LPSHELLFOLDER PPXAPI PidlToIShell(LPCITEMIDLIST  pidl);
-extern VFSDLL LPITEMIDLIST PPXAPI IShellToPidl(LPSHELLFOLDER pParent,LPCTSTR pszFile);
-extern VFSDLL LPITEMIDLIST PPXAPI BindIShellAndFname(LPSHELLFOLDER pParentFolder,const TCHAR *fname);
-extern VFSDLL LPITEMIDLIST PPXAPI BindIShellAndFdata(LPSHELLFOLDER pParentFolder,WIN32_FIND_DATA *fdata);
+extern VFSDLL LPITEMIDLIST PPXAPI IShellToPidl(LPSHELLFOLDER pParent, LPCTSTR pszFile);
+extern VFSDLL LPITEMIDLIST PPXAPI BindIShellAndFname(LPSHELLFOLDER pParentFolder, const TCHAR *fname);
+extern VFSDLL LPITEMIDLIST PPXAPI BindIShellAndFdata(LPSHELLFOLDER pParentFolder, WIN32_FIND_DATA *fdata);
 extern VFSDLL void PPXAPI FreePIDL(LPCITEMIDLIST pidl);
 
-extern VFSDLL BOOL PPXAPI SHContextMenu(HWND hwnd,LPPOINT lppt,LPSHELLFOLDER lpsfParent,LPITEMIDLIST *lpi,int pidls,const TCHAR *cmd);
-extern VFSDLL BOOL PPXAPI VFSMakeIDL(const TCHAR *path,LPSHELLFOLDER *ppSF,LPITEMIDLIST *pidl,const TCHAR *filename);
-extern VFSDLL void PPXAPI GetTextFromCF_SHELLIDLIST(TCHAR *text,SIZE32_T textsize,HGLOBAL hGMem,BOOL lf);
+extern VFSDLL BOOL PPXAPI SHContextMenu(HWND hwnd, LPPOINT lppt, LPSHELLFOLDER lpsfParent, LPITEMIDLIST *lpi, int pidls, const TCHAR *cmd);
+extern VFSDLL BOOL PPXAPI VFSMakeIDL(const TCHAR *path, LPSHELLFOLDER *ppSF, LPITEMIDLIST *pidl, const TCHAR *filename);
+extern VFSDLL void PPXAPI GetTextFromCF_SHELLIDLIST(TCHAR *text, SIZE32_T textsize, HGLOBAL hGMem, BOOL lf);
 #endif
-extern VFSDLL BOOL PPXAPI VFSSHContextMenu(HWND hWnd,LPPOINT pos,const TCHAR *path,const TCHAR *entry,const TCHAR *cmd);
+extern VFSDLL BOOL PPXAPI VFSSHContextMenu(HWND hWnd, LPPOINT pos, const TCHAR *path, const TCHAR *entry, const TCHAR *cmd);
 /*=============================================================================
 ============================================================= File Operation */
 #define VFSFOP_AUTOSTART	B0	// [OK]を押さなくてもすぐに処理開始
@@ -412,7 +412,7 @@ typedef struct {
 	HWND	hDialogWnd;		// OUT 作成されたダイアログ
 } VFSFILEOPERATION;
 
-extern VFSDLL BOOL PPXAPI PPxFileOperation(HWND hWnd,VFSFILEOPERATION *fileop);
+extern VFSDLL BOOL PPXAPI PPxFileOperation(HWND hWnd, VFSFILEOPERATION *fileop);
 
 #define VFSDE_WARNFILEINDIR B0	// Dir内のファイルがあれば警告するか
 #define VFSDE_REPORT B1	// log出力するか
@@ -430,7 +430,7 @@ typedef struct {
 	DWORD warnattr;		// 警告する属性
 } DELETESTATUS;
 
-extern VFSDLL ERRORCODE PPXAPI VFSDeleteEntry(DELETESTATUS *dinfo,const TCHAR *path,DWORD attr);
+extern VFSDLL ERRORCODE PPXAPI VFSDeleteEntry(DELETESTATUS *dinfo, const TCHAR *path, DWORD attr);
 
 extern VFSDLL ERRORCODE PPXAPI VFSLoadFileImage(const TCHAR *filename, DWORD margin, char **image, DWORD *imagesize, DWORD *filesize);
 
@@ -476,14 +476,14 @@ typedef struct {
 #define VFSAS_LEAVE B6
 #define VFSAS_CHECK B7
 
-extern VFSDLL int PPXAPI VFSArchiveSection(DWORD mode,const TCHAR *threadname);
+extern VFSDLL int PPXAPI VFSArchiveSection(DWORD mode, const TCHAR *threadname);
 //-------------------------------------------------------------- OpenArchive 系
 //-------------------------------------- DLL 定数
 #define FNAME_MAX32		512
 typedef HGLOBAL HARC;
 
 typedef struct {
-	DWORD l,h;
+	DWORD l, h;
 } ARCSIZE64;
 //-------------------------------------- DLL 構造体
 typedef struct {						// FindFirst 用 -----------------------
@@ -525,22 +525,22 @@ typedef LPINDIVIDUALINFOW LPINDIVIDUALINFO;
 
 //-------------------------------------- DLL 関数
 typedef int (WINAPI *ARCPROC)();
-typedef int (WINAPI *impUnarc)(const HWND hwnd,LPCSTR szCmdLine,LPSTR szOutput,const DWORD wSize);
-typedef int (WINAPI *impUnarcW)(const HWND hwnd,LPCWSTR szCmdLine,LPWSTR szOutput,const DWORD wSize);
-typedef HARC (WINAPI *impUnOpenArchive) (const HWND hwnd,LPCSTR szFileName,const DWORD dwMode);
-typedef HARC (WINAPI *impUnOpenArchiveW) (const HWND hwnd,LPCWSTR szFileName,const DWORD dwMode);
+typedef int (WINAPI *impUnarc)(const HWND hwnd, LPCSTR szCmdLine, LPSTR szOutput, const DWORD wSize);
+typedef int (WINAPI *impUnarcW)(const HWND hwnd, LPCWSTR szCmdLine, LPWSTR szOutput, const DWORD wSize);
+typedef HARC (WINAPI *impUnOpenArchive) (const HWND hwnd, LPCSTR szFileName, const DWORD dwMode);
+typedef HARC (WINAPI *impUnOpenArchiveW) (const HWND hwnd, LPCWSTR szFileName, const DWORD dwMode);
 typedef int (WINAPI *impUnCloseArchive)(HARC harc);
-typedef int (WINAPI *impUnFindFirst)(HARC harc,LPCSTR szWildName,INDIVIDUALINFOA *lpSubInfo);
-typedef int (WINAPI *impUnFindFirstW)(HARC harc,LPCWSTR szWildName,INDIVIDUALINFOW *lpSubInfo);
-typedef int (WINAPI *impUnFindNext)(HARC harc,INDIVIDUALINFOA *lpSubInfo);
-typedef int (WINAPI *impUnFindNextW)(HARC harc,INDIVIDUALINFOW *lpSubInfo);
-typedef BOOL (WINAPI *impUnCheckArchive)(LPCSTR szFileName,const int iMode);
-typedef BOOL (WINAPI *impUnCheckArchiveW)(LPCWSTR szFileName,const int iMode);
+typedef int (WINAPI *impUnFindFirst)(HARC harc, LPCSTR szWildName, INDIVIDUALINFOA *lpSubInfo);
+typedef int (WINAPI *impUnFindFirstW)(HARC harc, LPCWSTR szWildName, INDIVIDUALINFOW *lpSubInfo);
+typedef int (WINAPI *impUnFindNext)(HARC harc, INDIVIDUALINFOA *lpSubInfo);
+typedef int (WINAPI *impUnFindNextW)(HARC harc, INDIVIDUALINFOW *lpSubInfo);
+typedef BOOL (WINAPI *impUnCheckArchive)(LPCSTR szFileName, const int iMode);
+typedef BOOL (WINAPI *impUnCheckArchiveW)(LPCWSTR szFileName, const int iMode);
 typedef BOOL (WINAPI *impSetUnicodeMode)(const BOOL _bUnicode);
-typedef BOOL (WINAPI *impUnGetOriginalSizeEx)(HARC harc,ARCSIZE64 *_lpllSize);
-typedef BOOL (WINAPI *impUnGetWriteTimeEx)(HARC harc,FILETIME *_lpftLastWriteTime);
-typedef BOOL (WINAPI *impUnGetCreateTimeEx)(HARC harc,FILETIME *_lpftCreationTime);
-typedef BOOL (WINAPI *impUnGetAccessTimeEx)(HARC harc,FILETIME *_lpftLastAccessTime);
+typedef BOOL (WINAPI *impUnGetOriginalSizeEx)(HARC harc, ARCSIZE64 *_lpllSize);
+typedef BOOL (WINAPI *impUnGetWriteTimeEx)(HARC harc, FILETIME *_lpftLastWriteTime);
+typedef BOOL (WINAPI *impUnGetCreateTimeEx)(HARC harc, FILETIME *_lpftCreationTime);
+typedef BOOL (WINAPI *impUnGetAccessTimeEx)(HARC harc, FILETIME *_lpftLastAccessTime);
 //-------------------------------------- PPx 定義
 #if defined(ONPPXDLL)
 typedef struct {
@@ -554,7 +554,7 @@ typedef struct {
 	#endif
 } VUCHECKSTRUCT;
 
-typedef BOOL (*VUCHECKFUNC)(void *uD,VUCHECKSTRUCT *vcs);
+typedef BOOL (*VUCHECKFUNC)(void *uD, VUCHECKSTRUCT *vcs);
 typedef struct tagUNDLL{				// 呼出し用 ---------------------------
 	HANDLE	hadd;					// DLL のハンドル
 	impUnarc			Unarc;
@@ -599,7 +599,7 @@ typedef struct tagUNDLL{				// 呼出し用 ---------------------------
 
 #define UNDLLFLAG_RESPONSE_UTF8			B8	// ～W 系APIレスポンスファイルはUTF8
 
-#define UNDLLFLAG_SKIP_OPENED			B10	// Open中の書庫をチェック対象外にする(UNRAR32,LMZIP32,7zca32)
+#define UNDLLFLAG_SKIP_OPENED			B10	// Open中の書庫をチェック対象外にする(UNRAR32, LMZIP32, 7zca32)
 #define UNDLLFLAG_FIX_UNARCRESULT		B11	// UnArcの結果補正(CAB32)
 #define UNDLLFLAG_FIX_BRACKET			B12	// ファイル名中の [,] 等をescape(UNZIP32)
 #define UNDLLFLAG_FIX_IME				B13	// IMEを無効にする(7-zip32)
@@ -617,14 +617,14 @@ typedef struct tagUNDLL{				// 呼出し用 ---------------------------
 typedef void UN_DLL;
 #endif
 //-------------------------------------- UnXXX32 を呼び出す
-// extern VFSDLL int PPXAPI UnARCExec(UN_DLL *uD,HWND hWnd,const char *Cmd,char *Log,DWORD LogSize); 1.27 廃止。ExecUnarcに変更
-// extern VFSDLL int PPXAPI UnARC(const TCHAR *DllName,HWND hWnd,const TCHAR *Cmd,char *Log,DWORD LogSize); 1.27 廃止。%uを使用
+// extern VFSDLL int PPXAPI UnARCExec(UN_DLL *uD, HWND hWnd, const char *Cmd, char *Log, DWORD LogSize); 1.27 廃止。ExecUnarcに変更
+// extern VFSDLL int PPXAPI UnARC(const TCHAR *DllName, HWND hWnd, const TCHAR *Cmd, char *Log, DWORD LogSize); 1.27 廃止。%uを使用
 
 #define UNARCEXTRACT_ALL 0
 #define UNARCEXTRACT_PART 1
 #define UNARCEXTRACT_SINGLE 2
-extern VFSDLL ERRORCODE PPXAPI UnArc_Extract(PPXAPPINFO *info,const void *dt_opt,int extractmode,TCHAR *extract,int flag);
-extern VFSDLL void PPXAPI UnArc_Exec(PPXAPPINFO *info,const void *dt_opt,TCHAR *param,HANDLE hBatchfile,const TCHAR *tmppath,DWORD X_unbg,const TCHAR *chopdir);
+extern VFSDLL ERRORCODE PPXAPI UnArc_Extract(PPXAPPINFO *info, const void *dt_opt, int extractmode, TCHAR *extract, int flag);
+extern VFSDLL void PPXAPI UnArc_Exec(PPXAPPINFO *info, const void *dt_opt, TCHAR *param, HANDLE hBatchfile, const TCHAR *tmppath, DWORD X_unbg, const TCHAR *chopdir);
 
 //------------------------------------------------------------ SUSIE Plug-in 系
 //-------------------------------------- DLL 定数
@@ -643,9 +643,9 @@ typedef ULONG_PTR susie_time_t;
 #define SUSIE_PATH_MAX 200
 
 //-------------------------------------- DLL 構造体
-#pragma pack(push,1)
+#pragma pack(push, 1)
 struct PictureInfo{
-	long	left,top;				// 画像を展開する位置
+	long	left, top;				// 画像を展開する位置
 	long	width;					// 画像の幅(pixel)
 	long	height;					// 画像の高さ(pixel)
 	WORD	x_density;				// 画素の水平方向密度
@@ -734,13 +734,13 @@ typedef struct {
 	DWORD DllNameOffset;
 	DWORD SupportExtOffset;	// 対応拡張子名
 } SUSIE_DLL;
-// DllNameOffset,SupportExtOffset が示すテーブル
+// DllNameOffset, SupportExtOffset が示すテーブル
 typedef struct {
-	DWORD flags;	// VFSSUSIE_BMP,VFSSUSIE_ARC
+	DWORD flags;	// VFSSUSIE_BMP, VFSSUSIE_ARC
 	TCHAR filemask[VFPS];
 } SUSIE_DLLSTRINGS;
 
-extern VFSDLL int PPXAPI VFSGetSusieList(const SUSIE_DLL **su,BYTE **strings);
+extern VFSDLL int PPXAPI VFSGetSusieList(const SUSIE_DLL **su, BYTE **strings);
 extern VFSDLL const SUSIE_DLL * PPXAPI VFSGetSusieFuncs(const void *dt_opt);
 #ifdef __cplusplus
 }

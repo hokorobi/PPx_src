@@ -11,20 +11,14 @@
 #include "PPCOMBO.H"
 #pragma hdrstop
 
-#define PPcEnumInfoFunc(func,str,work) ((work)->buffer = str, cinfo->info.Function(&cinfo->info,func,work))
+#define PPcEnumInfoFunc(func, str, work) ((work)->buffer = str, cinfo->info.Function(&cinfo->info, func, work))
 
 const TCHAR LFMARK_STR[] = T(",M:1");
 const TCHAR LFSIZE_STR[] = T(",Size,");
 const TCHAR LFCREATE_STR[] = T(",Create,");
 const TCHAR LFLASTWRITE_STR[] = T(",Last Write,");
 const TCHAR LFLASTACCESS_STR[] = T(",Last Access,");
-#define CopyAndSkipString(dest,string) memcpy(dest,string,SIZEOFTSTR(string)); dest += TSIZEOFSTR(string);
-
-#define WLFC_DETAIL 0		// PPx独自形式
-#define WLFC_NAMEONLY  B0	// ファイル名のみにする
-#define WLFC_OPTIONSTR B1	// 末尾に csv用の文字列を追加する
-#define WLFC_WITHMARK  B2	// マークがあるときに、M:1,を記載
-#define WLFC_COMMENT   B3	// コメント出力を有効にする
+#define CopyAndSkipString(dest, string) memcpy(dest, string, SIZEOFTSTR(string)); dest += TSIZEOFSTR(string);
 
 #define GFSIZE 0x1000
 
@@ -32,9 +26,9 @@ const TCHAR DFO_title[] = MES_TDFO;
 const int DispAttributeTable[] = {DE_ATTRTABLE};
 #define CFMT_OLDHEADERSIZE (sizeof(DWORD) * 5)
 
-int RefreshAfterListModes[] = {K_ENDATTR,K_ENDCOPY,K_ENDDEL};
+int RefreshAfterListModes[] = {K_ENDATTR, K_ENDCOPY, K_ENDDEL};
 
-typedef int (__stdcall *CREATEPICTURE)(LPCTSTR filepath,unsigned int flag,HANDLE *pHBInfo,HANDLE *pHBm,void *lpInfo,void *progressCallback,LONG_PTR lData);
+typedef int (__stdcall *CREATEPICTURE)(LPCTSTR filepath, unsigned int flag, HANDLE *pHBInfo, HANDLE *pHBm, void *lpInfo, void *progressCallback, LONG_PTR lData);
 HMODULE hTSusiePlguin = NULL;
 CREATEPICTURE CreatePicture;
 
@@ -89,12 +83,12 @@ typedef struct {
 	ThSTRUCT *TH;
 } AppendMenuS;
 
-int GetEntryDepth(const TCHAR *src,const TCHAR **last)
+int GetEntryDepth(const TCHAR *src, const TCHAR **last)
 {
 	int depth = 0;
-	const TCHAR *rp,*tp;
+	const TCHAR *rp, *tp;
 
-	rp = VFSGetDriveType(src,NULL,NULL);	// ドライブ指定をスキップ
+	rp = VFSGetDriveType(src, NULL, NULL);	// ドライブ指定をスキップ
 	if ( rp == NULL ) rp = src;	// ドライブ指定が無い
 	if ( *rp ){				// root なら *rp == 0
 		if ( (*rp == '\\') || (*rp == '/') ) rp++;
@@ -114,16 +108,16 @@ int GetEntryDepth(const TCHAR *src,const TCHAR **last)
 // 現在ディレクトリ/カーソル位置をヒストリに保存 ------------------------------
 void SetPPcDirPos(PPC_APPINFO *cinfo)
 {
-	SavePPcDir(cinfo,FALSE);
+	SavePPcDir(cinfo, FALSE);
 	cinfo->OrgPath[0] = '\0';
 }
 
 // 現在ディレクトリ/カーソル位置をヒストリに保存・履歴順を更新 ----------------
-void SavePPcDir(PPC_APPINFO *cinfo,BOOL newdir)
+void SavePPcDir(PPC_APPINFO *cinfo, BOOL newdir)
 {
 	int tmp[4];
 	BYTE *hist;
-	TCHAR buf[VFPS],buf2[VFPS],*path;
+	TCHAR buf[VFPS], buf2[VFPS], *path;
 	WORD histdatasize;
 
 	if ( cinfo->e.cellIMax <= 0 ) return; // エントリが無い
@@ -147,18 +141,18 @@ void SavePPcDir(PPC_APPINFO *cinfo,BOOL newdir)
 	}
 	// 書庫内dir
 	if ( cinfo->UseArcPathMask != ARCPATHMASK_OFF ){
-		VFSFullPath(buf,cinfo->ArcPathMask,path);
+		VFSFullPath(buf, cinfo->ArcPathMask, path);
 		path = buf;
 	}
 	// Listfile(ベース指定あり)
 	if ( (cinfo->e.Dtype.mode == VFSDT_LFILE) &&
 		 (cinfo->e.Dtype.BasePath[0] != '\0') &&
 		 ((tstrlen(path) + tstrlen(cinfo->e.Dtype.BasePath) + 3) < VFPS) ){
-		wsprintf(buf2,T(":<%s>%s"),cinfo->e.Dtype.BasePath,cinfo->path);
+		wsprintf(buf2, T(":<%s>%s"), cinfo->e.Dtype.BasePath, cinfo->path);
 		path = buf2;
 	}
 	UsePPx();
-	hist = (BYTE *)SearchHistory(PPXH_PPCPATH,path);
+	hist = (BYTE *)SearchHistory(PPXH_PPCPATH, path);
 	if ( hist == NULL ){
 		histdatasize = 0;
 	}else{
@@ -166,20 +160,20 @@ void SavePPcDir(PPC_APPINFO *cinfo,BOOL newdir)
 	}
 		// 位置データの更新のみで済む？
 	if ( (histdatasize >= (sizeof(int) * 2)) && (newdir == FALSE) ){
-		memcpy(GetHistoryData(hist),&tmp,sizeof(int) * 2);
+		memcpy(GetHistoryData(hist), &tmp, sizeof(int) * 2);
 	}else{ // 書き込み(履歴順の変化)が必要
 		if ( histdatasize > (sizeof(int) * 2) ){ // サイズキャッシュ有り
-			memcpy(&tmp[2],GetHistoryData(hist) + sizeof(int) * 2,sizeof(int) * 2);
+			memcpy(&tmp[2], GetHistoryData(hist) + sizeof(int) * 2, sizeof(int) * 2);
 		}else{
 			histdatasize = sizeof(int) * 2;
 		}
-		WriteHistory(PPXH_PPCPATH,path,histdatasize,&tmp);
+		WriteHistory(PPXH_PPCPATH, path, histdatasize, &tmp);
 	}
 	FreePPx();
 }
 
 // マークファイル取得の初期化 -------------------------------------------------
-void InitEnumMarkCell(PPC_APPINFO *cinfo,int *work)
+void InitEnumMarkCell(PPC_APPINFO *cinfo, int *work)
 {
 	if ( cinfo->e.markC == 0 ){			// マーク無し
 		if ( CEL(cinfo->e.cellN).state >= ECS_NORMAL ){
@@ -193,7 +187,7 @@ void InitEnumMarkCell(PPC_APPINFO *cinfo,int *work)
 }
 
 // マークファイルを順次取得 ---------------------------------------------------
-ENTRYCELL *EnumMarkCell(PPC_APPINFO *cinfo,int *work)
+ENTRYCELL *EnumMarkCell(PPC_APPINFO *cinfo, int *work)
 {
 	int cell;
 
@@ -250,7 +244,7 @@ int GetItemTypeFromPoint(PPC_APPINFO *cinfo, POINT *pos, ENTRYINDEX *ItemNo)
 		x -= cinfo->BoxEntries.left;
 #if FREEPOSMODE
 		{
-			int i,tx,ty;
+			int i, tx, ty;
 			POINT *cpos;
 
 			// ●1.1x -1 を足す必要がある問題を調べること！
@@ -270,7 +264,9 @@ int GetItemTypeFromPoint(PPC_APPINFO *cinfo, POINT *pos, ENTRYINDEX *ItemNo)
 		}
 #endif
 		y = ( y - cinfo->BoxEntries.top ) / cinfo->cel.Size.cy;
-		if ( (y < cinfo->cel.Area.cy) && (x >= 0) ){
+		if ( x < 0 ) {
+			rc = PPCR_UNKNOWN;
+		}else if ( y < cinfo->cel.Area.cy ){
 			int TouchWidth = 0;
 			BOOL RightBorder;
 			int RightBorderWidth;
@@ -299,7 +295,10 @@ int GetItemTypeFromPoint(PPC_APPINFO *cinfo, POINT *pos, ENTRYINDEX *ItemNo)
 					(x / cinfo->cel.Size.cx) * cinfo->cel.Area.cy;
 			x = x % cinfo->cel.Size.cx;
 			// 右端は、セルの範囲であっても空欄扱いにする
-			if ( (x > (cinfo->fontX * 3)) && RightBorder ) return PPCR_CELLBLANK;
+			if ( (x > (cinfo->fontX * 3)) && RightBorder ){
+				if ( ItemNo != NULL ) *ItemNo = -1;
+				return PPCR_CELLBLANK;
+			}
 #if FREEPOSMODE
 			if ( (cell < cinfo->e.cellIMax) && (cell >= cinfo->cellWMin) && (CEL(cell).pos.x == NOFREEPOS) )
 #else
@@ -354,13 +353,13 @@ int GetItemTypeFromPoint(PPC_APPINFO *cinfo, POINT *pos, ENTRYINDEX *ItemNo)
 									HDC hDC = GetDC(cinfo->info.hWnd);
 									SIZE boxsize;
 									HGDIOBJ hOldFont;
-									hOldFont = SelectObject(hDC,cinfo->hBoxFont);
+									hOldFont = SelectObject(hDC, cinfo->hBoxFont);
 
-									GetTextExtentPoint32(hDC,CEL(cell).f.cFileName,
+									GetTextExtentPoint32(hDC, CEL(cell).f.cFileName,
 											CEL(cell).ext, &boxsize);
 									namewidth = boxsize.cx + ((cinfo->fontX * 3) / 2) + MARKOVERX;
-									SelectObject(hDC,hOldFont);	// フォント
-									ReleaseDC(cinfo->info.hWnd,hDC);
+									SelectObject(hDC, hOldFont);	// フォント
+									ReleaseDC(cinfo->info.hWnd, hDC);
 								}else{
 									namewidth = (CEL(cell).ext + 1) * cinfo->fontX + MARKOVERX;
 								}
@@ -377,7 +376,7 @@ int GetItemTypeFromPoint(PPC_APPINFO *cinfo, POINT *pos, ENTRYINDEX *ItemNo)
 				}
 			}
 		}else{
-			rc = PPCR_UNKNOWN;
+			rc = PPCR_CELLBLANK;
 		}
 	}
 	if ( ItemNo != NULL ) *ItemNo = cell;
@@ -388,7 +387,7 @@ HWND USEFASTCALL GetJoinWnd(PPC_APPINFO *cinfo)
 {
 	HWND hPairWnd;
 
-	hPairWnd = PPcGetWindow(cinfo->RegNo,CGETW_PAIR);
+	hPairWnd = PPcGetWindow(cinfo->RegNo, CGETW_PAIR);
 	if ( hPairWnd == BADHWND ) hPairWnd = NULL;
 	return hPairWnd;
 }
@@ -398,56 +397,56 @@ HWND USEFASTCALL GetPairWnd(PPC_APPINFO *cinfo)
 	HWND hPairWnd;
 
 	if ( cinfo->combo ){
-		hPairWnd = (HWND)SendMessage(cinfo->hComboWnd,WM_PPXCOMMAND,
-				KCW_getpairwnd,(LPARAM)cinfo->info.hWnd);
+		hPairWnd = (HWND)SendMessage(cinfo->hComboWnd, WM_PPXCOMMAND,
+				KCW_getpairwnd, (LPARAM)cinfo->info.hWnd);
 		if ( hPairWnd != NULL ) return hPairWnd;
 	}
-	hPairWnd = PPcGetWindow(cinfo->RegNo,CGETW_PAIR);
+	hPairWnd = PPcGetWindow(cinfo->RegNo, CGETW_PAIR);
 	if ( hPairWnd != NULL ) return hPairWnd;
 	if ( !(cinfo->swin & SWIN_JOIN) ){
-		hPairWnd = PPcGetWindow(cinfo->RegNo,CGETW_PREV);
+		hPairWnd = PPcGetWindow(cinfo->RegNo, CGETW_PREV);
 		if ( hPairWnd != BADHWND ) return hPairWnd;
 	}
 	return NULL;
 }
 
-void USEFASTCALL GetPairPath(PPC_APPINFO *cinfo,TCHAR *path)
+void USEFASTCALL GetPairPath(PPC_APPINFO *cinfo, TCHAR *path)
 {
 	if ( cinfo->combo ){
 		*(HWND *)path = cinfo->info.hWnd;
 		if ( SENDCOMBO_OK == SendMessage(cinfo->hComboWnd,
-				WM_PPXCOMMAND,KCW_getpath,(LPARAM)path) ){
+				WM_PPXCOMMAND, KCW_getpath, (LPARAM)path) ){
 			return;
 		}
 	}
-	PPcOldPath(cinfo->RegNo,cinfo->swin & SWIN_JOIN,path);
+	PPcOldPath(cinfo->RegNo, cinfo->swin & SWIN_JOIN, path);
 	return;
 }
 
-void SetReportTextMain(HWND hLogWnd,const TCHAR *text)
+void SetReportTextMain(HWND hLogWnd, const TCHAR *text)
 {
 	DWORD lines;
-	DWORD lP,wP;
+	DWORD lP, wP;
 
 	// XM_INFOlog
-	if ( X_log & B14 ) XMessage(NULL,NULL,14,T("%s"),text);
+	if ( X_log & B14 ) XMessage(NULL, NULL, 14, T("%s"), text);
 
-	lines = SendMessage(hLogWnd,EM_GETLINECOUNT,0,0);
+	lines = SendMessage(hLogWnd, EM_GETLINECOUNT, 0, 0);
 	if ( lines > LOGLINES_MAX ){
-		SendMessage(hLogWnd,EM_SETSEL,
-				0,SendMessage(hLogWnd,EM_LINEINDEX,(WPARAM)LOGLINES_DELETE,0));
-		SendMessage(hLogWnd,EM_REPLACESEL,0,(LPARAM)NilStr);
-		lines = SendMessage(hLogWnd,EM_GETLINECOUNT,0,0);
+		SendMessage(hLogWnd, EM_SETSEL,
+				0, SendMessage(hLogWnd, EM_LINEINDEX, (WPARAM)LOGLINES_DELETE, 0));
+		SendMessage(hLogWnd, EM_REPLACESEL, 0, (LPARAM)NilStr);
+		lines = SendMessage(hLogWnd, EM_GETLINECOUNT, 0, 0);
 	}
-	SendMessage(hLogWnd,EM_SETSEL,EC_LAST,EC_LAST);
-	SendMessage(hLogWnd,EM_GETSEL,(WPARAM)&wP,(LPARAM)&lP);
-	if ( (DWORD)SendMessage(hLogWnd,EM_LINEINDEX,(WPARAM)lines-1,0) < lP ){
-		SendMessage(hLogWnd,EM_REPLACESEL,0,(LPARAM)T("\r\n"));
+	SendMessage(hLogWnd, EM_SETSEL, EC_LAST, EC_LAST);
+	SendMessage(hLogWnd, EM_GETSEL, (WPARAM)&wP, (LPARAM)&lP);
+	if ( (DWORD)SendMessage(hLogWnd, EM_LINEINDEX, (WPARAM)lines-1, 0) < lP ){
+		SendMessage(hLogWnd, EM_REPLACESEL, 0, (LPARAM)T("\r\n"));
 	}
 
-	SendMessage(hLogWnd,EM_REPLACESEL,0,(LPARAM)text);
-	SendMessage(hLogWnd,EM_SCROLL,SB_LINEDOWN,0);
-	SendMessage(hLogWnd,EM_SETMODIFY,FALSE,0);
+	SendMessage(hLogWnd, EM_REPLACESEL, 0, (LPARAM)text);
+	SendMessage(hLogWnd, EM_SCROLL, SB_LINEDOWN, 0);
+	SendMessage(hLogWnd, EM_SETMODIFY, FALSE, 0);
 }
 
 void SetReportText(const TCHAR *text)
@@ -456,17 +455,17 @@ void SetReportText(const TCHAR *text)
 		if ( (hCommonLog == NULL) || (IsWindow(hCommonLog) == FALSE) ){
 			HWND hWnd;
 
-			hWnd = PPEui(PPcGetWindow(0,CGETW_GETFOCUS),MES_TPCL,NilStr);
-			hCommonLog = (HWND)SendMessage(hWnd,WM_PPXCOMMAND,KE_getHWND,0);
+			hWnd = PPEui(PPcGetWindow(0, CGETW_GETFOCUS), MES_TPCL, NilStr);
+			hCommonLog = (HWND)SendMessage(hWnd, WM_PPXCOMMAND, KE_getHWND, 0);
 		}
-		if ( text != NULL ) SetReportTextMain(hCommonLog,text);
+		if ( text != NULL ) SetReportTextMain(hCommonLog, text);
 	}else{
-		SendMessage(Combo.hWnd,WM_PPXCOMMAND,K_WINDDOWLOG,(LPARAM)text);
+		SendMessage(Combo.hWnd, WM_PPXCOMMAND, K_WINDDOWLOG, (LPARAM)text);
 	}
 }
 
 // １行メッセージ表示の設定 ---------------------------------------------------
-void USEFASTCALL SetPopMsg(PPC_APPINFO *cinfo,ERRORCODE err,const TCHAR *msg)
+void USEFASTCALL SetPopMsg(PPC_APPINFO *cinfo, ERRORCODE err, const TCHAR *msg)
 {
 	TCHAR msgbuf[CMDLINESIZE];
 
@@ -475,31 +474,31 @@ void USEFASTCALL SetPopMsg(PPC_APPINFO *cinfo,ERRORCODE err,const TCHAR *msg)
 
 		if ( err == POPMSG_GETLASTERROR ) err = PPERROR_GETLASTERROR;
 		if ( msg != NULL ){
-			tstrlimcpy(msgbuf,MessageText(msg),CMDLINESIZE);
+			tstrlimcpy(msgbuf, MessageText(msg), CMDLINESIZE);
 			msgptr = msgbuf + tstrlen(msgbuf);
 			*msgptr++ = ':';
 		}else{
 			msgptr = msgbuf;
 		}
-		PPErrorMsg(msgptr,err);
+		PPErrorMsg(msgptr, err);
 		err = POPMSG_MSG;
 		msg = msgbuf;
 	}
 
 	if ( !(err & POPMSG_NOLOGFLAG) && (Combo.Report.hWnd != NULL) ){
 		if ( msg != NULL ){
-			tstrlimcpy(msgbuf,MessageText(msg),CMDLINESIZE);
+			tstrlimcpy(msgbuf, MessageText(msg), CMDLINESIZE);
 		}else{
-			PPErrorMsg(msgbuf,err);
+			PPErrorMsg(msgbuf, err);
 		}
 		SetReportText(msgbuf);
 		return;
 	}
 
 	if ( msg != NULL ){
-		tstrlimcpy(cinfo->PopMsgStr,MessageText(msg),CMDLINESIZE);
+		tstrlimcpy(cinfo->PopMsgStr, MessageText(msg), CMDLINESIZE);
 	}else{
-		PPErrorMsg(cinfo->PopMsgStr,err);
+		PPErrorMsg(cinfo->PopMsgStr, err);
 	}
 	RefleshStatusLine(cinfo);
 
@@ -510,7 +509,7 @@ void USEFASTCALL SetPopMsg(PPC_APPINFO *cinfo,ERRORCODE err,const TCHAR *msg)
 		#if DRAWMODE == DRAWMODE_D3D
 		if ( err == POPMSG_PROGRESSBUSYMSG ){
 			if ( cinfo->PopMsgFlag & PMF_BUSY ){
-				DxSetMotion(cinfo->DxDraw,DXMOTION_Busy);
+				DxSetMotion(cinfo->DxDraw, DXMOTION_Busy);
 			}
 			cinfo->PopMsgFlag = PMF_PROGRESS | PMF_BUSY;
 		}else
@@ -530,37 +529,37 @@ void USEFASTCALL SetPopMsg(PPC_APPINFO *cinfo,ERRORCODE err,const TCHAR *msg)
 		}
 
 		if ( X_evoc == 1 ){
-			PPxCommonExtCommand(K_FLASHWINDOW,(WPARAM)cinfo->info.hWnd);
-			setflag(cinfo->PopMsgFlag,PMF_FLASH);
+			PPxCommonExtCommand(K_FLASHWINDOW, (WPARAM)cinfo->info.hWnd);
+			setflag(cinfo->PopMsgFlag, PMF_FLASH);
 		}
-		XMessage(NULL,NULL,XM_ETCl,cinfo->PopMsgStr);
+		XMessage(NULL, NULL, XM_ETCl, cinfo->PopMsgStr);
 	}
 }
 // メッセージ表示の停止 -------------------------------------------------------
-void StopPopMsg(PPC_APPINFO *cinfo,int mask)
+void StopPopMsg(PPC_APPINFO *cinfo, int mask)
 {
 	if ( cinfo->PopMsgFlag & mask & PMF_FLASH ){ // 優先順位考慮不要
-		PPxCommonExtCommand(K_STOPFLASHWINDOW,(WPARAM)cinfo->info.hWnd);
-		resetflag(cinfo->PopMsgFlag,PMF_FLASH);
+		PPxCommonExtCommand(K_STOPFLASHWINDOW, (WPARAM)cinfo->info.hWnd);
+		resetflag(cinfo->PopMsgFlag, PMF_FLASH);
 	}
 	if ( cinfo->PopMsgFlag & PMF_DISPLAYMASK ){
 		#if DRAWMODE == DRAWMODE_D3D
 			if ( cinfo->PopMsgFlag & mask & PMF_BUSY ){ // 優先順位考慮不要
-				DxSetMotion(cinfo->DxDraw,DXMOTION_StopBusy);
+				DxSetMotion(cinfo->DxDraw, DXMOTION_StopBusy);
 			}
 		#endif
-		resetflag(cinfo->PopMsgFlag,mask);
+		resetflag(cinfo->PopMsgFlag, mask);
 		// 表示が無くなるので描画する
 		if ( !(cinfo->PopMsgFlag & PMF_DISPLAYMASK) ){
-			setflag(cinfo->DrawTargetFlags,DRAWT_STATUSLINE);
+			setflag(cinfo->DrawTargetFlags, DRAWT_STATUSLINE);
 			RefleshStatusLine(cinfo);
 		}
 	}
 }
 
-BOOL WriteReport(const TCHAR *title,const TCHAR *name,ERRORCODE errcode)
+BOOL WriteReport(const TCHAR *title, const TCHAR *name, ERRORCODE errcode)
 {
-	TCHAR buf[CMDLINESIZE],*p;
+	TCHAR buf[CMDLINESIZE], *p;
 
 	if ( Combo.Report.hWnd == NULL ){
 		if ( hCommonLog == NULL ) return FALSE;
@@ -572,11 +571,11 @@ BOOL WriteReport(const TCHAR *title,const TCHAR *name,ERRORCODE errcode)
 	p = buf;
 
 	if ( title != NULL ){
-		tstrcpy(p,title);
+		tstrcpy(p, title);
 		p += tstrlen(p);
 	}
 	if ( name != NULL ){
-		tstrcpy(p,name);
+		tstrcpy(p, name);
 		p += tstrlen(p);
 		if ( errcode != NO_ERROR ){
 			*p++ = ' ';
@@ -587,7 +586,7 @@ BOOL WriteReport(const TCHAR *title,const TCHAR *name,ERRORCODE errcode)
 	*p = '\0';
 	if ( errcode != NO_ERROR ){
 		if ( errcode == REPORT_GETERROR ) errcode = GetLastError();
-		PPErrorMsg(p,errcode);
+		PPErrorMsg(p, errcode);
 	}
 	SetReportText(buf);
 	return TRUE;
@@ -595,13 +594,13 @@ BOOL WriteReport(const TCHAR *title,const TCHAR *name,ERRORCODE errcode)
 
 // PIDL list をまとめて解放 ---------------------------------------------------
 #if !NODLL
-void FreePIDLS(LPITEMIDLIST *pidls,int cnt)
+void FreePIDLS(LPITEMIDLIST *pidls, int cnt)
 {
 	LPMALLOC pMA;
 
 	if ( FAILED(SHGetMalloc(&pMA)) ) return;
 	while ( cnt != 0 ){
-		pMA->lpVtbl->Free(pMA,*pidls);
+		pMA->lpVtbl->Free(pMA, *pidls);
 		pidls++;
 		cnt--;
 	}
@@ -948,7 +947,7 @@ TCHAR *GetFilesSHN(PPC_APPINFO *cinfo, TCHAR *nameheap)
 
 TCHAR *GetFiles(PPC_APPINFO *cinfo, int flags)
 {
-	TCHAR *names, *p, *next;
+	TCHAR *names, *namep, *next;
 	TCHAR buf[VFPS], dir[VFPS];
 	PPXCMDENUMSTRUCT work;
 										// 保存用のメモリを確保する
@@ -957,7 +956,7 @@ TCHAR *GetFiles(PPC_APPINFO *cinfo, int flags)
 		xmessage(XM_FaERRd, T("GetFiles - AllocError"));
 		return NULL;
 	}
-	p = names;
+	namep = names;
 	next = names + GFSIZE - VFPS;
 	if ( flags & GETFILES_DATAINDEX ) next -= sizeof(ENTRYDATAOFFSET);
 
@@ -968,45 +967,45 @@ TCHAR *GetFiles(PPC_APPINFO *cinfo, int flags)
 	PPcEnumInfoFunc(PPXCMDID_STARTENUM, buf, &work);
 	if ( flags & GETFILES_FULLPATH ) PPcEnumInfoFunc('1', dir, &work);
 	if ( flags & GETFILES_SETPATHITEM ){
-		PPcEnumInfoFunc('1', p, &work);
-		p += tstrlen(p) + 1;
+		PPcEnumInfoFunc('1', namep, &work);
+		namep += tstrlen(namep) + 1;
 	}
 	for( ; ; ){
 		PPcEnumInfoFunc('C', buf, &work);
 		if ( *buf == '\0' ) break;
 		if ( IsParentDir(buf) == FALSE ){
-			if ( p >= next ){				// メモリの追加
-				p = GetFilesNextAlloc(p, &names, &next);
+			if ( namep >= next ){				// メモリの追加
+				namep = GetFilesNextAlloc(namep, &names, &next);
 				if ( names == NULL ) break;
 			}
 			if ( flags & GETFILES_FULLPATH ){
 				#pragma warning(suppress: 6054) // PPcEnumInfoFunc('1', dir, &work);
-				VFSFullPath(p, buf, dir);
+				VFSFullPath(namep, buf, dir);
 				if ( flags & GETFILES_REALPATH ){
 					int mode;
 
-					if ( VFSGetDriveType(p, &mode, NULL) != NULL ){
+					if ( VFSGetDriveType(namep, &mode, NULL) != NULL ){
 						if ( (mode <= VFSPT_SHN_DESK) || (mode == VFSPT_SHELLSCHEME) ){
-							VFSGetRealPath(NULL, p, p);
+							VFSGetRealPath(NULL, namep, namep);
 						}
 					}
 				}
 			}else{
-				tstrcpy(p, buf);
+				tstrcpy(namep, buf);
 			}
-			p += tstrlen(p) + 1;
+			namep += tstrlen(namep) + 1;
 			if ( flags & GETFILES_DATAINDEX ){
-				ENTRYDATAOFFSET *ep = (ENTRYDATAOFFSET *)p;
+				ENTRYDATAOFFSET *ep = (ENTRYDATAOFFSET *)namep;
 				*ep++ = (work.enumID == CELLENUMID_ONCURSOR) ?
 					CELt(cinfo->e.cellN) : (ENTRYDATAOFFSET)work.enumID;
-				p = (TCHAR *)ep;
+				namep = (TCHAR *)ep;
 			}
 		}
 		if ( PPcEnumInfoFunc(PPXCMDID_NEXTENUM, buf, &work) == 0 ) break;
 	}
 	PPcEnumInfoFunc(PPXCMDID_ENDENUM, buf, &work);
-	*p++ = '\0';
-	*p = '\0';
+	*namep = '\0';
+	*(namep + 1) = '\0';
 
 	if ( (names != NULL) && (*names == '\0') ){
 		HeapFree(hProcessHeap, 0, names);
@@ -1017,7 +1016,7 @@ TCHAR *GetFiles(PPC_APPINFO *cinfo, int flags)
 
 TCHAR *GetFilesForListfile(PPC_APPINFO *cinfo)
 {
-	TCHAR *names, *p, *next, *top;
+	TCHAR *names, *namep, *next, *top;
 	TCHAR buf[VFPS], dir[VFPS];
 	PPXCMDENUMSTRUCT work;
 	int baselen;
@@ -1027,7 +1026,7 @@ TCHAR *GetFilesForListfile(PPC_APPINFO *cinfo)
 		xmessage(XM_FaERRd, T("GetFiles - AllocError"));
 		return NULL;
 	}
-	p = names;
+	namep = names;
 	next = names + GFSIZE - VFPS;
 
 	PPcEnumInfoFunc(PPXCMDID_STARTENUM, buf, &work);
@@ -1047,18 +1046,18 @@ TCHAR *GetFilesForListfile(PPC_APPINFO *cinfo)
 			if ( baselen && ( memcmp(buf, dir, baselen * sizeof(TCHAR)) == 0 ) ){
 				top += baselen;
 			}
-			if ( p >= next ){				// メモリの追加
-				p = GetFilesNextAlloc(p, &names, &next);
+			if ( namep >= next ){				// メモリの追加
+				namep = GetFilesNextAlloc(namep, &names, &next);
 				if ( names == NULL ) break;
 			}
-			tstrcpy(p, top);
-			p += tstrlen(p) + 1;
+			tstrcpy(namep, top);
+			namep += tstrlen(namep) + 1;
 		}
 		if ( PPcEnumInfoFunc(PPXCMDID_NEXTENUM, buf, &work) == 0 ) break;
 	}
 	PPcEnumInfoFunc(PPXCMDID_ENDENUM, buf, &work);
-	*p++ = '\0';
-	*p = '\0';
+	*namep = '\0';
+	*(namep + 1) = '\0';
 	return names;
 }
 
@@ -1407,9 +1406,9 @@ HANDLE USEFASTCALL CreateHandleForListFile(PPC_APPINFO *cinfo, const TCHAR *file
 	return hFile;
 }
 
-BOOL WriteLFcell(HANDLE hFile, PPC_APPINFO *cinfo, ENTRYCELL *cell, int mode)
+BOOL WriteLFcell(HANDLE hFile, PPC_APPINFO *cinfo, ENTRYCELL *cell, int flags)
 {
-	TCHAR buf[VFPS + 900], *p, *dest;
+	TCHAR buf[VFPS + CMDLINESIZE], *dest;
 	DWORD tmp;
 	int len;
 
@@ -1419,7 +1418,7 @@ BOOL WriteLFcell(HANDLE hFile, PPC_APPINFO *cinfo, ENTRYCELL *cell, int mode)
 	memcpy(dest, cell->f.cFileName, len);
 	dest += len / sizeof(TCHAR);
 
-	if ( mode & WLFC_NAMEONLY ){
+	if ( flags & WLFC_NAMEONLY ){
 		*dest++ = '\"';
 	}else{
 		dest += wsprintf(dest, ListFileFormatStr,
@@ -1433,10 +1432,30 @@ BOOL WriteLFcell(HANDLE hFile, PPC_APPINFO *cinfo, ENTRYCELL *cell, int mode)
 				cell->f.nFileSizeHigh, cell->f.nFileSizeLow);
 	}
 
-	if ( mode & WLFC_OPTIONSTR ){
-		if ( (mode == WLF_WITHMARK) && IsCellPtrMarked(cell) ){
-			CopyAndSkipString(dest, LFMARK_STR);
-		}
+	if ( (flags & WLFC_WITHMARK) && IsCellPtrMarked(cell) ){
+		CopyAndSkipString(dest, LFMARK_STR);
+	}
+
+	if ( (cell->comment != EC_NOCOMMENT) && (flags & WLFC_COMMENT) ){
+		TCHAR *ptr;
+
+		ptr = ThPointerT(&cinfo->EntryComments, cell->comment);
+		len = tstrlen32(ptr);
+		*dest++ = ',';
+		*dest++ = 'T';
+		*dest++ = ':';
+		*dest++ = '\"';
+		if ( len > (CMDLINESIZE - 100) ) len = CMDLINESIZE - 100;
+		memcpy(dest, ptr, TSTROFF(len));
+		dest[len] = '\0';
+		while( (ptr = tstrchr(dest, '\"')) != NULL ) *ptr = '`';
+		while( (ptr = tstrchr(dest, '\r')) != NULL ) *ptr = '/';
+		while( (ptr = tstrchr(dest, '\n')) != NULL ) *ptr = ' ';
+		dest += len;
+		*dest++ = '\"';
+	}
+
+	if ( flags & WLFC_OPTIONSTR ){
 		CopyAndSkipString(dest, LFSIZE_STR);
 		FormatNumber(dest, 0, 26, cell->f.nFileSizeLow, cell->f.nFileSizeHigh);
 		dest += tstrlen(dest);
@@ -1448,20 +1467,6 @@ BOOL WriteLFcell(HANDLE hFile, PPC_APPINFO *cinfo, ENTRYCELL *cell, int mode)
 		dest += CnvDateTime(dest, NULL, NULL, &cell->f.ftLastAccessTime);
 	}
 
-	if ( (cell->comment != EC_NOCOMMENT) && (mode & WLFC_COMMENT) ){
-		p = ThPointerT(&cinfo->EntryComments, cell->comment);
-		len = tstrlen32(p);
-		*dest++ = ',';
-		*dest++ = 'T';
-		*dest++ = ':';
-		if ( len > 800 ) len = 800;
-		memcpy(dest, p, TSTROFF(len));
-		dest[len] = '\0';
-		dest += len;
-		while( (p = tstrchr(dest, '\"')) != NULL ) *p = '`';
-		while( (p = tstrchr(dest, '\r')) != NULL ) *p = '/';
-		while( (p = tstrchr(dest, '\n')) != NULL ) *p = ' ';
-	}
 	*dest++ = '\r';
 	*dest++ = '\n';
 	return WriteFile(hFile, buf, TSTROFF32(dest - buf), &tmp, NULL);
@@ -1491,15 +1496,12 @@ BOOL WriteListFileForRaw(PPC_APPINFO *cinfo, const TCHAR *filename)
 }
 
 // ユーザ向けListFileを出力…表示エントリ順で出力
-void WriteListFileForUser(PPC_APPINFO *cinfo, const TCHAR *filename, int mode)
+void WriteListFileForUser(PPC_APPINFO *cinfo, const TCHAR *filename, int wlfc_flags)
 {
 	HANDLE hFile;
-	int i, wlfc = WLFC_DETAIL | WLFC_OPTIONSTR | WLFC_COMMENT;
+	int i;
 
-	if ( mode == WLF_NAME ) wlfc = WLFC_NAMEONLY;
-	if ( mode == WLF_WITHMARK ) setflag(wlfc, WLFC_WITHMARK);
-
-	hFile = CreateHandleForListFile(cinfo, filename, wlfc);
+	hFile = CreateHandleForListFile(cinfo, filename, wlfc_flags);
 	if ( hFile == NULL ){
 		SetPopMsg(cinfo, POPMSG_GETLASTERROR, NULL);
 		return;
@@ -1509,11 +1511,14 @@ void WriteListFileForUser(PPC_APPINFO *cinfo, const TCHAR *filename, int mode)
 		ENTRYCELL *cell;
 
 		cell = &CEL(i);
-		if ( cell->type <= ECT_NOFILEDIRMAX ) continue;
-		if ( (mode == WLF_MARKEDENTRY) && !IsCellPtrMarked(cell) ){
+		if ( cell->type <= ECT_NOFILEDIRMAX ){
+			if ( !(wlfc_flags & WLFC_SYSMSG) || (cell->type != ECT_SYSMSG) ) continue;
+			cell->f.dwFileAttributes = FILE_ATTRIBUTEX_MESSAGE;
+		}
+		if ( (wlfc_flags & WLFC_MARKEDONLY) && !IsCellPtrMarked(cell) ){
 			continue;
 		}
-		if ( WriteLFcell(hFile, cinfo, cell, wlfc) == FALSE ) break;
+		if ( WriteLFcell(hFile, cinfo, cell, wlfc_flags) == FALSE ) break;
 	}
 	CloseHandle(hFile);
 	return;
@@ -2402,7 +2407,7 @@ void USEFASTCALL PeekLoop(void)
 UTCHAR GetCommandParameter(LPCTSTR *commandline, TCHAR *param, size_t paramlen)
 {
 	const TCHAR *src;
-	TCHAR *dest,*destmax;
+	TCHAR *dest, *destmax;
 	UTCHAR firstcode, code;
 
 	firstcode = SkipSpace(commandline);
@@ -2431,6 +2436,43 @@ UTCHAR GetCommandParameter(LPCTSTR *commandline, TCHAR *param, size_t paramlen)
 	return firstcode;
 }
 #endif
+
+UTCHAR GetCommandParameterDual(LPCTSTR *commandline, TCHAR *param, size_t paramlen)
+{
+	const TCHAR *src;
+	TCHAR *dest, *destmax;
+	UTCHAR firstcode, code;
+
+	firstcode = SkipSpace(commandline);
+	if ( (firstcode == '\0') || (firstcode == ',') ){ // パラメータ無し
+		*param = '\0';
+		return firstcode;
+	}
+	if ( firstcode == '\"' ) return GetLineParam(commandline, param);
+	src = *commandline + 1;
+	dest = param;
+	destmax = dest + paramlen - 1;
+	code = firstcode;
+	for ( ;; ){
+		*dest++ = code;
+		code = *src;
+		if ( code == ' ' ){
+			if ( tstrchr(src, ',') == NULL ) break;
+			src++;
+			continue;
+		}
+		if ( (dest >= destmax) || (code == ',') ||
+			 ((code < ' ') && ((code == '\0') || (code == '\t') ||
+							   (code == '\r') || (code == '\n'))) ){
+			break;
+		}
+		src++;
+	}
+	while ( (dest > param) && (*(dest - 1) == ' ') ) dest--;
+	*dest = '\0';
+	*commandline = src;
+	return firstcode;
+}
 
 void PPcChangeDirectory(PPC_APPINFO *cinfo, const TCHAR *newpath, DWORD flags)
 {
@@ -2521,7 +2563,7 @@ void WINAPI DummyNotifyWinEvent(DWORD event, HWND hwnd, LONG idObject, LONG idCh
 void USEFASTCALL CreateNewPane(const TCHAR *param)
 {
 	if ( (param == NULL) || (*param == '\0') ){
-		CallPPcParam(Combo.hWnd,T("-pane"));
+		CallPPcParam(Combo.hWnd, T("-pane"));
 	}else{
 		TCHAR buf[CMDLINESIZE];
 

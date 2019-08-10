@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------------------
-	Paper Plane xUI									Å` PPc,PPvã§óp Å`
+	Paper Plane xUI									Å` PPc, PPvã§óp Å`
 -----------------------------------------------------------------------------*/
 #ifdef __cplusplus
 extern "C" {
@@ -57,50 +57,50 @@ typedef struct {
 	int item;		// å¬êî
 	char **data;	// ì‡óe
 } HIDDENMENUS;
-extern void LoadHiddenMenu(HIDDENMENUS *hms,const TCHAR *name,HANDLE heap,COLORREF mes);
+extern void LoadHiddenMenu(HIDDENMENUS *hms, const TCHAR *name, HANDLE heap, COLORREF mes);
 extern const TCHAR DwmapiName[];
 extern HMODULE hDwmapi;
 
 extern BOOL X_awhel;
 
-extern void AutoColor(const TCHAR *str,COLORREF *clr,int def);
+extern void AutoColor(const TCHAR *str, COLORREF *clr, int def);
 // ï∂éöóÒëÄçÏ
 extern TCHAR USEFASTCALL upper(TCHAR c);
-extern void GetClipboardTypeName(TCHAR *str,UINT cliptype);
+extern void GetClipboardTypeName(TCHAR *str, UINT cliptype);
 // É}ÉEÉX
 extern const TCHAR PPxMouseButtonChar[];
 extern int CheckXMouseButton(WPARAM wParam);
 extern void PPxInitMouseButton(MOUSESTATE *ms);
 extern void PPxCancelMouseButton(MOUSESTATE *ms);
-extern int PPxGetMouseButtonDownInfo(MOUSESTATE *ms,HWND hWnd,DWORD button,LPARAM lParam);
-extern int PPxDownMouseButton(MOUSESTATE *ms,HWND hWnd,WPARAM wParam,LPARAM lParam);
-extern int PPxUpMouseButton(MOUSESTATE *ms,WPARAM wParam);
-extern int PPxDoubleClickMouseButton(MOUSESTATE *ms,HWND hWnd,WPARAM wParam,LPARAM lParam);
-extern BOOL PPxMoveMouse(MOUSESTATE *ms,HWND hWnd,LPARAM lParam);
-extern BOOL PPxCheckMouseGesture(MOUSESTATE *stat,TCHAR *textbuf,const TCHAR *keyname);
+extern int PPxGetMouseButtonDownInfo(MOUSESTATE *ms, HWND hWnd, DWORD button, LPARAM lParam);
+extern int PPxDownMouseButton(MOUSESTATE *ms, HWND hWnd, WPARAM wParam, LPARAM lParam);
+extern int PPxUpMouseButton(MOUSESTATE *ms, WPARAM wParam);
+extern int PPxDoubleClickMouseButton(MOUSESTATE *ms, HWND hWnd, WPARAM wParam, LPARAM lParam);
+extern BOOL PPxMoveMouse(MOUSESTATE *ms, HWND hWnd, LPARAM lParam);
+extern BOOL PPxCheckMouseGesture(MOUSESTATE *stat, TCHAR *textbuf, const TCHAR *keyname);
 
-extern int PPxWheelMouse(MOUSESTATE *ms,HWND hWnd,WPARAM wParam,LPARAM lParam);
+extern int PPxWheelMouse(MOUSESTATE *ms, HWND hWnd, WPARAM wParam, LPARAM lParam);
 // ÉLÅ[ì¸óÕ
 extern WORD FixCharKeycode(WORD key);
 
 // îwåiâÊëúèàóù
-extern void LoadWallpaper(BGSTRUCT *bg,HWND hWnd,const TCHAR *regid);
+extern void LoadWallpaper(BGSTRUCT *bg, HWND hWnd, const TCHAR *regid);
 extern void UnloadWallpaper(BGSTRUCT *bg);
-extern void DrawWallPaper(DIRECTXARG(DXDRAWSTRUCT *DxDraw) BGSTRUCT *bg,HWND hWnd,PAINTSTRUCT *ps,int Areax);
+extern void DrawWallPaper(DIRECTXARG(DXDRAWSTRUCT *DxDraw) BGSTRUCT *bg, HWND hWnd, PAINTSTRUCT *ps, int Areax);
 
-extern void InitOffScreen(BGSTRUCT *bg,HDC hWndDC,SIZE *WndSize);
-extern void OffScreenToScreen(BGSTRUCT *bg,HWND hWnd,HDC hWndDC,RECT *WndRect,SIZE *WndSize);
+extern void InitOffScreen(BGSTRUCT *bg, HDC hWndDC, SIZE *WndSize);
+extern void OffScreenToScreen(BGSTRUCT *bg, HWND hWnd, HDC hWndDC, RECT *WndRect, SIZE *WndSize);
 extern void FreeOffScreen(BGSTRUCT *bg);
 
-extern int PreviewCommand(BGSTRUCT *bg,const TCHAR *param,const TCHAR *path);
+extern int PreviewCommand(BGSTRUCT *bg, const TCHAR *param, const TCHAR *path);
 extern DWORD CalcBmpHeaderSize(BITMAPINFOHEADER *dumpdata);
 
 // ÉÅÉjÉÖÅ[
-extern void USEFASTCALL AppendMenuString(HMENU hMenu,UINT id,const TCHAR *string);
-extern void USEFASTCALL AppendMenuCheckString(HMENU hMenu,UINT id,const TCHAR *string,BOOL check);
+extern void USEFASTCALL AppendMenuString(HMENU hMenu, UINT id, const TCHAR *string);
+extern void USEFASTCALL AppendMenuCheckString(HMENU hMenu, UINT id, const TCHAR *string, BOOL check);
 
 // FillRect íuÇ´ä∑Ç¶
-extern void FillBox(HDC hDC,const RECT *box,HBRUSH hbr);
+extern void FillBox(HDC hDC, const RECT *box, HBRUSH hbr);
 
 extern BOOL GetAndFixTextMetrics(HDC hDC, TEXTMETRIC *tm);
 

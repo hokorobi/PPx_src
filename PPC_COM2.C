@@ -23,6 +23,7 @@ const TCHAR StrDsetDefault[] = MES_DSHO;
 const TCHAR StrDsetThisPath[] = MES_DSTP;
 const TCHAR StrDsetThisBranch[] = MES_DSTL;
 const TCHAR StrDsetArchive[] = MES_DSTA;
+const TCHAR StrDsetListfile[] = MES_DSTF;
 const TCHAR StrDsetPathSeparate[] = MES_DSTS;
 const TCHAR StrDsetTemporality[] = MES_DSTE;
 const TCHAR StrDsetDirmode[] = MES_DSTD;
@@ -116,7 +117,7 @@ const TCHAR StrInvokeExplorer3[] = T("P"); // Ver 6.1以上(Win7以降)
 const BYTE DescendingSortTable[MAXSORTITEM + 1] = {
 	8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7, 16, 18, 17, 19, 21, 20, 23, 22};
 
-XC_SORT tempxc = {{{0, -1, -1, 0x7f}}, 0x1f, NORM_IGNORECASE};
+XC_SORT nosort_xc = {{{-1, -1, -1, 0x7f}}, FILEATTRMASK_DIR_FILES, SORTE_DEFAULT_VALUE};
 
 struct DirOptionMenuDataStruct {
 	const TCHAR *CommandName;
@@ -410,8 +411,8 @@ void LoadLs(const TCHAR *path, LOADSETTINGS *ls)
 	ls->dset.flags = ls->dset.deflags = 0;
 	ls->dset.infoicon = ls->dset.cellicon = DSETI_DEFAULT;
 	ls->dset.sort.mode.block = -1;
-	ls->dset.sort.atr = 0x1f;
-	ls->dset.sort.option = NORM_IGNORECASE;
+	ls->dset.sort.atr = FILEATTRMASK_DIR_FILES;
+	ls->dset.sort.option = SORTE_DEFAULT_VALUE;
 	ls->disp[0] = '\0';
 	GetCustTable(T("XC_dset"), path, ls, sizeof(LOADSETTINGS));
 }
@@ -438,7 +439,7 @@ void SetNewXdir(const TCHAR *path, const TCHAR *header, const TCHAR *param)
 	size_t len;
 	LOADSETTINGS ls;
 
-	if ( path == NULL ) return; // MaskEntry(～,NULL) のとき用
+	if ( path == NULL ) return; // MaskEntry(～, NULL) のとき用
 	len = TSTRLENGTH(header);
 	LoadLs(path, &ls);
 	tstrcpy(src, ls.disp);
@@ -528,6 +529,8 @@ void GetSetPath(PPC_APPINFO *cinfo, TCHAR *setpath, int mode, int offset, HMENU 
 		CatPath(setpath, cinfo->path, NilStr);
 	} else if ( mode == (offset + DSMD_ARCHIVE) ){
 		tstrcpy(setpath, StrArchiveMode);
+	} else if ( mode == (offset + DSMD_LISTFILE) ){
+		tstrcpy(setpath, StrListfileMode);
 	} else{	// DSMD_PATHL
 		GetMenuString(hMenu, offset + DSMD_PATH_BRANCH, setpath, VFPS, MF_BYCOMMAND);
 		if ( setpath[0] == '\t' ){
@@ -558,10 +561,11 @@ void LoadSortOpt(LPCTSTR *param, XC_SORT *xc)
 	*param = p;
 }
 
+// 現在使用中のソート項目をチェック
 void SortMenuCheck(HMENU hMenu, const TCHAR *str, int indexmax, XC_SORT *xc, int descending_sort)
 {
 	MENUITEMINFO minfo;
-	int index = CRID_SORT, checkindex = 0;
+	int index = CRID_SORT, checkindex = 0, detailindex = 0;
 	XC_SORT des_xc;
 	XC_SORT tmpxc;
 
@@ -574,13 +578,16 @@ void SortMenuCheck(HMENU hMenu, const TCHAR *str, int indexmax, XC_SORT *xc, int
 	minfo.cbSize = sizeof(minfo);
 
 	for ( ; index < indexmax; str += tstrlen(str) + 1, index++ ){
-		if ( *str == '\0' ) continue;
+		if ( *str == '\0' ){
+			detailindex = index;
+			continue;
+		}
 		if ( *str == '\x1' ){
 			str += TSIZEOF(MENUNAMEID);
 			index--;
 			continue;
 		}
-		if ( (*str == 'a') || (*str == 'd') ){
+		if ( (*str == 'a') || (*str == 'd') ){ // ascending / descending指定
 			minfo.fMask = MIIM_STATE | MIIM_ID;
 			minfo.fState = descending_sort ? (MFS_ENABLED | MFS_CHECKED) : MFS_ENABLED;
 			minfo.wID = CRID_SORT_DESCENDING;
@@ -591,7 +598,7 @@ void SortMenuCheck(HMENU hMenu, const TCHAR *str, int indexmax, XC_SORT *xc, int
 			// ↓ID 変更後はここで調整。
 			SetMenuItemInfo(hMenu, minfo.wID, MF_BYCOMMAND, &minfo);
 			// ID 変更前は後ろのSetMenuItemInfoで調整。
-		} else{
+		} else{ // 通常のソート指定
 			minfo.fMask = MIIM_STATE;
 			LoadSortOpt(&str, &tmpxc);
 			if ( (memcmp(xc, &tmpxc, sizeof(XC_SORT)) == 0) ||
@@ -604,11 +611,11 @@ void SortMenuCheck(HMENU hMenu, const TCHAR *str, int indexmax, XC_SORT *xc, int
 		}
 		SetMenuItemInfo(hMenu, index, MF_BYCOMMAND, &minfo);
 	}
-	if ( checkindex == 0 ){
+	if ( (checkindex == 0) && (xc->mode.dat[0] >= 0) && (detailindex != 0) ){
 		minfo.fMask = MIIM_STATE;
 		minfo.fState = MFS_ENABLED | MFS_CHECKED;
 
-		SetMenuItemInfo(hMenu, CRID_SORT_EDIT, MF_BYCOMMAND, &minfo);
+		SetMenuItemInfo(hMenu, detailindex, MF_BYCOMMAND, &minfo);
 	}
 }
 
@@ -697,6 +704,15 @@ int FindSortSetting(PPC_APPINFO *cinfo, TCHAR *findpath)
 			mode = CRID_SORT_ARCHIVE;
 		}
 	}
+	// Listfile
+	if ( cinfo->e.Dtype.mode == VFSDT_LFILE ){
+		ls.dset.sort.mode.dat[0] = -1;
+		LoadSettingMain(&ls, StrListfileMode);
+		if ( ls.dset.sort.mode.dat[0] >= 0 ){
+			tstrcpy(findpath, StrListfileMode);
+			mode = CRID_SORT_LISTFILE;
+		}
+	}
 	return mode;
 }
 
@@ -720,7 +736,9 @@ HMENU AddPPcSortMenu(PPC_APPINFO *cinfo, HMENU hMenu, ThSTRUCT *PopupTbl, DWORD 
 		setpath[2] = '\0';
 	}
 	AppendMenuString(hMenu, CRID_SORT_PATH_BRANCH, settab ? setpath : setpath + 1);
-
+	if ( cinfo->e.Dtype.mode == VFSDT_LFILE ){
+		AppendMenuString(hMenu, CRID_SORT_LISTFILE, StrDsetListfile);
+	}
 	if ( (cinfo->e.Dtype.mode == VFSDT_UN) ||
 		(cinfo->e.Dtype.mode == VFSDT_SUSIE) ||
 		(cinfo->e.Dtype.mode == VFSDT_CABFOLDER) ||
@@ -795,6 +813,7 @@ BOOL PPC_SortMenu(PPC_APPINFO *cinfo, XC_SORT *xc, DWORD sortmode)
 	LOADSETTINGS ls;
 	TCHAR setpath[VFPS];
 	BOOL descending_sort = FALSE;
+	XC_SORT tmpxc;
 
 	if ( TinyCheckCellEdit(cinfo) ) return FALSE;
 	ThInit(&PopupTbl);
@@ -802,12 +821,10 @@ BOOL PPC_SortMenu(PPC_APPINFO *cinfo, XC_SORT *xc, DWORD sortmode)
 	if ( sortmode == CRID_SORT_DESCENDING ) descending_sort = 1;
 	hMenu = AddPPcSortMenu(cinfo, NULL, &PopupTbl, &mmmode, &id, sortmode);
 	if ( hMenu != NULL ){
-		XC_SORT tmpxc;
-
 		for ( ; ; ){
 			switch ( mmmode ){ // モード切替
 				case CRID_SORT_TEMP:
-					tmpxc = tempxc;
+					tmpxc = nosort_xc;
 					break;
 				case CRID_SORT_REGID:
 					tmpxc = cinfo->XC_sort;
@@ -819,6 +836,9 @@ BOOL PPC_SortMenu(PPC_APPINFO *cinfo, XC_SORT *xc, DWORD sortmode)
 					GetSetPath(cinfo, setpath, mmmode, CRID_SORTEX, hMenu);
 					LoadLs(setpath, &ls);
 					tmpxc = ls.dset.sort;
+					break;
+				default:
+					tmpxc = *xc;
 					break;
 			}
 			if ( (sortmode >= CRID_SORT) && (sortmode < CRID_SORTEX) ){
@@ -847,6 +867,7 @@ BOOL PPC_SortMenu(PPC_APPINFO *cinfo, XC_SORT *xc, DWORD sortmode)
 		mmmode = sortmode ? CRID_SORT_REGID : CRID_SORT_TEMP;
 		index = CRID_SORT;	// 登録メニューがないので詳細指定を用意しておく
 		ThAddString(&PopupTbl, NilStr);
+		tmpxc = *xc;
 	}
 	while ( index ){
 		GetMenuDataMacro2(p, &PopupTbl, index - CRID_SORT);
@@ -855,11 +876,12 @@ BOOL PPC_SortMenu(PPC_APPINFO *cinfo, XC_SORT *xc, DWORD sortmode)
 			PPCSORTDIALOGPARAM psdp;
 
 			psdp.cinfo = cinfo;
-			psdp.xc = xc;
+			psdp.xc = &tmpxc;
 			if ( PPxDialogBoxParam(hInst, MAKEINTRESOURCE(IDD_SORT),
 				cinfo->info.hWnd, SortDlgBox, (LPARAM)&psdp) <= 0 ){
 				break;
 			}
+			*xc = tmpxc;
 		} else{
 			char modedat;
 			LoadSortOpt(&p, xc);
@@ -947,7 +969,7 @@ ERRORCODE MarkEntry(PPC_APPINFO *cinfo, const TCHAR *wildcard, int mode)
 	if ( TinyCheckCellEdit(cinfo) ) return ERROR_PATH_BUSY;
 
 	SetExtParam(wildcard, buf, TSIZEOF(buf));
-	cinfo->MarkMask = 0x1f;
+	cinfo->MarkMask = MARKMASK_DIRFILE;
 	DirMask = MakeFN_REGEXP(&fn, buf);
 	if ( DirMask & REGEXPF_ERROR ) return ERROR_INVALID_PARAMETER;
 	DirMask = DirMask ? 0 : FILE_ATTRIBUTE_DIRECTORY;
@@ -1054,7 +1076,7 @@ void PPC_Tree(PPC_APPINFO *cinfo, int mode)
 		(cinfo->XC_tree.width > (cinfo->BoxEntries.right - 8))) ){
 		cinfo->XC_tree.width = cinfo->BoxEntries.right / 3;
 	}
-	// pts.typename を取得する (mode,widthは使わない)
+	// pts.typename を取得する (mode, widthは使わない)
 	pts.name[0] = '\0';
 	GetCustTable(T("XC_tree"), cinfo->RegCID + 1, &pts, sizeof(pts));
 
@@ -1093,7 +1115,7 @@ void PPC_View(PPC_APPINFO *cinfo)
 			PPXH_PATH, PPXH_PATH) <= 0 ){
 			return;
 		}
-		SetCustTable(T("A_exec"), T("viewer"), exe, TSTRSIZE(exe));
+		SetCustStringTable(T("A_exec"), T("viewer"), exe, 0);
 	}
 	VFSFullPath(buf1, CEL(cinfo->e.cellN).f.cFileName, cinfo->RealPath);
 	wsprintf(buf, T("%s \x22%s\x22"), exe, buf1);
@@ -1337,25 +1359,26 @@ ERRORCODE WriteComment(PPC_APPINFO *cinfo, TCHAR *cname)
 
 
 #if !NODLL
-#define CRCPOLY 0x0EDB88320
+const LONG crc32_half[16] = {
+	0x00000000, 0x1DB71064, 0x3B6E20C8, 0x26D930AC,
+	0x76DC4190, 0x6B6B51F4, 0x4DB26158, 0x5005713C,
+	0xEDB88320, 0xF00F9344, 0xD6D6A3E8, 0xCB61B38C,
+	0x9B64C2B0, 0x86D3D2D4, 0xA00AE278, 0xBDBDF21C
+};
 
 DWORD crc32(const BYTE *bin, DWORD size, DWORD r)
 {
-	DWORD i;
+	DWORD crc = ~r;
+	const BYTE *ptr = bin;
+	BYTE chr;
 
 	if ( size == MAX32 ) size = TSTRLENGTH32((TCHAR *)bin);
-	r = ~r;
-	for ( ; size; size-- ){
-		r ^= (DWORD)(*bin++);
-		for ( i = 0; i < 8; i++ ){
-			if ( r & LSBIT ){
-				r = (r >> 1) ^ CRCPOLY;
-			} else{
-				r >>= 1;
-			}
-		}
+	while ( size-- ){
+		chr = *ptr++;
+		crc = crc32_half[(crc ^  chr      ) & 0x0F] ^ (crc >> 4);
+		crc = crc32_half[(crc ^ (chr >> 4)) & 0x0F] ^ (crc >> 4);
 	}
-	return ~r;
+	return ~crc;
 }
 #endif
 
@@ -1467,6 +1490,191 @@ void SetCommentUseFlag(PPC_APPINFO *cinfo, DWORD CommentID)
 	setflag(cinfo->UseCommentsFlag, (1 << CommentID));
 }
 
+ERRORCODE SetHashComment(PPC_APPINFO *cinfo, COMMENTENUMINFO *cei, int type, DWORD CommentID, TCHAR *files, JOBINFO *jinfo)
+{
+	TCHAR text[VFPS];
+	ERRORCODE result = NO_ERROR;
+	DWORD binsize;
+	BOOL asyncmode = FALSE;
+	DWORD openflag;
+	OVERLAPPED ovr, *ovrptr;
+	int readid, calcid;
+#define data_empty 0
+#define data_read 1
+#define data_have 2
+	int datastate[2];
+	BYTE *binbuf[2], *calcbin;
+	DWORD readsize[2];
+
+	binsize = GetNT_9xValue(1 * MB, 256 * KB); // NT:1Mbytes / 9x:256kbytes
+	if ( OSver.dwMajorVersion >= 6 ){
+		asyncmode = TRUE;
+		ovrptr = &ovr;
+		openflag = FILE_FLAG_SEQUENTIAL_SCAN | FILE_FLAG_OVERLAPPED;
+		binbuf[1] = PPcHeapAlloc(binsize);
+		if ( binbuf[1] == NULL ) return ERROR_NOT_ENOUGH_MEMORY;
+	}else{
+		ovrptr = NULL;
+		openflag = FILE_FLAG_SEQUENTIAL_SCAN;
+		binbuf[1] = NULL;
+	}
+	binbuf[0] = PPcHeapAlloc(binsize);
+	if ( binbuf[0] == NULL ) return ERROR_NOT_ENOUGH_MEMORY;
+	InitCommentEnumInfo(cinfo, cei, CommentID, files);
+	while ( IsTrue(CommentEnum(cei)) ){
+		HANDLE hFile;
+		union {
+			DWORD crc;
+			MD5_CTX md5;
+			SHA1Context sha1;
+			SHA224Context sha224;
+			SHA256Context sha256;
+		} context;
+
+		context.crc = 0;
+		switch ( type ){
+			case CM_MD5:
+				MD5Init(&context.md5);
+				break;
+			case CM_SHA1:
+				SHA1Reset(&context.sha1);
+				break;
+			case CM_SHA224:
+				SHA224Reset(&context.sha224);
+				break;
+			case CM_SHA256:
+				SHA256Reset(&context.sha256);
+				break;
+//			default:
+		}
+
+		readid = calcid = 0;
+		datastate[0] = datastate[1] = data_empty;
+		hFile = CreateFileL(cei->name, GENERIC_READ, FILE_SHARE_READ, NULL,
+				OPEN_EXISTING, openflag, NULL);
+		if ( hFile == INVALID_HANDLE_VALUE ){
+			SetComment_CommentEnum(cei, T("open error"));
+			continue;
+		}
+		if ( asyncmode ){
+			memset(&ovr, 0, sizeof(ovr) ); // 読み込み位置を初期化
+			// 一度に hFile を使用する I/O が１つの時だけ省略可能
+			// ovr.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+		}
+		for ( ; ; ){
+			DWORD calcsize;
+
+			switch ( datastate[readid] ){
+				case data_empty: // 空の状態→読み込み開始
+					if ( IsTrue(ReadFile(hFile, binbuf[readid], binsize, &readsize[readid], ovrptr)) ){
+						datastate[readid] = data_have;
+						if ( asyncmode ){
+							AddDD(ovr.Offset, ovr.OffsetHigh, readsize[readid], 0);
+							readid ^= 1;
+							if ( datastate[readid] == data_empty ) continue;
+							break;
+						}
+					}else if ( asyncmode && (GetLastError() == ERROR_IO_PENDING) ){
+						datastate[readid] = data_read;
+						if ( datastate[readid ^ 1] == data_have ){ // 他の作業ができる
+							break;
+						}
+						continue;
+					}else{
+						SetComment_CommentEnum(cei, T("read error"));
+						goto readbreak;
+					}
+					break;
+
+				case data_read: // 読み込み中→完了しているかを確認
+					// 他の作業ができるなら、待機しない
+					if ( GetOverlappedResult(hFile, &ovr, &readsize[readid],
+						((datastate[readid ^ 1] == data_have) ? FALSE : TRUE)) ){
+						// 読み込み終了
+						datastate[readid] = data_have;
+						AddDD(ovr.Offset, ovr.OffsetHigh, readsize[readid], 0);
+						readid ^= 1;
+						if ( datastate[readid] == data_empty ) continue;
+						break;
+					}else if ( (datastate[readid ^ 1] == data_have) &&
+						(GetLastError() == ERROR_IO_PENDING) ){
+						break; // 未完了、他の作業へ
+					}else{
+						SetComment_CommentEnum(cei, T("read error"));
+						goto readbreak;
+					}
+				// dafault / data_have なら、他の作業をする
+			}
+
+			if ( datastate[calcid] != data_have ){ // データが無いのに来た…異常動作だが、ループさせるように。
+				Sleep(10);
+			}else{
+				calcbin = binbuf[calcid];
+				calcsize = readsize[calcid];
+				switch ( type ){
+					case CM_MD5:
+						MD5Update(&context.md5, calcbin, calcsize);
+						break;
+					case CM_SHA1:
+						SHA1Input(&context.sha1, calcbin, calcsize);
+						break;
+					case CM_SHA224:
+						SHA224Input(&context.sha224, calcbin, calcsize);
+						break;
+					case CM_SHA256:
+						SHA256Input(&context.sha256, calcbin, calcsize);
+						break;
+					default: // CRC32
+						context.crc = crc32(calcbin, calcsize, context.crc);
+						break;
+				}
+				if ( calcsize < binsize ){
+					BYTE digest[128];
+
+					switch ( type ){
+						case CM_MD5:
+							MD5Final(digest, &context.md5);
+							MakeDigestStrings(digest, text, 16, T("MD5:"));
+							break;
+						case CM_SHA1:
+							SHA1Result(&context.sha1, (uint8_t *)&digest);
+							MakeDigestStrings(digest, text, SHA1HashSize, T("SHA1:"));
+							break;
+						case CM_SHA224:
+							SHA224Result(&context.sha224, (uint8_t *)&digest);
+							MakeDigestStrings(digest, text, SHA224HashSize, T("SHA224:"));
+							break;
+						case CM_SHA256:
+							SHA256Result(&context.sha256, (uint8_t *)&digest);
+							MakeDigestStrings(digest, text, SHA256HashSize, T("SHA256:"));
+							break;
+						default: // CRC32
+							wsprintf(text, T("CRC:%08x"), context.crc);
+							break;
+					}
+					SetComment_CommentEnum(cei, text);
+					break;
+				}
+				datastate[calcid] = data_empty;
+				if ( asyncmode ) calcid ^= 1;
+			}
+			if ( IsTrue(BreakCheck(cinfo, jinfo, cei->name)) ){
+				StopEnumMarkCell(cei->work);
+				cei->filesptr = (TCHAR *)NilStr;
+				result = ERROR_CANCELLED;
+				break;
+			}
+		}
+readbreak:
+		CloseHandle(hFile);
+		// if ( asyncmode ) CloseHandle(ovr.hEvent);
+		jinfo->count++;
+	}
+	PPcHeapFree(binbuf[0]);
+	if ( binbuf[1] != NULL ) PPcHeapFree(binbuf[1]);
+	return result;
+}
+
 ERRORCODE CommentsMain(PPC_APPINFO *cinfo, ThSTRUCT *thEcdata, int type, int enummode, DWORD CommentID, TCHAR *files)
 {
 	JOBINFO jinfo;
@@ -1529,102 +1737,7 @@ ERRORCODE CommentsMain(PPC_APPINFO *cinfo, ThSTRUCT *thEcdata, int type, int enu
 		case CM_SHA224:		// SHA-224
 		case CM_SHA256:		// SHA-256
 		case CM_MD5:		// MD5
-			InitCommentEnumInfo(cinfo, &cei, CommentID, files);
-			while ( IsTrue(CommentEnum(&cei)) ){
-				HANDLE hF;
-				union {
-					DWORD crc;
-					MD5_CTX md5;
-					SHA1Context sha1;
-					SHA224Context sha224;
-					SHA256Context sha256;
-				} context;
-
-				context.crc = 0;
-				switch ( type ){
-					case CM_MD5:
-						MD5Init(&context.md5);
-						break;
-					case CM_SHA1:
-						SHA1Reset(&context.sha1);
-						break;
-					case CM_SHA224:
-						SHA224Reset(&context.sha224);
-						break;
-					case CM_SHA256:
-						SHA256Reset(&context.sha256);
-						break;
-//					default:
-				}
-
-				hF = CreateFileL(cei.name, GENERIC_READ, FILE_SHARE_READ, NULL,
-					OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-				if ( hF == INVALID_HANDLE_VALUE ){
-					SetComment_CommentEnum(&cei, T("open error"));
-					continue;
-				}
-				for ( ; ; ){
-					BYTE bin[0x8000];
-					DWORD fsize;
-
-					if ( ReadFile(hF, bin, sizeof bin, &fsize, NULL) == FALSE ){
-						SetComment_CommentEnum(&cei, T("read error"));
-						break;
-					}
-					switch ( type ){
-						case CM_MD5:
-							MD5Update(&context.md5, bin, fsize);
-							break;
-						case CM_SHA1:
-							SHA1Input(&context.sha1, bin, fsize);
-							break;
-						case CM_SHA224:
-							SHA224Input(&context.sha224, bin, fsize);
-							break;
-						case CM_SHA256:
-							SHA256Input(&context.sha256, bin, fsize);
-							break;
-						default: // CRC32
-							context.crc = crc32(bin, fsize, context.crc);
-							break;
-					}
-					if ( fsize < sizeof bin ){
-						BYTE digest[128];
-
-						switch ( type ){
-							case CM_MD5:
-								MD5Final(digest, &context.md5);
-								MakeDigestStrings(digest, text, 16, T("MD5:"));
-								break;
-							case CM_SHA1:
-								SHA1Result(&context.sha1, (uint8_t *)&digest);
-								MakeDigestStrings(digest, text, SHA1HashSize, T("SHA1:"));
-								break;
-							case CM_SHA224:
-								SHA224Result(&context.sha224, (uint8_t *)&digest);
-								MakeDigestStrings(digest, text, SHA224HashSize, T("SHA224:"));
-								break;
-							case CM_SHA256:
-								SHA256Result(&context.sha256, (uint8_t *)&digest);
-								MakeDigestStrings(digest, text, SHA256HashSize, T("SHA256:"));
-								break;
-							default: // CRC32
-								wsprintf(text, T("CRC:%08x"), context.crc);
-								break;
-						}
-						SetComment_CommentEnum(&cei, text);
-						break;
-					}
-					if ( IsTrue(BreakCheck(cinfo, &jinfo, cei.name)) ){
-						StopEnumMarkCell(cei.work);
-						cei.filesptr = (TCHAR *)NilStr;
-						result = ERROR_CANCELLED;
-						break;
-					}
-				}
-				CloseHandle(hF);
-				jinfo.count++;
-			}
+			result = SetHashComment(cinfo, &cei, type, CommentID, files, &jinfo);
 			break;
 
 		case CM_FTYPE:		// FileType
@@ -1848,7 +1961,7 @@ DWORD WINAPI CommentsThread(CommentsThreadInfo *cti)
 }
 
 // *comment コマンド
-ERRORCODE Comments(PPC_APPINFO *cinfo, const TCHAR *param)
+ERRORCODE CommentCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 {
 	HMENU hMenu, hSubMenu;
 	BOOL EnableSubThread = FALSE;
@@ -1957,7 +2070,7 @@ ERRORCODE Comments(PPC_APPINFO *cinfo, const TCHAR *param)
 		hSubMenu = CreatePopupMenu();
 		GetColumnExtMenu(&thEcdata, cinfo->RealPath, hSubMenu, CM_EXT);
 		AppendMenu(hMenu, MF_EPOP, (UINT_PTR)hSubMenu, MessageText(MES_TCLE));
-		#if 0 // 開発中断中。必要になったときに再開する予定
+		#if USEWINHASH // 開発中断中。必要になったときに再開する予定
 		type = CM_WINHASH;
 		hSubMenu = PP_AddMenu(&cinfo->info, cinfo->info.hWnd, NULL,
 			(DWORD *)&type, T("M?winhashlist"), &thEcdata);
@@ -1965,11 +2078,20 @@ ERRORCODE Comments(PPC_APPINFO *cinfo, const TCHAR *param)
 			AppendMenu(hMenu, MF_EPOP, (UINT_PTR)hSubMenu, T("Windows"));
 		}
 		#endif
+
+		if ( CompareHashFromClipBoard(cinfo, 0) != 0 ){
+			AppendMenuString(hMenu, CMP_1HASH, StrMesCMPH);
+		}
 		AppendMenuString(hMenu, CM_CLEAR, MES_TCLR);
 
 		type = PPcTrackPopupMenu(cinfo, hMenu);
 		DestroyMenu(hMenu);
 		if ( type == 0 ) return ERROR_CANCELLED;
+	}
+
+	if ( type == CMP_1HASH ){
+		CompareHashFromClipBoard(cinfo, 1);
+		return NO_ERROR;
 	}
 
 	if ( ((param == NULL) || EnableSubThread) &&
@@ -2137,6 +2259,16 @@ int FindDirSetting(PPC_APPINFO *cinfo, int type, TCHAR *findpath, TCHAR *findite
 			mode = DSMD_ARCHIVE;
 		}
 	}
+	// Listfile
+	if ( cinfo->e.Dtype.mode == VFSDT_LFILE ){
+		itemptr[0] = '\0';
+		LoadSettingMain(&ls, StrListfileMode);
+		if ( itemptr[0] ){
+			tstrcpy(findpath, StrListfileMode);
+			tstrcpy(finditem, itemptr);
+			mode = DSMD_LISTFILE;
+		}
+	}
 	return mode;
 }
 
@@ -2209,16 +2341,20 @@ void AddPPcCellDisplayMenu(PPC_APPINFO *cinfo, HMENU hMenu, int *rmode, DWORD *r
 	if ( mode == CRID_VIEWFORMAT_PATH_BRANCH ){
 		AppendMenuString(hMenu, CRID_VIEWFORMAT_PATH_BRANCH, path);
 	}
-	if ( (cinfo->e.Dtype.mode == VFSDT_UN) ||
-		(cinfo->e.Dtype.mode == VFSDT_SUSIE) ||
-		(cinfo->e.Dtype.mode == VFSDT_CABFOLDER) ||
-		(cinfo->e.Dtype.mode == VFSDT_LZHFOLDER) ||
-		(cinfo->e.Dtype.mode == VFSDT_ZIPFOLDER) ||
-		(cinfo->e.Dtype.mode == VFSDT_LFILE) ){
-		AppendMenuString(hMenu, CRID_VIEWFORMAT_ARCHIVE, StrDsetArchive);
+	if ( (cinfo->e.Dtype.mode == VFSDT_LFILE) ||
+		 (cinfo->e.Dtype.mode == VFSDT_UN) ||
+		 (cinfo->e.Dtype.mode == VFSDT_SUSIE) ||
+		 (cinfo->e.Dtype.mode == VFSDT_CABFOLDER) ||
+		 (cinfo->e.Dtype.mode == VFSDT_LZHFOLDER) ||
+		 (cinfo->e.Dtype.mode == VFSDT_ZIPFOLDER) ){
+		if ( cinfo->e.Dtype.mode == VFSDT_LFILE ){
+			AppendMenuString(hMenu, CRID_VIEWFORMAT_LISTFILE, StrDsetListfile);
+		}else{
+			AppendMenuString(hMenu, CRID_VIEWFORMAT_ARCHIVE, StrDsetArchive);
+		}
 		AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
 		AppendMenuCheckString(hMenu, CRID_VIEWFORMAT_PATHMASK,
-			StrDsetDirmode, cinfo->UseArcPathMask);
+				StrDsetDirmode, cinfo->UseArcPathMask);
 		if ( cinfo->UseArcPathMask == ARCPATHMASK_OFF ){
 			AppendMenuCheckString(hMenu, CRID_VIEWFORMAT_SPLITPATH,
 				StrDsetPathSeparate, cinfo->UseSplitPathName);
@@ -2265,7 +2401,7 @@ ERRORCODE SetCellDisplayFormat(PPC_APPINFO *cinfo, int selectindex)
 				case CRID_VIEWFORMAT_THIS_BRANCH:
 				case CRID_VIEWFORMAT_PATH_BRANCH:
 				case CRID_VIEWFORMAT_ARCHIVE:
-					GetSetPath(cinfo,sname,mode,CRID_VIEWFORMAT,hMenu);
+					GetSetPath(cinfo, sname, mode, CRID_VIEWFORMAT, hMenu);
 					break;
 			}
 			minfo.fMask = MIIM_STATE | MIIM_TYPE;
@@ -2274,20 +2410,20 @@ ERRORCODE SetCellDisplayFormat(PPC_APPINFO *cinfo, int selectindex)
 			Message(sname);
 			for ( index = CRID_VIEWFORMAT ; ; index++ ){
 				minfo.fMask = MIIM_STATE | MIIM_TYPE;
-				if ( GetMenuItemInfo(hMenu,index,MF_BYCOMMAND,&minfo) == FALSE ){
+				if ( GetMenuItemInfo(hMenu, index, MF_BYCOMMAND, &minfo) == FALSE ){
 					break;
 				}
-				if ( tstrcmp(sname,txt) == 0 ){
+				if ( tstrcmp(sname, txt) == 0 ){
 					minfo.fMask = MIIM_STATE;
 					minfo.fState = MFS_ENABLED | MFS_CHECKED;
 
-					SetMenuItemInfo(hMenu,index,MF_BYCOMMAND,&minfo);
+					SetMenuItemInfo(hMenu, index, MF_BYCOMMAND, &minfo);
 					break;
 				}else{
 					if ( minfo.fState & MFS_CHECKED ){
 						minfo.fMask = MIIM_STATE;
 						minfo.fState = MFS_CHECKED;
-						SetMenuItemInfo(hMenu,index,MF_BYCOMMAND,&minfo);
+						SetMenuItemInfo(hMenu, index, MF_BYCOMMAND, &minfo);
 					}
 				}
 			}
@@ -2367,7 +2503,7 @@ ERRORCODE SetCellDisplayFormat(PPC_APPINFO *cinfo, int selectindex)
 			cinfo->UseSplitPathName = FALSE;
 			cinfo->UseArcPathMask = ARCPATHMASK_OFF;
 			cinfo->ArcPathMask[0] = '\0';
-			MaskEntryMain(cinfo,&cinfo->mask,NilStr);
+			MaskEntryMain(cinfo, &cinfo->mask, NilStr);
 */
 			read_entry(cinfo, RENTRY_NOUSEPATHMASK); // 階層無効・再読み込み
 		}
@@ -2432,7 +2568,7 @@ BOOL SetPairPath(PPC_APPINFO *cinfo, const TCHAR *path, const TCHAR *entry)
 		}
 		entry = CEL(cinfo->e.cellN).f.cFileName;
 		if ( *entry == '>' ){
-			const TCHAR *longname = (const TCHAR *)EntryExtData_GetDATAptr(cinfo,DFC_LONGNAME,&CEL(cinfo->e.cellN));
+			const TCHAR *longname = (const TCHAR *)EntryExtData_GetDATAptr(cinfo, DFC_LONGNAME, &CEL(cinfo->e.cellN));
 			if ( longname != NULL ) entry = longname;
 		}
 	}
@@ -2522,9 +2658,17 @@ void SetMag(PPC_APPINFO *cinfo, int offset)
 
 BOOL OpenClipboardCheck(PPC_APPINFO *cinfo)
 {
-	if ( IsTrue(OpenClipboard(cinfo->info.hWnd)) ) return TRUE;
-	SetPopMsg(cinfo, POPMSG_MSG, T("Clipboard open error"));
-	return FALSE;
+	int trycount = 6;
+
+	for (;;){
+		if ( IsTrue(OpenClipboard(cinfo->info.hWnd)) ) return TRUE;
+		if ( --trycount != 0 ) {
+			Sleep(20);
+			continue;
+		}
+		SetPopMsg(cinfo, POPMSG_MSG, T("Clipboard open error"));
+		return FALSE;
+	}
 }
 
 void ClipFiles(PPC_APPINFO *cinfo, DWORD effect, DWORD cliptypes)
@@ -2600,7 +2744,7 @@ void OpenFileWithPPe(PPC_APPINFO *cinfo)
 		}
 		entryname = CEL(cinfo->e.cellN).f.cFileName;
 		if ( *entryname == '>' ){
-			const TCHAR *longname = (const TCHAR *)EntryExtData_GetDATAptr(cinfo,DFC_LONGNAME,&CEL(cinfo->e.cellN));
+			const TCHAR *longname = (const TCHAR *)EntryExtData_GetDATAptr(cinfo, DFC_LONGNAME, &CEL(cinfo->e.cellN));
 			if ( longname != NULL ) entryname = longname;
 		}
 		VFSFullPath(name, (TCHAR *)entryname, path);
@@ -2609,7 +2753,7 @@ void OpenFileWithPPe(PPC_APPINFO *cinfo)
 	if ( cinfo->e.Dtype.mode == VFSDT_SHN ){
 		TCHAR realname[VFPS];
 		if ( IsTrue(VFSGetRealPath(cinfo->info.hWnd, realname, name)) ){
-			tstrcpy(name,realname);
+			tstrcpy(name, realname);
 		}
 	}
 
@@ -2662,7 +2806,7 @@ BOOL MaskEntryMain(PPC_APPINFO *cinfo, XC_MASK *maskorg, const TCHAR *filename)
 	DirMask = ((result & REGEXPF_PATHMASK) || (mask.attr & MASKEXTATTR_DIR)) ?
 		0 : FILE_ATTRIBUTE_DIRECTORY;
 
-	cinfo->MarkMask = 0x1f;
+	cinfo->MarkMask = MARKMASK_DIRFILE;
 	cinfo->e.cellIMax = 0;
 	cinfo->e.RelativeDirs = 0;
 	cinfo->e.Directories = 0;
@@ -2719,6 +2863,7 @@ BOOL MaskEntryMain(PPC_APPINFO *cinfo, XC_MASK *maskorg, const TCHAR *filename)
 			if ( FALSE != TM_check(&cinfo->e.INDEXDATA, sizeof(ENTRYINDEX) * (cinfo->e.cellDataMax + 2)) ){
 				SetDummyCell(&CELdata(cinfo->e.cellDataMax), MessageText(StrNoEntries));
 				setflag(CELdata(cinfo->e.cellDataMax).attr, ECA_PARENT);
+				CELdata(cinfo->e.cellDataMax).f.dwFileAttributes = FILE_ATTRIBUTEX_MESSAGE;
 				CELdata(cinfo->e.cellDataMax).f.nFileSizeLow = ERROR_FILE_NOT_FOUND;
 				CELt(0) = cinfo->e.cellDataMax;
 				cinfo->e.cellIMax++;
@@ -2772,7 +2917,7 @@ ERRORCODE MaskEntry(PPC_APPINFO *cinfo, int mode, const TCHAR *defmask, const TC
 			cinfo->mask = *pfs.mask;
 			SetCustTable(T("XC_mask"), cinfo->RegCID + 1,
 				&cinfo->mask, TSTRSIZE(cinfo->mask.file) + 4);
-		} else{ // DSMD_THIS_PATH,DSMD_THIS_BRANCH,DSMD_PATH_BRANCH,DSMD_ARCHIVE
+		} else{ // DSMD_THIS_PATH, DSMD_THIS_BRANCH, DSMD_PATH_BRANCH, DSMD_ARCHIVE
 			SetNewXdir(path, LOADMASKSTR, pfs.mask->file);
 		}
 		tstrcpy(cinfo->Jfname, pfs.filename);
@@ -3206,7 +3351,7 @@ void SetSyncView(PPC_APPINFO *cinfo, int mode)
 	if ( mode ){
 		if ( mode == 1 ){
 			param[0] = '0';
-			GetCustTable(T("_others"), T("SyncViewID"), param, sizeof(param));
+			GetCustTable(Str_others, T("SyncViewID"), param, sizeof(param));
 			if ( Isalpha(param[0]) ) mode = param[0];
 		}
 
@@ -3527,7 +3672,7 @@ void DivMark(PPC_APPINFO *cinfo)
 {
 	int m, i;
 
-	cinfo->MarkMask = 0xf;
+	cinfo->MarkMask = MARKMASK_FILE;
 	m = !IsCEL_Marked(cinfo->e.cellN);
 	for ( i = 0; i < cinfo->e.cellN; i++ ) CellMark(cinfo, i, 1 - m);
 	for ( ; i < cinfo->e.cellIMax; i++ ) CellMark(cinfo, i, m);
@@ -3738,6 +3883,16 @@ HMENU DirOptionMenu(PPC_APPINFO *cinfo, HMENU hPopupMenu, DWORD *index, ThSTRUCT
 		DirOption_OptCommand(&DOMA, &DirOptionOptCommand_cmd, cmd);
 	}
 	AppendMenuPopString(hPopupMenu, DispDiroptStringList);
+	if ( cinfo->e.Dtype.mode == VFSDT_LFILE ){
+		AppendMenuString(hPopupMenu, CRID_DIROPT_LISTFILE, StrDsetListfile);
+	}
+	if ( (cinfo->e.Dtype.mode == VFSDT_UN) ||
+		(cinfo->e.Dtype.mode == VFSDT_SUSIE) ||
+		(cinfo->e.Dtype.mode == VFSDT_CABFOLDER) ||
+		(cinfo->e.Dtype.mode == VFSDT_LZHFOLDER) ||
+		(cinfo->e.Dtype.mode == VFSDT_ZIPFOLDER) ){
+		AppendMenuString(hPopupMenu, CRID_DIROPT_ARCHIVE, StrDsetArchive);
+	}
 	CheckMenuRadioItem(hPopupMenu, CRID_DIROPT, CRID_DIROPT_MODELAST - 1, CRID_DIROPT + nowmode, MF_BYCOMMAND);
 	return hPopupMenu;
 }

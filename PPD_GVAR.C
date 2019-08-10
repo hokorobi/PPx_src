@@ -4,14 +4,14 @@
 #ifdef GLOBALEXTERN
 	#define GVAR extern
 	#define GPARAM(x)
-	#define GPARAM2(x,y)
+	#define GPARAM2(x, y)
 #else
 	#undef	GVAR
 	#undef	GPARAM
 	#undef GPARAM2
 	#define GVAR
 	#define GPARAM(x) = x
-	#define GPARAM2(x,y) = {x,y}
+	#define GPARAM2(x, y) = {x, y}
 #endif
 
 GVAR int X_pmc[4] GPARAM({X_pmc_defvalue});
@@ -67,11 +67,11 @@ GVAR const TCHAR CUSTNAME[] GPARAM(CUSTNAME_);
 GVAR const TCHAR *JobTypeNames[]
 #ifndef GLOBALEXTERN
 = {
-	MES_JMJO,MES_JMAT,MES_JMCO,MES_JMCS,MES_JMRE,
+	MES_JMJO, MES_JMAT, MES_JMCO, MES_JMCS, MES_JMRE,
 	T("Thread"),
-	MES_JMAP,MES_JMAE,
-	MES_JMMO,MES_JMCP,MES_JMMR,MES_JMSH,
-	MES_JMLI,MES_JMDE,MES_JMUN,MES_JMSL,
+	MES_JMAP, MES_JMAE,
+	MES_JMMO, MES_JMCP, MES_JMMR, MES_JMSH,
+	MES_JMLI, MES_JMDE, MES_JMUN, MES_JMSL,
 }
 #endif
 ;
@@ -96,7 +96,7 @@ GVAR const WORD HistReadTypeflag[15]
  = {
 	PPXH_GENERAL | PPXH_COMMAND | PPXH_FILENAME,
 					PPXH_NUMBER,	PPXH_COMMAND,	PPXH_DIR_R,	// gnhd
-	PPXH_FILENAME,	PPXH_NAME_R,	PPXH_SEARCH,	PPXH_WILD_R,// cfsm
+	PPXH_FILENAME,	PPXH_NAME_R,	PPXH_SEARCH,	PPXH_WILD_R, // cfsm
 	PPXH_PPCPATH,	PPXH_PPVNAME,	0,							// pve
 	PPXH_USER1,		PPXH_USER1,		PPXH_USER2,		PPXH_USER2	// uUxX
 }
@@ -118,12 +118,13 @@ GVAR const DWORD TinputTypeflags[15]
 	0,	TIEX_SINGLEREF,	0,	TIEX_REFTREE | TIEX_SINGLEREF,		// gnhd
 	TIEX_SINGLEREF,	TIEX_SINGLEREF,	TIEX_SINGLEREF,	0,			// cfsm
 	TIEX_SINGLEREF,	TIEX_SINGLEREF,	0,							// pve
-	TIEX_SINGLEREF,	0,		TIEX_REFTREE | TIEX_SINGLEREF,0		// uUxX
+	TIEX_SINGLEREF,	0,		TIEX_REFTREE | TIEX_SINGLEREF, 0		// uUxX
 }
 #endif
 ;
 GVAR const TCHAR StrPackZipFolderTitle[] GPARAM(T("zip - zipfldr"));
 GVAR const TCHAR StrPackZipFolderCommand[] GPARAM(T("%uzipfldr.dll,A \"%2\""));
+GVAR const TCHAR EditCache_ValueName[] GPARAM(T(StringVariable_Command_EditCache));
 
 GVAR const TCHAR StrOptionError[] GPARAM(T("Option error: %s"));
 
@@ -152,7 +153,7 @@ GVAR FM_H SM_cust;					// カスタマイズ領域のファイルマップ
 #endif
 GVAR ThSTRUCT ProcessStringValue	// プロセス内限定特殊環境変数
 #ifndef GLOBALEXTERN
-	= { 0,0,0 };
+	= { 0, 0, 0 };
 #endif
 ;
 GVAR CRITICAL_SECTION ThreadSection; // 汎用スレッドセーフ用
@@ -162,12 +163,12 @@ GVAR HWND hUpdateResultWnd GPARAM(NULL); // カスタマイズログ(終了時に閉じる為)
 GVAR int X_es	GPARAM(0x1d);	// 拡張シフトのコード
 GVAR int X_mwid	GPARAM(60);		// メニューの最大桁数(要PPx再起動)
 GVAR int X_dss	GPARAM(DSS_NOLOAD);	// 画面自動スケーリング
-GVAR DWORD X_flst[2] GPARAM2(0,1);
+GVAR DWORD X_flst[2] GPARAM2(0, 1);
 #define NOMESSAGETEXT (BYTE *)BADPTR	// 読み込みできない場合の値
 GVAR BYTE *MessageTextTable GPARAM(NULL);	// 表示メッセージ用テーブル
 GVAR DWORD X_jinfo[4]
 #ifndef GLOBALEXTERN
-= {MAX32,1,1,1}
+= {MAX32, 1, 1, 1}
 #endif
 ;
 //---------------------------------------------------------------------- OS情報
@@ -204,7 +205,7 @@ GVAR DWORD X_beep GPARAM(0xfff);	/* Beep の出力フラグ 1010 1111
 GVAR DWORD X_log GPARAM(0);	// 各種ログを出力
 GVAR int X_execs GPARAM(-1);
 GVAR DWORD X_Keyra GPARAM(1);
-GVAR int X_jlst[2] GPARAM2(-1,1);
+GVAR int X_jlst[2] GPARAM2(-1, 1);
 GVAR int X_prtg GPARAM(-1);
 
 GVAR DWORD StartTick; // 実行開始時のTick
@@ -216,13 +217,13 @@ GVAR PVOID UEFvec; // 例外処理ハンドラ情報
 GVAR HWND hTipWnd GPARAM(NULL);
 GVAR HWND hProcessComboWnd GPARAM(NULL);
 
-GVAR int X_combos_[2] GPARAM2(-1,-1);
+GVAR int X_combos_[2] GPARAM2(-1, -1);
 #define CMBS_THREAD			B7	// メインスレッド共通化
 #define CMBS1_DIALOGNOPANE	B4	// ダイアログを一体化窓の中心に
 
 GVAR CRMENUSTACKCHECK CrmenuCheck // スタック異常等の検出用
 #ifndef GLOBALEXTERN
-= {0,0}
+= {0, 0}
 #endif
 ;
 GVAR TCHAR AuthHostCache[0x100];
@@ -232,7 +233,7 @@ GVAR TCHAR AuthPassCache[100];
 //---------------------------------------------------------------------- 通信用
 GVAR PPXAPPINFO PPxDefInfoDummy
 #ifndef GLOBALEXTERN
-= {(PPXAPPINFOFUNCTION)PPxDefInfoDummyFunc,PPxName,NilStr,NULL}
+= {(PPXAPPINFOFUNCTION)PPxDefInfoDummyFunc, PPxName, NilStr, NULL}
 #endif
 ;
 GVAR PPXAPPINFO *PPxDefInfo GPARAM(&PPxDefInfoDummy);

@@ -173,7 +173,7 @@ void DrawHex(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 	pps->si.bg = CV_char[CV__defback];
 
 	for ( y = pps->drawYtop ; y <= pps->drawYbottom ; y++ ){
-		if ( (DWORD)of >= vo->file.size.l ) break;	// 空行 ------------------
+		if ( (DWORD)of >= vo->file.UseSize ) break;	// 空行 ------------------
 
 		box.top = y * pps->lineY + pps->shiftdot.cy;
 		DxMoveToEx(DxDraw,pps->ps.hdc,-pps->shift.cx * pps->fontsize.cx +
@@ -211,7 +211,7 @@ void DrawHex(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 										// 16進部分
 		hoff = of;
 		for ( x = 0 ; x < (HEXNUMSWIDTH - 1) ; x += HEXNWIDTH ){
-			if ( (DWORD)of >= vo->file.size.l ){
+			if ( (DWORD)of >= vo->file.UseSize ){
 				tstrcpy(&buf[x], T("   "));
 			}else{
 				wsprintf(&buf[x], T("%02X "), *(vo->file.image + of));
@@ -259,7 +259,7 @@ void DrawHex(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 					int extlen;
 
 					extlen = 5;
-					while ( (DWORD)(hoff + len) < vo->file.size.l ){
+					while ( (DWORD)(hoff + len) < vo->file.UseSize ){
 						if ( (*(char *)(vo->file.image + hoff + len) & 0xc0) != 0x80 ){
 							break;
 						}
@@ -687,7 +687,7 @@ void Paint(HWND hWnd)
 			}
 			LP.x = box.right; // C4701ok,XV.HiddenMenu.item は必ず1以上
 		}
-		FormatNumber(buf2,XFN_SEPARATOR,26,vo_.file.size.l,vo_.file.size.h);
+		FormatNumber(buf2,XFN_SEPARATOR,26,vo_.file.UseSize, 0);
 		buf3[0] = '\0';
 		if ( FileDivideMode >= FDM_DIV ){
 			TCHAR *p;
@@ -709,7 +709,7 @@ void Paint(HWND hWnd)
 				break;
 			case DISPT_HEX:
 				wsprintf(buf,T("Type:%s %s Filesize:%s(%XH) TextType:%s"),
-					vo_.file.typeinfo,buf3,buf2,vo_.file.size.l,VO_textS[VOi->textC]);
+					vo_.file.typeinfo, buf3, buf2, vo_.file.UseSize, VO_textS[VOi->textC]);
 				break;
 			case DISPT_TEXT: {
 				int line,maxline;

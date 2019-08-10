@@ -16,5 +16,5 @@ typedef struct {
 #define FMAP_CREATEMAP		B0	// マップを新規作成
 #define FMAP_CREATEFILE		B1	// ファイルを新規作成
 #define FMAP_FILEOPENERROR	B2	// ファイルを開くことができなかった
-extern int FileMappingOn(FM_H *fm,const TCHAR *fname,const TCHAR *mapname,DWORD size,DWORD atr);
+extern int FileMappingOn(FM_H *fm, const TCHAR *fname, const TCHAR *mapname, DWORD size, DWORD atr);
 extern void FileMappingOff(FM_H *fm);

@@ -499,7 +499,7 @@ int SendPPB(HWND hOwner,const TCHAR *param,int useID)
 	tstrcat(buf,T("R"));
 	hCommIdleEvent = OpenEvent(EVENT_ALL_ACCESS,FALSE,buf);
 
-	if ( hCommSendEvent == NULL ){
+	if ( (hCommSendEvent == NULL) || (hCommIdleEvent == NULL) ){
 		XMessage(hOwner,NULL,XM_FaERRd,T("PPB-Event destroyed/1"));
 		return -1;
 	}
@@ -1101,7 +1101,7 @@ int GetPPxList(HMENU hPopupMenu, int mode, ThSTRUCT *th, DWORD *menuid)
 		lr = SendMessage(hComboWnd,WM_PPXCOMMAND,TMAKEWPARAM(KCW_ppclist,1),0);
 		if ( lr == 0 ) continue;
 
-		wsprintf(buf1,T("%%temp%%\\ppxl%d"),lr);
+		wsprintf(buf1,T("%%temp%%\\ppxl%d"),(int)lr);
 		ExpandEnvironmentStrings(buf1, buf2, TSIZEOF(buf2));
 
 		ec = LoadFileImage(buf2, 4, (char **)&ppclist,&size,LFI_ALWAYSLIMITLESS);

@@ -231,7 +231,7 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 	normalfont = XV_unff ? hUnfixedFont : hBoxFont;
 
 	mti.destbuf = buf;
-	mti.srcmax = vo->file.image + vo->file.size.l;
+	mti.srcmax = vo->file.image + vo->file.UseSize;
 	mti.writetbl = FALSE;
 	mti.paintmode = TRUE;
 

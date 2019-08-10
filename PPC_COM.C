@@ -57,13 +57,13 @@ case 'A':
 //----------------------------------------------- Mark All(F+D)
 case K_end:
 case K_c | 'A':
-	cinfo->MarkMask = 0x1f;
+	cinfo->MarkMask = MARKMASK_DIRFILE;
 	PPC_AllMark(cinfo);
 	break;
 //----------------------------------------------- Mark
 case K_s | K_c | 'A':
 	setflag(cinfo->DrawTargetFlags, DRAWT_ENTRY);
-	cinfo->MarkMask = 0x1f;
+	cinfo->MarkMask = MARKMASK_DIRFILE;
 	CellMark(cinfo, cinfo->e.cellN,  MARK_REVERSE);
 	RefleshCell(cinfo, cinfo->e.cellN);
 	RefleshInfoBox(cinfo, DE_ATTR_MARK);
@@ -182,7 +182,7 @@ case 'O':
 	return PPcCompare(cinfo, 0);
 //----------------------------------------------- Comment option
 case K_s | 'O':
-	return Comments(cinfo, NULL);
+	return CommentCommand(cinfo, NULL);
 //----------------------------------------------- Quit PPC
 case K_esc:			// [ESC]
 	if ( PMessageBox(cinfo->info.hWnd, MES_QPPC, T("Quit"), MB_APPLMODAL |
@@ -287,7 +287,7 @@ case '0':
 //----------------------------------------------- AllMark
 case K_home:	// [home]
 case '*':
-	cinfo->MarkMask = 0xf;
+	cinfo->MarkMask = MARKMASK_FILE;
 	PPC_AllMark(cinfo);
 	break;
 //----------------------------------------------- AddMark
@@ -462,25 +462,25 @@ case K_a | K_s | K_cr:
 	break;
 //----------------------------------------------- Invert Mark(F)
 case K_s | K_home:		// \[home]
-	cinfo->MarkMask = 0xf;
+	cinfo->MarkMask = MARKMASK_FILE;
 	PPC_ReverseMark(cinfo);
 	break;
 //----------------------------------------------- Invert Mark(F+D)
 case K_s | K_end:
-	cinfo->MarkMask = 0x1f;
+	cinfo->MarkMask = MARKMASK_DIRFILE;
 	PPC_ReverseMark(cinfo);
 	break;
 //-----------------------------------------------
 case K_c | K_home:
 	setflag(cinfo->DrawTargetFlags, DRAWT_ENTRY);
-	cinfo->MarkMask = 0xf;
+	cinfo->MarkMask = MARKMASK_FILE;
 	ClearMark(cinfo);
 	RefleshInfoBox(cinfo, DE_ATTR_MARK);
 	break;
 //-----------------------------------------------
 case K_c | K_end:
 	setflag(cinfo->DrawTargetFlags, DRAWT_ENTRY);
-	cinfo->MarkMask = 0x1f;
+	cinfo->MarkMask = MARKMASK_DIRFILE;
 	ClearMark(cinfo);
 	RefleshInfoBox(cinfo, DE_ATTR_MARK);
 	break;
@@ -587,7 +587,7 @@ case K_s | K_esc:
 	break;
 //----------------------------------------------- Mark & [«]
 case K_space:
-	cinfo->MarkMask = 0x1f;
+	cinfo->MarkMask = MARKMASK_DIRFILE;
 	CellMark(cinfo, cinfo->e.cellN, MARK_REVERSE);
 	if ( cinfo->e.cellN >= (cinfo->e.cellIMax - 1) ){
 		RefleshCell(cinfo, cinfo->e.cellN);
@@ -597,7 +597,7 @@ case K_space:
 	break;
 //----------------------------------------------- Mark & [ª]
 case K_s | K_space:
-	cinfo->MarkMask = 0x1f;
+	cinfo->MarkMask = MARKMASK_DIRFILE;
 	CellMark(cinfo, cinfo->e.cellN, MARK_REVERSE);
 	if ( cinfo->e.cellN == 0 ) RefleshCell(cinfo, cinfo->e.cellN);
 	MoveCellCursorR(cinfo, &XC_mvUD);

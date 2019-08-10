@@ -20,13 +20,16 @@
 #define LVS_EX_LABELTIP 0x4000
 #endif
 #define TListView_GetFocusedItem(hwnd) (int)SendMessage(hwnd, LVM_GETNEXTITEM, (WPARAM)-1, TMAKELPARAM(LVNI_FOCUSED, 0))
+
+#define ID_COMMAND_ENUMTYPE IDW_INTERNALMIN
+
 // ListView ÇÃ lParam Ç…ê›íËÇ∑ÇÈílÅBPPcustì‡Ç≈ã§í ÅïÉNÉäÉAÇµÇ»Ç¢Ç™ÅAí èÌÇÃ
 // égópîÕàÕÇ≈ÇÕÉIÅ[ÉoÅ[ÉtÉçÅ[ÇµÇ»Ç¢ÇÃÇ≈ÇªÇÃÇ‹Ç‹égÇ§ÅB
 LPARAM ListViewCounter = 1;
 
 typedef struct {
 	HWND	hLVTypeWnd, hLVAlcWnd;	// ListView
-	int		ListViewLastSort;		// IDV_ALCLISTÇÃÉ\Å[ÉgèÛë‘(+è∏èá,-ç~èá)
+	int		ListViewLastSort;		// IDV_ALCLISTÇÃÉ\Å[ÉgèÛë‘(+è∏èá, -ç~èá)
 	TCHAR	key;					// çÄñ⁄ÇÃéØï éq(E/K/m/M)
 	int		helpID;					// [ÉwÉãÉv]ÇâüÇµÇΩÇ∆Ç´Ç…ï\é¶Ç∑ÇÈÉwÉãÉv
 	int		index_type;				// éÌóﬁÇÃÉCÉìÉfÉbÉNÉX
@@ -90,7 +93,7 @@ struct LABELTEXT {
 
  {T("HM_ppc"), T("PPcâBÇµÉÅÉjÉÖÅ[\0PPc hidden menu")},
  {T("HM_ppv"), T("PPvâBÇµÉÅÉjÉÖÅ[\0PPv hidden menu")},
- {NULL,NULL}
+ {NULL, NULL}
 };
 
 const TCHAR *InsertMacroMenuString[] = {
@@ -197,7 +200,7 @@ struct MouseTypeListStruct {
 	{CE_PPCV | CE_NC,	T("CLOS [ï¬Ç∂ÇÈ]É{É^Éì\0CLOS close button")},
 	{CE_PPCV | CE_NC,	T("SCRL ÉXÉNÉçÅ[ÉãÉoÅ[\0SCRL scroll bar")},
 	{CE_PPCV | CE_ALL,	T("HMNU âBÇµÉÅÉjÉÖÅ[\0HMNU Hidden menu")},
-	{0,NULL}
+	{0, NULL}
 };
 
 const TCHAR GALLOW[] = T("LUDR");
@@ -291,7 +294,7 @@ const TCHAR *ToolBarDefaultCommand[ToolBarDefaultCommandCount][2] = { // ÉfÉtÉHÉ
 	{T("CUSTOMIZE"), T("ÉJÉXÉ^É}ÉCÉY\0customize")},
 };
 // âBÇµÉÅÉjÉÖÅ[ä÷òA
-COLORREF CharColor,BackColor; // âBÇµÉÅÉjÉÖÅ[ÇÃêF
+COLORREF CharColor, BackColor; // âBÇµÉÅÉjÉÖÅ[ÇÃêF
 
 const TCHAR StrTitleCommandBox[] = T("ÉRÉ}ÉìÉhàÍóó\0command list");
 const TCHAR StrMenuNew[] = T(" êVãK\0 new");
@@ -2084,35 +2087,35 @@ void FixWildItemName(TCHAR *item)
 //---------------------------------------------------------------- çÄñ⁄ìoò^èàóù
 void AddItem(HWND hDlg, TABLEINFO *tinfo, DWORD mode)
 {
-	TCHAR typebuf[MAX_PATH], item[MAX_PATH], para[CMDLINESIZE * 10 + 1], *type;
+	TCHAR typebuf[MAX_PATH], itemname[MAX_PATH], para[CMDLINESIZE * 10 + 1], *typename;
 	TCHAR olditemname[MAX_PATH];
 	int index;
 	size_t size;
 	HWND hLVAlcWnd;
-	LV_ITEM lvi;
+	LV_ITEM lviALC, lviTYPE;
 
-	GetControlText(hDlg, IDE_EXITEM, item, TSIZEOF(item));
-	type = typebuf + 2;
-	GetControlText(hDlg, IDE_EXTYPE, type, TSIZEOF(typebuf) - 2);
-	if ( *type == '\0' ) return;
-	if ( *item == '\0' ) return;
+	GetControlText(hDlg, IDE_EXITEM, itemname, TSIZEOF(itemname));
+	typename = typebuf + 2;
+	GetControlText(hDlg, IDE_EXTYPE, typename, TSIZEOF(typebuf) - 2);
+	if ( *typename == '\0' ) return;
+	if ( *itemname == '\0' ) return;
 
-	if ( CheckTypeName(tinfo->key, type) == FALSE ){
+	if ( CheckTypeName(tinfo->key, typename) == FALSE ){
 		typebuf[0] = tinfo->key;
 		typebuf[1] = '_';
-		type = typebuf;
+		typename = typebuf;
 	}
 	hLVAlcWnd = tinfo->hLVAlcWnd;
 	index = TListView_GetFocusedItem(hLVAlcWnd);
 
-	lvi.mask = LVIF_TEXT;
-	lvi.cchTextMax = MAX_PATH;
+	lviALC.mask = LVIF_TEXT;
+	lviALC.cchTextMax = MAX_PATH;
 
 	if ( index >= 0 ){
-		lvi.pszText = olditemname;
-		lvi.iItem = index;
-		lvi.iSubItem = 0;
-		ListView_GetItem(hLVAlcWnd, &lvi);
+		lviALC.pszText = olditemname;
+		lviALC.iItem = index;
+		lviALC.iSubItem = 0;
+		ListView_GetItem(hLVAlcWnd, &lviALC);
 	}else{
 		index = 0;
 		olditemname[0] = '\0';
@@ -2121,7 +2124,7 @@ void AddItem(HWND hDlg, TABLEINFO *tinfo, DWORD mode)
 	if ( tinfo->key != 'M' ){
 		TCHAR *parap;
 
-		if ( tinfo->key == 'E' ) FixWildItemName(item);
+		if ( tinfo->key == 'E' ) FixWildItemName(itemname);
 		if ( tinfo->key == 'B' ){
 			if ( tinfo->name_type[0] == 'H' ){ // âBÇµÉÅÉjÉÖÅ[ÇÕêFÇï€ë∂
 				((COLORREF *)para)[0] = CharColor;
@@ -2133,11 +2136,11 @@ void AddItem(HWND hDlg, TABLEINFO *tinfo, DWORD mode)
 					size_t itemlen;
 
 					// É{É^ÉìÉeÉLÉXÉgÇ™Ç»Ç¢Ç∆Ç´ÇÕÅAí«â¡Ç∑ÇÈ
-					itemlen = tstrlen(item);
-					if ( (tstrchr(item, '/') == NULL) &&
+					itemlen = tstrlen(itemname);
+					if ( (tstrchr(itemname, '/') == NULL) &&
 						 (itemlen < (MAX_PATH - 2)) ){
-						tstrcat(item, T("/"));
-						SetDlgItemText(hDlg, IDE_EXITEM, item);
+						tstrcat(itemname, T("/"));
+						SetDlgItemText(hDlg, IDE_EXITEM, itemname);
 					}
 					buttonindex = -2;
 				}else{
@@ -2196,7 +2199,7 @@ void AddItem(HWND hDlg, TABLEINFO *tinfo, DWORD mode)
 		if ( tinfo->key == 'K' ){
 			int i;
 
-			i = CheckRegistKey(item, item, type);
+			i = CheckRegistKey(itemname, itemname, typename);
 			if ( i < 0 ){
 				XMessage(hDlg, StrCustTitle, XM_GrERRld, MES_EKFT);
 				return;
@@ -2214,20 +2217,22 @@ void AddItem(HWND hDlg, TABLEINFO *tinfo, DWORD mode)
 		}
 	}
 
-	if ( !IsExistCustTable(type, item) || (*item == '-') || (*item == '|') ){
-		InsertCustTable(type, item, index, para, size);
+	if ( !IsExistCustTable(typename, itemname) || (*itemname == '-') || (*itemname == '|') ){
+		InsertCustTable(typename, itemname, index, para, size);
 	}else{
-		SetCustTable(type, item, para, size);
+		SetCustTable(typename, itemname, para, size);
 	}
 
 	if ( tinfo->index_type >= 0 ){ // éÌóﬁÇ™ïœÇÌÇ¡ÇƒÇ¢ÇΩÇÁéÌóﬁÇçƒéÊìæÇ≥ÇπÇÈ
 		TCHAR selectedtypename[MAX_PATH];
 
-		lvi.pszText = selectedtypename;
-		lvi.iSubItem = 0;
-		lvi.iItem = tinfo->index_type;
+		lviTYPE.mask = LVIF_TEXT;
+		lviTYPE.cchTextMax = MAX_PATH;
+		lviTYPE.pszText = selectedtypename;
+		lviTYPE.iSubItem = 0;
+		lviTYPE.iItem = tinfo->index_type;
 
-		if ( ListView_GetItem(tinfo->hLVTypeWnd, &lvi) == FALSE ){
+		if ( ListView_GetItem(tinfo->hLVTypeWnd, &lviTYPE) == FALSE ){
 			tinfo->index_type = -1;
 			olditemname[0] = '\0';
 		}else{
@@ -2239,21 +2244,21 @@ void AddItem(HWND hDlg, TABLEINFO *tinfo, DWORD mode)
 			}else{
 				seltype = selectedtypename;
 			}
-			if ( tstrcmp(seltype, type) != 0 ){
+			if ( tstrcmp(seltype, typename) != 0 ){
 				olditemname[0] = '\0';
 				tinfo->index_type = -1;
 			}
 		}
 	}
 
-	if ( (mode == IDB_TB_SETITEM) && (olditemname[0] != '\0') && tstricmp(olditemname, item) ){ // çÄñ⁄ñºì¸ë÷
-		DeleteCustTable(type, olditemname, 0); // å≥ÇÕçÌèú
+	if ( (mode == IDB_TB_SETITEM) && (olditemname[0] != '\0') && tstricmp(olditemname, itemname) ){ // çÄñ⁄ñºì¸ë÷
+		DeleteCustTable(typename, olditemname, 0); // å≥ÇÕçÌèú
 
-		lvi.pszText = item;
-		lvi.iSubItem = 0;
-		ListView_SetItem(hLVAlcWnd, &lvi);
+		lviALC.pszText = itemname;
+		lviALC.iSubItem = 0;
+		ListView_SetItem(hLVAlcWnd, &lviALC);
 
-		SetListViewItemDetail(tinfo, lvi.iItem, item, (BYTE *)para);
+		SetListViewItemDetail(tinfo, lviALC.iItem, itemname, (BYTE *)para);
 	}else{ // êVãK
 		LV_FINDINFO lvfi;
 
@@ -2261,7 +2266,7 @@ void AddItem(HWND hDlg, TABLEINFO *tinfo, DWORD mode)
 		SelectedType(hDlg, tinfo);
 
 		lvfi.flags = LVFI_STRING;
-		lvfi.psz = item;
+		lvfi.psz = itemname;
 		index = ListView_FindItem(hLVAlcWnd, -1, &lvfi);
 		SelectItemByIndex(tinfo, index);
 	}
@@ -2410,7 +2415,7 @@ void SetComment(HWND hDlg, TABLEINFO *tinfo)
 
 	comment[0] = '\0';
 	GetControlText(hDlg, IDE_ALCCMT, comment, TSIZEOF(comment));
-	if ( NO_ERROR == SetCustTable(T("#Comment"), tinfo->name_type, comment, TSTRSIZE(comment)) ){
+	if ( NO_ERROR == SetCustStringTable(T("#Comment"), tinfo->name_type, comment, 0) ){
 		EnableDlgWindow(hDlg, IDB_ALCCMT, FALSE);
 		Changed(hDlg);
 	}
@@ -2761,7 +2766,7 @@ INT_PTR CALLBACK TablePage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam, TA
 
 		case WM_COMMAND:
 			switch ( LOWORD(wParam) ){
-				case 0x1001:
+				case ID_COMMAND_ENUMTYPE:
 					EnumTypeList(hDlg, tinfo);
 					break;
 
@@ -2795,7 +2800,7 @@ INT_PTR CALLBACK TablePage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam, TA
 
 				case IDC_TB_TYPEMASK:
 					if ( (HIWORD(wParam) == CBN_SELCHANGE) || (HIWORD(wParam) == CBN_EDITUPDATE) ){
-						PostMessage(hDlg, WM_COMMAND, 0x1001, 0);
+						PostMessage(hDlg, WM_COMMAND, ID_COMMAND_ENUMTYPE, 0);
 					}
 					break;
 										// ÉRÉ}ÉìÉhä÷òA

@@ -24,13 +24,13 @@ typedef struct {
 #define THS_SHOW_NODRAG -2
 #define THS_SHOW_CANCELDRAG -1
 		int showindex;
-		int tabindex,width;
+		int tabindex, width;
 	} DDinfo;
 } TABHOOKSTRUCT;
 
 HWND DeletePane(int showindex);
 
-int PPxDownMouseButtonX(MOUSESTATE *ms,HWND hWnd,WPARAM wParam,LPARAM lParam)
+int PPxDownMouseButtonX(MOUSESTATE *ms, HWND hWnd, WPARAM wParam, LPARAM lParam)
 {
 	DWORD button;
 
@@ -46,7 +46,7 @@ int PPxDownMouseButtonX(MOUSESTATE *ms,HWND hWnd,WPARAM wParam,LPARAM lParam)
 
 		ms->mode = MOUSEMODE_PUSH;
 		if ( GetCapture() == NULL ) SetCapture(hWnd);
-		PPxGetMouseButtonDownInfo(ms,hWnd,button,lParam);
+		PPxGetMouseButtonDownInfo(ms, hWnd, button, lParam);
 		ms->DDRect.left   = ms->PushScreenPoint.x - x;
 		ms->DDRect.right  = ms->PushScreenPoint.x + x;
 		ms->DDRect.top    = ms->PushScreenPoint.y - y;
@@ -58,20 +58,20 @@ int PPxDownMouseButtonX(MOUSESTATE *ms,HWND hWnd,WPARAM wParam,LPARAM lParam)
 	return ms->PushButton;
 }
 
-BOOL TabMouseCommand(HWND hWnd,POINT *pos,const TCHAR *click,int index)
+BOOL TabMouseCommand(HWND hWnd, POINT *pos, const TCHAR *click, int index)
 {
-	TCHAR buf[CMDLINESIZE],*p;
+	TCHAR buf[CMDLINESIZE], *p;
 
-	p = PutShiftCode(buf,GetShiftKey());
-	wsprintf(p,T("%s_%s"),click,(index >= 0) ? T("TABB") : T("TABS") );
-	if ( NO_ERROR == GetCustTable(T("MC_click"),buf,buf,sizeof(buf)) ){
+	p = PutShiftCode(buf, GetShiftKey());
+	wsprintf(p, T("%s_%s"), click, (index >= 0) ? T("TABB") : T("TABS") );
+	if ( NO_ERROR == GetCustTable(T("MC_click"), buf, buf, sizeof(buf)) ){
 		TC_ITEM tie;
 
 		if ( index < 0 ) index = TabCtrl_GetCurSel(hWnd);
 		tie.mask = TCIF_PARAM;
-		if ( IsTrue(TabCtrl_GetItem(hWnd,index,&tie)) ){
-			SendMessage((HWND)tie.lParam,WM_PPCEXEC,
-					(WPARAM)buf,TMAKELPARAM(pos->x,pos->y));
+		if ( IsTrue(TabCtrl_GetItem(hWnd, index, &tie)) ){
+			SendMessage((HWND)tie.lParam, WM_PPCEXEC,
+					(WPARAM)buf, TMAKELPARAM(pos->x, pos->y));
 			return TRUE;
 		}
 	}
@@ -89,14 +89,14 @@ void CreateNewTab(int showindex)
 	SetFocus(hWnd);
 
 	if ( X_combos[0] & CMBS_TABEACHITEM ){
-		wsprintf(buf,T("-pane:%d"),showindex);
-		CallPPcParam(Combo.hWnd,buf);
+		wsprintf(buf, T("-pane:%d"), showindex);
+		CallPPcParam(Combo.hWnd, buf);
 	}else{
-		PostMessage(hWnd,WM_PPXCOMMAND,K_raw | K_F11,0);
+		PostMessage(hWnd, WM_PPXCOMMAND, K_raw | K_F11, 0);
 	}
 }
 
-void CreateNewTabParam(int showindex,int newbaseindex,const TCHAR *param)
+void CreateNewTabParam(int showindex, int newbaseindex, const TCHAR *param)
 {
 	TCHAR buf[CMDLINESIZE];
 
@@ -114,12 +114,12 @@ void CreateNewTabParam(int showindex,int newbaseindex,const TCHAR *param)
 		return;
 	}
 	if ( showindex < 0 ) showindex = 0;
-	wsprintf(buf,T("-pane:%d %s"),showindex,param);
+	wsprintf(buf, T("-pane:%d %s"), showindex, param);
 
-	CallPPcParam(Combo.hWnd,buf);
+	CallPPcParam(Combo.hWnd, buf);
 }
 
-void TabDblClickMouse(HWND hWnd,MOUSESTATE *ms)
+void TabDblClickMouse(HWND hWnd, MOUSESTATE *ms)
 {
 	TC_HITTESTINFO th;
 	TCHAR click[3];
@@ -127,12 +127,12 @@ void TabDblClickMouse(HWND hWnd,MOUSESTATE *ms)
 
 	if ( ms->PushButton <= MOUSEBUTTON_CANCEL ) return;
 	th.pt = ms->PushClientPoint;
-	index = TabCtrl_HitTest(hWnd,&th);
+	index = TabCtrl_HitTest(hWnd, &th);
 
 	click[0] = PPxMouseButtonChar[ms->PushButton];
 	click[1] = 'D';
 	click[2] = '\0';
-	TabMouseCommand(hWnd,&ms->PushClientPoint,click,index);
+	TabMouseCommand(hWnd, &ms->PushClientPoint, click, index);
 }
 
 int GetTabShowIndex(HWND hWnd)
@@ -149,10 +149,10 @@ int GetTabShowIndex(HWND hWnd)
 	return -1;
 }
 
-int GetTabFromPos(POINT *spos,POINT *cpos,int *TargetTab)
+int GetTabFromPos(POINT *spos, POINT *cpos, int *TargetTab)
 {
 	HWND hTargetWnd = WindowFromPoint(*spos);
-	int showindex = -1,tabpane;
+	int showindex = -1, tabpane;
 	TC_HITTESTINFO th;
 
 	for ( tabpane = 0 ; tabpane < Combo.Tabs ; tabpane++ ){
@@ -164,15 +164,15 @@ int GetTabFromPos(POINT *spos,POINT *cpos,int *TargetTab)
 	*TargetTab = showindex;
 	if ( showindex < 0 ) return -1;
 	th.pt = *spos;
-	ScreenToClient(hTargetWnd,&th.pt);
+	ScreenToClient(hTargetWnd, &th.pt);
 	if ( cpos != NULL ) *cpos = th.pt;
-	return TabCtrl_HitTest(hTargetWnd,&th);
+	return TabCtrl_HitTest(hTargetWnd, &th);
 }
 
 // タブの DnD 完了処理
-void TabUp_DnD_Mouse(HWND hWnd,TABHOOKSTRUCT *THS)
+void TabUp_DnD_Mouse(HWND hWnd, TABHOOKSTRUCT *THS)
 {
-	int targetshow,targettab;
+	int targetshow, targettab;
 	int reqsort = 0;
 	TC_HITTESTINFO th;
 
@@ -180,21 +180,21 @@ void TabUp_DnD_Mouse(HWND hWnd,TABHOOKSTRUCT *THS)
 	if ( THS->DDinfo.width >= 0 ){ // 幅変更
 		int width;
 
-		SetWindowLongPtr(hWnd,GWL_STYLE,
-				GetWindowLongPtr(hWnd,GWL_STYLE) | TCS_FIXEDWIDTH);
-		setflag(X_combos[0],CMBS_TABFIXEDWIDTH);
-		ScreenToClient(hWnd,&th.pt);
+		SetWindowLongPtr(hWnd, GWL_STYLE,
+				GetWindowLongPtr(hWnd, GWL_STYLE) | TCS_FIXEDWIDTH);
+		setflag(X_combos[0], CMBS_TABFIXEDWIDTH);
+		ScreenToClient(hWnd, &th.pt);
 		width = th.pt.x - THS->DDinfo.width;
 		if ( width < 16 ) width = 16;
-		SendMessage(hWnd,TCM_SETITEMSIZE,0,TMAKELPARAM(width,0));
-		InvalidateRect(hWnd,NULL,TRUE);
+		SendMessage(hWnd, TCM_SETITEMSIZE, 0, TMAKELPARAM(width, 0));
+		InvalidateRect(hWnd, NULL, TRUE);
 		if ( X_combos[0] & CMBS_TABMULTILINE ){
 			SortComboWindows(SORTWIN_LAYOUTPAIN);
 		}
 		return;
 	}
 
-	targettab = GetTabFromPos(&th.pt,NULL,&targetshow);
+	targettab = GetTabFromPos(&th.pt, NULL, &targetshow);
 	if ( (THS->DDinfo.showindex >= 0) && (targetshow >= 0) ){ // tab入替
 		TC_ITEM tie;
 		TCHAR cap[VFPS + 16];
@@ -215,15 +215,15 @@ void TabUp_DnD_Mouse(HWND hWnd,TABHOOKSTRUCT *THS)
 		tie.mask = TCIF_TEXT | TCIF_PARAM;
 		tie.cchTextMax = VFPS + 16;
 		tie.pszText = cap;
-		if ( IsTrue(TabCtrl_GetItem(hWnd,THS->DDinfo.tabindex,&tie)) ){
+		if ( IsTrue(TabCtrl_GetItem(hWnd, THS->DDinfo.tabindex, &tie)) ){
 			int srcpane = GetTabShowIndex(hWnd);
 
-			SendMessage(hTargetTabWnd,TCM_INSERTITEM,(WPARAM)targettab,(LPARAM)&tie);
+			SendMessage(hTargetTabWnd, TCM_INSERTITEM, (WPARAM)targettab, (LPARAM)&tie);
 			LastTabInsType = 5000;
 			UseTabInsType |= B0;
 			if ( THS->DDinfo.tabindex == srcselect ){
 				if ( hTargetTabWnd == hWnd ){ // ペイン内タブ移動
-					TabCtrl_SetCurSel(hWnd,targettab);
+					TabCtrl_SetCurSel(hWnd, targettab);
 				}else{ // ペイン間タブ移動
 					int c = TabCtrl_GetItemCount(hWnd);
 					HWND hTargetWnd = (HWND)tie.lParam;
@@ -233,13 +233,13 @@ void TabUp_DnD_Mouse(HWND hWnd,TABHOOKSTRUCT *THS)
 					}
 					// ShowWindow の前に削除しないと、窓の整合性チェックに
 					// 引っ掛かる
-					TabCtrl_DeleteItem(hWnd,THS->DDinfo.tabindex);
-					ShowWindow(hTargetWnd,SW_HIDE);
+					TabCtrl_DeleteItem(hWnd, THS->DDinfo.tabindex);
+					ShowWindow(hTargetWnd, SW_HIDE);
 
 					if ( srcselect >= 0 ){
-						if ( TabCtrl_GetItem(hWnd,srcselect,&tie) == FALSE ){
+						if ( TabCtrl_GetItem(hWnd, srcselect, &tie) == FALSE ){
 							srcselect = c - 2;
-							TabCtrl_GetItem(hWnd,srcselect,&tie);
+							TabCtrl_GetItem(hWnd, srcselect, &tie);
 						}
 						if ( hTargetWnd == hComboRightFocus ){
 							hComboRightFocus = (HWND)tie.lParam;
@@ -248,8 +248,8 @@ void TabUp_DnD_Mouse(HWND hWnd,TABHOOKSTRUCT *THS)
 							hComboFocus = (HWND)tie.lParam;
 						}
 						Combo.show[srcpane].baseNo = GetComboBaseIndex((HWND)tie.lParam);
-						TabCtrl_SetCurSel(hWnd,srcselect);
-						ShowWindow((HWND)tie.lParam,SW_SHOWNORMAL);
+						TabCtrl_SetCurSel(hWnd, srcselect);
+						ShowWindow((HWND)tie.lParam, SW_SHOWNORMAL);
 						reqsort = 1;
 						ChangeReason = T("TabDnD");
 					}else{
@@ -260,9 +260,9 @@ void TabUp_DnD_Mouse(HWND hWnd,TABHOOKSTRUCT *THS)
 			if ( (hTargetTabWnd == hWnd) && (targettab <= THS->DDinfo.tabindex) ){
 				THS->DDinfo.tabindex++;
 			}
-			InvalidateRect(hWnd,NULL,TRUE);
+			InvalidateRect(hWnd, NULL, TRUE);
 			if ( reqsort == 0 ){
-				TabCtrl_DeleteItem(hWnd,THS->DDinfo.tabindex);
+				TabCtrl_DeleteItem(hWnd, THS->DDinfo.tabindex);
 			}else{
 				if ( reqsort < 0 ) DeletePane(srcpane);
 				SortComboWindows(SORTWIN_LAYOUTPAIN);
@@ -271,7 +271,7 @@ void TabUp_DnD_Mouse(HWND hWnd,TABHOOKSTRUCT *THS)
 	}
 }
 
-void TabUpMouse(HWND hWnd,TABHOOKSTRUCT *THS,LPARAM lParam,int button)
+void TabUpMouse(HWND hWnd, TABHOOKSTRUCT *THS, LPARAM lParam, int button)
 {
 	TC_HITTESTINFO th;
 	TCHAR click[2];
@@ -279,26 +279,26 @@ void TabUpMouse(HWND hWnd,TABHOOKSTRUCT *THS,LPARAM lParam,int button)
 
 	if ( button <= MOUSEBUTTON_CANCEL ) return;
 
-	LPARAMtoPOINT(th.pt,lParam);
+	LPARAMtoPOINT(th.pt, lParam);
 
 	if ( THS->DDinfo.showindex != THS_SHOW_NODRAG ){ // タブ D&D
-		TabUp_DnD_Mouse(hWnd,THS);
+		TabUp_DnD_Mouse(hWnd, THS);
 		return;
 	}
 
-	index = TabCtrl_HitTest(hWnd,&th);
+	index = TabCtrl_HitTest(hWnd, &th);
 
 	click[0] = PPxMouseButtonChar[button];
 	click[1] = '\0';
-	if ( IsTrue(TabMouseCommand(hWnd,&th.pt,click,index)) ) return;
+	if ( IsTrue(TabMouseCommand(hWnd, &th.pt, click, index)) ) return;
 
 	if ( button == MOUSEBUTTON_M ){
 		if ( index >= 0 ){
 			TC_ITEM tie;
 
 			tie.mask = TCIF_PARAM;
-			if ( IsTrue(TabCtrl_GetItem(hWnd,index,&tie)) ){
-				PostMessage((HWND)tie.lParam,WM_CLOSE,0,0);
+			if ( IsTrue(TabCtrl_GetItem(hWnd, index, &tie)) ){
+				PostMessage((HWND)tie.lParam, WM_CLOSE, 0, 0);
 			}
 		}else{
 			CreateNewTab(GetTabShowIndex(hWnd));
@@ -313,34 +313,34 @@ void TabUpMouse(HWND hWnd,TABHOOKSTRUCT *THS,LPARAM lParam,int button)
 		GetMessagePosPoint(pos);
 		// Tabが指すIndexを求める
 		tie.mask = TCIF_PARAM;
-		if ( IsTrue(TabCtrl_GetItem(hWnd,index,&tie)) ){
+		if ( IsTrue(TabCtrl_GetItem(hWnd, index, &tie)) ){
 			baseindex = GetComboBaseIndex((HWND)tie.lParam);
 		}else{
 			baseindex = -1;	// 空白を右クリック
 		}
-		TabMenu(hWnd,baseindex,GetTabShowIndex(hWnd),&pos);
+		TabMenu(hWnd, baseindex, GetTabShowIndex(hWnd), &pos);
 		return;
 	}
 
 	if ( button == MOUSEBUTTON_L ){
 		TC_ITEM tie;
-		int baseindex,showindex;
+		int baseindex, showindex;
 
 		// Tabが指すIndexを求める
 		tie.mask = TCIF_PARAM;
-		if ( IsTrue(TabCtrl_GetItem(hWnd,index,&tie)) ){
+		if ( IsTrue(TabCtrl_GetItem(hWnd, index, &tie)) ){
 			baseindex = GetComboBaseIndex((HWND)tie.lParam);
 			if ( baseindex < 0 ){ // 不明タブを削除
-				TabCtrl_DeleteItem(hWnd,index);
+				TabCtrl_DeleteItem(hWnd, index);
 				return;
 			}
 
 			if ( !(X_combos[1] & CMBS1_NOTABBUTTON) ){
 				RECT box;
 
-				SendMessage(hWnd,TCM_GETITEMRECT,index,(LPARAM)&box);
+				SendMessage(hWnd, TCM_GETITEMRECT, index, (LPARAM)&box);
 				if ( th.pt.x >= (box.right - (box.bottom - (box.top + 4)) - 2)){
-					PostMessage(Combo.base[baseindex].hWnd,WM_CLOSE,0,0);
+					PostMessage(Combo.base[baseindex].hWnd, WM_CLOSE, 0, 0);
 					return;
 				}
 			}
@@ -353,7 +353,7 @@ void TabUpMouse(HWND hWnd,TABHOOKSTRUCT *THS,LPARAM lParam,int button)
 	}
 }
 
-BOOL TabKeyDown(HWND hWnd,int key)
+BOOL TabKeyDown(HWND hWnd, int key)
 {
 	switch (key){
 		case VK_ESCAPE: {
@@ -361,8 +361,8 @@ BOOL TabKeyDown(HWND hWnd,int key)
 
 			showindex = GetTabShowIndex(hWnd);
 			if ( !(X_combos[0] & CMBS_TABBUTTON) ){
-				int tabi = GetTabItemIndex(Combo.base[Combo.show[showindex].baseNo].hWnd,showindex);
-				SendMessage(hWnd,TCM_SETCURSEL,(WPARAM)tabi,0);
+				int tabi = GetTabItemIndex(Combo.base[Combo.show[showindex].baseNo].hWnd, showindex);
+				SendMessage(hWnd, TCM_SETCURSEL, (WPARAM)tabi, 0);
 			}
 
 			if ( showindex >= 0 ){
@@ -377,21 +377,21 @@ BOOL TabKeyDown(HWND hWnd,int key)
 			int baseindex;
 			int showindex;
 
-			cursor = (int)SendMessage(hWnd,TCM_GETCURFOCUS,0,0);
+			cursor = (int)SendMessage(hWnd, TCM_GETCURFOCUS, 0, 0);
 			if ( cursor >= 0 ){
 				RECT box;
 				POINT pos;
 
-				SendMessage(hWnd,TCM_GETITEMRECT,cursor,(LPARAM)&box);
+				SendMessage(hWnd, TCM_GETITEMRECT, cursor, (LPARAM)&box);
 				pos.x = box.left;
 				pos.y = box.bottom;
-				ClientToScreen(hWnd,&pos);
+				ClientToScreen(hWnd, &pos);
 				// Tabが指すIndexを求める
 				tie.mask = TCIF_PARAM;
-				TabCtrl_GetItem(hWnd,cursor,&tie);
+				TabCtrl_GetItem(hWnd, cursor, &tie);
 				baseindex = GetComboBaseIndex((HWND)tie.lParam);
 				showindex = GetTabShowIndex(hWnd);
-				if ( TabMenu(hWnd,baseindex,showindex,&pos) ){
+				if ( TabMenu(hWnd, baseindex, showindex, &pos) ){
 					if ( showindex >= 0 ){
 						SetFocus(Combo.base[Combo.show[showindex].baseNo].hWnd);
 					}
@@ -407,10 +407,10 @@ BOOL TabKeyDown(HWND hWnd,int key)
 					TC_ITEM tie;
 					int cursor;
 
-					cursor = (int)SendMessage(hWnd,TCM_GETCURFOCUS,0,0);
+					cursor = (int)SendMessage(hWnd, TCM_GETCURFOCUS, 0, 0);
 					if ( cursor >= 0 ){
 						tie.mask = TCIF_PARAM;
-						TabCtrl_GetItem(hWnd,cursor,&tie);
+						TabCtrl_GetItem(hWnd, cursor, &tie);
 						SetFocus((HWND)tie.lParam);
 					}
 					return TRUE;
@@ -422,18 +422,18 @@ BOOL TabKeyDown(HWND hWnd,int key)
 
 				case VK_LEFT: {
 					int cursor;
-					cursor = (int)SendMessage(hWnd,TCM_GETCURFOCUS,0,0);
+					cursor = (int)SendMessage(hWnd, TCM_GETCURFOCUS, 0, 0);
 					if ( cursor >= 1 ){
-						SendMessage(hWnd,TCM_SETCURSEL,(WPARAM)(cursor -1 ),0);
+						SendMessage(hWnd, TCM_SETCURSEL, (WPARAM)(cursor -1 ), 0);
 					}
 					return TRUE;
 				}
 
 				case VK_RIGHT: {
 					int cursor;
-					cursor = (int)SendMessage(hWnd,TCM_GETCURFOCUS,0,0);
+					cursor = (int)SendMessage(hWnd, TCM_GETCURFOCUS, 0, 0);
 					if ( cursor >= 0 ){
-						SendMessage(hWnd,TCM_SETCURSEL,(WPARAM)(cursor +1 ),0);
+						SendMessage(hWnd, TCM_SETCURSEL, (WPARAM)(cursor +1 ), 0);
 					}
 					return TRUE;
 				}
@@ -450,17 +450,17 @@ void SetTabSizeCursor(HWND hWnd)
 
 //	GetMessagePosPoint(th.pt);
 	GetCursorPos(&th.pt);
-	ScreenToClient(hWnd,&th.pt);
-	index = TabCtrl_HitTest(hWnd,&th);
+	ScreenToClient(hWnd, &th.pt);
+	index = TabCtrl_HitTest(hWnd, &th);
 	if ( index >= 0 ){
-		TabCtrl_GetItemRect(hWnd,index,&box);
+		TabCtrl_GetItemRect(hWnd, index, &box);
 		if ( (box.right - SIZEBAND) < th.pt.x ){
-			SetCursor( LoadCursor(NULL,IDC_SIZEWE) );
+			SetCursor( LoadCursor(NULL, IDC_SIZEWE) );
 		}
 	}
 }
 
-void TabMoveMouse(HWND hWnd,TABHOOKSTRUCT *THS)
+void TabMoveMouse(HWND hWnd, TABHOOKSTRUCT *THS)
 {
 	int tabindex;
 	int showindex;
@@ -470,7 +470,7 @@ void TabMoveMouse(HWND hWnd,TABHOOKSTRUCT *THS)
 
 	if ( THS->ms.PushButton == MOUSEBUTTON_W ){
 		THS->DDinfo.showindex = THS_SHOW_CANCELDRAG;
-		SetCursor( LoadCursor(NULL,IDC_ARROW) );
+		SetCursor( LoadCursor(NULL, IDC_ARROW) );
 	}
 
 	if ( THS->ms.mode == MOUSEMODE_NONE ) SetTabSizeCursor(hWnd);
@@ -481,40 +481,40 @@ void TabMoveMouse(HWND hWnd,TABHOOKSTRUCT *THS)
 		POINT cpos;
 
 		THS->DDinfo.width = -1;
-		THS->DDinfo.tabindex = GetTabFromPos(&THS->ms.PushScreenPoint,&cpos,&THS->DDinfo.showindex);
+		THS->DDinfo.tabindex = GetTabFromPos(&THS->ms.PushScreenPoint, &cpos, &THS->DDinfo.showindex);
 		if ( THS->DDinfo.tabindex < 0 ){
 			THS->DDinfo.showindex = THS_SHOW_CANCELDRAG;
 		}else{
-			TabCtrl_GetItemRect(Combo.show[THS->DDinfo.showindex].tab.hWnd,THS->DDinfo.tabindex,&box);
+			TabCtrl_GetItemRect(Combo.show[THS->DDinfo.showindex].tab.hWnd, THS->DDinfo.tabindex, &box);
 			if ( (box.right - SIZEBAND) < cpos.x ){
 				THS->DDinfo.width = box.left;
 			}
 		}
 	}
 	if ( THS->DDinfo.showindex < 0 ) return;
-	tabindex = GetTabFromPos(&THS->ms.MovedScreenPoint,NULL,&showindex);
+	tabindex = GetTabFromPos(&THS->ms.MovedScreenPoint, NULL, &showindex);
 	if ( (((X_combos[0] & (CMBS_TABSEPARATE | CMBS_TABEACHITEM)) == CMBS_TABSEPARATE) && (showindex != THS->DDinfo.showindex)) ||
 
 	((showindex == THS->DDinfo.showindex) && (tabindex == THS->DDinfo.tabindex)) ){
 		showindex = -1;
 	}
-	SetCursor(LoadCursor(NULL,(THS->DDinfo.width >= 0 ) ? IDC_SIZEWE : (showindex < 0 ? IDC_NO : IDC_UPARROW) ) );
+	SetCursor(LoadCursor(NULL, (THS->DDinfo.width >= 0 ) ? IDC_SIZEWE : (showindex < 0 ? IDC_NO : IDC_UPARROW) ) );
 }
 
-LRESULT CALLBACK TabHookProc(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
+LRESULT CALLBACK TabHookProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 	TABHOOKSTRUCT *THS;
 
-	THS = (TABHOOKSTRUCT *)GetProp(hWnd,THSPROP);
+	THS = (TABHOOKSTRUCT *)GetProp(hWnd, THSPROP);
 	switch(iMsg){
 		case WM_DESTROY: {
 			WNDPROC hOldProc;
 
 			hOldProc = THS->hOldProc;
-			SetWindowLongPtr(hWnd,GWLP_WNDPROC,(LONG_PTR)hOldProc);
-			RemoveProp(hWnd,THSPROP);
-			HeapFree(hProcessHeap,0,THS);
-			return CallWindowProc(hOldProc,hWnd,iMsg,wParam,lParam);
+			SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)hOldProc);
+			RemoveProp(hWnd, THSPROP);
+			HeapFree(hProcessHeap, 0, THS);
+			return CallWindowProc(hOldProc, hWnd, iMsg, wParam, lParam);
 		}
 		case WM_NCHITTEST:
 			return HTCLIENT;	// 非タブ領域上のマウス操作も取得可能にする
@@ -525,9 +525,9 @@ LRESULT CALLBACK TabHookProc(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
 		case WM_MBUTTONDOWN:
 		case WM_XBUTTONDOWN:
 			if ( THS->DDinfo.showindex == THS_SHOW_NODRAG ){
-				CallWindowProc(THS->hOldProc,hWnd,iMsg,wParam,lParam);
+				CallWindowProc(THS->hOldProc, hWnd, iMsg, wParam, lParam);
 			}
-			PPxDownMouseButtonX(&THS->ms,hWnd,wParam,lParam);
+			PPxDownMouseButtonX(&THS->ms, hWnd, wParam, lParam);
 			SetTabSizeCursor(hWnd);
 			return 0;
 
@@ -536,9 +536,9 @@ LRESULT CALLBACK TabHookProc(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
 		case WM_RBUTTONUP:
 		case WM_XBUTTONUP:
 			if ( THS->DDinfo.showindex == THS_SHOW_NODRAG ){
-				 CallWindowProc(THS->hOldProc,hWnd,iMsg,wParam,lParam);
+				 CallWindowProc(THS->hOldProc, hWnd, iMsg, wParam, lParam);
 			}
-			TabUpMouse(hWnd,THS,lParam,PPxUpMouseButton(&THS->ms,wParam));
+			TabUpMouse(hWnd, THS, lParam, PPxUpMouseButton(&THS->ms, wParam));
 			THS->DDinfo.showindex = THS_SHOW_NODRAG;
 			return 0;
 
@@ -546,35 +546,35 @@ LRESULT CALLBACK TabHookProc(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
 		case WM_MBUTTONDBLCLK:
 		case WM_RBUTTONDBLCLK:
 		case WM_XBUTTONDBLCLK:
-			PPxDoubleClickMouseButton(&THS->ms,hWnd,wParam,lParam);
-			TabDblClickMouse(hWnd,&THS->ms);
+			PPxDoubleClickMouseButton(&THS->ms, hWnd, wParam, lParam);
+			TabDblClickMouse(hWnd, &THS->ms);
 			break;
 
 		case WM_MOUSEMOVE:
-			PPxMoveMouse(&THS->ms,hWnd,lParam);
-			TabMoveMouse(hWnd,THS);
+			PPxMoveMouse(&THS->ms, hWnd, lParam);
+			TabMoveMouse(hWnd, THS);
 			break;
 
 		case WM_MOUSEWHEEL: {
 			int i;
 
-			i = PPxWheelMouse(&THS->ms,hWnd,wParam,lParam);
+			i = PPxWheelMouse(&THS->ms, hWnd, wParam, lParam);
 			if ( i != 0 ){
 				int key = i > 0 ? VK_LEFT : VK_RIGHT;
-				PostMessage(hWnd,WM_KEYDOWN,key,0);
-				PostMessage(hWnd,WM_KEYUP,key,0);
-				PostMessage(hWnd,WM_KEYDOWN,VK_SPACE,0);
-				PostMessage(hWnd,WM_KEYUP,VK_SPACE,0);
+				PostMessage(hWnd, WM_KEYDOWN, key, 0);
+				PostMessage(hWnd, WM_KEYUP, key, 0);
+				PostMessage(hWnd, WM_KEYDOWN, VK_SPACE, 0);
+				PostMessage(hWnd, WM_KEYUP, VK_SPACE, 0);
 			}
 			return 1;
 		}
 
 		case WM_KEYDOWN:
-			if ( TabKeyDown(hWnd,(int)wParam) ) return 0;
+			if ( TabKeyDown(hWnd, (int)wParam) ) return 0;
 			break;
 
 	}
-	return CallWindowProc(THS->hOldProc,hWnd,iMsg,wParam,lParam);
+	return CallWindowProc(THS->hOldProc, hWnd, iMsg, wParam, lParam);
 }
 
 void NewTabBar(void)
@@ -586,50 +586,51 @@ void NewTabBar(void)
 	DWORD style = WS_CHILD | WS_VISIBLE | TCS_TOOLTIPS |
 			TCS_HOTTRACK | TCS_FOCUSNEVER | CCS_NODIVIDER;
 
-	THS = HeapAlloc(hProcessHeap,0,sizeof(TABHOOKSTRUCT));
+	THS = HeapAlloc(hProcessHeap, 0, sizeof(TABHOOKSTRUCT));
 	if ( THS == NULL ) return;
 
 	tabpane = Combo.Tabs;
-	if ( X_combos[0] & CMBS_TABFIXEDWIDTH ) setflag(style,TCS_FIXEDWIDTH);
-	if ( X_combos[0] & CMBS_TABMULTILINE )  setflag(style,TCS_MULTILINE);
+	if ( X_combos[0] & CMBS_TABFIXEDWIDTH ) setflag(style, TCS_FIXEDWIDTH);
+	if ( X_combos[0] & CMBS_TABMULTILINE )  setflag(style, TCS_MULTILINE);
 	if ( X_combos[0] & CMBS_TABBUTTON ){ // タブの行位置が変化しないようにする時の設定。但し、見た目が変わる
-		setflag(style,TCS_BUTTONS | TCS_FLATBUTTONS);
+		setflag(style, TCS_BUTTONS | TCS_FLATBUTTONS);
 	}
 	if ( (X_combos[0] & CMBS_TABCOLOR) || !(X_combos[1] & CMBS1_NOTABBUTTON) ){
-		setflag(style,TCS_OWNERDRAWFIXED);
+		setflag(style, TCS_OWNERDRAWFIXED);
 	}
-	hTabWnd = CreateWindowEx(0,WC_TABCONTROL,NilStr,style,-10,-10,
-			10,10,Combo.hWnd /* Combo.Panes.hWnd */,(HMENU)IDW_TABCONTROL,hInst,NULL);
+	hTabWnd = CreateWindowEx(0, WC_TABCONTROL, NilStr, style, -10, -10,
+			10, 10, Combo.hWnd /* Combo.Panes.hWnd */,
+			(HMENU)IDW_TABCONTROL, hInst, NULL);
 	if ( hTabWnd == NULL ) return;
 	Combo.show[tabpane].tab.hWnd = hTabWnd;
 	// ↓TCS_EX_REGISTERDROP は親でDrop処理するため不要
-	SendMessage(hTabWnd,TCM_SETEXTENDEDSTYLE,0,TCS_EX_FLATSEPARATORS);
-	SendMessage(hTabWnd,WM_SETFONT,(WPARAM)GetControlFont(Combo.FontDPI,&Combo.cfs),TMAKELPARAM(TRUE,0));
+	SendMessage(hTabWnd, TCM_SETEXTENDEDSTYLE, 0, TCS_EX_FLATSEPARATORS);
+	SendMessage(hTabWnd, WM_SETFONT, (WPARAM)GetControlFont(Combo.FontDPI, &Combo.cfs), TMAKELPARAM(TRUE, 0));
 
 	Combo.show[tabpane].tab.hTipWnd = TabCtrl_GetToolTips(hTabWnd);
 
 	THS->hWnd = hTabWnd;
 	THS->DDinfo.showindex = THS_SHOW_NODRAG;
 	PPxInitMouseButton(&THS->ms);
-	SetProp(THS->hWnd,THSPROP,(HANDLE)THS);
+	SetProp(THS->hWnd, THSPROP, (HANDLE)THS);
 	THS->hOldProc = (WNDPROC)
-			SetWindowLongPtr(THS->hWnd,GWLP_WNDPROC,(LONG_PTR)TabHookProc);
+			SetWindowLongPtr(THS->hWnd, GWLP_WNDPROC, (LONG_PTR)TabHookProc);
 
 	if ( X_combos[0] & CMBS_TABFIXEDWIDTH ){
-		DWORD X_twid[2] = {96,0};
+		DWORD X_twid[2] = {96, 0};
 
-		GetCustData(T("X_twid"),&X_twid,sizeof(X_twid));
-		SendMessage(hTabWnd,TCM_SETITEMSIZE,0,TMAKELPARAM(X_twid[0],X_twid[1]));
+		GetCustData(T("X_twid"), &X_twid, sizeof(X_twid));
+		SendMessage(hTabWnd, TCM_SETITEMSIZE, 0, TMAKELPARAM(X_twid[0], X_twid[1]));
 	}
 
 	Combo.Tabs++;
 
 	if ( Combo.BaseCount > 0 ){
 		if ( X_combos[0] & CMBS_TABEACHITEM ){
-			AddTabInfo(tabpane,Combo.base[Combo.show[tabpane].baseNo].hWnd);
+			AddTabInfo(tabpane, Combo.base[Combo.show[tabpane].baseNo].hWnd);
 		}else{
 			for ( item = 0 ; item < Combo.BaseCount ; item++ ){
-				AddTabInfo(tabpane,Combo.base[item].hWnd);
+				AddTabInfo(tabpane, Combo.base[item].hWnd);
 			}
 		}
 	}
@@ -655,10 +656,10 @@ void CreateTabBar(int mode)
 	}
 }
 
-void SetTabInfoMain(int setinfo,int showindex,HWND hItemWnd,TCHAR *buf)
+void SetTabInfoMain(int setinfo, int showindex, HWND hItemWnd, TCHAR *buf)
 {
 	TC_ITEM tie;
-	int tabpane,tabmin,tabmax;
+	int tabpane, tabmin, tabmax;
 	int msg;
 
 	tie.mask = TCIF_TEXT | TCIF_PARAM;
@@ -678,11 +679,11 @@ void SetTabInfoMain(int setinfo,int showindex,HWND hItemWnd,TCHAR *buf)
 		int tabid;
 
 		TC_ITEM atie;
-		int baseindex,abaseindex;
+		int baseindex, abaseindex;
 		PPC_APPINFO *cinfo;
 
 		hTabWnd = Combo.show[tabpane].tab.hWnd;
-		tabid = GetTabItemIndex(hItemWnd,tabpane);
+		tabid = GetTabItemIndex(hItemWnd, tabpane);
 		if ( setinfo == SETTABINFO_SET ){ // (SetTabInfo)
 			if ( tabid < 0 ) continue; // 登録されていない
 			LastTabInsType = 8000;
@@ -704,12 +705,12 @@ void SetTabInfoMain(int setinfo,int showindex,HWND hItemWnd,TCHAR *buf)
 
 						for ( atabid = 0 ;  ; atabid++ ){
 							atie.mask = TCIF_PARAM;
-							if ( FALSE == TabCtrl_GetItem(hTabWnd,atabid,&atie) ){
+							if ( FALSE == TabCtrl_GetItem(hTabWnd, atabid, &atie) ){
 								break;
 							}
 							abaseindex = GetComboBaseIndex((HWND)atie.lParam);
 							if ( (abaseindex >= 0) && (Combo.base[abaseindex].cinfo != NULL) ){
-								if ( tstrcmp(newpath,Combo.base[abaseindex].cinfo->path) < 0 ){
+								if ( tstrcmp(newpath, Combo.base[abaseindex].cinfo->path) < 0 ){
 									tabid = atabid;
 									break;
 								}
@@ -726,7 +727,7 @@ void SetTabInfoMain(int setinfo,int showindex,HWND hItemWnd,TCHAR *buf)
 
 		if ( tabid != 0 ){
 			atie.mask = TCIF_PARAM;
-			if ( TabCtrl_GetItem(hTabWnd,0,&atie) ){
+			if ( TabCtrl_GetItem(hTabWnd, 0, &atie) ){
 				baseindex = GetComboBaseIndex(hItemWnd);
 				if ( (baseindex >= 0) &&
 						 ((cinfo = Combo.base[baseindex].cinfo) != NULL) ){
@@ -735,8 +736,8 @@ void SetTabInfoMain(int setinfo,int showindex,HWND hItemWnd,TCHAR *buf)
 						if ( Combo.base[abaseindex].cinfo == cinfo ){
 							continue;
 						}
-						if ( tstrcmp(cinfo->RegSubCID,Combo.base[abaseindex].cinfo->RegSubCID) == 0 ){
-							PPxCommonExtCommand(K_SENDREPORT,(WPARAM)
+						if ( tstrcmp(cinfo->RegSubCID, Combo.base[abaseindex].cinfo->RegSubCID) == 0 ){
+							PPxCommonExtCommand(K_SENDREPORT, (WPARAM)
 									((setinfo == SETTABINFO_SET) ?
 									 T("同ID設定") : T("同ID追加")) );
 							continue;
@@ -745,26 +746,26 @@ void SetTabInfoMain(int setinfo,int showindex,HWND hItemWnd,TCHAR *buf)
 				}
 			}
 		}
-		SendMessage(hTabWnd,msg,(WPARAM)tabid,(LPARAM)&tie);
+		SendMessage(hTabWnd, msg, (WPARAM)tabid, (LPARAM)&tie);
 	}
 }
 
-void SetTabInfoData(int setinfo,int showindex,HWND hItemWnd)
+void SetTabInfoData(int setinfo, int showindex, HWND hItemWnd)
 {
-	TCHAR caption[VFPS + 50],buf[VFPS + 50],base[64],*path,*p;
+	TCHAR caption[VFPS + 50], buf[VFPS + 50], base[64], *path, *p;
 	int baseindex;
 	PPC_APPINFO *cinfo;
 	BOOL lock = FALSE;
 
 	caption[0] = '\0';
-	SendMessage(hItemWnd,WM_GETTEXT,
-			(WPARAM)TSIZEOF(caption),(LPARAM)caption);
-	if ( hItemWnd == hComboFocus ) SetWindowText(Combo.hWnd,caption);
+	SendMessage(hItemWnd, WM_GETTEXT,
+			(WPARAM)TSIZEOF(caption), (LPARAM)caption);
+	if ( hItemWnd == hComboFocus ) SetWindowText(Combo.hWnd, caption);
 
 	baseindex = GetComboBaseIndex(hItemWnd);
 	if ( (baseindex >= 0) && ((cinfo = Combo.base[baseindex].cinfo) != NULL) ){
 		lock = cinfo->ChdirLock;
-		wsprintf(base,T("[%s]"),cinfo->RegSubCID + 1);
+		wsprintf(base, T("[%s]"), cinfo->RegSubCID + 1);
 
 		if ( (cinfo->e.Dtype.mode == VFSDT_LFILE) &&
 			 (cinfo->e.Dtype.BasePath[0] != '\0') ){
@@ -779,18 +780,18 @@ void SetTabInfoData(int setinfo,int showindex,HWND hItemWnd)
 		}
 	}else{
 		cinfo = NULL;
-		path = tstrchr(caption,']');
+		path = tstrchr(caption, ']');
 		if ( (path == NULL) || ((path - caption) > 10) ){
 			base[0] = '\0';
 			path = caption;
 		}else{
 			path++;
-			p = tstrchr(caption,'[');
+			p = tstrchr(caption, '[');
 			if ( (p == NULL) || (p >= path) ){
 				base[0] = '\0';
 				path = caption;
 			}else{
-				memcpy(base,path,(path - p) * sizeof(TCHAR) );
+				memcpy(base, path, (path - p) * sizeof(TCHAR) );
 				base[(path - p)] = '\0';
 			}
 		}
@@ -812,27 +813,27 @@ void SetTabInfoData(int setinfo,int showindex,HWND hItemWnd)
 		dst = buf;
 		if ( lock ) *dst++ = '#';
 		if ( (TabCaptionText != NULL) && (cinfo != NULL) ){
-			PP_ExtractMacro(NULL,&cinfo->info,NULL,TabCaptionText,dst,XEO_DISPONLY);
+			PP_ExtractMacro(NULL, &cinfo->info, NULL, TabCaptionText, dst, XEO_DISPONLY);
 		}else{
 			if ( TabCaptionType == 1 ){
-				tstrcpy(dst,base);
+				tstrcpy(dst, base);
 				dst += tstrlen(dst);
 			}
 			if ( *p != '\\' ){
-				tstrcpy(dst,path);
+				tstrcpy(dst, path);
 			}else{
-				tstrcpy(dst,p + 1);
+				tstrcpy(dst, p + 1);
 			}
 		}
 	}
 	if ( (X_combos[1] & (CMBS1_TABFIXLAYOUT | CMBS1_NOTABBUTTON)) == 0  ){ // タブ幅が可変長の時、閉じるボタン分の場所を確保
-		tstrcat(buf,T("    ")); // " [x]"
+		tstrcat(buf, T("    ")); // " [x]"
 	}
-	SetTabInfoMain(setinfo,showindex,hItemWnd,buf);
+	SetTabInfoMain(setinfo, showindex, hItemWnd, buf);
 }
 
 // hWnd に該当する Tab item の index を取得
-int GetTabItemIndex(HWND hWnd,int tabwndindex)
+int GetTabItemIndex(HWND hWnd, int tabwndindex)
 {
 	TC_ITEM tie;
 	int tabindex;
@@ -843,7 +844,7 @@ int GetTabItemIndex(HWND hWnd,int tabwndindex)
 	tabcount = TabCtrl_GetItemCount(hTabWnd);
 	for ( tabindex = 0 ; tabindex < tabcount ; tabindex++ ){
 		tie.mask = TCIF_PARAM;
-		if ( TabCtrl_GetItem(hTabWnd,tabindex,&tie) == FALSE ) continue;
+		if ( TabCtrl_GetItem(hTabWnd, tabindex, &tie) == FALSE ) continue;
 		if ( tie.lParam == (LPARAM)hWnd ) return tabindex;
 	}
 	return -1;
@@ -868,18 +869,18 @@ int GetTabItemIndex(HWND hWnd,int tabwndindex)
 
 void SetTabColor(int baseindex)
 {
-	TCHAR id[16],value[32];
+	TCHAR id[16], value[32];
 	PPC_APPINFO *cinfo;
 
-	InvalidateRect(Combo.hWnd,NULL,TRUE);
+	InvalidateRect(Combo.hWnd, NULL, TRUE);
 
 	if ( (cinfo = Combo.base[baseindex].cinfo) != NULL ){
-		wsprintf(id,T("%s_tabcolor"),(cinfo->RegSubIDNo < 0) ? cinfo->RegID : cinfo->RegSubCID);
+		wsprintf(id, T("%s_tabcolor"), (cinfo->RegSubIDNo < 0) ? cinfo->RegID : cinfo->RegSubCID);
 		if ( (Combo.base[baseindex].tabbackcolor == C_AUTO) && (Combo.base[baseindex].tabtextcolor == C_AUTO) ){
-			DeleteCustTable(T("_Path"),id,0);
+			DeleteCustTable(T("_Path"), id, 0);
 		}else{
-			wsprintf(value,T("H%x,H%x"),Combo.base[baseindex].tabtextcolor,Combo.base[baseindex].tabbackcolor);
-			SetCustTable(T("_Path"),id,value,TSTRSIZE(value));
+			wsprintf(value, T("H%x, H%x"), Combo.base[baseindex].tabtextcolor, Combo.base[baseindex].tabbackcolor);
+			SetCustStringTable(T("_Path"), id, value, 22);
 		}
 	}
 }
@@ -888,13 +889,13 @@ const TCHAR comdlg32name[] = T("comdlg32.dll");
 void SetTabColorDialog(int baseindex)
 {
 	CHOOSECOLOR cc;
-	DefineWinAPI(BOOL,ChooseColor,(LPCHOOSECOLOR lpcc));
+	DefineWinAPI(BOOL, ChooseColor, (LPCHOOSECOLOR lpcc));
 	COLORREF userColor[16];
 
 	HMODULE hComdlg32 = LoadLibrary(comdlg32name);
 	if ( hComdlg32 == NULL ) return;
 
-	GETDLLPROCT(hComdlg32,ChooseColor);
+	GETDLLPROCT(hComdlg32, ChooseColor);
 
 	cc.lStructSize = sizeof(cc);
 	cc.hwndOwner = Combo.hWnd;
@@ -904,8 +905,8 @@ void SetTabColorDialog(int baseindex)
 
 	if ( DChooseColor(&cc) ){
 		if ( !(X_combos[0] & CMBS_TABCOLOR) ){
-			setflag(X_combos[0],CMBS_TABCOLOR);
-			SetCustData(T("X_combos"),&X_combos,sizeof(X_combos));
+			setflag(X_combos[0], CMBS_TABCOLOR);
+			SetCustData(T("X_combos"), &X_combos, sizeof(X_combos));
 		}
 		Combo.base[baseindex].tabtextcolor = C_AUTO;
 		Combo.base[baseindex].tabbackcolor = cc.rgbResult;
@@ -915,29 +916,29 @@ void SetTabColorDialog(int baseindex)
 	FreeLibrary(hComdlg32);
 }
 
-void ClosePanes(HWND hTabWnd,int baseindex,int mode)
+void ClosePanes(HWND hTabWnd, int baseindex, int mode)
 {
 	TC_ITEM tie;
 	int tabindex;
 	int tabcount;
 	HWND hSWnd;
-	int first = 0,last = TabCtrl_GetItemCount(hTabWnd) - 1;
+	int first = 0, last = TabCtrl_GetItemCount(hTabWnd) - 1;
 
 	hSWnd = Combo.base[baseindex].hWnd;
 	tabcount = last + 1;
 	for ( tabindex = 0 ; tabindex < tabcount ; tabindex++ ){
 		tie.mask = TCIF_PARAM;
-		if ( TabCtrl_GetItem(hTabWnd,tabindex,&tie) == FALSE ) continue;
+		if ( TabCtrl_GetItem(hTabWnd, tabindex, &tie) == FALSE ) continue;
 		if ( tie.lParam != (LPARAM)hSWnd ) continue;
 
 		if ( mode < 0 ) last = tabindex - 1;
 		if ( mode > 0 ) first = tabindex + 1;
-		PostMessage(Combo.hWnd,WM_PPXCOMMAND,TMAKEWPARAM(KCW_closetabs,GetTabShowIndex(hTabWnd)),TMAKELPARAM(first,last));
+		PostMessage(Combo.hWnd, WM_PPXCOMMAND, TMAKEWPARAM(KCW_closetabs, GetTabShowIndex(hTabWnd)), TMAKELPARAM(first, last));
 		return;
 	}
 }
 
-void NewPane(int baseindex,const TCHAR *param)
+void NewPane(int baseindex, const TCHAR *param)
 {
 	HWND hPaneWnd = Combo.base[baseindex].hWnd;
 
@@ -971,7 +972,7 @@ void NewPane(int baseindex,const TCHAR *param)
 
 void SwapPane(int targetpane)
 {
-	int swapshow,rightpane = GetComboShowIndex(hComboRightFocus);
+	int swapshow, rightpane = GetComboShowIndex(hComboRightFocus);
 	COMBOPANES tmpshow;
 
 	swapshow = GetComboShowIndex(hComboFocus);
@@ -994,14 +995,14 @@ void SwapPane(int targetpane)
 	Combo.show[targetpane] = Combo.show[swapshow];
 	Combo.show[swapshow] = tmpshow;
 
-	InvalidateRect(Combo.hWnd,NULL,TRUE);
+	InvalidateRect(Combo.hWnd, NULL, TRUE);
 	SortComboWindows(SORTWIN_LAYOUTPAIN);
 }
 
-BOOL TabMenu(HWND hTabWnd,int baseindex,int targetpane,POINT *pos)
+BOOL TabMenu(HWND hTabWnd, int baseindex, int targetpane, POINT *pos)
 {
 	HMENU hMenu;
-	int menuindex,showindex = -1;
+	int menuindex, showindex = -1;
 	HWND hPaneWnd = NULL;
 	ThSTRUCT thMenuData;
 	POINT temppos;
@@ -1020,13 +1021,13 @@ BOOL TabMenu(HWND hTabWnd,int baseindex,int targetpane,POINT *pos)
 
 	ThInit(&thMenuData);
 	hMenu = CreatePopupMenu();
-	AppendMenuString(hMenu,CMENU_NEWTAB,MES_TABN);
+	AppendMenuString(hMenu, CMENU_NEWTAB, MES_TABN);
 	if ( baseindex >= 0 ){
 		if ( Combo.base[baseindex].cinfo != NULL ){
-			AppendMenuCheckString(hMenu,CMENU_LOCK,MES_TABL,
+			AppendMenuCheckString(hMenu, CMENU_LOCK, MES_TABL,
 					Combo.base[baseindex].cinfo->ChdirLock);
 			if ( Combo.BaseCount > 1 ){
-				AppendMenuString(hMenu,CMENU_EJECT,MES_TABE);
+				AppendMenuString(hMenu, CMENU_EJECT, MES_TABE);
 			}
 		}
 
@@ -1037,51 +1038,51 @@ BOOL TabMenu(HWND hTabWnd,int baseindex,int targetpane,POINT *pos)
 				temppos.x = Combo.show[showindex].box.left;
 				temppos.y = Combo.show[showindex].box.top;
 				pos = &temppos;
-				ClientToScreen(Combo.hWnd,&temppos);
+				ClientToScreen(Combo.hWnd, &temppos);
 			}
 			if ( Combo.ShowCount > 1 ){
 				if ( !(X_combos[0] & CMBS_TABEACHITEM) ){
-					AppendMenuString(hMenu,CMENU_HIDE,MES_TABH);
+					AppendMenuString(hMenu, CMENU_HIDE, MES_TABH);
 				}else{
-					AppendMenuString(hMenu,CMENU_CLOSEPANE,MES_TACP);
+					AppendMenuString(hMenu, CMENU_CLOSEPANE, MES_TACP);
 				}
 			}
 		}else{
-			AppendMenuString(hMenu,CMENU_NEWPANE,MES_TABP);
+			AppendMenuString(hMenu, CMENU_NEWPANE, MES_TABP);
 		}
 
 		if ( Combo.ShowCount >= 2 ){
-			AppendMenuString(hMenu,CMENU_SWAPPANE,MES_TABW);
+			AppendMenuString(hMenu, CMENU_SWAPPANE, MES_TABW);
 		}
 
 		if ( hTabWnd != NULL ){
-			AppendMenuString(hMenu,CMENU_KEYSELECT,MES_TABK);
-			AppendMenuString(hMenu,CMENU_COLOR,MES_TABR);
+			AppendMenuString(hMenu, CMENU_KEYSELECT, MES_TABK);
+			AppendMenuString(hMenu, CMENU_COLOR, MES_TABR);
 			if ( Combo.base[baseindex].tabbackcolor != C_AUTO ){
-				AppendMenuString(hMenu,CMENU_AUTOCOLOR,MES_TABD);
+				AppendMenuString(hMenu, CMENU_AUTOCOLOR, MES_TABD);
 			}
 
-			AppendMenuString(hMenu,CMENU_CLOSELEFT,MES_TACL);
-			AppendMenuString(hMenu,CMENU_CLOSERIGHT,MES_TACR);
+			AppendMenuString(hMenu, CMENU_CLOSELEFT, MES_TACL);
+			AppendMenuString(hMenu, CMENU_CLOSERIGHT, MES_TACR);
 		}
 
 		PP_AddMenu( (Combo.base[baseindex].cinfo != NULL) ?
 				 &Combo.base[baseindex].cinfo->info : NULL,
-				Combo.hWnd,hMenu,&exid,T("M_tabc"),&thMenuData);
+				Combo.hWnd, hMenu, &exid, T("M_tabc"), &thMenuData);
 
-		AppendMenuString(hMenu,CMENU_CLOSE,MES_TABC);
+		AppendMenuString(hMenu, CMENU_CLOSE, MES_TABC);
 	}else{
-		AppendMenuString(hMenu,CMENU_NEWPANE,MES_TABP);
+		AppendMenuString(hMenu, CMENU_NEWPANE, MES_TABP);
 		if ( X_combos[0] & CMBS_TABFIXEDWIDTH ){
-			AppendMenuString(hMenu,CMENU_SAVEWIDTH,MES_TABI);
+			AppendMenuString(hMenu, CMENU_SAVEWIDTH, MES_TABI);
 		}
 		if ( hTabWnd != NULL ){
-			AppendMenuString(hMenu,CMENU_KEYSELECT,MES_TABK);
+			AppendMenuString(hMenu, CMENU_KEYSELECT, MES_TABK);
 		}
 		if ( Combo.ShowCount >= 2 ){
-			AppendMenuString(hMenu,CMENU_SWAPPANE,MES_TABW);
-			AppendMenuString(hMenu,!(X_combos[0] & CMBS_TABEACHITEM) ?
-					CMENU_HIDE : CMENU_CLOSEPANE,MES_TACP);
+			AppendMenuString(hMenu, CMENU_SWAPPANE, MES_TABW);
+			AppendMenuString(hMenu, !(X_combos[0] & CMBS_TABEACHITEM) ?
+					CMENU_HIDE : CMENU_CLOSEPANE, MES_TACP);
 		}
 	}
 
@@ -1093,14 +1094,14 @@ BOOL TabMenu(HWND hTabWnd,int baseindex,int targetpane,POINT *pos)
 
 			for ( i = 0 ; i < Combo.BaseCount ; i++ ){	// 検索
 				tie.mask = TCIF_PARAM;
-				if ( TabCtrl_GetItem(hTabWnd,i,&tie) == FALSE ) continue;
+				if ( TabCtrl_GetItem(hTabWnd, i, &tie) == FALSE ) continue;
 				if ( hPaneWnd != (HWND)tie.lParam ) continue;
 				// タブの位置を取得し、変換
-				TabCtrl_GetItemRect(hTabWnd,i,&box);
+				TabCtrl_GetItemRect(hTabWnd, i, &box);
 				temppos.x = box.left;
 				temppos.y = box.bottom;
 				pos = &temppos;
-				ClientToScreen(hTabWnd,&temppos);
+				ClientToScreen(hTabWnd, &temppos);
 				break;
 			}
 		}
@@ -1108,10 +1109,10 @@ BOOL TabMenu(HWND hTabWnd,int baseindex,int targetpane,POINT *pos)
 			temppos.x = 0;
 			temppos.y = 0;
 			pos = &temppos;
-			ClientToScreen(Combo.hWnd,&temppos);
+			ClientToScreen(Combo.hWnd, &temppos);
 		}
 	}
-	menuindex = TrackPopupMenu(hMenu,TPM_TDEFAULT,pos->x,pos->y,0,Combo.hWnd,NULL);
+	menuindex = TrackPopupMenu(hMenu, TPM_TDEFAULT, pos->x, pos->y, 0, Combo.hWnd, NULL);
 	DestroyMenu(hMenu);
 	switch (menuindex){
 		case CMENU_NEWTAB:
@@ -1119,7 +1120,7 @@ BOOL TabMenu(HWND hTabWnd,int baseindex,int targetpane,POINT *pos)
 			break;
 
 		case CMENU_CLOSE:
-			PostMessage(hPaneWnd,WM_CLOSE,0,0);
+			PostMessage(hPaneWnd, WM_CLOSE, 0, 0);
 			break;
 
 		case CMENU_HIDE:
@@ -1127,11 +1128,11 @@ BOOL TabMenu(HWND hTabWnd,int baseindex,int targetpane,POINT *pos)
 			break;
 
 		case CMENU_NEWPANE:
-			NewPane(baseindex,NULL);
+			NewPane(baseindex, NULL);
 			break;
 
 		case CMENU_EJECT:
-			PostMessage(Combo.hWnd,WM_PPXCOMMAND,KCW_eject,(LPARAM)baseindex);
+			PostMessage(Combo.hWnd, WM_PPXCOMMAND, KCW_eject, (LPARAM)baseindex);
 			break;
 
 		case CMENU_AUTOCOLOR:
@@ -1152,7 +1153,7 @@ BOOL TabMenu(HWND hTabWnd,int baseindex,int targetpane,POINT *pos)
 			if ( Combo.base[baseindex].cinfo != NULL ){
 				Combo.base[baseindex].cinfo->ChdirLock =
 						!Combo.base[baseindex].cinfo->ChdirLock;
-				SetTabInfo(-1,Combo.base[baseindex].hWnd); // ロック状態を文字で表現している間、用意
+				SetTabInfo(-1, Combo.base[baseindex].hWnd); // ロック状態を文字で表現している間、用意
 			}
 			break;
 
@@ -1160,7 +1161,7 @@ BOOL TabMenu(HWND hTabWnd,int baseindex,int targetpane,POINT *pos)
 			if ( baseindex < 0 ) baseindex = Combo.show[targetpane].baseNo;
 		case CMENU_CLOSELEFT:
 		case CMENU_CLOSERIGHT:
-			ClosePanes(hTabWnd,baseindex,menuindex - CMENU_CLOSEPANE);
+			ClosePanes(hTabWnd, baseindex, menuindex - CMENU_CLOSEPANE);
 			break;
 
 		case CMENU_SWAPPANE:
@@ -1170,9 +1171,9 @@ BOOL TabMenu(HWND hTabWnd,int baseindex,int targetpane,POINT *pos)
 		case CMENU_SAVEWIDTH: {
 			RECT box;
 
-			TabCtrl_GetItemRect(hTabWnd,0,&box);
-			wsprintf(buf,T("%d"),box.right - box.left);
-			if ( tInput(hTabWnd,T("Save Width"),buf,TSIZEOF(buf),PPXH_NUMBER,PPXH_NUMBER) > 0 ){
+			TabCtrl_GetItemRect(hTabWnd, 0, &box);
+			wsprintf(buf, T("%d"), box.right - box.left);
+			if ( tInput(hTabWnd, T("Save Width"), buf, TSIZEOF(buf), PPXH_NUMBER, PPXH_NUMBER) > 0 ){
 				int X_twid[2];
 				const TCHAR *p;
 
@@ -1180,8 +1181,8 @@ BOOL TabMenu(HWND hTabWnd,int baseindex,int targetpane,POINT *pos)
 				X_twid[0] = GetNumber(&p);
 				if ( X_twid[0] >= 16 ){
 					X_twid[1] = 0;
-					SetCustData(T("X_twid"),&X_twid,sizeof(X_twid));
-					SendMessage(hTabWnd,TCM_SETITEMSIZE,0,TMAKELPARAM(X_twid[0],X_twid[1]));
+					SetCustData(T("X_twid"), &X_twid, sizeof(X_twid));
+					SendMessage(hTabWnd, TCM_SETITEMSIZE, 0, TMAKELPARAM(X_twid[0], X_twid[1]));
 				}
 			}
 			break;
@@ -1195,12 +1196,12 @@ BOOL TabMenu(HWND hTabWnd,int baseindex,int targetpane,POINT *pos)
 			if ( menuindex >= CMENU_ADDITEMS ){
 				const TCHAR *command;
 
-				GetMenuDataMacro2(command,&thMenuData,menuindex - CMENU_ADDITEMS);
+				GetMenuDataMacro2(command, &thMenuData, menuindex - CMENU_ADDITEMS);
 				if ( command != NULL ){
 					PP_ExtractMacro(Combo.base[baseindex].hWnd,
 							(Combo.base[baseindex].cinfo != NULL) ?
 							 &Combo.base[baseindex].cinfo->info : NULL,
-							NULL,command,NULL,0);
+							NULL, command, NULL, 0);
 				}
 				break;
 			}
@@ -1217,12 +1218,12 @@ BOOL TabMenu(HWND hTabWnd,int baseindex,int targetpane,POINT *pos)
 // 現在－反対のペインの中身を交換 --------------------------------------------
 void ComboSwap(void)
 {
-	int baseindexL,baseindexR,focusshowindex;
-	int showindexL,showindexR;
-	int tabL,tabR;
+	int baseindexL, baseindexR, focusshowindex;
+	int showindexL, showindexR;
+	int tabL, tabR;
 	int tabpane;
-	TC_ITEM tieL,tieR;
-	TCHAR strL[VFPS + 16],strR[VFPS + 16];
+	TC_ITEM tieL, tieR;
+	TCHAR strL[VFPS + 16], strR[VFPS + 16];
 	HWND hNewFocusR;
 
 	if ( Combo.BaseCount < 2 ) return; // １枚しかない
@@ -1262,36 +1263,36 @@ void ComboSwap(void)
 		//	hComboFocus = hNewLeftWnd;
 		//	hComboRightFocus = hNewFocusR;
 
-		ShowWindow(Combo.base[baseindexL].hWnd,SW_HIDE);
-		ShowWindow(hNewLeftWnd,SW_SHOWNORMAL);
+		ShowWindow(Combo.base[baseindexL].hWnd, SW_HIDE);
+		ShowWindow(hNewLeftWnd, SW_SHOWNORMAL);
 	}
 
 	if ( (showindexR > 0) && (X_combos[0] & CMBS_TABEACHITEM) ){ // タブ入れ替え(各ペイン間で入替え)
-		tabL = GetTabItemIndex(Combo.base[baseindexL].hWnd,showindexL);
-		tabR = GetTabItemIndex(Combo.base[baseindexR].hWnd,showindexR);
+		tabL = GetTabItemIndex(Combo.base[baseindexL].hWnd, showindexL);
+		tabR = GetTabItemIndex(Combo.base[baseindexR].hWnd, showindexR);
 		if ( (tabL >= 0) && (tabR >= 0) ){
 			tieL.mask = tieR.mask = TCIF_TEXT | TCIF_PARAM;
 			tieL.cchTextMax = tieR.cchTextMax = VFPS + 16;
 			tieL.pszText = strL;
 			tieR.pszText = strR;
-			TabCtrl_GetItem(Combo.show[showindexL].tab.hWnd,tabL,&tieL);
-			TabCtrl_GetItem(Combo.show[showindexR].tab.hWnd,tabR,&tieR);
-			TabCtrl_SetItem(Combo.show[showindexL].tab.hWnd,tabL,&tieR);
-			TabCtrl_SetItem(Combo.show[showindexR].tab.hWnd,tabR,&tieL);
+			TabCtrl_GetItem(Combo.show[showindexL].tab.hWnd, tabL, &tieL);
+			TabCtrl_GetItem(Combo.show[showindexR].tab.hWnd, tabR, &tieR);
+			TabCtrl_SetItem(Combo.show[showindexL].tab.hWnd, tabL, &tieR);
+			TabCtrl_SetItem(Combo.show[showindexR].tab.hWnd, tabR, &tieL);
 		}
 	}else{ // タブ入れ替え(各ペイン毎に入れ替え)
 		for ( tabpane = 0 ; tabpane < Combo.Tabs ; tabpane++ ){
-			tabL = GetTabItemIndex(Combo.base[baseindexL].hWnd,tabpane);
-			tabR = GetTabItemIndex(Combo.base[baseindexR].hWnd,tabpane);
+			tabL = GetTabItemIndex(Combo.base[baseindexL].hWnd, tabpane);
+			tabR = GetTabItemIndex(Combo.base[baseindexR].hWnd, tabpane);
 			if ( (tabL >= 0) && (tabR >= 0) ){
 				tieL.mask = tieR.mask = TCIF_TEXT | TCIF_PARAM;
 				tieL.cchTextMax = tieR.cchTextMax = VFPS;
 				tieL.pszText = strL;
 				tieR.pszText = strR;
-				TabCtrl_GetItem(Combo.show[tabpane].tab.hWnd,tabL,&tieL);
-				TabCtrl_GetItem(Combo.show[tabpane].tab.hWnd,tabR,&tieR);
-				TabCtrl_SetItem(Combo.show[tabpane].tab.hWnd,tabL,&tieR);
-				TabCtrl_SetItem(Combo.show[tabpane].tab.hWnd,tabR,&tieL);
+				TabCtrl_GetItem(Combo.show[tabpane].tab.hWnd, tabL, &tieL);
+				TabCtrl_GetItem(Combo.show[tabpane].tab.hWnd, tabR, &tieR);
+				TabCtrl_SetItem(Combo.show[tabpane].tab.hWnd, tabL, &tieR);
+				TabCtrl_SetItem(Combo.show[tabpane].tab.hWnd, tabR, &tieL);
 			}
 		}
 	}
@@ -1305,13 +1306,13 @@ void ComboSwap(void)
 	}
 }
 
-void SelectTabByWindow(HWND hTargetWnd,int selectpane)
+void SelectTabByWindow(HWND hTargetWnd, int selectpane)
 {
 	int tabindex;
 
-	tabindex = GetTabItemIndex(hTargetWnd,selectpane);
+	tabindex = GetTabItemIndex(hTargetWnd, selectpane);
 	if ( tabindex < 0 ) return;
-	TabCtrl_SetCurSel(Combo.show[selectpane].tab.hWnd,tabindex);
+	TabCtrl_SetCurSel(Combo.show[selectpane].tab.hWnd, tabindex);
 }
 
 void SetFocusWithBackupedRightWindow(HWND hNewFocusWnd)
@@ -1337,8 +1338,8 @@ BOOL USEFASTCALL IsHideTabForMultiShow(void)
 	}
 
 	if ( !(X_combos[0] & CMBS_TABEACHITEM) ){ // タブ共通
-		if ( Combo.ShowCount > X_mpane.max ) return FALSE; // ペイン数が最大以上なら表示
-		if ( Combo.BaseCount <= X_mpane.max ) return TRUE; // 全タブが最大以下なら非表示
+		if ( Combo.ShowCount > X_mpane.limit ) return FALSE; // ペイン数が最大以上なら表示
+		if ( Combo.BaseCount <= X_mpane.limit ) return TRUE; // 全タブが最大以下なら非表示
 	}
 
 	// ２タブ以上のペインがあれば表示
@@ -1350,12 +1351,12 @@ BOOL USEFASTCALL IsHideTabForMultiShow(void)
 	return TRUE; // 全ペイン１タブなので非表示
 }
 
-#define CutTableItem(table,index,max) memmove(&table[(index)],&table[(index)+1],(BYTE *)&table[max] - (BYTE *)&table[(index)+1]); // table[index] を除去して残りを詰める
+#define CutTableItem(table, index, max) memmove(&table[(index)], &table[(index)+1], (BYTE *)&table[max] - (BYTE *)&table[(index)+1]); // table[index] を除去して残りを詰める
 
 // １窓終了時の後処理 --------------------------------------------
-void DestroyedPaneWindow(HWND hComboWnd,HWND hPaneWnd)
+void DestroyedPaneWindow(HWND hComboWnd, HWND hPaneWnd)
 {
-	int showindex,baseindex;
+	int showindex, baseindex;
 	HWND hNewFocusWnd = NULL;
 	BOOL DecPane = FALSE;
 	TCHAR buf[VFPS];
@@ -1385,13 +1386,13 @@ void DestroyedPaneWindow(HWND hComboWnd,HWND hPaneWnd)
 			tabcount = TabCtrl_GetItemCount(hTabWnd);
 
 			if ( tabcount > 1 ){
-				int tabindex,tabbase;
+				int tabindex, tabbase;
 
 				for ( tabindex = 0 ; tabindex < tabcount ; tabindex++ ){
 					TC_ITEM tie;
 
 					tie.mask = TCIF_PARAM;
-					if ( IsTrue(TabCtrl_GetItem(hTabWnd,tabindex,&tie)) ){
+					if ( IsTrue(TabCtrl_GetItem(hTabWnd, tabindex, &tie)) ){
 						tabbase = GetComboBaseIndex((HWND)tie.lParam);
 						if ( (tabbase >= 0) &&
 							 (GetComboShowIndex((HWND)tie.lParam) < 0) ){
@@ -1406,7 +1407,7 @@ void DestroyedPaneWindow(HWND hComboWnd,HWND hPaneWnd)
 		}
 
 		// 未使用窓(別のペインでも可)があるなら割り当てる
-		if ( (newppc == -1) && (Combo.BaseCount > X_mpane.max) && (Combo.ShowCount >= X_mpane.max) ){
+		if ( (newppc == -1) && (Combo.BaseCount > X_mpane.limit) && (Combo.ShowCount >= X_mpane.limit) ){
 			int newbase;
 
 			for ( newbase = 0 ; newbase < Combo.BaseCount ; newbase++ ){
@@ -1425,20 +1426,20 @@ void DestroyedPaneWindow(HWND hComboWnd,HWND hPaneWnd)
 		if ( newppc < 0 ){
 			WINPOS WPos;
 
-			if ( (X_combos[0] & CMBS_TABMINCLOSE) && (Combo.ShowCount > 1) && (Combo.ShowCount == X_mpane.min) ){
-				PostMessage(hComboWnd,WM_CLOSE,0,0);
+			if ( (X_combos[0] & CMBS_TABMINCLOSE) && (Combo.ShowCount > 1) && (Combo.ShowCount == X_mpane.first) ){
+				PostMessage(hComboWnd, WM_CLOSE, 0, 0);
 				return; // タブ並びを保存するために、以降の処理をしない
 			}
-			wsprintf(buf,T("%s%d"),ComboID,showindex);
+			wsprintf(buf, T("%s%d"), ComboID, showindex);
 			WPos.show = 0;
 			WPos.reserved = 0;
 			WPos.pos = Combo.show[showindex].box;
-			SetCustTable(Str_WinPos,buf,&WPos,sizeof(WPos));
+			SetCustTable(Str_WinPos, buf, &WPos, sizeof(WPos));
 
 			hNewFocusWnd = DeletePane(showindex);
 			DecPane = TRUE;
 		}else{ // 新しいPPcを設定
-			SendMessage(Combo.hWnd,WM_SETREDRAW,FALSE,0);
+			SendMessage(Combo.hWnd, WM_SETREDRAW, FALSE, 0);
 			Combo.show[showindex].baseNo = newppc;
 			if ( hPaneWnd == hComboRightFocus ){
 				hComboRightFocus = Combo.base[newppc].hWnd;
@@ -1448,16 +1449,16 @@ void DestroyedPaneWindow(HWND hComboWnd,HWND hPaneWnd)
 				hNewFocusWnd = Combo.base[newppc].hWnd;
 			}else if ( Combo.Tabs >= 2 ){ // 現在窓以外の表示タブが変わった
 				// →タブの再選択が必要
-				int tabpane,focuspane;
+				int tabpane, focuspane;
 
 				if ( X_combos[0] & CMBS_TABEACHITEM ){
 					focuspane = GetComboShowIndex(hComboFocus);
 					for ( tabpane = 0 ; tabpane < Combo.Tabs ; tabpane++ ){
 						if ( tabpane == focuspane ) continue;
-						SelectTabByWindow(Combo.base[newppc].hWnd,tabpane);
+						SelectTabByWindow(Combo.base[newppc].hWnd, tabpane);
 					}
 				}else{
-					SelectTabByWindow(Combo.base[newppc].hWnd,showindex);
+					SelectTabByWindow(Combo.base[newppc].hWnd, showindex);
 				}
 			}
 			if ( (hComboRightFocus == hNewFocusWnd) && (showindex == 0) ){
@@ -1474,9 +1475,9 @@ void DestroyedPaneWindow(HWND hComboWnd,HWND hPaneWnd)
 				}
 			}
 			CheckComboTable(T("@DestroyedPaneWindow1"));
-			ShowWindow(Combo.base[newppc].hWnd,SW_SHOWNOACTIVATE);
-			SendMessage(Combo.hWnd,WM_SETREDRAW,TRUE,0);
-			InvalidateRect(Combo.hWnd,NULL,TRUE);
+			ShowWindow(Combo.base[newppc].hWnd, SW_SHOWNOACTIVATE);
+			SendMessage(Combo.hWnd, WM_SETREDRAW, TRUE, 0);
+			InvalidateRect(Combo.hWnd, NULL, TRUE);
 		}
 	}
 
@@ -1486,12 +1487,12 @@ void DestroyedPaneWindow(HWND hComboWnd,HWND hPaneWnd)
 
 	// 親ディレクトリのタブを捜す
 	if ( (X_combos[0] & CMBS_TABUPDIRCLOSE) && (cinfo != NULL) ){
-		if ( VFSFullPath(buf,T(".."),cinfo->path) != NULL ){
+		if ( VFSFullPath(buf, T(".."), cinfo->path) != NULL ){
 			int bi;
 
 			for ( bi = 0 ; bi < Combo.BaseCount ; bi++ ){
 				if ( (Combo.base[bi].cinfo != NULL) &&
-						!tstrcmp(buf,Combo.base[bi].cinfo->path) ){
+						!tstrcmp(buf, Combo.base[bi].cinfo->path) ){
 					hNewFocusWnd = Combo.base[bi].hWnd;
 					break;
 				}
@@ -1513,10 +1514,10 @@ void DestroyedPaneWindow(HWND hComboWnd,HWND hPaneWnd)
 	}
 
 	{ // 全てのタブからこの窓を削除
-		int tabindex,tabpane;
+		int tabindex, tabpane;
 
 		for ( tabpane = 0 ; tabpane < Combo.Tabs ; tabpane++ ){
-			tabindex = GetTabItemIndex(hPaneWnd,tabpane);
+			tabindex = GetTabItemIndex(hPaneWnd, tabpane);
 			if ( tabindex >= 0 ){
 				HWND hTabWnd = Combo.show[tabpane].tab.hWnd;
 
@@ -1528,20 +1529,20 @@ void DestroyedPaneWindow(HWND hComboWnd,HWND hPaneWnd)
 				if ( tabindex > 0 ){
 					RECT box;
 
-					if ( TabCtrl_GetItemRect(hTabWnd,tabindex,&box) ){
+					if ( TabCtrl_GetItemRect(hTabWnd, tabindex, &box) ){
 						if ( box.left < 8 ){ // 非選択:0 画面左端:2
-							TabCtrl_SetCurSel(hTabWnd,0);
+							TabCtrl_SetCurSel(hTabWnd, 0);
 						}
 					}
 				}
-				TabCtrl_DeleteItem(hTabWnd,tabindex);
+				TabCtrl_DeleteItem(hTabWnd, tabindex);
 			}
 		}
 	}
 									// 全体テーブルから削除
 
 	if ( (baseindex + 1) < Combo.BaseCount ){
-		CutTableItem(Combo.base,baseindex,Combo.BaseCount);
+		CutTableItem(Combo.base, baseindex, Combo.BaseCount);
 	}
 	Combo.BaseCount--;
 	{							// 表示テーブルを補正する
@@ -1553,10 +1554,10 @@ void DestroyedPaneWindow(HWND hComboWnd,HWND hPaneWnd)
 	}
 									// フォーカス補正／終了処理
 	if ( Combo.BaseCount ){
-		SendMessage(Combo.hWnd,WM_SETREDRAW,FALSE,0);
+		SendMessage(Combo.hWnd, WM_SETREDRAW, FALSE, 0);
 		if ( Combo.ShowCount == 0 ){
 			CreatePane(0);
-			ShowWindow(Combo.base[0].hWnd,SW_SHOWNORMAL);
+			ShowWindow(Combo.base[0].hWnd, SW_SHOWNORMAL);
 		}
 		// タブが不要になったので、なくす
 		if ( !(X_combos[0] & CMBS_TABALWAYS) && Combo.Tabs &&
@@ -1579,7 +1580,7 @@ void DestroyedPaneWindow(HWND hComboWnd,HWND hPaneWnd)
 		if ( hComboRightFocus == NULL ) ResetR(NULL);
 		SortComboWindows( (DecPane && (X_combos[0] & CMBS_VALWINSIZE)) ?
 				0 : SORTWIN_LAYOUTPAIN);
-		SendMessage(Combo.hWnd,WM_SETREDRAW,TRUE,0);
+		SendMessage(Combo.hWnd, WM_SETREDRAW, TRUE, 0);
 		{
 			int i;
 
@@ -1589,25 +1590,25 @@ void DestroyedPaneWindow(HWND hComboWnd,HWND hPaneWnd)
 				cinfo = Combo.base[Combo.show[i].baseNo].cinfo;
 				if ( cinfo != NULL ){
 					if ( cinfo->hHeaderWnd != NULL ){
-						InvalidateRect(cinfo->hHeaderWnd,NULL,FALSE);
+						InvalidateRect(cinfo->hHeaderWnd, NULL, FALSE);
 					}
 					if ( cinfo->hScrollBarWnd != NULL ){
-						InvalidateRect(cinfo->hScrollBarWnd,NULL,FALSE);
+						InvalidateRect(cinfo->hScrollBarWnd, NULL, FALSE);
 					}
 				}
 			}
 		}
-		InvalidateRect(Combo.hWnd,NULL,TRUE);
+		InvalidateRect(Combo.hWnd, NULL, TRUE);
 
 	}else{
-		PostMessage(hComboWnd,WM_CLOSE,0,0);
+		PostMessage(hComboWnd, WM_CLOSE, 0, 0);
 	}
 }
 
 // 指定のペインに指定の窓を設定 --------------------------------------------
-void SelectComboWindow(int showindex,HWND hTargetWnd,BOOL focus)
+void SelectComboWindow(int showindex, HWND hTargetWnd, BOOL focus)
 {
-	int targetshowindex,targetbaseindex;
+	int targetshowindex, targetbaseindex;
 
 	CheckComboTable(T("SelectComboWindow-pre"));
 
@@ -1631,7 +1632,7 @@ void SelectComboWindow(int showindex,HWND hTargetWnd,BOOL focus)
 		TCHAR path[VFPS];
 
 		path[0] = '\0';
-		GetWindowText(hTargetWnd,path,VFPS);
+		GetWindowText(hTargetWnd, path, VFPS);
 		SetComboAddresBar(path);
 	}
 
@@ -1642,24 +1643,24 @@ void SelectComboWindow(int showindex,HWND hTargetWnd,BOOL focus)
 			return;
 		}
 		// 表示されていないタブなので切換
-		SelectHidePane(showindex,hTargetWnd);
+		SelectHidePane(showindex, hTargetWnd);
 	}else{ // タブの分離表示中
 		int showindexBaseindex;
 
 		if ( X_combos[0] & CMBS_TABEACHITEM ){
 			// 表示しようとしているペインに該当タブがない…追加する
-			if ( GetTabItemIndex(hTargetWnd,showindex) < 0 ){
+			if ( GetTabItemIndex(hTargetWnd, showindex) < 0 ){
 				// 既存ペインに該当タブがあれば削除
 				int tabindex;
 				for ( tabindex = 0 ; tabindex < Combo.Tabs ; tabindex++ ){
 					int tabii;
 
-					tabii = GetTabItemIndex(hTargetWnd,tabindex);
+					tabii = GetTabItemIndex(hTargetWnd, tabindex);
 					if ( tabii >= 0 ){ // 登録されていたので削除
-						TabCtrl_DeleteItem(Combo.show[tabindex].tab.hWnd,tabii);
+						TabCtrl_DeleteItem(Combo.show[tabindex].tab.hWnd, tabii);
 					}
 				}
-				AddTabInfo(showindex,hTargetWnd);
+				AddTabInfo(showindex, hTargetWnd);
 			}
 		}
 
@@ -1687,15 +1688,15 @@ void SelectComboWindow(int showindex,HWND hTargetWnd,BOOL focus)
 
 				CheckComboTable(T("SelectComboWindow1"));
 				SortComboWindows(SORTWIN_LAYOUTPAIN);
-				InvalidateRect(Combo.hWnd,&Combo.Panes.box,TRUE);
+				InvalidateRect(Combo.hWnd, &Combo.Panes.box, TRUE);
 				hSwapTargetWnd = Combo.base[showindexBaseindex].hWnd;
-				InvalidateRect(hSwapTargetWnd,NULL,TRUE);
+				InvalidateRect(hSwapTargetWnd, NULL, TRUE);
 
 				// 入れ替え先のタブを切り替え
-				SelectTabByWindow(hSwapTargetWnd,targetshowindex);
+				SelectTabByWindow(hSwapTargetWnd, targetshowindex);
 			}
 		}else{ // 表示していない窓
-			SendMessage(Combo.hWnd,WM_SETREDRAW,FALSE,0);
+			SendMessage(Combo.hWnd, WM_SETREDRAW, FALSE, 0);
 			showindexBaseindex = Combo.show[showindex].baseNo;
 			Combo.show[showindex].baseNo = targetbaseindex;
 			if ( Combo.base[showindexBaseindex].hWnd == hComboRightFocus ){
@@ -1705,23 +1706,23 @@ void SelectComboWindow(int showindex,HWND hTargetWnd,BOOL focus)
 			// SW_HIDE 先が focus を持っている場合、foucs 変化が生じるので、
 			// 先にfocusをいじっておく
 			if ( Combo.base[showindexBaseindex].hWnd == GetFocus() ){
-//				ShowWindow(hTargetWnd,SW_SHOWNA);
+//				ShowWindow(hTargetWnd, SW_SHOWNA);
 				// 明後日の位置に表示させて、SortComboWindows による位置移動のときに子ウィンドウ(ツリー)を正しく描画させる
-				SetWindowPos(hTargetWnd,NULL,-10,-10,0,0,
+				SetWindowPos(hTargetWnd, NULL, -10, -10, 0, 0,
 					SWP_SHOWWINDOW | SWP_NOACTIVATE);
 				SetFocus(hTargetWnd);
-				ShowWindow(Combo.base[showindexBaseindex].hWnd,SW_HIDE);
+				ShowWindow(Combo.base[showindexBaseindex].hWnd, SW_HIDE);
 				CheckComboTable(T("@SelectComboWindow2a"));
 			}else{
-				ShowWindow(Combo.base[showindexBaseindex].hWnd,SW_HIDE);
+				ShowWindow(Combo.base[showindexBaseindex].hWnd, SW_HIDE);
 				CheckComboTable(T("@SelectComboWindow2b"));
-//				ShowWindow(hTargetWnd,SW_SHOWNA);
+//				ShowWindow(hTargetWnd, SW_SHOWNA);
 				// 明後日の位置に表示させて、SortComboWindows による位置移動のときに子ウィンドウを正しく描画させる
-				SetWindowPos(hTargetWnd,NULL,-10,-10,0,0,
+				SetWindowPos(hTargetWnd, NULL, -10, -10, 0, 0,
 					SWP_SHOWWINDOW | SWP_NOACTIVATE);
 			}
-			SendMessage(Combo.hWnd,WM_SETREDRAW,TRUE,0);
-			InvalidateRect(Combo.hWnd,NULL,TRUE);
+			SendMessage(Combo.hWnd, WM_SETREDRAW, TRUE, 0);
+			InvalidateRect(Combo.hWnd, NULL, TRUE);
 			SortComboWindows(SORTWIN_LAYOUTPAIN);
 		}
 	}
@@ -1737,13 +1738,13 @@ void SelectComboWindow(int showindex,HWND hTargetWnd,BOOL focus)
 		int tabwndindex;
 
 		tabwndindex = Combo.Tabs > 1 ? GetComboShowIndex(hTargetWnd) : 0;
-		tabindex = GetTabItemIndex(hTargetWnd,tabwndindex);
+		tabindex = GetTabItemIndex(hTargetWnd, tabwndindex);
 		if ( tabindex < 0 ){
-			SetTabInfo(tabwndindex,hTargetWnd);
-			tabindex = GetTabItemIndex(hTargetWnd,tabwndindex);
+			SetTabInfo(tabwndindex, hTargetWnd);
+			tabindex = GetTabItemIndex(hTargetWnd, tabwndindex);
 		}
 		if ( tabindex >= 0 ){
-			TabCtrl_SetCurSel(Combo.show[tabwndindex].tab.hWnd,tabindex);
+			TabCtrl_SetCurSel(Combo.show[tabwndindex].tab.hWnd, tabindex);
 		}
 		CheckComboTable(T("SelectComboWindow3"));
 	}
@@ -1775,7 +1776,7 @@ void HidePane(int showindex)
 			}
 		}
 	}
-	ShowWindow(Combo.base[Combo.show[showindex].baseNo].hWnd,SW_HIDE);
+	ShowWindow(Combo.base[Combo.show[showindex].baseNo].hWnd, SW_HIDE);
 									// 表示テーブルから削除
 	hNewFocusWnd = DeletePane(showindex);
 	if ( hNewFocusWnd != NULL ){
@@ -1784,11 +1785,11 @@ void HidePane(int showindex)
 
 //	CheckComboTable(T("HidePane"));
 	SortComboWindows(SORTWIN_LAYOUTPAIN);
-	InvalidateRect(Combo.hWnd,NULL,TRUE);
+	InvalidateRect(Combo.hWnd, NULL, TRUE);
 }
 
 // 隠れていたペインを既存のペインに表示する ----------------------------------
-void SelectHidePane(int showindex,HWND hWnd)
+void SelectHidePane(int showindex, HWND hWnd)
 {
 	int baseindex;
 
@@ -1800,7 +1801,7 @@ void SelectHidePane(int showindex,HWND hWnd)
 	if ( Combo.ShowCount == 0 ){ // ペインがない→ペインを追加
 		CreatePane(baseindex);
 //		CheckComboTable(T("SelectHidePaneA"));
-		ShowWindow(hWnd,SW_SHOWNORMAL);
+		ShowWindow(hWnd, SW_SHOWNORMAL);
 		SortComboWindows(SORTWIN_LAYOUTPAIN);
 	}else{
 		int tempindex;
@@ -1820,21 +1821,21 @@ void SelectHidePane(int showindex,HWND hWnd)
 			hComboRightFocus = hWnd;
 		}
 
-		SendMessage(Combo.hWnd,WM_SETREDRAW,FALSE,0);
+		SendMessage(Combo.hWnd, WM_SETREDRAW, FALSE, 0);
 		Combo.show[showindex].baseNo = baseindex;
-		ShowWindow(hHideWnd,SW_HIDE);
+		ShowWindow(hHideWnd, SW_HIDE);
 		// 明後日の位置に表示させて、SortComboWindows による位置移動のときに子ウィンドウ(ツリー)を正しく描画させる
-//		ShowWindow(hWnd,SW_SHOWNOACTIVATE);
-		SetWindowPos(hWnd,NULL,-10,-10,0,0,
+//		ShowWindow(hWnd, SW_SHOWNOACTIVATE);
+		SetWindowPos(hWnd, NULL, -10, -10, 0, 0,
 			SWP_SHOWWINDOW | SWP_NOACTIVATE);
 
 		ChangeReason = T("SelectHidePane@1");
 		if ( IsTrue(focus) ) SetFocus(hWnd);
 //		CheckComboTable(T("SelectHidePaneB"));
-		SendMessage(Combo.hWnd,WM_SETREDRAW,TRUE,0);
-		InvalidateRect(Combo.hWnd,NULL,TRUE);
+		SendMessage(Combo.hWnd, WM_SETREDRAW, TRUE, 0);
+		InvalidateRect(Combo.hWnd, NULL, TRUE);
 		SortComboWindows(SORTWIN_LAYOUTPAIN);
-		ShowWindow(hWnd,SW_SHOWNORMAL);
+		ShowWindow(hWnd, SW_SHOWNORMAL);
 	}
 }
 
@@ -1843,21 +1844,21 @@ void SelectHidePane(int showindex,HWND hWnd)
 void EjectPane(int baseindex)
 {
 	PPC_APPINFO *cinfo;
-	TCHAR param[MAX_PATH],RegID[10];
+	TCHAR param[MAX_PATH], RegID[10];
 	int i;
 
 	if ( (Combo.BaseCount <= 1) || (baseindex >= Combo.BaseCount) ) return;
 	cinfo = Combo.base[baseindex].cinfo;
 	if ( cinfo == NULL ) return;
-	tstrcpy(RegID,cinfo->RegID);
-	wsprintf(param,T("/single /show /bootid:%c"),RegID[2]);
-	PostMessage(Combo.base[baseindex].hWnd,WM_CLOSE,0,0);
+	tstrcpy(RegID, cinfo->RegID);
+	wsprintf(param, T("/single /show /bootid:%c"), RegID[2]);
+	PostMessage(Combo.base[baseindex].hWnd, WM_CLOSE, 0, 0);
 	for ( i = 0 ; i < 20 ; i++ ){
 		PeekLoop();
 		Sleep(50);
 		if ( PPxGetHWND(RegID) == NULL ) break;
 	}
-	PPCui(Combo.hWnd,param); // 新規プロセスで生成
+	PPCui(Combo.hWnd, param); // 新規プロセスで生成
 	for ( i = 0 ; i < 500 ; i++ ){
 		HWND hNewPPcWnd;
 
@@ -1865,7 +1866,7 @@ void EjectPane(int baseindex)
 		Sleep(50);
 		hNewPPcWnd = PPxGetHWND(RegID);
 		if ( hNewPPcWnd != NULL ){
-			ShowWindow(hNewPPcWnd,SW_SHOW);
+			ShowWindow(hNewPPcWnd, SW_SHOW);
 			SetForegroundWindow(hNewPPcWnd);
 			break;
 		}
@@ -1879,7 +1880,7 @@ void CreatePane(int baseindex)
 	COMBOPANES *ncs;
 
 	if ( Combo.ShowCount >= Combo_Max_Show ) return;
-	if ( (ncs = HeapReAlloc( hProcessHeap,0,Combo.show,sizeof(COMBOPANES) * (Combo.ShowCount + 2) )) == NULL ){ // +2... 増加する+1 と、予備兼処理簡略化用+1
+	if ( (ncs = HeapReAlloc( hProcessHeap, 0, Combo.show, sizeof(COMBOPANES) * (Combo.ShowCount + 2) )) == NULL ){ // +2... 増加する+1 と、予備兼処理簡略化用+1
 		return; // ペインを確保する余裕がない
 	}
 	Combo.show = ncs;
@@ -1896,9 +1897,9 @@ void CreatePane(int baseindex)
 			for ( tabpane = 0 ; tabpane < Combo.Tabs ; tabpane++ ){
 				int tabii;
 
-				tabii = GetTabItemIndex(Combo.base[baseindex].hWnd,tabpane);
+				tabii = GetTabItemIndex(Combo.base[baseindex].hWnd, tabpane);
 				if ( tabii < 0 ){ // 登録されていないので追加
-					AddTabInfo(tabpane,Combo.base[baseindex].hWnd);
+					AddTabInfo(tabpane, Combo.base[baseindex].hWnd);
 				}
 			}
 		}else{ // 既存ペインに該当タブがあれば削除
@@ -1906,22 +1907,22 @@ void CreatePane(int baseindex)
 				int tabii;
 
 				if ( tabpane >= (Combo.ShowCount - 1) ) break;
-				tabii = GetTabItemIndex(Combo.base[baseindex].hWnd,tabpane);
+				tabii = GetTabItemIndex(Combo.base[baseindex].hWnd, tabpane);
 				if ( tabii >= 0 ){ // 登録されていたので削除
-					TabCtrl_DeleteItem(Combo.show[tabpane].tab.hWnd,tabii);
+					TabCtrl_DeleteItem(Combo.show[tabpane].tab.hWnd, tabii);
 				}
 			}
 		}
 		NewTabBar();
-		SelectTabByWindow(Combo.base[baseindex].hWnd,Combo.ShowCount - 1);
+		SelectTabByWindow(Combo.base[baseindex].hWnd, Combo.ShowCount - 1);
 	}else{
 		// ペインが２以上なら、タブhwndを設定
 		if ( Combo.ShowCount > 1 ){
 			Combo.show[Combo.ShowCount - 1].tab = Combo.show[0].tab;
 		}
 		// タブ未登録なら登録
-		if ( GetTabItemIndex(Combo.base[baseindex].hWnd,0) < 0 ){
-			AddTabInfo(0,Combo.base[baseindex].hWnd);
+		if ( GetTabItemIndex(Combo.base[baseindex].hWnd, 0) < 0 ){
+			AddTabInfo(0, Combo.base[baseindex].hWnd);
 		}
 	}
 }
@@ -1930,7 +1931,7 @@ void CreateAndInitPane(int baseindex)
 {
 	CreatePane(baseindex);
 //	CheckComboTable(T("@CreateAndInitPane"));
-	ShowWindow(Combo.base[baseindex].hWnd,SW_SHOWNORMAL);
+	ShowWindow(Combo.base[baseindex].hWnd, SW_SHOWNORMAL);
 	SortComboWindows(SORTWIN_LAYOUTPAIN);
 //	CheckComboTable(T("CreateAndInitPane2"));
 }
@@ -1963,12 +1964,12 @@ HWND DeletePane(int showindex)
 		hTabWnd = Combo.show[showindex].tab.hWnd;
 		Combo.Tabs--;
 		DestroyWindow(hTabWnd);
-		InvalidateRect(Combo.hWnd,NULL,TRUE);
+		InvalidateRect(Combo.hWnd, NULL, TRUE);
 	}
 
 									// 表示テーブルから削除
 	if ( (showindex + 1) < Combo.ShowCount ){
-		CutTableItem(Combo.show,showindex,Combo.ShowCount);
+		CutTableItem(Combo.show, showindex, Combo.ShowCount);
 	}
 	Combo.ShowCount--;
 
@@ -2003,9 +2004,9 @@ HWND DeletePane(int showindex)
 // 現在ペイン・indexなどの情報を求める関数群
 //============================================================================
 // 指定のタブの座標から PPC_APPINFO を求める(D&D用)
-PPC_APPINFO *GetComboTarget(HWND hTargetWnd,POINT *pos)
+PPC_APPINFO *GetComboTarget(HWND hTargetWnd, POINT *pos)
 {
-	int baseindex,tabpane;
+	int baseindex, tabpane;
 
 	for ( tabpane = 0 ; tabpane < Combo.Tabs ; tabpane++ ){
 		if ( hTargetWnd == Combo.show[tabpane].tab.hWnd ){
@@ -2013,13 +2014,13 @@ PPC_APPINFO *GetComboTarget(HWND hTargetWnd,POINT *pos)
 			int tabindex;
 
 			th.pt = *pos;
-			ScreenToClient(Combo.show[tabpane].tab.hWnd,&th.pt);
-			tabindex = TabCtrl_HitTest(Combo.show[tabpane].tab.hWnd,&th);
+			ScreenToClient(Combo.show[tabpane].tab.hWnd, &th.pt);
+			tabindex = TabCtrl_HitTest(Combo.show[tabpane].tab.hWnd, &th);
 			if ( tabindex >= 0 ){
 				TC_ITEM tie;
 
 				tie.mask = TCIF_PARAM;
-				if ( IsTrue(TabCtrl_GetItem(Combo.show[tabpane].tab.hWnd,tabindex,&tie)) ){
+				if ( IsTrue(TabCtrl_GetItem(Combo.show[tabpane].tab.hWnd, tabindex, &tie)) ){
 					baseindex = GetComboBaseIndex((HWND)tie.lParam);
 					goto getdata;
 				}
@@ -2077,7 +2078,7 @@ int GetComboShowIndexFromPos(POINT *pos)
 
 	if ( !Combo.ShowCount ) return -1;
 	if ( !(X_combos[0] & CMBS_VPANE) ){	// 横整列
-		int x,y;
+		int x, y;
 
 		x = pos->x;
 		y = pos->y;
@@ -2152,8 +2153,8 @@ BOOL SetTabTipText(NMHDR *nmh)
 			hTabWnd = Combo.show[tabpane].tab.hWnd;
 														// 表示中タブにある？
 			tie.mask = TCIF_PARAM;
-			if ( IsTrue(TabCtrl_GetItem(hTabWnd,nmh->idFrom,&tie)) ){
-				GetWindowText((HWND)tie.lParam,tiptext,TSIZEOF(tiptext));
+			if ( IsTrue(TabCtrl_GetItem(hTabWnd, nmh->idFrom, &tie)) ){
+				GetWindowText((HWND)tie.lParam, tiptext, TSIZEOF(tiptext));
 				((LPTOOLTIPTEXT)nmh)->lpszText = tiptext;
 				((LPTOOLTIPTEXT)nmh)->hinst = NULL;
 				return TRUE;
@@ -2181,8 +2182,8 @@ void SelectChangeTab(NMHDR *nmh)
 														// 表示中タブにある？
 			tabindex = TabCtrl_GetCurSel(nmh->hwndFrom);
 			tie.mask = TCIF_PARAM;
-			if ( IsTrue(TabCtrl_GetItem(nmh->hwndFrom,tabindex,&tie)) ){
-				SelectComboWindow(tabpane,(HWND)tie.lParam,TRUE);
+			if ( IsTrue(TabCtrl_GetItem(nmh->hwndFrom, tabindex, &tie)) ){
+				SelectComboWindow(tabpane, (HWND)tie.lParam, TRUE);
 			}
 			return;
 		}
@@ -2198,7 +2199,7 @@ HWND GetHwndFromIDCombo(const TCHAR *regid)
 	for ( baseindex = 0 ; baseindex < Combo.BaseCount ; baseindex++ ){
 		combo_cinfo = Combo.base[baseindex].cinfo;
 		if ( combo_cinfo == NULL ) continue;
-		if ( tstricmp(regid,combo_cinfo->RegSubCID) == 0 ){
+		if ( tstricmp(regid, combo_cinfo->RegSubCID) == 0 ){
 			return combo_cinfo->info.hWnd;
 		}
 	}

@@ -16,7 +16,7 @@
 #define XTOUCH 0		// WM_TOUCH の解釈を有効にする
 #define XSW 0			// スワイプ処理を有効にする
 
-const CURSORMOVER MarkClick = { 0,1,OUTTYPE_PAGE,OUTHOOK_MARK,OUTTYPE_STOP,OUTHOOK_EDGE};
+const CURSORMOVER MarkClick = { 0, 1, OUTTYPE_PAGE, OUTHOOK_MARK, OUTTYPE_STOP, OUTHOOK_EDGE};
 
 typedef struct xtagGUITHREADINFO {
 	DWORD cbSize;
@@ -30,22 +30,22 @@ typedef struct xtagGUITHREADINFO {
 	RECT rcCaret;
 } xGUITHREADINFO;
 
-DefineWinAPI(BOOL,GetGUIThreadInfo,(DWORD idThread,xGUITHREADINFO *lpgui)) = INVALID_VALUE(impGetGUIThreadInfo);
+DefineWinAPI(BOOL, GetGUIThreadInfo, (DWORD idThread, xGUITHREADINFO *lpgui)) = INVALID_VALUE(impGetGUIThreadInfo);
 
 #if XTOUCH
-DefineWinAPI(BOOL,RegisterTouchWindow,(HWND hWnd,ULONG ulFlags));
-DefineWinAPI(BOOL,GetTouchInputInfo,(HTOUCHINPUT hTouchInput,UINT cInputs,PTOUCHINPUT pInputs,int cbSize));
-DefineWinAPI(BOOL,CloseTouchInputHandle,(HTOUCHINPUT hTouchInput));
+DefineWinAPI(BOOL, RegisterTouchWindow, (HWND hWnd, ULONG ulFlags));
+DefineWinAPI(BOOL, GetTouchInputInfo, (HTOUCHINPUT hTouchInput, UINT cInputs, PTOUCHINPUT pInputs, int cbSize));
+DefineWinAPI(BOOL, CloseTouchInputHandle, (HTOUCHINPUT hTouchInput));
 #endif // XTOUCH
 
 BOOL SkipTouchActive = FALSE; // WM_MOUSEACTIVE で、タッチ時に無意味な WM_MOUSEACTIVE がくるのをスキップするために使用する
 
-BOOL IsCellDblClk(PPC_APPINFO *cinfo,LPARAM lParam)
+BOOL IsCellDblClk(PPC_APPINFO *cinfo, LPARAM lParam)
 {
 	POINT pos;
 
-	LPARAMtoPOINT(pos,lParam);
-	return GetItemTypeFromPoint(cinfo,&pos,NULL) == PPCR_CELLTEXT;
+	LPARAMtoPOINT(pos, lParam);
+	return GetItemTypeFromPoint(cinfo, &pos, NULL) == PPCR_CELLTEXT;
 }
 
 BOOL USEFASTCALL IsTouchMessage(void)
@@ -61,10 +61,10 @@ VOID CALLBACK DelayLogShowProc(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwT
 {
 	UnUsedParam(uMsg);UnUsedParam(dwTime);
 
-	KillTimer(hWnd,idEvent);
-	SendMessage(hWnd,WM_SETREDRAW,TRUE,0);
-	InvalidateRect(hWnd,NULL,TRUE);
-	SendMessage(hWnd,EM_SCROLLCARET,0,0);
+	KillTimer(hWnd, idEvent);
+	SendMessage(hWnd, WM_SETREDRAW, TRUE, 0);
+	InvalidateRect(hWnd, NULL, TRUE);
+	SendMessage(hWnd, EM_SCROLLCARET, 0, 0);
 	return;
 }
 
@@ -80,11 +80,12 @@ VOID CALLBACK HoverTipTimerProc(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dw
 	if ( (cinfo->Tip.hTipWnd != NULL) && (cinfo->Tip.X_stip_mode == stip_mode_preview) ){
 		return;
 	}
+	if ( GetFocus() == NULL ) return;
 
-	if ( cinfo->e.cellPoint >= 0 ){
+	if ( (cinfo->e.cellPoint >= 0) && (cinfo->e.cellPoint < cinfo->e.cellIMax) ){
 		int mode = X_stip[TIP_HOVER_MODE];
 		if ( mode == 0 ) mode = stip_mode_fileinfo;
-		ShowTipNow(cinfo, STIP_HOVER | STIP_MOUSE, mode, cinfo->e.cellPoint);
+		ShowEntryTip(cinfo, STIP_CMD_HOVER | STIP_CMD_MOUSE, mode, cinfo->e.cellPoint);
 	}
 	return;
 }
@@ -103,7 +104,7 @@ void ReuseFix(PPCSTARTPARAM *psp)
 		size = PSPONE_size(pspo);
 		// ID が決まっていないなら割当てを行う
 		if ( pspo->id.RegMode != PPXREGIST_IDASSIGN ){
-			singlecount += PPxRegist(NULL,pspo->id.RegID,PPXREGIST_SEARCH_LIVEID + singlecount);
+			singlecount += PPxRegist(NULL, pspo->id.RegID, PPXREGIST_SEARCH_LIVEID + singlecount);
 			pspo->id.RegMode = PPXREGIST_IDASSIGN;
 		}
 		pspo = (PSPONE *)(char *)((char *)pspo + size);
@@ -117,50 +118,50 @@ void PostWindowClosed(void)
 	if ( X_MultiThread || (MainThreadID != GetCurrentThreadId()) ){
 		PostQuitMessage(EXIT_SUCCESS);
 	}else{
-		PostThreadMessage(GetCurrentThreadId(),WM_NULL,0,0);
+		PostThreadMessage(GetCurrentThreadId(), WM_NULL, 0, 0);
 	}
 }
 
-int CallKeyHook(PPC_APPINFO *cinfo,WORD key)
+int CallKeyHook(PPC_APPINFO *cinfo, WORD key)
 {
 	PPXMKEYHOOKSTRUCT keyhookinfo;
 	PPXMODULEPARAM pmp;
 
 	keyhookinfo.key = key;
 	pmp.keyhook = &keyhookinfo;
-	return CallModule(&cinfo->info,PPXMEVENT_KEYHOOK,pmp,cinfo->KeyHookEntry);
+	return CallModule(&cinfo->info, PPXMEVENT_KEYHOOK, pmp, cinfo->KeyHookEntry);
 }
 
-void ExecDualParam(PPC_APPINFO *cinfo,const TCHAR *param)
+void ExecDualParam(PPC_APPINFO *cinfo, const TCHAR *param)
 {
 	if ( (UTCHAR)*param == EXTCMD_CMD ){
-		PP_ExtractMacro(cinfo->info.hWnd,&cinfo->info,NULL,param + 1,NULL,0);
+		PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, param + 1, NULL, 0);
 	}else{
 		const WORD *key;
 
 		cinfo->KeyRepeats = 0;
 		if ( (UTCHAR)*param == EXTCMD_KEY ) param++;
 		key = (WORD *)param;
-		while( *key ) PPcCommand(cinfo,*key++);
+		while( *key ) PPcCommand(cinfo, *key++);
 	}
 }
 
-BOOL PPcToolbarCommand(PPC_APPINFO *cinfo,int id,int orcode)
+BOOL PPcToolbarCommand(PPC_APPINFO *cinfo, int id, int orcode)
 {
 	RECT box;
 	TCHAR *p;
 
 	box.bottom = -1;
-	SendMessage(cinfo->hToolBarWnd,TB_GETRECT,(WPARAM)id,(LPARAM)&box);
+	SendMessage(cinfo->hToolBarWnd, TB_GETRECT, (WPARAM)id, (LPARAM)&box);
 	if ( box.bottom == -1 ){
 		cinfo->PopupPosType = PPT_MOUSE;
 	}else{
 		cinfo->PopupPos.x = box.left;
 		cinfo->PopupPos.y = box.bottom;
-		ClientToScreen(cinfo->hToolBarWnd,&cinfo->PopupPos);
+		ClientToScreen(cinfo->hToolBarWnd, &cinfo->PopupPos);
 		cinfo->PopupPosType = PPT_SAVED;
 	}
-	p = GetToolBarCmd(cinfo->hToolBarWnd,&cinfo->thGuiWork,id);
+	p = GetToolBarCmd(cinfo->hToolBarWnd, &cinfo->thGuiWork, id);
 	if ( p == NULL ) return FALSE;
 	if ( orcode ){
 		if ( orcode < 0x100 ){ // 右クリック
@@ -169,9 +170,9 @@ BOOL PPcToolbarCommand(PPC_APPINFO *cinfo,int id,int orcode)
 					TCHAR path[VFPS];
 
 					p += 3;
-					GetLineParam((const TCHAR **)&p,path);
-					PP_ExtractMacro(cinfo->info.hWnd,&cinfo->info,NULL,path,path,0);
-					PPcSHContextMenu(cinfo,path,NULL);
+					GetLineParam((const TCHAR **)&p, path);
+					PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, path, path, 0);
+					PPcSHContextMenu(cinfo, path, NULL);
 				}
 			}
 		}else{	// ドロップダウン
@@ -181,22 +182,22 @@ BOOL PPcToolbarCommand(PPC_APPINFO *cinfo,int id,int orcode)
 			if ( key == (K_s | K_raw | K_bs) ){
 				key = K_raw | K_c | K_bs;
 			}
-			PPcCommand(cinfo,key);
+			PPcCommand(cinfo, key);
 		}
 	}else{
-		ExecDualParam(cinfo,p);
+		ExecDualParam(cinfo, p);
 	}
 	if ( IsTrue(cinfo->UnpackFix) ) OffArcPathMode(cinfo);
 	return TRUE;
 }
 
-LRESULT HeaderTrackCheck(PPC_APPINFO *cinfo,HWND hHeaderWnd,HD_NOTIFY *hdn)
+LRESULT HeaderTrackCheck(PPC_APPINFO *cinfo, HWND hHeaderWnd, HD_NOTIFY *hdn)
 {
-	BYTE *fmt,*fmtp;
+	BYTE *fmt, *fmtp;
 	HD_ITEM hdi;
 
 	hdi.mask = HDI_LPARAM;
-	if ( SendMessage(hHeaderWnd,HDM_GETITEM,hdn->iItem,(LPARAM)&hdi) == FALSE){
+	if ( SendMessage(hHeaderWnd, HDM_GETITEM, hdn->iItem, (LPARAM)&hdi) == FALSE){
 		return 1;
 	}
 	if ( hdi.lParam < 0 ) return 1;	// 未定義…トラック禁止
@@ -226,14 +227,14 @@ LRESULT HeaderTrackCheck(PPC_APPINFO *cinfo,HWND hHeaderWnd,HD_NOTIFY *hdn)
 	}
 }
 
-void HeaderTrack(PPC_APPINFO *cinfo,HWND hHeaderWnd,HD_NOTIFY *hdn)
+void HeaderTrack(PPC_APPINFO *cinfo, HWND hHeaderWnd, HD_NOTIFY *hdn)
 {
-	BYTE *fmt,*fmtp;
-	int width,oldw = 0;
+	BYTE *fmt, *fmtp;
+	int width, oldw = 0;
 	HD_ITEM hdi;
 
 	hdi.mask = HDI_LPARAM;
-	if ( SendMessage(hHeaderWnd,HDM_GETITEM,hdn->iItem,(LPARAM)&hdi) == FALSE){
+	if ( SendMessage(hHeaderWnd, HDM_GETITEM, hdn->iItem, (LPARAM)&hdi) == FALSE){
 		return;
 	}
 	if ( hdi.lParam < 0 ) return;	// 未定義
@@ -300,7 +301,7 @@ void HeaderTrack(PPC_APPINFO *cinfo,HWND hHeaderWnd,HD_NOTIFY *hdn)
 			break;
 	}
 	cinfo->celF.width += oldw;
-	InvalidateRect(cinfo->info.hWnd,NULL,FALSE);
+	InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
 }
 
 void HeaderRClick(PPC_APPINFO *cinfo)
@@ -310,25 +311,25 @@ void HeaderRClick(PPC_APPINFO *cinfo)
 	HD_ITEM hdi;
 
 	cinfo->PopupPosType = PPT_MOUSE;
-	hdi.lParam = 0xffff; // -1,-1
+	hdi.lParam = 0xffff; // -1, -1
 	GetMessagePosPoint(hhti.pt);
-	ScreenToClient(cinfo->hHeaderWnd,&hhti.pt);
-	if ( 0 <= SendMessage(cinfo->hHeaderWnd,HDM_HITTEST,0,(LPARAM)&hhti) ){
+	ScreenToClient(cinfo->hHeaderWnd, &hhti.pt);
+	if ( 0 <= SendMessage(cinfo->hHeaderWnd, HDM_HITTEST, 0, (LPARAM)&hhti) ){
 		hdi.mask = HDI_LPARAM | HDI_FORMAT;
-		if ( SendMessage(cinfo->hHeaderWnd,HDM_GETITEM,hhti.iItem,(LPARAM)&hdi) == FALSE ){
-			hdi.lParam = 0xffff; // -1,-1
+		if ( SendMessage(cinfo->hHeaderWnd, HDM_GETITEM, hhti.iItem, (LPARAM)&hdi) == FALSE ){
+			hdi.lParam = 0xffff; // -1, -1
 		}
 	}
 	wsprintf(buf, T("%d"), (char)hdi.lParam);
-	ThSetString(&cinfo->StringVariable, T("HeaderSortU"),buf);
+	ThSetString(&cinfo->StringVariable, T("HeaderSortU"), buf);
 	wsprintf(buf, T("%d"), (char)(hdi.lParam >> 8));
-	ThSetString(&cinfo->StringVariable, T("HeaderSortD"),buf);
+	ThSetString(&cinfo->StringVariable, T("HeaderSortD"), buf);
 
 	if ( IsTrue(PPcMouseCommand(cinfo, T("R"), T("HEAD"))) ) return;
 	PPcDirContextMenu(cinfo);
 }
 
-void HeaderClick(PPC_APPINFO *cinfo,HWND hHeaderWnd,int index,int button)
+void HeaderClick(PPC_APPINFO *cinfo, HWND hHeaderWnd, int index, int button)
 {
 	if ( button == 0 ){	// 左クリック
 		HD_ITEM hdi;
@@ -336,13 +337,13 @@ void HeaderClick(PPC_APPINFO *cinfo,HWND hHeaderWnd,int index,int button)
 		const TCHAR *filename;
 
 		hdi.mask = HDI_LPARAM | HDI_FORMAT;
-		if ( SendMessage(hHeaderWnd,HDM_GETITEM,index,(LPARAM)&hdi) == FALSE ){
+		if ( SendMessage(hHeaderWnd, HDM_GETITEM, index, (LPARAM)&hdi) == FALSE ){
 			return;
 		}
 		if ( hdi.lParam < 0 ) return;	// 未定義
 
 		// ソート
-		memset(&sort,0,sizeof(sort));
+		memset(&sort, 0, sizeof(sort));
 		if ( hdi.lParam & 0x8000 ){ // column拡張 sort
 			cinfo->sort_columnindex = sort.option = hdi.lParam & 0x7fff;
 			hdi.lParam = SORT_COLUMN_UP + (SORT_COLUMN_DOWN << 8);
@@ -352,7 +353,7 @@ void HeaderClick(PPC_APPINFO *cinfo,HWND hHeaderWnd,int index,int button)
 				char modedat = (char)hdi.lParam;
 
 				if ( (modedat >= 2) && (modedat <= 5) ){
-					setflag(hdi.fmt,HDF_SORTUP);
+					setflag(hdi.fmt, HDF_SORTUP);
 				}
 			}
 			sort.option = cinfo->XC_sort.option;
@@ -363,23 +364,23 @@ void HeaderClick(PPC_APPINFO *cinfo,HWND hHeaderWnd,int index,int button)
 
 		filename = CEL(cinfo->e.cellN).f.cFileName;
 		sort.atr = cinfo->XC_sort.atr;
-		CellSort(cinfo,&sort);
+		CellSort(cinfo, &sort);
 		cinfo->DrawTargetFlags = DRAWT_ALL;
-		InvalidateRect(cinfo->info.hWnd,NULL,FALSE);
-		if ( XC_acsr[1] ) FindCell(cinfo,filename);
+		InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
+		if ( XC_acsr[1] ) FindCell(cinfo, filename);
 		FixHeader(cinfo); // ソート状態の表示を更新
 	}else{
 		cinfo->PopupPosType = PPT_MOUSE;
-		PPcLayoutCommand(cinfo,NilStr);
+		PPcLayoutCommand(cinfo, NilStr);
 	}
 }
 
-void SetCaptionCombo(PPC_APPINFO *cinfo,HWND hWnd)
+void SetCaptionCombo(PPC_APPINFO *cinfo, HWND hWnd)
 {
 	TCHAR buf[VFPS + 80];
 
-	GetWindowText(cinfo->info.hWnd,buf,TSIZEOF(buf));
-	SetWindowText(hWnd,buf);
+	GetWindowText(cinfo->info.hWnd, buf, TSIZEOF(buf));
+	SetWindowText(hWnd, buf);
 }
 
 #pragma argsused
@@ -388,7 +389,7 @@ void CALLBACK DDTimerProc(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 	PPC_APPINFO *cinfo;
 	UnUsedParam(uMsg); UnUsedParam(idEvent); UnUsedParam(dwTime);
 
-	cinfo = (PPC_APPINFO *)GetWindowLongPtr(hWnd,GWLP_USERDATA);
+	cinfo = (PPC_APPINFO *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 	if ( !cinfo->DDpagemode ){
 		MoveWinOff(cinfo, cinfo->DDpage);
 	}else{
@@ -396,7 +397,7 @@ void CALLBACK DDTimerProc(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 	}
 }
 
-void SetDDScroll(PPC_APPINFO *cinfo,POINT *pos)
+void SetDDScroll(PPC_APPINFO *cinfo, POINT *pos)
 {
 	int ddpage = 0;
 
@@ -435,15 +436,15 @@ void SetDDScroll(PPC_APPINFO *cinfo,POINT *pos)
 		}
 	}else{
 		if ( cinfo->ddtimer_id != 0 ){
-			KillTimer(cinfo->info.hWnd,TIMERID_DRAGSCROLL);
+			KillTimer(cinfo->info.hWnd, TIMERID_DRAGSCROLL);
 			cinfo->ddtimer_id = 0;
 		}
 	}
 }
 
-BOOL USEFASTCALL MoveWinOff(PPC_APPINFO *cinfo,int offset)
+BOOL USEFASTCALL MoveWinOff(PPC_APPINFO *cinfo, int offset)
 {
-	return MoveCellCsr(cinfo,offset,&XC_mvSC);
+	return MoveCellCsr(cinfo, offset, &XC_mvSC);
 }
 
 void DoMouseAction(PPC_APPINFO *cinfo, const TCHAR *button, LPARAM lParam)
@@ -539,9 +540,9 @@ void WheelMouse(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 			→ WM_xMOUSEDOWN → WM_xMOUSEUP
 */
 
-LRESULT USEFASTCALL PPcMouseActive(HWND hWnd,PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
+LRESULT USEFASTCALL PPcMouseActive(HWND hWnd, PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 {
-	DEBUGLOGC("WM_MOUSEACTIVATE start",0);
+	DEBUGLOGC("WM_MOUSEACTIVATE start", 0);
 
 	if ( SkipTouchActive ){
 		SkipTouchActive = FALSE;
@@ -554,18 +555,19 @@ LRESULT USEFASTCALL PPcMouseActive(HWND hWnd,PPC_APPINFO *cinfo,WPARAM wParam,LP
 	if ( (HIWORD(lParam) == WM_LBUTTONDOWN) ||
 		 (HIWORD(lParam) == WM_RBUTTONDOWN) ){
 		POINT pos;
-		int areatype,celln;
+		int areatype;
+		ENTRYINDEX celln;
 
 		GetMessagePosPoint(pos);
-		ScreenToClient(hWnd,&pos);
-		areatype = GetItemTypeFromPoint(cinfo,&pos,&celln);
+		ScreenToClient(hWnd, &pos);
+		areatype = GetItemTypeFromPoint(cinfo, &pos, &celln);
 		if ( ((areatype == PPCR_CELLTEXT) &&
 			  ( !(X_askp || (TouchMode & TOUCH_ACTIONWITHACTIVE)) ||
 				(celln == cinfo->e.cellN)) ) ||
 			 (areatype == PPCR_INFOICON) ){
 			cinfo->MouseUpFG = 1;
 
-			DEBUGLOGC("WM_MOUSEACTIVATE noactive",0);
+			DEBUGLOGC("WM_MOUSEACTIVATE noactive", 0);
 			return MA_NOACTIVATE; // 非アクティブ & ドラッグ検出
 		}
 	}
@@ -592,12 +594,12 @@ LRESULT USEFASTCALL PPcMouseActive(HWND hWnd,PPC_APPINFO *cinfo,WPARAM wParam,LP
 				SetFocus(hWnd);
 			}
 		}
-		DEBUGLOGC("WM_MOUSEACTIVATE end",0);
-		return DefWindowProc(hWnd,WM_MOUSEACTIVATE,wParam,lParam);
+		DEBUGLOGC("WM_MOUSEACTIVATE end", 0);
+		return DefWindowProc(hWnd, WM_MOUSEACTIVATE, wParam, lParam);
 	}
 }
 
-void USEFASTCALL PPcMinMaxJoinFix(PPC_APPINFO *cinfo,MINMAXINFO *minfo)
+void USEFASTCALL PPcMinMaxJoinFix(PPC_APPINFO *cinfo, MINMAXINFO *minfo)
 {
 	HWND jHWnd;
 
@@ -607,7 +609,7 @@ void USEFASTCALL PPcMinMaxJoinFix(PPC_APPINFO *cinfo,MINMAXINFO *minfo)
 		 ((cinfo->swin & SWIN_WBOOT) && (cinfo->swin & SWIN_BUSY))){
 		RECT deskrect;
 
-		GetDesktopRect(cinfo->info.hWnd,&deskrect);
+		GetDesktopRect(cinfo->info.hWnd, &deskrect);
 		if ( cinfo->WinPos.show == SW_SHOWNORMAL ){
 			minfo->ptMaxPosition.x = 0;
 			minfo->ptMaxPosition.y = 0;
@@ -634,35 +636,35 @@ void USEFASTCALL PPcMinMaxJoinFix(PPC_APPINFO *cinfo,MINMAXINFO *minfo)
 	}
 }
 
-LRESULT USEFASTCALL PPcNotify(PPC_APPINFO *cinfo,NMHDR *nmh)
+LRESULT USEFASTCALL PPcNotify(PPC_APPINFO *cinfo, NMHDR *nmh)
 {
 	if ( nmh->hwndFrom == NULL ) return 0;
 
 	if ( nmh->hwndFrom == cinfo->hToolBarWnd ){
 		// TB_HITTEST も検討
 		if ( nmh->code == TBN_DROPDOWN ){
-			PPcToolbarCommand(cinfo,((LPNMTOOLBAR)nmh)->iItem,K_s);
+			PPcToolbarCommand(cinfo, ((LPNMTOOLBAR)nmh)->iItem, K_s);
 		}
 		if ( nmh->code == NM_RCLICK ){
 			if ( ((LPNMTOOLBAR)nmh)->iItem > 0 ){
-				if ( IsTrue(PPcToolbarCommand(cinfo,((LPNMTOOLBAR)nmh)->iItem,1)) ){
+				if ( IsTrue(PPcToolbarCommand(cinfo, ((LPNMTOOLBAR)nmh)->iItem, 1)) ){
 					return 0;
 				}
 			}
 			cinfo->PopupPosType = PPT_MOUSE;
-			PPcLayoutCommand(cinfo,NilStr);
+			PPcLayoutCommand(cinfo, NilStr);
 		}
 		return 0;
 	}
-	if ( IsTrue(DocksNotify(&cinfo->docks,nmh)) ){
+	if ( IsTrue(DocksNotify(&cinfo->docks, nmh)) ){
 		if ( nmh->code == RBN_HEIGHTCHANGE ){
 			WmWindowPosChanged(cinfo);
 		}
 		return 0;
 	}
 	if ( nmh->code == TTN_NEEDTEXT ){
-		if ( SetToolBarTipText(cinfo->hToolBarWnd,&cinfo->thGuiWork,nmh) ) return 0;
-		if ( DocksNeedTextNotify(&cinfo->docks,nmh) ) return 0;
+		if ( SetToolBarTipText(cinfo->hToolBarWnd, &cinfo->thGuiWork, nmh) ) return 0;
+		if ( DocksNeedTextNotify(&cinfo->docks, nmh) ) return 0;
 		return 0;
 	}
 	if ( nmh->hwndFrom == cinfo->hHeaderWnd ){
@@ -675,25 +677,25 @@ LRESULT USEFASTCALL PPcNotify(PPC_APPINFO *cinfo,NMHDR *nmh)
 				return 1;	// ドラッグを禁止する
 
 			case HDN_BEGINTRACK:
-				return HeaderTrackCheck(cinfo,nmh->hwndFrom,(HD_NOTIFY *)nmh);
+				return HeaderTrackCheck(cinfo, nmh->hwndFrom, (HD_NOTIFY *)nmh);
 
 			case HDN_ENDTRACK:
 				InitCli(cinfo);
 				WmWindowPosChanged(cinfo);
 				FixHeader(cinfo);
-				InvalidateRect(cinfo->info.hWnd,NULL,FALSE);
+				InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
 				break;
 
 			case HDN_TRACK:
-				HeaderTrack(cinfo,nmh->hwndFrom,(HD_NOTIFY *)nmh);
+				HeaderTrack(cinfo, nmh->hwndFrom, (HD_NOTIFY *)nmh);
 				break;
 // HDN_DIVIDERDBLCLICK
 			case HDN_ITEMCLICK:
 //			case HDN_ITEMDBLCLICK:
-				HeaderClick(cinfo,nmh->hwndFrom,((HD_NOTIFY *)nmh)->iItem,((HD_NOTIFY *)nmh)->iButton);
+				HeaderClick(cinfo, nmh->hwndFrom, ((HD_NOTIFY *)nmh)->iItem, ((HD_NOTIFY *)nmh)->iButton);
 				break;
 			case HDN_ITEMSTATEICONCLICK:
-				cinfo->MarkMask = 0x1f;
+				cinfo->MarkMask = MARKMASK_DIRFILE;
 				PPC_AllMark(cinfo);
 				break;
 		}
@@ -701,7 +703,7 @@ LRESULT USEFASTCALL PPcNotify(PPC_APPINFO *cinfo,NMHDR *nmh)
 	return 0;
 }
 
-void SetCountedDirectorySize(PPC_APPINFO *cinfo,struct dirinfo *di)
+void SetCountedDirectorySize(PPC_APPINFO *cinfo, struct dirinfo *di)
 {
 	ENTRYCELL *cell;
 	ENTRYINDEX index;
@@ -709,21 +711,21 @@ void SetCountedDirectorySize(PPC_APPINFO *cinfo,struct dirinfo *di)
 	BYTE *hist;
 	WORD datasize;
 
-	if ( tstrcmp(di->path,cinfo->path) != 0 ) return;
+	if ( tstrcmp(di->path, cinfo->path) != 0 ) return;
 
 	for ( index = 0 ; index < cinfo->e.cellIMax ; index++ ){
 		cell = &CEL(index);
 		if ( !(cell->f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ) continue;
- 		if ( tstrcmp(CellFileName(cell),di->name) ) continue;
+ 		if ( tstrcmp(CellFileName(cell), di->name) ) continue;
 
 		if ( IsCellPtrMarked(cell) ){
-			SubDD(cinfo->e.MarkSize.l,cinfo->e.MarkSize.h,
-					cell->f.nFileSizeLow,cell->f.nFileSizeHigh);
+			SubDD(cinfo->e.MarkSize.l, cinfo->e.MarkSize.h,
+					cell->f.nFileSizeLow, cell->f.nFileSizeHigh);
 		}
 		cell->f.nFileSizeLow = di->low;
 		cell->f.nFileSizeHigh = di->high;
 		if ( IsCellPtrMarked(cell) ){
-			AddDD(cinfo->e.MarkSize.l,cinfo->e.MarkSize.h,di->low,di->high);
+			AddDD(cinfo->e.MarkSize.l, cinfo->e.MarkSize.h, di->low, di->high);
 		}
 		cell->attr = (BYTE)((cell->attr & ~ECA_DIRG) | ECA_DIRC);
 
@@ -731,15 +733,15 @@ void SetCountedDirectorySize(PPC_APPINFO *cinfo,struct dirinfo *di)
 		if ( XC_szcm == 1 ){
 			TCHAR buf[24];
 
-			FormatNumber(buf,XFN_SEPARATOR,22,
-					cell->f.nFileSizeLow,cell->f.nFileSizeHigh);
-			SetComment(cinfo,0,cell,buf);
+			FormatNumber(buf, XFN_SEPARATOR, 22,
+					cell->f.nFileSizeLow, cell->f.nFileSizeHigh);
+			SetComment(cinfo, 0, cell, buf);
 		}
 
 		// ヒストリにサイズを保存
-		VFSFullPath(dirpath,CellFileName(cell),cinfo->path);
+		VFSFullPath(dirpath, CellFileName(cell), cinfo->path);
 		UsePPx();
-		hist = (BYTE *)SearchHistory(PPXH_PPCPATH,dirpath);
+		hist = (BYTE *)SearchHistory(PPXH_PPCPATH, dirpath);
 		if ( hist == NULL ){
 			datasize = 0;
 		}else{
@@ -752,13 +754,13 @@ void SetCountedDirectorySize(PPC_APPINFO *cinfo,struct dirinfo *di)
 
 				if ( datasize >= ( sizeof(DWORD) * 2 ) ){
 					// カーソル位置を回収
-					memcpy(&tmp,GetHistoryData(hist),sizeof(DWORD) * 2);
+					memcpy(&tmp, GetHistoryData(hist), sizeof(DWORD) * 2);
 				}else{
 					tmp[1] = MAX32; // カーソル位置情報無し
 				}
 				tmp[2] = cell->f.nFileSizeLow;
 				tmp[3] = cell->f.nFileSizeHigh;
-				WriteHistory(PPXH_PPCPATH,dirpath,sizeof(DWORD) * 4,&tmp);
+				WriteHistory(PPXH_PPCPATH, dirpath, sizeof(DWORD) * 4, &tmp);
 			}
 		}else{ // 既にサイズを保存しているので更新する
 			DWORD *WritePtr = (DWORD *)(BYTE *)GetHistoryData(hist);
@@ -771,11 +773,11 @@ void SetCountedDirectorySize(PPC_APPINFO *cinfo,struct dirinfo *di)
 	}
 }
 
-BOOL USEFASTCALL WmCopyData(PPC_APPINFO *cinfo,COPYDATASTRUCT *copydata,WPARAM wParam)
+BOOL USEFASTCALL WmCopyData(PPC_APPINFO *cinfo, COPYDATASTRUCT *copydata, WPARAM wParam)
 {
 	switch ( LOWORD(copydata->dwData) ){
-		case KC_ADDENTRY:
-			InsertEntry(cinfo,cinfo->e.cellIMax,NilStr,(WIN32_FIND_DATA *)copydata->lpData);
+		case KC_ADDENTRY: // 未使用？
+			InsertEntry(cinfo, -1, NilStr, (WIN32_FIND_DATA *)copydata->lpData);
 			return TRUE;
 
 		case KC_MOREPPC:
@@ -783,7 +785,7 @@ BOOL USEFASTCALL WmCopyData(PPC_APPINFO *cinfo,COPYDATASTRUCT *copydata,WPARAM w
 			return TRUE;
 
 		case K_WINDDOWLOG:
-			WmPPxCommand(NULL,K_WINDDOWLOG,(LPARAM)copydata->lpData);
+			WmPPxCommand(NULL, K_WINDDOWLOG, (LPARAM)copydata->lpData);
 			return TRUE;
 
 		case 0x100 + 'O': // (比較マーク)指定エントリにマークをする
@@ -791,12 +793,12 @@ BOOL USEFASTCALL WmCopyData(PPC_APPINFO *cinfo,COPYDATASTRUCT *copydata,WPARAM w
 				ENTRYINDEX index;
 
 				for ( index = 0 ; index < cinfo->e.cellIMax ; index++ ){
-					if ( !tstrcmp(CellFileNameIndex(cinfo,index),
+					if ( !tstrcmp(CellFileNameIndex(cinfo, index),
 							(TCHAR *)copydata->lpData) ){
-						cinfo->MarkMask = 0x1f;
-						CellMark(cinfo,index,MARK_CHECK);
-						RefleshCell(cinfo,index);
-						RefleshInfoBox(cinfo,DE_ATTR_MARK);
+						cinfo->MarkMask = MARKMASK_DIRFILE;
+						CellMark(cinfo, index, MARK_CHECK);
+						RefleshCell(cinfo, index);
+						RefleshInfoBox(cinfo, DE_ATTR_MARK);
 						break;
 					}
 				}
@@ -806,16 +808,16 @@ BOOL USEFASTCALL WmCopyData(PPC_APPINFO *cinfo,COPYDATASTRUCT *copydata,WPARAM w
 		case 'O':{ // 比較マークを実行する
 			COMPAREMARKPACKET cmp;
 
-			memcpy((char *)&cmp,copydata->lpData,sizeof(cmp));
+			memcpy((char *)&cmp, copydata->lpData, sizeof(cmp));
 
 			if ( (cmp.mode & CMPDOWN) || !(cmp.mode & CMPWAIT) || ((cmp.mode & 0x7f) == CMP_BINARY) ){
 				ReplyMessage(TRUE);
 			}
 
-			PPcCompareMain(cinfo,(HWND)wParam,&cmp);
+			PPcCompareMain(cinfo, (HWND)wParam, &cmp);
 			if ( !(cmp.mode & CMPDOWN) ){		// 上りだったので下り処理をする
-				setflag(cmp.mode,CMPDOWN);
-				PPcCompareSend(cinfo,&cmp,(HWND)wParam);
+				setflag(cmp.mode, CMPDOWN);
+				PPcCompareSend(cinfo, &cmp, (HWND)wParam);
 			}else{							// 処理後、終了処理
 				DeleteFileL(cmp.filename);
 			}
@@ -824,7 +826,7 @@ BOOL USEFASTCALL WmCopyData(PPC_APPINFO *cinfo,COPYDATASTRUCT *copydata,WPARAM w
 
 		case 0x200 + '=': // 指定パスを表示 (PPcディレクトリ指定用)
 			if ( IsTrue(cinfo->ChdirLock) ){
-				PPCuiWithPathForLock(cinfo,(const TCHAR *)copydata->lpData);
+				PPCuiWithPathForLock(cinfo, (const TCHAR *)copydata->lpData);
 				return TRUE;
 			}
 		// '=' へ
@@ -834,21 +836,21 @@ BOOL USEFASTCALL WmCopyData(PPC_APPINFO *cinfo,COPYDATASTRUCT *copydata,WPARAM w
 
 			if ( copydata->cbData >= sizeof(cinfo->path) ) return FALSE;
 			SetPPcDirPos(cinfo);
-			tstrcpy(cinfo->path,(TCHAR *)copydata->lpData);
+			tstrcpy(cinfo->path, (TCHAR *)copydata->lpData);
 #ifndef UNICODE
 			if ( OSver.dwPlatformId == VER_PLATFORM_WIN32_NT )
 #endif
 			{
 				if ( LOWORD(copydata->dwData) == '=' ) ReplyMessage(TRUE);
 			}
-			p = tstrrchr(cinfo->path,'\1');
+			p = tstrrchr(cinfo->path, '\1');
 
 			if ( p != NULL ){
 				*p = '\0';
-				tstrcpy(cinfo->Jfname,p + 1);
-				read_entry(cinfo,RENTRY_JUMPNAME | RENTRY_NOHIST);
+				tstrcpy(cinfo->Jfname, p + 1);
+				read_entry(cinfo, RENTRY_JUMPNAME | RENTRY_NOHIST);
 			}else{
-				read_entry(cinfo,RENTRY_READ);
+				read_entry(cinfo, RENTRY_READ);
 			}
 			return TRUE;
 		}
@@ -858,14 +860,14 @@ BOOL USEFASTCALL WmCopyData(PPC_APPINFO *cinfo,COPYDATASTRUCT *copydata,WPARAM w
 			TCHAR cmd[CMDLINESIZE * 3];
 
 			if ( copydata->cbData >= sizeof(cmd) ) return FALSE;
-			tstrcpy(cmd,(TCHAR *)copydata->lpData);
+			tstrcpy(cmd, (TCHAR *)copydata->lpData);
 			if ( LOWORD(copydata->dwData) == 'H' ) ReplyMessage(TRUE);
-			PP_ExtractMacro(cinfo->info.hWnd,&cinfo->info,NULL,cmd,NULL,0);
+			PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, cmd, NULL, 0);
 			return TRUE;
 		}
 
 		case KC_StDS:
-			SetCountedDirectorySize(cinfo,(struct dirinfo *)copydata->lpData);
+			SetCountedDirectorySize(cinfo, (struct dirinfo *)copydata->lpData);
 			return TRUE;
 
 //		dafault:
@@ -882,17 +884,17 @@ void ClearMark(PPC_APPINFO *cinfo)
 
 	for ( index = 0 ; index < cinfo->e.cellIMax ; index++ ){
 		if ( IsCEL_Marked(index) && !(CEL(index).f.dwFileAttributes & attrmask) ){
-			CellMark(cinfo,index,MARK_REMOVE);
-			RefleshCell(cinfo,index);
+			CellMark(cinfo, index, MARK_REMOVE);
+			RefleshCell(cinfo, index);
 		}
 	}
-	RefleshInfoBox(cinfo,DE_ATTR_MARK);
+	RefleshInfoBox(cinfo, DE_ATTR_MARK);
 }
 
-BOOL ExplorerTypeMark(PPC_APPINFO *cinfo,WPARAM wParam)
+BOOL ExplorerTypeMark(PPC_APPINFO *cinfo, WPARAM wParam)
 {
 	if ( XC_msel[0] && !(wParam & (MK_SHIFT | MK_CONTROL)) ){
-		cinfo->MarkMask = 0x1f;
+		cinfo->MarkMask = MARKMASK_DIRFILE;
 		if ( cinfo->e.markC != 0 ) ClearMark(cinfo);
 		return TRUE;
 	}
@@ -900,13 +902,13 @@ BOOL ExplorerTypeMark(PPC_APPINFO *cinfo,WPARAM wParam)
 }
 
 // クリック位置がマークしていないときには、マークを全部解除して、クリック位置のみマークする
-void ExplorerTypeMark_solo(PPC_APPINFO *cinfo,WPARAM wParam,int cellnum)
+void ExplorerTypeMark_solo(PPC_APPINFO *cinfo, WPARAM wParam, int cellnum)
 {
-	cinfo->MarkMask = 0x1f;
-	ExplorerTypeMark(cinfo,wParam);
-	CellMark(cinfo,cellnum,MARK_CHECK);
-	RefleshCell(cinfo,cellnum);
-	RefleshInfoBox(cinfo,DE_ATTR_MARK);
+	cinfo->MarkMask = MARKMASK_DIRFILE;
+	ExplorerTypeMark(cinfo, wParam);
+	CellMark(cinfo, cellnum, MARK_CHECK);
+	RefleshCell(cinfo, cellnum);
+	RefleshInfoBox(cinfo, DE_ATTR_MARK);
 	if ( cinfo->FullDraw == 0 ) UpdateWindow_Part(cinfo->info.hWnd);
 }
 
@@ -914,18 +916,18 @@ void CheckGesture(PPC_APPINFO *cinfo)
 {
 	TCHAR buf[GESTURETEXTSIZE];
 
-	if ( PPxCheckMouseGesture(&cinfo->MouseStat,buf,T("MC_click")) == FALSE ){
+	if ( PPxCheckMouseGesture(&cinfo->MouseStat, buf, T("MC_click")) == FALSE ){
 		return;
 	}
-	SetPopMsg(cinfo,POPMSG_PROGRESSMSG,buf);
+	SetPopMsg(cinfo, POPMSG_PROGRESSMSG, buf);
 }
 
-void DoubleClickMouse(PPC_APPINFO *cinfo,LPARAM lParam)
+void DoubleClickMouse(PPC_APPINFO *cinfo, LPARAM lParam)
 {
 	TCHAR click[3];
 
 	if ( cinfo->MouseStat.PushButton <= MOUSEBUTTON_CANCEL ) return;
-	KillTimer(cinfo->info.hWnd,TIMERID_DRAGSCROLL);
+	KillTimer(cinfo->info.hWnd, TIMERID_DRAGSCROLL);
 	if ( GetFocus() != cinfo->info.hWnd ) return;
 
 	if ( (cinfo->MouseStat.PushClientPoint.x < 0) ||
@@ -940,9 +942,10 @@ void DoubleClickMouse(PPC_APPINFO *cinfo,LPARAM lParam)
 	click[2] = '\0';
 
 	if ( click[0] == 'L' ){
-		int area,n;
+		int area;
+		ENTRYINDEX n;
 
-		area = GetItemTypeFromPoint(cinfo,&cinfo->MouseStat.PushClientPoint,&n);
+		area = GetItemTypeFromPoint(cinfo, &cinfo->MouseStat.PushClientPoint, &n);
 
 		if ( cinfo->PushArea != area ) return;
 		if ( (area == PPCR_CELLTEXT) || (area == PPCR_INFOICON) ){
@@ -950,60 +953,60 @@ void DoubleClickMouse(PPC_APPINFO *cinfo,LPARAM lParam)
 					(GetShiftKey() & K_s) ){
 				TCHAR buf[VFPS];
 
-				tstrcpy(buf,T("EXPLORER /n,/e,"));
+				tstrcpy(buf, T("EXPLORER /n,/e,"));
 				if ( NULL != VFSFullPath(buf + tstrlen(buf),
-						CellFileNameIndex(cinfo,n),cinfo->RealPath) ){
-					ComExec(cinfo->info.hWnd,buf,cinfo->path);
+						CellFileNameIndex(cinfo, n), cinfo->RealPath) ){
+					ComExec(cinfo->info.hWnd, buf, cinfo->path);
 				}else{
-					SetPopMsg(cinfo,POPMSG_GETLASTERROR,NULL);
+					SetPopMsg(cinfo, POPMSG_GETLASTERROR, NULL);
 				}
 				return;
 			}
 		}
 	}
-	DoMouseAction(cinfo,click,lParam);
+	DoMouseAction(cinfo, click, lParam);
 }
 
 void USEFASTCALL WmCapturechanged(PPC_APPINFO *cinfo)
 {
-	KillTimer(cinfo->info.hWnd,TIMERID_DRAGSCROLL);
+	KillTimer(cinfo->info.hWnd, TIMERID_DRAGSCROLL);
 	if ( cinfo->MousePush == MOUSE_MARK ){
-		SetDDScroll(cinfo,NULL);
-		InvalidateRect(cinfo->info.hWnd,NULL,FALSE);
+		SetDDScroll(cinfo, NULL);
+		InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
 	}
 	if ( cinfo->MouseStat.mode != MOUSEMODE_NONE ){ // 意図しないReleaseCapture
 		PPxCancelMouseButton(&cinfo->MouseStat);
 		cinfo->MousePush = MOUSE_CANCEL;
-		StopPopMsg(cinfo,PMF_DISPLAYMASK);
+		StopPopMsg(cinfo, PMF_DISPLAYMASK);
 	}
 }
 
-void USEFASTCALL PPcScrollBar(PPC_APPINFO *cinfo,UINT message,WORD scrollcode)
+void USEFASTCALL PPcScrollBar(PPC_APPINFO *cinfo, UINT message, WORD scrollcode)
 {
 	switch (scrollcode){
 								// 一番上 .............................
 		case SB_TOP:
-			MoveWinOff(cinfo,-cinfo->winOmax * cinfo->cel.Area.cy);
+			MoveWinOff(cinfo, -cinfo->winOmax * cinfo->cel.Area.cy);
 			break;
 								// 一番下 .............................
 		case SB_BOTTOM:
-			MoveWinOff(cinfo,cinfo->winOmax * cinfo->cel.Area.cy);
+			MoveWinOff(cinfo, cinfo->winOmax * cinfo->cel.Area.cy);
 			break;
 								// 一行上 .............................
 		case SB_LINEUP:
-			MoveWinOff(cinfo,XC_page ? -1 : -cinfo->cel.Area.cy);
+			MoveWinOff(cinfo, XC_page ? -1 : -cinfo->cel.Area.cy);
 			break;
 								// 一行下 .............................
 		case SB_LINEDOWN:
-			MoveWinOff(cinfo,XC_page ? 1 : cinfo->cel.Area.cy);
+			MoveWinOff(cinfo, XC_page ? 1 : cinfo->cel.Area.cy);
 			break;
 								// 一頁上 .............................
 		case SB_PAGEUP:
-			MoveWinOff(cinfo,-cinfo->cel.Area.cx * cinfo->cel.Area.cy);
+			MoveWinOff(cinfo, -cinfo->cel.Area.cx * cinfo->cel.Area.cy);
 			break;
 								// 一頁下 .............................
 		case SB_PAGEDOWN:
-			MoveWinOff(cinfo,cinfo->cel.Area.cx * cinfo->cel.Area.cy);
+			MoveWinOff(cinfo, cinfo->cel.Area.cx * cinfo->cel.Area.cy);
 			break;
 								// 特定位置まで移動中 .................
 		case SB_THUMBTRACK:
@@ -1018,7 +1021,7 @@ void USEFASTCALL PPcScrollBar(PPC_APPINFO *cinfo,UINT message,WORD scrollcode)
 					(cinfo->hScrollBarWnd != NULL ) ? SB_CTL :
 					((message == WM_VSCROLL) ? SB_VERT : SB_HORZ), &scri);
 			if ( XC_page ){
-					MoveWinOff(cinfo,scri.nTrackPos - cinfo->cellWMin);
+					MoveWinOff(cinfo, scri.nTrackPos - cinfo->cellWMin);
 			}else{
 /* なめらかスクロール開発コード
 				if ( scrollcode == SB_THUMBPOSITION ){
@@ -1027,9 +1030,9 @@ void USEFASTCALL PPcScrollBar(PPC_APPINFO *cinfo,UINT message,WORD scrollcode)
 					cinfo->EntriesOffset.x = -(
 						(scri.nTrackPos - cinfo->cellWMin) * cinfo->cel.Size.cx / (cinfo->cel.Area.cy) );
 				}
-				InvalidateRect(cinfo->info.hWnd,NULL,TRUE);
+				InvalidateRect(cinfo->info.hWnd, NULL, TRUE);
 */
-				MoveWinOff(cinfo,(scri.nTrackPos + cinfo->cel.Area.cy / 2) /
+				MoveWinOff(cinfo, (scri.nTrackPos + cinfo->cel.Area.cy / 2) /
 						cinfo->cel.Area.cy * cinfo->cel.Area.cy -
 						cinfo->cellWMin);
 			}
@@ -1043,31 +1046,30 @@ void USEFASTCALL RunGesture(PPC_APPINFO *cinfo)
 {
 	TCHAR buf[CMDLINESIZE];
 
-	StopPopMsg(cinfo,PMF_PROGRESS);
-	wsprintf(buf,T("RG_%s"),cinfo->MouseStat.gesture.step);
+	StopPopMsg(cinfo, PMF_PROGRESS);
+	wsprintf(buf, T("RG_%s"), cinfo->MouseStat.gesture.step);
 	cinfo->MouseStat.gesture.count = 0;
-	if ( NO_ERROR == GetCustTable(T("MC_click"),buf,buf,sizeof(buf)) ){
-		ExecDualParam(cinfo,buf);
+	if ( NO_ERROR == GetCustTable(T("MC_click"), buf, buf, sizeof(buf)) ){
+		ExecDualParam(cinfo, buf);
 	}
 }
 
-void UpMouse(PPC_APPINFO *cinfo,int button,int oldmode,WPARAM wParam,LPARAM lParam)
+void UpMouse(PPC_APPINFO *cinfo, int button, int oldmode, WPARAM wParam, LPARAM lParam)
 {
 	TCHAR click[4];
 	POINT uppos;
 	int newMpos;
 
-	if ( cinfo->Tip.WndState >= TWS_READY ){
+	if ( cinfo->Tip.states & STIP_STATE_READYMASK ){
 		if ( (cinfo->Tip.hTipWnd != NULL) && (cinfo->Tip.X_stip_mode == stip_mode_preview) ){ //preview は DestroyWindow で ReleaseCapture が生じるのでここで処理
-			 HideFileNameTip(cinfo);
+			 EndEntryTip(cinfo);
 		}
 	}
-
 
 	if ( cinfo->EntriesOffset.x | cinfo->EntriesOffset.y ){
 		if ( button > MOUSEBUTTON_CANCEL ){
 			if ( XC_page ){
-				MoveWinOff(cinfo,-cinfo->EntriesOffset.y / cinfo->cel.Size.cy);
+				MoveWinOff(cinfo, -cinfo->EntriesOffset.y / cinfo->cel.Size.cy);
 			}else{
 				MoveWinOff(cinfo,
 					-(cinfo->EntriesOffset.x /
@@ -1075,13 +1077,13 @@ void UpMouse(PPC_APPINFO *cinfo,int button,int oldmode,WPARAM wParam,LPARAM lPar
 			}
 		}
 		cinfo->EntriesOffset.x = cinfo->EntriesOffset.y = 0;
-		InvalidateRect(cinfo->info.hWnd,NULL,FALSE);
+		InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
 	}
 
 	if ( button <= MOUSEBUTTON_CANCEL ){
 		if ( cinfo->MouseStat.gesture.count ){
 			cinfo->MouseStat.gesture.count = 0;
-			StopPopMsg(cinfo,PMF_PROGRESS);
+			StopPopMsg(cinfo, PMF_PROGRESS);
 		}
 		return;
 	}
@@ -1107,12 +1109,12 @@ void UpMouse(PPC_APPINFO *cinfo,int button,int oldmode,WPARAM wParam,LPARAM lPar
 	click[0] = PPxMouseButtonChar[button];
 	click[1] = '\0';
 
-	LPARAMtoPOINT(uppos,lParam);
+	LPARAMtoPOINT(uppos, lParam);
 	cinfo->PopupPos = uppos;
 	cinfo->PopupPosType = PPT_SAVED;
-	ClientToScreen(cinfo->info.hWnd,&cinfo->PopupPos);
+	ClientToScreen(cinfo->info.hWnd, &cinfo->PopupPos);
 
-	if ( cinfo->PushArea != GetItemTypeFromPoint(cinfo,&uppos,&newMpos) ){
+	if ( cinfo->PushArea != GetItemTypeFromPoint(cinfo, &uppos, &newMpos) ){
 		return;
 	}
 
@@ -1120,7 +1122,7 @@ void UpMouse(PPC_APPINFO *cinfo,int button,int oldmode,WPARAM wParam,LPARAM lPar
 		 (cinfo->MouseStat.PushTick > MOUSE_LONG_PUSH_TIME) ){ // 長押しチェック
 		click[1] = 'H';
 		click[2] = '\0';
-		if ( IsTrue(PPcMouseCommand(cinfo,click,(const TCHAR *)cinfo->PushArea)) ){
+		if ( IsTrue(PPcMouseCommand(cinfo, click, (const TCHAR *)cinfo->PushArea)) ){
 			return;
 		}
 		click[1] = '\0';
@@ -1136,7 +1138,7 @@ void UpMouse(PPC_APPINFO *cinfo,int button,int oldmode,WPARAM wParam,LPARAM lPar
 				const TCHAR *cmdp;
 
 				cmdp = HiddenMenu_cmd(cinfo->HiddenMenu.data[newMpos]);
-				ExecDualParam(cinfo,cmdp);
+				ExecDualParam(cinfo, cmdp);
 				return;
 			}
 		}
@@ -1144,7 +1146,7 @@ void UpMouse(PPC_APPINFO *cinfo,int button,int oldmode,WPARAM wParam,LPARAM lPar
 		if ( (cinfo->PushArea == PPCR_CELLTEXT) ||
 			 (cinfo->PushArea == PPCR_INFOICON)){
 			if ( XC_msel[0] && !(wParam & (MK_SHIFT | MK_CONTROL)) ){
-				ExplorerTypeMark_solo(cinfo,wParam,cinfo->e.cellN);
+				ExplorerTypeMark_solo(cinfo, wParam, cinfo->e.cellN);
 			}
 		}
 		// ダブルクリック / タッチ時タップ解除
@@ -1153,11 +1155,14 @@ void UpMouse(PPC_APPINFO *cinfo,int button,int oldmode,WPARAM wParam,LPARAM lPar
 				 IsTouchMessage() &&
 				 (cinfo->PushArea == PPCR_CELLTEXT) &&
 				 (cinfo->e.cellN == cinfo->cellNbeforePush) ){ // タッチをダブルクリックに変換
-				PPcMouseCommand(cinfo,T("LD"),(const TCHAR *)cinfo->PushArea);
+				PPcMouseCommand(cinfo, T("LD"), (const TCHAR *)cinfo->PushArea);
 			}else if ( cinfo->PushArea == PPCR_CELLTAIL ){
-				int mode = X_stip[TIP_TAIL_MODE];
-				if ( mode == 0 ) mode = stip_mode_preview;
-				ShowTipNow(cinfo, STIP_TAIL | STIP_MOUSE, mode, cinfo->e.cellPoint);
+				if ( (cinfo->e.cellPoint >= 0) && (cinfo->e.cellPoint < cinfo->e.cellIMax) ){
+					int mode = X_stip[TIP_TAIL_MODE];
+					if ( mode == 0 ) mode = stip_mode_preview;
+
+					ShowEntryTip(cinfo, STIP_CMD_MOUSE, mode, cinfo->e.cellPoint);
+				}
 			}
 		}
 		return;
@@ -1166,26 +1171,26 @@ void UpMouse(PPC_APPINFO *cinfo,int button,int oldmode,WPARAM wParam,LPARAM lPar
 	if ( (button == MOUSEBUTTON_R) &&
 		 ((cinfo->PushArea == PPCR_CELLTEXT) ||
 		  (cinfo->PushArea == PPCR_INFOICON)) ){
-		MoveCellCsr(cinfo,newMpos - cinfo->e.cellN,NULL);
+		MoveCellCsr(cinfo, newMpos - cinfo->e.cellN, NULL);
 
 		// マーク無しで、単独右クリック解除時にマークを一つにする
 		if ( XC_msel[0] && !(wParam & (MK_SHIFT | MK_CONTROL)) ){
 			if ( !IsCEL_Marked(newMpos) ){
-				ExplorerTypeMark_solo(cinfo,wParam,newMpos);
+				ExplorerTypeMark_solo(cinfo, wParam, newMpos);
 			}
 		}
 	}
 
 	if ( (button == MOUSEBUTTON_M) || (button == MOUSEBUTTON_W) ){
-		StopPopMsg(cinfo,PMF_WAITKEY | PMF_FLASH);
+		StopPopMsg(cinfo, PMF_WAITKEY | PMF_FLASH);
 													// View/ディレクトリ容量
 		if ( (cinfo->PushArea == PPCR_CELLTEXT) ||
 			 (cinfo->PushArea == PPCR_INFOICON)){
-			MoveCellCsr(cinfo,newMpos - cinfo->e.cellN,NULL);
+			MoveCellCsr(cinfo, newMpos - cinfo->e.cellN, NULL);
 			if ( ((1 << button) & XC_cdc) && DispMarkSize(cinfo) ) return;
 		}
 	}
-	PPcMouseCommand(cinfo,click,(const TCHAR *)cinfo->PushArea);
+	PPcMouseCommand(cinfo, click, (const TCHAR *)cinfo->PushArea);
 }
 
 void WMMouseMove(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
@@ -1222,7 +1227,9 @@ void WMMouseMove(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 				if ( pn >= 0 ) RefleshCell(cinfo, pn);
 				if ( oldn >= 0 ) RefleshCell(cinfo, oldn);
 				if ( X_stip[TIP_HOVER_TIME] ){
-					HideFileNameTip(cinfo);
+					if ( cinfo->Tip.states & STIP_CMD_HOVER ){
+						HideEntryTip(cinfo);
+					}
 					if ( pn >= 0 ){
 						SetTimer(cinfo->info.hWnd, TIMERID_HOVERTIP, X_stip[TIP_HOVER_TIME], HoverTipTimerProc);
 					}
@@ -1235,7 +1242,7 @@ void WMMouseMove(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 			if ( posType != PPCR_MENU ) itemNo = -1;
 			if ( itemNo != cinfo->Mpos ){
 				cinfo->Mpos = itemNo;
-				InvalidateRect(cinfo->info.hWnd,&cinfo->BoxInfo,FALSE);	// 更新指定
+				InvalidateRect(cinfo->info.hWnd, &cinfo->BoxInfo, FALSE);	// 更新指定
 			}
 			return;
 		}
@@ -1252,7 +1259,7 @@ void WMMouseMove(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 			}else{
 				cinfo->EntriesOffset.x += cinfo->MouseStat.MovedOffset.cx;
 			}
-			InvalidateRect(cinfo->info.hWnd,NULL,FALSE);
+			InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
 			break;
 
 		case MOUSE_LDDCHECK:				// D&D開始検知
@@ -1268,21 +1275,21 @@ void WMMouseMove(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case MOUSE_MOVE: {				// 窓移動中
-			RECT box,*b;
+			RECT box, *b;
 			HWND hWnd;
 
 			if ( cinfo->combo ){
 				b = &box;
 				hWnd = cinfo->hComboWnd;
-				GetWindowRect(hWnd,b);
+				GetWindowRect(hWnd, b);
 			}else{
 				b = &cinfo->wnd.NCRect;
 				hWnd = cinfo->info.hWnd;
 			}
-			SetWindowPos(hWnd,NULL,
+			SetWindowPos(hWnd, NULL,
 					b->left + cinfo->MouseStat.MovedOffset.cx,
 					b->top + cinfo->MouseStat.MovedOffset.cy,
-					0,0,SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOZORDER);
+					0, 0, SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOZORDER);
 			break;
 		}
 		case MOUSE_MARKCHECK:{				// Drag型範囲指定検知中
@@ -1294,47 +1301,47 @@ void WMMouseMove(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 			}
 
 			if ( (cinfo->PushArea == PPCR_CELLMARK) && (wParam & MK_LBUTTON) ){
-				CellMark(cinfo,cinfo->e.cellN,MARK_REVERSE);
+				CellMark(cinfo, cinfo->e.cellN, MARK_REVERSE);
 			}
 			// Drag型範囲指定 を有効に
 			cinfo->MousePush = MOUSE_MARK;
 			cinfo->MouseDragPoint = pos;
-			CalcDragTarget(cinfo,&pos,&area);
-			MarkDragArea(cinfo,&area,MARK_REVERSE);
-			DrawDragFrame(cinfo->info.hWnd,&area);
+			CalcDragTarget(cinfo, &pos, &area);
+			MarkDragArea(cinfo, &area, MARK_REVERSE);
+			DrawDragFrame(cinfo->info.hWnd, &area);
 			if ( cinfo->PushArea != PPCR_CELLMARK ){
 				ExplorerTypeMark(cinfo, wParam);
 			}
-			InvalidateRect(cinfo->info.hWnd,NULL,FALSE);
+			InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
 			break;
 		}
 		case MOUSE_MARK: {					// Drag型範囲指定中
 			RECT area;
 			int oldmarks;
 
-			SetDDScroll(cinfo,&pos);
+			SetDDScroll(cinfo, &pos);
 			if ( (pos.x == cinfo->MouseStat.PushClientPoint.x) &&
 				 (pos.y == cinfo->MouseStat.PushClientPoint.y) ){
 				break;
 			}
 			oldmarks = cinfo->e.markC;
-			CalcDragTarget(cinfo,&cinfo->MouseDragPoint,&area);
-			DrawDragFrame(cinfo->info.hWnd,&area);
-			MarkDragArea(cinfo,&area,MARK_REVERSE);
+			CalcDragTarget(cinfo, &cinfo->MouseDragPoint, &area);
+			DrawDragFrame(cinfo->info.hWnd, &area);
+			MarkDragArea(cinfo, &area, MARK_REVERSE);
 
 			cinfo->MouseDragPoint = pos;
-			CalcDragTarget(cinfo,&pos,&area);
-			MarkDragArea(cinfo,&area,MARK_REVERSE);
+			CalcDragTarget(cinfo, &pos, &area);
+			MarkDragArea(cinfo, &area, MARK_REVERSE);
 			if ( ((X_poshl != 0) && (pn == -2)) || (oldmarks != cinfo->e.markC) ){ // C4701ok
 				Repaint(cinfo);
 				UpdateWindow(cinfo->info.hWnd);
 			}
-			DrawDragFrame(cinfo->info.hWnd,&area);
+			DrawDragFrame(cinfo->info.hWnd, &area);
 			break;
 		}
 
 		case MOUSE_GESTURE:					// ジェスチャー
-			if ( PtInRect(&cinfo->MouseStat.DDRect,cinfo->MouseStat.MovedScreenPoint) == FALSE ){
+			if ( PtInRect(&cinfo->MouseStat.DDRect, cinfo->MouseStat.MovedScreenPoint) == FALSE ){
 				CheckGesture(cinfo);
 			}
 			break;
@@ -1342,20 +1349,20 @@ void WMMouseMove(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 	}
 }
 
-void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo,WPARAM wParam)
+void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo, WPARAM wParam)
 {
-	int area,n;
+	int area, itemno;
 
-	if ( cinfo->Tip.WndState >= TWS_READY ){
+	if ( cinfo->Tip.states & STIP_STATE_READYMASK ){
 		if ( (cinfo->Tip.hTipWnd == NULL) || (cinfo->Tip.X_stip_mode != stip_mode_preview) ){ //preview は DestroyWindow で ReleaseCapture が生じるので無視
-			 HideFileNameTip(cinfo);
+			 EndEntryTip(cinfo);
 		}
 	}
 
 	if ( cinfo->MouseStat.PushButton <= MOUSEBUTTON_CANCEL ){
 		if ( cinfo->MousePush != MOUSE_NONE ){
 			cinfo->MousePush = MOUSE_CANCEL;
-			InvalidateRect(cinfo->info.hWnd,NULL,TRUE);
+			InvalidateRect(cinfo->info.hWnd, NULL, TRUE);
 		}
 		return;
 	}
@@ -1365,9 +1372,9 @@ void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo,WPARAM wParam)
 		SetFocus(cinfo->info.hWnd);
 	}
 	cinfo->cellNbeforePush = cinfo->e.cellN;
-	cinfo->PushArea = area = GetItemTypeFromPoint(cinfo,&cinfo->MouseStat.PushClientPoint,&n);
-	cinfo->DownMPos = n;
-	StopPopMsg(cinfo,PMF_WAITKEY | PMF_FLASH);
+	cinfo->PushArea = area = GetItemTypeFromPoint(cinfo, &cinfo->MouseStat.PushClientPoint, &cinfo->DownMPos);
+	itemno = cinfo->DownMPos;
+	StopPopMsg(cinfo, PMF_WAITKEY | PMF_FLASH);
 
 //↓本来は非アクティブ時に変なメッセージが来た場合の対策だが、
 //  WM_MOUSEACTIVATE で return MA_NOACTIVATE; を行った場合にも機能して
@@ -1387,16 +1394,16 @@ void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo,WPARAM wParam)
 				ENTRYDATAOFFSET olddata;
 
 				olddata = cinfo->e.markLast;
-				if ( CELt(n) == olddata ) olddata = cinfo->e.markTop;
-				cellold = GetCellIndexFromCellData(cinfo,olddata);
+				if ( CELt(itemno) == olddata ) olddata = cinfo->e.markTop;
+				cellold = GetCellIndexFromCellData(cinfo, olddata);
 			}
-			cinfo->MarkMask = 0x1f;
+			cinfo->MarkMask = MARKMASK_DIRFILE;
 			if ( XC_msel[0] == 2 ) ClearMark(cinfo);
-			f = !IsCEL_Marked(n);
-			if ( n < cellold){
-				for ( i = n ; i <= cellold ; i++ ) CellMark(cinfo,i,f);
+			f = !IsCEL_Marked(itemno);
+			if ( itemno < cellold){
+				for ( i = itemno ; i <= cellold ; i++ ) CellMark(cinfo, i, f);
 			}else{
-				for ( i = cellold ; i <= n ; i++ ) CellMark(cinfo,i,f);
+				for ( i = cellold ; i <= itemno ; i++ ) CellMark(cinfo, i, f);
 			}
 			Repaint(cinfo);
 			return;
@@ -1408,11 +1415,11 @@ void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo,WPARAM wParam)
 			cinfo->MousePush = MOUSE_MARKCHECK;
 			cinfo->MouseDragWMin = cinfo->cellWMin;
 
-			MoveCellCsr(cinfo,n - cinfo->e.cellN,NULL);
-			cinfo->MarkMask = 0x1f;
-			CellMark(cinfo,cinfo->e.cellN,MARK_REVERSE);
-			RefleshCell(cinfo,cinfo->e.cellN);
-			RefleshInfoBox(cinfo,DE_ATTR_ENTRY | DE_ATTR_MARK);
+			MoveCellCsr(cinfo, itemno - cinfo->e.cellN, NULL);
+			cinfo->MarkMask = MARKMASK_DIRFILE;
+			CellMark(cinfo, cinfo->e.cellN, MARK_REVERSE);
+			RefleshCell(cinfo, cinfo->e.cellN);
+			RefleshInfoBox(cinfo, DE_ATTR_ENTRY | DE_ATTR_MARK);
 			return;
 		}
 	}
@@ -1422,7 +1429,7 @@ void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo,WPARAM wParam)
 			 ((cinfo->MousePush == MOUSE_MARK) || ((cinfo->MousePush == MOUSE_GESTURE) && (cinfo->MouseStat.gesture.count != 0))) ){
 			PPxCancelMouseButton(&cinfo->MouseStat);
 			cinfo->MousePush = MOUSE_CANCEL;
-			InvalidateRect(cinfo->info.hWnd,NULL,TRUE);
+			InvalidateRect(cinfo->info.hWnd, NULL, TRUE);
 			return;
 		}
 		if ( cinfo->combo ? (ComboWinPos.show == SW_SHOWNORMAL) :
@@ -1436,7 +1443,7 @@ void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo,WPARAM wParam)
 		 (cinfo->MouseStat.PushButton == MOUSEBUTTON_R) ){
 		if ( (area == PPCR_CELLTEXT) || (area == PPCR_INFOICON) ){
 			if ( XC_Gest && (wParam & MK_RBUTTON) &&
-					!((XC_Gest == 2) && (n == cinfo->e.cellN)) ){
+					!((XC_Gest == 2) && (itemno == cinfo->e.cellN)) ){
 				cinfo->MousePush = MOUSE_GESTURE;
 				cinfo->MouseStat.gesture.count = 0;
 			}else{
@@ -1446,7 +1453,7 @@ void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo,WPARAM wParam)
 				return;
 #else
 				cinfo->MousePush = MOUSE_LDDCHECK;
-				MoveCellCsr(cinfo,n - cinfo->e.cellN,NULL);
+				MoveCellCsr(cinfo, itemno - cinfo->e.cellN, NULL);
 #endif
 			}
 			return;
@@ -1474,7 +1481,7 @@ void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo,WPARAM wParam)
 	cinfo->MousePush = MOUSE_PUSH;
 }
 
-void WMDpiChanged(PPC_APPINFO *cinfo,WPARAM wParam,RECT *newpos)
+void WMDpiChanged(PPC_APPINFO *cinfo, WPARAM wParam, RECT *newpos)
 {
 	DWORD newDPI = HIWORD(wParam);
 
@@ -1488,7 +1495,7 @@ void WMDpiChanged(PPC_APPINFO *cinfo,WPARAM wParam,RECT *newpos)
 	ClearCellIconImage(cinfo);
 
 	if ( newpos != NULL ){
-		SetWindowPos(cinfo->info.hWnd,NULL,newpos->left,newpos->top,
+		SetWindowPos(cinfo->info.hWnd, NULL, newpos->left, newpos->top,
 				newpos->right - newpos->left, newpos->bottom - newpos->top,
 				SWP_NOACTIVATE | SWP_NOZORDER);
 	}
@@ -1497,42 +1504,42 @@ void WMDpiChanged(PPC_APPINFO *cinfo,WPARAM wParam,RECT *newpos)
 	InitGuiControl(cinfo);
 
 	if ( cinfo->hTreeWnd != NULL ){
-		SendMessage(cinfo->hTreeWnd,VTM_CHANGEDDISPDPI,wParam,0);
+		SendMessage(cinfo->hTreeWnd, VTM_CHANGEDDISPDPI, wParam, 0);
 	}
 
 	WmWindowPosChanged(cinfo);
-	InvalidateRect(cinfo->info.hWnd,NULL,FALSE);
+	InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
 }
 
 
-LRESULT WMGesture(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
+LRESULT WMGesture(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 {
 
 	if ( TouchMode == 0 ){
 		if ( X_pmc[0] < 0 ){
 			PPcEnterTabletMode(cinfo);
-			SetPopMsg(cinfo,POPMSG_MSG,T("enter touch mode"));
+			SetPopMsg(cinfo, POPMSG_MSG, T("enter touch mode"));
 		}
 	}
 
 	switch ( wParam ){
 		case GID_TWOFINGERTAP:
-			PostMessage(cinfo->info.hWnd,WM_PPXCOMMAND,K_apps,0);
+			PostMessage(cinfo->info.hWnd, WM_PPXCOMMAND, K_apps, 0);
 			break;
 
 		case GID_PRESSANDTAP:
-			PostMessage(cinfo->info.hWnd,WM_PPXCOMMAND,K_apps,0);
+			PostMessage(cinfo->info.hWnd, WM_PPXCOMMAND, K_apps, 0);
 			break;
 	}
 #if 0
 	{
 		GESTUREINFO ginfo;
-			TCHAR a[200],*id;
+			TCHAR a[200], *id;
 
-		TCHAR *idstr[] = {T("???"),T("begin"),T("end"),T("zoom"),T("pan"),T("rotate(reserved)"),T("twotap"),T("pressand")};
-// GID_SCROLL,GID_HOLD,GID_SELECT,GID_DOUBLESELECT,GID_DIRECTMANIPULATION
+		TCHAR *idstr[] = {T("???"), T("begin"), T("end"), T("zoom"), T("pan"), T("rotate(reserved)"), T("twotap"), T("pressand")};
+// GID_SCROLL, GID_HOLD, GID_SELECT, GID_DOUBLESELECT, GID_DIRECTMANIPULATION
 		ginfo.cbSize = sizeof(GESTUREINFO);
-		if ( DGetGestureInfo((HGESTUREINFO)lParam,&ginfo) ){
+		if ( DGetGestureInfo((HGESTUREINFO)lParam, &ginfo) ){
 
 			if ( ginfo.dwID <= 7 ){
 				id = idstr[ginfo.dwID];
@@ -1540,19 +1547,19 @@ LRESULT WMGesture(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 				id = idstr[0];
 			}
 
-			wsprintf(a,T("WMGesture : Flag:%03x  ID:%04x(%s)  (%4d,%4d) %x"),
-					ginfo.dwFlags, ginfo.dwID,id,
-					ginfo.ptsLocation.x,ginfo.ptsLocation.x,
+			wsprintf(a, T("WMGesture : Flag:%03x  ID:%04x(%s)  (%4d,%4d) %x"),
+					ginfo.dwFlags, ginfo.dwID, id,
+					ginfo.ptsLocation.x, ginfo.ptsLocation.x,
 					ginfo.cbExtraArgs);
 			// DCloseGestureInfoHandle((HGESTUREINFO)lParam); // DefWindowProc を通すので不要
-		SetPopMsg(cinfo,POPMSG_MSG,a);
+		SetPopMsg(cinfo, POPMSG_MSG, a);
 		}else{
-			wsprintf(a,T("WMGesture FALSE : %04x"),wParam);
-		if( wParam != 2 ) SetPopMsg(cinfo,POPMSG_MSG,a);
+			wsprintf(a, T("WMGesture FALSE : %04x"), wParam);
+		if( wParam != 2 ) SetPopMsg(cinfo, POPMSG_MSG, a);
 		}
 	}
 #endif
-	return DefWindowProc(cinfo->info.hWnd,WM_GESTURE,wParam,lParam);
+	return DefWindowProc(cinfo->info.hWnd, WM_GESTURE, wParam, lParam);
 }
 
 /*
@@ -1571,13 +1578,13 @@ struct {
 	int mode;
 } Touch;
 
-LRESULT WMTouch(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
+LRESULT WMTouch(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 {
 	UINT Touchs = LOWORD(wParam);
-	PTOUCHINPUT TouchsData,TData;
+	PTOUCHINPUT TouchsData, TData;
 	POINT pos;
 
-	SetPopMsg(cinfo,POPMSG_MSG,T("WMTouch"));
+	SetPopMsg(cinfo, POPMSG_MSG, T("WMTouch"));
 	if ( Touchs == 0 ){
 		if ( Touch.touchs != 0 ){
 			int oldmode, button;
@@ -1593,7 +1600,7 @@ LRESULT WMTouch(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 		Touch.touchs = Touchs;
 		TouchsData = PPcHeapAlloc(sizeof(TOUCHINPUT) * Touchs);
 		if ( TouchsData != NULL ){
-			if ( IsTrue(DGetTouchInputInfo((HTOUCHINPUT)lParam,Touchs,TouchsData,sizeof(TOUCHINPUT))) ){
+			if ( IsTrue(DGetTouchInputInfo((HTOUCHINPUT)lParam, Touchs, TouchsData, sizeof(TOUCHINPUT))) ){
 				TCHAR a[1000];
 				UINT i = 0;
 				for ( ; i < Touchs ; i++ ){
@@ -1601,24 +1608,24 @@ LRESULT WMTouch(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 
 					pos.x = TData->x;
 					pos.y = TData->y;
-					ScreenToClient(cinfo->info.hWnd,&pos);
+					ScreenToClient(cinfo->info.hWnd, &pos);
 
-					wsprintf(a,T("Touch Time:%x ID:%x (%d,%d) ->%x"),TData->dwTime,TData->dwID,pos.x,pos.y,TData->dwFlags);
-					SetPopMsg(cinfo,POPMSG_MSG,a);
+					wsprintf(a, T("Touch Time:%x ID:%x (%d,%d) ->%x"), TData->dwTime, TData->dwID, pos.x, pos.y, TData->dwFlags);
+					SetPopMsg(cinfo, POPMSG_MSG, a);
 					if ( TData->dwFlags & TOUCHEVENTF_PRIMARY ){
 						if ( TData->dwFlags & TOUCHEVENTF_DOWN ){
-							PPxDownMouseButton(&cinfo->MouseStat,cinfo->info.hWnd,MK_LBUTTON,TMAKELPARAM(pos.x,pos.y));
-							WmMouseDown(cinfo,MK_LBUTTON);
+							PPxDownMouseButton(&cinfo->MouseStat, cinfo->info.hWnd, MK_LBUTTON, TMAKELPARAM(pos.x, pos.y));
+							WmMouseDown(cinfo, MK_LBUTTON);
 						}else if ( TData->dwFlags & TOUCHEVENTF_UP ){
-							int oldmode,i;
+							int oldmode, i;
 
 							oldmode = cinfo->MouseStat.mode;
-							i = PPxUpMouseButton(&cinfo->MouseStat,0);
-							UpMouse(cinfo,i,oldmode,0,TMAKELPARAM(pos.x,pos.y));
+							i = PPxUpMouseButton(&cinfo->MouseStat, 0);
+							UpMouse(cinfo, i, oldmode, 0, TMAKELPARAM(pos.x, pos.y));
 							cinfo->MousePush = MOUSE_CANCEL;
 						}else if ( !(TData->dwFlags & TOUCHEVENTF_UP) ){
-							PPxMoveMouse(&cinfo->MouseStat,cinfo->info.hWnd,TMAKELPARAM(pos.x,pos.y));
-							WMMouseMove(cinfo,MK_LBUTTON,TMAKELPARAM(pos.x,pos.y));
+							PPxMoveMouse(&cinfo->MouseStat, cinfo->info.hWnd, TMAKELPARAM(pos.x, pos.y));
+							WMMouseMove(cinfo, MK_LBUTTON, TMAKELPARAM(pos.x, pos.y));
 						}
 					}
 				}
@@ -1628,59 +1635,59 @@ LRESULT WMTouch(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 		DCloseTouchInputHandle((HTOUCHINPUT)lParam);
 	}
 	return 0;
-//	return DefWindowProc(cinfo->info.hWnd,WM_TOUCH,wParam,lParam);
+//	return DefWindowProc(cinfo->info.hWnd, WM_TOUCH, wParam, lParam);
 }
 #endif // XTOUCH
 
-void RestartSubthread(PPC_APPINFO *cinfo,LPARAM lParam)
+void RestartSubthread(PPC_APPINFO *cinfo, LPARAM lParam)
 {
 	DWORD tmp;
 	ENTRYINDEX index;
 	TCHAR buf[VFPS + 128];
 
 	for ( index = 0 ; index < cinfo->e.cellIMax ; index++ ){
-		if ( tstrcmp(CEL(index).f.cFileName,(TCHAR *)lParam) == 0 ){
+		if ( tstrcmp(CEL(index).f.cFileName, (TCHAR *)lParam) == 0 ){
 			CEL(index).icon = ICONLIST_BROKEN;
 			DIRECTXDEFINE(CEL(index).iconcache = 0);
-			wsprintf(buf,T("Icon broken : %s"),(TCHAR *)lParam);
-			SetPopMsg(cinfo,POPMSG_MSG,buf);
+			wsprintf(buf, T("Icon broken : %s"), (TCHAR *)lParam);
+			SetPopMsg(cinfo, POPMSG_MSG, buf);
 			break;
 		}
 	}
 
-	cinfo->hSubThread = CreateThread(NULL,0,
-			(LPTHREAD_START_ROUTINE)SubThread,cinfo,0,&tmp);
+	cinfo->hSubThread = CreateThread(NULL, 0,
+			(LPTHREAD_START_ROUTINE)SubThread, cinfo, 0, &tmp);
 }
 
 void ResizeGuiParts(PPC_APPINFO *cinfo)
 {
 	if ( cinfo->hHeaderWnd != NULL ){
-		SetWindowPos(cinfo->hHeaderWnd,NULL,
-			cinfo->BoxEntries.left,cinfo->BoxEntries.top - cinfo->HeaderHeight,
-			cinfo->BoxStatus.right - cinfo->BoxEntries.left,cinfo->HeaderHeight,
+		SetWindowPos(cinfo->hHeaderWnd, NULL,
+			cinfo->BoxEntries.left, cinfo->BoxEntries.top - cinfo->HeaderHeight,
+			cinfo->BoxStatus.right - cinfo->BoxEntries.left, cinfo->HeaderHeight,
 			SWP_NOACTIVATE | SWP_NOZORDER);
 	}
 	if ( cinfo->hScrollBarWnd != NULL ){
 		if ( cinfo->ScrollBarHV == SB_HORZ ){ // 水平
-			SetWindowPos(cinfo->hScrollBarWnd,NULL,
-				cinfo->BoxEntries.left,cinfo->ScrollBarY,
-				cinfo->BoxEntries.right - cinfo->BoxEntries.left,cinfo->ScrollBarSize,
+			SetWindowPos(cinfo->hScrollBarWnd, NULL,
+				cinfo->BoxEntries.left, cinfo->ScrollBarY,
+				cinfo->BoxEntries.right - cinfo->BoxEntries.left, cinfo->ScrollBarSize,
 				SWP_NOACTIVATE | SWP_NOZORDER);
 		}else{ // 垂直
-			SetWindowPos(cinfo->hScrollBarWnd,NULL,
-				cinfo->BoxEntries.right,cinfo->BoxEntries.top,
-				cinfo->ScrollBarSize,cinfo->ScrollBarY - cinfo->BoxEntries.top,
+			SetWindowPos(cinfo->hScrollBarWnd, NULL,
+				cinfo->BoxEntries.right, cinfo->BoxEntries.top,
+				cinfo->ScrollBarSize, cinfo->ScrollBarY - cinfo->BoxEntries.top,
 				SWP_NOACTIVATE | SWP_NOZORDER);
 		}
 	}
 }
 
-LRESULT WmPPxCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
+LRESULT WmPPxCommand(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 {
-	DEBUGLOGC("WmPPxCommand %4x",wParam);
+	DEBUGLOGC("WmPPxCommand %4x", wParam);
 	switch (LOWORD(wParam)){
 		case KC_POPTENDFIX:
-			SetPopMsg(cinfo,POPMSG_MSG,T("PPcFile: Fixed Thread terminate lock"));
+			SetPopMsg(cinfo, POPMSG_MSG, T("PPcFile: Fixed Thread terminate lock"));
 			break;
 
 		// Tree関連
@@ -1699,19 +1706,19 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 			break;
 
 		case KCW_enteraddress:
-			if ( VFSFixPath(NULL,(TCHAR *)lParam,cinfo->path,VFSFIX_VFPS) != NULL ){
+			if ( VFSFixPath(NULL, (TCHAR *)lParam, cinfo->path, VFSFIX_VFPS) != NULL ){
 				SetPPcDirPos(cinfo);
-				tstrcpy(cinfo->path,(TCHAR *)lParam);
-				read_entry(cinfo,RENTRY_READ);
+				tstrcpy(cinfo->path, (TCHAR *)lParam);
+				read_entry(cinfo, RENTRY_READ);
 			}
 			break;
 
 		case KTN_select:
 		case KTN_selected:
-			if ( tstricmp(cinfo->path,(TCHAR *)lParam) ){
+			if ( tstricmp(cinfo->path, (TCHAR *)lParam) ){
 				SetPPcDirPos(cinfo);
-				tstrcpy(cinfo->path,(TCHAR *)lParam);
-				read_entry(cinfo,RENTRY_READ);
+				tstrcpy(cinfo->path, (TCHAR *)lParam);
+				read_entry(cinfo, RENTRY_READ);
 			}
 			if ( LOWORD(wParam) == KTN_selected ){
 				SetFocus(cinfo->info.hWnd);
@@ -1727,21 +1734,21 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 				cinfo->TreeX = cinfo->XC_tree.width = (int)lParam;
 				InitCli(cinfo);
 				ResizeGuiParts(cinfo);
-				InvalidateRect(cinfo->hTreeWnd,NULL,FALSE);
-				InvalidateRect(cinfo->info.hWnd,NULL,FALSE);
-				ChangeSizeDxDraw(cinfo->DxDraw,cinfo->BackColor);
+				InvalidateRect(cinfo->hTreeWnd, NULL, FALSE);
+				InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
+				ChangeSizeDxDraw(cinfo->DxDraw, cinfo->BackColor);
 			}
 			break;
 
 		//通信
 		case KC_DoJW:
 			cinfo->NowJoint = FALSE;
-			JointWindowMain(cinfo,(HWND)lParam);
+			JointWindowMain(cinfo, (HWND)lParam);
 			cinfo->NowJoint = TRUE;
 			break;
 
 		case KC_MOUSECMD: {
-			int ppcr,mpos;
+			int ppcr, mpos;
 			TCHAR cmd[3];
 
 			ppcr = LOWORD(lParam);
@@ -1757,30 +1764,30 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 						TCHAR *p;
 
 						p = HiddenMenu_cmd(cinfo->HiddenMenu.data[mpos]);
-						ExecDualParam(cinfo,p);
+						ExecDualParam(cinfo, p);
 					}
 					break;
 				}else{
 					ppcr = PPCR_INFOTEXT;
 				}
 			}
-			PPcMouseCommand(cinfo,cmd,(const TCHAR *)ppcr);
+			PPcMouseCommand(cinfo, cmd, (const TCHAR *)ppcr);
 			break;
 		}
 
 		case K_ENDATTR:
 			if ( cinfo->RealPath[0] == (TCHAR)lParam ){
-				RefreshAfterList(cinfo,ALST_ATTRIBUTES);
+				RefreshAfterList(cinfo, ALST_ATTRIBUTES);
 			}
 			break;
 		case K_ENDCOPY:
 			if ( cinfo->RealPath[0] == (TCHAR)lParam ){
-				RefreshAfterList(cinfo,ALST_COPYMOVE);
+				RefreshAfterList(cinfo, ALST_COPYMOVE);
 			}
 			break;
 		case K_ENDDEL:
 			if ( cinfo->RealPath[0] == (TCHAR)lParam ){
-				RefreshAfterList(cinfo,ALST_DELETE);
+				RefreshAfterList(cinfo, ALST_DELETE);
 			}
 			break;
 
@@ -1788,7 +1795,7 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 			TCHAR *mptr;
 
 			mptr = MapViewOfFile((HANDLE)lParam,
-						FILE_MAP_ALL_ACCESS,0,0,CMDLINESIZE);
+						FILE_MAP_ALL_ACCESS, 0, 0, CMDLINESIZE);
 			if ( mptr == NULL ) break;
 
 			PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, mptr, mptr, XEO_EXTRACTEXEC);
@@ -1810,18 +1817,18 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 					read_entry(cinfo,
 							cinfo->AcceptReload & ~RENTRY_FLAGS_ARELOAD);
 				}else{	// キャッシュ等があるので更新のみ
-					read_entry(cinfo,RENTRY_SAVEOFF | RENTRY_UPDATE);
+					read_entry(cinfo, RENTRY_SAVEOFF | RENTRY_UPDATE);
 				}
 			}
 			break;
 
 		case KC_DRIVERELOAD:
-			read_entry(cinfo,RENTRY_CACHEREFRESH | RENTRY_DRIVEFIX);
+			read_entry(cinfo, RENTRY_CACHEREFRESH | RENTRY_DRIVEFIX);
 			break;
 
 		case K_FREEDRIVEUSE:
 			if ( !lParam || (cinfo->RealPath[0] == lParam) ){
-				setflag(cinfo->SubTCmdFlags,SUBT_STOPDIRCHECK); // 監視停止
+				setflag(cinfo->SubTCmdFlags, SUBT_STOPDIRCHECK); // 監視停止
 				SetEvent(cinfo->SubT_cmd);
 			}
 			break;
@@ -1829,30 +1836,30 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 		case K_SETPOPMSG:
 		case K_SETPOPLINENOLOG:
 			if ( (TCHAR *)lParam == NULL ){
-				StopPopMsg(cinfo,PMF_ALL);
+				StopPopMsg(cinfo, PMF_ALL);
 			}else{
 				SetPopMsg(cinfo, ((LOWORD(wParam) == K_SETPOPMSG) ?
-						POPMSG_MSG : POPMSG_NOLOGMSG) ,(const TCHAR *)lParam);
+						POPMSG_MSG : POPMSG_NOLOGMSG), (const TCHAR *)lParam);
 			}
 			return 1;
 
 		case K_WINDDOWLOG:
 			if ( Combo.hWnd != NULL ){
-				SendMessage(Combo.hWnd,WM_PPXCOMMAND,wParam,lParam);
+				SendMessage(Combo.hWnd, WM_PPXCOMMAND, wParam, lParam);
 			}else{
 				if ( lParam != 0 ) SetReportText((const TCHAR *)lParam);
 				if ( HIWORD(wParam) && (hCommonLog != NULL) &&
 						!(X_combos[0] & CMBS_DELAYLOGSHOW) ){
 					if ( HIWORD(wParam) == 2 ){ // 強制表示を行う
 						DelayLogShowProc(hCommonLog,
-								WM_TIMER,TIMERID_DELAYLOGSHOW,0);
+								WM_TIMER, TIMERID_DELAYLOGSHOW, 0);
 						break;
 					}
-					if ( GetWindowLongPtr(hCommonLog,GWL_STYLE) & WS_VISIBLE ){
+					if ( GetWindowLongPtr(hCommonLog, GWL_STYLE) & WS_VISIBLE ){
 						// ログの遅延表示を開始／画面描画を止める
-						SendMessage(hCommonLog,WM_SETREDRAW,FALSE,0);
-						SetTimer(hCommonLog,TIMERID_DELAYLOGSHOW,
-								TIMER_DELAYLOGSHOW,DelayLogShowProc);
+						SendMessage(hCommonLog, WM_SETREDRAW, FALSE, 0);
+						SetTimer(hCommonLog, TIMERID_DELAYLOGSHOW,
+								TIMER_DELAYLOGSHOW, DelayLogShowProc);
 					}
 				}
 			}
@@ -1860,7 +1867,7 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 
 		case K_POPOPS:
 			cinfo->PopupPosType = HIWORD(wParam);
-			LPARAMtoPOINT(cinfo->PopupPos,lParam);
+			LPARAMtoPOINT(cinfo->PopupPos, lParam);
 			break;
 
 		case KC_UNFOCUS:
@@ -1868,8 +1875,8 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 				cinfo->X_inag = INAG_UNFOCUS;
 				DeleteObject(cinfo->C_BackBrush);
 				cinfo->C_BackBrush = CreateSolidBrush(GetGrayColorB(cinfo->BackColor));
-				ChangeSizeDxDraw(cinfo->DxDraw,GetGrayColorB(cinfo->BackColor));
-				InvalidateRect(cinfo->info.hWnd,NULL,FALSE);
+				ChangeSizeDxDraw(cinfo->DxDraw, GetGrayColorB(cinfo->BackColor));
+				InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
 			}
 			break;
 
@@ -1884,7 +1891,7 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 			}
 			if ( (int)lParam >= KC_GETSITEHWND_LEFTENUM ){
 				if ( cinfo->combo == 0 ) return (LRESULT)NULL;
-				return SendMessage(Combo.hWnd,WM_PPXCOMMAND,KC_GETSITEHWND,lParam);
+				return SendMessage(Combo.hWnd, WM_PPXCOMMAND, KC_GETSITEHWND, lParam);
 			}
 
 			// KC_GETSITEHWND_LEFT / KC_GETSITEHWND_RIGHT
@@ -1902,27 +1909,27 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 			break;
 
 		case KC_ENDCOMPARE:
-			StopPopMsg(cinfo,PMF_PROGRESS);
-			SetPopMsg(cinfo,POPMSG_MSG,MES_CCMP);
-			ActionInfo(cinfo->info.hWnd,&cinfo->info,AJI_COMPLETE,T("compare")); // 通知
+			StopPopMsg(cinfo, PMF_PROGRESS);
+			SetPopMsg(cinfo, POPMSG_MSG, MES_CCMP);
+			ActionInfo(cinfo->info.hWnd, &cinfo->info, AJI_COMPLETE, T("compare")); // 通知
 			break;
 
 		case K_THREADRESTART:
-			RestartSubthread(cinfo,lParam);
+			RestartSubthread(cinfo, lParam);
 			break;
 
 		case KC_PRECLOSE:
 			if ( IsTrue(cinfo->mws.NowClose) || IsTrue(cinfo->mws.DestroryRequest) ){
 				break; // 既に終了処理中
 			}
-			setflag(cinfo->swin,SWIN_BUSY);
-			IOX_win(cinfo,TRUE);
+			setflag(cinfo->swin, SWIN_BUSY);
+			IOX_win(cinfo, TRUE);
 			PreClosePPc(cinfo);
 			RequestDestroyFlag = 1;
 			break;
 
 		case KC_COMMENTEVENT:
-			ExtCommentExecute(cinfo,lParam);
+			ExtCommentExecute(cinfo, lParam);
 			break;
 
 		case KCW_ready:
@@ -1930,7 +1937,7 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 			break;
 
 		case K_CHENGEDDISPDPI:
-			WMDpiChanged(cinfo,lParam,NULL);
+			WMDpiChanged(cinfo, lParam, NULL);
 			break;
 /*
 		case K_E_TABLET:
@@ -1950,9 +1957,9 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 			break;
 
 		default:
-			PPcCommand(cinfo,LOWORD(wParam));
+			PPcCommand(cinfo, LOWORD(wParam));
 	}
-	DEBUGLOGC("WmPPxCommand %4x end",wParam);
+	DEBUGLOGC("WmPPxCommand %4x end", wParam);
 	return NO_ERROR;
 }
 
@@ -1965,26 +1972,26 @@ void WmClose(PPC_APPINFO *cinfo)
 	if ( (cinfo->swin & SWIN_WQUIT) && CheckReady(cinfo) ){
 		HWND hPairWnd;
 
-		setflag(cinfo->swin,SWIN_BUSY);
-		IOX_win(cinfo,TRUE);
+		setflag(cinfo->swin, SWIN_BUSY);
+		IOX_win(cinfo, TRUE);
 		hPairWnd = GetJoinWnd(cinfo);
-		if ( hPairWnd != NULL ) SendMessage(hPairWnd,WM_CLOSE,0,0);
+		if ( hPairWnd != NULL ) SendMessage(hPairWnd, WM_CLOSE, 0, 0);
 	}else{
-		setflag(cinfo->swin,SWIN_BUSY);
-		IOX_win(cinfo,TRUE);
+		setflag(cinfo->swin, SWIN_BUSY);
+		IOX_win(cinfo, TRUE);
 	}
 
 	if ( cinfo->Ref <= 1 ){
 		if ( (cinfo->combo != 0) && (Combo.BaseCount == 1) ){
-			if ( Combo.hWnd != BADHWND ) PostMessage(Combo.hWnd,WM_CLOSE,0,0);
+			if ( Combo.hWnd != BADHWND ) PostMessage(Combo.hWnd, WM_CLOSE, 0, 0);
 		}else{
 			DestroyWindow(cinfo->info.hWnd);
 		}
 	}else{
 		PreClosePPc(cinfo);
-		ShowWindow(cinfo->info.hWnd,SW_HIDE);
+		ShowWindow(cinfo->info.hWnd, SW_HIDE);
 		if ( (cinfo->combo != 0) && (Combo.hWnd != BADHWND) ){
-			SendMessage(Combo.hWnd,WM_PARENTNOTIFY,WM_DESTROY,(LPARAM)cinfo->info.hWnd);
+			SendMessage(Combo.hWnd, WM_PARENTNOTIFY, WM_DESTROY, (LPARAM)cinfo->info.hWnd);
 		}
 		RequestDestroyFlag = 1;
 	}
@@ -1993,18 +2000,18 @@ void WmClose(PPC_APPINFO *cinfo)
 void WmWindowPosChanged(PPC_APPINFO *cinfo)
 {
 	WINDOWPLACEMENT wp;
-	int oldx,oldy;
+	int oldx, oldy;
 	HWND hWnd;
 	RECT box;
 
 	hWnd = cinfo->info.hWnd;
-	GetWindowRect(hWnd,&cinfo->wnd.NCRect); //※wpの座標はタスクバーの考慮無
+	GetWindowRect(hWnd, &cinfo->wnd.NCRect); //※wpの座標はタスクバーの考慮無
 	cinfo->wnd.NCArea.cx = cinfo->wnd.NCRect.right  - cinfo->wnd.NCRect.left;
 	cinfo->wnd.NCArea.cy = cinfo->wnd.NCRect.bottom - cinfo->wnd.NCRect.top;
 
 										// 窓の最大化・最小化状態を取得
 	wp.length = sizeof(wp);
-	GetWindowPlacement(hWnd,&wp);
+	GetWindowPlacement(hWnd, &wp);
 
 	oldx = cinfo->wnd.Area.cx;
 	oldy = cinfo->wnd.Area.cy;
@@ -2013,7 +2020,7 @@ void WmWindowPosChanged(PPC_APPINFO *cinfo)
 	// SW_HIDE は WS_VISIBLE が無くなった状態なので前回のを維持
 	if ( (wp.showCmd != SW_SHOWMINIMIZED) && (wp.showCmd != SW_HIDE) ){
 		cinfo->WinPos.show = (BYTE)wp.showCmd;
-		GetClientRect(hWnd,&box);
+		GetClientRect(hWnd, &box);
 		cinfo->wnd.Area.cx = box.right;
 		cinfo->wnd.Area.cy = box.bottom;
 	}
@@ -2023,70 +2030,69 @@ void WmWindowPosChanged(PPC_APPINFO *cinfo)
 	}
 
 //	if ( (cinfo->wnd.Area.cx == oldx) && (cinfo->wnd.Area.cy == oldy) ) return;
-//	XMessage(NULL,NULL,XM_DbgLOG,T("size %d %d<-%d,%d<-%d"),hWnd,cinfo->wnd.Area.cx , oldx,cinfo->wnd.Area.cy , oldy);
+//	XMessage(NULL, NULL, XM_DbgLOG, T("size %d %d<-%d, %d<-%d"), hWnd, cinfo->wnd.Area.cx , oldx, cinfo->wnd.Area.cy , oldy);
 										// クライアント情報の再設定
 	InitCli(cinfo);
 
 	if ( (cinfo->celF.attr & DE_ATTR_WIDEW) || cinfo->bg.X_WallpaperType || X_fles ){
-		InvalidateRect(hWnd,NULL,FALSE);
+		InvalidateRect(hWnd, NULL, FALSE);
 		if ( (oldx != cinfo->wnd.Area.cx) || (oldy != cinfo->wnd.Area.cy) ){
 			FreeOffScreen(&cinfo->bg);
 		}
 	}
-	MoveCellCsr(cinfo,0,NULL);
+	MoveCellCsr(cinfo, 0, NULL);
 	if ( cinfo->combo ){
 		// cinfo->combo = -1 の時は通知しない
 		// (起動時の大きさ調整中の内容まで送信しないようにする)
 		if ( (cinfo->combo > 0) && (wp.showCmd != SW_HIDE) ){
-			PostMessage(cinfo->hComboWnd,WM_PPXCOMMAND,KCW_size,(LPARAM)hWnd);
+			PostMessage(cinfo->hComboWnd, WM_PPXCOMMAND, KCW_size, (LPARAM)hWnd);
 		}
 	}else{					// 必要なら連結処理
 		if ( (cinfo->swin & SWIN_JOIN) && cinfo->NowJoint ) JoinWindow(cinfo);
 		if ( (wp.showCmd == SW_SHOWMINIMIZED) && (X_tray & X_tray_SinglePPc) ){
 			// ※最小化のときと、次の隠したときと２回続けて呼ばれる
-			PostMessage(hWnd,WM_PPXCOMMAND,K_HIDE,0);
+			PostMessage(hWnd, WM_PPXCOMMAND, K_HIDE, 0);
 			return;
 		}
 	}
 	if ( cinfo->hTreeWnd != NULL ){
 		MoveWindow(cinfo->hTreeWnd,
-				0,cinfo->BoxEntries.top - cinfo->HeaderHeight,
+				0, cinfo->BoxEntries.top - cinfo->HeaderHeight,
 				cinfo->BoxEntries.left,
 				cinfo->wnd.Area.cy - cinfo->BoxEntries.top
-					- cinfo->docks.b.client.bottom + cinfo->HeaderHeight,TRUE);
+					- cinfo->docks.b.client.bottom + cinfo->HeaderHeight, TRUE);
 	}
 	if ( cinfo->docks.t.hWnd != NULL ){
 		MoveWindow(cinfo->docks.t.hWnd,
-				0,0,
+				0, 0,
 				cinfo->wnd.Area.cx + REBARFIXWIDTH,
-				cinfo->docks.t.client.bottom,TRUE);
+				cinfo->docks.t.client.bottom, TRUE);
 	}
 	if ( cinfo->hToolBarWnd != NULL ){
-		GetWindowRect(cinfo->hToolBarWnd,&box);
+		GetWindowRect(cinfo->hToolBarWnd, &box);
 		cinfo->ToolbarHeight = box.bottom - box.top;
-		SetWindowPos(cinfo->hToolBarWnd,NULL,0,cinfo->BoxInfo.bottom,
-				cinfo->wnd.Area.cx,cinfo->ToolbarHeight,
+		SetWindowPos(cinfo->hToolBarWnd, NULL, 0, cinfo->BoxInfo.bottom,
+				cinfo->wnd.Area.cx, cinfo->ToolbarHeight,
 				SWP_NOACTIVATE | SWP_NOZORDER);
 		// 横幅が変化するときは、ツールバーが下にずれることがあるため、
 		// もう一度位置設定を行う
 		if ( cinfo->wnd.Area.cx != (box.right - box.left) ){
-			SetWindowPos(cinfo->hToolBarWnd,NULL,0,cinfo->BoxInfo.bottom,
-					cinfo->wnd.Area.cx,cinfo->ToolbarHeight,
+			SetWindowPos(cinfo->hToolBarWnd, NULL, 0, cinfo->BoxInfo.bottom,
+					cinfo->wnd.Area.cx, cinfo->ToolbarHeight,
 					SWP_NOREDRAW | SWP_NOACTIVATE | SWP_NOZORDER);
 		}
 	}
 	if ( cinfo->docks.b.hWnd != NULL ){
 		MoveWindow(cinfo->docks.b.hWnd,
-				0,cinfo->wnd.Area.cy - cinfo->docks.b.client.bottom,
+				0, cinfo->wnd.Area.cy - cinfo->docks.b.client.bottom,
 				cinfo->wnd.Area.cx + REBARFIXWIDTH,
-				cinfo->docks.b.client.bottom,TRUE);
+				cinfo->docks.b.client.bottom, TRUE);
 	}
 	ResizeGuiParts(cinfo);
-	// HideFileNameTip(cinfo);
-	ChangeSizeDxDraw(cinfo->DxDraw,cinfo->BackColor);
+	ChangeSizeDxDraw(cinfo->DxDraw, cinfo->BackColor);
 }
 
-BOOL WmChar(PPC_APPINFO *cinfo,WORD key,LPARAM lParam)
+BOOL WmChar(PPC_APPINFO *cinfo, WORD key, LPARAM lParam)
 {
 	cinfo->KeyChar = 0;
 
@@ -2097,7 +2103,7 @@ BOOL WmChar(PPC_APPINFO *cinfo,WORD key,LPARAM lParam)
 
 	if ( Ismulti(key) ){
 		cinfo->multicharkey = 1;
-		SetPopMsg(cinfo,POPMSG_MSG,MES_EKCD);
+		SetPopMsg(cinfo, POPMSG_MSG, MES_EKCD);
 	}
 
 	if ( key < 0x80 ){
@@ -2105,12 +2111,12 @@ BOOL WmChar(PPC_APPINFO *cinfo,WORD key,LPARAM lParam)
 		cinfo->PopupPosType = PPT_FOCUS;
 
 		if ( cinfo->KeyHookEntry != NULL ){
-			if ( CallKeyHook(cinfo,FixCharKeycode(key)) != PPXMRESULT_SKIP ){
+			if ( CallKeyHook(cinfo, FixCharKeycode(key)) != PPXMRESULT_SKIP ){
 				return TRUE;
 			}
 		}
 
-		if ( PPcCommand(cinfo,FixCharKeycode(key)) != ERROR_INVALID_FUNCTION ){
+		if ( PPcCommand(cinfo, FixCharKeycode(key)) != ERROR_INVALID_FUNCTION ){
 			if ( IsTrue(cinfo->UnpackFix) ) OffArcPathMode(cinfo);
 			return TRUE;
 		}
@@ -2121,7 +2127,7 @@ BOOL WmChar(PPC_APPINFO *cinfo,WORD key,LPARAM lParam)
 void USEFASTCALL SetTextClipboardData(PPC_APPINFO *cinfo)
 {
 	if ( cinfo->CLIPDATAS[CLIPTYPES_TEXT] == NULL ) return;
-	SetClipboardData(CF_TTEXT,cinfo->CLIPDATAS[CLIPTYPES_TEXT]);
+	SetClipboardData(CF_TTEXT, cinfo->CLIPDATAS[CLIPTYPES_TEXT]);
 }
 
 void SetSHNClipboardData(PPC_APPINFO *cinfo)
@@ -2129,7 +2135,7 @@ void SetSHNClipboardData(PPC_APPINFO *cinfo)
 	TCHAR classname[VFPS];
 
 	if ( DGetGUIThreadInfo == INVALID_HANDLE_VALUE ){
-		GETDLLPROC(GetModuleHandle(StrUser32DLL),GetGUIThreadInfo);
+		GETDLLPROC(GetModuleHandle(StrUser32DLL), GetGUIThreadInfo);
 	}
 	if ( DGetGUIThreadInfo != NULL ){
 		xGUITHREADINFO guiinfo;
@@ -2140,28 +2146,28 @@ void SetSHNClipboardData(PPC_APPINFO *cinfo)
 				&guiinfo) ){
 			HWND hTargetWnd;
 			hTargetWnd = guiinfo.hwndFocus ? guiinfo.hwndFocus : guiinfo.hwndActive;
-			if ( GetClassName(hTargetWnd,classname,VFPS) ){
-				if ( !tstricmp(classname,T("edit")) || (tstrstr(classname,T(".EDIT.")) != NULL) ){
+			if ( GetClassName(hTargetWnd, classname, VFPS) ){
+				if ( !tstricmp(classname, T("edit")) || (tstrstr(classname, T(".EDIT.")) != NULL) ){
 					return;
 				}
 			}
 		}
 	}
-	SetClipboardData(CF_xSHELLIDLIST,cinfo->CLIPDATAS[CLIPTYPES_SHN]);
+	SetClipboardData(CF_xSHELLIDLIST, cinfo->CLIPDATAS[CLIPTYPES_SHN]);
 }
 
-LRESULT USEFASTCALL PPcWmCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
+LRESULT USEFASTCALL PPcWmCommand(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 {
 	DWORD cmdID;
-	DEBUGLOGC("WM_COMMAND %4x",wParam);
+	DEBUGLOGC("WM_COMMAND %4x", wParam);
 	cinfo->KeyRepeats = 0;
 
 	if ( lParam != 0 ){ // コントロールからの送信
 		if ( (HWND)lParam == cinfo->hToolBarWnd ){
-			PPcToolbarCommand(cinfo,LOWORD(wParam),0);
+			PPcToolbarCommand(cinfo, LOWORD(wParam), 0);
 			return 0;
 		}
-		if ( DocksWmCommand(&cinfo->docks,wParam,lParam) ){
+		if ( DocksWmCommand(&cinfo->docks, wParam, lParam) ){
 			return 0;
 		}
 		if ( (HWND)lParam == hCommonLog ) return 0;
@@ -2171,19 +2177,19 @@ LRESULT USEFASTCALL PPcWmCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 		cmdID = cmdID & 0xfff0;
 		if ( cmdID == SC_MINIMIZE ){
 			cinfo->PopupPosType = PPT_FOCUS;
-			PPcCommand(cinfo,K_s | K_esc | K_raw);
+			PPcCommand(cinfo, K_s | K_esc | K_raw);
 			return 0;
 		}
 		if ( (cinfo->combo) && (
 				(cmdID == SC_MAXIMIZE) || (cmdID == SC_RESTORE) ||
 				(cmdID == SC_SIZE) || (cmdID == SC_MOVE) ) ){
-			PostMessage(cinfo->hComboWnd,WM_SYSCOMMAND,wParam,lParam);
+			PostMessage(cinfo->hComboWnd, WM_SYSCOMMAND, wParam, lParam);
 			return 0;
 		}
 		if ( (cmdID == SC_KEYMENU) || (cmdID == SC_MOUSEMENU) ){
 			cinfo->DynamicMenu.Sysmenu = TRUE;
 		}
-		return DefWindowProc(cinfo->info.hWnd,WM_SYSCOMMAND,wParam,lParam);
+		return DefWindowProc(cinfo->info.hWnd, WM_SYSCOMMAND, wParam, lParam);
 	}
 	{
 		DYNAMICMENUSTRUCT *dms;
@@ -2191,7 +2197,7 @@ LRESULT USEFASTCALL PPcWmCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 		dms = (cinfo->combo == 0) ? &cinfo->DynamicMenu : &ComboDMenu;
 											// 0x4000～0x4fff Menu bar ========
 		if ( (cmdID >= IDW_MENU) && (cmdID <= IDW_MENUMAX) ){
-			CommandDynamicMenu(dms,&cinfo->info,wParam);
+			CommandDynamicMenu(dms, &cinfo->info, wParam);
 			if ( IsTrue(cinfo->UnpackFix) ) OffArcPathMode(cinfo);
 			return 0;
 		}
@@ -2201,7 +2207,7 @@ LRESULT USEFASTCALL PPcWmCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 
 			execmenu.hMenu = dms->hMenuBarMenu;
 			execmenu.index = (int)wParam;
-			PPcExecExMenu(cinfo,&execmenu);
+			PPcExecExMenu(cinfo, &execmenu);
 			return 0;
 		}
 	}
@@ -2220,39 +2226,39 @@ LRESULT USEFASTCALL PPcWmCommand(PPC_APPINFO *cinfo,WPARAM wParam,LPARAM lParam)
 	{
 		TCHAR buf[64];
 
-		wsprintf(buf,T("Unknown WM_xxxCOMMAND:%x"),(int)wParam);
-		SetPopMsg(cinfo,POPMSG_MSG,buf);
+		wsprintf(buf, T("Unknown WM_xxxCOMMAND:%x"), (int)wParam);
+		SetPopMsg(cinfo, POPMSG_MSG, buf);
 	}
 	return 0;
 }
 
-void USEFASTCALL PPcWmSetFocus(HWND hWnd,PPC_APPINFO *cinfo)
+void USEFASTCALL PPcWmSetFocus(HWND hWnd, PPC_APPINFO *cinfo)
 {
-	DEBUGLOGC("WM_SETFOCUS start",0);
+	DEBUGLOGC("WM_SETFOCUS start", 0);
 
 	if ( cinfo->X_inag ){
 		cinfo->X_inag = INAG_FOCUS;
 		DeleteObject(cinfo->C_BackBrush);
 		cinfo->C_BackBrush = CreateSolidBrush(cinfo->BackColor);
-		ChangeSizeDxDraw(cinfo->DxDraw,cinfo->BackColor);
+		ChangeSizeDxDraw(cinfo->DxDraw, cinfo->BackColor);
 	}
 	if ( cinfo->combo ){
-		SendMessage(cinfo->hComboWnd,WM_PPXCOMMAND,KCW_focus,(LPARAM)hWnd);
-		SetCaptionCombo(cinfo,cinfo->hComboWnd);
+		SendMessage(cinfo->hComboWnd, WM_PPXCOMMAND, KCW_focus, (LPARAM)hWnd);
+		SetCaptionCombo(cinfo, cinfo->hComboWnd);
 	}else if ( IsWindowVisible(hWnd) == FALSE ){
-		ShowWindow(hWnd,SW_SHOW);
+		ShowWindow(hWnd, SW_SHOW);
 	}
 
-	PPcGetWindow(cinfo->RegNo,CGETW_SAVEFOCUS);
-	PPxRegist(hWnd,NULL,PPXREGIST_SETPPcFOCUS);
-	CreateCaret(hWnd,NULL,0,0);
+	PPcGetWindow(cinfo->RegNo, CGETW_SAVEFOCUS);
+	PPxRegist(hWnd, NULL, PPXREGIST_SETPPcFOCUS);
+	CreateCaret(hWnd, NULL, 0, 0);
 	FixTwinWindow(cinfo);
 
 	if ( cinfo->hActiveWnd != NULL ) SetFocus(cinfo->hActiveWnd);
 
 	cinfo->Mpos = -1;
-	RefleshCell(cinfo,cinfo->e.cellN); // カーソルの色・キャレットの位置を元に戻す
-	InvalidateRect(hWnd,NULL,FALSE); // 残ったゴミを消去するため再描画
+	RefleshCell(cinfo, cinfo->e.cellN); // カーソルの色・キャレットの位置を元に戻す
+	InvalidateRect(hWnd, NULL, FALSE); // 残ったゴミを消去するため再描画
 	if ( !(cinfo->swin & SWIN_BUSY) &&
 			 (cinfo->swin & SWIN_WACTIVE) && cinfo->NowJoint ){
 		HWND hPairWnd;
@@ -2262,51 +2268,51 @@ void USEFASTCALL PPcWmSetFocus(HWND hWnd,PPC_APPINFO *cinfo)
 			HDWP hDWP;
 
 			hDWP = BeginDeferWindowPos(2);
-			hDWP = DeferWindowPos(hDWP,hWnd,HWND_TOP,
-					0,0,0,0,SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
-			hDWP = DeferWindowPos(hDWP,hPairWnd,hWnd,
-					0,0,0,0,SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+			hDWP = DeferWindowPos(hDWP, hWnd, HWND_TOP,
+					0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+			hDWP = DeferWindowPos(hDWP, hPairWnd, hWnd,
+					0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
 			if ( hDWP != NULL ) EndDeferWindowPos(hDWP);
 		}
 	}
 	if ( ((XC_alst[ALST_ACTIVATE] >= ALSTV_UPD) || (cinfo->FDirWrite != FDW_NORMAL)) &&
 		 (cinfo->SlowMode == FALSE) ){
-		PostMessage(hWnd,WM_PPXCOMMAND,KC_CHECKRELOAD,0);
+		PostMessage(hWnd, WM_PPXCOMMAND, KC_CHECKRELOAD, 0);
 	}
-	if ( X_IME == 1 ) PostMessage(hWnd,WM_PPXCOMMAND,K_IMEOFF,0);
+	if ( X_IME == 1 ) PostMessage(hWnd, WM_PPXCOMMAND, K_IMEOFF, 0);
 	if ( IsTrue(cinfo->UseActiveEvent) ){
-		PostMessage(cinfo->info.hWnd,WM_PPXCOMMAND,K_E_ACTIVE,0);
+		PostMessage(cinfo->info.hWnd, WM_PPXCOMMAND, K_E_ACTIVE, 0);
 	}
-	DEBUGLOGC("WM_SETFOCUS end",0);
+	DEBUGLOGC("WM_SETFOCUS end", 0);
 }
 
 int WINAPI PPcMain(PPCSTARTPARAM *psp)
 {
 	MSG msg;
-	THREADSTRUCT threadstruct = {PPcRootMainThreadName,XTHREAD_ROOT,NULL,0,0};
+	THREADSTRUCT threadstruct = {PPcRootMainThreadName, XTHREAD_ROOT, NULL, 0, 0};
 
 	PPxRegisterThread(&threadstruct);
 	if ( MainThreadID != GetCurrentThreadId() ){
 		threadstruct.flag = 0;
 		threadstruct.ThreadName = PPcMainThreadName;
-		CoInitializeEx(NULL,COINIT_APARTMENTTHREADED);
+		CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 	}
 
-	if ( CreatePPcWindow(psp,&MainWindows) == FALSE ) goto fin;
-	PPxCommonExtCommand(K_TBB_INIT,1);
+	if ( CreatePPcWindow(psp, &MainWindows) == FALSE ) goto fin;
+	PPxCommonExtCommand(K_TBB_INIT, 1);
 										// メインループ -----------------------
 	for ( ; ; ){
-		if ( (int)GetMessage(&msg,NULL,0,0) <= 0 ) break;
+		if ( (int)GetMessage(&msg, NULL, 0, 0) <= 0 ) break;
 /*
 		// 極一部の環境で無効なSetTimerが設定されることの対策
 		if ( (msg.message == WM_TIMER) && (msg.wParam > 0xfff) && msg.lParam ){
-			if ( IsBadReadPtr((const void *)msg.lParam,1) == FALSE ) continue;
+			if ( IsBadReadPtr((const void *)msg.lParam, 1) == FALSE ) continue;
 		}
 */
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 		if ( RequestDestroyFlag ){	// ウィンドウの終了処理
-			if ( FixPPcWindowList(&MainWindows,FALSE) == FALSE ){
+			if ( FixPPcWindowList(&MainWindows, FALSE) == FALSE ){
 				// 管理 PPc ウィンドウなし
 				if ( Combo.hWnd == NULL ) break;
 
@@ -2317,14 +2323,14 @@ int WINAPI PPcMain(PPCSTARTPARAM *psp)
 					// サブスレッドで、Combo が終わっている→終了指示
 					if ( !(threadstruct.flag & XTHREAD_ROOT) ){
 						RequestDestroyFlag = 1;
-						PostThreadMessage(MainThreadID,WM_NULL,0,0);
+						PostThreadMessage(MainThreadID, WM_NULL, 0, 0);
 					}
 				}
 				break;
 			}
 		}
 	}
-	FixPPcWindowList(&MainWindows,TRUE); // サブスレッドを強制終了してもよい
+	FixPPcWindowList(&MainWindows, TRUE); // サブスレッドを強制終了してもよい
 fin:
 	if ( !(threadstruct.flag & XTHREAD_ROOT) ) CoUninitialize();
 	PPxUnRegisterThread();
@@ -2332,39 +2338,39 @@ fin:
 }
 
 /*===========================================================================*/
-LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	PPC_APPINFO *cinfo;
 
-	cinfo = (PPC_APPINFO *)GetWindowLongPtr(hWnd,GWLP_USERDATA);
+	cinfo = (PPC_APPINFO *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 	if ( cinfo == NULL ){
 		if ( message == WM_CREATE ){
-			SetWindowLongPtr(hWnd,GWLP_USERDATA,
+			SetWindowLongPtr(hWnd, GWLP_USERDATA,
 					(LONG_PTR)(((CREATESTRUCT *)lParam)->lpCreateParams));
 			return 0;
 		}
 		if ( message == WM_NCCREATE ){
 			if ( (X_dss & DSS_COMCTRL) && (OSver.dwMajorVersion >= 10) ){
-				PPxCommonCommand(hWnd,0,K_ENABLE_NC_SCALE);
+				PPxCommonCommand(hWnd, 0, K_ENABLE_NC_SCALE);
 			}
 		}
 /* 今のところ不要
 		if ( message == WM_TaskbarButtonCreated ){
-			PPxCommonExtCommand(K_TBB_INIT,0);
+			PPxCommonExtCommand(K_TBB_INIT, 0);
 		}
 */
 		// WM_CREATE の前にWM_GETMINMAXINFO,
-		// WM_NCCREATE,WM_NCDESTROY,WM_NCCALCSIZE等が来る(^^;
-		return DefWindowProc(hWnd,message,wParam,lParam);
+		// WM_NCCREATE, WM_NCDESTROY, WM_NCCALCSIZE等が来る(^^;
+		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 	switch (message){
 		case WM_COPYDATA:
-			return WmCopyData(cinfo,(COPYDATASTRUCT *)lParam,wParam);
-							// マウスの移動(w:ﾎﾞﾀﾝ,lH:Y,lL:X)---------
+			return WmCopyData(cinfo, (COPYDATASTRUCT *)lParam, wParam);
+							// マウスの移動(w:ﾎﾞﾀﾝ, lH:Y, lL:X)---------
 		case WM_MOUSEMOVE:
-			DxTransformPoint(cinfo->DxDraw,&lParam);
-			PPxMoveMouse(&cinfo->MouseStat,hWnd,lParam);
-			WMMouseMove(cinfo,wParam,lParam);
+			DxTransformPoint(cinfo->DxDraw, &lParam);
+			PPxMoveMouse(&cinfo->MouseStat, hWnd, lParam);
+			WMMouseMove(cinfo, wParam, lParam);
 			break;
 							// マウスの非クライアント領域クリック ------
 		case WM_NCLBUTTONUP:
@@ -2376,14 +2382,14 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 		case WM_NCRBUTTONDBLCLK:
 		case WM_NCMBUTTONDBLCLK:
 		case WM_NCXBUTTONDBLCLK:
-			return PPcNCMouseCommand(cinfo,message,wParam,lParam);
+			return PPcNCMouseCommand(cinfo, message, wParam, lParam);
 
 		case WM_NCRBUTTONDOWN:
 			if ( wParam == HTCAPTION ) cinfo->DynamicMenu.Sysmenu = TRUE;
 		// WM_NCLBUTTONDOWN へ
 		case WM_NCLBUTTONDOWN:
 			cinfo->PopupPosType = PPT_MOUSE;
-			return DefWindowProc(hWnd,message,wParam,lParam);
+			return DefWindowProc(hWnd, message, wParam, lParam);
 
 							// マウスのクライアント領域押下 ------
 		case WM_LBUTTONDOWN:
@@ -2398,7 +2404,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 		case WM_CAPTURECHANGED:
 			WmCapturechanged(cinfo);
 			break;
-							// マウスのクリック解除(w:ﾎﾞﾀﾝ,lH:Y,lL:X)--------
+							// マウスのクリック解除 --------
 		case WM_LBUTTONUP:
 		case WM_MBUTTONUP:
 		case WM_RBUTTONUP:
@@ -2412,35 +2418,35 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 			cinfo->MousePush = MOUSE_CANCEL;
 			break;
 		}
-							// マウスのダブルクリック(w:ﾎﾞﾀﾝ,lH:Y,lL:X)------
+							// マウスのダブルクリック ------
 		case WM_LBUTTONDBLCLK:
 		case WM_MBUTTONDBLCLK:
 		case WM_RBUTTONDBLCLK:
 		case WM_XBUTTONDBLCLK:
-			DxTransformPoint(cinfo->DxDraw,&lParam);
-			if ( !((TouchMode & TOUCH_DBLCLICKTOSINGLE) && IsTouchMessage() && IsCellDblClk(cinfo,lParam)) ){ // マウス
-				PPxDoubleClickMouseButton(&cinfo->MouseStat,hWnd,wParam,lParam);
-				DoubleClickMouse(cinfo,lParam);
+			DxTransformPoint(cinfo->DxDraw, &lParam);
+			if ( !((TouchMode & TOUCH_DBLCLICKTOSINGLE) && IsTouchMessage() && IsCellDblClk(cinfo, lParam)) ){ // マウス
+				PPxDoubleClickMouseButton(&cinfo->MouseStat, hWnd, wParam, lParam);
+				DoubleClickMouse(cinfo, lParam);
 			}else{ // タッチ
-				PPxDownMouseButton(&cinfo->MouseStat,hWnd,wParam,lParam);
-				WmMouseDown(cinfo,wParam);
+				PPxDownMouseButton(&cinfo->MouseStat, hWnd, wParam, lParam);
+				WmMouseDown(cinfo, wParam);
 				break;
 			}
 			break;
 							// ホイールの移動(上下)
 		case WM_MOUSEWHEEL:
-//			DxTransformPoint(DxDraw,&lParam); 不要
-			WheelMouse(cinfo,wParam,lParam);
+//			DxTransformPoint(DxDraw, &lParam); 不要
+			WheelMouse(cinfo, wParam, lParam);
 			break;
-							// ホイールの移動(左右,Vista以降)
+							// ホイールの移動(左右, Vista以降)
 		case WM_MOUSEHWHEEL:
-			DxTransformPoint(cinfo->DxDraw,&lParam);
-			H_WheelMouse(cinfo,wParam,lParam);
+			DxTransformPoint(cinfo->DxDraw, &lParam);
+			H_WheelMouse(cinfo, wParam, lParam);
 			break;
-							// 各種コントロール (w:ID,lH:message,lL:CtrlHandle)
+							// 各種コントロール (w:ID, lH:message, lL:CtrlHandle)
 		case WM_SYSCOMMAND:
 		case WM_COMMAND:
-			return PPcWmCommand(cinfo,wParam,lParam);
+			return PPcWmCommand(cinfo, wParam, lParam);
 
 		case WM_MENUCHAR:
 			if ( cinfo->KeyChar ){
@@ -2451,109 +2457,109 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 		case WM_MENUSELECT:
 		case WM_MENUDRAG:
 		case WM_MENURBUTTONUP:
-			return PPxMenuProc(hWnd,message,wParam,lParam);
+			return PPxMenuProc(hWnd, message, wParam, lParam);
 
 							// フォーカスを取得 (w:old HWND)
 		case WM_SETFOCUS:
-			PPcWmSetFocus(hWnd,cinfo);
+			PPcWmSetFocus(hWnd, cinfo);
 			break;
 
 		case WM_KILLFOCUS:
-			DEBUGLOGC("WM_KILLFOCUS start",0);
+			DEBUGLOGC("WM_KILLFOCUS start", 0);
 			DestroyCaret();
-			RefleshCell(cinfo,cinfo->e.cellN);
+			RefleshCell(cinfo, cinfo->e.cellN);
 			if ( cinfo->BoxStatus.top ){
 				UpdateWindow_Part(hWnd);
-				RefleshInfoBox(cinfo,DE_ATTR_PATH);
+				RefleshInfoBox(cinfo, DE_ATTR_PATH);
 			}
-			DEBUGLOGC("WM_KILLFOCUS end",0);
+			DEBUGLOGC("WM_KILLFOCUS end", 0);
 			break;
 
 		case WM_MOUSEACTIVATE:
-			return PPcMouseActive(hWnd,cinfo,wParam,lParam);
+			return PPcMouseActive(hWnd, cinfo, wParam, lParam);
 
 #ifdef USEDIRECTX
 		case WM_ACTIVATE:
 			if ( LOWORD(wParam) != WA_INACTIVE ){
-				InvalidateRect(hWnd,NULL,TRUE);
+				InvalidateRect(hWnd, NULL, TRUE);
 			}
-			return DefWindowProc(hWnd,message,wParam,lParam);
+			return DefWindowProc(hWnd, message, wParam, lParam);
 #endif
 		case WM_GETMINMAXINFO:
-			DEBUGLOGC("WM_GETMINMAXINFO start",0);
+			DEBUGLOGC("WM_GETMINMAXINFO start", 0);
 									// 上下／左右連結中は全画面の半分に修正
 			if ( (cinfo->swin & SWIN_JOIN) && !(cinfo->swin & SWIN_PILEJOIN) ){
-				PPcMinMaxJoinFix(cinfo,(MINMAXINFO *)lParam);
+				PPcMinMaxJoinFix(cinfo, (MINMAXINFO *)lParam);
 			}
-			DEBUGLOGC("WM_GETMINMAXINFO end",0);
+			DEBUGLOGC("WM_GETMINMAXINFO end", 0);
 			return 0;
 							// 窓状態の変更 -----------------------------------
 		case WM_WINDOWPOSCHANGED:
-			DEBUGLOGC("WM_WINDOWPOSCHANGED start",0);
+			DEBUGLOGC("WM_WINDOWPOSCHANGED start", 0);
 			WmWindowPosChanged(cinfo);
-			DEBUGLOGC("WM_WINDOWPOSCHANGED end",0);
+			DEBUGLOGC("WM_WINDOWPOSCHANGED end", 0);
 			break;
 
-		case WM_HSCROLL:	// 水平スクロール (w:種類,lH:handle,lL:現在位置)---
-		case WM_VSCROLL:	// 垂直スクロール (w:種類,lH:handle,lL:現在位置)---
-			PPcScrollBar(cinfo,message,LOWORD(wParam));
+		case WM_HSCROLL:	// 水平スクロール ---
+		case WM_VSCROLL:	// 垂直スクロール ---
+			PPcScrollBar(cinfo, message, LOWORD(wParam));
 			break;
-							// ALT+? が押された(w:仮想 key,lH:値,lL:repeat数)--
+							// ALT+? が押された --
 		case WM_SYSKEYDOWN:
 			if ( !(lParam & B29) ){
-				DEBUGLOGC("WM_SYSKEYDOWN - fix unfocus",0);
+				DEBUGLOGC("WM_SYSKEYDOWN - fix unfocus", 0) ;
 				SetFocus(hWnd);
 			}
-							// key   が押された(w:仮想 key,lH:値,lL:repeat数)--
+							// key   が押された --
 		case WM_KEYDOWN:{
 			WORD key;
 
-			HideFileNameTip(cinfo);
+			HideEntryTip(cinfo);
 
 			key = (WORD)(wParam | GetShiftKey() | K_v);
 			if ( cinfo->IncSearchMode ){
-				if ( IsTrue(IncSearchKeyDown(cinfo,key,wParam,lParam)) ){
+				if ( IsTrue(IncSearchKeyDown(cinfo, key, wParam, lParam)) ){
 					break;
 				}
 			}
 
 			cinfo->KeyChar = 1;
-			StopPopMsg(cinfo,PMF_WAITKEY | PMF_FLASH);
+			StopPopMsg(cinfo, PMF_WAITKEY | PMF_FLASH);
 										// [ALT] は メニュー移行を禁止
 			cinfo->PopupPosType = PPT_FOCUS;
 			cinfo->KeyRepeats = (int)lParam & B30;
 
 			if ( cinfo->KeyHookEntry != NULL ){
-				if ( CallKeyHook(cinfo,key) != PPXMRESULT_SKIP ) break;
+				if ( CallKeyHook(cinfo, key) != PPXMRESULT_SKIP ) break;
 			}
 
-			if ( PPcCommand(cinfo,key) == ERROR_INVALID_FUNCTION ){
+			if ( PPcCommand(cinfo, key) == ERROR_INVALID_FUNCTION ){
 				if ( X_alt && (wParam == VK_MENU) ) break;
-				return DefWindowProc(hWnd,message,wParam,lParam);
+				return DefWindowProc(hWnd, message, wParam, lParam);
 			}
 			if ( IsTrue(cinfo->UnpackFix) ) OffArcPathMode(cinfo);
 			break;
 		}
-							// key   が押された(w:key,lH:値,lL:repeat数)--
+							// key   が押された(w:key, lH:値, lL:repeat数)--
 		case WM_SYSCHAR:
 		case WM_CHAR:
 			if ( cinfo->IncSearchMode ){
-				if ( IsTrue(WmCharSearch(cinfo,(WORD)wParam)) ) break;
+				if ( IsTrue(WmCharSearch(cinfo, (WORD)wParam)) ) break;
 			}
-			if ( IsTrue(WmChar(cinfo,(WORD)wParam,lParam)) ) break;
-			return DefWindowProc(hWnd,message,wParam,lParam);
+			if ( IsTrue(WmChar(cinfo, (WORD)wParam, lParam)) ) break;
+			return DefWindowProc(hWnd, message, wParam, lParam);
 
-							// 窓の再描画(w:未使用,l:未使用) ------------------
+							// 窓の再描画(w:未使用, l:未使用) ------------------
 		case WM_PAINT:
-			DEBUGLOGC("WM_PAINT start",0);
+			DEBUGLOGC("WM_PAINT start", 0);
 			Paint(cinfo);
-			DEBUGLOGC("WM_PAINT end",0);
+			DEBUGLOGC("WM_PAINT end", 0);
 			break;
-							// 終了要求(w:未使用,l:未使用) --------------------
+							// 終了要求(w:未使用, l:未使用) --------------------
 		case WM_CLOSE:	//defaultはDestroyWindowを呼び出す
 			WmClose(cinfo);
 			break;
-							// 窓の破棄,終了処理(w:未使用,l:未使用) -----------
+							// 窓の破棄, 終了処理(w:未使用, l:未使用) -----------
 		case WM_DESTROY:
 			ClosePPc(cinfo);		// 必要な後処理を行う
 			// combo 時は、combo thread の時は、comboで PostQuitMessage
@@ -2562,16 +2568,16 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 			}
 			PostWindowClosed();
 			break;
-							// 強制終了要求(w:未使用,l:未使用) ----------------
+							// 強制終了要求(w:未使用, l:未使用) ----------------
 // w=0 logoff   w != 0 ユーザによるこのソフトの強制終了
 //		case WM_QUERYENDSESSION:
-//			return (long)TRUE;	// TRUE ならば終了,FALSE なら終了の拒否
+//			return (long)TRUE;	// TRUE ならば終了, FALSE なら終了の拒否
 							// 強制終了動作の報告 -----------------------------
 		case WM_ENDSESSION:
 			if ( wParam ){ // TRUE:セッションの終了(WM_DESTROY は通知されない)
 				if ( (cinfo->mws.NowClose == 0) &&
 					 (cinfo->mws.DestroryRequest == FALSE) ){
-					PPxCommonExtCommand(K_REPORTSHUTDOWN,0);
+					PPxCommonExtCommand(K_REPORTSHUTDOWN, 0);
 					cinfo->BreakFlag = TRUE;
 
 					PreClosePPc(cinfo); // 設定の記憶を済ませる
@@ -2591,24 +2597,24 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 			#endif
 			{
 				if ( tstricmp((TCHAR *)lParam, T("ImmersiveColorSet")) == 0 ){
-					PPcCommand(cinfo,K_Scust);
-					PPcCommand(cinfo,K_Lcust);
+					PPcCommand(cinfo, K_Scust);
+					PPcCommand(cinfo, K_Lcust);
 					FreeOffScreen(&cinfo->bg);
 				}
 			}
-			//PostMessage(hWnd,lParam,K_SETTINGCHANGE);
-			return DefWindowProc(hWnd,message,wParam,lParam);
+			//PostMessage(hWnd, lParam, K_SETTINGCHANGE);
+			return DefWindowProc(hWnd, message, wParam, lParam);
 #endif
 		case WM_SYSCOLORCHANGE:
-			PPcCommand(cinfo,K_Scust);
-			PPcCommand(cinfo,K_Lcust);
+			PPcCommand(cinfo, K_Scust);
+			PPcCommand(cinfo, K_Lcust);
 			FreeOffScreen(&cinfo->bg);
 			break;
 #ifdef USEDIRECTX
 		case WM_DISPLAYCHANGE:
-			ChangeSizeDxDraw(cinfo->DxDraw,cinfo->BackColor); // DXで必要。DWでは不要
-			InvalidateRect(hWnd,NULL,TRUE);
-			return DefWindowProc(hWnd,message,wParam,lParam);
+			ChangeSizeDxDraw(cinfo->DxDraw, cinfo->BackColor); // DXで必要。DWでは不要
+			InvalidateRect(hWnd, NULL, TRUE);
+			return DefWindowProc(hWnd, message, wParam, lParam);
 #endif
 		case WM_RENDERFORMAT:
 			if ( wParam == CF_TTEXT ){
@@ -2637,13 +2643,13 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 		}
 
 		case WM_NOTIFY:
-			DEBUGLOGC("WM_NOTIFY",0);
-			return PPcNotify(cinfo,(NMHDR *)lParam);
+			DEBUGLOGC("WM_NOTIFY", 0);
+			return PPcNotify(cinfo, (NMHDR *)lParam);
 
 		case WM_PPCEXEC:
 			cinfo->PopupPosType = PPT_SAVED;
-			LPARAMtoPOINT(cinfo->PopupPos,lParam);
-			ExecDualParam(cinfo,(TCHAR *)wParam);
+			LPARAMtoPOINT(cinfo->PopupPos, lParam);
+			ExecDualParam(cinfo, (TCHAR *)wParam);
 			break;
 
 		case WM_PPCSETFOCUS:
@@ -2651,7 +2657,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 			break;
 
 		case WM_PPCFOLDERCHANGE: // SHChangeNotifyRegister 通知
-			setflag(cinfo->SubTCmdFlags,SUBT_FOLDERCHANGE);
+			setflag(cinfo->SubTCmdFlags, SUBT_FOLDERCHANGE);
 			SetEvent(cinfo->SubT_cmd);
 			break;
 
@@ -2661,19 +2667,19 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 
 			if ( cinfo->LoadCounter != ssc->LoadCounter ) break;
 			cell = &CELdata(ssc->dataindex);
-			SetComment(cinfo,ssc->CommentID,cell,ssc->comment);
+			SetComment(cinfo, ssc->CommentID, cell, ssc->comment);
 			break;
 		}
 
 		case WM_INITMENU:
 			if ( cinfo->combo == 0 ){
-				DynamicMenu_InitMenu(&cinfo->DynamicMenu,(HMENU)wParam,cinfo->X_win & XWIN_MENUBAR);
+				DynamicMenu_InitMenu(&cinfo->DynamicMenu, (HMENU)wParam, cinfo->X_win & XWIN_MENUBAR);
 			}
 			break;
 
 		case WM_INITMENUPOPUP:
 			if ( cinfo->combo == 0 ){
-				if ( FALSE != DynamicMenu_InitPopupMenu(&cinfo->DynamicMenu,(HMENU)wParam,&cinfo->info) ){
+				if ( FALSE != DynamicMenu_InitPopupMenu(&cinfo->DynamicMenu, (HMENU)wParam, &cinfo->info) ){
 					break;
 				}
 			}
@@ -2687,7 +2693,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 					}
 				}
 			}
-			return DefWindowProc(hWnd,message,wParam,lParam);
+			return DefWindowProc(hWnd, message, wParam, lParam);
 
 		case WM_DWMCOMPOSITIONCHANGED:
 			if ( DDwmIsCompositionEnabled != NULL ){
@@ -2701,9 +2707,9 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 				 (((PDEV_BROADCAST_HDR)lParam)->dbch_devicetype
 						== DBT_DEVTYP_VOLUME) ){
 				if ( cinfo->hTreeWnd != NULL ){
-					SendMessage(cinfo->hTreeWnd,WM_DEVICECHANGE,wParam,lParam);
+					SendMessage(cinfo->hTreeWnd, WM_DEVICECHANGE, wParam, lParam);
 				}
-				DocksWmDevicechange(&cinfo->docks,wParam,lParam);
+				DocksWmDevicechange(&cinfo->docks, wParam, lParam);
 
 				// 追加されたドライブが、現在表示できないドライブだったら、
 				// 再読み込み / 更新を行う
@@ -2713,48 +2719,48 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 					  (1 << (TinyCharUpper(cinfo->path[0]) - 'A')) ) ){
 					// 一度も読み込んでなさそうなら再読み込み、
 					// 一度成功しているなら更新
-					PostMessage(hWnd,WM_PPXCOMMAND,
+					PostMessage(hWnd, WM_PPXCOMMAND,
 						((cinfo->e.cellDataMax == 1) &&
 						 (CELdata(0).type == ECT_SYSMSG)) ?
-						KC_DRIVERELOAD : (K_raw | K_c | K_F5) ,0);
+						KC_DRIVERELOAD : (K_raw | K_c | K_F5), 0);
 				}
 			}
-			return DefWindowProc(hWnd,message,wParam,lParam);
+			return DefWindowProc(hWnd, message, wParam, lParam);
 		// 注意 WM_GETOBJECTのwParam/lParamは64bit環境では上位32bitにゴミが入る
 		case WM_GETOBJECT:
 			if ( ((LONG)lParam == OBJID_CLIENT) && X_iacc ){
-				return WmGetObject(cinfo,(WPARAM)(DWORD)wParam);
+				return WmGetObject(cinfo, (WPARAM)(DWORD)wParam);
 			}
-			return DefWindowProc(hWnd,message,wParam,lParam);
+			return DefWindowProc(hWnd, message, wParam, lParam);
 #if XTOUCH
 		case WM_TOUCH:
-			return WMTouch(cinfo,wParam,lParam);
+			return WMTouch(cinfo, wParam, lParam);
 #endif
 
 		case WM_GESTURE:
-			return WMGesture(cinfo,wParam,lParam);
+			return WMGesture(cinfo, wParam, lParam);
 
 		case WM_DPICHANGED:
-			WMDpiChanged(cinfo,wParam,(RECT *)lParam);
+			WMDpiChanged(cinfo, wParam, (RECT *)lParam);
 			break;
 							// 知らないメッセージ -----------------------------
 		default:
 			if ( message == WM_PPXCOMMAND ){
-				return WmPPxCommand(cinfo,wParam,lParam);
+				return WmPPxCommand(cinfo, wParam, lParam);
 			}else if ( message == WM_TaskbarButtonCreated ){
-				PPxCommonExtCommand(K_TBB_INIT,0);
+				PPxCommonExtCommand(K_TBB_INIT, 0);
 			}
 #if 0
 			if ( ((message >= 0x10d) && (message <= 0x10f)) ){
-				TCHAR *ime1[] = {T("WM_IME_STARTCOMPOSITION"),T("WM_IME_ENDCOMPOSITION"),T("WM_IME_COMPOSITION"),T("WM_IME_KEYLAST")};
-				XMessage(NULL,NULL,XM_DbgLOG,T("%s - %x - %x"),ime1[message - 0x10d],wParam,lParam);
+				TCHAR *ime1[] = {T("WM_IME_STARTCOMPOSITION"), T("WM_IME_ENDCOMPOSITION"), T("WM_IME_COMPOSITION"), T("WM_IME_KEYLAST")};
+				XMessage(NULL, NULL, XM_DbgLOG, T("%s - %x - %x"), ime1[message - 0x10d], wParam, lParam);
 
 			}else if ( ((message >= 0x281) && (message <= 0x291)) ){
-				TCHAR *ime2[] = {T("WM_IME_SETCONTEXT"),T("WM_IME_NOTIFY"),T("WM_IME_CONTROL"),T("WM_IME_COMPOSITIONFULL"),T("WM_IME_SELECT"),T("WM_IME_CHAR"),T("WM_IME_???"),T("WM_IME_REQUEST"),T("WM_IME_0x289"),T("WM_IME_0x28a"),T("WM_IME_0x28b"),T("WM_IME_0x28c"),T("WM_IME_0x28d"),T("WM_IME_0x28e"),T("WM_IME_0x28f"),T("WM_IME_KEYDOWN"),T("WM_IME_KEYUP")};
-				XMessage(NULL,NULL,XM_DbgLOG,T("%s - %x - %x"),ime2[message - 0x281],wParam,lParam);
+				TCHAR *ime2[] = {T("WM_IME_SETCONTEXT"), T("WM_IME_NOTIFY"), T("WM_IME_CONTROL"), T("WM_IME_COMPOSITIONFULL"), T("WM_IME_SELECT"), T("WM_IME_CHAR"), T("WM_IME_???"), T("WM_IME_REQUEST"), T("WM_IME_0x289"), T("WM_IME_0x28a"), T("WM_IME_0x28b"), T("WM_IME_0x28c"), T("WM_IME_0x28d"), T("WM_IME_0x28e"), T("WM_IME_0x28f"), T("WM_IME_KEYDOWN"), T("WM_IME_KEYUP")};
+				XMessage(NULL, NULL, XM_DbgLOG, T("%s - %x - %x"), ime2[message - 0x281], wParam, lParam);
 			}
 #endif
-			return DefWindowProc(hWnd,message,wParam,lParam);
+			return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 	return 0;
 }

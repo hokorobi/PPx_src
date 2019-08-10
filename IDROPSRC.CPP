@@ -22,10 +22,10 @@ CImpIDropSource::CImpIDropSource()
 //------------------------------------- デコンストラクタ
 CImpIDropSource::~CImpIDropSource()
 {
-	if(m_cRefCount != 0) xmessage(XM_FaERRd,T("~CImpIDropSource"));
+	if(m_cRefCount != 0) xmessage(XM_FaERRd, T("~CImpIDropSource"));
 }
 //------------------------------------- 定型部分 ------------------------------
-STDMETHODIMP CImpIDropSource::QueryInterface(REFIID refiid,void **ppv)
+STDMETHODIMP CImpIDropSource::QueryInterface(REFIID refiid, void **ppv)
 {
 	// Explorer では、IDropSourceNotify、不明{0000012C-0000-0000-C000-000000000046}が実装されている
 
@@ -58,7 +58,7 @@ STDMETHODIMP CImpIDropSource::GiveFeedback(DWORD)
 	return ResultFromScode(DRAGDROP_S_USEDEFAULTCURSORS);
 }
 
-STDMETHODIMP CImpIDropSource::QueryContinueDrag(BOOL fEscapePressed,DWORD grfKeyState)
+STDMETHODIMP CImpIDropSource::QueryContinueDrag(BOOL fEscapePressed, DWORD grfKeyState)
 {
 	if ( fEscapePressed ||
 		 ( (grfKeyState & (MK_LBUTTON | MK_RBUTTON)) ==

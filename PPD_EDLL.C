@@ -49,7 +49,7 @@ void FixInputbox(HWND hDlg,HWND hEdWnd,TINPUT *tinput)
 	PPxEDSTRUCT *PES;
 
 	PES = (PPxEDSTRUCT *)GetProp(hEdWnd,PPxED);
-	if ( (PES != NULL) && (PES->hTreeWnd != NULL) && (PES->flag & PPXEDIT_JOINTTREE) ){
+	if ( (PES != NULL) && (PES->hTreeWnd != NULL) && (PES->flags & PPXEDIT_JOINTTREE) ){
 		hTreeWnd = PES->hTreeWnd;
 	}
 
@@ -609,7 +609,7 @@ INT_PTR CALLBACK tInputMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 					PPxEDSTRUCT *PES;
 
 					PES = (PPxEDSTRUCT *)GetProp(ts->hEdWnd, PPxED);
-					if ( (PES == NULL) || (PES->hTreeWnd == NULL) || !(PES->flag & PPXEDIT_JOINTTREE) ){
+					if ( (PES == NULL) || (PES->hTreeWnd == NULL) || !(PES->flags & PPXEDIT_JOINTTREE) ){
 						result = HTBORDER;
 					}
 					break;
@@ -768,7 +768,7 @@ void ClosePPeTreeWindow(PPxEDSTRUCT *PES)
 {
 	if ( PES->hTreeWnd == NULL ) return;
 
-	if ( PES->flag & PPXEDIT_JOINTTREE ){ // 親と一体
+	if ( PES->flags & PPXEDIT_JOINTTREE ){ // 親と一体
 		HWND hParent;
 		RECT parentbox, treebox;
 
@@ -808,11 +808,13 @@ void PPeTreeWindow(PPxEDSTRUCT *PES)
 	GetWindowRect(hParent, &box);
 	GetDesktopRect(hParent, &deskbox);
 
-	X_tree[1] = X_tree[2] = TREEHEIGHT * GetMonitorDPI(hWnd) / DEFAULT_WIN_DPI;
+	X_tree[1] = X_tree[2] = (TREEHEIGHT * GetMonitorDPI(hWnd)) / DEFAULT_WIN_DPI;
 	GetCustData(StrX_tree, X_tree, sizeof(X_tree));
-	if ( PES->flag & PPXEDIT_JOINTTREE ) X_tree[2] = X_tree[1];  // 親と一体
+	if ( PES->flags & PPXEDIT_JOINTTREE ) X_tree[2] = X_tree[1];  // 親と一体
 
-	if ( expand_height < 64 ) expand_height = 64;
+	if ( expand_height < 64 ){
+		expand_height = (expand_height < 32) ? TREEHEIGHT : 64;
+	}
 
 	if ( (box.bottom + (int)expand_height) > deskbox.bottom ) {
 		// 上にずらして画面内に納める
@@ -835,7 +837,7 @@ void PPeTreeWindow(PPxEDSTRUCT *PES)
 		}
 	}
 
-	if ( PES->flag & PPXEDIT_JOINTTREE ){
+	if ( PES->flags & PPXEDIT_JOINTTREE ){
 		SetWindowPos(hParent, NULL, 0,0,
 				box.right - box.left, box.bottom - box.top + expand_height,
 				SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER);
@@ -855,7 +857,7 @@ void PPeTreeWindow(PPxEDSTRUCT *PES)
 	SendMessage(PES->hTreeWnd, VTM_SETFLAG,
 			(WPARAM)hWnd, (LPARAM)(VFSTREE_SELECT | VFSTREE_PATHNOTIFY));
 
-	if ( PES->flag & PPXEDIT_SINGLEREF ){
+	if ( PES->flags & PPXEDIT_SINGLEREF ){
 		GetWindowText(hWnd, path, TSIZEOF(path));
 	}else{
 		path[0] = '\0';

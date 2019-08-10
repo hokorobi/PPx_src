@@ -82,7 +82,7 @@ BOOL FileSave(PPxEDSTRUCT *PES,int mode)
 	if ( PES->filename[0] != '\0' ){
 		tstrcpy(name,PES->filename);
 	}else{
-		if ( PES->flag & PPXEDIT_TEXTEDIT ){
+		if ( PES->flags & PPXEDIT_TEXTEDIT ){
 			GetWindowText(GetParentCaptionWindow(PES->hWnd),name,TSIZEOF(name));
 			if ( name[0] == ' ' ) tstrcpy(name,T("EDITTEXT.TXT"));
 		}else{
@@ -346,7 +346,7 @@ BOOL FileSave(PPxEDSTRUCT *PES,int mode)
 		CloseHandle(hFile);
 
 		HeapFree(ProcHeap,0,text);
-		if ( PES->flag & PPXEDIT_TEXTEDIT ){
+		if ( PES->flags & PPXEDIT_TEXTEDIT ){
 			SetWindowText(GetParentCaptionWindow(PES->hWnd),name);
 		}
 		if ( IsTrue(result) ) break;
@@ -382,7 +382,7 @@ void OpenMainFromMem(PPxEDSTRUCT *PES, int openmode, const TCHAR *filename, cons
 		PES->CrCode = crcode;
 		if ( filename != NULL ){
 			tstrcpy(PES->filename,filename);
-			if ( PES->flag & PPXEDIT_TEXTEDIT ){
+			if ( PES->flags & PPXEDIT_TEXTEDIT ){
 				SetWindowText(GetParentCaptionWindow(PES->hWnd),filename);
 			}
 		}

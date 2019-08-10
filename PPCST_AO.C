@@ -18,7 +18,7 @@ int SusieIndex = -1;
 void AddOnSusieSetting(HWND hDlg)
 {
 	if ( susieconfig == NULL ) return;
-	susieconfig(hDlg,1);
+	susieconfig(hDlg, 1);
 }
 
 void AddOnGetSusieExt(HWND hDlg)
@@ -37,7 +37,7 @@ void AddOnGetSusieExt(HWND hDlg)
 	buf[0] = '\0';
 	if ( sudll->GetPluginInfo != NULL ){
 		for (;;){
-			if ( sudll->GetPluginInfo(index,buf + offset,sizeof(buf) - offset - 1) <= 0 ){
+			if ( sudll->GetPluginInfo(index, buf + offset, sizeof(buf) - offset - 1) <= 0 ){
 				buf[offset] = '\0';
 				break;
 			}
@@ -54,8 +54,8 @@ void AddOnGetSusieExt(HWND hDlg)
 			index += 2;
 		}
 	}
-	SendDlgItemMessageA(hDlg,IDE_AOSMASK,WM_SETTEXT,0,(LPARAM)buf);
-	EnableDlgWindow(hDlg,IDB_GCADD,TRUE);
+	SendDlgItemMessageA(hDlg, IDE_AOSMASK, WM_SETTEXT, 0, (LPARAM)buf);
+	EnableDlgWindow(hDlg, IDB_GCADD, TRUE);
 }
 
 void AddonListSusie(HWND hDlg)
@@ -63,13 +63,13 @@ void AddonListSusie(HWND hDlg)
 	const SUSIE_DLL *sudll;
 	int i;
 
-	susiedll_items = VFSGetSusieList(&susiedll_list,&sustrings);
+	susiedll_items = VFSGetSusieList(&susiedll_list, &sustrings);
 	sudll = susiedll_list;
-	for ( i = 0 ; i < susiedll_items ; i++,sudll++ ){
+	for ( i = 0 ; i < susiedll_items ; i++, sudll++ ){
 		TCHAR *p;
 
 		p = (TCHAR *)(sustrings + sudll->DllNameOffset);
-		SendDlgItemMessage(hDlg,IDL_AOSUSIE,LB_ADDSTRING,0,(LPARAM)p);
+		SendDlgItemMessage(hDlg, IDL_AOSUSIE, LB_ADDSTRING, 0, (LPARAM)p);
 	}
 }
 
@@ -86,22 +86,22 @@ void AddonSelectSusie(HWND hDlg)
 
 	sp.filemask[0] = '\0';
 	sp.flags = VFSSUSIE_BMP | VFSSUSIE_ARC;
-	GetCustTable(T("P_susie"),(TCHAR *)(sustrings + sudll->DllNameOffset),
-			&sp,sizeof(DWORD) + VFPS);
+	GetCustTable(T("P_susie"), (TCHAR *)(sustrings + sudll->DllNameOffset),
+			&sp, sizeof(DWORD) + VFPS);
 
-	strcpy(buf,"* Plug-in load error *");
+	strcpy(buf, "* Plug-in load error *");
 	if ( (sudll->hadd != NULL) && (sudll->GetPluginInfo != NULL) ){
-		strcpy(buf,"* GetPluginInfo error *");
-		sudll->GetPluginInfo(1,buf,TSIZEOFA(buf));
+		strcpy(buf, "* GetPluginInfo error *");
+		sudll->GetPluginInfo(1, buf, TSIZEOFA(buf));
 	}
-	SendDlgItemMessageA(hDlg,IDE_AOSINFO,WM_SETTEXT,0,(LPARAM)buf);
-	CheckDlgButton(hDlg,IDX_AOSUSE,sp.flags & (VFSSUSIE_BMP | VFSSUSIE_ARC));
-	CheckDlgButton(hDlg,IDX_AOSDETECT,!(sp.flags & VFSSUSIE_NOAUTODETECT) );
-	SendDlgItemMessage(hDlg,IDE_AOSMASK,WM_SETTEXT,0,(LPARAM)sp.filemask);
+	SendDlgItemMessageA(hDlg, IDE_AOSINFO, WM_SETTEXT, 0, (LPARAM)buf);
+	CheckDlgButton(hDlg, IDX_AOSUSE, sp.flags & (VFSSUSIE_BMP | VFSSUSIE_ARC));
+	CheckDlgButton(hDlg, IDX_AOSDETECT, !(sp.flags & VFSSUSIE_NOAUTODETECT) );
+	SendDlgItemMessage(hDlg, IDE_AOSMASK, WM_SETTEXT, 0, (LPARAM)sp.filemask);
 	susieconfig = (sudll->hadd == NULL) ? NULL :
 		(CONFIGURATIONDLG)GetProcAddress( sudll->hadd, "ConfigurationDlg" );
-	EnableDlgWindow(hDlg,IDB_AOSSETTING,(susieconfig != NULL));
-	EnableDlgWindow(hDlg,IDB_GCADD,FALSE);
+	EnableDlgWindow(hDlg, IDB_AOSSETTING, (susieconfig != NULL));
+	EnableDlgWindow(hDlg, IDB_GCADD, FALSE);
 }
 
 void AddonSaveSusie(HWND hDlg)
@@ -113,38 +113,38 @@ void AddonSaveSusie(HWND hDlg)
 		return;
 	}
 	sudll = susiedll_list + SusieIndex;
-	sp.flags = IsDlgButtonChecked(hDlg,IDX_AOSUSE) ?
+	sp.flags = IsDlgButtonChecked(hDlg, IDX_AOSUSE) ?
 					(VFSSUSIE_BMP | VFSSUSIE_ARC) : 0;
-	if ( ! IsDlgButtonChecked(hDlg,IDX_AOSDETECT) ){
-		setflag(sp.flags,VFSSUSIE_NOAUTODETECT);
+	if ( ! IsDlgButtonChecked(hDlg, IDX_AOSDETECT) ){
+		setflag(sp.flags, VFSSUSIE_NOAUTODETECT);
 	}
-	GetControlText(hDlg,IDE_AOSMASK,sp.filemask,VFPS);
-	SetCustTable(T("P_susie"),(TCHAR *)(sustrings + sudll->DllNameOffset),
-			&sp,sizeof(DWORD) + TSTRSIZE(sp.filemask));
+	GetControlText(hDlg, IDE_AOSMASK, sp.filemask, VFPS);
+	SetCustTable(T("P_susie"), (TCHAR *)(sustrings + sudll->DllNameOffset),
+			&sp, sizeof(DWORD) + TSTRSIZE(sp.filemask));
 	Changed(hDlg);
-	EnableDlgWindow(hDlg,IDB_GCADD,FALSE);
+	EnableDlgWindow(hDlg, IDB_GCADD, FALSE);
 }
 
 #pragma argsused
-INT_PTR CALLBACK AddonPage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK AddonPage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	UnUsedParam(lParam);
 
 	switch (msg){
 		case WM_DESTROY:
 			VFSOff();
-			return StyleDlgProc(hDlg,msg,IDD_ADDON,lParam);
+			return StyleDlgProc(hDlg, msg, IDD_ADDON, lParam);
 
 		case WM_INITDIALOG:
 			VFSOn(VFS_DIRECTORY | VFS_BMP | VFS_ALL);
-			SendDlgItemMessage(hDlg,IDE_AOSMASK,EM_LIMITTEXT,MAX_PATH - 1,0);
+			SendDlgItemMessage(hDlg, IDE_AOSMASK, EM_LIMITTEXT, MAX_PATH - 1, 0);
 			AddonListSusie(hDlg);
 			return FALSE;
 
 		case WM_COMMAND:
 			switch ( LOWORD(wParam) ){
 				case IDL_AOSUSIE:
-					if ( GetListCursorIndex(wParam,lParam,&SusieIndex) > 0 ){
+					if ( GetListCursorIndex(wParam, lParam, &SusieIndex) > 0 ){
 						AddonSelectSusie(hDlg);
 					}
 					break;
@@ -156,7 +156,7 @@ INT_PTR CALLBACK AddonPage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 					break;
 				case IDE_AOSMASK:
 					if ( HIWORD(wParam) == EN_CHANGE ){
-						EnableDlgWindow(hDlg,IDB_GCADD,TRUE);
+						EnableDlgWindow(hDlg, IDB_GCADD, TRUE);
 					}
 					break;
 				case IDB_GCADD:
@@ -169,11 +169,11 @@ INT_PTR CALLBACK AddonPage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 
 		case WM_NOTIFY:
 			if ( ((NMHDR *)lParam)->code == PSN_SETACTIVE ){
-				InitWndIcon(hDlg,IDE_AOSINFO);
+				InitWndIcon(hDlg, IDE_AOSINFO);
 			}
 		// default ‚Ö
 		default:
-			return StyleDlgProc(hDlg,msg,IDD_ADDON,lParam);
+			return StyleDlgProc(hDlg, msg, IDD_ADDON, lParam);
 	}
 	return TRUE;
 }

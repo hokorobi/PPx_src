@@ -24,35 +24,35 @@ const TCHAR StrDummyTempPath[] = T("C:\\PPXTEMP");
 const TCHAR RegAppData[] =T("Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders");
 const TCHAR RegAppDataName[] =T("AppData");
 
-IID XCLSID_RegExp = {0x3F4DACA4, 0x160D,0x11D2, {0xA8,0xE9, 0x00,0x10,0x4B,0x36,0x5C,0x9F}};
-//IID XCLSID_Match = {0x3F4DACA5, 0x160D,0x11D2, {0xA8,0xE9, 0x00,0x10,0x4B,0x36,0x5C,0x9F}};
-//IID XCLSID_MatchCollection = {0x3F4DACA6, 0x160D,0x11D2, {0xA8,0xE9,0x00,0x10,0x4B,0x36,0x5C,0x9F}};
-IID XIID_IRegExp =	{0x3F4DACA0, 0x160D,0x11D2, {0xA8,0xE9, 0x00,0x10,0x4B,0x36,0x5C,0x9F}};
-IID XIID_IMatch =	{0x3F4DACA1, 0x160D,0x11D2, {0xA8,0xE9, 0x00,0x10,0x4B,0x36,0x5C,0x9F}};
-IID XIID_IMatch2 =	{0x3F4DACB1, 0x160D,0x11D2, {0xA8,0xE9, 0x00,0x10,0x4B,0x36,0x5C,0x9F}};
-IID XIID_IMatchCollection = {0x3F4DACA2, 0x160D,0x11D2, {0xA8,0xE9, 0x00,0x10,0x4B,0x36,0x5C,0x9F}};
-IID XIID_ISubMatches = {0x3F4DACB3, 0x160D,0x11D2, {0xA8,0xE9, 0x00,0x10,0x4B,0x36,0x5C,0x9F}};
+IID XCLSID_RegExp = {0x3F4DACA4, 0x160D, 0x11D2, {0xA8, 0xE9, 0x00, 0x10, 0x4B, 0x36, 0x5C, 0x9F}};
+//IID XCLSID_Match = {0x3F4DACA5, 0x160D, 0x11D2, {0xA8, 0xE9, 0x00, 0x10, 0x4B, 0x36, 0x5C, 0x9F}};
+//IID XCLSID_MatchCollection = {0x3F4DACA6, 0x160D, 0x11D2, {0xA8, 0xE9, 0x00, 0x10, 0x4B, 0x36, 0x5C, 0x9F}};
+IID XIID_IRegExp =	{0x3F4DACA0, 0x160D, 0x11D2, {0xA8, 0xE9, 0x00, 0x10, 0x4B, 0x36, 0x5C, 0x9F}};
+IID XIID_IMatch =	{0x3F4DACA1, 0x160D, 0x11D2, {0xA8, 0xE9, 0x00, 0x10, 0x4B, 0x36, 0x5C, 0x9F}};
+IID XIID_IMatch2 =	{0x3F4DACB1, 0x160D, 0x11D2, {0xA8, 0xE9, 0x00, 0x10, 0x4B, 0x36, 0x5C, 0x9F}};
+IID XIID_IMatchCollection = {0x3F4DACA2, 0x160D, 0x11D2, {0xA8, 0xE9, 0x00, 0x10, 0x4B, 0x36, 0x5C, 0x9F}};
+IID XIID_ISubMatches = {0x3F4DACB3, 0x160D, 0x11D2, {0xA8, 0xE9, 0x00, 0x10, 0x4B, 0x36, 0x5C, 0x9F}};
 
 // Shell Extension
-IID XIID_IContextMenu3 = {0xbcfce0a0,0xec17,0x11d0,{0x8d,0x10,0x0,0xa0,0xc9,0xf,0x27,0x19}};
-IID XIID_IColumnProvider = {0xe8025004, 0x1c42,0x11d2, {0xbe,0x2c, 0x00,0xa0,0xc9,0xa8,0x3d,0xa1}};
-IID XIID_IPropertySetStorage = {0x0000013A,0x0000,0x0000,{0xc0,0x00,0x0,0x0,0x0,0x0,0x0,0x46}};
+IID XIID_IContextMenu3 = {0xbcfce0a0, 0xec17, 0x11d0, {0x8d, 0x10, 0x0, 0xa0, 0xc9, 0xf, 0x27, 0x19}};
+IID XIID_IColumnProvider = {0xe8025004, 0x1c42, 0x11d2, {0xbe, 0x2c, 0x00, 0xa0, 0xc9, 0xa8, 0x3d, 0xa1}};
+IID XIID_IPropertySetStorage = {0x0000013A, 0x0000, 0x0000, {0xc0, 0x00, 0x0, 0x0, 0x0, 0x0, 0x0, 0x46}};
 
 #ifdef WINEGCC
-IID XIID_IClassFactory ={1,0,0,{0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46}};
-IID XIID_IUnknown = {0,0,0,{0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46}};
-IID XIID_IDataObject = {0x0000010e,0,0,{0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46}};
-IID XIID_IDropSource = {0x00000121,0,0,{0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46}};
+IID XIID_IClassFactory ={1, 0, 0, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
+IID XIID_IUnknown = {0, 0, 0, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
+IID XIID_IDataObject = {0x0000010e, 0, 0, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
+IID XIID_IDropSource = {0x00000121, 0, 0, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
 
-IID XIID_IStorage = {0x0000000b,0x0000,0x0000,{0xc0,0x00,0x0,0x0,0x0,0x0,0x0,0x46}};
-IID XIID_IPersistFile =	{0x0000010b,0x0000,0x0000,{0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46}};
+IID XIID_IStorage = {0x0000000b, 0x0000, 0x0000, {0xc0, 0x00, 0x0, 0x0, 0x0, 0x0, 0x0, 0x46}};
+IID XIID_IPersistFile =	{0x0000010b, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
 
 // Shell Extension
-IID XCLSID_ShellLink =	{0x00021401,0x0000,0x0000,{0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46}};
-IID XIID_IContextMenu =	{0x000214E4,0x0000,0x0000,{0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46}};
-IID XIID_IShellFolder =	{0x000214E6,0x0000,0x0000,{0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46}};
-IID XIID_IShellLink =	{0x000214EE,0x0000,0x0000,{0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46}};
-IID XIID_IContextMenu2 ={0x000214F4,0x0000,0x0000,{0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46}};
+IID XCLSID_ShellLink =	{0x00021401, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
+IID XIID_IContextMenu =	{0x000214E4, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
+IID XIID_IShellFolder =	{0x000214E6, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
+IID XIID_IShellLink =	{0x000214EE, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
+IID XIID_IContextMenu2 ={0x000214F4, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
 #endif
 
 #ifndef CSIDL_APPDATA
@@ -65,19 +65,19 @@ DWORD AjiEnterCount = 0;
 // レジストリから文字列を得る -------------------------------------------------
 // ※ path と dest が同じ変数でも問題無い
 _Success_(return)
-PPXDLL BOOL PPXAPI GetRegString(HKEY hKey,const TCHAR *path,const TCHAR *name,_Out_ TCHAR *dest,DWORD size)
+PPXDLL BOOL PPXAPI GetRegString(HKEY hKey, const TCHAR *path, const TCHAR *name, _Out_ TCHAR *dest, DWORD size)
 {
 	HKEY HK;
-	DWORD t,s;
+	DWORD t, s;
 	TCHAR buf[VFPS];
 
-	if ( RegOpenKeyEx(hKey,path,0,KEY_READ,&HK) == ERROR_SUCCESS ){
+	if ( RegOpenKeyEx(hKey, path, 0, KEY_READ, &HK) == ERROR_SUCCESS ){
 		s = size;
-		if (RegQueryValueEx(HK,name,NULL,&t,(LPBYTE)dest,&s) == ERROR_SUCCESS){
+		if (RegQueryValueEx(HK, name, NULL, &t, (LPBYTE)dest, &s) == ERROR_SUCCESS){
 			if ( (t == REG_EXPAND_SZ) && (s < sizeof(buf)) ){
 
-				tstrcpy(buf,dest);
-				ExpandEnvironmentStrings(buf,dest,size);
+				tstrcpy(buf, dest);
+				ExpandEnvironmentStrings(buf, dest, size);
 			}
 			RegCloseKey(HK);
 			return TRUE;
@@ -95,7 +95,7 @@ PPXDLL BOOL PPXAPI GetRegString(HKEY hKey,const TCHAR *path,const TCHAR *name,_O
 戻り値:0:正常終了 -1:20秒以上使用できず、ユーザーが無視した
 -----------------------------------------------------------------------------*/
 const TCHAR UsePPxTitle[] = T("PPx synchronize error(UsePPx)");
-const TCHAR LockErrorMessage[] = T("Lock error,ignore ?\nロックエラーです。無視しますか？");
+const TCHAR LockErrorMessage[] = T("Lock error, ignore ?\nロックエラーです。無視しますか？");
 
 #define USE_SPINTIMEOUT B0
 #define USE_SPINTIMEOUT_DIE B1
@@ -119,11 +119,11 @@ HANDLE SpinThreadAliveCheck(void)
 
 	// 利用中スレッドの生存確認
 	if ( DOpenThread == INVALID_HANDLE_VALUE ){
-		GETDLLPROC(hKernel32,OpenThread);
+		GETDLLPROC(hKernel32, OpenThread);
 	}
 	if ( DOpenThread != NULL ){
 		hThread = DOpenThread(THREAD_QUERY_INFORMATION,
-				FALSE,Sm->UsePPxSync.ThreadID);
+				FALSE, Sm->UsePPxSync.ThreadID);
 		if ( hThread != NULL ) CloseHandle(hThread); // スレッドは有効
 		return hThread;
 	}else{
@@ -132,18 +132,18 @@ HANDLE SpinThreadAliveCheck(void)
 }
 
 #if PPXSYNCDEBUG
-int UsePPxDialog(const TCHAR *text,const char *filename,int fileline,UINT flags)
+int UsePPxDialog(const TCHAR *text, const char *filename, int fileline, UINT flags)
 {
 	TCHAR titlebuf[200];
 
-	wsprintf(titlebuf,T("PPx synchronize error(UsePPx)%hs(%d),%hs,%hs"),
-			filename,fileline,Sm->UsePPxFirst,Sm->UsePPxLast);
-	return MessageBox(NULL,text,titlebuf,flags);
+	wsprintf(titlebuf, T("PPx synchronize error(UsePPx)%hs(%d),%hs,%hs"),
+			filename, fileline, Sm->UsePPxFirst, Sm->UsePPxLast);
+	return MessageBox(NULL, text, titlebuf, flags);
 }
 
-PPXDLL void PPXAPI UsePPxDebug(const char *filename,int fileline)
+PPXDLL void PPXAPI UsePPxDebug(const char *filename, int fileline)
 #else
-#define UsePPxDialog(text,filename,fileline,flags) MessageBox(NULL,text,UsePPxTitle,flags)
+#define UsePPxDialog(text, filename, fileline, flags) MessageBox(NULL, text, UsePPxTitle, flags)
 PPXDLL void PPXAPI UsePPx(void)
 #endif
 {
@@ -158,7 +158,7 @@ PPXDLL void PPXAPI UsePPx(void)
 	for ( ; ; ){
 		// 構造体へのアクセス権を確保
 		SpinCheckWait = 0;
-		while ( InterlockedExchange(&Sm->UsePPxSync.SpinLock,1) != 0 ){
+		while ( InterlockedExchange(&Sm->UsePPxSync.SpinLock, 1) != 0 ){
 			DWORD TickDelta;
 
 			Sleep(SpinCheckWait);
@@ -172,26 +172,26 @@ PPXDLL void PPXAPI UsePPx(void)
 			if ( TickDelta >= UsePPxSpinMaxTime ){
 				int result;
 
-				setflag(checkflag,USE_SPINTIMEOUT);
+				setflag(checkflag, USE_SPINTIMEOUT);
 				if ( Sm->UsePPxSync.ThreadID == ThreadID ){ // 再入
-					setflag(checkflag,USE_SPINTIMEOUT_SAMETHREAD);
+					setflag(checkflag, USE_SPINTIMEOUT_SAMETHREAD);
 					break;
 				}
 
 				if ( SpinThreadAliveCheck() == NULL ){ // 利用中スレッドが死亡→奪う
-					setflag(checkflag,USE_SPINTIMEOUT_DIE);
+					setflag(checkflag, USE_SPINTIMEOUT_DIE);
 					Sm->UsePPxSync.ThreadID = 0; // 強制解放
 					break;
 				}
 
 				if ( IsTrue(Sm->NowShutdown) ){
-					setflag(checkflag,USE_SPINTIMEOUT_DIALOG | USE_NOWSHUTDOWN);
+					setflag(checkflag, USE_SPINTIMEOUT_DIALOG | USE_NOWSHUTDOWN);
 					Sm->UsePPxSync.ThreadID = 0; // 強制解放
 					break;
 				}
 
-				setflag(checkflag,USE_SPINTIMEOUT_DIALOG);
-				result = UsePPxDialog(LockErrorMessage,filename,fileline,
+				setflag(checkflag, USE_SPINTIMEOUT_DIALOG);
+				result = UsePPxDialog(LockErrorMessage, filename, fileline,
 						MB_ICONEXCLAMATION | MB_RETRYCANCEL);
 				if ( (result == 0) || (result == IDCANCEL) ){
 					Sm->UsePPxSync.ThreadID = 0; // 強制解放
@@ -205,11 +205,11 @@ PPXDLL void PPXAPI UsePPx(void)
 
 		if ( Sm->UsePPxSync.ThreadID == ThreadID ){ // 再入
 			#if PPXSYNCDEBUG
-				wsprintfA(Sm->UsePPxLast,"R:%s(%d)+%d",filename,fileline,Sm->UsePPxSync.SpinCount);
+				wsprintfA(Sm->UsePPxLast, "R:%s(%d)+%d", filename, fileline, Sm->UsePPxSync.SpinCount);
 			#endif
 			if ( Sm->UsePPxSync.SpinCount > 0xffff ){
 				if ( Sm->NowShutdown == FALSE ){
-					UsePPxDialog(T("Reentrance error"),filename,fileline,MB_OK);
+					UsePPxDialog(T("Reentrance error"), filename, fileline, MB_OK);
 				}
 			}else{
 				Sm->UsePPxSync.SpinCount++;
@@ -221,14 +221,14 @@ PPXDLL void PPXAPI UsePPx(void)
 			HANDLE hThread;
 			if ( (GetTickCount() - Tick) < (IsTrue(Sm->NowShutdown) ?
 					(DWORD)(UsePPxMaxTime / 3) : UsePPxMaxTime) ){ // 待機時間内
-				InterlockedExchange(&Sm->UsePPxSync.SpinLock,0); //spin解放
+				InterlockedExchange(&Sm->UsePPxSync.SpinLock, 0); //spin解放
 				Sleep(10);
 				continue;
 			}
 
 			hThread = SpinThreadAliveCheck(); // 利用中スレッドの生存確認
 			// 利用中スレッドが死亡→奪う
-			if ( hThread == NULL ) setflag(checkflag,USE_CHECK_DIE);
+			if ( hThread == NULL ) setflag(checkflag, USE_CHECK_DIE);
 
 			// ダイアログがないなら表示
 			if ( (Sm->NowShutdown == FALSE) && (hThread != NULL) ){
@@ -238,34 +238,35 @@ PPXDLL void PPXAPI UsePPx(void)
 					#endif
 /*
 					if ( Sm->UsePPxSync.ThreadID == ThreadID ){
-						setflag(checkflag,USE_CHECK_DIALOG_SAMETHREAD);
+						setflag(checkflag, USE_CHECK_DIALOG_SAMETHREAD);
 					}
 */
 					#if PPXSYNCDEBUG
-						wsprintf(titlebuf,T("PPx synchronize error(UsePPx)(%hs:%d),Flag:%x,Spin:%d,NowThread:%s(%d),BlockThread:%s(%d),BlockFirst:%hs,BlockLast:%hs"),filename,fileline,checkflag,Sm->UsePPxSync.SpinCount,GetThreadName(ThreadID),ThreadID,GetThreadName(OldThreadID),OldThreadID,Sm->UsePPxFirst,Sm->UsePPxLast);
+						wsprintf(titlebuf, T("PPx synchronize error(UsePPx)(%hs:%d),Flag:%x,Spin:%d,NowThread:%s(%d),BlockThread:%s(%d),BlockFirst:%hs,BlockLast:%hs"),
+								filename, fileline, checkflag, Sm->UsePPxSync.SpinCount, GetThreadName(ThreadID), ThreadID, GetThreadName(OldThreadID), OldThreadID, Sm->UsePPxFirst, Sm->UsePPxLast);
 						md.title = titlebuf;
 					#else
 						md.title = UsePPxTitle;
 					#endif
-					InterlockedExchange(&Sm->UsePPxSync.SpinLock,0);
-					setflag(checkflag,USE_CHECK_DIALOG);
+					InterlockedExchange(&Sm->UsePPxSync.SpinLock, 0);
+					setflag(checkflag, USE_CHECK_DIALOG);
 					md.text = LockErrorMessage;
 					md.style = MB_PPX_USEPPXCHECKOKCANCEL | MB_DEFBUTTON2 | MB_ICONEXCLAMATION;
-					hDlgWnd = CreateDialogParam(DLLhInst,MAKEINTRESOURCE(IDD_NULL),NULL,MessageBoxDxProc,(LPARAM)&md);
+					hDlgWnd = CreateDialogParam(DLLhInst, MAKEINTRESOURCE(IDD_NULL), NULL, MessageBoxDxProc, (LPARAM)&md);
 					if ( hDlgWnd == NULL){
-						setflag(checkflag,USE_CHECK_DIALOG_ERROR);
+						setflag(checkflag, USE_CHECK_DIALOG_ERROR);
 						goto forceuse;
 					}
 				}else{
 					MSG msg;
 
 					if ( IsWindow(hDlgWnd) == FALSE ) goto forceuse;
-					InterlockedExchange(&Sm->UsePPxSync.SpinLock,0);
-					while ( IsTrue(PeekMessage(&msg,NULL,0,0,PM_REMOVE)) ){
+					InterlockedExchange(&Sm->UsePPxSync.SpinLock, 0);
+					while ( IsTrue(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) ){
 						if ( msg.message == WM_QUIT ) break;
-						if ( IsDialogMessage(hDlgWnd,&msg) == FALSE ){
+						if ( IsDialogMessage(hDlgWnd, &msg) == FALSE ){
 							if ( msg.message == WM_PAINT ){
-								ValidateRect(msg.hwnd,NULL);
+								ValidateRect(msg.hwnd, NULL);
 							}
 //							TranslateMessage(&msg);
 //							DispatchMessage(&msg);
@@ -283,18 +284,20 @@ forceuse:
 //		Sm->UsePPxSync.TickCount = GetTickCount();
 		Sm->UsePPxSync.SpinCount = 1;
 #if PPXSYNCDEBUG
-		wsprintfA(Sm->UsePPxFirst,"%s(%d)",filename,fileline);
+		wsprintfA(Sm->UsePPxFirst, "%s(%d)", filename, fileline);
 		Sm->UsePPxLast[0] = '\0';
 #endif
 		break;
 	}
-	InterlockedExchange(&Sm->UsePPxSync.SpinLock,0);
+	InterlockedExchange(&Sm->UsePPxSync.SpinLock, 0);
 	if ( hDlgWnd != NULL ) DestroyWindow(hDlgWnd);
 	if ( checkflag ){
 #if PPXSYNCDEBUG
-		XMessage(NULL,NULL,XM_DbgLOG,T("UsePPx %hs(%d): %x,%d,%s-%d,%s-%d,%hs,%hs"),filename,fileline,checkflag,Sm->UsePPxSync.SpinCount,GetThreadName(ThreadID),ThreadID,GetThreadName(OldThreadID),OldThreadID,Sm->UsePPxFirst,Sm->UsePPxLast);
+		XMessage(NULL, NULL, XM_DbgLOG, T("UsePPx %hs(%d): %x,%d,%s-%d,%s-%d,%hs,%hs"),
+				filename, fileline, checkflag, Sm->UsePPxSync.SpinCount, GetThreadName(ThreadID), ThreadID, GetThreadName(OldThreadID), OldThreadID, Sm->UsePPxFirst, Sm->UsePPxLast);
 #else
-		XMessage(NULL,NULL,XM_DbgLOG,T("UsePPx : %x,%d,%s-%d,%s-%d"),checkflag,Sm->UsePPxSync.SpinCount,GetThreadName(ThreadID),ThreadID,GetThreadName(OldThreadID),OldThreadID);
+		XMessage(NULL, NULL, XM_DbgLOG, T("UsePPx : %x,%d,%s-%d,%s-%d"),
+				checkflag, Sm->UsePPxSync.SpinCount, GetThreadName(ThreadID), ThreadID, GetThreadName(OldThreadID), OldThreadID);
 #endif
 	}
 	return;
@@ -303,19 +306,19 @@ forceuse:
  共有メモリ使用の排他処理の解除
 -----------------------------------------------------------------------------*/
 #if PPXSYNCDEBUG
-int FreePPxDialog(const TCHAR *text,const char *filename,int fileline,UINT flags)
+int FreePPxDialog(const TCHAR *text, const char *filename, int fileline, UINT flags)
 {
 	TCHAR titlebuf[200];
 
-	wsprintf(titlebuf,T("PPx synchronize error(FreePPx)%hs(%d)"),filename,fileline);
-	return MessageBox(NULL,text,titlebuf,flags);
+	wsprintf(titlebuf, T("PPx synchronize error(FreePPx)%hs(%d)"), filename, fileline);
+	return MessageBox(NULL, text, titlebuf, flags);
 }
 
-PPXDLL void PPXAPI FreePPxDebug(const char *filename,int fileline)
+PPXDLL void PPXAPI FreePPxDebug(const char *filename, int fileline)
 #else
 
 const TCHAR FreePPxTitle[] = T("PPx synchronize error(FreePPx)");
-#define FreePPxDialog(text,filename,fileline,flags) MessageBox(NULL,text,FreePPxTitle,flags)
+#define FreePPxDialog(text, filename, fileline, flags) MessageBox(NULL, text, FreePPxTitle, flags)
 
 PPXDLL void PPXAPI FreePPx(void)
 #endif
@@ -324,7 +327,7 @@ PPXDLL void PPXAPI FreePPx(void)
 	DWORD SpinCheckWait = 0;
 
 	// 構造体へのアクセス権を確保
-	while ( InterlockedExchange(&Sm->UsePPxSync.SpinLock,1) != 0 ){
+	while ( InterlockedExchange(&Sm->UsePPxSync.SpinLock, 1) != 0 ){
 		DWORD TickDelta;
 
 		Sleep(SpinCheckWait);
@@ -347,7 +350,7 @@ PPXDLL void PPXAPI FreePPx(void)
 				return;
 			}
 			if ( IsTrue(Sm->NowShutdown) ) break;
-			result = FreePPxDialog(LockErrorMessage,filename,fileline,
+			result = FreePPxDialog(LockErrorMessage, filename, fileline,
 					MB_ICONEXCLAMATION | MB_RETRYCANCEL);
 			if ( (result != IDCANCEL) && (result != 0) ){
 				Tick = GetTickCount();
@@ -369,7 +372,7 @@ PPXDLL void PPXAPI FreePPx(void)
 			Sm->UsePPxSync.ThreadID = 0; // 解放
 		}
 	}
-	InterlockedExchange(&Sm->UsePPxSync.SpinLock,0);
+	InterlockedExchange(&Sm->UsePPxSync.SpinLock, 0);
 	return;
 }
 //=========================================================== Stack Heap 関連
@@ -390,14 +393,14 @@ PPXDLL BOOL PPXAPI ThFree(ThSTRUCT *TH)
 		TH->bottom = NULL;
 		TH->top = 0;
 		TH->size = 0;
-		result = HeapFree(DLLheap,0,bottom);
+		result = HeapFree(DLLheap, 0, bottom);
 	}
 	return result;
 }
 
 #define ThAllocCheck()								\
 	if ( TH->bottom == NULL ){						\
-		TH->bottom = HeapAlloc(DLLheap,0,ThSTEP);	\
+		TH->bottom = HeapAlloc(DLLheap, 0, ThSTEP);	\
 		if ( TH->bottom == NULL ) return FALSE;		\
 		TH->size = ThSTEP;							\
 	}
@@ -408,61 +411,61 @@ PPXDLL BOOL PPXAPI ThFree(ThSTRUCT *TH)
 		DWORD nextsize;								\
 													\
 		nextsize = TH->size + ThNextAllocSizeM(TH->size < (256 * KB) ? TH->size : (TH->size * 2) );\
-		p = HeapReAlloc(DLLheap,0,TH->bottom,nextsize);\
+		p = HeapReAlloc(DLLheap, 0, TH->bottom, nextsize);\
 		if (p == NULL) return FALSE;				\
 		TH->bottom = (void *)p;						\
 		TH->size = nextsize;						\
 	}
 
-PPXDLL BOOL PPXAPI ThSize(ThSTRUCT *TH,DWORD size)
+PPXDLL BOOL PPXAPI ThSize(ThSTRUCT *TH, DWORD size)
 {
 	ThAllocCheck();
 	ThSizecheck(size);
 	return TRUE;
 }
 
-PPXDLL BOOL PPXAPI ThAppend(ThSTRUCT *TH,const void *data,DWORD size)
+PPXDLL BOOL PPXAPI ThAppend(ThSTRUCT *TH, const void *data, DWORD size)
 {
 	ThAllocCheck();
 	ThSizecheck(size);
-	memcpy(ThLast(TH),data,size);
+	memcpy(ThLast(TH), data, size);
 	TH->top += size;
 	return TRUE;
 }
 
-PPXDLL BOOL PPXAPI ThAddString(ThSTRUCT *TH,const TCHAR *data)
+PPXDLL BOOL PPXAPI ThAddString(ThSTRUCT *TH, const TCHAR *data)
 {
 	DWORD size;
 
 	ThAllocCheck();
 	size = TSTRSIZE32(data);
 	ThSizecheck(size + 1);
-	memcpy(ThLast(TH),data,size);
+	memcpy(ThLast(TH), data, size);
 	TH->top += size;
 	*(TCHAR *)ThLast(TH) = '\0'; //文字列の\0とは別の保護用
 	return TRUE;
 }
 
-PPXDLL BOOL PPXAPI ThCatString(ThSTRUCT *TH,const TCHAR *data)
+PPXDLL BOOL PPXAPI ThCatString(ThSTRUCT *TH, const TCHAR *data)
 {
 	DWORD size;
 
 	ThAllocCheck();
 	size = TSTRSIZE32(data);
 	ThSizecheck(size);
-	memcpy(ThLast(TH),data,size);
+	memcpy(ThLast(TH), data, size);
 	TH->top += size - TSTROFF(1);
 	return TRUE;
 }
 #ifdef UNICODE
-PPXDLL BOOL PPXAPI ThCatStringA(ThSTRUCT *TH,const char *data)
+PPXDLL BOOL PPXAPI ThCatStringA(ThSTRUCT *TH, const char *data)
 {
 	DWORD size;
 
 	ThAllocCheck();
 	size = strlen32(data) + 1;
 	ThSizecheck(size);
-	memcpy(ThLast(TH),data,size);
+	memcpy(ThLast(TH), data, size);
 	TH->top += size - 1;
 	return TRUE;
 }
@@ -472,7 +475,7 @@ PPXDLL BOOL PPXAPI ThCatStringA(ThSTRUCT *TH,const char *data)
 	((DWORD 全体のサイズ=8+namesize+strsize+'\0')(WORD nameのサイズ)name str '\0')...
 */
 
-#pragma pack(push,1)
+#pragma pack(push, 1)
 typedef struct {
 	DWORD varsize;
 	WORD namesize;
@@ -480,12 +483,12 @@ typedef struct {
 } THVARS;
 #pragma pack(pop)
 
-PPXDLL BOOL PPXAPI ThSetString(ThSTRUCT *TH,const TCHAR *name,const TCHAR *str)
+PPXDLL BOOL PPXAPI ThSetString(ThSTRUCT *TH, const TCHAR *name, const TCHAR *str)
 {
-	DWORD namesize = TSTRLENGTH32(name),strsize = TSTRSIZE32(str);
+	DWORD namesize = TSTRLENGTH32(name), strsize = TSTRSIZE32(str);
 	DWORD varsize;
 	THVARS *nulltvs = NULL; // 途中で見つけた空きブロック
-	THVARS *tvs,*maxtvs;
+	THVARS *tvs, *maxtvs;
 
 	varsize = (sizeof(DWORD) * 2) + namesize + strsize;
 	if ( TH == NULL ) TH = &ProcessStringValue;
@@ -496,12 +499,12 @@ PPXDLL BOOL PPXAPI ThSetString(ThSTRUCT *TH,const TCHAR *name,const TCHAR *str)
 
 		tvsnamesize = tvs->namesize;
 		if ( (tvsnamesize == namesize) &&
-			 (memcmp(tvs->name,name,namesize) == 0) ){
+			 (memcmp(tvs->name, name, namesize) == 0) ){
 			if ( tvs->varsize >= varsize ){ // 再利用が可能
 				if ( strsize == sizeof(TCHAR) ){ // 削除
 					tvs->namesize = 0;
 				}else{
-					memcpy( tvs->name + tvs->namesize,str,strsize );
+					memcpy( tvs->name + tvs->namesize, str, strsize );
 				}
 				return TRUE;
 			}
@@ -516,27 +519,27 @@ PPXDLL BOOL PPXAPI ThSetString(ThSTRUCT *TH,const TCHAR *name,const TCHAR *str)
 
 	if ( nulltvs != NULL ){ // 再利用可能
 		nulltvs->namesize = (WORD)namesize;
-		memcpy(nulltvs->name,name,namesize);
-		memcpy(nulltvs->name + namesize,str,strsize);
+		memcpy(nulltvs->name, name, namesize);
+		memcpy(nulltvs->name + namesize, str, strsize);
 		return TRUE;
 	}
 	// 新規確保
-	if ( ThSize(TH,varsize) == FALSE ) return FALSE;
+	if ( ThSize(TH, varsize) == FALSE ) return FALSE;
 	tvs = (THVARS *)(char *)(TH->bottom + TH->top);
 	tvs->varsize = varsize;
 	tvs->namesize = (WORD)namesize;
-	memcpy(tvs->name,name,namesize);
-	memcpy(tvs->name + namesize,str,strsize);
+	memcpy(tvs->name, name, namesize);
+	memcpy(tvs->name + namesize, str, strsize);
 	TH->top += varsize;
 	return TRUE;
 }
 
-PPXDLL TCHAR * PPXAPI ThAllocString(ThSTRUCT *TH,const TCHAR *name,DWORD strsize)
+PPXDLL TCHAR * PPXAPI ThAllocString(ThSTRUCT *TH, const TCHAR *name, DWORD strsize)
 {
 	DWORD namesize = TSTRLENGTH32(name);
 	DWORD varsize;
 	THVARS *nulltvs = NULL; // 途中で見つけた空きブロック
-	THVARS *tvs,*maxtvs;
+	THVARS *tvs, *maxtvs;
 
 	varsize = (sizeof(DWORD) * 2) + namesize + strsize;
 
@@ -548,7 +551,7 @@ PPXDLL TCHAR * PPXAPI ThAllocString(ThSTRUCT *TH,const TCHAR *name,DWORD strsize
 
 		tvsnamesize = tvs->namesize;
 		if ( (tvsnamesize == namesize) &&
-			 (memcmp(tvs->name,name,namesize) == 0) ){
+			 (memcmp(tvs->name, name, namesize) == 0) ){
 			if ( tvs->varsize >= varsize ){ // 再利用が可能
 				return (TCHAR *)(char *)(tvs->name + tvs->namesize);
 			}
@@ -561,32 +564,32 @@ PPXDLL TCHAR * PPXAPI ThAllocString(ThSTRUCT *TH,const TCHAR *name,DWORD strsize
 	}
 	if ( nulltvs != NULL ){ // 再利用可能
 		nulltvs->namesize = (WORD)namesize;
-		memcpy(nulltvs->name,name,namesize);
+		memcpy(nulltvs->name, name, namesize);
 		return (TCHAR *)(char *)(nulltvs->name + namesize);
 	}
 	// 新規確保
-	if ( ThSize(TH,varsize) == FALSE ) return FALSE;
+	if ( ThSize(TH, varsize) == FALSE ) return FALSE;
 	tvs = (THVARS *)(char *)(TH->bottom + TH->top);
 	tvs->varsize = varsize;
 	tvs->namesize = (WORD)namesize;
-	memcpy(tvs->name,name,namesize);
+	memcpy(tvs->name, name, namesize);
 	TH->top += varsize;
 	return (TCHAR *)(char *)(tvs->name + namesize);
 }
 
-PPXDLL const TCHAR * PPXAPI ThGetString(ThSTRUCT *TH,const TCHAR *name,TCHAR *str,DWORD strbufsize)
+PPXDLL const TCHAR * PPXAPI ThGetString(ThSTRUCT *TH, const TCHAR *name, TCHAR *str, DWORD strbufsize)
 {
 	DWORD namesize = TSTRLENGTH32(name);
-	THVARS *tvs,*maxtvs;
+	THVARS *tvs, *maxtvs;
 
 	if ( TH == NULL ) TH = &ProcessStringValue;
 	tvs = (THVARS *)TH->bottom;
 	maxtvs = (THVARS *)(char *)(TH->bottom + TH->top);
 	while ( tvs < maxtvs ){
 		if ( (tvs->namesize == (WORD)namesize) &&
-			 (memcmp(tvs->name,name,namesize) == 0) ){
+			 (memcmp(tvs->name, name, namesize) == 0) ){
 			if ( str != NULL ){
-				tstrlimcpy(str,(TCHAR *)(char *)(tvs->name + namesize),strbufsize - 1 );
+				tstrlimcpy(str, (TCHAR *)(char *)(tvs->name + namesize), strbufsize - 1 );
 			}
 			return (TCHAR *)(char *)(tvs->name + namesize);
 		}
@@ -597,18 +600,18 @@ PPXDLL const TCHAR * PPXAPI ThGetString(ThSTRUCT *TH,const TCHAR *name,TCHAR *st
 	return NULL;
 }
 
-PPXDLL BOOL PPXAPI ThEnumString(ThSTRUCT *TH,int index,TCHAR *name,TCHAR *str,DWORD strbufsize)
+PPXDLL BOOL PPXAPI ThEnumString(ThSTRUCT *TH, int index, TCHAR *name, TCHAR *str, DWORD strbufsize)
 {
-	THVARS *tvs,*maxtvs;
+	THVARS *tvs, *maxtvs;
 
 	if ( TH == NULL ) TH = &ProcessStringValue;
 	tvs = (THVARS *)TH->bottom;
 	maxtvs = (THVARS *)(char *)(TH->bottom + TH->top);
 	while ( tvs < maxtvs ){
 		if ( tvs->namesize && (index-- == 0) ){
-			memcpy(name,tvs->name,tvs->namesize);
+			memcpy(name, tvs->name, tvs->namesize);
 			name[tvs->namesize / sizeof(TCHAR)] = '\0';
-			tstrlimcpy(str,(TCHAR *)(char *)(tvs->name + tvs->namesize),strbufsize - 1);
+			tstrlimcpy(str, (TCHAR *)(char *)(tvs->name + tvs->namesize), strbufsize - 1);
 			return TRUE;
 		}
 		tvs = (THVARS *)(char *)( (char *)tvs + tvs->varsize );
@@ -623,7 +626,7 @@ PPXDLL BOOL PPXAPI ThEnumString(ThSTRUCT *TH,int index,TCHAR *name,TCHAR *str,DW
 	str		格納バッファ(VFPS)
 	number	エラーの内容、PPERROR_GETLASTERROR なら GetLastError() の値を用いる
 -----------------------------------------------------------------------------*/
-PPXDLL ERRORCODE PPXAPI PPErrorMsg(TCHAR *str,ERRORCODE code)
+PPXDLL ERRORCODE PPXAPI PPErrorMsg(TCHAR *str, ERRORCODE code)
 {
 	TCHAR *p;
 
@@ -633,14 +636,14 @@ PPXDLL ERRORCODE PPXAPI PPErrorMsg(TCHAR *str,ERRORCODE code)
 		if ( code == NO_ERROR ) return NO_ERROR;
 	}
 	FormatMessage(FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_FROM_SYSTEM,
-			NULL,code,MAKELANGID(LANG_NEUTRAL,SUBLANG_SYS_DEFAULT),
-			(LPTSTR)str,VFPS,NULL);
+			NULL, code, MAKELANGID(LANG_NEUTRAL, SUBLANG_SYS_DEFAULT),
+			(LPTSTR)str, VFPS, NULL);
 	for ( p = str ; *p ; p++ ) if ( (UTCHAR)*p < ' ' ) *p = ' ';
 	while ( (p > str) && (*(p - 1) == ' ') ) p--;
 	if ( p < (str + 4) ){
-		wsprintf(str,T("Unknown error : %d"),code);
+		wsprintf(str, T("Unknown error : %d"), code);
 	}else if ( (p - str) < (VFPS - 10) ){
-		wsprintf(p,T("(%d)"),code);
+		wsprintf(p, T("(%d)"), code);
 	}else{
 		*p = '\0';
 	}
@@ -653,13 +656,13 @@ PPXDLL ERRORCODE PPXAPI PPErrorMsg(TCHAR *str,ERRORCODE code)
 	code	エラーの内容、PPERROR_GETLASTERROR なら GetLastError() の値を用いる
 	戻り値	エラー番号、成功なら 0
 -----------------------------------------------------------------------------*/
-PPXDLL ERRORCODE PPXAPI PPErrorBox(HWND hWnd,const TCHAR *title,ERRORCODE code)
+PPXDLL ERRORCODE PPXAPI PPErrorBox(HWND hWnd, const TCHAR *title, ERRORCODE code)
 {
 	TCHAR mes[VFPS];
 
-	code = PPErrorMsg(mes,code);
+	code = PPErrorMsg(mes, code);
 	if ( code != NO_ERROR ){
-		PMessageBox(hWnd,mes,title,MB_APPLMODAL | MB_OK | MB_ICONEXCLAMATION);
+		PMessageBox(hWnd, mes, title, MB_APPLMODAL | MB_OK | MB_ICONEXCLAMATION);
 	}
 	return code;
 }
@@ -669,39 +672,39 @@ PPXDLL ERRORCODE PPXAPI PPErrorBox(HWND hWnd,const TCHAR *title,ERRORCODE code)
 	src = 4バイトの英数字（名前に使用）
 	idname = 使用するレジストリの位置
 -----------------------------------------------------------------------------*/
-void MakeUserfilename(TCHAR *dst,const TCHAR *src,const TCHAR *idname)
+void MakeUserfilename(TCHAR *dst, const TCHAR *src, const TCHAR *idname)
 {
 	TCHAR path[MAX_PATH];
 	TCHAR name[MAX_PATH];
 										// 固定ファイルがあるならそれを使用 ===
-	wsprintf(dst,T("%s%sDEF.DAT"),DLLpath,src);
+	wsprintf(dst, T("%s%sDEF.DAT"), DLLpath, src);
 	if ( GetFileAttributes(dst) != BADATTR ) return;
 
-	if ( !GetRegString(HKEY_CURRENT_USER,idname,src,dst,TSTROFF(MAX_PATH)) ){
+	if ( !GetRegString(HKEY_CURRENT_USER, idname, src, dst, TSTROFF(MAX_PATH)) ){
 		TCHAR *p;
 		DWORD t;
 
 		if ( ((DSHGetFolderPath != NULL) &&
-			  SUCCEEDED(DSHGetFolderPath(NULL,CSIDL_APPDATA,NULL,0,path)))
+			  SUCCEEDED(DSHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, path)))
 			|| GetRegString(HKEY_CURRENT_USER,
-				RegAppData,RegAppDataName,path,TSTROFF(MAX_PATH)) ){
-			CatPath(NULL,path,T(PPxSettingsAppdataPath));
+				RegAppData, RegAppDataName, path, TSTROFF(MAX_PATH)) ){
+			CatPath(NULL, path, T(PPxSettingsAppdataPath));
 		}else{
-			tstrcpy(path,DLLpath);
-			if ( path[0] == '\\' ) GetWindowsDirectory(path,MAX_PATH);
+			tstrcpy(path, DLLpath);
+			if ( path[0] == '\\' ) GetWindowsDirectory(path, MAX_PATH);
 		}
 
 		t = 0xa55a;
 		p = UserName;
 		while ( *p ) t = (t << 1) + (DWORD)*p++;
-		wsprintf(name,T("%s%04X.DAT"),src,t & 0xffff);
-		CatPath(dst,path,name);
+		wsprintf(name, T("%s%04X.DAT"), src, t & 0xffff);
+		CatPath(dst, path, name);
 #if USETEMPCONFIGFILE // 一発ネタ(きちんと設定を保存しない/仮の設定を作成)の時
 		if ( GetFileAttributes(dst) == BADATTR ){
-			wsprintf(dst,T("%s%sDEF.DAT"),DLLpath,src);
+			wsprintf(dst, T("%s%sDEF.DAT"), DLLpath, src);
 		}
 #else	// 通常の時
-		if ( GetFileAttributes(path) == BADATTR ) MakeDirectories(path,NULL);
+		if ( GetFileAttributes(path) == BADATTR ) MakeDirectories(path, NULL);
 #endif
 	}
 }
@@ -722,53 +725,53 @@ PPXDLL DWORD PPXAPI GetShiftKey(void)
 /*-----------------------------------------------------------------------------
 	キーカスタマイズの解釈をする
 -----------------------------------------------------------------------------*/
-PPXDLL ERRORCODE PPXAPI ExecKeyCommand(const EXECKEYCOMMANDSTRUCT *ekcs,PPXAPPINFO *info,WORD key)
+PPXDLL ERRORCODE PPXAPI ExecKeyCommand(const EXECKEYCOMMANDSTRUCT *ekcs, PPXAPPINFO *info, WORD key)
 {
-	TCHAR buf[CMDLINESIZE],*bufp;
+	TCHAR buf[CMDLINESIZE], *bufp;
 	ERRORCODE result;
 	const TCHAR *ekname;
 
 	if ( ExecKeyStack >= MAXEXECKEYSTACK ){
-		XMessage(NULL,NULL,XM_FaERRd,MES_RKAL);
+		XMessage(NULL, NULL, XM_FaERRd, MES_RKAL);
 		return ERROR_OUT_OF_STRUCTURES;
 	}
 	ExecKeyStack++;
 
-	PutKeyCode(buf,key);
+	PutKeyCode(buf, key);
 	buf[CMDLINESIZE - 1] = '\0';
 	ekname = ekcs->CustName1;
-	if ( NO_ERROR != GetCustTable(ekname,buf,buf,sizeof(buf)) ){
+	if ( NO_ERROR != GetCustTable(ekname, buf, buf, sizeof(buf)) ){
 		ekname = ekcs->CustName2;
-		if ( (ekname == NULL) || GetCustTable(ekname,buf,buf,sizeof(buf)) ){
+		if ( (ekname == NULL) || GetCustTable(ekname, buf, buf, sizeof(buf)) ){
 			ERRORCODE cmdresult;
 
-			cmdresult = ekcs->Command(info,key | (WORD)K_raw); // 該当無し
+			cmdresult = ekcs->Command(info, key | (WORD)K_raw); // 該当無し
 			ExecKeyStack--;
 			return cmdresult;
 		}
 	}
 
 	if ( buf[CMDLINESIZE - 1] != '\0' ){ // はみ出したので、確保し直し
-		int size = GetCustTableSize(ekname,buf);
+		int size = GetCustTableSize(ekname, buf);
 
-		PutKeyCode(buf,key);
-		bufp = HeapAlloc(DLLheap,0,size);
+		PutKeyCode(buf, key);
+		bufp = HeapAlloc(DLLheap, 0, size);
 		if ( bufp == NULL ){
 			ExecKeyStack--;
 			return GetLastError();
 		}
-		GetCustTable(ekname,buf,bufp,size);
+		GetCustTable(ekname, buf, bufp, size);
 	}else{
 		bufp = buf;
 	}
 	if ( (UTCHAR)bufp[0] == EXTCMD_CMD ){ // コマンド実行
-		result = PP_ExtractMacro(info->hWnd,info,NULL,bufp + 1,NULL,0);
+		result = PP_ExtractMacro(info->hWnd, info, NULL, bufp + 1, NULL, 0);
 	}else{ // キー
-		WORD *keyp,readkey;
+		WORD *keyp, readkey;
 
 		if ( X_Keyra == 1 ){
 			X_Keyra = 0;
-			GetCustData(T("X_Keyra"),&X_Keyra,sizeof(X_Keyra));
+			GetCustData(T("X_Keyra"), &X_Keyra, sizeof(X_Keyra));
 			X_Keyra = (X_Keyra == 0) ? K_raw : 0;
 		}
 		keyp = (WORD *)(((UTCHAR)bufp[0] == EXTCMD_KEY) ? (bufp + 1) : bufp);
@@ -778,12 +781,12 @@ PPXDLL ERRORCODE PPXAPI ExecKeyCommand(const EXECKEYCOMMANDSTRUCT *ekcs,PPXAPPIN
 				result = NO_ERROR;
 				break;
 			}
-			result = ekcs->Command(info,readkey | (WORD)X_Keyra);
+			result = ekcs->Command(info, readkey | (WORD)X_Keyra);
 			if ( result != NO_ERROR ) break;
 			keyp++;
 		}
 	}
-	if ( bufp != buf ) HeapFree(DLLheap,0,bufp);
+	if ( bufp != buf ) HeapFree(DLLheap, 0, bufp);
 	ExecKeyStack--;
 	return result;
 }
@@ -792,7 +795,7 @@ PPXDLL ERRORCODE PPXAPI ExecKeyCommand(const EXECKEYCOMMANDSTRUCT *ekcs,PPXAPPIN
 	IME の状態を設定する
 	status		0:IME off	1:IME on	2:IME onなら固定入力に切り換え(予定)
 -----------------------------------------------------------------------------*/
-PPXDLL void PPXAPI SetIMEStatus(HWND hWnd,int status)
+PPXDLL void PPXAPI SetIMEStatus(HWND hWnd, int status)
 {
 #if !defined(WINEGCC)
 	HIMC hIMC;
@@ -803,13 +806,13 @@ PPXDLL void PPXAPI SetIMEStatus(HWND hWnd,int status)
 		if ( status == 2 ){
 			if ( IsTrue(ImmGetOpenStatus(hIMC)) ){
 				ImmSetConversionStatus(hIMC,
-							IME_CMODE_ALPHANUMERIC,IME_SMODE_NONE);
+						IME_CMODE_ALPHANUMERIC, IME_SMODE_NONE);
 			}
 		}else{
 */
 			// 希望状態でなければ変更
 			if ( ImmGetOpenStatus(hIMC) ? !status : status ){
-				ImmSetOpenStatus(hIMC,status);
+				ImmSetOpenStatus(hIMC, status);
 			}
 //		}
 		ImmReleaseContext(hWnd, hIMC);
@@ -822,17 +825,17 @@ PPXDLL void PPXAPI SetIMEStatus(HWND hWnd,int status)
 -----------------------------------------------------------------------------*/
 PPXDLL void PPXAPI SetIMEDefaultStatus(HWND hWnd)
 {
-	if ( (hWnd != NULL) && GetCustDword(T("X_IME"),0) ) SetIMEStatus(hWnd,0);
+	if ( (hWnd != NULL) && GetCustDword(T("X_IME"), 0) ) SetIMEStatus(hWnd, 0);
 	// ↓押されっぱなしになった場合に備える
-	if ( GetShiftKey() & K_e ) keybd_event((BYTE)X_es,0,KEYEVENTF_KEYUP,0);
+	if ( GetShiftKey() & K_e ) keybd_event((BYTE)X_es, 0, KEYEVENTF_KEYUP, 0);
 }
 
-BOOL CheckLoadSize(HWND hWnd,DWORD *sizeL)
+BOOL CheckLoadSize(HWND hWnd, DWORD *sizeL)
 {
 	DWORD X_wsiz = IMAGESIZELIMIT;
 	int result;
 
-	GetCustData(T("X_wsiz"),&X_wsiz,sizeof X_wsiz);
+	GetCustData(T("X_wsiz"), &X_wsiz, sizeof X_wsiz);
 	if ( *sizeL <= X_wsiz ) return TRUE;
 
 	if ( hWnd == (HWND)LFI_ALWAYSLIMIT ){
@@ -846,7 +849,7 @@ BOOL CheckLoadSize(HWND hWnd,DWORD *sizeL)
 			hOldFocusWnd = GetForegroundWindow();
 			ForceSetForegroundWindow(hWnd);
 		}
-		result = PMessageBox(hWnd,MES_QOSL,T("Warning"),
+		result = PMessageBox(hWnd, MES_QOSL, T("Warning"),
 				MB_ICONEXCLAMATION | MB_YESNOCANCEL);
 		if ( (hWnd != NULL) && (hOldFocusWnd != hWnd) ){
 			ForceSetForegroundWindow(hOldFocusWnd); // C4701ok
@@ -866,7 +869,7 @@ PPXDLL ERRORCODE PPXAPI LoadFileImage(const TCHAR *filename, DWORD margin, char 
 {
 	BOOL useheap; // ヒープを確保したなら true
 	HANDLE hFile;
-	DWORD sizeL,sizeH;		// ファイルの大きさ
+	DWORD sizeL, sizeH;		// ファイルの大きさ
 	ERRORCODE result;
 	HWND hWnd = NULL;
 										// ファイルを開く ---------------------
@@ -876,7 +879,7 @@ PPXDLL ERRORCODE PPXAPI LoadFileImage(const TCHAR *filename, DWORD margin, char 
 	if ( hFile == INVALID_HANDLE_VALUE ){
 		return GetLastError();
 /*
-		if ( tstrcmp(filename,T("<")) == 0 ){
+		if ( tstrcmp(filename, T("<")) == 0 ){
 			hFile = GetStdHandle(STD_INPUT_HANDLE);
 		}
 		if ( hFile == INVALID_HANDLE_VALUE ) return GetLastError();
@@ -888,7 +891,7 @@ PPXDLL ERRORCODE PPXAPI LoadFileImage(const TCHAR *filename, DWORD margin, char 
 		hWnd = (HWND)filesize;
 		filesize = NULL;
 	}
-	sizeL = GetFileSize(hFile,&sizeH);
+	sizeL = GetFileSize(hFile, &sizeH);
 	if ( (sizeL == MAX32) && ((result = GetLastError()) != NO_ERROR) ){
 		CloseHandle(hFile);
 		return result;
@@ -905,13 +908,13 @@ PPXDLL ERRORCODE PPXAPI LoadFileImage(const TCHAR *filename, DWORD margin, char 
 		if ( imgsize < sizeL ) sizeL = imgsize;
 		if ( imgsize < (sizeL + margin) ) margin = imgsize - sizeL;
 	}else{						// 内部確保
-		if ( CheckLoadSize(hWnd,&sizeL) == FALSE ){
+		if ( CheckLoadSize(hWnd, &sizeL) == FALSE ){
 			CloseHandle(hFile);
 			return ERROR_CANCELLED;
 		}
 
 		useheap = TRUE;
-		if ( (*image = HeapAlloc(ProcHeap,0,sizeL + margin)) == NULL ){
+		if ( (*image = HeapAlloc(ProcHeap, 0, sizeL + margin)) == NULL ){
 			result = GetLastError();
 			CloseHandle(hFile);
 			return result;
@@ -935,13 +938,13 @@ struct CHARSETLISTSTRUCT {
 	int size;
 	int type;
 } charsetlist[] = {
-	{"SHIFT_JIS",9,	CP__SJIS},
-	{"X-SJIS",6,	CP__SJIS},
-	{"EUC",3,		VTYPE_EUCJP},
-	{"X-EUC",5,		VTYPE_EUCJP},
-	{"UTF-7",5,		VTYPE_UTF7},
-	{"UTF-8",5,		CP_UTF8},
-	{NULL,0,0}
+	{"SHIFT_JIS", 9,	CP__SJIS},
+	{"X-SJIS", 6,		CP__SJIS},
+	{"EUC", 3,			VTYPE_EUCJP},
+	{"X-EUC", 5,		VTYPE_EUCJP},
+	{"UTF-7", 5,		VTYPE_UTF7},
+	{"UTF-8", 5,		CP_UTF8},
+	{NULL, 0, 0}
 };
 
 // Win95/NT4 eng RTM は VTYPE_IBM / VTYPE_ANSI / VTYPE_SYSTEMCP のみ使用可能
@@ -954,7 +957,7 @@ UINT VTypeToCPlist[VTypeToCPlist_max] = {
 	CP__UTF16L,	// VTYPE_UNICODE
 	CP__UTF16B,	// VTYPE_UNICODEB
 	CP__SJIS,	// VTYPE_SJISNEC
-	CP__SJIS,	// VTYPE_SJISB,
+	CP__SJIS,	// VTYPE_SJISB
 	CP__SJIS,	// VTYPE_KANA
 	CP_UTF8,	// VTYPE_UTF8
 	CP_UTF7,	// VTYPE_UTF7
@@ -984,13 +987,13 @@ PPXDLL int PPXAPI GetTextCodeType(const BYTE *image, DWORD size)
 	int cnt; // utf-8の２バイト目以降のバイト数カウント & 7bit限定チェッカ
 
 	if ( *image >= 0xef ){ // UNICODE ヘッダの可能性
-		if ( memcmp(image,UTF8HEADER,UTF8HEADERSIZE) == 0 ){
+		if ( memcmp(image, UTF8HEADER, UTF8HEADERSIZE) == 0 ){
 			return VTYPE_UTF8;
 		}
-		if ( memcmp(image,UCF2HEADER,UCF2HEADERSIZE) == 0 ){
+		if ( memcmp(image, UCF2HEADER, UCF2HEADERSIZE) == 0 ){
 			return VTYPE_UNICODE;
 		}
-		if ( memcmp(image,UCF2BEHEADER,UCF2HEADERSIZE) == 0 ){
+		if ( memcmp(image, UCF2BEHEADER, UCF2HEADERSIZE) == 0 ){
 			return VTYPE_UNICODEB;
 		}
 	}
@@ -1001,7 +1004,7 @@ PPXDLL int PPXAPI GetTextCodeType(const BYTE *image, DWORD size)
 	for ( ptr = image ; ptr < maximage ; ptr++ ){
 		BYTE c;
 
-		if ( (*ptr == 'c') && !memcmp(ptr + 1,"harset",6) ){
+		if ( (*ptr == 'c') && !memcmp(ptr + 1, "harset", 6) ){
 			struct CHARSETLISTSTRUCT *cl;
 
 			ptr += 7;
@@ -1015,7 +1018,7 @@ PPXDLL int PPXAPI GetTextCodeType(const BYTE *image, DWORD size)
 				SkipSepA((char **)&ptr);
 			}
 			for ( cl = charsetlist ; cl->name ; cl++ ){
-				if ( memicmp(ptr,cl->name,cl->size) == 0 ){
+				if ( memicmp(ptr, cl->name, cl->size) == 0 ){
 					if ( (cl->type == CP__SJIS) && (GetACP() == CP__SJIS) ){
 						return VTYPE_SYSTEMCP;
 					}
@@ -1042,7 +1045,7 @@ PPXDLL int PPXAPI GetTextCodeType(const BYTE *image, DWORD size)
 				c = *up;
 				up += 2;
 				// 通常 UNICODEに存在しない文字を見つけたら中止
-				// 2b-2dは一部(4.0↑)あり,d8-dfはサロゲートだが、ここでは×に
+				// 2b-2dは一部(4.0↑)あり, d8-dfはサロゲートだが、ここでは×に
 				if ( (c == 8) || (c == 0x1c) || ((c >= 0x2b) && (c <= 0x2d)) ||
 					 ((c >= 0xd8) && (c <= 0xf8)) ){
 					c = 8;
@@ -1087,7 +1090,7 @@ noutf8:
 		if ( ptr >= maximage ) return VTYPE_EUCJP;
 		c = *ptr++;
 		if ( c < 0x80 ) continue;		// 00-7f
-		if ( (c != 0x8e) && (c < 0xa1) ) break;	// SS2,1bytes KANA 以外
+		if ( (c != 0x8e) && (c < 0xa1) ) break;	// SS2, 1bytes KANA 以外
 										// ２バイト目チェック
 		c = *ptr;
 		if ( ((c < 0xa1) && c) || (c >= 0xff) ) break; // 範囲外
@@ -1113,7 +1116,7 @@ noutf8:
 }
 
 // 新しいイメージを作成したときは、負の値
-int FixTextImage(const char *src,DWORD memsize,TCHAR **dest,int usecp)
+int FixTextImage(const char *src, DWORD memsize, TCHAR **dest, int usecp)
 {
 	int charcode;
 	DWORD size;
@@ -1124,7 +1127,7 @@ int FixTextImage(const char *src,DWORD memsize,TCHAR **dest,int usecp)
 	if ( usecp > 0 ){
 		charcode = usecp;
 	}else{
-		charcode = GetTextCodeType((const BYTE *)src,memsize);
+		charcode = GetTextCodeType((const BYTE *)src, memsize);
 	}
 	switch (charcode){
 		case VTYPE_UNICODE: // BOM あり
@@ -1132,16 +1135,16 @@ int FixTextImage(const char *src,DWORD memsize,TCHAR **dest,int usecp)
 		case CP__UTF16L: // BOM なし
 		case CP__UTF16B:
 			if ( (charcode == VTYPE_UNICODE) || (charcode == CP__UTF16L) ){
-				if ( memcmp(src,UCF2HEADER,UCF2HEADERSIZE) == 0 ){
+				if ( memcmp(src, UCF2HEADER, UCF2HEADERSIZE) == 0 ){
 					src += UCF2HEADERSIZE;
 				}
 			}else{ // VTYPE_UNICODEB / CP__UTF16B
 				WCHAR *udest;
-				if ( memcmp(src,UCF2BEHEADER,UCF2HEADERSIZE) == 0 ){
+				if ( memcmp(src, UCF2BEHEADER, UCF2HEADERSIZE) == 0 ){
 					src += UCF2HEADERSIZE;
 				}
 				size = wcslen32((WCHAR *)src) + 1;
-				tmpimage = HeapAlloc(DLLheap,0,size * sizeof(WCHAR));
+				tmpimage = HeapAlloc(DLLheap, 0, size * sizeof(WCHAR));
 				if ( tmpimage != NULL ){ // バイトオーダ変換
 					udest = (WCHAR *)tmpimage;
 					while ( size-- ){
@@ -1174,13 +1177,13 @@ int FixTextImage(const char *src,DWORD memsize,TCHAR **dest,int usecp)
 			break;
 
 		case VTYPE_EUCJP: {
-			BYTE *srcp,*dstp;
-			int c,d;
+			BYTE *srcp, *dstp;
+			int c, d;
 
 			size = strlen32(src) + 1;
-			tmpimage = HeapAlloc(DLLheap,0,size);
+			tmpimage = HeapAlloc(DLLheap, 0, size);
 			if ( tmpimage == NULL ) break;
-			memcpy(tmpimage,src,size);
+			memcpy(tmpimage, src, size);
 			dstp = srcp = (BYTE *)tmpimage;
 			while ( *srcp != '\0' ){
 				c = *srcp++;
@@ -1188,7 +1191,7 @@ int FixTextImage(const char *src,DWORD memsize,TCHAR **dest,int usecp)
 					*dstp++ = (BYTE)c;
 					continue;
 				}
-				if ( c == 0x8e ){		//SS2,1bytes KANA
+				if ( c == 0x8e ){		//SS2, 1bytes KANA
 					*dstp++ = *srcp++;
 					continue;
 				}
@@ -1224,13 +1227,13 @@ int FixTextImage(const char *src,DWORD memsize,TCHAR **dest,int usecp)
 		}
 #if 0
 		case VTYPE_JIS: {
-			BYTE *srcp,*dstp;
-			int c,d, jismode = 0;
+			BYTE *srcp, *dstp;
+			int c, d, jismode = 0;
 
 			size = strlen32(src) + 1;
-			tmpimage = HeapAlloc(DLLheap,0,size);
+			tmpimage = HeapAlloc(DLLheap, 0, size);
 			if ( tmpimage == NULL ) break;
-			memcpy(tmpimage,src,size);
+			memcpy(tmpimage, src, size);
 			dstp = srcp = (BYTE *)tmpimage;
 			while ( *srcp != '\0' ){
 				if ( jismode == 0 ){ // 非JIS
@@ -1295,8 +1298,8 @@ int FixTextImage(const char *src,DWORD memsize,TCHAR **dest,int usecp)
 	cp = (charcode < VTypeToCPlist_max) ? VTypeToCPlist[charcode] : charcode;
 	flags = (cp == CP_UTF8) ? 0 : MB_PRECOMPOSED;
 #ifdef UNICODE
-	size = MultiByteToWideCharU8(cp,flags,src,-1,NULL,0);
-	*dest = HeapAlloc(ProcHeap,0,TSTROFF(size));
+	size = MultiByteToWideCharU8(cp, flags, src, -1, NULL, 0);
+	*dest = HeapAlloc(ProcHeap, 0, TSTROFF(size));
 	if ( *dest == NULL ){
 		if ( tmpimage != NULL ){
 			*dest = (TCHAR *)tmpimage;
@@ -1306,8 +1309,8 @@ int FixTextImage(const char *src,DWORD memsize,TCHAR **dest,int usecp)
 			return charcode;
 		}
 	}
-	MultiByteToWideCharU8(cp,flags,src,-1,*dest,size);
-	if ( tmpimage != NULL ) HeapFree(ProcHeap,0,tmpimage);
+	MultiByteToWideCharU8(cp, flags, src, -1, *dest, size);
+	if ( tmpimage != NULL ) HeapFree(ProcHeap, 0, tmpimage);
 	return -charcode;
 
 #else // Multibyte
@@ -1319,36 +1322,36 @@ int FixTextImage(const char *src,DWORD memsize,TCHAR **dest,int usecp)
 		BOOL reqfree;
 
 		if ( (cp != CP__UTF16L) && (cp != CP__UTF16B) ){ // 一旦UNICODEに変換
-			size = MultiByteToWideCharU8(cp,flags,src,-1,NULL,0);
-			srcW = HeapAlloc(ProcHeap,0,size * sizeof(WCHAR));
+			size = MultiByteToWideCharU8(cp, flags, src, -1, NULL, 0);
+			srcW = HeapAlloc(ProcHeap, 0, size * sizeof(WCHAR));
 			if ( srcW == NULL ){
 				*dest = (TCHAR *)src;
 				return charcode;
 			}
-			MultiByteToWideCharU8(cp,flags,src,-1,srcW,size);
+			MultiByteToWideCharU8(cp, flags, src, -1, srcW, size);
 			reqfree = TRUE;
 		}else{
 			srcW = (WCHAR *)src;
 			reqfree = FALSE;
 		}
 		// system cp に変換
-		size = WideCharToMultiByte(CP_ACP,0,srcW,-1,NULL,0,NULL,NULL);
-		*dest = HeapAlloc(ProcHeap,0,size);
+		size = WideCharToMultiByte(CP_ACP, 0, srcW, -1, NULL, 0, NULL, NULL);
+		*dest = HeapAlloc(ProcHeap, 0, size);
 		if ( *dest == NULL ){
-			HeapFree(ProcHeap,0,srcW);
+			HeapFree(ProcHeap, 0, srcW);
 			*dest = (TCHAR *)src;
-			if ( tmpimage != NULL ) HeapFree(ProcHeap,0,tmpimage);
+			if ( tmpimage != NULL ) HeapFree(ProcHeap, 0, tmpimage);
 			return charcode;
 		}
-		WideCharToMultiByte(CP_ACP,0,srcW,-1,*dest,size,NULL,NULL);
-		if ( IsTrue(reqfree) ) HeapFree(ProcHeap,0,srcW);
-		if ( tmpimage != NULL ) HeapFree(ProcHeap,0,tmpimage);
+		WideCharToMultiByte(CP_ACP, 0, srcW, -1, *dest, size, NULL, NULL);
+		if ( IsTrue(reqfree) ) HeapFree(ProcHeap, 0, srcW);
+		if ( tmpimage != NULL ) HeapFree(ProcHeap, 0, tmpimage);
 		return -charcode;
 	}
 #endif
 }
 
-PPXDLL ERRORCODE PPXAPI LoadTextImage(const TCHAR *filename,TCHAR **image,TCHAR **readpoint,TCHAR **maxptr)
+PPXDLL ERRORCODE PPXAPI LoadTextImage(const TCHAR *filename, TCHAR **image, TCHAR **readpoint, TCHAR **maxptr)
 {
 	ERRORCODE result;
 	TCHAR *newimage;
@@ -1362,8 +1365,8 @@ PPXDLL ERRORCODE PPXAPI LoadTextImage(const TCHAR *filename,TCHAR **image,TCHAR 
 		size = TSTROFF32(*maxptr - *image);
 	}
 
-	if ( FixTextImage((char *)*image,size,&newimage,0) < 0 ){
-		HeapFree(ProcHeap,0,*image);
+	if ( FixTextImage((char *)*image, size, &newimage, 0) < 0 ){
+		HeapFree(ProcHeap, 0, *image);
 		*image = newimage;
 	}
 	*readpoint = newimage;
@@ -1371,12 +1374,12 @@ PPXDLL ERRORCODE PPXAPI LoadTextImage(const TCHAR *filename,TCHAR **image,TCHAR 
 	return NO_ERROR;
 }
 
-BOOL MakeTempEntrySub(TCHAR *tempath,DWORD attribute)
+BOOL MakeTempEntrySub(TCHAR *tempath, DWORD attribute)
 {
-	TCHAR buf[VFPS],*p;
+	TCHAR buf[VFPS], *p;
 	int count = 16;
 
-	tstrcpy(buf,tempath);
+	tstrcpy(buf, tempath);
 					// 長さ制限を行う
 	p = buf;
 	while( *p != '\0' ){
@@ -1387,18 +1390,18 @@ BOOL MakeTempEntrySub(TCHAR *tempath,DWORD attribute)
 		p += Ismulti(*p) ? 2 : 1;
 	}
 
-	CatPath(tempath,TempPath,buf);
+	CatPath(tempath, TempPath, buf);
 	GetUniqueEntryName(tempath);
 	if ( attribute & FILE_ATTRIBUTE_DIRECTORY ){
-		return CreateDirectory(tempath,NULL);
+		return CreateDirectory(tempath, NULL);
 	}
 	return TRUE;
 }
 
-PPXDLL BOOL PPXAPI MakeTempEntry(DWORD bufsize,TCHAR *tempath,DWORD attribute)
+PPXDLL BOOL PPXAPI MakeTempEntry(DWORD bufsize, TCHAR *tempath, DWORD attribute)
 {
 	DWORD seed;
-	int pathlen,i;
+	int pathlen, i;
 
 	if ( TempPath[0] == '\0' ){
 		GetTempPath(MAX_PATH, TempPath);
@@ -1409,21 +1412,22 @@ PPXDLL BOOL PPXAPI MakeTempEntry(DWORD bufsize,TCHAR *tempath,DWORD attribute)
 	// 2: "\\" と "\n" 8:filename 4:ext
 	if ( (tstrlen(TempPath) + ( 2 + 8 + 4 )) >= (size_t)bufsize ){
 		if ( bufsize >= TSIZEOF(StrDummyTempPath) ){
-			tstrcpy(tempath,StrDummyTempPath);
+			tstrcpy(tempath, StrDummyTempPath);
 		}
 		return FALSE;
 	}
 
 	if ( attribute & FILE_ATTRIBUTE_LABEL ){
-		return MakeTempEntrySub(tempath,attribute);
+		return MakeTempEntrySub(tempath, attribute);
 	}
 
-	CatPath(tempath,TempPath,NilStr);
+	CatPath(tempath, TempPath, NilStr);
 
 	if ( attribute & FILE_ATTRIBUTE_COMPRESSED ){
-		resetflag(attribute,FILE_ATTRIBUTE_COMPRESSED);
-		if ( GetEnvironmentVariable(StrTempExtractPath,tempath,MAX_PATH) != 0 ){
-			CatPath(NULL,tempath,NilStr);
+		resetflag(attribute, FILE_ATTRIBUTE_COMPRESSED);
+		if ( (NO_ERROR == GetCustTable(T("_others"), T("ExtractTemp"), tempath, MAX_PATH)) ||
+			(GetEnvironmentVariable(StrTempExtractPath, tempath, MAX_PATH) != 0) ){
+			CatPath(NULL, tempath, NilStr);
 		}
 	}
 	if ( attribute == 0 ) return TRUE;
@@ -1433,14 +1437,14 @@ PPXDLL BOOL PPXAPI MakeTempEntry(DWORD bufsize,TCHAR *tempath,DWORD attribute)
 	for ( i = 0 ; i < 0x10000 ; i++ ){
 		ERRORCODE result;
 
-		wsprintf(tempath + pathlen,T("PPX%X.TMP"),LOWORD(seed));
+		wsprintf(tempath + pathlen, T("PPX%X.TMP"), LOWORD(seed));
 		if ( attribute & FILE_ATTRIBUTE_DIRECTORY ){
-			if ( IsTrue(CreateDirectory(tempath,NULL)) ) return TRUE;
+			if ( IsTrue(CreateDirectory(tempath, NULL)) ) return TRUE;
 		}else{
 			HANDLE hF;
 
-			hF = CreateFile(tempath,GENERIC_WRITE,0,NULL,CREATE_NEW,
-					FILE_ATTRIBUTE_NORMAL,NULL);
+			hF = CreateFile(tempath, GENERIC_WRITE, 0, NULL, CREATE_NEW,
+					FILE_ATTRIBUTE_NORMAL, NULL);
 			if ( hF != INVALID_HANDLE_VALUE ){
 				CloseHandle(hF);
 				return TRUE;
@@ -1449,7 +1453,7 @@ PPXDLL BOOL PPXAPI MakeTempEntry(DWORD bufsize,TCHAR *tempath,DWORD attribute)
 		result = GetLastError();
 
 		if ( result == ERROR_PATH_NOT_FOUND ){
-			if ( CreateDirectory(TempPath,NULL) == FALSE ) break;
+			if ( CreateDirectory(TempPath, NULL) == FALSE ) break;
 			continue;
 		}
 		if ( result != ERROR_FILE_EXISTS ){
@@ -1460,34 +1464,34 @@ PPXDLL BOOL PPXAPI MakeTempEntry(DWORD bufsize,TCHAR *tempath,DWORD attribute)
 	return FALSE;
 }
 
-BOOL DeleteDirectories(const TCHAR *path,BOOL notify)
+BOOL DeleteDirectories(const TCHAR *path, BOOL notify)
 {
 	TCHAR buf[VFPS];
 	WIN32_FIND_DATA	ff;
 	HANDLE hFF;
 
 	if ( !(GetFileAttributes(path) & FILE_ATTRIBUTE_REPARSE_POINT) ){
-		CatPath(buf,(TCHAR *)path,WildCard_All);
-		hFF = FindFirstFileL(buf,&ff);
+		CatPath(buf, (TCHAR *)path, WildCard_All);
+		hFF = FindFirstFileL(buf, &ff);
 		if ( INVALID_HANDLE_VALUE != hFF ){
 			do{
 				if ( IsRelativeDirectory(ff.cFileName) ) continue;
-				CatPath(buf,(TCHAR *)path,ff.cFileName);
+				CatPath(buf, (TCHAR *)path, ff.cFileName);
 
 				if ( ff.dwFileAttributes & FILE_ATTRIBUTE_READONLY ){
-					SetFileAttributesL(buf,FILE_ATTRIBUTE_NORMAL);
+					SetFileAttributesL(buf, FILE_ATTRIBUTE_NORMAL);
 				}
 				if ( ff.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ){
-					DeleteDirectories(buf,FALSE);
+					DeleteDirectories(buf, FALSE);
 				}else{
 					DeleteFileL(buf);
 				}
-			}while(FindNextFile(hFF,&ff));
+			}while(FindNextFile(hFF, &ff));
 			FindClose(hFF);
 		}
 	}
 	if( IsTrue(RemoveDirectoryL(path)) ){
-		if ( IsTrue(notify) ) SHChangeNotify(SHCNE_RMDIR,SHCNF_PATH,path,NULL);
+		if ( IsTrue(notify) ) SHChangeNotify(SHCNE_RMDIR, SHCNF_PATH, path, NULL);
 		return TRUE;
 	}
 	return FALSE;
@@ -1505,13 +1509,13 @@ struct GETCHILD {
 	POINT pos;
 };
 
-BOOL CALLBACK GetWindowFromPointProc(HWND hWnd,LPARAM gc)
+BOOL CALLBACK GetWindowFromPointProc(HWND hWnd, LPARAM gc)
 {
 	RECT box;
 
 	if ( !IsWindowVisible(hWnd) ) return TRUE; // HIDE状態
-	GetWindowRect(hWnd,&box);
-	if (PtInRect(&box,((struct GETCHILD *)gc)->pos) &&
+	GetWindowRect(hWnd, &box);
+	if (PtInRect(&box, ((struct GETCHILD *)gc)->pos) &&
 			(((struct GETCHILD *)gc)->box.left   <= box.left  ) &&
 			(((struct GETCHILD *)gc)->box.top    <= box.top   ) &&
 			(((struct GETCHILD *)gc)->box.right  >= box.right ) &&
@@ -1522,7 +1526,7 @@ BOOL CALLBACK GetWindowFromPointProc(HWND hWnd,LPARAM gc)
 }
 
 /* 指定座標のウィンドウを厳密に抽出する sPos:screen*/
-HWND GetChildWindowFromPoint(HWND hWnd,POINT *pos)
+HWND GetChildWindowFromPoint(HWND hWnd, POINT *pos)
 {
 	struct GETCHILD gc;
 	HWND hPWnd;
@@ -1531,13 +1535,13 @@ HWND GetChildWindowFromPoint(HWND hWnd,POINT *pos)
 	if ( gc.hWnd == NULL ) return gc.hWnd;
 							// 子を検索、隠れているのを探すため、
 							// ChildWindowFromPoint をあえて使わない
-	GetWindowRect(gc.hWnd,&gc.box);
+	GetWindowRect(gc.hWnd, &gc.box);
 	gc.pos = *pos;
-	if ( !(GetWindowLong(gc.hWnd,GWL_STYLE) & ((WS_CAPTION | WS_SYSMENU) & ~WS_BORDER)) ){
+	if ( !(GetWindowLong(gc.hWnd, GWL_STYLE) & ((WS_CAPTION | WS_SYSMENU) & ~WS_BORDER)) ){
 		hPWnd = GetParent(gc.hWnd);
 		if ( hPWnd != NULL ) gc.hWnd = hPWnd;
 	}
-	EnumChildWindows(gc.hWnd,GetWindowFromPointProc,(LPARAM)&gc);
+	EnumChildWindows(gc.hWnd, GetWindowFromPointProc, (LPARAM)&gc);
 	return gc.hWnd;
 }
 #endif
@@ -1547,7 +1551,7 @@ HWND GetChildWindowFromPoint(HWND hWnd,POINT *pos)
 HWND GetCaptionWindow(HWND hWnd)
 {
 	// タイトルバーを持っているかを確認
-	while ( !(GetWindowLong(hWnd,GWL_STYLE) & (WS_CAPTION & ~WS_BORDER)) ){
+	while ( !(GetWindowLong(hWnd, GWL_STYLE) & (WS_CAPTION & ~WS_BORDER)) ){
 		HWND htWnd;
 
 		htWnd = GetParent(hWnd);
@@ -1564,7 +1568,7 @@ HWND GetParentCaptionWindow(HWND hWnd)
 
 	nhWnd = hWnd;
 	while ( (nhWnd = GetParent(nhWnd)) != NULL ){
-		if ( GetWindowLong(nhWnd,GWL_STYLE) & (WS_CAPTION & ~WS_BORDER) ){
+		if ( GetWindowLong(nhWnd, GWL_STYLE) & (WS_CAPTION & ~WS_BORDER) ){
 			return nhWnd;
 		}
 	}
@@ -1575,18 +1579,18 @@ HWND GetParentCaptionWindow(HWND hWnd)
 // ウィンドウを親ウィンドウのまん中に移動させる -------------------------------
 PPXDLL void PPXAPI CenterWindow(HWND hWnd)
 {
-	MoveCenterWindow(hWnd,GetParentCaptionWindow(hWnd));
+	MoveCenterWindow(hWnd, GetParentCaptionWindow(hWnd));
 }
 
-PPXDLL void PPXAPI MoveCenterWindow(HWND hWnd,HWND hParentWnd)
+PPXDLL void PPXAPI MoveCenterWindow(HWND hWnd, HWND hParentWnd)
 {
-	RECT box,pbox,desk;
+	RECT box, pbox, desk;
 	int parentheight;
 
-	GetDesktopRect( (hParentWnd != NULL) ? hParentWnd : hWnd,&desk);
-	GetWindowRect(hWnd,&box);
+	GetDesktopRect( (hParentWnd != NULL) ? hParentWnd : hWnd, &desk);
+	GetWindowRect(hWnd, &box);
 	if ( hParentWnd != NULL ){
-		GetWindowRect(hParentWnd,&pbox);
+		GetWindowRect(hParentWnd, &pbox);
 	}else{
 		pbox = desk;
 	}
@@ -1614,7 +1618,7 @@ PPXDLL void PPXAPI MoveCenterWindow(HWND hWnd,HWND hParentWnd)
 	}
 	if ( box.top < desk.top ) box.top = desk.top;
 
-	MoveWindow(hWnd, box.left,box.top, box.right,box.bottom,TRUE);
+	MoveWindow(hWnd, box.left, box.top, box.right, box.bottom, TRUE);
 }
 
 typedef struct {
@@ -1622,7 +1626,7 @@ typedef struct {
 	DWORD dwICC;
 } INITCOMMONCONTROLSEXSTRUCT;
 INITCOMMONCONTROLSEXSTRUCT UseCommonControls = {
-	sizeof(INITCOMMONCONTROLSEXSTRUCT),0
+	sizeof(INITCOMMONCONTROLSEXSTRUCT), 0
 };
 
 //  -------------------------------
@@ -1644,33 +1648,50 @@ PPXDLL HANDLE PPXAPI LoadCommonControls(DWORD usecontrol)
 		if ( DInitCommonControlsEx != NULL ){
 			UseCommonControls.dwICC = 0;
 		}else{
-			GETDLLPROC(hComctl32,InitCommonControls);
+			GETDLLPROC(hComctl32, InitCommonControls);
 			if ( DInitCommonControls != NULL ) DInitCommonControls();
 			return hComctl32;
 		}
 	}
 	if ( (UseCommonControls.dwICC & usecontrol) != usecontrol ){	// まだ未ロードがある
-		setflag(UseCommonControls.dwICC,usecontrol);
-		GETDLLPROC(hComctl32,InitCommonControlsEx);
+		setflag(UseCommonControls.dwICC, usecontrol);
+		GETDLLPROC(hComctl32, InitCommonControlsEx);
 		DInitCommonControlsEx(&UseCommonControls);
 	}
 	return hComctl32;
 }
 
 #pragma argsused
-BOOL CALLBACK EnumChildTextFixProc(HWND hWnd,LPARAM lParam)
+BOOL CALLBACK EnumChildTextFixProc(HWND hWnd, LPARAM lParam)
 {
 	TCHAR name[8];
 	const TCHAR *findtext;
 	UnUsedParam(lParam);
 
-	wsprintf(name,T("%04X"),GetWindowLongPtr(hWnd,GWLP_ID));
+	wsprintf(name, T("%04X"), GetWindowLongPtr(hWnd, GWLP_ID));
 	findtext = SearchMessageText(name);
-	if ( findtext != NULL ) SetWindowText(hWnd,findtext);
+	if ( findtext != NULL ) SetWindowText(hWnd, findtext);
 	return TRUE;
 }
 
-PPXDLL void PPXAPI LocalizeDialogText(HWND hDlg,DWORD titleID)
+#define TESTDARK 0
+#if TESTDARK
+const WCHAR M1[] = L"explorer";
+const WCHAR M2[] = L"DarkMode_Explorer";
+DefineWinAPI(HRESULT, DwmSetWindowAttribute, (HWND, DWORD, LPCVOID, DWORD));
+DefineWinAPI(HRESULT, SetWindowTheme, (HWND, LPCWSTR name, LPCWSTR idlist));
+DefineWinAPI(BOOL, AllowDarkModeForWindow, (HWND, BOOL));
+
+#pragma argsused
+BOOL CALLBACK EnumDarkFixProc(HWND hWnd, LPARAM lParam)
+{
+	BOOL mode = TRUE;
+	DSetWindowTheme(hWnd, M2, NULL);
+	DDwmSetWindowAttribute(hWnd, 19, &mode, sizeof(mode));
+	return TRUE;
+}
+#endif
+PPXDLL void PPXAPI LocalizeDialogText(HWND hDlg, DWORD titleID)
 {
 	if ( MessageTextTable == NULL ) LoadMessageTextTable();
 	if ( MessageTextTable != NOMESSAGETEXT ){
@@ -1678,43 +1699,68 @@ PPXDLL void PPXAPI LocalizeDialogText(HWND hDlg,DWORD titleID)
 			TCHAR name[8];
 			const TCHAR *findtext;
 
-			wsprintf(name,T("%04X"),titleID);
+			wsprintf(name, T("%04X"), titleID);
 			findtext = SearchMessageText(name);
-			if ( findtext != NULL ) SetWindowText(hDlg,findtext);
+			if ( findtext != NULL ) SetWindowText(hDlg, findtext);
 		}
-		EnumChildWindows(hDlg,EnumChildTextFixProc,0);
+		EnumChildWindows(hDlg, EnumChildTextFixProc, 0);
 	}
+
+#if TESTDARK
+{
+	HANDLE hUxtheme;
+
+	hUxtheme = GetModuleHandle(T("uxtheme.dll"));
+	if ( hUxtheme != NULL ){
+		GETDLLPROC(hUxtheme, SetWindowTheme);
+		if ( DSetWindowTheme != NULL ){
+			BOOL mode = TRUE;
+
+			DAllowDarkModeForWindow = (impAllowDarkModeForWindow)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(133));
+			DAllowDarkModeForWindow(hDlg, TRUE);
+//			DSetWindowTheme(hDlg, M1, NULL);
+			DSetWindowTheme(hDlg, M2, NULL);
+//			DSetWindowTheme(hDlg, L"", L"");	// Classic
+//			DSetWindowTheme(hDlg, NULL, NULL);	// 最新テーマ？
+			GETDLLPROC(GetModuleHandle(T("dwmapi.dll")), DwmSetWindowAttribute);
+			DDwmSetWindowAttribute(hDlg, 19, &mode, sizeof(mode));
+			EnumChildWindows(hDlg, EnumDarkFixProc, 0);
+		}
+	}
+}
+#endif
+
 }
 
 /* ● 1.46+3 未使用みたいなので廃止
 PPXDLL void PPXAPI MessageTextDialog(HWND hDlg)
 {
-	LocalizeDialogText(hDlg,0);
+	LocalizeDialogText(hDlg, 0);
 }
 */
 
-BOOL CheckAjiParam(DWORD mode,const TCHAR *type,const TCHAR *name,TCHAR *param)
+BOOL CheckAjiParam(DWORD mode, const TCHAR *type, const TCHAR *name, TCHAR *param)
 {
 	TCHAR keyword[64];
 
-	wsprintf(keyword,T("%s%s%s"),
-			name,(mode == AJI_SHOW) ? T("show") : T("comp"),type);
-	GetCustTable(T("X_jinfc"),keyword,param,CMDLINESIZE);
+	wsprintf(keyword, T("%s%s%s"),
+			name, (mode == AJI_SHOW) ? T("show") : T("comp"), type);
+	GetCustTable(T("X_jinfc"), keyword, param, CMDLINESIZE);
 	if ( param[0] != '\0' ) return TRUE;
-	GetCustTable(T("X_jinfc"),keyword + tstrlen(name),param,CMDLINESIZE);
+	GetCustTable(T("X_jinfc"), keyword + tstrlen(name), param, CMDLINESIZE);
 	if ( param[0] != '\0' ) return TRUE;
 	return FALSE;
 }
 
-PPXDLL void PPXAPI ActionJobInfo(HWND hWnd,DWORD mode,const TCHAR *name)
+PPXDLL void PPXAPI ActionJobInfo(HWND hWnd, DWORD mode, const TCHAR *name)
 {
-	ActionInfo(hWnd,NULL,mode,name);
+	ActionInfo(hWnd, NULL, mode, name);
 }
 
-PPXDLL void PPXAPI ActionInfo(HWND hWnd,PPXAPPINFO *info,DWORD mode,const TCHAR *name)
+PPXDLL void PPXAPI ActionInfo(HWND hWnd, PPXAPPINFO *info, DWORD mode, const TCHAR *name)
 {
 	HWND hFWnd;
-	DWORD flash,command;
+	DWORD flash, command;
 	TCHAR param[CMDLINESIZE];
 
 	if ( AjiEnterCount > 5 ) return;
@@ -1722,37 +1768,37 @@ PPXDLL void PPXAPI ActionInfo(HWND hWnd,PPXAPPINFO *info,DWORD mode,const TCHAR 
 
 	if ( X_jinfo[0] == MAX32 ){
 		X_jinfo[0] = 1;
-		GetCustData(T("X_jinfo"),X_jinfo,sizeof(X_jinfo));
+		GetCustData(T("X_jinfo"), X_jinfo, sizeof(X_jinfo));
 	}
 	hFWnd = GetForegroundWindow();
 	flash = X_jinfo[mode * 2];
 	if ( (flash > 1) || ((flash == 1) && (hWnd != hFWnd)) ){
-		PPxFlashWindow(hWnd,PPXFLASH_NOFOCUS);
+		PPxFlashWindow(hWnd, PPXFLASH_NOFOCUS);
 	}
 	command = X_jinfo[mode * 2 + 1];
 	if ( (command > 1) || ((command == 1) && (hWnd != hFWnd)) ){
 		param[0] = '\0';
-		if ( IsTrue(CheckAjiParam(mode,T("cmd"),name,param)) ){
-			PP_ExtractMacro(hWnd,info,NULL,param,NULL,0);
+		if ( IsTrue(CheckAjiParam(mode, T("cmd"), name, param)) ){
+			PP_ExtractMacro(hWnd, info, NULL, param, NULL, 0);
 		}else{
-			CheckAjiParam(mode,T("wav"),name,param);
+			CheckAjiParam(mode, T("wav"), name, param);
 			if ( name[0] != '\0' ) PlayWave(param);
 		}
 	}
 	AjiEnterCount--;
 }
 
-PPXDLL BOOL PPXAPI GetCalc(const TCHAR *param,TCHAR *resultstr,int *resultnum)
+PPXDLL BOOL PPXAPI GetCalc(const TCHAR *param, TCHAR *resultstr, int *resultnum)
 {
-	int num,i,j;
+	int num, i, j;
 	const TCHAR *ptr;
 
 	ptr = param;
-	if ( CalcString(&ptr,&num) != CALC_NOERROR ) return FALSE;
+	if ( CalcString(&ptr, &num) != CALC_NOERROR ) return FALSE;
 
 	if ( resultnum != NULL ) *resultnum = num;
 	if ( resultstr != NULL ){
-		char str[6],*bptr;
+		char str[6], *bptr;
 #ifdef UNICODE
 		WCHAR wstr[6];
 		#define usestr wstr
@@ -1771,9 +1817,9 @@ PPXDLL BOOL PPXAPI GetCalc(const TCHAR *param,TCHAR *resultstr,int *resultnum)
 		str[4] = '\0';
 		str[5] = '\0';
 #ifdef UNICODE
-		AnsiToUnicode(str,wstr,6);
+		AnsiToUnicode(str, wstr, 6);
 #endif
-		wsprintf(resultstr,T("D:%ld X:%x U:%lu %s"),num,num,num,usestr);
+		wsprintf(resultstr, T("D:%ld X:%x U:%lu %s"), num, num, num, usestr);
 	}
 	return TRUE;
 }
@@ -1792,18 +1838,18 @@ PPXDLL void PPXAPI FixCharlengthTable(char *table)
 			int i;
 
 			p = (BYTE *)&T_CHRTYPE[1];
-			for ( i = 1 ; i < 0x100 ; i++,p++ ){
+			for ( i = 1 ; i < 0x100 ; i++, p++ ){
 				chrcode[0] = (char)i;
 				*p = (BYTE)((*p & ~3) | (CharNextA(chrcode) - chrcode));
 			}
 		}
 		userlcid = GetUserDefaultLCID();
-		GetLocaleInfo(userlcid,LOCALE_STHOUSAND,localebuf,TSIZEOF(localebuf));
+		GetLocaleInfo(userlcid, LOCALE_STHOUSAND, localebuf, TSIZEOF(localebuf));
 		NumberUnitSeparator = localebuf[0];
-		GetLocaleInfo(userlcid,LOCALE_SDECIMAL,localebuf,TSIZEOF(localebuf));
+		GetLocaleInfo(userlcid, LOCALE_SDECIMAL, localebuf, TSIZEOF(localebuf));
 		NumberDecimalSeparator = localebuf[0];
 	}
-	if ( table != NULL ) memcpy(table,T_CHRTYPE,0x100);
+	if ( table != NULL ) memcpy(table, T_CHRTYPE, 0x100);
 }
 #ifndef TokenElevationType
 #define TokenElevationType 18
@@ -1830,33 +1876,33 @@ PPXDLL const TCHAR * PPXAPI CheckRunAs(void)
 			if ( WinType != WINTYPE_9x )
 			#endif
 			for ( ;; ) {
-				TCHAR tinfo[0x40],user[0x80],domain[0x80];
-				DWORD pid,size,dsize;
+				TCHAR tinfo[0x40], user[0x80], domain[0x80];
+				DWORD pid, size, dsize;
 				SID_NAME_USE snu;
 				HWND hWnd;
 
-				hWnd = FindWindow(T("Progman"),NULL);
+				hWnd = FindWindow(T("Progman"), NULL);
 				if ( hWnd == NULL ) break;
-				GetWindowThreadProcessId(hWnd,&pid);
+				GetWindowThreadProcessId(hWnd, &pid);
 
 				Sm->RunAsMode = RUNAS_RUNAS;
-				hProcess = OpenProcess(PROCESS_QUERY_INFORMATION,FALSE,pid);
+				hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
 				if ( hProcess == NULL ) break;
 
-				if ( OpenProcessToken(hProcess,TOKEN_QUERY,&hToken) == FALSE){
+				if ( OpenProcessToken(hProcess, TOKEN_QUERY, &hToken) == FALSE){
 					break;
 				}
-				if ( GetTokenInformation(hToken,TokenUser,tinfo,
-											sizeof tinfo,&size) == FALSE ){
+				if ( GetTokenInformation(hToken, TokenUser, tinfo,
+							sizeof tinfo, &size) == FALSE ){
 					break;
 				}
 				size = TSIZEOF(user);
 				dsize = TSIZEOF(domain);
-				if ( LookupAccountSid(NULL,((PTOKEN_USER)tinfo)->User.Sid,
-						user,&size,domain,&dsize,&snu) == FALSE ){
+				if ( LookupAccountSid(NULL, ((PTOKEN_USER)tinfo)->User.Sid,
+						user, &size, domain, &dsize, &snu) == FALSE ){
 					break;
 				}
-				if ( !tstricmp(user,UserName) ) Sm->RunAsMode = RUNAS_NORMAL;
+				if ( !tstricmp(user, UserName) ) Sm->RunAsMode = RUNAS_NORMAL;
 				break;
 			}
 			if ( hToken != NULL ) CloseHandle(hToken);
@@ -1868,17 +1914,17 @@ PPXDLL const TCHAR * PPXAPI CheckRunAs(void)
 	if ( WinType >= WINTYPE_VISTA ){
 		HANDLE hCurToken;
 
-		if ( OpenProcessToken(GetCurrentProcess(),TOKEN_QUERY,&hCurToken) ){
+		if ( OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hCurToken) ){
 			DWORD tetsize = 0;
 			xTOKEN_ELEVATION_TYPE tet = xTokenElevationTypeDefault;
 
-			GetTokenInformation(hCurToken,TokenElevationType,&tet,sizeof(tet),&tetsize);
+			GetTokenInformation(hCurToken, TokenElevationType, &tet, sizeof(tet), &tetsize);
 			CloseHandle(hCurToken);
 			if ( tet == xTokenElevationTypeFull ){ // UAC 昇格状態
 				return ElevationString;
 			}else if ( tet == xTokenElevationTypeLimited ){
 				// UAC 制限状態
-				if ( GetCustDword(T("X_dlim"),1) ){
+				if ( GetCustDword(T("X_dlim"), 1) ){
 					return LimitString;
 				}
 			}
@@ -1894,14 +1940,14 @@ void LoadErrorWinAPI(const char *DLLname)
 	#ifdef UNICODE
 		WCHAR nameW[MAX_PATH];
 
-		AnsiToUnicode(DLLname,nameW,MAX_PATH);
-		XMessage(NULL,NULL,XM_GrERRld,T("%s loaderror"),nameW);
+		AnsiToUnicode(DLLname, nameW, MAX_PATH);
+		XMessage(NULL, NULL, XM_GrERRld, T("%s loaderror"), nameW);
 	#else
-		XMessage(NULL,NULL,XM_GrERRld,T("%s loaderror"),DLLname);
+		XMessage(NULL, NULL, XM_GrERRld, T("%s loaderror"), DLLname);
 	#endif
 }
 
-PPXDLL HMODULE PPXAPI LoadWinAPI(const char *DLLname,HMODULE hDLL,LOADWINAPISTRUCT *apis,int mode)
+PPXDLL HMODULE PPXAPI LoadWinAPI(const char *DLLname, HMODULE hDLL, LOADWINAPISTRUCT *apis, int mode)
 {
 	LOADWINAPISTRUCT *list;
 
@@ -1917,7 +1963,7 @@ PPXDLL HMODULE PPXAPI LoadWinAPI(const char *DLLname,HMODULE hDLL,LOADWINAPISTRU
 	}
 	list = apis;
 	while ( list->APIname != NULL ){
-		*list->APIptr = (void (WINAPI *)())GetProcAddress(hDLL,list->APIname);
+		*list->APIptr = (void (WINAPI *)())GetProcAddress(hDLL, list->APIname);
 		if ( *list->APIptr == NULL ){
 			if ( mode & LOADWINAPI_LOAD ){
 				while ( apis != list ){
@@ -1960,7 +2006,7 @@ int LoadDLLflags = 1;
 PPXDLL HMODULE PPXAPI LoadSystemDLL(DWORD dllID)
 {
 	if ( LoadDLLflags == 1 ){
-		if ( (WinType >= WINTYPE_8) || (GetProcAddress(hKernel32,"SetDefaultDllDirectories") != NULL) ){
+		if ( (WinType >= WINTYPE_8) || (GetProcAddress(hKernel32, "SetDefaultDllDirectories") != NULL) ){
 			LoadDLLflags = xLOAD_LIBRARY_SEARCH_SYSTEM32; // SetDefaultDllDirectories がない Win7/Vista では例外が発生する
 		}else{
 			LoadDLLflags = 0;
@@ -1983,13 +2029,13 @@ HMODULE LoadSystemWinAPI(DWORD dllID, LOADWINAPISTRUCT *apis)
 	return hDLL;
 }
 
-void USEFASTCALL SetDlgFocus(HWND hDlg,int id)
+void USEFASTCALL SetDlgFocus(HWND hDlg, int id)
 {
-	SetFocus(GetDlgItem(hDlg,id));
+	SetFocus(GetDlgItem(hDlg, id));
 }
 
 //------------------------------------- 文字列をバイナリに変換
-DWORD ReadEString(TCHAR **string,void *destptr,DWORD destsize)
+DWORD ReadEString(TCHAR **string, void *destptr, DWORD destsize)
 {
 	TCHAR *r;
 	BYTE *w;
@@ -1999,7 +2045,7 @@ DWORD ReadEString(TCHAR **string,void *destptr,DWORD destsize)
 	w = destptr;
 	while( destsize ){
 		DWORD seed;
-		int i,l;
+		int i, l;
 
 		seed = 0;
 		for ( l = 0 ; l < 4 ; l++ ){
@@ -2033,11 +2079,11 @@ DWORD ReadEString(TCHAR **string,void *destptr,DWORD destsize)
 	return size;
 }
 //------------------------------------- バイナリを文字列に変換
-void WriteEString(TCHAR *dest,BYTE *src,DWORD srcsize)
+void WriteEString(TCHAR *dest, BYTE *src, DWORD srcsize)
 {
 	while( srcsize ){
 		DWORD seed;
-		int i,l;
+		int i, l;
 
 		seed = 0;
 		for ( l = 0 ; l < 3 ; l++ ){
@@ -2081,33 +2127,35 @@ WORD FixCharKeycode(WORD key)
 	return key;
 }
 
-#define CRCPOLY 0x0EDB88320
-DWORD crc32(const BYTE *bin,DWORD size,DWORD r)
+const LONG crc32_half[16] = {
+	0x00000000, 0x1DB71064, 0x3B6E20C8, 0x26D930AC,
+	0x76DC4190, 0x6B6B51F4, 0x4DB26158, 0x5005713C,
+	0xEDB88320, 0xF00F9344, 0xD6D6A3E8, 0xCB61B38C,
+	0x9B64C2B0, 0x86D3D2D4, 0xA00AE278, 0xBDBDF21C
+};
+
+DWORD crc32(const BYTE *bin, DWORD size, DWORD r)
 {
-	DWORD i;
+	DWORD crc = ~r;
+	const BYTE *ptr = bin;
+	BYTE chr;
 
 	if ( size == MAX32 ) size = TSTRLENGTH32((TCHAR *)bin);
-	r = ~r;
-	for ( ; size ; size-- ){
-		r ^= (DWORD)(*bin++);
-		for ( i = 0 ; i < 8 ; i++){
-			if (r & LSBIT){
-				r = (r >> 1) ^ CRCPOLY;
-			}else{
-				r >>= 1;
-			}
-		}
+	while ( size-- ){
+		chr = *ptr++;
+		crc = crc32_half[(crc ^  chr      ) & 0x0F] ^ (crc >> 4);
+		crc = crc32_half[(crc ^ (chr >> 4)) & 0x0F] ^ (crc >> 4);
 	}
-	return ~r;
+	return ~crc;
 }
 
 #ifdef UNICODE
-BOOL WriteFileZT(HANDLE fileh,const WCHAR *str,DWORD *wrote)
+BOOL WriteFileZT(HANDLE fileh, const WCHAR *str, DWORD *wrote)
 {
 	char bufA[WriteFileZTSIZE];
 
-	UnicodeToAnsi(str,bufA,WriteFileZTSIZE);
-	return WriteFile(fileh,bufA,strlen32(bufA),wrote,NULL);
+	UnicodeToAnsi(str, bufA, WriteFileZTSIZE);
+	return WriteFile(fileh, bufA, strlen32(bufA), wrote, NULL);
 }
 
 // アラインメントがあっていないテキストをリストやコンボボックスに登録
@@ -2124,13 +2172,13 @@ LRESULT SendUTextMessage_U(HWND hWnd, UINT uMsg, WPARAM wParam, const TCHAR *tex
 }
 #endif
 
-void GetPopMenuPos(HWND hWnd,POINT *pos,WORD key)
+void GetPopMenuPos(HWND hWnd, POINT *pos, WORD key)
 {
 	RECT box;
 
 	GetMessagePosPoint(*pos);
 	if ( key & K_mouse ) return;
-	GetWindowRect(hWnd,&box);
+	GetWindowRect(hWnd, &box);
 	if ( (box.left > pos->x) || (box.top > pos->y) ||
 		 (box.right < pos->x) || (box.bottom < pos->y) ){
 		pos->x = (box.left + box.right) / 2;

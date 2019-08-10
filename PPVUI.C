@@ -25,7 +25,7 @@ BOOL multichar = FALSE;
 #define CSRTM_INERTIA 2	// 慣性スクロール(クリック後)
 #define CSRTM_SELECT 3		// 範囲選択スクロール(クリック中)
 int CursorTimerMode = CSRTM_OFF;
-SIZE OffPos = {0,0}; // 慣性スクロール量
+SIZE OffPos = {0, 0}; // 慣性スクロール量
 static LONG ClkTime;
 static int KeyChar = 0;		// WM_KEYUP 中は 1
 int PosChangeEntry = 0;
@@ -34,16 +34,16 @@ TCHAR PPvMainThreadName[] = T("PPv main");
 
 #ifdef USEDIRECTX
 #pragma argsused
-void CALLBACK DrawTimerProc(HWND hWnd,UINT unuse1,UINT_PTR unuse2,DWORD unuse3)
+void CALLBACK DrawTimerProc(HWND hWnd, UINT unuse1, UINT_PTR unuse2, DWORD unuse3)
 {
-	InvalidateRect(hWnd,NULL,FALSE);
+	InvalidateRect(hWnd, NULL, FALSE);
 }
 #endif
 
-void Isearch(PPV_APPINFO *vinfo,HWND hEditWnd)
+void Isearch(PPV_APPINFO *vinfo, HWND hEditWnd)
 {
 	VOsel.VSstring[0] = '\0';
-	GetWindowText(hEditWnd,VOsel.VSstring,TSIZEOF(VOsel.VSstring));
+	GetWindowText(hEditWnd, VOsel.VSstring, TSIZEOF(VOsel.VSstring));
 
 	if ( BackupOffY < 0 ){
 		if ( BackupOffY == -3 ){
@@ -57,32 +57,32 @@ void Isearch(PPV_APPINFO *vinfo,HWND hEditWnd)
 
 	if ( VOsel.VSstring[0] == '\0' ){
 		VOsel.highlight = FALSE;
-		InvalidateRect(vinfo->info.hWnd,NULL,TRUE);
+		InvalidateRect(vinfo->info.hWnd, NULL, TRUE);
 	}else{
 		#ifdef UNICODE
-			UnicodeToAnsi(VOsel.VSstringW,VOsel.VSstringA,VFPS);
+			UnicodeToAnsi(VOsel.VSstringW, VOsel.VSstringA, VFPS);
 		#else
-			AnsiToUnicode(VOsel.VSstringA,VOsel.VSstringW,VFPS);
+			AnsiToUnicode(VOsel.VSstringA, VOsel.VSstringW, VFPS);
 		#endif
 
 		if ( VOsel.cursor != FALSE ){
-			MoveCsrkey(0,BackupSelY - VOsel.now.y.line,FALSE);
+			MoveCsrkey(0, BackupSelY - VOsel.now.y.line, FALSE);
 		}else{
-			MoveCsrkey(0,BackupOffY - VOi->offY,FALSE);
+			MoveCsrkey(0, BackupOffY - VOi->offY, FALSE);
 		}
 		VOsel.lastY = BackuplastY;
-		DoFind(vinfo->info.hWnd,2);
+		DoFind(vinfo->info.hWnd, 2);
 	}
 }
 
 void GetSelectText(TCHAR *destptr)
 {
 	const TCHAR *src;
-	TMS_struct text = {{NULL,0,NULL},0};
+	TMS_struct text = {{NULL, 0, NULL}, 0};
 	TCHAR *dest, *maxptr;
 
 	if ( vo_.DModeBit & VO_dmode_SELECTABLE ){
-		ClipMem(&text,-1,-1);
+		ClipMem(&text, -1, -1);
 		src = text.p ? text.tm.p : NilStr;
 		dest = destptr;
 		maxptr = destptr + CMDLINESIZE / 2;
@@ -109,10 +109,10 @@ LRESULT PPvPPxCommand(PPV_APPINFO *vinfo, WPARAM wParam, LPARAM lParam)
 			TCHAR *p;
 
 			p = MapViewOfFile((HANDLE)lParam,
-					FILE_MAP_ALL_ACCESS,0,0,CMDLINESIZE);
+					FILE_MAP_ALL_ACCESS, 0, 0, CMDLINESIZE);
 			if ( p == NULL ) break;
 
-			PP_ExtractMacro(vinfo->info.hWnd,&vinfo->info,NULL,p,p,0);
+			PP_ExtractMacro(vinfo->info.hWnd, &vinfo->info, NULL, p, p, 0);
 			UnmapViewOfFile(p);
 			CloseHandle((HANDLE)lParam);
 			break;
@@ -127,7 +127,7 @@ LRESULT PPvPPxCommand(PPV_APPINFO *vinfo, WPARAM wParam, LPARAM lParam)
 			if ( (TCHAR *)lParam == NULL ){
 				StopPopMsg(PMF_ALL);
 			}else{
-				SetPopMsg(POPMSG_NOLOGMSG,(TCHAR *)lParam);
+				SetPopMsg(POPMSG_NOLOGMSG, (TCHAR *)lParam);
 				UpdateWindow_Part(vinfo->info.hWnd);
 			}
 			return 1;
@@ -137,28 +137,28 @@ LRESULT PPvPPxCommand(PPV_APPINFO *vinfo, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case K_EDITCHANGE:
-			Isearch(vinfo,(HWND)lParam);
+			Isearch(vinfo, (HWND)lParam);
 			break;
 
 /* XWIN_HIDETASK で一体化PPcに埋め込む為の試験コード
 		case K_HIDE:
 			if ( (hCommonWnd != NULL) && IsWindow(hCommonWnd) ){
-				ShowWindow(hWnd,SW_HIDE);
+				ShowWindow(hWnd, SW_HIDE);
 				return 0;
 			}
-			PPvCommand(vinfo,LOWORD(wParam));
+			PPvCommand(vinfo, LOWORD(wParam));
 			return 0;
 */
 		case KCW_captureEx:
 			Embed = TRUE;
-			return (LRESULT)TMAKELPARAM(1,KCW_captureEx);
+			return (LRESULT)TMAKELPARAM(1, KCW_captureEx);
 
 		case KV_Load:
 			hLastViewReqWnd = hViewReqWnd = (HWND)lParam;
 		// default へ
 
 		default:
-			PPvCommand(vinfo,LOWORD(wParam));
+			PPvCommand(vinfo, LOWORD(wParam));
 	}
 	return 0;
 }
@@ -170,7 +170,7 @@ int CallKeyHook(WORD key)
 
 	keyhookinfo.key = key;
 	pmp.keyhook = &keyhookinfo;
-	return CallModule(&vinfo.info,PPXMEVENT_KEYHOOK,pmp,KeyHookEntry);
+	return CallModule(&vinfo.info, PPXMEVENT_KEYHOOK, pmp, KeyHookEntry);
 }
 
 void ExecDualParam(PPV_APPINFO *vinfo, const TCHAR *param)
@@ -186,22 +186,22 @@ void ExecDualParam(PPV_APPINFO *vinfo, const TCHAR *param)
 	}
 }
 
-void PPvToolbarCommand(int id,int orcode)
+void PPvToolbarCommand(int id, int orcode)
 {
 	RECT box;
 	const TCHAR *ptr;
 
 	box.bottom = -1;
-	SendMessage(hToolBarWnd,TB_GETRECT,(WPARAM)id,(LPARAM)&box);
+	SendMessage(hToolBarWnd, TB_GETRECT, (WPARAM)id, (LPARAM)&box);
 	if ( box.bottom == -1 ){
 		PopupPosType = PPT_MOUSE;
 	}else{
 		PopupPos.x = box.left;
 		PopupPos.y = box.bottom;
-		ClientToScreen(hToolBarWnd,&PopupPos);
+		ClientToScreen(hToolBarWnd, &PopupPos);
 		PopupPosType = PPT_SAVED;
 	}
-	ptr = GetToolBarCmd(hToolBarWnd,&thGuiWork,id);
+	ptr = GetToolBarCmd(hToolBarWnd, &thGuiWork, id);
 	if ( ptr == NULL ) return;
 	if ( orcode ){
 		WORD key;
@@ -210,7 +210,7 @@ void PPvToolbarCommand(int id,int orcode)
 		if ( key == (K_s | K_raw | K_bs) ){
 			key = K_raw | K_c | K_bs;
 		}
-		PPvCommand(&vinfo,key);
+		PPvCommand(&vinfo, key);
 	}else{
 		ExecDualParam(&vinfo, ptr);
 	}
@@ -221,7 +221,7 @@ LRESULT PPvNotify(NMHDR *nmh)
 	if ( nmh->hwndFrom == NULL ) return 0;
 	if ( nmh->hwndFrom == hToolBarWnd ){
 		if ( nmh->code == TBN_DROPDOWN ){
-			PPvToolbarCommand(((LPNMTOOLBAR)nmh)->iItem,K_s);
+			PPvToolbarCommand(((LPNMTOOLBAR)nmh)->iItem, K_s);
 		}
 		if ( nmh->code == NM_RCLICK ){
 			PopupPosType = PPT_MOUSE;
@@ -230,7 +230,7 @@ LRESULT PPvNotify(NMHDR *nmh)
 		return 0;
 	}
 	if ( nmh->code == TTN_NEEDTEXT ){
-		if ( SetToolBarTipText(hToolBarWnd,&thGuiWork,nmh) ) return 0;
+		if ( SetToolBarTipText(hToolBarWnd, &thGuiWork, nmh) ) return 0;
 		return 0;
 	}
 	return 0;
@@ -241,7 +241,7 @@ LRESULT PPvNotify(NMHDR *nmh)
 #define CPosX ParamX	// istate == SELPOSCHANGE_PIX なら、ポイントX座標
 int CalcTextXPoint(int ParamX, int csrY, int istate)
 {
-	char buf[TEXTBUFSIZE],*p;
+	char buf[TEXTBUFSIZE], *p;
 #ifdef UNICODE
 	TCHAR wbuf[TEXTBUFSIZE];
 #endif
@@ -309,11 +309,11 @@ int CalcTextXPoint(int ParamX, int csrY, int istate)
 	XV_bctl[2] = 0;
 
 	mti.destbuf = (BYTE *)buf;
-	mti.srcmax = vo_.file.image + vo_.file.size.l;
+	mti.srcmax = vo_.file.image + vo_.file.UseSize;
 	mti.writetbl = FALSE;
 	mti.paintmode = FALSE;
 
-	VOi->MakeText(&mti,&VOi->ti[csrY]);
+	VOi->MakeText(&mti, &VOi->ti[csrY]);
 	XV_bctl[2] = XV_bctl3bk;
 
 	// 表示に使用するフォントを選択
@@ -331,7 +331,7 @@ int CalcTextXPoint(int ParamX, int csrY, int istate)
 			hUseFont = XV_unff ? hUnfixedFont : hBoxFont;
 			break;
 	}
-	hOldFont = SelectObject(hDC,hUseFont);
+	hOldFont = SelectObject(hDC, hUseFont);
 
 	p = buf;
 	while( *p != VCODE_END ) switch(*p++){ // VCODE_SWITCH
@@ -339,16 +339,16 @@ int CalcTextXPoint(int ParamX, int csrY, int istate)
 		case VCODE_CONTROL: // 制御文字 ---------------------------------
 #ifdef UNICODE
 		{
-			int alength,wlength,wresult;
+			int alength, wlength, wresult;
 
 			alength = strlen32(p);
 			// フォントリンク対策のため、一旦UNICODEにする
-			wlength = MultiByteToWideChar(CP_ACP,0,p,alength,wbuf,TEXTBUFSIZE);
+			wlength = MultiByteToWideChar(CP_ACP, 0, p, alength, wbuf, TEXTBUFSIZE);
 
 			if ( istate != SELPOSCHANGE_PIX ){ // カーソル移動：文字列内にいる
 				if ( (charX <= MaxcX) && ((charX + alength) >= MaxcX) ){
 					{ // 文字の中間の場合の補正
-						char *fp,*maxp;
+						char *fp, *maxp;
 
 						fp = p;
 						maxp = p + MaxcX - charX;
@@ -366,19 +366,19 @@ int CalcTextXPoint(int ParamX, int csrY, int istate)
 							fp++;
 						}
 					}
-					GetTextExtentPoint32W(hDC,wbuf,
-						MultiByteToWideChar(CP_ACP,0,p,MaxcX - charX,NULL,0),
+					GetTextExtentPoint32W(hDC, wbuf,
+						MultiByteToWideChar(CP_ACP, 0, p, MaxcX - charX, NULL, 0),
 						&textsize);
 					PixX += textsize.cx;
 					charX = MaxcX;
 					goto fin;
 				}
 			}
-			GetTextExtentExPointW(hDC,wbuf,wlength,leftX,&wresult,NULL,&textsize);
+			GetTextExtentExPointW(hDC, wbuf, wlength, leftX, &wresult, NULL, &textsize);
 			leftX -= textsize.cx;
 			if ( wresult < wlength ){ // 座標指定：文字列内に座標がある
-				charX += WideCharToMultiByte(CP_ACP,0,wbuf,wresult,NULL,0,NULL,NULL);
-				GetTextExtentPoint32W(hDC,wbuf,wresult,&textsize);
+				charX += WideCharToMultiByte(CP_ACP, 0, wbuf, wresult, NULL, 0, NULL, NULL);
+				GetTextExtentPoint32W(hDC, wbuf, wresult, &textsize);
 				PixX += textsize.cx;
 				goto fin;
 			}
@@ -389,7 +389,7 @@ int CalcTextXPoint(int ParamX, int csrY, int istate)
 		}
 #else
 		{
-			int length,result;
+			int length, result;
 			int addw;
 
 			addw = XV_unff ? 0 : fontWW;
@@ -397,7 +397,7 @@ int CalcTextXPoint(int ParamX, int csrY, int istate)
 			if ( istate != SELPOSCHANGE_PIX ){ // カーソル移動：文字列内にいる
 				if ( (charX <= MaxcX) && ((charX + length) >= MaxcX) ){
 					{ // 文字の中間の場合の補正
-						char *fp,*maxp;
+						char *fp, *maxp;
 
 						fp = p;
 						maxp = p + MaxcX - charX;
@@ -416,7 +416,7 @@ int CalcTextXPoint(int ParamX, int csrY, int istate)
 							fp++;
 						}
 					}
-					GetTextExtentPoint32A(hDC,p,MaxcX - charX,&textsize);
+					GetTextExtentPoint32A(hDC, p, MaxcX - charX, &textsize);
 					PixX += textsize.cx;
 					charX = MaxcX;
 					goto fin;
@@ -428,7 +428,7 @@ int CalcTextXPoint(int ParamX, int csrY, int istate)
 					int width;
 
 					width = ChrlenA(*p);
-					GetTextExtentPoint32A(hDC,p,width,&textsize);
+					GetTextExtentPoint32A(hDC, p, width, &textsize);
 					if ( width > 1) textsize.cx += addw;
 					leftX -= textsize.cx;
 					if ( leftX < 0 ) goto fin;
@@ -440,12 +440,12 @@ int CalcTextXPoint(int ParamX, int csrY, int istate)
 				p++; // NUL skip
 				break;
 			}
-			GetTextExtentExPointA(hDC,p,length,leftX,&result,NULL,&textsize);
+			GetTextExtentExPointA(hDC, p, length, leftX, &result, NULL, &textsize);
 
 			leftX -= textsize.cx;
 			charX += result;
 			if ( result < length ){ // 座標指定：文字列内に座標がある
-				GetTextExtentPoint32A(hDC,p,result,&textsize);
+				GetTextExtentPoint32A(hDC, p, result, &textsize);
 				PixX += textsize.cx;
 				goto fin;
 			}
@@ -459,22 +459,22 @@ int CalcTextXPoint(int ParamX, int csrY, int istate)
 		case VCODE_UNICODE:		// UNICODE Text ---------------------------
 #ifdef UNICODE
 		{
-			int length,result;
+			int length, result;
 
 			length = strlenW32((WCHAR *)p);
 			if ( istate != SELPOSCHANGE_PIX ){ // カーソル移動：文字列内にいる
 				if ( (charX <= MaxcX) && ((charX + length) >= MaxcX) ){
-					GetTextExtentPoint32W(hDC,(WCHAR *)p,MaxcX - charX,&textsize);
+					GetTextExtentPoint32W(hDC, (WCHAR *)p, MaxcX - charX, &textsize);
 					PixX += textsize.cx;
 					charX = MaxcX;
 					goto fin;
 				}
 			}
-			GetTextExtentExPointW(hDC,(WCHAR *)p,length,leftX,&result,NULL,&textsize);
+			GetTextExtentExPointW(hDC, (WCHAR *)p, length, leftX, &result, NULL, &textsize);
 			leftX -= textsize.cx;
 			charX += result;
 			if ( result < length ){ // 座標指定：文字列内に座標がある
-				GetTextExtentPoint32W(hDC,(WCHAR *)p,result,&textsize);
+				GetTextExtentPoint32W(hDC, (WCHAR *)p, result, &textsize);
 				PixX += textsize.cx;
 				goto fin;
 			}
@@ -486,7 +486,7 @@ int CalcTextXPoint(int ParamX, int csrY, int istate)
 		{
 			if ( charX == MaxcX ) goto fin;
 			while(*(WORD *)p){
-				GetTextExtentPoint32W(hDC,(WCHAR *)p,1,&textsize);
+				GetTextExtentPoint32W(hDC, (WCHAR *)p, 1, &textsize);
 				leftX -= textsize.cx;
 				if ( leftX < 0 ) goto fin;
 				PixX += textsize.cx;
@@ -551,9 +551,9 @@ int CalcTextXPoint(int ParamX, int csrY, int istate)
 		case VCODE_WSPACE:
 			if ( charX == MaxcX ) goto fin;
 #ifdef UNICODE
-			GetTextExtentPoint32W(hDC,StrWideSpace,1,&textsize);
+			GetTextExtentPoint32W(hDC, StrWideSpace, 1, &textsize);
 #else
-			GetTextExtentPoint32A(hDC,StrSJISSpace,2,&textsize);
+			GetTextExtentPoint32A(hDC, StrSJISSpace, 2, &textsize);
 #endif
 			leftX -= textsize.cx;
 			if ( leftX <= 0 ){
@@ -571,8 +571,8 @@ int CalcTextXPoint(int ParamX, int csrY, int istate)
 			break;
 	}
 fin:
-	SelectObject(hDC,hOldFont);
-	ReleaseDC(vinfo.info.hWnd,hDC);
+	SelectObject(hDC, hOldFont);
+	ReleaseDC(vinfo.info.hWnd, hDC);
 
 	VOsel.now.x.offset = charX;
 	VOsel.now.x.pix = PixX;
@@ -584,13 +584,13 @@ fin:
 #undef PosX
 #undef COffX
 
-void Ascroll(HWND hWnd,BOOL reverse)
+void Ascroll(HWND hWnd, BOOL reverse)
 {
 	POINT pos;
-	int x = 0,y = 0;
+	int x = 0, y = 0;
 
 	GetCursorPos(&pos);
-	ScreenToClient(hWnd,&pos);
+	ScreenToClient(hWnd, &pos);
 
 	if ( pos.y < (BoxView.top + LineY) ){
 		if ( vo_.DModeBit & VO_dmode_IMAGE ){
@@ -623,7 +623,7 @@ void Ascroll(HWND hWnd,BOOL reverse)
 		y = -y;
 	}
 	if ( x || y ){
-		MoveCsr(x,y,FALSE);
+		MoveCsr(x, y, FALSE);
 		if ( VOsel.cursor != FALSE ) SetCursorCaret(&VOsel.now);
 	}
 }
@@ -653,7 +653,7 @@ void SetCursorCaret(SELPOSINFO *posinfo)
 		SetCaretPos(posinfo->x.pix - (VOi->offX * fontX) + XV_left + XV_lleft,
 				posinfo->y.pix - (VOi->offY * LineY) + BoxView.top);
 	}
-	DNotifyWinEvent(EVENT_OBJECT_FOCUS,vinfo.info.hWnd,OBJID_CLIENT,posinfo->y.line + 1);
+	DNotifyWinEvent(EVENT_OBJECT_FOCUS, vinfo.info.hWnd, OBJID_CLIENT, posinfo->y.line + 1);
 }
 
 void MoveCsrkey(int offx, int offy, BOOL select)
@@ -813,38 +813,38 @@ void MoveCsrkey(int offx, int offy, BOOL select)
 }
 
 #pragma argsused
-void CALLBACK DragProc(HWND hWnd,UINT msg,UINT_PTR id,DWORD work)
+void CALLBACK DragProc(HWND hWnd, UINT msg, UINT_PTR id, DWORD work)
 {
 	UnUsedParam(msg);UnUsedParam(work);
 
 	switch (CursorTimerMode){
 		case CSRTM_OUT:	// 範囲外
 			if ( !X_dds && (VOsel.select == FALSE) ) break;
-			Ascroll(hWnd,FALSE);
+			Ascroll(hWnd, FALSE);
 			return;
 
 		case CSRTM_INERTIA:	// 慣性処理
-			MoveCsr(-OffPos.cx,-OffPos.cy,FALSE);
+			MoveCsr(-OffPos.cx, -OffPos.cy, FALSE);
 			if ( VOsel.cursor != FALSE ) SetCursorCaret(&VOsel.now);
 			OffPos.cx /= 2; OffPos.cy /= 2;
 			if ( !OffPos.cx && !OffPos.cy ){
 				CursorTimerMode = CSRTM_OFF;
-				KillTimer(hWnd,id);
+				KillTimer(hWnd, id);
 			}
 			break;
 
 		case CSRTM_SELECT:{	// 範囲選択
 			POINT pos;
-			int pointX,oldline,newline,oldoffset;
+			int pointX, oldline, newline, oldoffset;
 
 			if ( VOsel.select == FALSE ) break;
-			Ascroll(hWnd,TRUE);
+			Ascroll(hWnd, TRUE);
 			GetCursorPos(&pos);
-			ScreenToClient(hWnd,&pos);
+			ScreenToClient(hWnd, &pos);
 			#ifdef USEDIRECTWRITE
 			{
-				LPARAM lParam = TMAKELPARAM(pos.x,pos.y);
-				DxTransformPoint(DxDraw,&lParam);
+				LPARAM lParam = TMAKELPARAM(pos.x, pos.y);
+				DxTransformPoint(DxDraw, &lParam);
 				pos.x = (short)LOWORD(lParam);
 				pos.y = (short)HIWORD(lParam);
 			}
@@ -859,14 +859,14 @@ void CALLBACK DragProc(HWND hWnd,UINT msg,UINT_PTR id,DWORD work)
 				case -2:	// 上にはみ出している
 					newline = VOi->offY;
 					if ( VOsel.linemode == FALSE ){
-						InvalidateRect(hWnd,NULL,FALSE);
+						InvalidateRect(hWnd, NULL, FALSE);
 					}
 					VOsel.linemode = X_vzs;
 					break;
 				case -3:	// 下にはみ出している
 				case -4:
 					if ( VOsel.linemode == FALSE ){
-						InvalidateRect(hWnd,NULL,FALSE);
+						InvalidateRect(hWnd, NULL, FALSE);
 					}
 					VOsel.linemode = X_vzs;
 					newline = VOi->offY + VO_sizeY - 1;
@@ -880,7 +880,7 @@ void CALLBACK DragProc(HWND hWnd,UINT msg,UINT_PTR id,DWORD work)
 			VOsel.now.y.line = newline;
 
 			oldoffset = VOsel.now.x.offset;
-			CalcTextXPoint(pos.x,newline,SELPOSCHANGE_PIX);
+			CalcTextXPoint(pos.x, newline, SELPOSCHANGE_PIX);
 			SetCursorCaret(&VOsel.now);
 			pointX = (pos.x / fontX) - OldPointCX; // Xのポイント位置の移動量を算出
 			OldPointCX += pointX; // 反映
@@ -889,7 +889,7 @@ void CALLBACK DragProc(HWND hWnd,UINT msg,UINT_PTR id,DWORD work)
 			if ( oldline != VOsel.now.y.line ){
 				RECT box;
 
-				if ( VOsel.linemode == FALSE ) InvalidateRect(hWnd,NULL,FALSE);
+				if ( VOsel.linemode == FALSE ) InvalidateRect(hWnd, NULL, FALSE);
 				VOsel.linemode = X_vzs;
 				box.left = 0;
 				box.right = WndSize.cx;
@@ -900,12 +900,12 @@ void CALLBACK DragProc(HWND hWnd,UINT msg,UINT_PTR id,DWORD work)
 					box.top = (VOsel.now.y.line - VOi->offY) * LineY + BoxView.top;
 					box.bottom = (oldline - VOi->offY + 1) * LineY + BoxView.top;
 				}
-				InvalidateRect(hWnd,&box,TRUE);
+				InvalidateRect(hWnd, &box, TRUE);
 			}else{
 				if ( pointX ) VOsel.linemode = FALSE;
 			}
 			if ( !VOsel.linemode && pointX ){
-				InvalidateRect(hWnd,NULL,FALSE);
+				InvalidateRect(hWnd, NULL, FALSE);
 			}
 			FixSelectRange();
 			return;
@@ -913,37 +913,37 @@ void CALLBACK DragProc(HWND hWnd,UINT msg,UINT_PTR id,DWORD work)
 	}
 }
 
-BOOL USEFASTCALL WmCopyData(HWND hWnd,COPYDATASTRUCT *copydata)
+BOOL USEFASTCALL WmCopyData(HWND hWnd, COPYDATASTRUCT *copydata)
 {
 	switch(LOWORD(copydata->dwData)){
 		case 'H':{
 			TCHAR cmd[0x1000];
 
 			if ( copydata->cbData >= sizeof(cmd) ) return FALSE;
-			tstrcpy(cmd,(TCHAR *)copydata->lpData);
+			tstrcpy(cmd, (TCHAR *)copydata->lpData);
 			ReplyMessage(TRUE);
-			PP_ExtractMacro(hWnd,&vinfo.info,NULL,cmd,NULL,0);
+			PP_ExtractMacro(hWnd, &vinfo.info, NULL, cmd, NULL, 0);
 			return TRUE;
 		}
 	}
 	return FALSE;
 }
 
-void USEFASTCALL DoDropFiles(HWND hWnd,HDROP hDrop)
+void USEFASTCALL DoDropFiles(HWND hWnd, HDROP hDrop)
 {
 	if ( VO_PrintMode == PRINTMODE_FILES ){
 		if ( IsIconic(hWnd) || !IsWindowVisible(hWnd) ){
-			PostMessage(hWnd,WM_SYSCOMMAND,SC_RESTORE,0xffff0000);
+			PostMessage(hWnd, WM_SYSCOMMAND, SC_RESTORE, 0xffff0000);
 		}
-		InvalidateRect(hWnd,NULL,TRUE);
+		InvalidateRect(hWnd, NULL, TRUE);
 		SetForegroundWindow(hWnd);
-		PPVPrintFiles(hWnd,hDrop);
+		PPVPrintFiles(hWnd, hDrop);
 	}else{
 		TCHAR name[VFPS];
 
-		DragQueryFile(hDrop,0,name,TSIZEOF(name));
+		DragQueryFile(hDrop, 0, name, TSIZEOF(name));
 		DragFinish(hDrop);
-		OpenAndFollowViewObject(&vinfo,name,NULL,NULL,0);
+		OpenAndFollowViewObject(&vinfo, name, NULL, NULL, 0);
 		SetForegroundWindow(hWnd);
 		if ( VO_PrintMode == PRINTMODE_ONE ) PPVPrint(hWnd);
 	}
@@ -957,10 +957,10 @@ void WmWindowPosChanged(HWND hWnd)
 	if ( PosChangeEntry > 1 ) return; // 再入有
 	do {
 		wp.length = sizeof(wp);
-		GetWindowPlacement(hWnd,&wp);
+		GetWindowPlacement(hWnd, &wp);
 		WinPos.show = (BYTE)wp.showCmd;
 
-		GetClientRect(hWnd,&wp.rcNormalPosition);
+		GetClientRect(hWnd, &wp.rcNormalPosition);
 
 		if ( ((wp.showCmd != SW_SHOWMINIMIZED) && (wp.showCmd != SW_HIDE)) &&
 			 ( (WndSize.cx != wp.rcNormalPosition.right) ||
@@ -968,10 +968,10 @@ void WmWindowPosChanged(HWND hWnd)
 			WndSize.cx = wp.rcNormalPosition.right;
 			WndSize.cy = wp.rcNormalPosition.bottom;
 			FreeOffScreen(&BackScreen);
-			InvalidateRect(hWnd,NULL,TRUE);
+			InvalidateRect(hWnd, NULL, TRUE);
 		}
 
-		GetWindowRect(hWnd,&winS);
+		GetWindowRect(hWnd, &winS);
 		if ( !OpenEntryNow && wp.showCmd == SW_SHOWNORMAL ){
 			if ( (XV.img.imgD[0] <= IMGD_FIXWINDOWSIZE) &&
 				 (  (vo_.DModeBit == DOCMODE_NONE ) ||
@@ -999,15 +999,15 @@ void WmWindowPosChanged(HWND hWnd)
 		if ( hToolBarWnd != NULL ){
 			RECT box;
 
-			GetWindowRect(hToolBarWnd,&box);
-			SetWindowPos(hToolBarWnd,NULL,0,BoxStatus.bottom,
-					WndSize.cx,box.bottom - box.top,
+			GetWindowRect(hToolBarWnd, &box);
+			SetWindowPos(hToolBarWnd, NULL, 0, BoxStatus.bottom,
+					WndSize.cx, box.bottom - box.top,
 					SWP_NOREDRAW | SWP_NOACTIVATE | SWP_NOZORDER);
 
 			// 横幅が変化するときは、ツールバーが下にずれることがあるため、
 			// もう一度位置設定を行う
-			SetWindowPos(hToolBarWnd,NULL,0,BoxStatus.bottom,
-					WndSize.cx,box.bottom - box.top,
+			SetWindowPos(hToolBarWnd, NULL, 0, BoxStatus.bottom,
+					WndSize.cx, box.bottom - box.top,
 					SWP_NOREDRAW | SWP_NOACTIVATE | SWP_NOZORDER);
 			BoxView.top += box.bottom - box.top;
 		}
@@ -1036,18 +1036,18 @@ void WmWindowPosChanged(HWND hWnd)
 
 		SetScrollBar(); // ここで再入が起きる
 		if ( X_fles || BackScreen.X_WallpaperType ){
-			InvalidateRect(hWnd,NULL,TRUE);
+			InvalidateRect(hWnd, NULL, TRUE);
 		}
 
 		if ( (wp.showCmd == SW_SHOWMINIMIZED) && (X_tray & X_tray_PPv) ){
-			PostMessage(hWnd,WM_PPXCOMMAND,K_HIDE,0);
+			PostMessage(hWnd, WM_PPXCOMMAND, K_HIDE, 0);
 		}
-		ChangeSizeDxDraw(DxDraw,C_back);
+		ChangeSizeDxDraw(DxDraw, C_back);
 		if ( PosChangeEntry > 4 ) PosChangeEntry = 1; // 過度の再入
 	}while ( --PosChangeEntry );
 }
 
-LRESULT WMGesture(HWND hWnd,WPARAM wParam,LPARAM lParam)
+LRESULT WMGesture(HWND hWnd, WPARAM wParam, LPARAM lParam)
 {
 	if ( TouchMode == 0 ){
 		if ( X_pmc[0] < 0 ) PPvEnterTabletMode(hWnd);
@@ -1055,18 +1055,18 @@ LRESULT WMGesture(HWND hWnd,WPARAM wParam,LPARAM lParam)
 	{
 		switch ( wParam ){
 			case GID_TWOFINGERTAP:
-				PostMessage(hWnd,WM_PPXCOMMAND,K_apps,0);
+				PostMessage(hWnd, WM_PPXCOMMAND, K_apps, 0);
 				break;
 
 			case GID_PRESSANDTAP:
-				PostMessage(hWnd,WM_PPXCOMMAND,K_apps,0);
+				PostMessage(hWnd, WM_PPXCOMMAND, K_apps, 0);
 				break;
 		}
 	}
-	return DefWindowProc(hWnd,WM_GESTURE,wParam,lParam);
+	return DefWindowProc(hWnd, WM_GESTURE, wParam, lParam);
 }
 
-void WMDpiChanged(HWND hWnd,WPARAM wParam,RECT *newpos)
+void WMDpiChanged(HWND hWnd, WPARAM wParam, RECT *newpos)
 {
 	int newDPI = HIWORD(wParam);
 	HDC hDC;
@@ -1084,17 +1084,17 @@ void WMDpiChanged(HWND hWnd,WPARAM wParam,RECT *newpos)
 
 	DeleteFonts();
 	hDC = GetDC(hWnd);
-	MakeFonts(hDC,X_textmag);
-	ReleaseDC(hWnd,hDC);
+	MakeFonts(hDC, X_textmag);
+	ReleaseDC(hWnd, hDC);
 
 	if ( newpos != NULL ){
-		SetWindowPos(hWnd,NULL,newpos->left,newpos->top,
+		SetWindowPos(hWnd, NULL, newpos->left, newpos->top,
 				newpos->right - newpos->left, newpos->bottom - newpos->top,
 				SWP_NOACTIVATE | SWP_NOZORDER);
 	}
 
 	WmWindowPosChanged(hWnd);
-	InvalidateRect(hWnd,NULL,FALSE);
+	InvalidateRect(hWnd, NULL, FALSE);
 }
 
 /*=============================================================================
@@ -1104,11 +1104,11 @@ void CheckGesture(MOUSESTATE *ms)
 {
 	TCHAR buf[GESTURETEXTSIZE];
 
-	if ( PPxCheckMouseGesture(ms,buf,T("MV_click")) == FALSE ) return;
-	SetPopMsg(POPMSG_NOLOGMSG,buf);
+	if ( PPxCheckMouseGesture(ms, buf, T("MV_click")) == FALSE ) return;
+	SetPopMsg(POPMSG_NOLOGMSG, buf);
 }
 
-void PPvMouseMove(HWND hWnd,MOUSESTATE *ms,LPARAM lParam)
+void PPvMouseMove(HWND hWnd, MOUSESTATE *ms, LPARAM lParam)
 {
 	POINT pos;
 
@@ -1116,7 +1116,7 @@ void PPvMouseMove(HWND hWnd,MOUSESTATE *ms,LPARAM lParam)
 	if ( (ms->mode != MOUSEMODE_DRAG) && !(TouchMode & TOUCH_DISABLEHIDDENMENU) ){
 		int menus = -1;
 
-		LPARAMtoPOINT(pos,lParam);
+		LPARAMtoPOINT(pos, lParam);
 		if ( (pos.x >= BoxStatus.left) &&
 			 (pos.y >= BoxStatus.top) &&
 			 (pos.y < BoxStatus.bottom) ){
@@ -1125,7 +1125,7 @@ void PPvMouseMove(HWND hWnd,MOUSESTATE *ms,LPARAM lParam)
 		}
 		if ( menus != Mpos ){
 			Mpos = menus;
-			InvalidateRect(hWnd,&BoxStatus,TRUE);	// 更新指定
+			InvalidateRect(hWnd, &BoxStatus, TRUE);	// 更新指定
 		}
 		return;
 	}
@@ -1136,7 +1136,7 @@ void PPvMouseMove(HWND hWnd,MOUSESTATE *ms,LPARAM lParam)
 
 	//---------------------------------- ジェスチャ
 	if ( ms->PushButton == XV_DragGes ){
-		if ( PtInRect(&ms->DDRect,ms->MovedScreenPoint) == FALSE ){
+		if ( PtInRect(&ms->DDRect, ms->MovedScreenPoint) == FALSE ){
 			CheckGesture(ms);
 		}
 		return;
@@ -1150,7 +1150,7 @@ void PPvMouseMove(HWND hWnd,MOUSESTATE *ms,LPARAM lParam)
 			if ( !X_dds || !((pos.y < (LineY + BoxView.top)) ||
 					(pos.y >= (WndSize.cy - BoxView.top)) || (pos.x < fontX) ||
 					(pos.x >= (WndSize.cx - fontX))) ){
-				MoveCsr(-ms->MovedOffset.cx,-ms->MovedOffset.cy,FALSE);
+				MoveCsr(-ms->MovedOffset.cx, -ms->MovedOffset.cy, FALSE);
 				if ( VOsel.cursor != FALSE ) SetCursorCaret(&VOsel.now);
 			}
 		}
@@ -1158,25 +1158,25 @@ void PPvMouseMove(HWND hWnd,MOUSESTATE *ms,LPARAM lParam)
 	}
 	//---------------------------------- ウィンドウドラッグ(中ドラッグ)
 	if ( ms->PushButton == XV_DragWnd ){
-		SetWindowPos(hWnd,NULL,
+		SetWindowPos(hWnd, NULL,
 			winS.left + ms->MovedOffset.cx, winS.top + ms->MovedOffset.cy,
-			0,0,SWP_NOSIZE | SWP_NOZORDER);
+			0, 0, SWP_NOSIZE | SWP_NOZORDER);
 		return;
 	}
 }
 
-void SetCursorIcon(HWND hWnd,LPCTSTR csr)
+void SetCursorIcon(HWND hWnd, LPCTSTR csr)
 {
 	HCURSOR hCsr;
 
-	hCsr = LoadCursor(NULL,csr);
-	SetClassLongPtr(hWnd,GCLP_HCURSOR,(LONG_PTR)hCsr);
+	hCsr = LoadCursor(NULL, csr);
+	SetClassLongPtr(hWnd, GCLP_HCURSOR, (LONG_PTR)hCsr);
 	SetCursor(hCsr);
 }
 
 void CancelMouse(HWND hWnd)
 {
-	SetCursorIcon(hWnd,IDC_ARROW);
+	SetCursorIcon(hWnd, IDC_ARROW);
 }
 
 void USEFASTCALL RunGesture(PPV_APPINFO *vinfo, MOUSESTATE *ms)
@@ -1184,20 +1184,20 @@ void USEFASTCALL RunGesture(PPV_APPINFO *vinfo, MOUSESTATE *ms)
 	TCHAR buf[CMDLINESIZE];
 
 	StopPopMsg(PMF_PROGRESS);
-	wsprintf(buf,T("RG_%s"),ms->gesture.step);
+	wsprintf(buf, T("RG_%s"), ms->gesture.step);
 	ms->gesture.count = 0;
-	if ( NO_ERROR == GetCustTable(T("MV_click"),buf,buf,sizeof(buf)) ){
+	if ( NO_ERROR == GetCustTable(T("MV_click"), buf, buf, sizeof(buf)) ){
 		ExecDualParam(vinfo, buf);
 	}
 }
 
-void PPvDownMouse(HWND hWnd,MOUSESTATE *ms,WPARAM wParam)
+void PPvDownMouse(HWND hWnd, MOUSESTATE *ms, WPARAM wParam)
 {
 	if ( ms->PushButton <= MOUSEBUTTON_CANCEL ){
 		CancelMouse(hWnd);
 		if ( IsTrue(VOsel.select) ){
 			ResetSelect(TRUE);
-			InvalidateRect(hWnd,NULL,FALSE);
+			InvalidateRect(hWnd, NULL, FALSE);
 		}
 		return;
 	}
@@ -1208,7 +1208,7 @@ void PPvDownMouse(HWND hWnd,MOUSESTATE *ms,WPARAM wParam)
 		PPxCancelMouseButton(ms);
 		return;
 	}
-	KillTimer(hWnd,TIMERID_DRAGSCROLL);
+	KillTimer(hWnd, TIMERID_DRAGSCROLL);
 	StopPopMsg(PMF_PROGRESS | PMF_WAITKEY);
 	if ( (GetFocus() != hWnd) && (hViewParentWnd == NULL) ){
 		PPxCancelMouseButton(ms);
@@ -1227,7 +1227,7 @@ void PPvDownMouse(HWND hWnd,MOUSESTATE *ms,WPARAM wParam)
 
 			if ( (ms->PushClientPoint.y >= BoxView.top) && (pointY >= 0) && (pointY < VOi->line) ){
 				ms->mode = MOUSEMODE_DRAG;
-				SetCursorIcon(NULL,IDC_IBEAM);
+				SetCursorIcon(NULL, IDC_IBEAM);
 
 				VOsel.linemode = X_vzs;
 				VOsel.cursor = TRUE;
@@ -1237,20 +1237,20 @@ void PPvDownMouse(HWND hWnd,MOUSESTATE *ms,WPARAM wParam)
 
 				VOsel.now.y.pix  = pointY * LineY;
 				VOsel.now.y.line = pointY;
-				CalcTextXPoint(ms->PushClientPoint.x,pointY,SELPOSCHANGE_PIX);
+				CalcTextXPoint(ms->PushClientPoint.x, pointY, SELPOSCHANGE_PIX);
 
 				if ( !( (wParam & MK_SHIFT) && IsTrue(VOsel.cursor) ) ){
 					VOsel.start = VOsel.now;
 				}
 
 				FixSelectRange();
-				InvalidateRect(hWnd,NULL,FALSE);
+				InvalidateRect(hWnd, NULL, FALSE);
 
 				SetCursorCaret(&VOsel.now);
 				UpdateWindow_Part(hWnd);
 
 				CursorTimerMode = CSRTM_SELECT;
-				SetTimer(hWnd,TIMERID_DRAGSCROLL,TIMER_DRAGSCROLL,DragProc);
+				SetTimer(hWnd, TIMERID_DRAGSCROLL, TIMER_DRAGSCROLL, DragProc);
 			}
 			return;
 		}
@@ -1259,9 +1259,9 @@ void PPvDownMouse(HWND hWnd,MOUSESTATE *ms,WPARAM wParam)
 	if ( (ms->PushButton == XV_DragScr) || (ms->PushButton == XV_DragSel) ){
 		if ( ms->PushClientPoint.y >= BoxView.top ){
 			ms->mode = MOUSEMODE_DRAG;
-			SetCursorIcon(NULL,IDC_SIZEALL);
+			SetCursorIcon(NULL, IDC_SIZEALL);
 			CursorTimerMode = CSRTM_OUT;
-			SetTimer(hWnd,TIMERID_DRAGSCROLL,TIMER_DRAGSCROLL,DragProc);
+			SetTimer(hWnd, TIMERID_DRAGSCROLL, TIMER_DRAGSCROLL, DragProc);
 		}
 		return;
 	}
@@ -1269,7 +1269,7 @@ void PPvDownMouse(HWND hWnd,MOUSESTATE *ms,WPARAM wParam)
 		if ( IsTrue(VOsel.select) ){
 			CancelMouse(hWnd);
 			ResetSelect(TRUE);
-			InvalidateRect(hWnd,NULL,FALSE);
+			InvalidateRect(hWnd, NULL, FALSE);
 			PPxCancelMouseButton(ms);
 			ms->mode = MOUSEMODE_NONE;
 //			return;
@@ -1282,7 +1282,7 @@ void PPvDownMouse(HWND hWnd,MOUSESTATE *ms,WPARAM wParam)
 	}
 }
 
-void PPvUpMouse(HWND hWnd,MOUSESTATE *ms,int button,int oldmode,LPARAM lParam)
+void PPvUpMouse(HWND hWnd, MOUSESTATE *ms, int button, int oldmode, LPARAM lParam)
 {
 	TCHAR click[4];
 	POINT pos;
@@ -1291,9 +1291,9 @@ void PPvUpMouse(HWND hWnd,MOUSESTATE *ms,int button,int oldmode,LPARAM lParam)
 	if ( button <= MOUSEBUTTON_CANCEL ) return;
 	CancelMouse(hWnd);
 	if ( GetFocus() != hWnd ) SetFocus(hWnd);
-	LPARAMtoPOINT(pos,lParam);
+	LPARAMtoPOINT(pos, lParam);
 	posY = pos.y;
-	ClientToScreen(hWnd,&pos);
+	ClientToScreen(hWnd, &pos);
 
 	click[0] = PPxMouseButtonChar[button];
 	click[1] = '\0';
@@ -1301,10 +1301,10 @@ void PPvUpMouse(HWND hWnd,MOUSESTATE *ms,int button,int oldmode,LPARAM lParam)
 	PopupPos = pos;
 	PopupPosType = PPT_SAVED;
 
-	KillTimer(hWnd,TIMERID_DRAGSCROLL);
+	KillTimer(hWnd, TIMERID_DRAGSCROLL);
 	if ( oldmode == MOUSEMODE_DRAG ){
 		if ( button == XV_DragGes ){
-			if ( ms->gesture.count ) RunGesture(&vinfo ,ms);
+			if ( ms->gesture.count ) RunGesture(&vinfo , ms);
 			return;
 		}
 
@@ -1315,14 +1315,14 @@ void PPvUpMouse(HWND hWnd,MOUSESTATE *ms,int button,int oldmode,LPARAM lParam)
 			if ( (ClkTime + 60) > GetMessageTime() ){
 				CursorTimerMode = CSRTM_INERTIA;
 				OffPos = ms->MovedOffset;
-				SetTimer(hWnd,TIMERID_DRAGSCROLL,TIMER_DRAGSCROLL,DragProc);
+				SetTimer(hWnd, TIMERID_DRAGSCROLL, TIMER_DRAGSCROLL, DragProc);
 				return;
 			}else{
 				CursorTimerMode = CSRTM_OFF;
 				if ( (ms->PushScreenPoint.x != pos.x) || (ms->PushScreenPoint.y != pos.y) ) return;
 			}
 		}
-							// マウスの右クリック解除(w:ﾎﾞﾀﾝ,lH:Y,lL:X)--------
+							// マウスの右クリック解除
 		if ( button == XV_DragSel ){
 			if ( VOsel.select != FALSE ){
 				int pointY;
@@ -1354,7 +1354,7 @@ void PPvUpMouse(HWND hWnd,MOUSESTATE *ms,int button,int oldmode,LPARAM lParam)
 						box.top = (VOsel.now.y.line - VOi->offY) * LineY + BoxView.top;
 						box.bottom = (pointY - VOi->offY + 1) * LineY + BoxView.top;
 					}
-					InvalidateRect(hWnd,&box,FALSE);
+					InvalidateRect(hWnd, &box, FALSE);
 					UpdateWindow_Part(hWnd);
 					VOsel.now.y.line = pointY;
 				}
@@ -1363,7 +1363,7 @@ void PPvUpMouse(HWND hWnd,MOUSESTATE *ms,int button,int oldmode,LPARAM lParam)
 				 (VOsel.now.y.line   == VOsel.start.y.line ) &&
 				 (VOsel.now.x.offset == VOsel.start.x.offset) ){
 				ResetSelect(TRUE);
-				InvalidateRect(hWnd,NULL,FALSE);
+				InvalidateRect(hWnd, NULL, FALSE);
 			}else{
 				oldmode = MOUSEMODE_PUSH;
 			}
@@ -1375,7 +1375,7 @@ void PPvUpMouse(HWND hWnd,MOUSESTATE *ms,int button,int oldmode,LPARAM lParam)
 		 (ms->PushTick > MOUSE_LONG_PUSH_TIME) ){ // 長押しチェック
 		click[1] = 'H';
 		click[2] = '\0';
-		if ( IsTrue(PPvMouseCommandPos(&vinfo,&pos,click,posY)) ) return;
+		if ( IsTrue(PPvMouseCommandPos(&vinfo, &pos, click, posY)) ) return;
 		click[1] = '\0';
 	}
 
@@ -1388,25 +1388,25 @@ void PPvUpMouse(HWND hWnd,MOUSESTATE *ms,int button,int oldmode,LPARAM lParam)
 		return;
 	}
 	if ( oldmode != MOUSEMODE_DRAG ){
-		if ( IsTrue(PPvMouseCommandPos(&vinfo,&pos,click,posY)) ){
+		if ( IsTrue(PPvMouseCommandPos(&vinfo, &pos, click, posY)) ){
 			if ( button == XV_DragSel ){
 				if ( VOsel.select != FALSE ){
 					ResetSelect(TRUE);
-					InvalidateRect(hWnd,NULL,FALSE);
+					InvalidateRect(hWnd, NULL, FALSE);
 				}
 			}
 		}
 	}
 }
 
-void DoubleClickMouse(HWND hWnd,MOUSESTATE *ms)
+void DoubleClickMouse(HWND hWnd, MOUSESTATE *ms)
 {
 	TCHAR type[3];
 
 	if ( ms->PushButton <= MOUSEBUTTON_CANCEL ) return;
 
 	CursorTimerMode = CSRTM_OFF;
-	KillTimer(hWnd,TIMERID_DRAGSCROLL);
+	KillTimer(hWnd, TIMERID_DRAGSCROLL);
 	if ( GetFocus() != hWnd ) SetFocus(hWnd);
 	if ( (ms->PushClientPoint.x < 0) ||
 		 (ms->PushClientPoint.y < 0) ||
@@ -1417,37 +1417,37 @@ void DoubleClickMouse(HWND hWnd,MOUSESTATE *ms)
 	type[0] = PPxMouseButtonChar[ms->PushButton];
 	type[1] = 'D';
 	type[2] = '\0';
-	PPvMouseCommandPos(&vinfo,&ms->PushScreenPoint,type,ms->PushClientPoint.y);
+	PPvMouseCommandPos(&vinfo, &ms->PushScreenPoint, type, ms->PushClientPoint.y);
 }
 
-void WheelMouse(HWND hWnd,MOUSESTATE *ms,WPARAM wParam,LPARAM lParam)
+void WheelMouse(HWND hWnd, MOUSESTATE *ms, WPARAM wParam, LPARAM lParam)
 {
 	int now;
 	int X_wheel = 3;
 
-	now = PPxWheelMouse(ms,hWnd,wParam,lParam);
+	now = PPxWheelMouse(ms, hWnd, wParam, lParam);
 	if ( now == 0 ) return;
-	GetCustData(T("X_wheel"),&X_wheel,sizeof(X_wheel));
+	GetCustData(T("X_wheel"), &X_wheel, sizeof(X_wheel));
 	CursorTimerMode = CSRTM_OFF;
-	KillTimer(hWnd,TIMERID_DRAGSCROLL);
+	KillTimer(hWnd, TIMERID_DRAGSCROLL);
 	CancelMouse(hWnd);
 
 #ifdef USEDIRECTWRITE
 	if ( GetAsyncKeyState(VK_MENU) & KEYSTATE_PUSH ){
-		SetRotate(DxDraw,now * 2);
-		InvalidateRect(hWnd,NULL,TRUE);
+		SetRotate(DxDraw, now * 2);
+		InvalidateRect(hWnd, NULL, TRUE);
 		return;
 	}
 #endif
 	if ( wParam & MK_CONTROL ){ // Ctrl…フォントサイズ・透明度変更
 		if ( VOsel.select != FALSE ){
 			ResetSelect(TRUE);
-			InvalidateRect(hWnd,NULL,TRUE);
+			InvalidateRect(hWnd, NULL, TRUE);
 		}
 
 		if ( now != 0 ){
 			if ( wParam & MK_SHIFT ){
-				PPxCommonCommand(hWnd,0,(now > 0) ? (WORD)(K_c | K_s | K_v | VK_ADD) : (WORD)(K_c | K_s | K_v | VK_SUBTRACT));
+				PPxCommonCommand(hWnd, 0, (now > 0) ? (WORD)(K_c | K_s | K_v | VK_ADD) : (WORD)(K_c | K_s | K_v | VK_SUBTRACT));
 			}else{
 				SetMag( (now > 0) ? IMGD_OFFSET : -IMGD_OFFSET );
 			}
@@ -1458,17 +1458,30 @@ void WheelMouse(HWND hWnd,MOUSESTATE *ms,WPARAM wParam,LPARAM lParam)
 	}else if ( wParam & MK_MBUTTON ){
 		MoveCsrkey(0, -now * VO_sizeY / 3, VOsel.select);
 	}else{
+#if 0
+		if ( (vo_.DModeBit & VO_dmode_IMAGE) && !vo_.bitmap.page.animate &&
+			 ((XV.img.imgD[0] == IMGD_WINDOWSIZE) || (XV.img.imgD[0] == IMGD_AUTOWINDOWSIZE) || (XV.img.imgD[0] == IMGD_WINDOWSIZE)) ){ // 画像
+			if ( (now > 0) && (vo_.bitmap.page.current > 0) ){
+				ChangePage( -1 );
+				return;
+			}
+			if ( (now < 0) && (vo_.bitmap.page.current < vo_.bitmap.page.max) ){
+				ChangePage( 1 );
+				return;
+			}
+		}
+#endif
 		if ( X_pppv == '1' ){
 			HWND hPPcWnd;
 			const TCHAR *p = T("C");
 
 			hPPcWnd = (hLastViewReqWnd != NULL) ?
-					hLastViewReqWnd : GetPPxhWndFromID(&vinfo.info,&p,NULL);
+					hLastViewReqWnd : GetPPxhWndFromID(&vinfo.info, &p, NULL);
 			if ( hPPcWnd != NULL ){
-				PostMessage(hPPcWnd,WM_PPXCOMMAND,
-					now < 0 ? (K_raw | K_dw) : (K_raw | K_up),0);
-					PostMessage(hPPcWnd,WM_PPXCOMMAND,K_raw | 'N',0);
-					return;
+				PostMessage(hPPcWnd, WM_PPXCOMMAND,
+					now < 0 ? (K_raw | K_dw) : (K_raw | K_up), 0);
+				PostMessage(hPPcWnd, WM_PPXCOMMAND, K_raw | 'N', 0);
+				return;
 			}
 		}
 
@@ -1480,22 +1493,22 @@ void H_WheelMouse(PPV_APPINFO *vinfo, WPARAM wParam, LPARAM lParam)
 {
 	POINT pos;
 
-	LPARAMtoPOINT(pos,lParam);
-	PPvMouseCommandPos(vinfo, &pos,((short)HIWORD(wParam) < 0) ? T("H") : T("I"),pos.y);
+	LPARAMtoPOINT(pos, lParam);
+	PPvMouseCommandPos(vinfo, &pos, ((short)HIWORD(wParam) < 0) ? T("H") : T("I"), pos.y);
 }
 
-LRESULT USEFASTCALL PPvWmCommand(HWND hWnd,WPARAM wParam,LPARAM lParam)
+LRESULT USEFASTCALL PPvWmCommand(HWND hWnd, WPARAM wParam, LPARAM lParam)
 {
 	if ( lParam ){
 		if ( (HWND)lParam == hToolBarWnd ){
-			PPvToolbarCommand(LOWORD(wParam),0);
+			PPvToolbarCommand(LOWORD(wParam), 0);
 			return 0;
 		}
 	}
 	switch ( LOWORD(wParam) >> 12){
 		case (IDW_MENU >> 12):
 			PopupPosType = PPT_MOUSE;
-			CommandDynamicMenu(&DynamicMenu,&vinfo.info,wParam);
+			CommandDynamicMenu(&DynamicMenu, &vinfo.info, wParam);
 			break;
 
 		case 0xf: {				// f000-ffff System Menu ==============
@@ -1507,46 +1520,46 @@ LRESULT USEFASTCALL PPvWmCommand(HWND hWnd,WPARAM wParam,LPARAM lParam)
 			}
 
 			if ( (cmdID == SC_MINIMIZE) && (X_tray & X_tray_PPv) ){
-				PPxCommonCommand(hWnd,0,K_HIDE);
+				PPxCommonCommand(hWnd, 0, K_HIDE);
 				break;
 			}
 
-			return DefWindowProc(hWnd,WM_SYSCOMMAND,wParam,lParam);
+			return DefWindowProc(hWnd, WM_SYSCOMMAND, wParam, lParam);
 		}
 
 		default:
-			XMessage(NULL,NULL,XM_NiERRld,T("Unknown WM_COMMAND:%x"),wParam);
+			XMessage(NULL, NULL, XM_NiERRld, T("Unknown WM_COMMAND:%x"), wParam);
 			break;
 	}
 	return 0;
 }
 
-void USEFASTCALL PPvWmHscroll(HWND hWnd,WORD scrollcode)
+void USEFASTCALL PPvWmHscroll(HWND hWnd, WORD scrollcode)
 {
 	switch ( scrollcode ){
 								// 一番上 .............................
 		case SB_TOP:
-			MoveCsr(-VO_maxX,0,FALSE);
+			MoveCsr(-VO_maxX, 0, FALSE);
 			break;
 								// 一番下 .............................
 		case SB_BOTTOM:
-			MoveCsr(VO_maxX,0,FALSE);
+			MoveCsr(VO_maxX, 0, FALSE);
 			break;
 								// 一行上 .............................
 		case SB_LINEUP:
-			MoveCsr(-VO_stepX,0,FALSE);
+			MoveCsr(-VO_stepX, 0, FALSE);
 			break;
 								// 一行下 .............................
 		case SB_LINEDOWN:
-			MoveCsr(VO_stepX,0,FALSE);
+			MoveCsr(VO_stepX, 0, FALSE);
 			break;
 								// 一頁上 .............................
 		case SB_PAGEUP:
-			MoveCsr(1-VO_sizeX,0,FALSE);
+			MoveCsr(1-VO_sizeX, 0, FALSE);
 			break;
 								// 一頁下 .............................
 		case SB_PAGEDOWN:
-			MoveCsr(VO_sizeX-1,0,FALSE);
+			MoveCsr(VO_sizeX-1, 0, FALSE);
 			break;
 								// 特定位置まで移動中 .................
 		case SB_THUMBTRACK:
@@ -1558,14 +1571,14 @@ void USEFASTCALL PPvWmHscroll(HWND hWnd,WORD scrollcode)
 			scri.cbSize = sizeof(scri);
 			scri.fMask = SIF_TRACKPOS;
 			GetScrollInfo(hWnd, SB_HORZ, &scri);
-			MoveCsr(scri.nTrackPos - VOi->offX,0,FALSE);
+			MoveCsr(scri.nTrackPos - VOi->offX, 0, FALSE);
 			break;
 		}
 	}
 	if ( VOsel.cursor != FALSE ) SetCursorCaret(&VOsel.now);
 }
 
-void USEFASTCALL PPvWmVscroll(HWND hWnd,WORD scrollcode) // 垂直スクロール
+void USEFASTCALL PPvWmVscroll(HWND hWnd, WORD scrollcode) // 垂直スクロール
 {
 	int delta = 0;
 
@@ -1603,7 +1616,7 @@ void USEFASTCALL PPvWmVscroll(HWND hWnd,WORD scrollcode) // 垂直スクロール
 
 			scri.cbSize = sizeof(scri);
 			scri.fMask = SIF_ALL | SIF_TRACKPOS;
-			GetScrollInfo(hWnd,SB_VERT,&scri);
+			GetScrollInfo(hWnd, SB_VERT, &scri);
 
 			delta = scri.nTrackPos - VOi->offY;
 			if ( scri.nPage && WndSize.cy ){
@@ -1632,7 +1645,7 @@ void USEFASTCALL PPvWmVscroll(HWND hWnd,WORD scrollcode) // 垂直スクロール
 			break;
 	}
 	if ( delta ){
-		MoveCsr(0,delta,detailmode);
+		MoveCsr(0, delta, detailmode);
 		if ( VOsel.cursor != FALSE ) SetCursorCaret(&VOsel.now);
 	}
 }
@@ -1645,7 +1658,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 {
 	MSG msg;
 	int result;
-	THREADSTRUCT threadstruct = {PPvMainThreadName,XTHREAD_ROOT,NULL,0,0};
+	THREADSTRUCT threadstruct = {PPvMainThreadName, XTHREAD_ROOT, NULL, 0, 0};
 	UnUsedParam(hPrevInstance);UnUsedParam(lpCmdLine);
 
 	hInst = hInstance;
@@ -1653,50 +1666,50 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	InitCommonDll((HINSTANCE)hInst);
 #endif
 	PPxRegisterThread(&threadstruct);
-	CoInitializeEx(NULL,COINIT_APARTMENTTHREADED);
+	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 	WinPos.show = (BYTE)nShowCmd;
 	PPvHeap = GetProcessHeap();
 
 	if ( InitializePPv(&result) == FALSE ) return result;
-	PPxCommonExtCommand(K_TBB_INIT,1);
+	PPxCommonExtCommand(K_TBB_INIT, 1);
 #if USEDELAYCURSOR || SHOWFRAMERATE
 	SetTimer(vinfo.info.hWnd, TIMERID_DRAW, TIMERRATE_DRAW, DrawTimerProc);
 #endif
 	if ( FirstCommand != NULL ){
-		PostMessage(vinfo.info.hWnd,WM_PPXCOMMAND,K_FIRSTCMD,0);
+		PostMessage(vinfo.info.hWnd, WM_PPXCOMMAND, K_FIRSTCMD, 0);
 	}
-	if ( IsExistCustTable(T("KV_main"),T("FIRSTEVENT")) ){
-		PostMessage(vinfo.info.hWnd,WM_PPXCOMMAND,K_E_FIRST,0);
+	if ( IsExistCustTable(T("KV_main"), T("FIRSTEVENT")) ){
+		PostMessage(vinfo.info.hWnd, WM_PPXCOMMAND, K_E_FIRST, 0);
 	}
 										// メインループ -----------------------
-	while( (int)GetMessage(&msg,NULL,0,0) > 0 ){
+	while( (int)GetMessage(&msg, NULL, 0, 0) > 0 ){
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
 
 	if ( hComdlg32 != NULL ) FreeLibrary(hComdlg32);
 	if ( hWinmm != NULL ) FreeLibrary(hWinmm);
-	PPxCommonCommand(NULL,0,K_CLEANUP);
+	PPxCommonCommand(NULL, 0, K_CLEANUP);
 	CoUninitialize();
 	return EXIT_SUCCESS;
 }
 
 /*=============================================================================
 =============================================================================*/
-LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message){
 		case WM_NCCREATE:
 			if ( (X_dss & DSS_COMCTRL) && (OSver.dwMajorVersion >= 10) ){
-				PPxCommonCommand(hWnd,0,K_ENABLE_NC_SCALE);
+				PPxCommonCommand(hWnd, 0, K_ENABLE_NC_SCALE);
 			}
 			return 1;
 
 		case WM_COPYDATA:
-			return WmCopyData(hWnd,(COPYDATASTRUCT *)lParam);
+			return WmCopyData(hWnd, (COPYDATASTRUCT *)lParam);
 
 		case WM_DROPFILES:
-			DoDropFiles(hWnd,(HDROP)wParam);
+			DoDropFiles(hWnd, (HDROP)wParam);
 			break;
 
 		case WM_MENUCHAR:
@@ -1708,53 +1721,53 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 		case WM_MENUSELECT:
 		case WM_MENUDRAG:
 		case WM_MENURBUTTONUP:
-			return PPxMenuProc(hWnd,message,wParam,lParam);
+			return PPxMenuProc(hWnd, message, wParam, lParam);
 
 		case WM_INITMENU:
-			DynamicMenu_InitMenu(&DynamicMenu,(HMENU)wParam,X_win & XWIN_MENUBAR);
+			DynamicMenu_InitMenu(&DynamicMenu, (HMENU)wParam, X_win & XWIN_MENUBAR);
 			break;
 
 		case WM_INITMENUPOPUP:
 			if ( (hDispTypeMenu != NULL) && ((HMENU)wParam == hDispTypeMenu) ){
-				PPvAddDisplayTypeMenu(hDispTypeMenu,FALSE);
+				PPvAddDisplayTypeMenu(hDispTypeMenu, FALSE);
 				hDispTypeMenu = NULL;
 				break;
 			}
-			DynamicMenu_InitPopupMenu(&DynamicMenu,(HMENU)wParam,&vinfo.info);
+			DynamicMenu_InitPopupMenu(&DynamicMenu, (HMENU)wParam, &vinfo.info);
 			break;
 
 		case WM_SETFOCUS:
 			if ( VOsel.cursor != FALSE ){
-				CreateCaret(hWnd,NULL,fontX,fontY);
+				CreateCaret(hWnd, NULL, fontX, fontY);
 				SetCaretPos(
 					VOsel.now.x.pix - (VOi->offX * fontX) + XV_left + XV_lleft,
 					VOsel.now.y.pix - (VOi->offY * LineY) + BoxView.top);
 				ShowCaret(hWnd);
 			}else{
-				CreateCaret(hWnd,NULL,0,0);
-				SetCaretPos(0,(LineY >> 1) + BoxView.top);
+				CreateCaret(hWnd, NULL, 0, 0);
+				SetCaretPos(0, (LineY >> 1) + BoxView.top);
 			}
-			if ( X_IME == 1 ) PostMessage(hWnd,WM_PPXCOMMAND,K_IMEOFF,0);
+			if ( X_IME == 1 ) PostMessage(hWnd, WM_PPXCOMMAND, K_IMEOFF, 0);
 			if ( IsTrue(UseActiveEvent) ){
-				PostMessage(hWnd,WM_PPXCOMMAND,K_E_ACTIVE,0);
+				PostMessage(hWnd, WM_PPXCOMMAND, K_E_ACTIVE, 0);
 			}
 			if ( IsTrue(Embed) ){
-				SendMessage(GetParent(hWnd),WM_PPXCOMMAND,KCW_focus,(LPARAM)hWnd);
+				SendMessage(GetParent(hWnd), WM_PPXCOMMAND, KCW_focus, (LPARAM)hWnd);
 			}
-			InvalidateRect(hWnd,NULL,FALSE); // XPでゴミが残る問題の対策
+			InvalidateRect(hWnd, NULL, FALSE); // XPでゴミが残る問題の対策
 			break;
 
 		case WM_KILLFOCUS:
 			DestroyCaret();
 			break;
-							// マウスの移動(w:ﾎﾞﾀﾝ,lH:Y,lL:X)---------
+							// マウスの移動
 		case WM_MOUSEMOVE:
-			DxTransformPoint(DxDraw,&lParam);
+			DxTransformPoint(DxDraw, &lParam);
 			ClkTime = GetMessageTime();
-			PPxMoveMouse(&MouseStat,hWnd,lParam);
-			PPvMouseMove(hWnd,&MouseStat,lParam);
+			PPxMoveMouse(&MouseStat, hWnd, lParam);
+			PPvMouseMove(hWnd, &MouseStat, lParam);
 			break;
-							// マウスの左ダブルクリック(w:ﾎﾞﾀﾝ,lH:Y,lL:X)------
+							// マウスの左ダブルクリック
 		case WM_NCLBUTTONUP:
 		case WM_NCRBUTTONUP:
 		case WM_NCMBUTTONUP:
@@ -1764,23 +1777,23 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 		case WM_NCMBUTTONDBLCLK:
 		case WM_NCRBUTTONDBLCLK:
 		case WM_NCXBUTTONDBLCLK:
-			return PPvNCMouseCommand(hWnd,message,wParam,lParam);
+			return PPvNCMouseCommand(hWnd, message, wParam, lParam);
 
 		case WM_NCRBUTTONDOWN:
 			if ( wParam == HTCAPTION ) DynamicMenu.Sysmenu = TRUE;
 		// WM_NCLBUTTONDOWN へ
 		case WM_NCLBUTTONDOWN:
 			PopupPosType = PPT_MOUSE;
-			return DefWindowProc(hWnd,message,wParam,lParam);
+			return DefWindowProc(hWnd, message, wParam, lParam);
 
-							// マウスのXクリック(w:ﾎﾞﾀﾝ,lH:Y,lL:X)--------
+							// マウスのXクリック
 		case WM_LBUTTONDOWN:
 		case WM_MBUTTONDOWN:
 		case WM_RBUTTONDOWN:
 		case WM_XBUTTONDOWN:
-			DxTransformPoint(DxDraw,&lParam);
-			PPxDownMouseButton(&MouseStat,hWnd,wParam,lParam);
-			PPvDownMouse(hWnd,&MouseStat,wParam);
+			DxTransformPoint(DxDraw, &lParam);
+			PPxDownMouseButton(&MouseStat, hWnd, wParam, lParam);
+			PPvDownMouse(hWnd, &MouseStat, wParam);
 			break;
 
 		case WM_CAPTURECHANGED:
@@ -1791,7 +1804,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 		case WM_MBUTTONUP:
 		case WM_RBUTTONUP:
 		case WM_XBUTTONUP: {
-			int oldmode,i;
+			int oldmode, i;
 
 			oldmode = MouseStat.mode;
 			DxTransformPoint(DxDraw, &lParam);
@@ -1803,16 +1816,16 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 		case WM_MBUTTONDBLCLK:
 		case WM_RBUTTONDBLCLK:
 		case WM_XBUTTONDBLCLK:
-			DxTransformPoint(DxDraw,&lParam);
-			PPxDoubleClickMouseButton(&MouseStat,hWnd,wParam,lParam);
-			DoubleClickMouse(hWnd,&MouseStat);
+			DxTransformPoint(DxDraw, &lParam);
+			PPxDoubleClickMouseButton(&MouseStat, hWnd, wParam, lParam);
+			DoubleClickMouse(hWnd, &MouseStat);
 			break;
 
 		case WM_MOUSEWHEEL:
-//			DxTransformPoint(DxDraw,&lParam); 不要
-			WheelMouse(hWnd,&MouseStat,wParam,lParam);
+//			DxTransformPoint(DxDraw, &lParam); 不要
+			WheelMouse(hWnd, &MouseStat, wParam, lParam);
 			break;
-							// ホイールの移動(左右,Vista以降)
+							// ホイールの移動(左右, Vista以降)
 		case WM_MOUSEHWHEEL:
 			DxTransformPoint(DxDraw, &lParam);
 			H_WheelMouse(&vinfo, wParam, lParam);
@@ -1823,12 +1836,12 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 				if ( GetFocus() != hWnd ) return MA_ACTIVATEANDEAT;
 			}
 			if ( IsTrue(Embed) ) SetFocus(hWnd);
-			return DefWindowProc(hWnd,message,wParam,lParam);
+			return DefWindowProc(hWnd, message, wParam, lParam);
 
-							// 各種コントロール (w:ID,lH:message,lL:CtrlHandle)
+							// 各種コントロール (w:ID, lH:message, lL:CtrlHandle)
 		case WM_SYSCOMMAND:
 		case WM_COMMAND:
-			return PPvWmCommand(hWnd,wParam,lParam);
+			return PPvWmCommand(hWnd, wParam, lParam);
 
 							// 窓状態の変更
 		case WM_WINDOWPOSCHANGED:
@@ -1836,17 +1849,17 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 			break;
 							// 垂直スクロール
 		case WM_VSCROLL:
-			PPvWmVscroll(hWnd,LOWORD(wParam));
+			PPvWmVscroll(hWnd, LOWORD(wParam));
 			break;
 							// 水平スクロール
 		case WM_HSCROLL:
-			PPvWmHscroll(hWnd,LOWORD(wParam));
+			PPvWmHscroll(hWnd, LOWORD(wParam));
 			break;
-							// ALT+? が押された(w:仮想 key,lH:値,lL:repeat数)--
+							// ALT+? が押された(w:仮想 key, lH:値, lL:repeat数)--
 		case WM_SYSKEYDOWN:
 			if ( !(lParam & B29) ) SetFocus(hWnd);
 			// WM_KEYDOWN へ
-							// key   が押された(w:仮想 key,lH:値,lL:repeat数)--
+							// key   が押された(w:仮想 key, lH:値, lL:repeat数)--
 		case WM_KEYDOWN:{
 			WORD key;
 
@@ -1860,13 +1873,13 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 				if ( CallKeyHook(key) != PPXMRESULT_SKIP ) break;
 			}
 
-			if ( PPvCommand(&vinfo,key) == ERROR_INVALID_FUNCTION ){
+			if ( PPvCommand(&vinfo, key) == ERROR_INVALID_FUNCTION ){
 				if ( X_alt && (wParam == VK_MENU) ) break;
-				return DefWindowProc(hWnd,message,wParam,lParam);
+				return DefWindowProc(hWnd, message, wParam, lParam);
 			}
 			break;
 		}
-							// key   が押された(w:key,lH:値,lL:repeat数)--
+							// key   が押された(w:key, lH:値, lL:repeat数)--
 		case WM_SYSCHAR:
 		case WM_CHAR: {
 			WORD key;
@@ -1881,7 +1894,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 			}
 			if ( IskanjiA(key) ){
 				multichar = TRUE;
-				SetPopMsg(POPMSG_NOLOGMSG,MES_EKCD);
+				SetPopMsg(POPMSG_NOLOGMSG, MES_EKCD);
 			}
 #endif
 			if ( key < 0x80 ){
@@ -1893,13 +1906,13 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 					}
 				}
 
-				if ( PPvCommand(&vinfo,FixCharKeycode(key)) == NO_ERROR ){
+				if ( PPvCommand(&vinfo, FixCharKeycode(key)) == NO_ERROR ){
 					break;
 				}
 			}
-			return DefWindowProc(hWnd,message,wParam,lParam);
+			return DefWindowProc(hWnd, message, wParam, lParam);
 		}
-							// 窓の再描画(w:未使用,l:未使用) ------------------
+							// 窓の再描画(w:未使用, l:未使用) ------------------
 		case WM_PAINT:
 			Paint(hWnd);
 			break;
@@ -1908,20 +1921,20 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 			if ( (hViewReqWnd != NULL) && (GetFocus() != FALSE) ){
 				SetForegroundWindow(hViewReqWnd);
 			}
-			return DefWindowProc(hWnd,message,wParam,lParam);
-							// 窓の破棄,終了処理(w:未使用,l:未使用) -----------
+			return DefWindowProc(hWnd, message, wParam, lParam);
+							// 窓の破棄, 終了処理(w:未使用, l:未使用) -----------
 		case WM_DESTROY:
 			ClosePPv();		// 必要な後処理を行う
 			PostQuitMessage(EXIT_SUCCESS);	// これで終り
 			break;
-							// 強制終了要求(w:未使用,l:未使用) ----------------
+							// 強制終了要求(w:未使用, l:未使用) ----------------
 // w=0 logoff   w != 0 ユーザによるこのソフトの強制終了
 //		case WM_QUERYENDSESSION:
-//			return (long)TRUE;	// TRUE ならば終了,FALSE なら終了の拒否
+//			return (long)TRUE;	// TRUE ならば終了, FALSE なら終了の拒否
 							// 強制終了動作の報告 -----------------------------
 		case WM_ENDSESSION:
 			if ( wParam ){	// TRUE:セッションの終了(WM_DESTROY は通知されない)
-				PPxCommonExtCommand(K_REPORTSHUTDOWN,0);
+				PPxCommonExtCommand(K_REPORTSHUTDOWN, 0);
 				ClosePPv();		// 必要な後処理を行う
 								// 時間がないのでここで全体の後始末もおこなう
 				PostQuitMessage(EXIT_SUCCESS);
@@ -1939,17 +1952,17 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 				int redraw;
 
 				hDC = GetDC(hWnd);
-				hOldPal = SelectPalette(hDC,vo_.bitmap.hPal,0);
+				hOldPal = SelectPalette(hDC, vo_.bitmap.hPal, 0);
 				redraw = RealizePalette(hDC);
-				SelectPalette(hDC,hOldPal,0);
-				ReleaseDC(hWnd,hDC);
-				if ( redraw ) InvalidateRect(hWnd,NULL,FALSE);
+				SelectPalette(hDC, hOldPal, 0);
+				ReleaseDC(hWnd, hDC);
+				if ( redraw ) InvalidateRect(hWnd, NULL, FALSE);
 			}
 			break;
 /*
 		case WM_SETTINGCHANGE:
-			PPxCommonCommand(hWnd,lParam,K_SETTINGCHANGE);
-			return DefWindowProc(hWnd,message,wParam,lParam);
+			PPxCommonCommand(hWnd, lParam, K_SETTINGCHANGE);
+			return DefWindowProc(hWnd, message, wParam, lParam);
 */
 		case WM_SYSCOLORCHANGE:
 			PPvCommand(&vinfo, K_Scust);
@@ -1961,30 +1974,30 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 			HDC hDC;
 
 			hDC = GetDC(hWnd);
-			VideoBits = GetDeviceCaps(hDC,BITSPIXEL);
-			ReleaseDC(hWnd,hDC);
-			ChangeSizeDxDraw(DxDraw,C_back); // DXで必要。DWでは不要
-			InvalidateRect(hWnd,NULL,TRUE);
+			VideoBits = GetDeviceCaps(hDC, BITSPIXEL);
+			ReleaseDC(hWnd, hDC);
+			ChangeSizeDxDraw(DxDraw, C_back); // DXで必要。DWでは不要
+			InvalidateRect(hWnd, NULL, TRUE);
 			break;
 		}
 
 		case WM_NOTIFY:
 			return PPvNotify((NMHDR *)lParam);
 
-//		case WM_DESTROYCLIPBOARD:	// 現在は TEXT,DIB のみのため、不要
+//		case WM_DESTROYCLIPBOARD:	// 現在は TEXT, DIB のみのため、不要
 
 		// 注意 WM_GETOBJECTのwParam/lParamは64bit環境では上位32bitにゴミが入る
 		case WM_GETOBJECT:
 			if ( ((LONG)lParam == OBJID_CLIENT) && X_iacc ){
 				return WmGetObject((WPARAM)(DWORD)wParam);
 			}
-			return DefWindowProc(hWnd,message,wParam,lParam);
+			return DefWindowProc(hWnd, message, wParam, lParam);
 
 		case WM_GESTURE:
-			return WMGesture(hWnd,wParam,lParam);
+			return WMGesture(hWnd, wParam, lParam);
 
 		case WM_DPICHANGED:
-			WMDpiChanged(hWnd,wParam,(RECT *)lParam);
+			WMDpiChanged(hWnd, wParam, (RECT *)lParam);
 			break;
 
 							// 知らないメッセージ -----------------------------
@@ -1992,7 +2005,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 			if ( message == WM_PPXCOMMAND ){
 				return PPvPPxCommand(&vinfo, wParam, lParam);
 			}
-			return DefWindowProc(hWnd,message,wParam,lParam);
+			return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 	return 0;
 }

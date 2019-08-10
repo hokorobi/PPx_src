@@ -17,7 +17,7 @@ typedef struct {
 	PPC_APPINFO *parent;
 	ENTRYCELL *Cell;
 	TCHAR ResponseName[VFPS];
-	TCHAR *DestPathLast,DestPath[VFPS];
+	TCHAR *DestPathLast, DestPath[VFPS];
 	ThSTRUCT thFileList;
 	DWORD chop;
 } UNPACKINFOSTRUCT;
@@ -25,7 +25,7 @@ typedef struct {
 typedef struct {
 	UNPACKINFOSTRUCT info;
 	TCHAR *lastpath;
-	size_t arclen,oldlastlen;
+	size_t arclen, oldlastlen;
 	const TCHAR *oldlast;
 	HANDLE hBatchfile;
 	DWORD X_unbg;
@@ -42,7 +42,7 @@ const TCHAR RUnpackTitle[] = T("Unpack\t");
 const TCHAR UnpackTitle[] = MES_TUPA;
 
 #ifndef WINEGCC
-	#define Get_X_unbg GetCustXDword(T("X_unbg"),NULL,0)
+	#define Get_X_unbg GetCustXDword(T("X_unbg"), NULL, 0)
 #else
 	#define Get_X_unbg 0 // まだ pptrayがないので無効にする。※VFS_ARCD.Cも
 #endif
@@ -58,17 +58,17 @@ ERRORCODE UnUndirUn(UNUNDIRSTRUCT *uud)
 	cinfo = uud->info.parent;
 	uud->info.ResponseName[0] = '\0';
 
-	result = UnArc_Extract(&uud->info.info,cinfo->e.Dtype.ExtData,
-			UNARCEXTRACT_PART,param,XEO_NOEDIT);
+	result = UnArc_Extract(&uud->info.info, cinfo->e.Dtype.ExtData,
+			UNARCEXTRACT_PART, param, XEO_NOEDIT);
 	uud->info.thFileList.top = 0;
 	if ( result != NO_ERROR ) return ERROR_CANCELLED;
-	UnArc_Exec(&cinfo->info,cinfo->e.Dtype.ExtData,param,
-			uud->hBatchfile,uud->info.ResponseName,uud->X_unbg,NULL);
+	UnArc_Exec(&cinfo->info, cinfo->e.Dtype.ExtData, param,
+			uud->hBatchfile, uud->info.ResponseName, uud->X_unbg, NULL);
 	return NO_ERROR;
 }
 
 // 書庫dir再現の為の修正
-void UnUndirfix(UNUNDIRSTRUCT *uud,ENTRYCELL *cell)
+void UnUndirfix(UNUNDIRSTRUCT *uud, ENTRYCELL *cell)
 {
 	TCHAR *lastentry;
 	size_t lastlen;
@@ -78,17 +78,17 @@ void UnUndirfix(UNUNDIRSTRUCT *uud,ENTRYCELL *cell)
 	lastentry = FindLastEntryPoint(entryname);
 	lastlen = TSTROFF(lastentry - entryname);
 	if ( (lastlen != uud->oldlastlen) ||
-		 (memcmp(entryname,uud->oldlast,uud->oldlastlen) != 0) ){ // 新規 dir
+		 (memcmp(entryname, uud->oldlast, uud->oldlastlen) != 0) ){ // 新規 dir
 		TCHAR mdpath[VFPS];
 
 		UnUndirUn(uud); // 溜めたファイルを展開
 		uud->oldlast = entryname;
 		uud->oldlastlen = lastlen;
-		memcpy(mdpath,entryname,lastlen);
+		memcpy(mdpath, entryname, lastlen);
 		mdpath[lastlen / sizeof(TCHAR)] = '\0';
 		if ( lastlen ){
-			tstrcpy(uud->info.DestPathLast,mdpath);
-			MakeDirectories(uud->info.DestPath,NULL);
+			tstrcpy(uud->info.DestPathLast, mdpath);
+			MakeDirectories(uud->info.DestPath, NULL);
 		}else{
 			*uud->info.DestPathLast = '\0';
 		}
@@ -96,18 +96,18 @@ void UnUndirfix(UNUNDIRSTRUCT *uud,ENTRYCELL *cell)
 	if ( !(cell->f.dwFileAttributes &
 				(FILE_ATTRIBUTEX_FOLDER | FILE_ATTRIBUTE_DIRECTORY)) &&
 			(*lastentry != '\0') ){ // ファイルのみ登録
-		ThAddString(&uud->info.thFileList,CellFileName(cell));
+		ThAddString(&uud->info.thFileList, CellFileName(cell));
 	}
 }
 
-ERRORCODE UnUnsubdir(UNUNDIRSTRUCT *uud,const TCHAR *dirname)
+ERRORCODE UnUnsubdir(UNUNDIRSTRUCT *uud, const TCHAR *dirname)
 {
-	ENTRYDATAOFFSET index,maxi;
+	ENTRYDATAOFFSET index, maxi;
 	size_t dirsize;
 	TCHAR dircheckname[VFPS];
 	PPC_APPINFO *cinfo;
 
-	CatPath(dircheckname,(TCHAR *)dirname,NilStr);
+	CatPath(dircheckname, (TCHAR *)dirname, NilStr);
 	dirsize = TSTRLENGTH(dircheckname);
 	cinfo = uud->info.parent;
 	maxi = cinfo->e.cellDataMax;
@@ -116,9 +116,9 @@ ERRORCODE UnUnsubdir(UNUNDIRSTRUCT *uud,const TCHAR *dirname)
 
 		cell = &CELdata(index);
 		if ( cell->f.dwFileAttributes & FILE_ATTRIBUTEX_FOLDER ) continue;
-		if ( memcmp(CellFileName(cell),dircheckname,dirsize) == 0 ){
+		if ( memcmp(CellFileName(cell), dircheckname, dirsize) == 0 ){
 			if ( !(cell->f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ){
-				UnUndirfix(uud,cell);
+				UnUndirfix(uud, cell);
 			}
 		}
 	}
@@ -126,7 +126,7 @@ ERRORCODE UnUnsubdir(UNUNDIRSTRUCT *uud,const TCHAR *dirname)
 }
 
 // 全展開用
-DWORD_PTR USECDECL UnpackInfoFunc_All(UNPACKINFOSTRUCT *ppxa,DWORD cmdID,PPXAPPINFOUNION *uptr)
+DWORD_PTR USECDECL UnpackInfoFunc_All(UNPACKINFOSTRUCT *ppxa, DWORD cmdID, PPXAPPINFOUNION *uptr)
 {
 	switch(cmdID){
 //		case PPXCMDID_STARTENUM:	// 検索開始(マーク無しもあり)…無視
@@ -138,28 +138,28 @@ DWORD_PTR USECDECL UnpackInfoFunc_All(UNPACKINFOSTRUCT *ppxa,DWORD cmdID,PPXAPPI
 //		case '0':	// 自分自身へのパス…親に任せる
 
 		case '1': // 書庫ファイル名(フルパス)
-			VFSFullPath(uptr->enums.buffer,(TCHAR *)GetCellFileName(ppxa->parent,ppxa->Cell,uptr->enums.buffer),ppxa->parent->RealPath);
+			VFSFullPath(uptr->enums.buffer, (TCHAR *)GetCellFileName(ppxa->parent, ppxa->Cell, uptr->enums.buffer), ppxa->parent->RealPath);
 			break;
 
 		case '2': // 展開先
-			tstrcpy(uptr->enums.buffer,ppxa->DestPath);
+			tstrcpy(uptr->enums.buffer, ppxa->DestPath);
 			break;
 
 		case 'C': // 書庫名
 		case 'R':
-			tstrcpy(uptr->enums.buffer,CellFileName(ppxa->Cell));
+			tstrcpy(uptr->enums.buffer, CellFileName(ppxa->Cell));
 			break;
 
 		case 'X': // 書庫名
 		case 'Y':
-			tstrcpy(uptr->enums.buffer,CellFileName(ppxa->Cell));
+			tstrcpy(uptr->enums.buffer, CellFileName(ppxa->Cell));
 			*(uptr->enums.buffer + ppxa->Cell->ext) = '\0';
 			break;
 
 		case 'T': // 書庫名
 		case 't':
 			if ( ppxa->Cell->ext ){
-				tstrcpy(uptr->enums.buffer,CellFileName(ppxa->Cell) + ppxa->Cell->ext + 1);
+				tstrcpy(uptr->enums.buffer, CellFileName(ppxa->Cell) + ppxa->Cell->ext + 1);
 			}else{
 				*uptr->enums.buffer = '\0';
 			}
@@ -174,47 +174,47 @@ DWORD_PTR USECDECL UnpackInfoFunc_All(UNPACKINFOSTRUCT *ppxa,DWORD cmdID,PPXAPPI
 
 		default:
 			return ppxa->parent->
-					info.Function(&ppxa->parent->info,cmdID,uptr);
+					info.Function(&ppxa->parent->info, cmdID, uptr);
 	}
 	return 1;
 }
 
 // 部分展開、展開先指定付き用
-DWORD_PTR USECDECL UnpackInfoFunc2(UNPACKINFOSTRUCT *ppxa,DWORD cmdID,PPXAPPINFOUNION *uptr)
+DWORD_PTR USECDECL UnpackInfoFunc2(UNPACKINFOSTRUCT *ppxa, DWORD cmdID, PPXAPPINFOUNION *uptr)
 {
 	switch(cmdID){
 		case '2':
-			tstrcpy(uptr->enums.buffer,ppxa->DestPath);
+			tstrcpy(uptr->enums.buffer, ppxa->DestPath);
 			break;
 
 		case PPXCMDID_GETTMPFILENAME:
-			tstrcpy(ppxa->ResponseName,uptr->str);
+			tstrcpy(ppxa->ResponseName, uptr->str);
 			break;
 
 		default:
 			return ppxa->parent->
-					info.Function(&ppxa->parent->info,cmdID,uptr);
+					info.Function(&ppxa->parent->info, cmdID, uptr);
 	}
 	return 1;
 }
 
 // 部分展開、展開先は入力させる用
-DWORD_PTR USECDECL UnpackInfoFunc4(UNPACKINFOSTRUCT *ppxa,DWORD cmdID,PPXAPPINFOUNION *uptr)
+DWORD_PTR USECDECL UnpackInfoFunc4(UNPACKINFOSTRUCT *ppxa, DWORD cmdID, PPXAPPINFOUNION *uptr)
 {
 	switch(cmdID){
 		case PPXCMDID_GETTMPFILENAME:
-			tstrcpy(ppxa->ResponseName,uptr->str);
+			tstrcpy(ppxa->ResponseName, uptr->str);
 			break;
 
 		default:
 			return ppxa->parent->
-					info.Function(&ppxa->parent->info,cmdID,uptr);
+					info.Function(&ppxa->parent->info, cmdID, uptr);
 	}
 	return 1;
 }
 
 // 階層付き部分展開
-DWORD_PTR USECDECL UnpackInfoFunc_Tree(UNPACKINFOSTRUCT *ppxa,DWORD cmdID,PPXAPPINFOUNION *uptr)
+DWORD_PTR USECDECL UnpackInfoFunc_Tree(UNPACKINFOSTRUCT *ppxa, DWORD cmdID, PPXAPPINFOUNION *uptr)
 {
 	switch(cmdID){
 		case PPXCMDID_STARTENUM:	// 検索開始(マーク無しもあり)
@@ -239,16 +239,16 @@ DWORD_PTR USECDECL UnpackInfoFunc_Tree(UNPACKINFOSTRUCT *ppxa,DWORD cmdID,PPXAPP
 			}
 		// case 'R': へ
 		case 'R':
-			tstrcpy(uptr->enums.buffer,(const TCHAR *)
+			tstrcpy(uptr->enums.buffer, (const TCHAR *)
 					(ppxa->thFileList.bottom + uptr->enums.enumID));
 			break;
 
 		case '2':
-			tstrcpy(uptr->enums.buffer,ppxa->DestPath);
+			tstrcpy(uptr->enums.buffer, ppxa->DestPath);
 			break;
 
 		case PPXCMDID_GETTMPFILENAME:
-			tstrcpy(ppxa->ResponseName,uptr->str);
+			tstrcpy(ppxa->ResponseName, uptr->str);
 			break;
 
 		case PPXCMDID_ENUMATTR:
@@ -260,31 +260,31 @@ DWORD_PTR USECDECL UnpackInfoFunc_Tree(UNPACKINFOSTRUCT *ppxa,DWORD cmdID,PPXAPP
 
 		default:
 			return ppxa->parent->
-					info.Function(&ppxa->parent->info,cmdID,uptr);
+					info.Function(&ppxa->parent->info, cmdID, uptr);
 	}
 	return 1;
 }
 
-BOOL Unpacksub(PPC_APPINFO *cinfo,TCHAR *newpath,int mode)
+BOOL Unpacksub(PPC_APPINFO *cinfo, TCHAR *newpath, int mode)
 {
 	if ( mode != UFA_EXTRACT ){
 		TCHAR *p;
 
-		tstrcpy(newpath,FindLastEntryPoint(cinfo->RealPath));
-		if ( (p = tstrchr(newpath,':')) != NULL ) *p = '\0';
-		MakeTempEntry(VFPS,newpath,FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_LABEL);
+		tstrcpy(newpath, FindLastEntryPoint(cinfo->RealPath));
+		if ( (p = tstrchr(newpath, ':')) != NULL ) *p = '\0';
+		MakeTempEntry(VFPS, newpath, FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_LABEL);
 		if ( mode == UFA_PATH ) return FALSE;
 	}
 	return TRUE;
 }
 
-void RunBatchProcess(PPC_APPINFO *cinfo,const TCHAR *batchname,const TCHAR *currentdir,DWORD X_unbg)
+void RunBatchProcess(PPC_APPINFO *cinfo, const TCHAR *batchname, const TCHAR *currentdir, DWORD X_unbg)
 {
 	TCHAR buf[VFPS + CMDLINESIZE];
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 
-	wsprintf(buf,T("\"%s\\") T(PPTRAYEXE) T("\" /B%s"),PPcPath,batchname);
+	wsprintf(buf, T("\"%s\\") T(PPTRAYEXE) T("\" /B%s"), PPcPath, batchname);
 
 	si.cb			= sizeof(si);
 	si.lpReserved	= NULL;
@@ -294,17 +294,17 @@ void RunBatchProcess(PPC_APPINFO *cinfo,const TCHAR *batchname,const TCHAR *curr
 	si.cbReserved2	= 0;
 	si.lpReserved2	= NULL;
 
-	if ( IsTrue(CreateProcess(NULL,buf,NULL,NULL,FALSE,
+	if ( IsTrue(CreateProcess(NULL, buf, NULL, NULL, FALSE,
 			((X_unbg >= 2) ? IDLE_PRIORITY_CLASS : 0) |
-			CREATE_DEFAULT_ERROR_MODE,NULL,currentdir,&si,&pi)) ){
+			CREATE_DEFAULT_ERROR_MODE, NULL, currentdir, &si, &pi)) ){
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
 	}else{
-		PPErrorBox(cinfo->info.hWnd,T("Unarc"),PPERROR_GETLASTERROR);
+		PPErrorBox(cinfo->info.hWnd, T("Unarc"), PPERROR_GETLASTERROR);
 	}
 }
 
-ERRORCODE DoUndll(PPC_APPINFO *cinfo,const TCHAR *destpath,DWORD X_unbg)
+ERRORCODE DoUndll(PPC_APPINFO *cinfo, const TCHAR *destpath, DWORD X_unbg)
 {
 	TCHAR param[CMDLINESIZE + VFPS];
 	const void *dt_opt = cinfo->e.Dtype.ExtData;
@@ -322,15 +322,15 @@ ERRORCODE DoUndll(PPC_APPINFO *cinfo,const TCHAR *destpath,DWORD X_unbg)
 			info.info.Function = (PPXAPPINFOFUNCTION)UnpackInfoFunc4;
 			flags = 0;
 		}else{
-			tstrcpy(info.DestPath,destpath);
+			tstrcpy(info.DestPath, destpath);
 			info.info.Function = (PPXAPPINFOFUNCTION)UnpackInfoFunc2;
 			flags = XEO_NOEDIT;
 		}
-		if ( UnArc_Extract(&info.info,dt_opt,
-				UNARCEXTRACT_PART,param,flags) != NO_ERROR ){
+		if ( UnArc_Extract(&info.info, dt_opt,
+				UNARCEXTRACT_PART, param, flags) != NO_ERROR ){
 				return ERROR_CANCELLED;
 		}
-		UnArc_Exec(&cinfo->info,dt_opt,param,INVALID_HANDLE_VALUE,info.ResponseName,X_unbg,NULL);
+		UnArc_Exec(&cinfo->info, dt_opt, param, INVALID_HANDLE_VALUE, info.ResponseName, X_unbg, NULL);
 		return NO_ERROR;
 	}else{ // 階層再現処理
 		ENTRYCELL *cell;
@@ -339,20 +339,20 @@ ERRORCODE DoUndll(PPC_APPINFO *cinfo,const TCHAR *destpath,DWORD X_unbg)
 		TCHAR tempfilename[VFPS];
 
 		if ( destpath == NULL ){
-			GetPairPath(cinfo,uud.info.DestPath);
-			CatPath(NULL,uud.info.DestPath,NilStr);
-			if ( PPctInput(cinfo,UnpackTitle,uud.info.DestPath,
-					TSIZEOF(uud.info.DestPath),PPXH_DIR_R,PPXH_DIR) <= 0 ){
+			GetPairPath(cinfo, uud.info.DestPath);
+			CatPath(NULL, uud.info.DestPath, NilStr);
+			if ( PPctInput(cinfo, UnpackTitle, uud.info.DestPath,
+					TSIZEOF(uud.info.DestPath), PPXH_DIR_R, PPXH_DIR) <= 0 ){
 				return ERROR_CANCELLED;
 			}
-			CatPath(NULL,uud.info.DestPath,NilStr);
+			CatPath(NULL, uud.info.DestPath, NilStr);
 		}else{
-			CatPath(uud.info.DestPath,(TCHAR *)destpath,NilStr);
+			CatPath(uud.info.DestPath, (TCHAR *)destpath, NilStr);
 		}
 		uud.X_unbg = X_unbg;
 		uud.hBatchfile = INVALID_HANDLE_VALUE;
 		if ( X_unbg ){
-			MakeTempEntry(VFPS,tempfilename,FILE_ATTRIBUTE_NORMAL);
+			MakeTempEntry(VFPS, tempfilename, FILE_ATTRIBUTE_NORMAL);
 			uud.hBatchfile = CreateFileL(tempfilename, GENERIC_WRITE,
 					0, NULL, CREATE_ALWAYS,
 					FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
@@ -372,20 +372,20 @@ ERRORCODE DoUndll(PPC_APPINFO *cinfo,const TCHAR *destpath,DWORD X_unbg)
 		}
 		uud.oldlastlen = 0;
 
-		InitEnumMarkCell(cinfo,&work);
-		while ( (cell = EnumMarkCell(cinfo,&work)) != NULL ){
+		InitEnumMarkCell(cinfo, &work);
+		while ( (cell = EnumMarkCell(cinfo, &work)) != NULL ){
 			if ( cell->f.dwFileAttributes & FILE_ATTRIBUTEX_FOLDER ) continue;
 			if ( cell->f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY){
-				if ( UnUnsubdir(&uud,CellFileName(cell)) != NO_ERROR ) break;
+				if ( UnUnsubdir(&uud, CellFileName(cell)) != NO_ERROR ) break;
 			}else{
-				UnUndirfix(&uud,cell);
+				UnUndirfix(&uud, cell);
 			}
 		}
 		UnUndirUn(&uud);
 		ThFree(&uud.info.thFileList);
 		if ( uud.hBatchfile != INVALID_HANDLE_VALUE ){
 			CloseHandle(uud.hBatchfile);
-			RunBatchProcess(cinfo,tempfilename,PPcPath,X_unbg);
+			RunBatchProcess(cinfo, tempfilename, PPcPath, X_unbg);
 		}
 	}
 	return NO_ERROR;
@@ -398,24 +398,24 @@ void MakeArcDestDirPath(UNPACKINFOSTRUCT *info)
 	if ( info->chop == 0 ) return;
 
 	*info->DestPathLast = '\0';
-	CatPath(NULL,info->DestPath,FindLastEntryPoint(CellFileName(info->Cell)) );
+	CatPath(NULL, info->DestPath, FindLastEntryPoint(CellFileName(info->Cell)) );
 	// 拡張子を除去
-	p = tstrrchr(info->DestPathLast,'.');
+	p = tstrrchr(info->DestPathLast, '.');
 	if ( p != NULL ) *p = '\0';
 
 	// ごみとり
-	VFSFixPath(NULL,info->DestPathLast,NULL,0);
+	VFSFixPath(NULL, info->DestPathLast, NULL, 0);
 }
 
 void UnpackChop(UNPACKINFOSTRUCT *info)
 {
 	if ( info->chop != 2 ) return;
-	PP_ExtractMacro(info->info.hWnd,&info->info,NULL,T("*chopdir \"%2\""),NULL,0);
+	PP_ExtractMacro(info->info.hWnd, &info->info, NULL, T("*chopdir \"%2\""), NULL, 0);
 }
 
 // SUSIE_DEST_DISK に対応していない Plug-in 向けの展開処理
 // 例) axpdf.spi
-ERRORCODE DoSusie_UseMemA(const SUSIE_DLL *sudll,const char *arcpath,SUSIE_FINFO *fi,const TCHAR *destfullpath)
+ERRORCODE DoSusie_UseMemA(const SUSIE_DLL *sudll, const char *arcpath, SUSIE_FINFO *fi, const TCHAR *destfullpath)
 {
 	HANDLE hMap;
 	DWORD tmpsize;
@@ -424,16 +424,16 @@ ERRORCODE DoSusie_UseMemA(const SUSIE_DLL *sudll,const char *arcpath,SUSIE_FINFO
 	HANDLE hFile;
 	ERRORCODE result;
 
-	susieresult = sudll->GetFile(arcpath,fi->position,
-			(LPSTR)&hMap,SUSIE_SOURCE_DISK | SUSIE_DEST_MEM,NULL,0);
+	susieresult = sudll->GetFile(arcpath, fi->position,
+			(LPSTR)&hMap, SUSIE_SOURCE_DISK | SUSIE_DEST_MEM, NULL, 0);
 	if ( susieresult != SUSIEERROR_NOERROR ) return ERROR_READ_FAULT;
 
-	hFile = CreateFile(destfullpath,GENERIC_WRITE,0,NULL,
-			CREATE_ALWAYS,FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+	hFile = CreateFile(destfullpath, GENERIC_WRITE, 0, NULL,
+			CREATE_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if ( hFile == INVALID_HANDLE_VALUE ){
 		result = GetLastError();
 	}else{
-		if ( IsTrue(WriteFile(hFile,GlobalLock(hMap),fi->filesize,&tmpsize,NULL)) ){
+		if ( IsTrue(WriteFile(hFile, GlobalLock(hMap), fi->filesize, &tmpsize, NULL)) ){
 			result = NO_ERROR;
 		}else{
 			result = GetLastError();
@@ -454,32 +454,32 @@ void VFSArchiveSection_Leave(void)
 }
 
 #ifdef UNICODE
-ERRORCODE DoSusie_partW(PPC_APPINFO *cinfo,WCHAR *dstT,const SUSIE_DLL *sudll)
+ERRORCODE DoSusie_partW(PPC_APPINFO *cinfo, WCHAR *dstT, const SUSIE_DLL *sudll)
 {
 	ERRORCODE result = NO_ERROR;
 	ENTRYCELL *cell;
 	HLOCAL fiH;
-	SUSIE_FINFOW *fi,*fiorg,*fimax;
+	SUSIE_FINFOW *fi, *fiorg, *fimax;
 	WCHAR *lastpath;
 	int work;
 	WCHAR srcpath[VFPS];
 
-	tstrcpy(srcpath,cinfo->RealPath);
+	tstrcpy(srcpath, cinfo->RealPath);
 
 	lastpath = dstT + strlenW(dstT);
 
-	if ( VFSArchiveSection(VFSAS_ENTER | VFSAS_SUSIE,VAS_Name) < 0 ){
+	if ( VFSArchiveSection(VFSAS_ENTER | VFSAS_SUSIE, VAS_Name) < 0 ){
 		return ERROR_INVALID_HANDLE;
 	}
-	if ( SUSIEERROR_NOERROR != sudll->GetArchiveInfoW(srcpath,0,SUSIE_SOURCE_DISK,(HLOCAL *)&fiH) ){
+	if ( SUSIEERROR_NOERROR != sudll->GetArchiveInfoW(srcpath, 0, SUSIE_SOURCE_DISK, (HLOCAL *)&fiH) ){
 		VFSArchiveSection_Leave();
 		return ERROR_INVALID_HANDLE;
 	}
 	fiorg = LocalLock(fiH);
 	fimax = (SUSIE_FINFOW *)(BYTE *)((BYTE *)fiorg + LocalSize(fiH));
 
-	InitEnumMarkCell(cinfo,&work);
-	while ( (cell = EnumMarkCell(cinfo,&work)) != NULL ){
+	InitEnumMarkCell(cinfo, &work);
+	while ( (cell = EnumMarkCell(cinfo, &work)) != NULL ){
 		int namelen;
 		WCHAR *cellname;
 
@@ -494,13 +494,13 @@ ERRORCODE DoSusie_partW(PPC_APPINFO *cinfo,WCHAR *dstT,const SUSIE_DLL *sudll)
 			int susieresult;
 
 			if ( fi->filename[0] == '\0' ) continue; // dir ?
-			CatPath(nameW,fi->path,fi->filename);
+			CatPath(nameW, fi->path, fi->filename);
 			if ( cinfo->UseArcPathMask != ARCPATHMASK_OFF ){
 				WCHAR dirpath[VFPS];
 				const WCHAR *pathfirst;
 				int depth;
 
-				if ( memcmp(cellname,nameW,namelen * sizeof(WCHAR)) != 0 ) continue;
+				if ( memcmp(cellname, nameW, namelen * sizeof(WCHAR)) != 0 ) continue;
 				if ( (nameW[namelen] != '\0') && (nameW[namelen] != '\\') ){
 					continue;
 				}
@@ -514,24 +514,24 @@ ERRORCODE DoSusie_partW(PPC_APPINFO *cinfo,WCHAR *dstT,const SUSIE_DLL *sudll)
 					}
 					pathfirst++;
 				}
-				strcpyW(lastpath,pathfirst);
-				if ( strcmpW(dirpath,pathfirst) != 0 ){ // subdir 生成
-					MakeDirectories(dstT,NULL);
-					tstrcpy(dirpath,pathfirst);
+				strcpyW(lastpath, pathfirst);
+				if ( strcmpW(dirpath, pathfirst) != 0 ){ // subdir 生成
+					MakeDirectories(dstT, NULL);
+					tstrcpy(dirpath, pathfirst);
 				}
 			}else{
-				if ( strcmpW(cellname,nameW) != 0 ) continue;
+				if ( strcmpW(cellname, nameW) != 0 ) continue;
 				*lastpath = '\0';
 			}
-			susieresult = sudll->GetFileW(srcpath,fi->position,
-					dstT,SUSIE_SOURCE_DISK | SUSIE_DEST_DISK,NULL,0);
+			susieresult = sudll->GetFileW(srcpath, fi->position,
+					dstT, SUSIE_SOURCE_DISK | SUSIE_DEST_DISK, NULL, 0);
 			if ( susieresult != SUSIEERROR_NOERROR ){
 /*
 				if ( susieresult == SUSIEERROR_NOTSUPPORT ){
 					TCHAR destfullpath[VFPS];
 
-					CatPath(destfullpath,dstT,FindLastEntryPoint(nameW));
-					result = DoSusie_UseMemW(sudll,TPATH,fi,destfullpath);
+					CatPath(destfullpath, dstT, FindLastEntryPoint(nameW));
+					result = DoSusie_UseMemW(sudll, TPATH, fi, destfullpath);
 					if ( result != NO_ERROR ) break;
 				}else{
 */
@@ -554,12 +554,12 @@ ERRORCODE DoSusie_partW(PPC_APPINFO *cinfo,WCHAR *dstT,const SUSIE_DLL *sudll)
 #endif
 
 
-ERRORCODE DoSusie_part(PPC_APPINFO *cinfo,const TCHAR *destpath)
+ERRORCODE DoSusie_part(PPC_APPINFO *cinfo, const TCHAR *destpath)
 {
 	ERRORCODE result = NO_ERROR;
 	ENTRYCELL *cell;
 	HLOCAL fiH;
-	SUSIE_FINFO *fi,*fiorg,*fimax;
+	SUSIE_FINFO *fi, *fiorg, *fimax;
 	char *lastpath;
 	const SUSIE_DLL *sudll;
 	int work;
@@ -570,12 +570,12 @@ ERRORCODE DoSusie_part(PPC_APPINFO *cinfo,const TCHAR *destpath)
 	#endif
 	TCHAR dstT[VFPS];
 
-	CatPath(dstT,(TCHAR *)destpath,NilStr);
-	tstrcpy(srcpath,cinfo->RealPath);
+	CatPath(dstT, (TCHAR *)destpath, NilStr);
+	tstrcpy(srcpath, cinfo->RealPath);
 
 	#ifdef UNICODE
-		UnicodeToAnsi(srcpath,pathA,sizeof(pathA));
-		UnicodeToAnsi(dstT,dstA,sizeof(dstA));
+		UnicodeToAnsi(srcpath, pathA, sizeof(pathA));
+		UnicodeToAnsi(dstT, dstA, sizeof(dstA));
 		#define TPATH pathA
 		#define TDEST dstA
 	#else
@@ -588,25 +588,25 @@ ERRORCODE DoSusie_part(PPC_APPINFO *cinfo,const TCHAR *destpath)
 	if ( sudll == NULL ) return ERROR_INVALID_HANDLE;
 	#ifdef UNICODE
 		if ( sudll->GetArchiveInfoW != NULL ){ // UNICODE 版
-			return DoSusie_partW(cinfo,dstT,sudll);
+			return DoSusie_partW(cinfo, dstT, sudll);
 		}
 	#endif
 
-	VFSArchiveSection(VFSAS_ENTER | VFSAS_SUSIE,VAS_Name);
-	if ( SUSIEERROR_NOERROR != sudll->GetArchiveInfo(TPATH,0,SUSIE_SOURCE_DISK,(HLOCAL *)&fiH) ){
+	VFSArchiveSection(VFSAS_ENTER | VFSAS_SUSIE, VAS_Name);
+	if ( SUSIEERROR_NOERROR != sudll->GetArchiveInfo(TPATH, 0, SUSIE_SOURCE_DISK, (HLOCAL *)&fiH) ){
 		VFSArchiveSection_Leave();
 		return ERROR_INVALID_HANDLE;
 	}
 	fiorg = LocalLock(fiH);
 	fimax = (SUSIE_FINFO *)(BYTE *)((BYTE *)fiorg + LocalSize(fiH));
 
-	InitEnumMarkCell(cinfo,&work);
-	while ( (cell = EnumMarkCell(cinfo,&work)) != NULL ){
+	InitEnumMarkCell(cinfo, &work);
+	while ( (cell = EnumMarkCell(cinfo, &work)) != NULL ){
 		int namelen;
 		#ifdef UNICODE
 			char cellname[VFPS];
 
-			UnicodeToAnsi(CellFileName(cell),cellname,sizeof(cellname));
+			UnicodeToAnsi(CellFileName(cell), cellname, sizeof(cellname));
 		#else
 			char *cellname;
 
@@ -623,23 +623,23 @@ ERRORCODE DoSusie_part(PPC_APPINFO *cinfo,const TCHAR *destpath)
 
 			if ( fi->filename[0] == '\0' ) continue; // dir ?
 			#ifdef UNICODE
-				wsprintfA(nameA,"%s%s",fi->path,fi->filename);
+				wsprintfA(nameA, "%s%s", fi->path, fi->filename);
 			#else
-				CatPath(nameA,fi->path,fi->filename);
+				CatPath(nameA, fi->path, fi->filename);
 			#endif
-			if ( cinfo->UseArcPathMask  != ARCPATHMASK_OFF ){
+			if ( cinfo->UseArcPathMask != ARCPATHMASK_OFF ){
 				TCHAR dirpath[VFPS];
 				const TCHAR *pathfirst;
 				int depth;
 				#ifdef UNICODE
 					WCHAR DIRNAME[VFPS];
 
-					AnsiToUnicode(fi->path,DIRNAME,VFPS);
+					AnsiToUnicode(fi->path, DIRNAME, VFPS);
 				#else
 					#define DIRNAME fi->path
 				#endif
 
-				if ( memcmp(cellname,nameA,namelen) != 0 ) continue;
+				if ( memcmp(cellname, nameA, namelen) != 0 ) continue;
 				if ( (nameA[namelen] != '\0') && (nameA[namelen] != '\\') ){
 					continue;
 				}
@@ -653,35 +653,35 @@ ERRORCODE DoSusie_part(PPC_APPINFO *cinfo,const TCHAR *destpath)
 					}
 					pathfirst++;
 				}
-				strcpyToA(lastpath,pathfirst,MAX_PATH);
-				if ( tstrcmp(dirpath,pathfirst) != 0 ){ // subdir 生成
+				strcpyToA(lastpath, pathfirst, MAX_PATH);
+				if ( tstrcmp(dirpath, pathfirst) != 0 ){ // subdir 生成
 					#ifdef UNICODE
 						WCHAR destpathbuf[VFPS];
 
-						AnsiToUnicode(TDEST,destpathbuf,VFPS);
-						MakeDirectories(destpathbuf,NULL);
+						AnsiToUnicode(TDEST, destpathbuf, VFPS);
+						MakeDirectories(destpathbuf, NULL);
 					#else
-						MakeDirectories(TDEST,NULL);
+						MakeDirectories(TDEST, NULL);
 					#endif
-					tstrcpy(dirpath,pathfirst);
+					tstrcpy(dirpath, pathfirst);
 				}
 			}else{
-				if ( strcmp(cellname,nameA) != 0 ) continue;
+				if ( strcmp(cellname, nameA) != 0 ) continue;
 				*lastpath = '\0';
 			}
-			susieresult = sudll->GetFile(TPATH,fi->position,
-					TDEST,SUSIE_SOURCE_DISK | SUSIE_DEST_DISK,NULL,0);
+			susieresult = sudll->GetFile(TPATH, fi->position,
+					TDEST, SUSIE_SOURCE_DISK | SUSIE_DEST_DISK, NULL, 0);
 			if ( susieresult != SUSIEERROR_NOERROR ){
 				if ( susieresult == SUSIEERROR_NOTSUPPORT ){
 					TCHAR destfullpath[VFPS];
 
 					#ifdef UNICODE
-						strcpyAToT(destfullpath,nameA,VFPS);
-						VFSFullPath(destfullpath,FindLastEntryPoint(destfullpath),dstT);
+						strcpyAToT(destfullpath, nameA, VFPS);
+						VFSFullPath(destfullpath, FindLastEntryPoint(destfullpath), dstT);
 					#else
-						CatPath(destfullpath,dstT,FindLastEntryPoint(nameA));
+						CatPath(destfullpath, dstT, FindLastEntryPoint(nameA));
 					#endif
-					result = DoSusie_UseMemA(sudll,TPATH,fi,destfullpath);
+					result = DoSusie_UseMemA(sudll, TPATH, fi, destfullpath);
 					if ( result != NO_ERROR ) break;
 				}else{
 					result = ERROR_CAN_NOT_COMPLETE;
@@ -703,7 +703,7 @@ ERRORCODE DoSusie_part(PPC_APPINFO *cinfo,const TCHAR *destpath)
 	return result;
 }
 
-ERRORCODE DoSusie_all(UNPACKINFOSTRUCT *info,const TCHAR *filename,void *dt_opt)
+ERRORCODE DoSusie_all(UNPACKINFOSTRUCT *info, const TCHAR *filename, void *dt_opt)
 {
 	TCHAR param[VFPS];
 	TCHAR dirpath[VFPS];
@@ -715,18 +715,18 @@ ERRORCODE DoSusie_all(UNPACKINFOSTRUCT *info,const TCHAR *filename,void *dt_opt)
 	if ( sudll == NULL ) return ERROR_INVALID_HANDLE;
 
 	dirpath[0] = '\0';
-	MakeDirectories(info->DestPath,NULL);
-	CatPath(param,info->DestPath,NilStr);
-	VFSArchiveSection(VFSAS_ENTER | VFSAS_SUSIE,VAS_Name);
+	MakeDirectories(info->DestPath, NULL);
+	CatPath(param, info->DestPath, NilStr);
+	VFSArchiveSection(VFSAS_ENTER | VFSAS_SUSIE, VAS_Name);
 
 #ifdef UNICODE
 	if ( sudll->GetArchiveInfoW != NULL ){ // UNICODE 版
 		WCHAR *lastpath;
 		const WCHAR *oldmakedir = L"";
-		SUSIE_FINFOW *fiW,*fimaxW;
+		SUSIE_FINFOW *fiW, *fimaxW;
 
 		lastpath = param + strlenW(param);
-		sudll->GetArchiveInfoW(filename,0,SUSIE_SOURCE_DISK,(HLOCAL *)&fiH);
+		sudll->GetArchiveInfoW(filename, 0, SUSIE_SOURCE_DISK, (HLOCAL *)&fiH);
 		fiW = LocalLock(fiH);
 		fimaxW = (SUSIE_FINFOW *)(BYTE *)((BYTE *)fiW + LocalSize(fiH));
 		for ( ; (fiW < fimaxW) && (fiW->method[0] != 0) ; fiW++ ){
@@ -736,28 +736,28 @@ ERRORCODE DoSusie_all(UNPACKINFOSTRUCT *info,const TCHAR *filename,void *dt_opt)
 			*lastpath = '\0';
 
 			if ( fiW->path[0] != '\0' ){
-				if ( strcmpW(fiW->path,oldmakedir) != 0 ){
-					wsprintf(dirpath,L"%s%s",param,fiW->path);
-					MakeDirectories(dirpath,NULL);
+				if ( strcmpW(fiW->path, oldmakedir) != 0 ){
+					wsprintf(dirpath, L"%s%s", param, fiW->path);
+					MakeDirectories(dirpath, NULL);
 					oldmakedir = fiW->path;
 				}
 				if ( dirbug != 0 ){
 					*lastpath = '\\';
-					strcpyW(lastpath,fiW->path);
+					strcpyW(lastpath, fiW->path);
 				}
 			}
 
-			susieresult = sudll->GetFileW(filename,(LONG_PTR)fiW->position,
-					param,SUSIE_SOURCE_DISK | SUSIE_DEST_DISK,NULL,0);
+			susieresult = sudll->GetFileW(filename, (LONG_PTR)fiW->position,
+					param, SUSIE_SOURCE_DISK | SUSIE_DEST_DISK, NULL, 0);
 			if ( susieresult != SUSIEERROR_NOERROR ){
 				ERRORCODE result;
 				if ( fiW->path[0] && (dirbug < 0) ){ // bug を確認
 					*lastpath = '\0';
-					if ( sudll->GetFileW(filename,(LONG_PTR)fiW->position,param,
-							SUSIE_SOURCE_DISK | SUSIE_DEST_DISK,NULL,0) ==
+					if ( sudll->GetFileW(filename, (LONG_PTR)fiW->position, param,
+							SUSIE_SOURCE_DISK | SUSIE_DEST_DISK, NULL, 0) ==
 							SUSIEERROR_NOERROR ){
 						dirbug = 0; // 成功→bug有り
-						WriteReport(RUnpackTitle,filename,NO_ERROR);
+						WriteReport(RUnpackTitle, filename, NO_ERROR);
 						continue;
 					}
 					*lastpath = '\\';
@@ -767,15 +767,15 @@ ERRORCODE DoSusie_all(UNPACKINFOSTRUCT *info,const TCHAR *filename,void *dt_opt)
 /*
 					WCHAR destfullpath[VFPS];
 
-					CatPath(destfullpath,fiW->path[0] ? dirpath : param,fiW->filename);
-					result = DoSusie_UseMemA(sudll,TFILENAME2,fi,destfullpath);
+					CatPath(destfullpath, fiW->path[0] ? dirpath : param, fiW->filename);
+					result = DoSusie_UseMemA(sudll, TFILENAME2, fi, destfullpath);
 					if ( result == NO_ERROR ) continue;
 */
 				}else{
 					if ( (Combo.Report.hWnd == NULL) && (hCommonLog == NULL) ){
-						SetPopMsg(info->parent,ERROR_WRITE_FAULT,NULL);
+						SetPopMsg(info->parent, ERROR_WRITE_FAULT, NULL);
 					}else{
-						WriteReport(RUnpackTitle,filename,ERROR_WRITE_FAULT);
+						WriteReport(RUnpackTitle, filename, ERROR_WRITE_FAULT);
 					}
 					result = ERROR_WRITE_FAULT;
 				}
@@ -784,7 +784,7 @@ ERRORCODE DoSusie_all(UNPACKINFOSTRUCT *info,const TCHAR *filename,void *dt_opt)
 				LocalFree(fiH);
 				return result;
 			}
-			WriteReport(RUnpackTitle,filename,NO_ERROR);
+			WriteReport(RUnpackTitle, filename, NO_ERROR);
 		}
 		VFSArchiveSection_Leave();
 		LocalUnlock(fiH);
@@ -796,13 +796,13 @@ ERRORCODE DoSusie_all(UNPACKINFOSTRUCT *info,const TCHAR *filename,void *dt_opt)
 	{ // ANSI 版
 		const char *oldmakedir = "";
 		char *lastpath;
-		SUSIE_FINFO *fi,*fimax;
+		SUSIE_FINFO *fi, *fimax;
 		#ifdef UNICODE
 			char paramA[VFPS];
 			char filenameA[VFPS];
 
-			UnicodeToAnsi(param,paramA,sizeof(paramA));
-			UnicodeToAnsi(filename,filenameA,sizeof(filenameA));
+			UnicodeToAnsi(param, paramA, sizeof(paramA));
+			UnicodeToAnsi(filename, filenameA, sizeof(filenameA));
 			#define TFILENAME2 filenameA
 			#define TDEST paramA
 		#else
@@ -811,7 +811,7 @@ ERRORCODE DoSusie_all(UNPACKINFOSTRUCT *info,const TCHAR *filename,void *dt_opt)
 		#endif
 
 		lastpath = TDEST + strlen(TDEST);
-		sudll->GetArchiveInfo(TFILENAME2,0,SUSIE_SOURCE_DISK,(HLOCAL *)&fiH);
+		sudll->GetArchiveInfo(TFILENAME2, 0, SUSIE_SOURCE_DISK, (HLOCAL *)&fiH);
 		fi = LocalLock(fiH);
 		fimax = (SUSIE_FINFO *)(BYTE *)((BYTE *)fi + LocalSize(fiH));
 		for ( ; (fi < fimax) && (fi->method[0] != 0) ; fi++ ){
@@ -821,35 +821,35 @@ ERRORCODE DoSusie_all(UNPACKINFOSTRUCT *info,const TCHAR *filename,void *dt_opt)
 			*lastpath = '\0';
 
 			if ( fi->path[0] != '\0' ){
-				if ( strcmp(fi->path,oldmakedir) != 0 ){
+				if ( strcmp(fi->path, oldmakedir) != 0 ){
 				#ifdef UNICODE
 					WCHAR direntryW[VFPS];
 
-					AnsiToUnicode(fi->path,direntryW,MAX_PATH);
-					wsprintf(dirpath,L"%s%s",param,direntryW);
+					AnsiToUnicode(fi->path, direntryW, MAX_PATH);
+					wsprintf(dirpath, L"%s%s", param, direntryW);
 				#else
-					wsprintf(dirpath,"%s%s",param,fi->path);
+					wsprintf(dirpath, "%s%s", param, fi->path);
 				#endif
-					MakeDirectories(dirpath,NULL);
+					MakeDirectories(dirpath, NULL);
 					oldmakedir = fi->path;
 				}
 				if ( dirbug != 0 ){
 					*lastpath = '\\';
-					strcpy(lastpath,fi->path);
+					strcpy(lastpath, fi->path);
 				}
 			}
 
-			susieresult = sudll->GetFile(TFILENAME2,(LONG_PTR)fi->position,
-					TDEST,SUSIE_SOURCE_DISK | SUSIE_DEST_DISK,NULL,0);
+			susieresult = sudll->GetFile(TFILENAME2, (LONG_PTR)fi->position,
+					TDEST, SUSIE_SOURCE_DISK | SUSIE_DEST_DISK, NULL, 0);
 			if ( susieresult != SUSIEERROR_NOERROR ){
 				ERRORCODE result;
 				if ( fi->path[0] && (dirbug < 0) ){ // bug を確認
 					*lastpath = '\0';
-					if ( sudll->GetFile(TFILENAME2,(LONG_PTR)fi->position,TDEST,
-							SUSIE_SOURCE_DISK | SUSIE_DEST_DISK,NULL,0) ==
+					if ( sudll->GetFile(TFILENAME2, (LONG_PTR)fi->position, TDEST,
+							SUSIE_SOURCE_DISK | SUSIE_DEST_DISK, NULL, 0) ==
 							SUSIEERROR_NOERROR ){
 						dirbug = 0; // 成功→bug有り
-						WriteReport(RUnpackTitle,filename,NO_ERROR);
+						WriteReport(RUnpackTitle, filename, NO_ERROR);
 						continue;
 					}
 					*lastpath = '\\';
@@ -859,18 +859,18 @@ ERRORCODE DoSusie_all(UNPACKINFOSTRUCT *info,const TCHAR *filename,void *dt_opt)
 					TCHAR destfullpath[VFPS];
 
 					#ifdef UNICODE
-						strcpyAToT(destfullpath,fi->filename,VFPS);
-						VFSFullPath(NULL,destfullpath,fi->path[0] ? dirpath : param);
+						strcpyAToT(destfullpath, fi->filename, VFPS);
+						VFSFullPath(NULL, destfullpath, fi->path[0] ? dirpath : param);
 					#else
-						CatPath(destfullpath,fi->path[0] ? dirpath : param,fi->filename);
+						CatPath(destfullpath, fi->path[0] ? dirpath : param, fi->filename);
 					#endif
-					result = DoSusie_UseMemA(sudll,TFILENAME2,fi,destfullpath);
+					result = DoSusie_UseMemA(sudll, TFILENAME2, fi, destfullpath);
 					if ( result == NO_ERROR ) continue;
 				}else{
 					if ( (Combo.Report.hWnd == NULL) && (hCommonLog == NULL) ){
-						SetPopMsg(info->parent,ERROR_WRITE_FAULT,NULL);
+						SetPopMsg(info->parent, ERROR_WRITE_FAULT, NULL);
 					}else{
-						WriteReport(RUnpackTitle,filename,ERROR_WRITE_FAULT);
+						WriteReport(RUnpackTitle, filename, ERROR_WRITE_FAULT);
 					}
 					result = ERROR_WRITE_FAULT;
 				}
@@ -879,7 +879,7 @@ ERRORCODE DoSusie_all(UNPACKINFOSTRUCT *info,const TCHAR *filename,void *dt_opt)
 				LocalFree(fiH);
 				return result;
 			}
-			WriteReport(RUnpackTitle,filename,NO_ERROR);
+			WriteReport(RUnpackTitle, filename, NO_ERROR);
 		}
 		VFSArchiveSection_Leave();
 		LocalUnlock(fiH);

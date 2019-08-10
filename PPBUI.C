@@ -36,8 +36,8 @@ const TCHAR PPbOptionError[] = T("Bad option\r\n");
 const TCHAR PPbMainTitle[] = T("PPbui Version ") T(FileProp_Version) T("(")
 		T(BITSTRING) T(",") T(CODETYPESTRING) T(") ") TCopyright T("\n");
 
-THREADSTRUCT threadstruct = {PPbMainThreadName,XTHREAD_ROOT,NULL,0,0};
-PPXAPPINFO ppbappinfo = {(PPXAPPINFOFUNCTION)PPbInfoFunc,T("PPb"),RegID,NULL};
+THREADSTRUCT threadstruct = {PPbMainThreadName, XTHREAD_ROOT, NULL, 0, 0};
+PPXAPPINFO ppbappinfo = {(PPXAPPINFOFUNCTION)PPbInfoFunc, T("PPb"), RegID, NULL};
 
 /*-----------------------------------------------------------------------------
 	SetConsoleCtrlHandler で登録されるハンドラ
@@ -61,11 +61,11 @@ BOOL InitPPb(void)
 {
 	TCHAR buf[CMDLINESIZE * 2];
 	const TCHAR *p;
-	DefineWinAPI(HWND,GetConsoleWindow,(void));
+	DefineWinAPI(HWND, GetConsoleWindow, (void));
 	HWND hRwnd = BADHWND; // 起動時同期の対象ウィンドウ
 	BOOL silent = FALSE;
 
-	CoInitializeEx(NULL,COINIT_APARTMENTTHREADED);
+	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 #if NODLL
 	InitCommonDll(GetModuleHandle(NULL));
 #endif
@@ -74,14 +74,14 @@ BOOL InitPPb(void)
 	FixCharlengthTable(T_CHRTYPE);
 //------------------------------------- カレントディレクトリ設定
 	p = GetCommandLine();
-	GetLineParam(&p,PPxPath);
+	GetLineParam(&p, PPxPath);
 										//---------------------------- PPxPath
-	GetModuleFileName(NULL,PPxPath,TSIZEOF(PPxPath));
+	GetModuleFileName(NULL, PPxPath, TSIZEOF(PPxPath));
 	*VFSFindLastEntry(PPxPath) = '\0';	// ファイル名部分を除去する
 										//---------------------------- EditPath
-	GetCurrentDirectory(TSIZEOF(EditPath),EditPath);
+	GetCurrentDirectory(TSIZEOF(EditPath), EditPath);
 										//---------------------------- ExtPath
-	tstrcpy(ExtPath,EditPath);
+	tstrcpy(ExtPath, EditPath);
 										//-------- プロセスのカレントを変更する
 	SetCurrentDirectory(PPxPath);
 
@@ -90,8 +90,8 @@ BOOL InitPPb(void)
 
 	if ( (SkipSpace(&p) == '-') && (*(p + 1) == 'P') ){
 		p += 2;
-		GetLineParam(&p,buf);
-		VFSFixPath(EditPath,buf,EditPath,VFSFIX_FULLPATH | VFSFIX_REALPATH | VFSFIX_NOFIXEDGE);
+		GetLineParam(&p, buf);
+		VFSFixPath(EditPath, buf, EditPath, VFSFIX_FULLPATH | VFSFIX_REALPATH | VFSFIX_NOFIXEDGE);
 		SkipSpace(&p);	// 空白削除
 	}
 										// オプションチェック -----
@@ -103,7 +103,7 @@ BOOL InitPPb(void)
 			case 'C':
 				p++;
 				SkipSpace(&p);	// 空白削除
-				PP_ExtractMacro(NULL,&ppbappinfo,NULL,p,NULL,(silent == FALSE) ?
+				PP_ExtractMacro(NULL, &ppbappinfo, NULL, p, NULL, (silent == FALSE) ?
 						(XEO_CONSOLE | XEO_NOUSEPPB) :
 						(XEO_CONSOLE | XEO_NOUSEPPB | XEO_SEQUENTIAL) );
 				if ( silent == FALSE ) goto goexit; // EXIT_SUCCESS
@@ -122,31 +122,31 @@ BOOL InitPPb(void)
 		}
 	}
 	//------------------------------------- 初期化
-	RegNo = PPxRegist(PPXREGIST_DUMMYHWND,RegID,PPXREGIST_NORMAL);
+	RegNo = PPxRegist(PPXREGIST_DUMMYHWND, RegID, PPXREGIST_NORMAL);
 
 	SetErrorMode(SEM_FAILCRITICALERRORS);	// 致命的エラーを取得可能にする
 
-	GETDLLPROC(hKernel32,GetConsoleWindow);
+	GETDLLPROC(hKernel32, GetConsoleWindow);
 	if ( DGetConsoleWindow != NULL ){
 		hMainWnd = DGetConsoleWindow();
 	}else{
-		wsprintf(buf,T("+%X)"),GetCurrentThreadId());
+		wsprintf(buf, T("+%X)"), GetCurrentThreadId());
 	}
 	if ( tInit((DGetConsoleWindow != NULL) ? NULL : buf) == FALSE ){
-		MessageBox(NULL,T("Can't execute PPb on this OS."),NULL,MB_OK);
+		MessageBox(NULL, T("Can't execute PPb on this OS."), NULL, MB_OK);
 		ExitCode = EXIT_FAILURE;
 		goto goexit;
 	}
 	ThInit(&LongParam);
 									// システム関連のイベント管理ハンドラの設定
-	SetConsoleCtrlHandler((PHANDLER_ROUTINE)SysHotKey,TRUE);
+	SetConsoleCtrlHandler((PHANDLER_ROUTINE)SysHotKey, TRUE);
 	if ( silent == FALSE ) tputstr(PPbMainTitle);
 										// 自分のコンソールの HWND を取得する
 	if ( DGetConsoleWindow == NULL ){
 		int i;
 
 		for ( i = 0 ; i < 30 ; i++ ){
-			hMainWnd = FindWindow(NULL,buf);
+			hMainWnd = FindWindow(NULL, buf);
 			if ( hMainWnd != NULL ) break;
 			Sleep(100);
 		}
@@ -154,36 +154,36 @@ BOOL InitPPb(void)
 	if ( hMainWnd == NULL ) hMainWnd = BADHWND;
 	ppbappinfo.hWnd = hMainWnd;
 										// PPCOMMON に登録
-	PPxRegist(hMainWnd,RegID,PPXREGIST_SETHWND);
+	PPxRegist(hMainWnd, RegID, PPXREGIST_SETHWND);
 	RegCID[1] = RegID[2];
 	WndTitle[4] = RegID[2];
 	{
 		const TCHAR *runasp;
 
 		runasp = CheckRunAs();
-		if ( runasp != NULL ) wsprintf(WndTitle + 6,T("(%s)"),runasp);
+		if ( runasp != NULL ) wsprintf(WndTitle + 6, T("(%s)"), runasp);
 	}
 										// ↓ SendPPb記載のフロー番号
 										// [1] プロセス間通信用イベントの定義
-	wsprintf(buf,T("%s%s"),PPxGetSyncTag(),RegID);
+	wsprintf(buf, T("%s%s"), PPxGetSyncTag(), RegID);
 
-	hCommSendEvent = CreateEvent(NULL,TRUE,FALSE,buf); // nosignal
-	tstrcat(buf,T("R"));
-	hCommIdleEvent = CreateEvent(NULL,TRUE,FALSE,buf); // nosignal
+	hCommSendEvent = CreateEvent(NULL, TRUE, FALSE, buf); // nosignal
+	tstrcat(buf, T("R"));
+	hCommIdleEvent = CreateEvent(NULL, TRUE, FALSE, buf); // nosignal
 
 	if ( hCommSendEvent == NULL ) tputstr(T("Event create error\n"));
 											// ウィンドウ位置を再設定
-	if ( NO_ERROR == GetCustTable(T("_WinPos"),RegCID,&WinPos,sizeof(WinPos)) ){
-		MoveWindow(hMainWnd,WinPos.pos.left,WinPos.pos.top,
+	if ( NO_ERROR == GetCustTable(T("_WinPos"), RegCID, &WinPos, sizeof(WinPos)) ){
+		MoveWindow(hMainWnd, WinPos.pos.left, WinPos.pos.top,
 					WinPos.pos.right - WinPos.pos.left,
-					WinPos.pos.bottom - WinPos.pos.top,TRUE);
+					WinPos.pos.bottom - WinPos.pos.top, TRUE);
 	}
 //------------------------------------- 起動時同期
 	if ( hRwnd != BADHWND ){
 		HANDLE hRevent;
 
-		wsprintf(buf,T(PPBBOOTSYNC) T("%x"),hRwnd);
-		hRevent = OpenEvent(EVENT_ALL_ACCESS,FALSE,buf);
+		wsprintf(buf, T(PPBBOOTSYNC) T("%x"), hRwnd);
+		hRevent = OpenEvent(EVENT_ALL_ACCESS, FALSE, buf);
 		if ( hRevent != NULL ){
 			SetEvent(hRevent);
 			CloseHandle(hRevent);
@@ -214,13 +214,13 @@ int USECDECL main(void)
 		SetCurrentDirectory(PPxPath);
 		TitleDisp(NULL);
 		SetEvent(hCommIdleEvent); // [2]受付可能
-		switch( tCInput(Cparam,TSIZEOF(Cparam),
+		switch( tCInput(Cparam, TSIZEOF(Cparam),
 				PPXH_GENERAL | PPXH_COMMAND | PPXH_PATH) ){
 			case TCI_RECV: {	// 外部からのコマンド実行、[4][5] 内容設定通知
 				*(DWORD *)RecvParam = ExitCode;
-				if ( ReceiveStrings(RegID,RecvParam) == 0 ){ // [6]内容受領
-					tFillChr(0,screen.dwCursorPosition.Y,
-						screen.dwSize.X - 1,screen.dwCursorPosition.Y,' ');
+				if ( ReceiveStrings(RegID, RecvParam) == 0 ){ // [6]内容受領
+					tFillChr(0, screen.dwCursorPosition.Y,
+						screen.dwSize.X - 1, screen.dwCursorPosition.Y, ' ');
 					CurrentPath = ExtPath;
 					PPbExecuteRecv(RecvParam); // [7]実行
 				}
@@ -231,8 +231,8 @@ int USECDECL main(void)
 				if ( Cparam[0] != '\0' ){
 					ResetEvent(hCommIdleEvent); // 受け付け無しに変更 [1]
 					tputstr(T("\n"));
-					WriteHistory(PPXH_COMMAND,Cparam,0,NULL);
-					PPbExecuteInput(Cparam,tstrlen32(Cparam));
+					WriteHistory(PPXH_COMMAND, Cparam, 0, NULL);
+					PPbExecuteInput(Cparam, tstrlen32(Cparam));
 					Cparam[0] = '\0';
 				}
 				break;

@@ -25,7 +25,7 @@ enum {
 	VCODE_ASCII,	// Text(ASCIIZ)
 	VCODE_UNICODEF,	// Text(UNICODEZ) + 補正用 1byte
 	VCODE_UNICODE,	// Text(UNICODEZ)
-	VCODE_COLOR,	// Color(BYTE fg,BYTE bg)
+	VCODE_COLOR,	// Color(BYTE fg, BYTE bg)
 	VCODE_FONT,		// Font(BYTE type)
 	VCODE_CONTROL,	// 制御文字
 	VCODE_TAB,		// Tab
@@ -49,7 +49,7 @@ enum {
 #define VTTF_LINK B3 // リンク表示の途中
 #define VTTF_HIGHLIGHT B4 // ハイライト有り
 
-#pragma pack(push,1)
+#pragma pack(push, 1)
 typedef struct {
 	BYTE *ptr;	// 表示開始位置
 	BYTE Fclr;	// 前景色
@@ -68,22 +68,22 @@ typedef struct {
 } MAKETEXTINFO;
 
 typedef struct {
-	int			offX,offY;		// 表示開始位置
-	int			csrX,csrY;		// カーソルの位置
+	int			offX, offY;		// 表示開始位置
+	int			csrX, csrY;		// カーソルの位置
 	int			textC;			// テキスト: 表示文字コード
 								// 0:IBM 1:ANSI 2:JIS 3:S-JIS 4:EUC 5:UNICODE
 								// RAWIMAGE: 色情報
 								//	B0-B5:色数 B6:1:10bit B7:1:RGB/0:BGR
 	#define WIDTH_AUTOFIX -1
 	#define WIDTH_NOWARP 0
-	int			width,defwidth;	// 桁数(調整済み),桁数(元値)
+	int			width, defwidth;	// 桁数(調整済み), 桁数(元値)
 	int			cline;			// 計算済みの行数(cline≦line)
 	int			line;			// 全行数(内容が古いものを含む)
 	BOOL		reading;		// 読込み中か
 	int			tab;			// Tab幅
 	BYTE		*img;			// File image
 	VT_TABLE	*ti;			// Text Display index
-	BYTE		*(*MakeText)(MAKETEXTINFO *mti,VT_TABLE *tbl);
+	BYTE		*(*MakeText)(MAKETEXTINFO *mti, VT_TABLE *tbl);
 } VO_INFO;
 
 typedef struct {
@@ -155,7 +155,7 @@ enum {
 	IMGD_WINDOWSIZE = -1, // 窓枠に合わせる
 	IMGD_AUTOWINDOWSIZE = -2,	 // 窓枠より小さければ等倍、そうでなければ縮小
 	IMGD_FIXWINDOWSIZE = -3,	 // 窓枠の大きさを変える
-	IMGD_AUTOFIXWINDOWSIZE = -4, // 窓枠の大きさを変える,最大窓枠より大→縮小
+	IMGD_AUTOFIXWINDOWSIZE = -4, // 窓枠の大きさを変える, 最大窓枠より大→縮小
 //
 	IMGD_AUTOWINDOWSIZE_2 = -5,  // IMGD_NORMAL / IMGD_AUTOWINDOWSIZE トグル
 	IMGD_OFFSET = 10, // 拡縮オフセット
@@ -177,7 +177,7 @@ typedef struct {
 						// +1:SetStretchBltMode の値
 		int MagMode;	// IMGD_MM_xx
 		int AspectRate;	// アスペクト比 0:無効
-		int AspectW,AspectH;
+		int AspectW, AspectH;
 	} img;
 } PPVVAR;
 typedef BOOL (APIENTRY *impPPRINTDLG)(LPPRINTDLG);
@@ -206,18 +206,18 @@ typedef struct X_prtsStruct {
 
 typedef struct {
 	X_PRTSSTRUCT X_prts;
-	int tileX,tileY;	// 集約処理
-	int width,height;	// 文字桁数／行数
+	int tileX, tileY;	// 集約処理
+	int width, height;	// 文字桁数／行数
 } PRINTINFO;
 
-TypedefWinAPI(BOOL,sndPlaySound,(LPCTSTR pszSound,UINT fuSound));
+TypedefWinAPI(BOOL, sndPlaySound, (LPCTSTR pszSound, UINT fuSound));
 
 typedef struct {
 	PPXAPPINFO info;
 } PPV_APPINFO;
 
 typedef struct {
-	COLORREF fg,bg;
+	COLORREF fg, bg;
 	BOOL bgmode;
 } SELINFO;
 
@@ -225,7 +225,7 @@ typedef struct {
 	PAINTSTRUCT ps; // 描画情報
 	RECT view; // 表示範囲
 
-	int drawYtop,drawYbottom;	// 表示を行う範囲(行単位)
+	int drawYtop, drawYbottom;	// 表示を行う範囲(行単位)
 	SIZE shift;					// 表示開始位置をずらす文字単位の量
 	SIZE shiftdot;				// 表示開始位置をずらすdot単位の量
 	SIZE fontsize;				// 文字の大きさ
@@ -237,7 +237,7 @@ typedef struct {
 } PPVPAINTSTRUCT;
 
 typedef struct {
-	DWORD l,h;
+	DWORD l, h;
 } DblDWORD;
 
 typedef struct {
@@ -257,8 +257,9 @@ typedef struct {
 		TCHAR name[VFPS]; // ファイル名
 		BYTE *image; // ファイルの中身
 		HGLOBAL mapH;	// メモリハンドル
-		DblDWORD size; // ファイルサイズ
-		DWORD sizeLmax; // メモリ確保時に使用する現在の確保メモリ
+		DWORD UseSize; // image で使用しているサイズ
+		DWORD ImageSize; // メモリ確保時に使用する現在の確保メモリ
+						// ※ FILEBUFMARGIN 分は含まれない
 
 		int IsFile; // ファイルかそれ以外か
 		BOOL memdata; // ファイルでないメモリ等から得たので、履歴記憶しない
@@ -317,7 +318,7 @@ extern PreFrameInfoStruct PreFrameInfo;
 #define HEXNUMSWIDTH (HEXNWIDTH * HEXSTRWIDTH + 1 + 1)
 #define HEXWIDTH (HEXADRWIDTH + HEXNUMSWIDTH + HEXSTRWIDTH)
 
-ExternWinAPI(void,NotifyWinEvent,(DWORD event,HWND hwnd,LONG idObject,LONG idChild));
+ExternWinAPI(void, NotifyWinEvent, (DWORD event, HWND hwnd, LONG idObject, LONG idChild));
 
 #define CV__defback 8
 #define CV__deftext 15
@@ -326,9 +327,9 @@ ExternWinAPI(void,NotifyWinEvent,(DWORD event,HWND hwnd,LONG idObject,LONG idChi
 #define CV__highlight 16
 
 //========= History option ID
-#pragma pack(push,4)
+#pragma pack(push, 4)
 typedef struct{
-	DWORD LowPart,HighPart;
+	DWORD LowPart, HighPart;
 } DDWORDST;
 
 typedef struct {

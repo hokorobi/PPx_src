@@ -11,9 +11,9 @@
 tFUZZYCOMPAREFILETIME FuzzyCompareFileTime = FuzzyCompareFileTime0;
 
 // Žž”äŠrŠÖ” - Œµ–§”äŠr
-int USEFASTCALL FuzzyCompareFileTime0(const FILETIME *time1,const FILETIME *time2)
+int USEFASTCALL FuzzyCompareFileTime0(const FILETIME *time1, const FILETIME *time2)
 {
-	DWORD num1,num2;
+	DWORD num1, num2;
 
 	num1 = time1->dwHighDateTime;
 	num2 = time2->dwHighDateTime;
@@ -26,9 +26,9 @@ int USEFASTCALL FuzzyCompareFileTime0(const FILETIME *time1,const FILETIME *time
 }
 
 // Žž”äŠrŠÖ” - }2•b‚Ü‚Å‚ð‹–—e‚·‚é
-int USEFASTCALL FuzzyCompareFileTime2(const FILETIME *time1,const FILETIME *time2)
+int USEFASTCALL FuzzyCompareFileTime2(const FILETIME *time1, const FILETIME *time2)
 {
-	DWORD numL,numH;
+	DWORD numL, numH;
 
 	numL = time1->dwLowDateTime;
 	numH = time1->dwHighDateTime;
@@ -37,8 +37,8 @@ int USEFASTCALL FuzzyCompareFileTime2(const FILETIME *time1,const FILETIME *time
 	numH -= time2->dwHighDateTime;
 	if ( numH < 0x80000000 ){ // ³
 		if ( numH ) return 1;
-		return (numL <= 2*10000000) ? 0 : 1;
+		return (numL <= (2 * 10000000)) ? 0 : 1;
 	} // •‰
 	if ( numH != MAX32 ) return -1;
-	return (numL >= (MAX32 - 2*10000000 + 1)) ? 0 : -1;
+	return (numL >= (MAX32 - (2 * 10000000) + 1)) ? 0 : -1;
 }

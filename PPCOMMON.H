@@ -38,19 +38,19 @@ extern "C" {
 #endif
 
 /*-----------------------------------------------------------------------------
-	PPx –{‘Ì,PPCOMMON,PPx Module ŠÔ‚Ìî•ñŒğŠ·—p\‘¢‘Ì
+	PPx –{‘Ì, PPCOMMON, PPx Module ŠÔ‚Ìî•ñŒğŠ·—p\‘¢‘Ì
 
 Function ‚Ì cmdID Š„“–‚ÄF‹LÚ‚ª‚È‚¢ŒÀ‚èA–ß‚è’l‚ª 0 ‚È‚ç–¢À‘•
 
 	’u‚«Š·‚¦	'0'¨DLL‚Ìpath	'1'¨ƒJƒŒƒ“ƒgƒfƒBƒŒƒNƒgƒŠ
-				'F','X','T','R','Y','t','L' ¨ '1'‚Æ'C'‚©‚ç¶¬
+				'F', 'X', 'T', 'R', 'Y', 't', 'L' ¨ '1'‚Æ'C'‚©‚ç¶¬
 */
-#define PPxInfoFunc(info,func,uptr) (info)->Function(info,func,uptr)
-#define PPxEnumInfoFunc(info,func,str,work) ((work)->buffer = str, PPxInfoFunc(info,func,work))
+#define PPxInfoFunc(info, func, uptr) (info)->Function(info, func, uptr)
+#define PPxEnumInfoFunc(info, func, str, work) ((work)->buffer = str, PPxInfoFunc(info, func, work))
 
 /* 0x0000`PPXCMDID_FILL:	PPXCMDENUMSTRUCT ‚ğg—p‚µ‚½‚â‚è‚Æ‚è—pB
-		cmdid :		—ñ‹“‘Î‰”Å	'C','X','T'
-					”ñ‘Î‰		'0','1','2','R','Y','t','L'
+		cmdid :		—ñ‹“‘Î‰”Å	'C', 'X', 'T'
+					”ñ‘Î‰		'0', '1', '2', 'R', 'Y', 't', 'L'
 
 		uptr :		PPXCMDENUMSTRUCT ‚Ö‚Ìƒ|ƒCƒ“ƒ^
 					–¢À‘•‚Ìê‡‚Å‚àAuptr->enums.buffer = '\0' ‚Ìˆ—‚ª•K—v
@@ -114,21 +114,21 @@ typedef struct {
 #define PPXCMDID_GETFILEINFO	0x0820	// ƒtƒ@ƒCƒ‹î•ñ(VFSGetFileType)
 #define PPXCMDID_WINDOWDIR		0x0881	// ˜AŒ‹ó‘Ô‚É‚¨‚¯‚éŒ»İ‘‹‚ÌˆÊ’u
 
-// 880,888,889 g—pÏ‚İ
+// 880, 888, 889 g—pÏ‚İ
 //#define PPXCMDID_PAIRWINDOWC	0x0882	// ”½‘Î‘‹‚Ì ID
 #define PPXCMDID_PAIRWINDOW		0x0883	// ”½‘Î‘‹‚Ì HWND(PPc)
 
 #define PPXCMDID_COMBOIDNAME	0x0884	// ˆê‘Ì‰»‘‹‚Ìe‘‹ID
 #define PPXCMDID_COMBOWINDOW	0x0885	// ˆê‘Ì‰»‘‹‚Ìe‘‹HWND(PPc)
-#define PPXCMDID_COMBOSHOWPANES	0x0886	// ˆê‘Ì‰»‘‹‚Ì•\¦ƒyƒCƒ“”,”ñˆê‘Ì‰»:0
-#define PPXCMDID_COMBOITEMS		0x0887	// ˆê‘Ì‰»‘‹‚É“o˜^‚³‚ê‚½‘‹”,”ñˆê‘Ì‰»:0
+#define PPXCMDID_COMBOSHOWPANES	0x0886	// ˆê‘Ì‰»‘‹‚Ì•\¦ƒyƒCƒ“”, ”ñˆê‘Ì‰»:0
+#define PPXCMDID_COMBOITEMS		0x0887	// ˆê‘Ì‰»‘‹‚É“o˜^‚³‚ê‚½‘‹”, ”ñˆê‘Ì‰»:0
 #define PPXCMDID_COMBOIDCOUNT	0x088a	// ˆê‘Ì‰»‘‹‚Ì“o˜^‚³‚ê‚½ID‚Ì‘‹”
 #define PPXCMDID_COMBOGETPANE	0x088b	// w’èIDƒ^ƒu‚ÌƒyƒCƒ“index‚ğŒŸõ
 #define PPXCMDID_COMBOGETHWNDEX	0x088c	// w’èIDƒ^ƒu‚ÌHWND‚ğæ“¾
 
 #define PPXCMDID_POPUPPOS		0x089f	// ƒƒjƒ…[•\¦“™‚Ég‚¤•\¦À•W(POINT)
-#define PPXCMDID_CSRDISPW		0x08a0	// ••ûŒü‚Ì•\¦‰Â”\”(PPc,PPv)
-#define PPXCMDID_CSRDISPH		0x08a2	// ‚‚³•ûŒü‚Ì•\¦‰Â”\”(PPc,PPv)
+#define PPXCMDID_CSRDISPW		0x08a0	// ••ûŒü‚Ì•\¦‰Â”\”(PPc, PPv)
+#define PPXCMDID_CSRDISPH		0x08a2	// ‚‚³•ûŒü‚Ì•\¦‰Â”\”(PPc, PPv)
 #define PPXCMDID_CSRDINDEX		0x08a3	// •\¦ŠJnƒCƒ“ƒfƒbƒNƒX(PPc)
 // Œ»İ‘‹‚Ìî•ñ
 // PPc 4x 5x 6x
@@ -163,7 +163,7 @@ typedef struct {
 #define PPXCMDID_CSRINDEX		0x0880	// ŠY“–ƒGƒ“ƒgƒŠ‚ÌƒJ[ƒ\ƒ‹index(PPc)
 #define PPXCMDID_CSRX			0x0888	// ŠY“–ƒGƒ“ƒgƒŠ‚ÌƒJ[ƒ\ƒ‹ X ˆÊ’u(PPv)
 #define PPXCMDID_CSRY			0x0889	// ŠY“–ƒGƒ“ƒgƒŠ‚ÌƒJ[ƒ\ƒ‹ Y ˆÊ’u(PPv)
-#define PPXCMDID_CSRRECT		0x088f	// ŠY“–ƒGƒ“ƒgƒŠ‚ÌƒJ[ƒ\ƒ‹ ‚Ì‹éŒ`(x,y,l,w,ƒXƒNƒŠ[ƒ“À•W)
+#define PPXCMDID_CSRRECT		0x088f	// ŠY“–ƒGƒ“ƒgƒŠ‚ÌƒJ[ƒ\ƒ‹ ‚Ì‹éŒ`(x, y, l, w, ƒXƒNƒŠ[ƒ“À•W)
 
 // ‘I‘ğ•¨î•ñ
 // PPc
@@ -192,7 +192,7 @@ typedef struct {
 		// w’èƒGƒ“ƒgƒŠ‚ÉŠÖ˜A‚Ã‚¯‚½ƒ†[ƒUƒf[ƒ^‚ğ“Ç‚İ‘‚«‚·‚é
 #define PPXCMDID_ENTRYEXTDATA_SETDATA 0x091e
 #define PPXCMDID_ENTRYEXTDATA_GETDATA 0x091f
-	// Šg’£ƒRƒƒ“ƒg—pID ID1=DFC_COMMENTEX_MAX,ID2=DFC_COMMENTEX_MAX-1...
+	// Šg’£ƒRƒƒ“ƒg—pID ID1=DFC_COMMENTEX_MAX, ID2=DFC_COMMENTEX_MAX-1...
 	#define DFC_COMMENTEX_MAX 0x7f00 // PPX.H ‚É‘¼‚ÌID‚ğ‹LÚ
 	#define DFC_COMMENTEX (DFC_COMMENTEX_MAX - 10 + 1)
 typedef struct {
@@ -202,7 +202,7 @@ typedef struct {
 	BYTE *data;
 } ENTRYEXTDATASTRUCT;
 
-#define PPXCMDID_GETFGWND		0x09f0	// PPtray,’¼‘O‚Ì‘O–ÊhWndæ“¾
+#define PPXCMDID_GETFGWND		0x09f0	// PPtray, ’¼‘O‚Ì‘O–ÊhWndæ“¾
 
 
 //   0x0a00`0x0bff İ’èAÀsŒn
@@ -344,14 +344,14 @@ typedef DWORD_PTR(USECDECL * PPXAPPINFOFUNCTIONW)(struct tagPPXAPPINFOW *ppxa, D
 
 typedef struct tagPPXAPPINFOA {
 	PPXAPPINFOFUNCTIONA Function;
-	const char *Name;		// "PPc","PPv","PPTray" “™
+	const char *Name;		// "PPc", "PPv", "PPTray" “™
 	const char *RegID;	// "C_A" “™
 	HWND hWnd;		// ‚±‚Ì\‘¢‘Ì‚ğŠ—L‚·‚é‘‹
 } PPXAPPINFOA;
 
 typedef struct tagPPXAPPINFOW {
 	PPXAPPINFOFUNCTIONW Function;
-	const WCHAR *Name;	// "PPc","PPv","PPTray" “™
+	const WCHAR *Name;	// "PPc", "PPv", "PPTray" “™
 	const WCHAR *RegID;	// "C_A" “™
 	HWND hWnd;		// ‚±‚Ì\‘¢‘Ì‚ğŠ—L‚·‚é‘‹
 } PPXAPPINFOW;
@@ -383,7 +383,7 @@ typedef struct {	// %F ‚Åg—p‚·‚é\‘¢‘Ì
 	‘—M•û–@‚ÍA’Êí PostMessage ‚ğg—p‚·‚é‚±‚ÆB
 ex)
 	WM_PPXCOMMAND = RegisterWindowMessage(PPXCOMMAND_WM);
-	PostMessage(hPPxWnd,WM_PPXCOMMAND,keyname,param);
+	PostMessage(hPPxWnd, WM_PPXCOMMAND, keyname, param);
 	keyname ‚Í tkey.h ‚É’è‹`‚³‚ê‚½ PPx ‚ÌƒRƒ}ƒ“ƒh
 	param ‚Í keyname ‚É‘Î‰‚µ‚½ƒpƒ‰ƒ[ƒ^i’Êí‚Í 0j
 -----------------------------------------------------------------------------*/
@@ -393,12 +393,12 @@ ex)
 	ƒEƒBƒ“ƒhƒE‚ÌŠÇ—‚É—p‚¢‚ç‚ê‚é’è‹`Ï‚İ IDBPPxRegist ‚É—p‚¢‚é
 
 	ID ‚Í REGIDSIZE ‚Ì char ‚ÅA
-	ID[0],ID[1] ‚Í PPx ‚Ìí—Ş‚ğ•\‚·•¶šBˆÈ‰º‚Ì define ‚ğQÆB
+	ID[0], ID[1] ‚Í PPx ‚Ìí—Ş‚ğ•\‚·•¶šBˆÈ‰º‚Ì define ‚ğQÆB
 	ID[3] ‚Í 'A'`'Z' ‚Ì“¯í PPx ‚ÌŠÇ—”Ô†
 	ID[4] = '\0' ŒÅ’èB
 -----------------------------------------------------------------------------*/
 #define REGIDSIZE 4
-#define REGEXTIDSIZE 8 // ˆê‘Ì‰»‘‹‚Ì C_Zxyy / Zxyy Œ`®—p(x:ˆê‘Ì‰»‘‹ID,y:’Ç‰ÁID)
+#define REGEXTIDSIZE 8 // ˆê‘Ì‰»‘‹‚Ì C_Zxyy / Zxyy Œ`®—p(x:ˆê‘Ì‰»‘‹ID, y:’Ç‰ÁID)
 #define PPB_REGID		"B_"	// PPb
 #define PPC_REGID		"C_"	// PPc
 #define PPV_REGID		"V_"	// PPv
@@ -425,13 +425,13 @@ ex)
 
 Evoid	ThInit(ThSTRUCT *TH);							\‘¢‘Ì‚Ì‰Šú‰»‚ğs‚¤
 EBOOL	ThFree(ThSTRUCT *TH);							Šm•Ûƒƒ‚ƒŠ‚ğ‰ğ•ú
-EBOOL	ThAppend(ThSTRUCT *TH,void *data,SIZE32_T size);	ƒf[ƒ^‚ğ’Ç‰Á‚·‚é
+EBOOL	ThAppend(ThSTRUCT *TH, void *data, SIZE32_T size);	ƒf[ƒ^‚ğ’Ç‰Á‚·‚é
 		data	’Ç‰Á‚·‚éƒf[ƒ^‚Ö‚Ìƒ|ƒCƒ“ƒ^
 		size	’Ç‰Á‚·‚éƒf[ƒ^‚Ì‘å‚«‚³
 
-EBOOL	ThAddString(ThSTRUCT *TH,char *data);			•¶š—ñ‚ğ’Ç‰Á‚·‚é
+EBOOL	ThAddString(ThSTRUCT *TH, char *data);			•¶š—ñ‚ğ’Ç‰Á‚·‚é
 		data	’Ç‰Á‚·‚é•¶š—ñ‚Ö‚Ìƒ|ƒCƒ“ƒ^
-EBOOL	ThCatString(ThSTRUCT *TH,char *data);			•¶š—ñ‚ğ˜AŒ‹‚·‚é
+EBOOL	ThCatString(ThSTRUCT *TH, char *data);			•¶š—ñ‚ğ˜AŒ‹‚·‚é
 		data	’Ç‰Á‚·‚é•¶š—ñ‚Ö‚Ìƒ|ƒCƒ“ƒ^
 ¦ThAddString‚ÍASCIIZ‚ª—ñ‹“‚³‚ê‚½Œ`B
 ¦ThCatString‚ÍThAppend/ThAddString‚Æ¬“¯‚µ‚Äg—p‚Å‚«‚È‚¢
@@ -450,8 +450,8 @@ extern PPXDLL BOOL PPXAPI ThAppend(ThSTRUCT *TH, const void *data, SIZE32_T size
 extern PPXDLL BOOL PPXAPI ThAddString(ThSTRUCT *TH, const TCHAR *data);
 extern PPXDLL BOOL PPXAPI ThCatString(ThSTRUCT *TH, const TCHAR *data);
 extern PPXDLL BOOL PPXAPI ThSize(ThSTRUCT *TH, SIZE32_T size);
-#define ThPointer(TH,offset) ((char *)((TH)->bottom + (offset)))
-#define ThPointerT(TH,offset) ((TCHAR *)(char *)((TH)->bottom + (offset)))
+#define ThPointer(TH, offset) ((char *)((TH)->bottom + (offset)))
+#define ThPointerT(TH, offset) ((TCHAR *)(char *)((TH)->bottom + (offset)))
 #define ThLast(TH) ((char *)((TH)->bottom + (TH)->top))
 #define ThNextAllocSizeS(maxsize) ThSTEP
 // 16k
@@ -459,7 +459,7 @@ extern PPXDLL BOOL PPXAPI ThSize(ThSTRUCT *TH, SIZE32_T size);
 // 256k
 #define ThNextAllocSizeL(maxsize) ( (((maxsize) / 2) + ThSTEP) & ~(ThSTEP - 1) )
 #ifdef UNICODE
-//	extern PPXDLL BOOL PPXAPI ThAddStringA(ThSTRUCT *TH,const char *data);
+//	extern PPXDLL BOOL PPXAPI ThAddStringA(ThSTRUCT *TH, const char *data);
 extern PPXDLL BOOL PPXAPI ThCatStringA(ThSTRUCT *TH, const char *data);
 #else
 //	#define ThAddStringA ThAddString
@@ -472,14 +472,14 @@ extern PPXDLL BOOL PPXAPI ThEnumString(ThSTRUCT *TH, int index, TCHAR *name, TCH
 
 // PP_ExtractMacro “à‚ÌThGetString (%so) ‚Åæ“¾‰Â”\‚È•¶š—ñ
 #define StringVariable_Command_Title "title"		// %" ‚Ì“à—e
-#define StringVariable_Command_Response "response"	// %@,%a ‚Å¶¬‚µ‚½ƒpƒX
+#define StringVariable_Command_Response "response"	// %@, %a ‚Å¶¬‚µ‚½ƒpƒX
 #define StringVariable_Command_EditCache "EditText"	// %$ ‚Å•ÒW‚µ‚½“à—e
 //#define StringVariable_Command_MenuCacheItem "MenuCache1"	// %M ‚Å‘I‘ğ‚µ‚½€–Ú
 //#define StringVariable_Command_MenuCacheText "MenuCache2"	// %M ‚Å‘I‘ğ‚µ‚½“à—e
 
 //============================================================== ‚»‚Ì‘¼
 									// PPx ‚É SendMessage
-#define PPxSendCommand(hWnd,wParam,lParam) SendMessage(hWnd,WM_PPXCOMMAND,wParam,lParam)
+#define PPxSendCommand(hWnd, wParam, lParam) SendMessage(hWnd, WM_PPXCOMMAND, wParam, lParam)
 /* ƒeƒ“ƒ|ƒ‰ƒŠ‚ğì¬‚·‚é
  attribute:
 	0 : ƒpƒX‚Ì‚İ	%temp%\ppxtemp\
@@ -511,7 +511,7 @@ extern PPXDLL HANDLE PPXAPI LoadCommonControls(DWORD usecontrol);
 // PPx”Å DialogBoxParamBƒ_ƒCƒAƒƒO‚ÌƒtƒHƒ“ƒgİ’è‚ğs‚¤
 extern PPXDLL INT_PTR PPXAPI PPxDialogBoxParam(HANDLE hinst, const TCHAR *lpszTemplate, HWND hwndOwner, DLGPROC dlgprc, LPARAM lParamInit);
 // ƒ_ƒCƒAƒƒOƒtƒHƒ“ƒgİ’èÏ‚İ‚Ì DLGITEMTEMPLATE ‚ğ“¾‚é
-// extern PPXDLL LPDLGTEMPLATE PPXAPI GetDialogTemplate(HANDLE hinst,LPCTSTR lpszTemplate);
+// extern PPXDLL LPDLGTEMPLATE PPXAPI GetDialogTemplate(HANDLE hinst, LPCTSTR lpszTemplate);
 
 // RunAs Œo—R‚Å‹N“®‚µ‚Ä‚¢‚½‚çAƒ†[ƒU–¼‚ğ•Ô‚·B‚»‚¤‚Å‚È‚¯‚ê‚Î NULL
 extern PPXDLL const TCHAR * PPXAPI CheckRunAs(void);
@@ -527,10 +527,10 @@ typedef struct {
 #define LOADWINAPI_LOAD			1	// LoadLibrary ‚ğg‚Á‚Ä DLL ‚ğƒ[ƒh
 #define LOADWINAPI_GETMODULE	2	// GetModuleHandle ‚ğg‚Á‚Ä DLL ‚ğæ“¾
 #define LOADWINAPI_LOAD_ERRMSG	3	// ƒGƒ‰[ƒƒbƒZ[ƒW•t‚« LOADWINAPI_LOAD
-#define LOADWINAPI(ptr,name)	{(void (WINAPI **)())&ptr,name}
-#define LOADWINAPI1(name)	{(void (WINAPI **)())&(D ## name),#name}
-#define LOADWINAPI1ND(name)	{(void (WINAPI **)())&name,#name}
-#define LOADWINAPI1T(name)	{(void (WINAPI **)())&(D ## name),#name TAPITAIL}
+#define LOADWINAPI(ptr, name)	{(void (WINAPI **)())&ptr, name}
+#define LOADWINAPI1(name)	{(void (WINAPI **)())&(D ## name), #name}
+#define LOADWINAPI1ND(name)	{(void (WINAPI **)())&name, #name}
+#define LOADWINAPI1T(name)	{(void (WINAPI **)())&(D ## name), #name TAPITAIL}
 extern PPXDLL HMODULE PPXAPI LoadWinAPI(const char *DLLname, HMODULE hDLL, LOADWINAPISTRUCT *apis, int mode);
 
 enum {
@@ -598,7 +598,7 @@ extern PPXDLL TCHAR * PPXAPI Strds(TCHAR *dststr, const TCHAR *srcstr); // ‘SŠp
 extern PPXDLL TCHAR * PPXAPI Strupr(TCHAR *str); // ‰p‘å•¶š
 extern PPXDLL TCHAR * PPXAPI Strlwr(TCHAR *str); // ‰p¬•¶š
 															// Key Code •ÏŠ· --
-												// u\,^,&,@v‚ğ•¶š—ñ‰»
+												// u\, ^, &, @v‚ğ•¶š—ñ‰»
 extern PPXDLL TCHAR * PPXAPI PutShiftCode(TCHAR *str, int key);
 extern PPXDLL int PPXAPI GetKeyCode(LPCTSTR *ptr);	// •¶š—ñ‚©‚çkeycode‚ğ“¾‚é
 extern PPXDLL void PPXAPI PutKeyCode(TCHAR *str, int key);	// keycode‚ğ•¶š—ñ‚É‚·‚é
@@ -609,7 +609,7 @@ extern PPXDLL int PPXAPI CheckRegistKey(const TCHAR *src, TCHAR *dest, const TCH
 #define CHECKREGISTKEY_WARNKEY 0
 
 // ƒeƒLƒXƒg‚©‚çƒEƒBƒ“ƒhƒEƒnƒ“ƒhƒ‹‚ğ‹‚ß‚é(*focus“™‚Åg—p)B‚È‚¢‚È‚ç NULL
-extern PPXDLL HWND PPXAPI GetWindowHandleByText(PPXAPPINFO *ppxa,const TCHAR *param);
+extern PPXDLL HWND PPXAPI GetWindowHandleByText(PPXAPPINFO *ppxa, const TCHAR *param);
 //====================================================== Šg’£ƒGƒfƒBƒbƒgƒ{ƒbƒNƒX
 typedef struct tagTINPUT {
 	HWND hOwnerWnd;	// e‚ÌƒEƒBƒ“ƒhƒEƒnƒ“ƒhƒ‹
@@ -660,12 +660,13 @@ extern PPXDLL int PPXAPI tInputEx(TINPUT *tinput);
 #define PPXEDIT_WANTEVENT	B7	// EventÀs—L‚è
 #define PPXEDIT_REFTREE		B8	// Ref‚Í Dir Tree
 #define PPXEDIT_SINGLEREF	B9	// Ref‚Í ‚·‚×‚Ä‚¢‚ê‚©‚¦
+#define PPXEDIT_PANEMODE	B10	//
 #define PPXEDIT_INSTRSEL	B12	// "|"‚É‚æ‚é”ÍˆÍw’è‚ğ—LŒø‚É‚·‚é
 #define PPXEDIT_NOWORDBREAK	B13	// ES_MULTILINE‚ÉA’PŒê‚Ì“r’†‚Å‰üs‚·‚é(VistaˆÈ~)
 #define PPXEDIT_LINE_MULTI	B14	// ‚Ps•ÒW‚Ì•¡”s”Å(—vES_MULTILINE)
 // B16 ˆÈ~‚Í“à•”‚Å—˜—p
 //-----------------------------------------------------------------------------
-extern PPXDLL HWND PPXAPI PPxRegistExEdit(PPXAPPINFO *info,HWND hED,int maxlen,const TCHAR *defstr,WORD rHist,WORD wHist,int flag);
+extern PPXDLL HWND PPXAPI PPxRegistExEdit(PPXAPPINFO *info, HWND hED, int maxlen, const TCHAR *defstr, WORD rHist, WORD wHist, int flags);
 //---------------------------------------------------- ƒtƒ@ƒCƒ‹ŒŸõ
 #define EXTPATHEXT ".COM;.EXE;.BAT;.CMD"
 				// mode ‚Éw’è‚·‚é’l
@@ -758,7 +759,7 @@ extern PPXDLL BOOL PPXAPI PPxHookEdit(int local);
 #define XEO_NOSCANEXE	B30	// v:X_execs‚É‚æ‚éƒ`ƒFƒbƒN‚ğs‚í‚È‚¢
 #define XEO_CONSOLE		B31	// -:ƒRƒ“ƒ\[ƒ‹ã‚ÅÀs(PPb“à•”—p)
 
-extern PPXDLL BOOL PPXAPI ComExec(HWND hOwner,const TCHAR *line,const TCHAR *path);
+extern PPXDLL BOOL PPXAPI ComExec(HWND hOwner, const TCHAR *line, const TCHAR *path);
 
 // GetExecType ‚Ì–ß‚è’l
 enum {
@@ -776,17 +777,14 @@ extern PPXDLL BOOL PPXAPI CheckExebin(const TCHAR *path, int type);
 	ShellExecute ‚ğÀs‚µAƒGƒ‰[‚ª‚Å‚½‚ç•¶š—ñ‚ğæ“¾‚·‚éB
 	¸”s‚µ‚½‚ç NULL ‚ğ•Ô‚·    ¦HINSTANCE ‚Í‰ğ•ú•s—v‚Å‚ ‚é
 -----------------------------------------------------------------------------*/
-extern PPXDLL HANDLE PPXAPI PPxShellExecute(HWND hwnd,LPCTSTR lpOperation,
-								LPCTSTR lpFile,LPCTSTR lpParameters,
-								LPCTSTR lpDirectory,int flag,TCHAR *ErrMsg);
+extern PPXDLL HANDLE PPXAPI PPxShellExecute(HWND hwnd, LPCTSTR lpOperation, LPCTSTR lpFile, LPCTSTR lpParameters, LPCTSTR lpDirectory, int flag, TCHAR *ErrMsg);
 
 //================================================================== ƒ}ƒNƒŠÖ˜A
 #define CMDLINESIZE 0x400		// ƒRƒ}ƒ“ƒhƒ‰ƒCƒ“‚Ì‘å‚«‚³
 #define MAXCMDLINESIZE 0x8000	// OS‚ªó•t‰Â”\‚ÈƒRƒ}ƒ“ƒhƒ‰ƒCƒ“‚ÌÅ‘åƒTƒCƒY
 
 extern PPXDLL void PPXAPI PPxRegGetIInfo(PPXAPPINFO *ptr);
-extern PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd,PPXAPPINFO *ParentInfo,
-		POINT *pos,const TCHAR *param,TCHAR *extract,int flag);
+extern PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd, PPXAPPINFO *ParentInfo, POINT *pos, const TCHAR *param, TCHAR *extract, int flag);
 
 // PP_GetExtCommand –ß’l
 // -1 ˆÈŠO‚Ì•‰‚Ì’l‚ÍAPPEXTRESULT_xxx ‚É‚¨‚¢‚ÄAŠY“–Às“à—e‚ª‚È‚¢ê‡
@@ -797,7 +795,7 @@ extern PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd,PPXAPPINFO *ParentInfo,
 #define PPEXTRESULT_LINK	3
 #define PPEXTRESULT_CLSID	4
 
-extern PPXDLL int PPXAPI PP_GetExtCommand(const TCHAR *src,const TCHAR *ID,TCHAR *cmdbuf,TCHAR *TypeName);
+extern PPXDLL int PPXAPI PP_GetExtCommand(const TCHAR *src, const TCHAR *ID, TCHAR *cmdbuf, TCHAR *TypeName);
 
 //================================================================ ƒqƒXƒgƒŠŠÇ—
 // ‘‚İw’è—p
@@ -837,8 +835,7 @@ extern PPXDLL int PPXAPI PP_GetExtCommand(const TCHAR *src,const TCHAR *ID,TCHAR
 extern PPXDLL void PPXAPI InitHistory(void);
 extern PPXDLL const TCHAR * PPXAPI SearchHistory(WORD type, const TCHAR *str);
 extern PPXDLL const TCHAR * PPXAPI SearchPHistory(DWORD type, const TCHAR *str);
-extern PPXDLL void PPXAPI WriteHistory(WORD type, const TCHAR *str,
-	WORD b_size, void *bin);
+extern PPXDLL void PPXAPI WriteHistory(WORD type, const TCHAR *str, WORD b_size, void *bin);
 extern PPXDLL const TCHAR * PPXAPI EnumHistory(WORD type, int No);	// No † 0
 extern PPXDLL BOOL PPXAPI DeleteHistory(WORD type, const TCHAR *str);
 extern PPXDLL WORD PPXAPI GetHistoryType(const TCHAR **param);
@@ -847,16 +844,17 @@ extern PPXDLL WORD PPXAPI GetHistoryType(const TCHAR **param);
 extern PPXDLL void PPXAPI InitCust(void);
 extern PPXDLL int PPXAPI SetCustData(const TCHAR *str, const void *bin, size_t b_size); // ¬Œ÷‚È‚ç NO_ERROR
 extern PPXDLL int PPXAPI GetCustData(const TCHAR *str, void *bin, size_t b_size); // ¬Œ÷‚È‚ç NO_ERROR
-#define IsExistCustData(str) (GetCustData(str,NULL,0) >= 0)
-#define GetCustDataSize(str) GetCustData(str,NULL,0)
+#define IsExistCustData(str) (GetCustData(str, NULL, 0) >= 0)
+#define GetCustDataSize(str) GetCustData(str, NULL, 0)
 extern PPXDLL int PPXAPI DeleteCustData(const TCHAR *str); // ¬Œ÷‚È‚ç NO_ERROR
 extern PPXDLL int PPXAPI EnumCustData(int offset, TCHAR *str, void *bin, size_t b_size);
 extern PPXDLL int PPXAPI SetCustTable(const TCHAR *str, const TCHAR *sub, const void *bin, size_t b_size); // ¬Œ÷‚È‚ç NO_ERROR
 extern PPXDLL int PPXAPI InsertCustTable(const TCHAR *str, const TCHAR *sub, DWORD index, const void *bin, size_t b_size); // ¬Œ÷‚È‚ç NO_ERROR
+extern PPXDLL int PPXAPI SetCustStringTable(const TCHAR *str, const TCHAR *sub, const TCHAR *string, int keep_length);
 extern PPXDLL int PPXAPI GetCustTable(const TCHAR *str, const TCHAR *sub, void *bin, size_t b_size); // ¬Œ÷‚È‚ç NO_ERROR
-#define IsExistCustTable(str,sub) (GetCustTable(str,sub,NULL,0) >= 0)
-#define GetCustTableSize(str,sub) GetCustTable(str,sub,NULL,0)
-#define CountCustTable(str) EnumCustTable(-1,str,NULL,NULL,0)
+#define IsExistCustTable(str, sub) (GetCustTable(str, sub, NULL, 0) >= 0)
+#define GetCustTableSize(str, sub) GetCustTable(str, sub, NULL, 0)
+#define CountCustTable(str) EnumCustTable(-1, str, NULL, NULL, 0)
 
 extern PPXDLL int PPXAPI DeleteCustTable(const TCHAR *str, const TCHAR *sub, int index); // ¬Œ÷‚È‚ç NO_ERROR
 extern PPXDLL int PPXAPI EnumCustTable(
@@ -869,8 +867,8 @@ extern PPXDLL int PPXAPI SortCustTable(const TCHAR *str, int (PPXAPI *func)(cons
 // PPx ‚Ì DB(ƒqƒXƒgƒŠ^ƒJƒXƒ^ƒ}ƒCƒY—Ìˆæ)‚Ìó‹µ‚ğ“üè‚·‚é
 typedef struct {
 	DWORD structsize;			// ‚±‚Ì\‘¢‘Ì‚Ì‘å‚«‚³/Šg’£—p
-	DWORD histsize,histfree;	// ƒqƒXƒgƒŠDB‚Ì‘å‚«‚³‚Æ‹ó‚«
-	DWORD custsize,custfree;	// ƒJƒXƒ^ƒ}ƒCƒYDB‚Ì‘å‚«‚³‚Æ‹ó‚«
+	DWORD histsize, histfree;	// ƒqƒXƒgƒŠDB‚Ì‘å‚«‚³‚Æ‹ó‚«
+	DWORD custsize, custfree;	// ƒJƒXƒ^ƒ}ƒCƒYDB‚Ì‘å‚«‚³‚Æ‹ó‚«
 	TCHAR *custpath;			// ƒJƒXƒ^ƒ}ƒCƒYƒtƒ@ƒCƒ‹‚ÌŠù’èˆÊ’u
 } PPXDBINFOSTRUCT;
 extern PPXDLL void PPXAPI GetPPxDBinfo(PPXDBINFOSTRUCT *dbinfo);
@@ -878,15 +876,15 @@ extern PPXDLL void PPXAPI GetPPxDBinfo(PPXDBINFOSTRUCT *dbinfo);
 // DB ‚Ì‘å‚«‚³‚ğ•ÏX‚·‚é
 #define PPXDB_HISTORY	1
 #define PPXDB_CUSTOMIZE	2
-extern PPXDLL void PPXAPI SetPPxDBsize(int mode,SIZE32_T size);
+extern PPXDLL void PPXAPI SetPPxDBsize(int mode, SIZE32_T size);
 
 //======================================================================== “¯Šú
 
 #if PPXSYNCDEBUG
 extern PPXDLL void PPXAPI UsePPxDebug(const char *filename, int fileline);
 extern PPXDLL void PPXAPI FreePPxDebug(const char *filename, int fileline);
-#define UsePPx() UsePPxDebug(__FILE__,__LINE__)
-#define FreePPx() FreePPxDebug(__FILE__,__LINE__)
+#define UsePPx() UsePPxDebug(__FILE__, __LINE__)
+#define FreePPx() FreePPxDebug(__FILE__, __LINE__)
 #else
 extern PPXDLL void PPXAPI UsePPx(void);
 extern PPXDLL void PPXAPI FreePPx(void);
@@ -896,18 +894,17 @@ extern PPXDLL void PPXAPI FreePPx(void);
 	filename ‚Åw’è‚³‚ê‚½ƒtƒ@ƒCƒ‹‚ğƒƒ‚ƒŠ‚É“Ç‚İ‚ŞB‚½‚¾‚µA10M ˆÈã‚Í“Ç‚Ü‚È‚¢
 	margin:		ƒtƒ@ƒCƒ‹‚Ì––”öˆÈ~ 0 padding ‚·‚é’·‚³
 	image		“Ç‚İ‚İæBNULL ‚È‚ç Systemheap ‚ğ—p‚¢“à•”‚ÅŠm•ÛB
-							—á)HeapFree(GetProcessHeap(),0,image);
+							—á)HeapFree(GetProcessHeap(), 0, image);
 	imagesize	“Ç‚İ‚ñ‚¾ƒCƒ[ƒW‚Ì‘å‚«‚³Bimage != NULL ‚È‚çŠm•ÛÏ‚İ‚Ì
 				ƒƒ‚ƒŠ‚Ì‘å‚«‚³‚ğ‚¢‚ê‚Ä‚¨‚­B
 	filesize	ƒtƒ@ƒCƒ‹‚ÌƒTƒCƒYB4G over ‚È‚ç LFI_OVERSIZE(0xffffffff) ‚ª“ü‚é
-				NULL,LFI_ALWAYSLIMIT,LFI_ALWAYSLIMITLESS w’è‰Â
+				NULL, LFI_ALWAYSLIMIT, LFI_ALWAYSLIMITLESS w’è‰Â
 -----------------------------------------------------------------------------*/
 #define LFI_ALWAYSLIMIT		(DWORD *)(DWORD_PTR)1	// í‚ÉƒTƒCƒY§ŒÀ‚ğs‚¤
 #define LFI_ALWAYSLIMITLESS	(DWORD *)(DWORD_PTR)2	// í‚É§ŒÀ‚µ‚È‚¢
 #define LFI_OVERSIZE	MAX32
-extern PPXDLL ERRORCODE PPXAPI LoadFileImage(const TCHAR *filename, DWORD margin,
-	char **image, SIZE32_T *imagesize, SIZE32_T *filesize);
-// MultiByte,UNICODE ‚Ì•ÏŠ·‹@”\•t‚« LoadFileImage
+extern PPXDLL ERRORCODE PPXAPI LoadFileImage(const TCHAR *filename, DWORD margin, 	char **image, SIZE32_T *imagesize, SIZE32_T *filesize);
+// MultiByte, UNICODE ‚Ì•ÏŠ·‹@”\•t‚« LoadFileImage
 extern PPXDLL ERRORCODE PPXAPI LoadTextImage(const TCHAR *filename, TCHAR **image, TCHAR **readpoint, TCHAR **max);
 extern PPXDLL int PPXAPI GetTextCodeType(const BYTE *image, SIZE32_T size);
 
@@ -919,7 +916,7 @@ extern PPXDLL void PPXAPI ForceSetForegroundWindow(HWND hWnd);
 
 //==================================================================== ƒƒjƒ…[
 /*-----------------------------------------------------------------------------
-int	PP_GetContextMenu(HMENU menu,char *fullpath,char *ext);
+int	PP_GetContextMenu(HMENU menu, char *fullpath, char *ext);
 
 	ContextMenu ‚ğì¬‚µ‚Äƒƒjƒ…[‚É“o˜^‚·‚éB
 
@@ -961,15 +958,15 @@ typedef struct {
 	TCHAR menuname[];
 } MENUNAMEID;
 
-#define GetMenuDataMacro2(ptr,thmenu,id)\
+#define GetMenuDataMacro2(ptr, thmenu, id)\
 {const TCHAR *max;\
 	(ptr) = (const TCHAR *)((thmenu)->bottom);\
 	max = (const TCHAR *)ThLast((thmenu));\
-	GetMenuDataMacro((ptr),max,id);\
+	GetMenuDataMacro((ptr), max, id);\
 }
 
-#define GetMenuDataMacro(ptr,max,id)\
-{int search__id = 0,target__id = id;\
+#define GetMenuDataMacro(ptr, max, id)\
+{int search__id = 0, target__id = id;\
 	for ( ; ; ){\
 		if ( ptr >= max ){\
 			ptr = NULL;\
@@ -987,8 +984,8 @@ typedef struct {
 #endif
 
 
-// WM_MENUCHAR,WM_MENUDRAG,WM_MENURBUTTONUP ‚Ìƒnƒ“ƒhƒ‰
-extern PPXDLL LRESULT PPXAPI PPxMenuProc(HWND hWnd,UINT Msg,WPARAM wParam,LPARAM lParam);
+// WM_MENUCHAR, WM_MENUDRAG, WM_MENURBUTTONUP ‚Ìƒnƒ“ƒhƒ‰
+extern PPXDLL LRESULT PPXAPI PPxMenuProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 typedef struct {
 	PPXAPPINFO *info;
 	HMENU hMenu;	// g—p‚·‚éƒƒjƒ…[
@@ -997,7 +994,7 @@ typedef struct {
 	DWORD commandID; // ‰EƒNƒŠƒbƒN‚ÅŒÄ‚Ño‚·‚Æ‚«‚Ég—p‚·‚éƒRƒ}ƒ“ƒh‚ÌID
 	ThSTRUCT th;
 } PPXMENUINFO;
-extern PPXDLL BOOL PPXAPI PPxSetMenuInfo(HMENU hMenu,PPXMENUINFO *xminfo);
+extern PPXDLL BOOL PPXAPI PPxSetMenuInfo(HMENU hMenu, PPXMENUINFO *xminfo);
 
 typedef struct {
 	DWORD_PTR key;		// 0x10000 –¢–cƒL[ƒR[ƒhA0x10000 ˆÈãcƒRƒ}ƒ“ƒh
@@ -1028,12 +1025,12 @@ extern PPXDLL void PPXAPI SystemDynamicMenu(DYNAMICMENUSTRUCT *dms, PPXAPPINFO *
 extern PPXDLL void PPXAPI CommandDynamicMenu(DYNAMICMENUSTRUCT *dms, PPXAPPINFO *info, WPARAM wParam);
 
 // ƒJƒ‰ƒ€Šg’£‚Ìˆê——ƒƒjƒ…[‚ğ hMenu ‚É‘}“üB•s—v‚É‚È‚Á‚½‚çAtargetpath = NULL ‚ÅÀs‚·‚é‚±‚Æ‚É‚æ‚èAƒJƒ‰ƒ€ƒnƒ“ƒhƒ‰‚ÆThSTRUCT‚ğ‰ğ•ú‚Å‚«‚é
-extern PPXDLL void PPXAPI GetColumnExtMenu(ThSTRUCT *thEcdata,const TCHAR *targetpath,HMENU hMenu,DWORD index);
+extern PPXDLL void PPXAPI GetColumnExtMenu(ThSTRUCT *thEcdata, const TCHAR *targetpath, HMENU hMenu, DWORD index);
 
 /* GetColumnExtMenu ‚Ì ThSTRUCT “à•”\‘¢
 	{int} x 1 					€–Ú‚Ö‚ÌƒIƒtƒZƒbƒg
 	{IColumnProvider *} x N		g—p’†‚ÌIColumnProvider‚Ìˆê——BÅŒã‚ÍNULL
-	{COLUMNEXTDATAINFO} x N		€–Ú,Ÿ,‚»‚ÌID,ŠY“–IColumnProviderB(menuƒiƒV‚Ì‚Í ŠeCOLUMNEXTDATAINFO ‚ÌŸ€–Ú–¼‚Ì•¶š—ñ‚ª‘±‚­)
+	{COLUMNEXTDATAINFO} x N		€–Ú, Ÿ, ‚»‚ÌID, ŠY“–IColumnProviderB(menuƒiƒV‚Ì‚Í ŠeCOLUMNEXTDATAINFO ‚ÌŸ€–Ú–¼‚Ì•¶š—ñ‚ª‘±‚­)
 		COLUMNEXTDATAINFO ‚É‚ÍACOLUMNEXTDATAINFO_ICP ‚ª‚Ô‚ç‰º‚ª‚é
 */
 
@@ -1055,8 +1052,8 @@ typedef struct {
 #endif
 
 #define CAPTIONSEPARATOR T("        ")
-extern PPXDLL void PPXAPI SetMessageOnCaption(HWND hWnd,const TCHAR *message);
-extern PPXDLL void PPXAPI GetDesktopRect(HWND hWnd,RECT *desktop);
+extern PPXDLL void PPXAPI SetMessageOnCaption(HWND hWnd, const TCHAR *message);
+extern PPXDLL void PPXAPI GetDesktopRect(HWND hWnd, RECT *desktop);
 
 #define PPXFONT_F_mes	0	// Default_F_mes / GetSystemMetrics(SM_CYMENU)
 #define PPXFONT_F_dlg	1	// Default_F_mes / GetSystemMetrics(SM_CYMENU)
@@ -1070,12 +1067,12 @@ typedef struct {
 	DWORD dpi;
 } LOGFONTWITHDPI;
 
-extern PPXDLL void PPXAPI GetPPxFont(int type,DWORD dpi,LOGFONTWITHDPI *font);
+extern PPXDLL void PPXAPI GetPPxFont(int type, DWORD dpi, LOGFONTWITHDPI *font);
 
 //================================================================== ƒL[ƒ{[ƒh
 extern PPXDLL DWORD PPXAPI GetShiftKey(void);
 
-typedef ERRORCODE (PPXAPI *EXECKEYCOMMANDFUNCTION)(PPXAPPINFO *info,WORD key);
+typedef ERRORCODE (PPXAPI *EXECKEYCOMMANDFUNCTION)(PPXAPPINFO *info, WORD key);
 typedef struct {
 	EXECKEYCOMMANDFUNCTION Command;
 	const TCHAR *CustName1;
@@ -1112,7 +1109,7 @@ extern PPXDLL void PPXAPI FreeFN_REGEXP(FN_REGEXP *fn);
 #define ISEA_FLOAT		B16	// •”•ªˆê’vŒŸõ‚ª—LŒø
 #define ISEA_FNAME		B24	// ƒtƒ@ƒCƒ‹ƒl[ƒ€‚ğŒŸõ
 #define ISEA_COMMENT	B25	// ƒRƒƒ“ƒg‚ğŒŸõ
-extern PPXDLL BOOL PPXAPI SearchRomaString(const TCHAR *text,const TCHAR *searchstr,DWORD mode,DWORD_PTR *handle);
+extern PPXDLL BOOL PPXAPI SearchRomaString(const TCHAR *text, const TCHAR *searchstr, DWORD mode, DWORD_PTR *handle);
 
 //================================================================ ƒXƒŒƒbƒhŠÇ—
 #define XTHREAD_ROOT		B0	// ƒvƒƒZƒX‚ğ‹N“®‚µ‚½‚Æ‚«‚Éì¬‚³‚ê‚½ƒXƒŒƒbƒh
@@ -1133,7 +1130,7 @@ typedef struct TagTHREADSTRUCT {
 typedef struct {
 	THREADSTRUCT threadinfo; // flag ‚É XTHREAD_RESTARTREQUEST ‚ğw’è‚·‚é
 	HWND hParentWnd; // ˆÙíI—¹WM_PPXCOMMAND‚ğ’Ê’m‚·‚é‘‹B(—vİ’è)
-	WPARAM wParam; // WM_PPXCOMMAND ‚Ì wParam,lParam ‚ÉŠi”[‚³‚ê‚é’l(option)
+	WPARAM wParam; // WM_PPXCOMMAND ‚Ì wParam, lParam ‚ÉŠi”[‚³‚ê‚é’l(option)
 	LPARAM lParam;
 } RESTARTTHREADSTRUCT;
 
@@ -1154,7 +1151,7 @@ extern PPXDLL HWND PPXAPI GetPPxhWndFromID(PPXAPPINFO *ppxa, const TCHAR **src, 
 
 #define PPXREGIST_FREE		-1	// “o˜^‰ğœ
 #define PPXREGIST_SETHWND	-2	// w’èRegID ‚É‘Î‰‚·‚é HWND ‚ğ“o˜^‚·‚é
-#define PPXREGIST_SETPPcFOCUS	-101	// w’èRegID,HWND ‚ğÅIPPcƒtƒH[ƒJƒX‚Æ‚µ‚Ä“o˜^‚·‚é
+#define PPXREGIST_SETPPcFOCUS	-101	// w’èRegID, HWND ‚ğÅIPPcƒtƒH[ƒJƒX‚Æ‚µ‚Ä“o˜^‚·‚é
 
 #define PPXREGIST_SEARCH_LIVEID	-100 // Reuse ‚Ég‚¦‚éID‚ğ’T‚·
 #define PPXREGIST_SEARCH_LIVEID_MAX -10
@@ -1218,21 +1215,21 @@ extern PPXDLL void PPXAPI XBeep(UINT type);
 /*------------------------------------- ŠeíƒƒbƒZ[ƒWƒ{ƒbƒNƒX
 	î•ñ’ñ‹Ÿ‚ğs‚¤
 
-hWnd,title:	ƒ_ƒCƒAƒƒO‚ğ•\¦‚·‚é‚ÌeƒEƒBƒ“ƒhƒE,ƒ^ƒCƒgƒ‹
+hWnd, title:	ƒ_ƒCƒAƒƒO‚ğ•\¦‚·‚é‚ÌeƒEƒBƒ“ƒhƒE, ƒ^ƒCƒgƒ‹
 
 type:í•Ê
 	0-7:ƒ_ƒCƒAƒƒO•\¦+ƒƒO  8-15:ƒƒO‚Ì‚İ
-		1, 9:ˆê”ÊƒGƒ‰[•\¦
-		2,10:d—v‚Å‚È‚¢ƒGƒ‰[•\¦
-		3,11:d—v‚ÈŒx
-		4,12:d—v‚Å‚È‚¢Œx
-		5,13:Œ‹‰Ê‚ğ•\¦‚·‚éî•ñ
-		6,14:DˆÓ‚Åo—Í‚·‚éî•ñ/ì‹ÆŠ®—¹
-		7,15:‚»‚Ì‘¼
+		1,  9:ˆê”ÊƒGƒ‰[•\¦
+		2, 10:d—v‚Å‚È‚¢ƒGƒ‰[•\¦
+		3, 11:d—v‚ÈŒx
+		4, 12:d—v‚Å‚È‚¢Œx
+		5, 13:Œ‹‰Ê‚ğ•\¦‚·‚éî•ñ
+		6, 14:DˆÓ‚Åo—Í‚·‚éî•ñ/ì‹ÆŠ®—¹
+		7, 15:‚»‚Ì‘¼
 	16-23:ƒGƒ‰[ŠÖŒW(ƒƒO–³‚µ)
 	24-31:ƒfƒoƒbƒN—p(ƒƒO—L‚è)
 
-message:o—Í•¶š—ñ,% ‘Î‰
+message:o—Í•¶š—ñ, % ‘Î‰
 -------------------------------------*/
 // ƒ_ƒCƒAƒƒO•\¦+ƒƒO
 #define XM_FaERRld	0	// ’v–½“IƒGƒ‰[
@@ -1255,11 +1252,11 @@ message:o—Í•¶š—ñ,% ‘Î‰
 #define XM_DbgDIA	24	// ƒ_ƒCƒAƒƒO•\¦
 #define XM_BEEP		25	// Beep
 #define XM_DbgLOG	26	// ƒƒO‚Ì‚İ
-#define XM_DUMP		27	// Dumpƒ_ƒCƒAƒƒO message:ƒ_ƒ“ƒvæ“ª 1st:DWORD,dump size
+#define XM_DUMP		27	// Dumpƒ_ƒCƒAƒƒO message:ƒ_ƒ“ƒvæ“ª 1st:DWORD, dump size
 #define XM_DUMPLOG	28	// DumpƒƒO
 
 extern PPXDLL void USECDECL XMessage(HWND hWnd, const TCHAR *title, UINT type, const TCHAR *message, ...);
-#define xmessage(type,message) XMessage(NULL,NULL,type,message)
+#define xmessage(type, message) XMessage(NULL, NULL, type, message)
 extern PPXDLL int PPXAPI PMessageBox(HWND hWnd, const TCHAR *text, const TCHAR *title, UINT style);
 //================================================================== ƒGƒ‰[ŠÖŒW
 #define PPERROR_GETLASTERROR 0
@@ -1290,18 +1287,18 @@ extern PPXDLL LRESULT PPXAPI PPxCommonExtCommand(WORD key, WPARAM wParam);
 #define XWIN_HEADER		B7	// ƒwƒbƒ_•\¦BPPcê—p
 #define XWIN_NOTITLE	B8	// ƒ^ƒCƒgƒ‹ƒo[”ñ•\¦B
 //-------------------------------------------------------------------- PPB ŠÖ˜A
-extern PPXDLL int PPXAPI ReceiveStrings(const TCHAR *ID,TCHAR *str);
+extern PPXDLL int PPXAPI ReceiveStrings(const TCHAR *ID, TCHAR *str);
 
 //-------------------------------------------------------------------- PPC ŠÖ˜A
 // w’è‚·‚éPPc‘‹‚Ìæ“¾
-#define CGETW_NEXTNOPREV	0	// Ÿ(•ûŒü‹L‰¯‚È‚µ),—v RegNo
-#define CGETW_NEXT	1	// Ÿ(CGETW_PREV‚Ég‚¤•ûŒü‚à‹L‰¯),—v RegNo
-#define CGETW_BACK	-1	// ‘O(CGETW_PREV‚Ég‚¤•ûŒü‚à‹L‰¯),—v RegNo
-#define CGETW_PAIR	2	// ”½‘Î‘‹,—v RegNo
-#define CGETW_PREV	3	// ’¼‘O,—v RegNo
-#define CGETW_SAVEFOCUS	-2	// Focus •Û‘¶,—v RegNo
-#define CGETW_GETFOCUS	-3	// Focus æ“¾,RegNo •s—v
-#define CGETW_GETFOCUSPAIR	-4	// Focus ‘‹‚Ì”½‘Î‘‹æ“¾,RegNo •s—v
+#define CGETW_NEXTNOPREV	0	// Ÿ(•ûŒü‹L‰¯‚È‚µ), —v RegNo
+#define CGETW_NEXT	1	// Ÿ(CGETW_PREV‚Ég‚¤•ûŒü‚à‹L‰¯), —v RegNo
+#define CGETW_BACK	-1	// ‘O(CGETW_PREV‚Ég‚¤•ûŒü‚à‹L‰¯), —v RegNo
+#define CGETW_PAIR	2	// ”½‘Î‘‹, —v RegNo
+#define CGETW_PREV	3	// ’¼‘O, —v RegNo
+#define CGETW_SAVEFOCUS	-2	// Focus •Û‘¶, —v RegNo
+#define CGETW_GETFOCUS	-3	// Focus æ“¾, RegNo •s—v
+#define CGETW_GETFOCUSPAIR	-4	// Focus ‘‹‚Ì”½‘Î‘‹æ“¾, RegNo •s—v
 #define CGETW_GETCOMBOHWND	8	// w’èID(0-25)‚ÌCombo hWndæ“¾
 // 'A'-'Z':’¼Úw’è
 extern PPXDLL HWND PPXAPI PPcGetWindow(int RegNo, int direction);
@@ -1317,7 +1314,7 @@ extern PPXDLL HWND PPXAPI PPxCombo(HWND hWnd);
 #define PPV_BOOTID			B4	// B24`B31‚Ég—p‚·‚éPPv‚ÌID(ASCII)‚ ‚è
 #define PPV_HEADVIEW		B5	// “r’†‚Ü‚Å“Ç‚ñ‚Å•\¦(PPV_NOENSURE‚Æ•¹—p)
 #define PPV_SYNCVIEW		B6	// ˜A“®•\¦İ’è
-extern PPXDLL BOOL PPXAPI PPxView(HWND hWnd,const TCHAR *param,int flags);
+extern PPXDLL BOOL PPXAPI PPxView(HWND hWnd, const TCHAR *param, int flags);
 extern PPXDLL int PPXAPI PPvViewName(TCHAR *param);
 
 // •¶šƒR[ƒh’è‹`
@@ -1354,8 +1351,7 @@ enum {
 };
 #define PPCUSTRESULT_RELOAD B1
 #define PPCUSTRESULT_RESTART B2
-extern PPXDLL int PPXAPI PPcustCStore(TCHAR *mem,TCHAR *max,
-		int appendmode,TCHAR **log,int (USECDECL *Sure)(const TCHAR *message));
+extern PPXDLL int PPXAPI PPcustCStore(TCHAR *mem, TCHAR *memmax, int appendmode, TCHAR **log, int (USECDECL *Sure)(const TCHAR *message));
 extern PPXDLL TCHAR * PPXAPI PPcustCDump(void);
 
 /*-----------------------------------------------------------------------------
@@ -1369,7 +1365,7 @@ extern PPXDLL TCHAR * PPXAPI PPcustCDump(void);
 
 	–ß‚è’l		ŠJ‚¢‚½ PPeui ‚Ì HWND
 -----------------------------------------------------------------------------*/
-extern PPXDLL HWND PPXAPI PPEui(HWND hPWnd,const TCHAR *title,const TCHAR *text);
+extern PPXDLL HWND PPXAPI PPEui(HWND hPWnd, const TCHAR *title, const TCHAR *text);
 
 /*-----------------------------------------------------------------------------
 	PPx Module ŠÖ˜A
@@ -1380,7 +1376,7 @@ extern PPXDLL HWND PPXAPI PPEui(HWND hPWnd,const TCHAR *title,const TCHAR *text)
 -----------------------------------------------------------------------------*/
 #define PPXM_INFORMATION	0	// ‚Ç‚Ì‹@”\‚ğ’ñ‹Ÿ‚Å‚«‚é‚©‚ğPPXMINFOSTRUCT‚Å’Ê’m
 #define PPXMEVENT_CLEANUP	1	// “Ç‚İ‚ñ‚¾Module‚ğ‰ğ•ú‚·‚é‚Æ‚«‚É‘—‚ç‚ê‚é
-								//                (ppxag—p•s‰Â ,ƒpƒ‰ƒ[ƒ^–³)
+								//                (ppxag—p•s‰Â , ƒpƒ‰ƒ[ƒ^–³)
 #define PPXMEVENT_KEYHOOK	5	// ƒL[“ü—Í‚É‘—‚ç‚ê‚é(“o˜^‚ğ‚µ‚½‚Æ‚«‚Ì‚İ)
 								//							(PPXMKEYHOOKSTRUCT)
 #define PPXMEVENT_COMMAND	6	// –¢’è‹`ƒRƒ}ƒ“ƒh‚Ì‰ğß     (PPXMCOMMANDSTRUCT)
@@ -1397,7 +1393,7 @@ extern PPXDLL HWND PPXAPI PPEui(HWND hPWnd,const TCHAR *title,const TCHAR *text)
 
 #define PPMTYPEFLAGS(ppm) (1 << (ppm))
 typedef struct tagPPXMINFOSTRUCT {
-	DWORD infotype;		// •K—v‚Èî•ñ‚Ìí—Ş 0:ƒ‚ƒWƒ…[ƒ‹î•ñ(typeflags,copyright)
+	DWORD infotype;		// •K—v‚Èî•ñ‚Ìí—Ş 0:ƒ‚ƒWƒ…[ƒ‹î•ñ(typeflags, copyright)
 	DWORD typeflags;	// —LŒø‚È PPMEVENT
 						// PPMTYPEFLAGS(PPXMEVENT_FUNCTION) | c ‚Æ‚·‚é
 	WCHAR *copyright;	// ’˜ìŒ BMAXPATHˆÈ“àBuƒ‚ƒWƒ…[ƒ‹–¼ Copyright (c)2010 TOROv‚È‚Ç‚Æ‚·‚é
@@ -1459,12 +1455,12 @@ typedef struct tagPPXMSEARCHSTRUCT {
 #define PPXMRESULT_STOP		-1	// ˆ—‚µ‚½AŒã‘±ƒRƒ}ƒ“ƒh‚ª‚ ‚ê‚Î’†~‚·‚é
 
 // PPx Module ‘¤—p‚Ì’è‹`
-extern EXTDLL int PPXAPI ModuleEntry(PPXAPPINFOW *ppxa,DWORD cmdID,PPXMODULEPARAM pxp);
+extern EXTDLL int PPXAPI ModuleEntry(PPXAPPINFOW *ppxa, DWORD cmdID, PPXMODULEPARAM pxp);
 
-typedef int (PPXAPI *CALLBACKMODULEENTRY)(PPXAPPINFOW *ppxa,DWORD cmdID,PPXMODULEPARAM pxp);
+typedef int (PPXAPI *CALLBACKMODULEENTRY)(PPXAPPINFOW *ppxa, DWORD cmdID, PPXMODULEPARAM pxp);
 
 // PPx Module ‚ğŒÄ‚Ño‚·
-extern PPXDLL int PPXAPI CallModule(PPXAPPINFO *info,DWORD func,PPXMODULEPARAM ModuleParam,CALLBACKMODULEENTRY CallBackModule);
+extern PPXDLL int PPXAPI CallModule(PPXAPPINFO *info, DWORD func, PPXMODULEPARAM ModuleParam, CALLBACKMODULEENTRY CallBackModule);
 
 #ifdef __cplusplus
 }

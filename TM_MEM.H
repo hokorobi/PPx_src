@@ -17,14 +17,14 @@ typedef struct {							// ï∂éöóÒåQä«óùç\ë¢ëÃ
 
 extern void TM_off(TM_struct *TM);
 extern void TM_kill(TM_struct *TM);
-extern BOOL TM_check(TM_struct *TM,DWORD size);
+extern BOOL TM_check(TM_struct *TM, DWORD size);
 
 #define TMS_off(TMS)	(TM_off(TMS.tm));
 #define TMS_kill(TMS)	(TM_kill(TMS.tm));
 extern void TMS_reset(TMS_struct *TMS);
-extern char *TMS_setA(TMS_struct *TMS,const char *string);
+extern char *TMS_setA(TMS_struct *TMS, const char *string);
 #ifdef UNICODE
-extern char *TMS_setW(TMS_struct *TMS,const WCHAR *string);
+extern char *TMS_setW(TMS_struct *TMS, const WCHAR *string);
 #define TMS_set TMS_setW
 #else
 #define TMS_set TMS_setA

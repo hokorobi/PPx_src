@@ -25,10 +25,10 @@ const TCHAR ShellStateName[] = T("ShellState");
 const TCHAR StrNewFileName[] = T("FileName");
 const TCHAR StrNewData[] = T("Data");
 const TCHAR QueryRecyclebin[] = MES_QDRD;
-const UINT deletemesboxstyle[] = { 0,MB_QYES,MB_QNO };
+const UINT deletemesboxstyle[] = { 0, MB_QYES, MB_QNO };
 
 enum {
-	NEWCMD_DIR = CRID_NEWENTRY,NEWCMD_FILE,NEWCMD_LISTFILE,NEWCMD_REG
+	NEWCMD_DIR = CRID_NEWENTRY, NEWCMD_FILE, NEWCMD_LISTFILE, NEWCMD_REG
 };
 
 #define JPCSR 0	// 終了後カーソル移動。終わった後にデッドロックするか検証
@@ -55,10 +55,10 @@ typedef struct {
 } PPCDOFILEOPERATIONSTRUCT;
 
 
-void PPcDeleteFile(PPC_APPINFO *cinfo,DWORD *X_wdel);
+void PPcDeleteFile(PPC_APPINFO *cinfo, DWORD *X_wdel);
 
 IID XIID_IFileOperation = xIID_IFileOperation;
-CLSID XCLSID_IFileOperation = {0x3ad05575,0x8857,0x4850,{0x92,0x77,0x11,0xb8,0x5b,0xdb,0x8e,0x09}};
+CLSID XCLSID_IFileOperation = {0x3ad05575, 0x8857, 0x4850, {0x92, 0x77, 0x11, 0xb8, 0x5b, 0xdb, 0x8e, 0x09}};
 
 DefineWinAPI(int, SHFileOperation, (LPSHFILEOPSTRUCT)) = NULL;
 #define FO__NEWFOLDER	5
@@ -67,7 +67,7 @@ DefineWinAPI(int, SHFileOperation, (LPSHFILEOPSTRUCT)) = NULL;
 #define SFOERROR_SHFO	1
 #define SFOERROR_IFO	2
 #define SFOERROR_BADNEW	3
-#define PPcEnumInfoFunc(func,str,work) ((work)->buffer = str, cinfo->info.Function(&cinfo->info,func,work))
+#define PPcEnumInfoFunc(func, str, work) ((work)->buffer = str, cinfo->info.Function(&cinfo->info, func, work))
 
 int SxFileOperation(PPC_APPINFO *cinfo, SHFILEOPSTRUCT *fileop)
 {
@@ -103,7 +103,7 @@ int SxFileOperation(PPC_APPINFO *cinfo, SHFILEOPSTRUCT *fileop)
 			return DSHFileOperation(fileop) ? SFOERROR_SHFO : SFOERROR_OK;
 		}else{
 			int fresult;
-			fileop->pFrom = GetFiles(cinfo,GETFILES_FULLPATH | GETFILES_REALPATH);
+			fileop->pFrom = GetFiles(cinfo, GETFILES_FULLPATH | GETFILES_REALPATH);
 			if ( fileop->pFrom == NULL ) return SFOERROR_SHFO;
 			fresult = DSHFileOperation(fileop) ? SFOERROR_SHFO : SFOERROR_OK;
 
@@ -122,7 +122,7 @@ int SxFileOperation(PPC_APPINFO *cinfo, SHFILEOPSTRUCT *fileop)
 #ifdef UNICODE
 		#define destdirW fileop->pTo
 #else
-		AnsiToUnicode(fileop->pTo,srcnameW,VFPS);
+		AnsiToUnicode(fileop->pTo, srcnameW, VFPS);
 		#define destdirW srcnameW
 #endif
 		if ( FAILED(DSHCreateItemFromParsingName(destdirW, NULL, &XIID_IShellItem, (void**)&destShellItem)) ){
@@ -142,7 +142,7 @@ int SxFileOperation(PPC_APPINFO *cinfo, SHFILEOPSTRUCT *fileop)
 #ifdef UNICODE
 		#define srcnameW fileop->pFrom
 #else
-		AnsiToUnicode(fileop->pFrom,srcnameW,VFPS);
+		AnsiToUnicode(fileop->pFrom, srcnameW, VFPS);
 #endif
 		result = ifo->lpVtbl->NewItem(ifo, destShellItem, FILE_ATTRIBUTE_DIRECTORY, srcnameW, NULL, NULL);
 	}else{
@@ -150,9 +150,9 @@ int SxFileOperation(PPC_APPINFO *cinfo, SHFILEOPSTRUCT *fileop)
 		nameptr = fileop->pFrom;
 		if ( nameptr == NULL ){
 			if ( cinfo->e.Dtype.mode == VFSDT_SHN ){
-				PPcEnumInfoFunc(PPXCMDID_STARTENUM,buf,&enumwork);
+				PPcEnumInfoFunc(PPXCMDID_STARTENUM, buf, &enumwork);
 			}else{
-				nameptr = GetFiles(cinfo,GETFILES_FULLPATH | GETFILES_REALPATH);
+				nameptr = GetFiles(cinfo, GETFILES_FULLPATH | GETFILES_REALPATH);
 				if ( nameptr != NULL ){
 					freemem = TRUE;
 				}else{
@@ -168,26 +168,26 @@ int SxFileOperation(PPC_APPINFO *cinfo, SHFILEOPSTRUCT *fileop)
 #ifdef UNICODE
 				result = DSHCreateItemFromParsingName(nameptr, NULL, &XIID_IShellItem, (void**)&srcShellItem);
 #else
-				AnsiToUnicode(nameptr,srcnameW,VFPS);
+				AnsiToUnicode(nameptr, srcnameW, VFPS);
 				result = DSHCreateItemFromParsingName(srcnameW, NULL, &XIID_IShellItem, (void**)&srcShellItem);
 #endif
 				if ( FAILED(result) ){
-					PPErrorBox(fileop->hwnd,NULL,(ERRORCODE)result);
+					PPErrorBox(fileop->hwnd, NULL, (ERRORCODE)result);
 					break;
 				}
 			}else{ // shn
-				PPcEnumInfoFunc('C',buf,&enumwork);
+				PPcEnumInfoFunc('C', buf, &enumwork);
 				if ( *buf == '\0' ) break;
 				if ( IsParentDir(buf) == FALSE ){
-					VFSFullPath(NULL,buf,cinfo->path);
+					VFSFullPath(NULL, buf, cinfo->path);
 				}
 				pidl = PathToPidl(buf);
 				if ( pidl == NULL ){
-					PPErrorBox(fileop->hwnd,NULL,ERROR_ACCESS_DENIED);
+					PPErrorBox(fileop->hwnd, NULL, ERROR_ACCESS_DENIED);
 					break;
 				}
 				if ( FAILED(DSHCreateItemFromIDList(pidl, &XIID_IShellItem, (void**)&srcShellItem)) ){
-					PPErrorBox(fileop->hwnd,NULL,ERROR_INVALID_FUNCTION);
+					PPErrorBox(fileop->hwnd, NULL, ERROR_INVALID_FUNCTION);
 					break;
 				}
 				FreePIDL(pidl);
@@ -199,7 +199,7 @@ int SxFileOperation(PPC_APPINFO *cinfo, SHFILEOPSTRUCT *fileop)
 
 				srcname = FindLastEntryPoint(nameptr ? nameptr : buf);
 #ifndef UNICODE
-				AnsiToUnicode(srcname,srcnameW,VFPS);
+				AnsiToUnicode(srcname, srcnameW, VFPS);
 #endif
 #endif
 				if ( destShellItem == NULL ){
@@ -224,10 +224,10 @@ int SxFileOperation(PPC_APPINFO *cinfo, SHFILEOPSTRUCT *fileop)
 			if ( nameptr != NULL ){
 				nameptr += tstrlen(nameptr) + 1;
 			}else{
-				if ( PPcEnumInfoFunc(PPXCMDID_NEXTENUM,buf,&enumwork) == 0 ) break;
+				if ( PPcEnumInfoFunc(PPXCMDID_NEXTENUM, buf, &enumwork) == 0 ) break;
 			}
 		}
-		if ( nameptr == NULL ) PPcEnumInfoFunc(PPXCMDID_ENDENUM,buf,&enumwork);
+		if ( nameptr == NULL ) PPcEnumInfoFunc(PPXCMDID_ENDENUM, buf, &enumwork);
 	}
 
 	if ( SUCCEEDED(result) ){ // 実行
@@ -250,7 +250,7 @@ void SHFileOperationFix(PPC_APPINFO *cinfo)
 			if ( X_MultiThread ){
 				PostQuitMessage(EXIT_SUCCESS);
 			}else{
-				PostMessage(cinfo->info.hWnd,WM_NULL,0,0);
+				PostMessage(cinfo->info.hWnd, WM_NULL, 0, 0);
 			}
 		}
 	}
@@ -258,9 +258,9 @@ void SHFileOperationFix(PPC_APPINFO *cinfo)
 
 //-----------------------------------------------------------------------------
 // ファイルの複写
-ERRORCODE PPC_ExplorerCopy(PPC_APPINFO *cinfo,BOOL move)
+ERRORCODE PPC_ExplorerCopy(PPC_APPINFO *cinfo, BOOL move)
 {
-	TCHAR dst[VFPS],destest[VFPS];
+	TCHAR dst[VFPS], destest[VFPS];
 	SHFILEOPSTRUCT fileop;
 	const TCHAR *modestr;
 
@@ -270,34 +270,34 @@ ERRORCODE PPC_ExplorerCopy(PPC_APPINFO *cinfo,BOOL move)
 		 ((cinfo->e.Dtype.mode != VFSDT_SHN) && IsNodirShnPath(cinfo)) ||
 		 (cinfo->e.Dtype.mode == VFSDT_HTTP) ){
 		if ( !move ){
-			SetPopMsg(cinfo,POPMSG_MSG,MES_ECDR);
+			SetPopMsg(cinfo, POPMSG_MSG, MES_ECDR);
 		}else{
-			PPC_Unpack(cinfo,NULL);
+			PPC_Unpack(cinfo, NULL);
 		}
 		return NO_ERROR;
 	}
-	GetPairVpath(cinfo,dst);
+	GetPairVpath(cinfo, dst);
 
-	if ( PPctInput(cinfo,modestr,dst,TSIZEOF(dst),
-			PPXH_DIR_R,PPXH_DIR) <= 0 ){
+	if ( PPctInput(cinfo, modestr, dst, TSIZEOF(dst),
+			PPXH_DIR_R, PPXH_DIR) <= 0 ){
 		return ERROR_CANCELLED;
 	}
 
-	VFSFixPath(NULL,dst,cinfo->path,VFSFIX_VFPS);
-	VFSGetRealPath(NULL,destest,dst);
+	VFSFixPath(NULL, dst, cinfo->path, VFSFIX_VFPS);
+	VFSGetRealPath(NULL, destest, dst);
 	if ( (destest[0] != '\0') && (GetFileAttributesL(dst) == BADATTR) ){
 		ERRORCODE result;
 
 		result = GetLastError();
 		if ( result != ERROR_NOT_READY){
-			if ( PMessageBox(cinfo->info.hWnd,MES_QCRD,
-						T("File operation warning"),MB_OKCANCEL) != IDOK ){
+			if ( PMessageBox(cinfo->info.hWnd, MES_QCRD,
+						T("File operation warning"), MB_OKCANCEL) != IDOK ){
 				return ERROR_CANCELLED;
 			}
-			result = MakeDirectories(dst,NULL);
+			result = MakeDirectories(dst, NULL);
 		}
 		if ( result != NO_ERROR ){
-			SetPopMsg(cinfo,result,dst);
+			SetPopMsg(cinfo, result, dst);
 			return result;
 		}
 	}
@@ -307,21 +307,21 @@ ERRORCODE PPC_ExplorerCopy(PPC_APPINFO *cinfo,BOOL move)
 	fileop.pTo		= dst;
 	fileop.fFlags	= 0;
 //	fileop.lpszProgressTitle		= MES_TFAC;
-	PPxCommonCommand(NULL,!move ? JOBSTATE_FOP_COPY : JOBSTATE_FOP_MOVE,K_ADDJOBTASK);
+	PPxCommonCommand(NULL, !move ? JOBSTATE_FOP_COPY : JOBSTATE_FOP_MOVE, K_ADDJOBTASK);
 	if ( SxFileOperation(cinfo, &fileop) == SFOERROR_OK ){
-		SetRefreshAfterList(cinfo,ALST_COPYMOVE,dst[0]);
+		SetRefreshAfterList(cinfo, ALST_COPYMOVE, dst[0]);
 	}
-	PPxCommonCommand(NULL,0,K_DELETEJOBTASK);
+	PPxCommonCommand(NULL, 0, K_DELETEJOBTASK);
 	SHFileOperationFix(cinfo);
 	return NO_ERROR;
 }
 
-DWORD_PTR USECDECL PPcFOPInfoFunc(PPCINFOEXT *infoext,DWORD cmdID,PPXAPPINFOUNION *uptr)
+DWORD_PTR USECDECL PPcFOPInfoFunc(PPCINFOEXT *infoext, DWORD cmdID, PPXAPPINFOUNION *uptr)
 {
 	if ( IsTrue(IsWindow(infoext->info.hWnd)) &&
 		 (infoext->cinfo->e.INDEXDATA.p != NULL) &&
 		 (infoext->cinfo->e.CELLDATA.p != NULL) ){
-		return infoext->cinfo->info.Function(&infoext->cinfo->info,cmdID,uptr);
+		return infoext->cinfo->info.Function(&infoext->cinfo->info, cmdID, uptr);
 	}
 
 	if ( cmdID <= PPXCMDID_FILL ) *uptr->enums.buffer = '\0';
@@ -330,11 +330,11 @@ DWORD_PTR USECDECL PPcFOPInfoFunc(PPCINFOEXT *infoext,DWORD cmdID,PPXAPPINFOUNIO
 
 DWORD WINAPI PPc_DoFileOperationThread(PPCDOFILEOPERATIONSTRUCT *ppfo)
 {
-	THREADSTRUCT threadstruct = {PPcDoFileOperationThreadName,XTHREAD_TERMENABLE,NULL,0,0};
-	CoInitializeEx(NULL,COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	THREADSTRUCT threadstruct = {PPcDoFileOperationThreadName, XTHREAD_TERMENABLE, NULL, 0, 0};
+	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	PPxRegisterThread(&threadstruct);
 
-	PPxFileOperation(NULL,&ppfo->fileop);
+	PPxFileOperation(NULL, &ppfo->fileop);
 	if ( ppfo->infoext.cinfo != NULL ) ppfo->infoext.cinfo->Ref--;
 	TM_kill(&ppfo->files);
 	PPcHeapFree(ppfo);
@@ -347,7 +347,7 @@ DWORD WINAPI PPc_DoFileOperationThread(PPCDOFILEOPERATIONSTRUCT *ppfo)
 }
 
 // Paste / Drop 用スレッド
-void PPc_DoFileOperation(PPC_APPINFO *cinfo,const TCHAR *action,TMS_struct *files,const TCHAR *destdir,const TCHAR *option,DWORD flags)
+void PPc_DoFileOperation(PPC_APPINFO *cinfo, const TCHAR *action, TMS_struct *files, const TCHAR *destdir, const TCHAR *option, DWORD flags)
 {
 	DWORD tmp;
 	PPCDOFILEOPERATIONSTRUCT *ppfo = PPcHeapAlloc(sizeof(PPCDOFILEOPERATIONSTRUCT));
@@ -376,20 +376,20 @@ void PPc_DoFileOperation(PPC_APPINFO *cinfo,const TCHAR *action,TMS_struct *file
 	ppfo->fileop.hReadyEvent = NULL;
 #ifndef WINEGCC
 	if ( OSver.dwMajorVersion < 6 ){
-		PPxFileOperation(NULL,&ppfo->fileop);
+		PPxFileOperation(NULL, &ppfo->fileop);
 		TM_kill(&ppfo->files);
 		PPcHeapFree(ppfo);
 		return;
 	}
 #endif
 	if ( cinfo != NULL ) cinfo->Ref++;
-	CloseHandle(CreateThread(NULL,0,
-			(LPTHREAD_START_ROUTINE)PPc_DoFileOperationThread,ppfo,0,&tmp));
+	CloseHandle(CreateThread(NULL, 0,
+			(LPTHREAD_START_ROUTINE)PPc_DoFileOperationThread, ppfo, 0, &tmp));
 }
 
 DWORD WINAPI PPcFileOperationThread(FOPTHREADSTRUCT *fop)
 {
-	THREADSTRUCT threadstruct = {PPcFileOperationThreadName,XTHREAD_TERMENABLE,NULL,0,0};
+	THREADSTRUCT threadstruct = {PPcFileOperationThreadName, XTHREAD_TERMENABLE, NULL, 0, 0};
 #if JPCSR
 	TCHAR command[VFPS];
 	int work;
@@ -398,11 +398,11 @@ DWORD WINAPI PPcFileOperationThread(FOPTHREADSTRUCT *fop)
 
 	hPairWnd = GetPairWnd(fop->cinfo);
 	if ( hPairWnd != NULL ){
-		InitEnumMarkCell(fop->cinfo,&work);
-		tstrcpy(command + 2,EnumMarkCell(fop->cinfo,&work)->f.cFileName);
+		InitEnumMarkCell(fop->cinfo, &work);
+		tstrcpy(command + 2, EnumMarkCell(fop->cinfo, &work)->f.cFileName);
 	}
 #endif
-	CoInitializeEx(NULL,COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	fop->infoext.info.Function = (PPXAPPINFOFUNCTION)PPcFOPInfoFunc;
 	fop->infoext.info.Name  = PPcFileOperationThreadName;
 	fop->infoext.info.RegID = fop->infoext.cinfo->info.RegID;
@@ -410,9 +410,9 @@ DWORD WINAPI PPcFileOperationThread(FOPTHREADSTRUCT *fop)
 	fop->fileop.info = &fop->infoext.info;
 
 	PPxRegisterThread(&threadstruct);
-	if ( PPxFileOperation(NULL,&fop->fileop) < 0 ){
+	if ( PPxFileOperation(NULL, &fop->fileop) < 0 ){
 		CloseHandle(fop->fileop.hReadyEvent);
-		SetPopMsg(fop->infoext.cinfo,ERROR_INVALID_FUNCTION,NULL);
+		SetPopMsg(fop->infoext.cinfo, ERROR_INVALID_FUNCTION, NULL);
 	}
 #if JPCSR
 	if ( (hPairWnd != NULL) && IsWindow(hPairWnd) &&
@@ -422,7 +422,7 @@ DWORD WINAPI PPcFileOperationThread(FOPTHREADSTRUCT *fop)
 		copydata.dwData = 'H';
 		copydata.cbData = TSTRSIZE(command);
 		copydata.lpData = command;
-		SendMessage(hPairWnd,WM_COPYDATA,(WPARAM)hPairWnd,(LPARAM)&copydata);
+		SendMessage(hPairWnd, WM_COPYDATA, (WPARAM)hPairWnd, (LPARAM)&copydata);
 	}
 #endif
 	if ( FALSE != IsWindow(fop->infoext.info.hWnd) ){
@@ -451,18 +451,18 @@ BOOL IsNodirShnPath(PPC_APPINFO *cinfo)
 	}
 }
 
-void PPcFileOperation(PPC_APPINFO *cinfo,const TCHAR *action,const TCHAR *destdir,const TCHAR *option)
+void PPcFileOperation(PPC_APPINFO *cinfo, const TCHAR *action, const TCHAR *destdir, const TCHAR *option)
 {
 	VFSFILEOPERATION fileop;
 	MSG msg;
 
 	if ( cinfo->usereentry ){
-		SetPopMsg(cinfo,POPMSG_MSG,T("reentry"));
+		SetPopMsg(cinfo, POPMSG_MSG, T("reentry"));
 		return;
 	}
 
 	if ( cinfo->e.Dtype.mode == VFSDT_SHN ){
-		fileop.files = GetFiles(cinfo,0);
+		fileop.files = GetFiles(cinfo, 0);
 	}else{
 		fileop.files = NULL;
 	}
@@ -472,11 +472,11 @@ void PPcFileOperation(PPC_APPINFO *cinfo,const TCHAR *action,const TCHAR *destdi
 		 (IsNodirShnPath(cinfo) && (fileop.files == NULL)) ||
 		 (cinfo->e.Dtype.mode == VFSDT_HTTP) ){
 		if ( cinfo->e.Dtype.mode == VFSDT_SHN ){
-			PPcUnpackSelectedEntry(cinfo,destdir,action);
+			PPcUnpackSelectedEntry(cinfo, destdir, action);
 		}else if ( action != FileOperationMode_Move ){
-			PPC_Unpack(cinfo,destdir);
+			PPC_Unpack(cinfo, destdir);
 		}else{
-			SetPopMsg(cinfo,POPMSG_MSG,StrNotSupport);
+			SetPopMsg(cinfo, POPMSG_MSG, StrNotSupport);
 		}
 		return;
 	}
@@ -492,8 +492,8 @@ void PPcFileOperation(PPC_APPINFO *cinfo,const TCHAR *action,const TCHAR *destdi
 
 	if ( fileop.dtype != VFSDT_LFILE ){
 		if ( fileop.files == NULL ){
-			if ( (fileop.files = GetFiles(cinfo,0)) == NULL ){
-				SetPopMsg(cinfo,POPMSG_MSG,StrNotSupport);
+			if ( (fileop.files = GetFiles(cinfo, 0)) == NULL ){
+				SetPopMsg(cinfo, POPMSG_MSG, StrNotSupport);
 				cinfo->usereentry = 0;
 				return;
 			}
@@ -501,7 +501,7 @@ void PPcFileOperation(PPC_APPINFO *cinfo,const TCHAR *action,const TCHAR *destdi
 	}else{
 		if ( cinfo->e.Dtype.BasePath[0] != '\0' ){
 			fileop.src = cinfo->e.Dtype.BasePath;
-			setflag(fileop.flags,VFSFOP_USEKEEPDIR);
+			setflag(fileop.flags, VFSFOP_USEKEEPDIR);
 		}
 		fileop.files = GetFilesForListfile(cinfo);
 	}
@@ -510,18 +510,18 @@ void PPcFileOperation(PPC_APPINFO *cinfo,const TCHAR *action,const TCHAR *destdi
 	fileop.hReturnWnd = cinfo->info.hWnd;
 
 	if ( fileop.action[0] == '!' ){
-		setflag(fileop.flags,VFSFOP_AUTOSTART);
+		setflag(fileop.flags, VFSFOP_AUTOSTART);
 		fileop.action++;
 	}
 	if ( fileop.files == NULL ){
 		cinfo->usereentry = 0;
-		xmessage(XM_FaERRd,T("Alloc error"));
+		xmessage(XM_FaERRd, T("Alloc error"));
 		return;
 	}
 #ifndef UNICODE
 	if ( OSver.dwPlatformId != VER_PLATFORM_WIN32_NT ){
-		if ( PPxFileOperation(NULL,&fileop) > 0 ){
-			SetRefreshAfterList(cinfo,ALST_COPYMOVE,'\0');
+		if ( PPxFileOperation(NULL, &fileop) > 0 ){
+			SetRefreshAfterList(cinfo, ALST_COPYMOVE, '\0');
 		}
 	}else
 #endif
@@ -529,8 +529,8 @@ void PPcFileOperation(PPC_APPINFO *cinfo,const TCHAR *action,const TCHAR *destdi
 		DWORD tmp;
 		FOPTHREADSTRUCT *fop;
 
-		setflag(fileop.flags,VFSFOP_NOTIFYREADY);
-		fileop.hReadyEvent = CreateEvent(NULL,TRUE,FALSE,NULL);
+		setflag(fileop.flags, VFSFOP_NOTIFYREADY);
+		fileop.hReadyEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 		{
 			DWORD strsize;
 
@@ -565,7 +565,7 @@ void PPcFileOperation(PPC_APPINFO *cinfo,const TCHAR *action,const TCHAR *destdi
 			}
 			CloseHandle(fileop.hReadyEvent);
 		}
-		EnableWindow(cinfo->info.hWnd,TRUE);
+		EnableWindow(cinfo->info.hWnd, TRUE);
 	}
 	cinfo->usereentry = 0;
 }
@@ -610,12 +610,12 @@ BOOL CheckFileAccess(TCHAR *src)
 	sd = LocalAlloc(LPTR, size);
 	if ( sd == NULL ) return TRUE;
 
-	//	XMessage(NULL,NULL,XM_DUMP,(char *)sd,0x300);
+	//	XMessage(NULL, NULL, XM_DUMP, (char *)sd, 0x300);
 	if ( FALSE == GetFileSecurity(src, DACL_SECURITY_INFORMATION, sd, size, &size) ){
 		goto error;
 	}
-	//	XMessage(NULL,NULL,XM_DUMP,(char *)sd,0x300);
-	//	PPErrorBox(NULL,NULL,PPERROR_GETLASTERROR);
+	//	XMessage(NULL, NULL, XM_DUMP, (char *)sd, 0x300);
+	//	PPErrorBox(NULL, NULL, PPERROR_GETLASTERROR);
 	//	XMessage(NULL, NULL, XM_DbgDIA, T("%s %d"), src, size);
 	// GetFileSecurity (200)より GetNamedSecurityInfo (XP 1000byte)のほうが、情報が多い
 	if ( NO_ERROR != GetNamedSecurityInfo(src, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, NULL, NULL, NULL, NULL, &sd) != ERROR_SUCCESS ){
@@ -823,10 +823,10 @@ ERRORCODE PPC_Rename(PPC_APPINFO *cinfo, BOOL continuous)
 		// IDB_PREV / IDB_NEXT
 		if ( continuous && (cinfo->e.markC > 0) ){
 			if ( result == IDB_PREV ){
-				nextcell = UpSearchMarkCell(cinfo,cinfo->e.cellN);
+				nextcell = UpSearchMarkCell(cinfo, cinfo->e.cellN);
 				if ( nextcell < 0 ) continue;
 			}else{
-				nextcell = DownSearchMarkCell(cinfo,cinfo->e.cellN);
+				nextcell = DownSearchMarkCell(cinfo, cinfo->e.cellN);
 				if ( nextcell < 0 ){
 					if ( result == 1 ) break; // OK...終了
 					continue; // IDB_NEXT...再表示
@@ -891,6 +891,19 @@ void USEFASTCALL ReadEntryForNewEntry(PPC_APPINFO *cinfo, TCHAR *newEntryPath, D
 	return;
 }
 
+const TCHAR *GetNewEntryName(const TCHAR *custid, const TCHAR *mesid, TCHAR *buf)
+{
+	const TCHAR *mes;
+
+	*buf = '\0';
+	GetCustTable(Str_others, custid, buf, TSTROFF(MAX_PATH));
+	if ( *buf != '\0' ) return buf;
+	mes = MessageText(mesid);
+	SetCustStringTable(Str_others, custid, mes, 0);
+	return mes;
+}
+
+
 ERRORCODE PPC_MakeDir(PPC_APPINFO *cinfo)
 {
 	TCHAR target[VFPS], src[CMDLINESIZE], *ptr;
@@ -898,7 +911,7 @@ ERRORCODE PPC_MakeDir(PPC_APPINFO *cinfo)
 
 	TINPUT tinput;
 
-	PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, MessageText(NewDirName), src, XEO_EXTRACTEXEC);
+	PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, GetNewEntryName(T("NewDir"), NewDirName, src), src, XEO_EXTRACTEXEC);
 	GetNewName(target, src, cinfo->RealPath);
 
 	tinput.hOwnerWnd= cinfo->info.hWnd;
@@ -922,7 +935,7 @@ ERRORCODE PPC_MakeDir(PPC_APPINFO *cinfo)
 			tstrcpy(ff.cFileName, target);
 		}
 		ff.dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY;
-		InsertEntry(cinfo, 0x7fffffff, ff.cFileName, &ff);
+		InsertEntry(cinfo, -1, ff.cFileName, &ff);
 		return NO_ERROR;
 	}
 
@@ -1069,34 +1082,35 @@ void MakeMakeEntryItem(HMENU hMenu)
 #define MakeType_NULL 0
 #define MakeType_FILE 1
 #define MakeType_DATA 2
-int GetTemplateFileName(TCHAR *filename,const TCHAR *dir)
+int GetTemplateFileName(TCHAR *filename, const TCHAR *dir)
 {
 	TCHAR temppath[VFPS];
 
-	if ( VFSFixPath(temppath,filename,dir,VFSFIX_FULLPATH | VFSFIX_REALPATH) == NULL ){
+	if ( VFSFixPath(temppath, filename, dir, VFSFIX_FULLPATH | VFSFIX_REALPATH) == NULL ){
 		return MakeType_NULL;
 	}
 	if ( GetFileAttributesL(temppath) == BADATTR ) return MakeType_NULL;
-	tstrcpy(filename,temppath);
+	tstrcpy(filename, temppath);
 	return MakeType_FILE;
 }
 
-ERRORCODE USEFASTCALL MakeEntryMain(PPC_APPINFO *cinfo,int type,TCHAR *name)
+ERRORCODE USEFASTCALL MakeEntryMain(PPC_APPINFO *cinfo, int type, TCHAR *name)
 {
-	DWORD regtype,regsize;
+	DWORD regtype, regsize;
 	TCHAR filesrc[VFPS];
 	int MakeType = MakeType_NULL;
 	if ( type == NEWCMD_DIR ) return PPC_MakeDir(cinfo);
 
 	if ( (type == NEWCMD_FILE) || (type == NEWCMD_LISTFILE) ){
-		PP_ExtractMacro(cinfo->info.hWnd,&cinfo->info,NULL,
-				MessageText(NewFileName),name,XEO_EXTRACTEXEC);
-		tstrcat(name,T(".TXT"));
+		PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL,
+				GetNewEntryName(T("NewFile"), NewFileName, name),
+				name, XEO_EXTRACTEXEC);
+		tstrcat(name, (OSver.dwMajorVersion < 6) ? T(".TXT") : T(".txt"));
 	}else{
-		TCHAR *namesepp,*extname;
+		TCHAR *namesepp, *extname;
 		TCHAR exttypename[VFPS];
 
-		namesepp = tstrrchr(name,'\t');
+		namesepp = tstrrchr(name, '\t');
 		if ( namesepp != NULL ){
 			HKEY HKext;
 
@@ -1105,19 +1119,19 @@ ERRORCODE USEFASTCALL MakeEntryMain(PPC_APPINFO *cinfo,int type,TCHAR *name)
 				*namesepp = *(namesepp + 1);
 				namesepp++;
 			}
-			if ( RegOpenKeyEx(HKEY_CLASSES_ROOT,extname,0,KEY_READ,&HKext)
+			if ( RegOpenKeyEx(HKEY_CLASSES_ROOT, extname, 0, KEY_READ, &HKext)
 					== ERROR_SUCCESS ){
 				regsize = sizeof exttypename;
-				if ( (RegQueryValueEx(HKext,NilStr,NULL,&regtype,(LPBYTE)exttypename,&regsize) == ERROR_SUCCESS) && (regsize > 1) ){
+				if ( (RegQueryValueEx(HKext, NilStr, NULL, &regtype, (LPBYTE)exttypename, &regsize) == ERROR_SUCCESS) && (regsize > 1) ){
 					HKEY HKsnew;
 					TCHAR temppath[VFPS];
 
 								// 既定ドキュメント下にShellNew有り
-					CatPath(temppath,exttypename,ShellNewString);
-					if ( RegOpenKeyEx(HKext,temppath,0,KEY_READ,&HKsnew)
+					CatPath(temppath, exttypename, ShellNewString);
+					if ( RegOpenKeyEx(HKext, temppath, 0, KEY_READ, &HKsnew)
 							!= ERROR_SUCCESS ){
 								// 直下にShellNew有り
-						if ( RegOpenKeyEx(HKext,ShellNewString,0,KEY_READ,&HKsnew)
+						if ( RegOpenKeyEx(HKext, ShellNewString, 0, KEY_READ, &HKsnew)
 								!= ERROR_SUCCESS ){
 							HKsnew = NULL;
 						}
@@ -1125,24 +1139,24 @@ ERRORCODE USEFASTCALL MakeEntryMain(PPC_APPINFO *cinfo,int type,TCHAR *name)
 					if ( HKsnew != NULL ){
 						// filename ?
 						regsize = sizeof filesrc;
-						if ( RegQueryValueEx(HKsnew,StrNewFileName,NULL,&regtype,(LPBYTE)filesrc,&regsize) == ERROR_SUCCESS ){
+						if ( RegQueryValueEx(HKsnew, StrNewFileName, NULL, &regtype, (LPBYTE)filesrc, &regsize) == ERROR_SUCCESS ){
 							if ( filesrc[0] != '\0' ){
 								// ユーザ別Template
-								MakeType = GetTemplateFileName(filesrc,T("#21:\\"));
+								MakeType = GetTemplateFileName(filesrc, T("#21:\\"));
 								// ユーザ共通Template
 								if ( MakeType == MakeType_NULL ){
-									MakeType = GetTemplateFileName(filesrc,T("#45:\\"));
+									MakeType = GetTemplateFileName(filesrc, T("#45:\\"));
 								}
 								// OS標準Template(\Windows\ShellNew)
 								if ( MakeType == MakeType_NULL ){
-									MakeType = GetTemplateFileName(filesrc,T("#36:\\ShellNew"));
+									MakeType = GetTemplateFileName(filesrc, T("#36:\\ShellNew"));
 								}
 							}
 						}
 						// data ?
 						if ( MakeType == MakeType_NULL ){
 							regsize = sizeof filesrc;
-							if ( RegQueryValueEx(HKsnew,StrNewData,NULL,&regtype,(LPBYTE)filesrc,&regsize) == ERROR_SUCCESS ){
+							if ( RegQueryValueEx(HKsnew, StrNewData, NULL, &regtype, (LPBYTE)filesrc, &regsize) == ERROR_SUCCESS ){
 								if ( regtype == REG_BINARY ){
 									MakeType = MakeType_DATA;
 								}
@@ -1157,15 +1171,15 @@ ERRORCODE USEFASTCALL MakeEntryMain(PPC_APPINFO *cinfo,int type,TCHAR *name)
 		}
 	}
 	// 既存ファイルと被らないようにする
-	GetNewName(name,name,cinfo->RealPath);
+	GetNewName(name, name, cinfo->RealPath);
 	for ( ; ; ){
 		TINPUT tinput;
 		HANDLE hFile;
-		TCHAR buf[CMDLINESIZE],filepath[VFPS],*lastptr;
+		TCHAR buf[CMDLINESIZE], filepath[VFPS], *lastptr;
 		DWORD tmp;
 		ERRORCODE result = ERROR_CANCELLED;
 
-		tstrcpy(buf,name);
+		tstrcpy(buf, name);
 		tinput.hOwnerWnd = cinfo->info.hWnd;
 		tinput.hWtype	= PPXH_FILENAME;
 		tinput.hRtype	= PPXH_NAME_R;
@@ -1179,33 +1193,33 @@ ERRORCODE USEFASTCALL MakeEntryMain(PPC_APPINFO *cinfo,int type,TCHAR *name)
 		if ( tInputEx(&tinput) <= 0 ) return ERROR_CANCELLED;
 
 		if ( StartCellEdit(cinfo) ) return ERROR_PATH_BUSY;
-		lastptr = VFSFixPath(filepath,buf,cinfo->RealPath,VFSFIX_SEPARATOR | VFSFIX_FULLPATH | VFSFIX_REALPATH);
+		lastptr = VFSFixPath(filepath, buf, cinfo->RealPath, VFSFIX_SEPARATOR | VFSFIX_FULLPATH | VFSFIX_REALPATH);
 		if ( lastptr != NULL ){
 			if ( MakeType == MakeType_FILE ){ // template file をコピー
 				*(lastptr - 1) = '\0';
-				wsprintf(buf,T("*file !copy,\"%s\",\"%s\",/name:\"%s\""),filesrc,filepath,lastptr);
+				wsprintf(buf, T("*file !copy,\"%s\",\"%s\",/name:\"%s\""), filesrc, filepath, lastptr);
 				*(lastptr - 1) = '\\';
-				result = PP_ExtractMacro(cinfo->info.hWnd,&cinfo->info,NULL,buf,NULL,0);
+				result = PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, buf, NULL, 0);
 			}
 			if ( result != NO_ERROR ){ // null file を生成
-				hFile = CreateFileL(filepath,GENERIC_WRITE,0,NULL,
-						CREATE_NEW,FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+				hFile = CreateFileL(filepath, GENERIC_WRITE, 0, NULL,
+						CREATE_NEW, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 				if ( hFile == INVALID_HANDLE_VALUE ){
 					EndCellEdit(cinfo);
-					SetPopMsg(cinfo,POPMSG_GETLASTERROR,MES_TMKF);
+					SetPopMsg(cinfo, POPMSG_GETLASTERROR, MES_TMKF);
 					continue;
 				}
 				if ( MakeType == MakeType_DATA ){ // template data を出力
-					WriteFile(hFile,filesrc,regsize,&tmp,NULL);
+					WriteFile(hFile, filesrc, regsize, &tmp, NULL);
 				}
 				if ( type == NEWCMD_LISTFILE ){ // listfile header を出力
-					WriteFile(hFile,ListFileHeaderStr,ListFileHeaderStrLen,&tmp,NULL);
+					WriteFile(hFile, ListFileHeaderStr, ListFileHeaderStrLen, &tmp, NULL);
 				}
 				CloseHandle(hFile);
 			}
 		}
 		EndCellEdit(cinfo);
-		ReadEntryForNewEntry(cinfo,filepath,RETRY_FLAGS_NEWFILE | RENTRY_UPDATE);
+		ReadEntryForNewEntry(cinfo, filepath, RETRY_FLAGS_NEWFILE | RENTRY_UPDATE);
 		return NO_ERROR;
 	}
 }
@@ -1219,49 +1233,49 @@ ERRORCODE PPC_MakeEntry(PPC_APPINFO *cinfo)
 	hMenu = CreatePopupMenu();
 	MakeMakeEntryItem(hMenu);
 	//-------------------------------------------------------------------------
-	index = PPcTrackPopupMenu(cinfo,hMenu);
-	GetMenuString(hMenu,index,name,TSIZEOF(name),MF_BYCOMMAND);
+	index = PPcTrackPopupMenu(cinfo, hMenu);
+	GetMenuString(hMenu, index, name, TSIZEOF(name), MF_BYCOMMAND);
 	DestroyMenu(hMenu);
 	if ( index == 0 ) return ERROR_CANCELLED;
-	return MakeEntryMain(cinfo,index,name);
+	return MakeEntryMain(cinfo, index, name);
 }
 
 void PPcCreateHarkLink(PPC_APPINFO *cinfo)
 {
 	typedef BOOL (APIENTRY *impCreateHardLink)(
-			LPCTSTR lpFileName,LPCTSTR lpExistingFileName,
+			LPCTSTR lpFileName, LPCTSTR lpExistingFileName,
 			LPSECURITY_ATTRIBUTES lpSecurityAttributes);
 	impCreateHardLink DCreateHardLink;
 	TCHAR name[VFPS];
-	TCHAR src[VFPS],dst[VFPS];
+	TCHAR src[VFPS], dst[VFPS];
 
-	GETDLLPROCT(GetModuleHandle(StrKernel32DLL),CreateHardLink);
+	GETDLLPROCT(GetModuleHandle(StrKernel32DLL), CreateHardLink);
 	if ( DCreateHardLink == NULL ){
-		SetPopMsg(cinfo,POPMSG_GETLASTERROR,MES_ENSO);
+		SetPopMsg(cinfo, POPMSG_GETLASTERROR, MES_ENSO);
 		return;
 	}
-	tstrcpy(name,CEL(cinfo->e.cellN).f.cFileName);
+	tstrcpy(name, CEL(cinfo->e.cellN).f.cFileName);
 	if ( PPctInput(cinfo, MES_TMHL, name, TSIZEOF(name),
 			PPXH_NAME_R, PPXH_FILENAME) > 0 ){
 		CatPath(src, cinfo->path, CEL(cinfo->e.cellN).f.cFileName);
-		VFSFixPath(dst,name,cinfo->path,VFSFIX_SEPARATOR | VFSFIX_FULLPATH | VFSFIX_REALPATH);
-		tstrcpy(cinfo->Jfname,name);
+		VFSFixPath(dst, name, cinfo->path, VFSFIX_SEPARATOR | VFSFIX_FULLPATH | VFSFIX_REALPATH);
+		tstrcpy(cinfo->Jfname, name);
 
 		if ( CEL(cinfo->e.cellN).f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ){
 			ERRORCODE result;
 
-			result = CreateJunction(dst,src,NULL);
+			result = CreateJunction(dst, src, NULL);
 			if ( result != NO_ERROR ){
-				SetPopMsg(cinfo,result,MES_TMHL);
+				SetPopMsg(cinfo, result, MES_TMHL);
 				return;
 			}
-			read_entry(cinfo,RETRY_FLAGS_NEWDIR | RENTRY_UPDATE);
+			read_entry(cinfo, RETRY_FLAGS_NEWDIR | RENTRY_UPDATE);
 		}else{
-			if ( DCreateHardLink(dst,src,NULL) == FALSE ){
-				SetPopMsg(cinfo,POPMSG_GETLASTERROR,MES_TMHL);
+			if ( DCreateHardLink(dst, src, NULL) == FALSE ){
+				SetPopMsg(cinfo, POPMSG_GETLASTERROR, MES_TMHL);
 				return;
 			}
-			read_entry(cinfo,RETRY_FLAGS_NEWFILE | RENTRY_UPDATE);
+			read_entry(cinfo, RETRY_FLAGS_NEWFILE | RENTRY_UPDATE);
 		}
 	}
 }
@@ -1269,7 +1283,7 @@ void PPcCreateHarkLink(PPC_APPINFO *cinfo)
 ERRORCODE PPcDupFile(PPC_APPINFO *cinfo)
 {
 	TCHAR name[VFPS];
-	TCHAR src[VFPS * 2],dst[VFPS];
+	TCHAR src[VFPS * 2], dst[VFPS];
 	TINPUT tinput;
 	ENTRYCELL *cell;
 	ERRORCODE result;
@@ -1284,46 +1298,46 @@ ERRORCODE PPcDupFile(PPC_APPINFO *cinfo)
 	tinput.flag		= TIEX_USEREFLINE | TIEX_USEINFO | TIEX_SINGLEREF | TIEX_FIXFORPATH;
 	cell = &CEL(cinfo->e.cellN);
 	if ( !(cell->f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ){
-		setflag(tinput.flag,TIEX_REFEXT);
+		setflag(tinput.flag, TIEX_REFEXT);
 	}
-	tstrcpy(name,FindLastEntryPoint(cell->f.cFileName) );
+	tstrcpy(name, FindLastEntryPoint(cell->f.cFileName) );
 	if ( tInputEx(&tinput) <= 0 ) return ERROR_CANCELLED;
 
 	if ( cell->f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ){
-		VFSFullPath(dst,name,cinfo->RealPath);
-		wsprintf(src,T("*file !copy,\"%%*name(NDC,\"%%R\")\\*\",\"%s\",/querycreatedirectory:off"),dst);
+		VFSFullPath(dst, name, cinfo->RealPath);
+		wsprintf(src, T("*file !copy,\"%%*name(NDC,\"%%R\")\\*\",\"%s\",/querycreatedirectory:off"), dst);
 	}else{
-		wsprintf(src,T("*file !copy,%%*name(BDC,\"%%R\"),\"%%1\",/name:\"%s\""),name);
+		wsprintf(src, T("*file !copy,%%*name(BDC,\"%%R\"),\"%%1\",/name:\"%s\""), name);
 	}
-	result = PP_ExtractMacro(cinfo->info.hWnd,&cinfo->info,NULL,src,NULL,0);
-	tstrcpy(cinfo->Jfname,name);
-	read_entry(cinfo,RENTRY_JUMPNAME | RENTRY_SAVEOFF);
+	result = PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, src, NULL, 0);
+	tstrcpy(cinfo->Jfname, name);
+	read_entry(cinfo, RENTRY_JUMPNAME | RENTRY_SAVEOFF);
 	return result;
 }
 
 //============================================= [W]コマンド関連/ 順番の書き込み
 ERRORCODE WriteFSDir(PPC_APPINFO *cinfo)
 {
-	TCHAR tmppath[VFPS],src[VFPS],dst[VFPS];
-	int i,firstindex;
+	TCHAR tmppath[VFPS], src[VFPS], dst[VFPS];
+	int i, firstindex;
 	JOBINFO jinfo;
 
-	if ( PMessageBox(cinfo->info.hWnd,MES_QWRD,MES_TWRD,MB_QYES) != IDOK ){
+	if ( PMessageBox(cinfo->info.hWnd, MES_QWRD, MES_TWRD, MB_QYES) != IDOK ){
 		return ERROR_CANCELLED;
 	}
 									// 作業ディレクトリを作成
-	GetDriveName(src,cinfo->path);
-	CatPath(tmppath,src,T("PPXTMP"));
+	GetDriveName(src, cinfo->path);
+	CatPath(tmppath, src, T("PPXTMP"));
 	GetUniqueEntryName(tmppath);
-	if ( CreateDirectory(tmppath,NULL) == FALSE ){
-		CatPath(tmppath,cinfo->path,T("PPXTMP"));
+	if ( CreateDirectory(tmppath, NULL) == FALSE ){
+		CatPath(tmppath, cinfo->path, T("PPXTMP"));
 		GetUniqueEntryName(tmppath);
-		if ( CreateDirectory(tmppath,NULL) == FALSE ){
-			SetPopMsg(cinfo,POPMSG_GETLASTERROR,MES_TWRD);
+		if ( CreateDirectory(tmppath, NULL) == FALSE ){
+			SetPopMsg(cinfo, POPMSG_GETLASTERROR, MES_TWRD);
 			return ERROR_ACCESS_DENIED;
 		}
 	}
-	PPxCommonCommand(NULL,JOBSTATE_FOP_MOVE,K_ADDJOBTASK);
+	PPxCommonCommand(NULL, JOBSTATE_FOP_MOVE, K_ADDJOBTASK);
 	InitJobinfo(&jinfo);
 	cinfo->BreakFlag = FALSE;
 	firstindex = 0;
@@ -1336,27 +1350,27 @@ ERRORCODE WriteFSDir(PPC_APPINFO *cinfo)
 	for ( i = firstindex ; i < cinfo->e.cellIMax ; i++ ){
 		if ( CEL(i).type > ECT_NOFILEDIRMAX ){
 			jinfo.count++;
-			CatPath(src,cinfo->path,CEL(i).f.cFileName);
-			CatPath(dst,tmppath,CEL(i).f.cFileName);
-			MoveFile(src,dst);
-			if ( IsTrue(BreakCheck(cinfo,&jinfo,src)) ) break;
+			CatPath(src, cinfo->path, CEL(i).f.cFileName);
+			CatPath(dst, tmppath, CEL(i).f.cFileName);
+			MoveFile(src, dst);
+			if ( IsTrue(BreakCheck(cinfo, &jinfo, src)) ) break;
 		}
 	}
 	for ( i = firstindex ; i < cinfo->e.cellIMax ; i++ ){
 		if ( CEL(i).type > ECT_NOFILEDIRMAX ){
 			jinfo.count++;
-			CatPath(src,tmppath,CEL(i).f.cFileName);
-			CatPath(dst,cinfo->path,CEL(i).f.cFileName);
-			MoveFile(src,dst);
-			if ( IsTrue(BreakCheck(cinfo,&jinfo,dst)) ) break;
+			CatPath(src, tmppath, CEL(i).f.cFileName);
+			CatPath(dst, cinfo->path, CEL(i).f.cFileName);
+			MoveFile(src, dst);
+			if ( IsTrue(BreakCheck(cinfo, &jinfo, dst)) ) break;
 		}
 	}
 	if ( RemoveDirectoryL(tmppath) == FALSE ){
-		SetPopMsg(cinfo,POPMSG_GETLASTERROR,MES_EDTD);
+		SetPopMsg(cinfo, POPMSG_GETLASTERROR, MES_EDTD);
 	}
-	read_entry(cinfo,RENTRY_SAVEOFF);
-	FinishJobinfo(cinfo,&jinfo,NO_ERROR);
-	PPxCommonCommand(NULL,0,K_DELETEJOBTASK);
+	read_entry(cinfo, RENTRY_SAVEOFF);
+	FinishJobinfo(cinfo, &jinfo, NO_ERROR);
+	PPxCommonCommand(NULL, 0, K_DELETEJOBTASK);
 	return NO_ERROR;
 }
 
@@ -1367,23 +1381,23 @@ ERRORCODE PPC_WriteDir(PPC_APPINFO *cinfo)
 		TCHAR pathbuf[VFPS];
 		const TCHAR *path;
 
-		if ( PMessageBox(cinfo->info.hWnd,MES_QWRD,T("ListFile"),MB_QYES) != IDOK ){
+		if ( PMessageBox(cinfo->info.hWnd, MES_QWRD, T("ListFile"), MB_QYES) != IDOK ){
 			return ERROR_CANCELLED;
 		}
 		if ( cinfo->e.Dtype.mode == VFSDT_LFILE ){
 			path = cinfo->path;
 		}else{
-			GetCache_Path(pathbuf,cinfo->path,NULL);
+			GetCache_Path(pathbuf, cinfo->path, NULL);
 			path = pathbuf;
 		}
-		WriteListFileForUser(cinfo,path,WLF_NORMAL);
+		WriteListFileForUser(cinfo, path, WLFC_WRITEDIR_DEFAULT);
 		return NO_ERROR;
 	}
 	if ( (cinfo->e.Dtype.mode == VFSDT_PATH) ||
 		 (cinfo->e.Dtype.mode == VFSDT_SHN) ){
 		return WriteFSDir(cinfo);
 	}
-	SetPopMsg(cinfo,POPMSG_MSG,MES_EBWS);
+	SetPopMsg(cinfo, POPMSG_MSG, MES_EBWS);
 	return ERROR_BAD_COMMAND;
 }
 
@@ -1392,32 +1406,32 @@ ERRORCODE DeleteEntrySH(PPC_APPINFO *cinfo)
 {
 	BYTE regbuf[0x100];
 	HKEY HK;
-	DWORD size,t;
+	DWORD size, t;
 	DWORD X_wdel[4] = X_wdel_default;
 
 	if ( cinfo->e.markC == 0 ){
 		if ( (CEL(cinfo->e.cellN).state < ECS_NORMAL) ||
 			 (CEL(cinfo->e.cellN).type <= ECT_LABEL) ){
-			SetPopMsg(cinfo,POPMSG_MSG,MES_EDEL);
+			SetPopMsg(cinfo, POPMSG_MSG, MES_EDEL);
 			return ERROR_BAD_COMMAND;
 		}
 	}
-	GetCustData(T("X_wdel"),&X_wdel,sizeof(X_wdel));
+	GetCustData(T("X_wdel"), &X_wdel, sizeof(X_wdel));
 	if ( X_wdel[3] ){
 		regbuf[RECYCLEBINOFFSET] = 0;
-		if ( RegOpenKeyEx(HKEY_CURRENT_USER,ShellStatePath,0,KEY_READ,&HK) == ERROR_SUCCESS ){
+		if ( RegOpenKeyEx(HKEY_CURRENT_USER, ShellStatePath, 0, KEY_READ, &HK) == ERROR_SUCCESS ){
 			size = sizeof(regbuf);
-			RegQueryValueEx(HK,ShellStateName,NULL,&t,regbuf,&size);
+			RegQueryValueEx(HK, ShellStateName, NULL, &t, regbuf, &size);
 		}
 		if ( regbuf[RECYCLEBINOFFSET] & DELETEDIALOG ){
-			if ( PMessageBox(cinfo->info.hWnd,QueryRecyclebin,MES_TDEL,MB_QYES) != IDOK ){
+			if ( PMessageBox(cinfo->info.hWnd, QueryRecyclebin, MES_TDEL, MB_QYES) != IDOK ){
 				return ERROR_CANCELLED;
 			}
 		}
 	}
 
 	if ( X_wdel[0] & B4 ){
-		if ( CheckOffScreenMark(cinfo,MES_TDEL) != IDYES ){
+		if ( CheckOffScreenMark(cinfo, MES_TDEL) != IDYES ){
 			return ERROR_CANCELLED;
 		}
 	}
@@ -1426,16 +1440,16 @@ ERRORCODE DeleteEntrySH(PPC_APPINFO *cinfo)
 		TCHAR *names;
 		SHFILEOPSTRUCT fileop;
 
-		names = GetFiles(cinfo,GETFILES_FULLPATH | GETFILES_REALPATH);
+		names = GetFiles(cinfo, GETFILES_FULLPATH | GETFILES_REALPATH);
 		if ( names == NULL ){
 			ERRORCODE result;
 
-			PPxCommonCommand(NULL,JOBSTATE_FOP_DELETE,K_ADDJOBTASK);
-			result = SCmenu(cinfo,T("delete"));
-			PPxCommonCommand(NULL,0,K_DELETEJOBTASK);
+			PPxCommonCommand(NULL, JOBSTATE_FOP_DELETE, K_ADDJOBTASK);
+			result = SCmenu(cinfo, T("delete"));
+			PPxCommonCommand(NULL, 0, K_DELETEJOBTASK);
 			return result;
 
-//			SetPopMsg(cinfo,POPMSG_MSG,MES_EDEL);
+//			SetPopMsg(cinfo, POPMSG_MSG, MES_EDEL);
 //			return ERROR_BAD_COMMAND;
 		}
 		fileop.wFunc				= FO_DELETE;
@@ -1444,18 +1458,18 @@ ERRORCODE DeleteEntrySH(PPC_APPINFO *cinfo)
 		fileop.fFlags				= FOF_ALLOWUNDO;
 		fileop.lpszProgressTitle	= MessageText(MES_TDEL);
 
-		PPxCommonCommand(NULL,JOBSTATE_FOP_DELETE,K_ADDJOBTASK);
+		PPxCommonCommand(NULL, JOBSTATE_FOP_DELETE, K_ADDJOBTASK);
 		if ( SxFileOperation(cinfo, &fileop) == SFOERROR_OK ){
-			SetRefreshAfterList(cinfo,ALST_DELETE,'\0');
+			SetRefreshAfterList(cinfo, ALST_DELETE, '\0');
 		}
-		PPxCommonCommand(NULL,0,K_DELETEJOBTASK);
+		PPxCommonCommand(NULL, 0, K_DELETEJOBTASK);
 		SHFileOperationFix(cinfo);
 	}else{							// PIDL
 		ERRORCODE result;
 
-		PPxCommonCommand(NULL,JOBSTATE_FOP_DELETE,K_ADDJOBTASK);
-		result = SCmenu(cinfo,T("delete"));
-		PPxCommonCommand(NULL,0,K_DELETEJOBTASK);
+		PPxCommonCommand(NULL, JOBSTATE_FOP_DELETE, K_ADDJOBTASK);
+		result = SCmenu(cinfo, T("delete"));
+		PPxCommonCommand(NULL, 0, K_DELETEJOBTASK);
 		return result;
 	}
 	return NO_ERROR;
@@ -1469,14 +1483,14 @@ ERRORCODE EraseListEntry(PPC_APPINFO *cinfo)
 	if ( cinfo->e.Dtype.mode != VFSDT_LFILE ) return ERROR_BAD_COMMAND;
 
 	if ( StartCellEdit(cinfo) ) return ERROR_PATH_BUSY;
-	InitEnumMarkCell(cinfo,&work);
-	while ( (cell = EnumMarkCell(cinfo,&work)) != NULL ){
+	InitEnumMarkCell(cinfo, &work);
+	while ( (cell = EnumMarkCell(cinfo, &work)) != NULL ){
 		cell->state = ECS_DELETED;	// 削除
 	}
 	EndCellEdit(cinfo);
-	WriteListFileForRaw(cinfo,cinfo->path);
-	SetRefreshAfterList(cinfo,ALST_DELETE,'\0');
-	SetPopMsg(cinfo,POPMSG_MSG,MES_LERE);
+	WriteListFileForRaw(cinfo, cinfo->path);
+	SetRefreshAfterList(cinfo, ALST_DELETE, '\0');
+	SetPopMsg(cinfo, POPMSG_MSG, MES_LERE);
 	return NO_ERROR;
 }
 
@@ -1492,36 +1506,36 @@ ERRORCODE DeleteEntry(PPC_APPINFO *cinfo)
 		if ( !cinfo->e.markC &&
 			 ((CEL(cinfo->e.cellN).state < ECS_NORMAL) ||
 			 (CEL(cinfo->e.cellN).type  < 4)) ){
-			SetPopMsg(cinfo,POPMSG_MSG,MES_EDEL);
+			SetPopMsg(cinfo, POPMSG_MSG, MES_EDEL);
 			return ERROR_BAD_COMMAND;
 		}
-		wsprintf(buf,T("%s %s"),cinfo->e.markC ?
+		wsprintf(buf, T("%s %s"), cinfo->e.markC ?
 				CELdata(cinfo->e.markTop).f.cFileName :
-				CEL(cinfo->e.cellN).f.cFileName,MessageText(MES_QDL1));
+				CEL(cinfo->e.cellN).f.cFileName, MessageText(MES_QDL1));
 	}else{
-		wsprintf(buf,T("%s %s%d %s"),CELdata(cinfo->e.markTop).f.cFileName,
-				MessageText(MES_QDL2),cinfo->e.markC,MessageText(MES_QDL3));
+		wsprintf(buf, T("%s %s%d %s"), CELdata(cinfo->e.markTop).f.cFileName,
+				MessageText(MES_QDL2), cinfo->e.markC, MessageText(MES_QDL3));
 	}
 	if ( StartCellEdit(cinfo) ) return ERROR_PATH_BUSY;
 
-	GetCustData(T("X_wdel"),&X_wdel,sizeof(X_wdel));
+	GetCustData(T("X_wdel"), &X_wdel, sizeof(X_wdel));
 	if ( X_wdel[2] ){
 		if ( X_wdel[2] > 2 ) X_wdel[2] -= 2; // 旧設定の変換
 		if ( X_wdel[2] > 2 ) X_wdel[2] = 1;
-		result = PMessageBox(cinfo->info.hWnd,buf,MES_TDEL,deletemesboxstyle[X_wdel[2]]);
+		result = PMessageBox(cinfo->info.hWnd, buf, MES_TDEL, deletemesboxstyle[X_wdel[2]]);
 	}else{
 		result = IDOK;
 	}
 
 	if ( (X_wdel[0] & B4) && ((result == IDOK) || (result == IDYES)) ){
-		result = CheckOffScreenMark(cinfo,MES_TDEL);
+		result = CheckOffScreenMark(cinfo, MES_TDEL);
 	}
 
 	if ( (result == IDOK) || (result == IDYES) ){
-		PPcDeleteFile(cinfo,X_wdel);
+		PPcDeleteFile(cinfo, X_wdel);
 		EndCellEdit(cinfo);
-		SetRefreshAfterList(cinfo,ALST_DELETE,'\0');
-		ActionInfo(cinfo->info.hWnd,&cinfo->info,AJI_COMPLETE,T("delete"));
+		SetRefreshAfterList(cinfo, ALST_DELETE, '\0');
+		ActionInfo(cinfo->info.hWnd, &cinfo->info, AJI_COMPLETE, T("delete"));
 		return NO_ERROR;
 	}else{
 		EndCellEdit(cinfo);
@@ -1529,7 +1543,7 @@ ERRORCODE DeleteEntry(PPC_APPINFO *cinfo)
 	}
 }
 
-void PPcDeleteFile(PPC_APPINFO *cinfo,DWORD *X_wdel)
+void PPcDeleteFile(PPC_APPINFO *cinfo, DWORD *X_wdel)
 {
 	ENTRYCELL *cell;
 	int work;
@@ -1548,14 +1562,14 @@ void PPcDeleteFile(PPC_APPINFO *cinfo,DWORD *X_wdel)
 
 	if ( (Combo.Report.hWnd != NULL) ||
 		 ((hCommonLog != NULL) && IsTrue(IsWindow(hCommonLog))) ){
-		setflag(dstat.flags,VFSDE_REPORT);
+		setflag(dstat.flags, VFSDE_REPORT);
 	}
 
-	PPxCommonCommand(NULL,JOBSTATE_FOP_DELETE,K_ADDJOBTASK);
+	PPxCommonCommand(NULL, JOBSTATE_FOP_DELETE, K_ADDJOBTASK);
 	if ( cinfo->e.Dtype.mode != VFSDT_SHN ){
 		TCHAR *path;
 
-		InitEnumMarkCell(cinfo,&work);
+		InitEnumMarkCell(cinfo, &work);
 		if ( cinfo->e.Dtype.mode == VFSDT_FATDISK ){
 			path = cinfo->path + 1;
 		}else if ( (cinfo->e.Dtype.mode == VFSDT_LFILE) && (cinfo->e.Dtype.BasePath[0] != '\0') ){
@@ -1563,38 +1577,38 @@ void PPcDeleteFile(PPC_APPINFO *cinfo,DWORD *X_wdel)
 		}else{
 			path = cinfo->path;
 		}
-		while ( (cell = EnumMarkCell(cinfo,&work)) != NULL ){
+		while ( (cell = EnumMarkCell(cinfo, &work)) != NULL ){
 			TCHAR *entry;
 			if ( IsParentDir(cell->f.cFileName) ) continue;
 
 			entry = cell->f.cFileName;
 			if ( *entry == '>' ){
-				TCHAR *longname = (TCHAR *)EntryExtData_GetDATAptr(cinfo,DFC_LONGNAME,cell);
+				TCHAR *longname = (TCHAR *)EntryExtData_GetDATAptr(cinfo, DFC_LONGNAME, cell);
 				if ( longname != NULL ) entry = longname;
 			}
 
 			#ifdef UNICODE
-				VFSFullPath(name,entry,path);
+				VFSFullPath(name, entry, path);
 			#else
 				VFSFullPath(name,
 					((cell->f.cAlternateFileName[0] != '\0') &&
-					 (strchr(entry,'?') != NULL) ) ?
-					cell->f.cAlternateFileName : entry,path);
+					 (strchr(entry, '?') != NULL) ) ?
+					cell->f.cAlternateFileName : entry, path);
 			#endif
-			err = VFSDeleteEntry(&dstat,name,cell->f.dwFileAttributes);
+			err = VFSDeleteEntry(&dstat, name, cell->f.dwFileAttributes);
 			if ( err != NO_ERROR ) break;
 			cell->state = ECS_DELETED;	// 削除に成功したので状態を変更
 		}
 
 		if ( cinfo->e.Dtype.mode == VFSDT_LFILE ){ // listfile 更新
-			WriteListFileForRaw(cinfo,cinfo->path);
+			WriteListFileForRaw(cinfo, cinfo->path);
 		}
 	}else{
-		TCHAR *ptr,*files;
+		TCHAR *ptr, *files;
 
-		files = ptr = GetFiles(cinfo,0);
+		files = ptr = GetFiles(cinfo, 0);
 		if ( ptr == NULL ){
-			xmessage(XM_FaERRd,T("Alloc error"));
+			xmessage(XM_FaERRd, T("Alloc error"));
 			return;
 		}
 		while ( *ptr != '\0' ){
@@ -1604,29 +1618,29 @@ void PPcDeleteFile(PPC_APPINFO *cinfo,DWORD *X_wdel)
 			if ( attr != BADATTR ){
 				if ( attr & FILE_ATTRIBUTE_DIRECTORY ){
 					if ( !(attr & FILE_ATTRIBUTE_REPARSE_POINT) ){
-						err = VFSDeleteEntry(&dstat,ptr,attr);
+						err = VFSDeleteEntry(&dstat, ptr, attr);
 						if ( err != NO_ERROR ) break;
 					}
 				}else{
-					err = VFSDeleteEntry(&dstat,ptr,attr);
+					err = VFSDeleteEntry(&dstat, ptr, attr);
 					if ( err != NO_ERROR ) break;
 				}
 			}
 			ptr += tstrlen(ptr) + 1;
 		}
-		HeapFree( hProcessHeap,0,files);
+		HeapFree( hProcessHeap, 0, files);
 	}
-	PPxCommonCommand(NULL,0,K_DELETEJOBTASK);
+	PPxCommonCommand(NULL, 0, K_DELETEJOBTASK);
 	if ( Combo.hWnd != NULL ){
-		SendMessage(Combo.hWnd,WM_PPXCOMMAND,TMAKEWPARAM(K_WINDDOWLOG,2),0);
+		SendMessage(Combo.hWnd, WM_PPXCOMMAND, TMAKEWPARAM(K_WINDDOWLOG, 2), 0);
 	}
-	StopPopMsg(cinfo,PMF_DISPLAYMASK);
-	PPxCommonExtCommand(K_TBB_STOPPROGRESS,(WPARAM)cinfo->info.hWnd);
+	StopPopMsg(cinfo, PMF_DISPLAYMASK);
+	PPxCommonExtCommand(K_TBB_STOPPROGRESS, (WPARAM)cinfo->info.hWnd);
 
 //	if ( (err == NO_ERROR) && dstat.noempty ) err = ERROR_DIR_NOT_EMPTY;
 	if ( (err != NO_ERROR) &&
 		 (err != ERROR_CANCELLED) &&
 		 (err != ERROR_DIR_NOT_EMPTY) ){
-		SetPopMsg(cinfo,err,NULL);
+		SetPopMsg(cinfo, err, NULL);
 	}
 }

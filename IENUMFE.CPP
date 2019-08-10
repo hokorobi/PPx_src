@@ -15,13 +15,13 @@
 #pragma hdrstop
 
 //------------------------------------- コンストラクタ
-CEnumFormatEtc::CEnumFormatEtc(LPFORMATETC pFE,int numberItems)
+CEnumFormatEtc::CEnumFormatEtc(LPFORMATETC pFE, int numberItems)
 {
 	m_cRefCount = 1;
 	m_iCur = 0;
 	m_cItems = numberItems;
 	m_pStrFE = new FORMATETC[numberItems];
-	memcpy(m_pStrFE,(LPBYTE)pFE,sizeof(FORMATETC) * numberItems);
+	memcpy(m_pStrFE, (LPBYTE)pFE, sizeof(FORMATETC) * numberItems);
 }
 
 //------------------------------------- デコンストラクタ
@@ -31,9 +31,9 @@ CEnumFormatEtc::~CEnumFormatEtc()
 }
 
 //------------------------------------- 定型部分 ------------------------------
-STDMETHODIMP CEnumFormatEtc::QueryInterface(REFIID refiid,void **ppv)
+STDMETHODIMP CEnumFormatEtc::QueryInterface(REFIID refiid, void **ppv)
 {
-	Debug_DispIID(T("EnumFormatEtc"),refiid);
+	Debug_DispIID(T("EnumFormatEtc"), refiid);
 	if ( (IID_IUnknown == refiid) || (IID_IEnumFORMATETC == refiid) ){
 		*ppv = this;
 		AddRef();
@@ -58,7 +58,7 @@ STDMETHODIMP_(ULONG) CEnumFormatEtc::Release(void)
 }
 
 //------------------------------------- 主要部分 ------------------------------
-STDMETHODIMP CEnumFormatEtc::Next(ULONG celt,LPFORMATETC lpFormatEtc,ULONG *pceltFetched)
+STDMETHODIMP CEnumFormatEtc::Next(ULONG celt, LPFORMATETC lpFormatEtc, ULONG *pceltFetched)
 {
 	ULONG cReturn = 0;
 
@@ -96,7 +96,7 @@ STDMETHODIMP CEnumFormatEtc::Clone(IEnumFORMATETC ** ppCloneEnumFormatEtc)
 
 	if(ppCloneEnumFormatEtc == NULL) return ResultFromScode(S_FALSE);
 
-	newEnum = new CEnumFormatEtc(m_pStrFE,m_cItems);
+	newEnum = new CEnumFormatEtc(m_pStrFE, m_cItems);
 	if (newEnum == NULL) return ResultFromScode(E_OUTOFMEMORY);
 	newEnum->AddRef();
 	newEnum->m_iCur = m_iCur;

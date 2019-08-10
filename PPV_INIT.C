@@ -70,7 +70,9 @@ const TCHAR *OptionNames[] = {
 	T("UTF16"),
 	T("UTF16BE"),
 	T("PARENT"),
-//	T("FILECASE"),
+	T("POPUP"),
+//50
+//	T("FILECASE"), // 50
 	NULL
 };
 
@@ -220,7 +222,7 @@ BOOL CheckParam(VIEWOPTIONS *viewopts,const TCHAR *param,TCHAR *filename)
 		const TCHAR *oldp;
 
 		oldp = param;
-		code = GetOptionParameter(&param,buf,&more);
+		code = GetOptionParameter(&param, buf, &more);
 		if ( code == '\0' ) break;
 		if ( code != '-' ){ // 開くファイル名
 			if ( filename != NULL ){
@@ -387,7 +389,11 @@ BOOL CheckParam(VIEWOPTIONS *viewopts,const TCHAR *param,TCHAR *filename)
 			case 48:			//	"PARENT"
 				hViewParentWnd = (HWND)GetNumber((const TCHAR **)&more);
 				break;
-//			case 49:			//	filecase
+			case 49:			//	"POPUP"
+				ParentPopup = TRUE;
+				hViewParentWnd = (HWND)GetNumber((const TCHAR **)&more);
+				break;
+//			case 50:			//	filecase
 //				FileCase = CheckSubParam(more,OffOn,1);
 //				break;
 			default:
@@ -902,15 +908,22 @@ void InitPPvWindow(void)
 		style = (X_win & XWIN_NOTITLE) ? WS_NOTITLEOVERLAPPED : WS_OVERLAPPEDWINDOW;
 		hUseParentWnd = hCommonWnd;
 	}else{
-		GetClientRect(hViewParentWnd,&WinPos.pos);
-		style = WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
-		WinPos.pos.right -= WinPos.pos.left;
-		WinPos.pos.bottom -= WinPos.pos.top;
-		WinPos.pos.left = WinPos.pos.top = 0;
-		hUseParentWnd = hViewParentWnd;
-		setflag(X_win,XWIN_HIDESCROLL);
-		XV.img.MagMode = IMGD_AUTOWINDOWSIZE;
-		viewopt_def.I_animate = 1;
+		if ( ParentPopup == FALSE ){ // -parent(preview用途)
+			GetClientRect(hViewParentWnd, &WinPos.pos);
+			WinPos.pos.right -= WinPos.pos.left;
+			WinPos.pos.bottom -= WinPos.pos.top;
+			WinPos.pos.left = WinPos.pos.top = 0;
+
+			style = WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+			hUseParentWnd = hViewParentWnd;
+			setflag(X_win,XWIN_HIDESCROLL);
+			XV.img.MagMode = IMGD_AUTOWINDOWSIZE;
+			viewopt_def.I_animate = 1;
+		}else{ // -popup(埋め込み用途)
+			GetWindowRect(hViewParentWnd, &WinPos.pos);
+			style = WS_POPUP | WS_BORDER | WS_CLIPCHILDREN;
+			hUseParentWnd = hViewParentWnd;
+		}
 	}
 	vinfo.info.hWnd = CreateWindowEx(0, T(PPVWinClass), NilStr, style,
 		WinPos.pos.left, WinPos.pos.top,

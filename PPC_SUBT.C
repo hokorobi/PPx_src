@@ -19,7 +19,7 @@
 
 void USEFASTCALL GetDirSizeCache(PPC_APPINFO *cinfo);
 void GetColumnExtData(PPC_APPINFO *cinfo);
-void USEFASTCALL FixThreads(PPC_APPINFO *cinfo,DWORD ThreadID);
+void USEFASTCALL FixThreads(PPC_APPINFO *cinfo, DWORD ThreadID);
 
 typedef struct {
 	struct {
@@ -34,10 +34,10 @@ typedef struct {
 } SUBTHREADSTRUCT;
 
 #if NODLL
-#define DefineWinAPINoDLL(retvar,name,param) typedef retvar (WINAPI *imp ## name) param ; extern imp ## name D ## name
-DefineWinAPINoDLL(HANDLE,OpenThread,(DWORD dwDesiredAccess,BOOL bInheritHandle,DWORD dwThreadId));
+#define DefineWinAPINoDLL(retvar, name, param) typedef retvar (WINAPI *imp ## name) param ; extern imp ## name D ## name
+DefineWinAPINoDLL(HANDLE, OpenThread, (DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwThreadId));
 #else
-DefineWinAPI(HANDLE,OpenThread,(DWORD dwDesiredAccess,BOOL bInheritHandle,DWORD dwThreadId)) = INVALID_VALUE(impOpenThread);
+DefineWinAPI(HANDLE, OpenThread, (DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwThreadId)) = INVALID_VALUE(impOpenThread);
 #endif
 
 const TCHAR SubThreadName[] = T("PPc sub");
@@ -46,16 +46,16 @@ const TCHAR SubThreadThumbnail[] = T("PPc thumbnail");
 //-----------------------------------------------------------------------------
 void USEFASTCALL IObreak(PPC_APPINFO *cinfo)
 {
-	DWORD threadID = GetWindowThreadProcessId(cinfo->info.hWnd,NULL);
+	DWORD threadID = GetWindowThreadProcessId(cinfo->info.hWnd, NULL);
 	HANDLE hThread;
 
 	if ( (threadID == 0) || (DOpenThread == NULL) ) return;
 	hThread = DOpenThread(STANDARD_RIGHTS_REQUIRED | THREAD_TERMINATE,
-			FALSE,threadID);
+			FALSE, threadID);
 	if ( hThread != NULL ){
-		DefineWinAPI(BOOL,CancelSynchronousIo,(HANDLE hThread));
+		DefineWinAPI(BOOL, CancelSynchronousIo, (HANDLE hThread));
 
-		GETDLLPROC(GetModuleHandle(StrKernel32DLL),CancelSynchronousIo);
+		GETDLLPROC(GetModuleHandle(StrKernel32DLL), CancelSynchronousIo);
 		if ( DCancelSynchronousIo != NULL ){
 			DCancelSynchronousIo(hThread);
 		}
@@ -82,23 +82,23 @@ typedef struct _SHChangeNotifyEntry
 #define DSHChangeNotification_Unlock SHChangeNotification_Unlock
 #else
 #if !NODLL
-DefineWinAPI(ULONG,SHChangeNotifyRegister,(HWND hwnd, int fSources, LONG fEvents, UINT wMsg, int cEntries, const SHChangeNotifyEntry *pshcne));
-DefineWinAPI(BOOL,SHChangeNotifyDeregister,(unsigned long ulID));
-DefineWinAPI(HANDLE,SHChangeNotification_Lock,(HANDLE hChange,DWORD dwProcId,LPITEMIDLIST **pppidl,LONG *plEvent));
-DefineWinAPI(BOOL,SHChangeNotification_Unlock,(HANDLE hLock));
+DefineWinAPI(ULONG, SHChangeNotifyRegister, (HWND hwnd, int fSources, LONG fEvents, UINT wMsg, int cEntries, const SHChangeNotifyEntry *pshcne));
+DefineWinAPI(BOOL, SHChangeNotifyDeregister, (unsigned long ulID));
+DefineWinAPI(HANDLE, SHChangeNotification_Lock, (HANDLE hChange, DWORD dwProcId, LPITEMIDLIST **pppidl, LONG *plEvent));
+DefineWinAPI(BOOL, SHChangeNotification_Unlock, (HANDLE hLock));
 
 LOADWINAPISTRUCT SHChangeNotifyDLL[] = {
 	LOADWINAPI1(SHChangeNotifyRegister),
 	LOADWINAPI1(SHChangeNotifyDeregister),
 	LOADWINAPI1(SHChangeNotification_Lock),
 	LOADWINAPI1(SHChangeNotification_Unlock),
-	{NULL,NULL}
+	{NULL, NULL}
 };
 #else
-ExternWinAPI(ULONG,SHChangeNotifyRegister,(HWND hwnd, int fSources, LONG fEvents, UINT wMsg, int cEntries, const SHChangeNotifyEntry *pshcne));
-ExternWinAPI(BOOL,SHChangeNotifyDeregister,(unsigned long ulID));
-ExternWinAPI(HANDLE,SHChangeNotification_Lock,(HANDLE hChange,DWORD dwProcId,LPITEMIDLIST **pppidl,LONG *plEvent));
-ExternWinAPI(BOOL,SHChangeNotification_Unlock,(HANDLE hLock));
+ExternWinAPI(ULONG, SHChangeNotifyRegister, (HWND hwnd, int fSources, LONG fEvents, UINT wMsg, int cEntries, const SHChangeNotifyEntry *pshcne));
+ExternWinAPI(BOOL, SHChangeNotifyDeregister, (unsigned long ulID));
+ExternWinAPI(HANDLE, SHChangeNotification_Lock, (HANDLE hChange, DWORD dwProcId, LPITEMIDLIST **pppidl, LONG *plEvent));
+ExternWinAPI(BOOL, SHChangeNotification_Unlock, (HANDLE hLock));
 
 extern LOADWINAPISTRUCT SHChangeNotifyDLL[];
 #endif
@@ -111,41 +111,41 @@ void SetShellChangeNotification(PPC_APPINFO *cinfo)
 
 	#ifndef _WIN64
 	if ( DSHChangeNotifyRegister == NULL ){
-		LoadWinAPI("SHELL32.dll",NULL,SHChangeNotifyDLL,LOADWINAPI_GETMODULE);
+		LoadWinAPI("SHELL32.dll", NULL, SHChangeNotifyDLL, LOADWINAPI_GETMODULE);
 	}
 	if ( DSHChangeNotifyRegister == NULL ) return;
 	#endif
 
 	req_entry.pidl = NULL;
-	pSF = VFPtoIShell(NULL,cinfo->path,(LPITEMIDLIST *)&req_entry.pidl);
+	pSF = VFPtoIShell(NULL, cinfo->path, (LPITEMIDLIST *)&req_entry.pidl);
 	if ( pSF != NULL ){
 		pSF->lpVtbl->Release(pSF);
 		req_entry.fRecursive = FALSE;
 		cinfo->ShNotifyID = DSHChangeNotifyRegister(cinfo->info.hWnd,
-				SHCNRF_ShellLevel | SHCNRF_NewDelivery,// 何処が変わったかは不要
+				SHCNRF_ShellLevel | SHCNRF_NewDelivery, // 何処が変わったかは不要
 				SHCNE_RENAMEITEM | SHCNE_CREATE | SHCNE_DELETE |
 				SHCNE_MKDIR | SHCNE_RMDIR | SHCNE_UPDATEDIR |
 				SHCNE_MEDIAINSERTED | SHCNE_MEDIAREMOVED |
 				SHCNE_RENAMEFOLDER | SHCNE_DRIVEADD | SHCNE_DRIVEREMOVED,
-				WM_PPCFOLDERCHANGE,1,&req_entry);
+				WM_PPCFOLDERCHANGE, 1, &req_entry);
 		FreePIDL(req_entry.pidl);
 	}
 }
 
-void USEFASTCALL StartReload(PPC_APPINFO *cinfo,int *FixRead)
+void USEFASTCALL StartReload(PPC_APPINFO *cinfo, int *FixRead)
 {
 	cinfo->FDirWrite = FDW_SENDREQUEST;
-	PostMessage(cinfo->info.hWnd,WM_PPXCOMMAND,K_SETGRAYSTATUS,0);
+	PostMessage(cinfo->info.hWnd, WM_PPXCOMMAND, K_SETGRAYSTATUS, 0);
 
 	if ( cinfo->SlowMode == FALSE ){ // 低速モードでなければ、更新待ちに移行
 		*FixRead = XC_rrt[
 				((GetFocus() == cinfo->info.hWnd) ||
 				 (GetForegroundWindow() == cinfo->info.hWnd)) ? 0 : 1];
-		DEBUGLOGC("Subthred-FixRead %d",*FixRead);
+		DEBUGLOGC("Subthred-FixRead %d", *FixRead);
 	}
 }
 
-void USEFASTCALL IntervalSubThread(PPC_APPINFO *cinfo,SUBTHREADSTRUCT *sts)
+void USEFASTCALL IntervalSubThread(PPC_APPINFO *cinfo, SUBTHREADSTRUCT *sts)
 {
 	if ( OSver.dwMajorVersion >= 6 ){
 		// ● IsHungAppWindow (W2k)を使うことを検討する 1.32
@@ -163,7 +163,7 @@ void USEFASTCALL IntervalSubThread(PPC_APPINFO *cinfo,SUBTHREADSTRUCT *sts)
 				cinfo->StateInfo.tick = tick;
 				if ( state > StateID_MAX ) state = StateID_MAX;
 
-				XMessage(NULL,NULL,XM_DbgLOG,T("BUSY[%s:%d]%s"),cinfo->RegCID,cinfo->LoadCounter,StateText[state]);
+				XMessage(NULL, NULL, XM_DbgLOG, T("BUSY[%s:%d]%s"), cinfo->RegCID, cinfo->LoadCounter, StateText[state]);
 			}
 		}
 
@@ -176,18 +176,18 @@ void USEFASTCALL IntervalSubThread(PPC_APPINFO *cinfo,SUBTHREADSTRUCT *sts)
 				if ( state > StateID_MAX ) state = StateID_MAX;
 
 				cinfo->StateInfo.hStateWnd = CreateWindow(T("STATIC"),
-						StateText[state],WS_POPUPWINDOW | WS_CAPTION,
-						cinfo->wnd.NCRect.left,cinfo->wnd.NCRect.top,
+						StateText[state], WS_POPUPWINDOW | WS_CAPTION,
+						cinfo->wnd.NCRect.left, cinfo->wnd.NCRect.top,
 						cinfo->wnd.NCArea.cx / 2,
 						cinfo->wnd.NCArea.cy - cinfo->wnd.Area.cy,
-						NULL,NULL,hInst,0);
-				ShowWindow(cinfo->StateInfo.hStateWnd,SW_SHOW);
+						NULL, NULL, hInst, 0);
+				ShowWindow(cinfo->StateInfo.hStateWnd, SW_SHOW);
 			}
 		}
 		if ( cinfo->StateInfo.hStateWnd != NULL ){
 			MSG msg;
 
-			while ( PeekMessage(&msg,NULL,0,0,PM_REMOVE) ){
+			while ( PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) ){
 				if ( msg.message == WM_QUIT ) break;
 				DispatchMessage(&msg);
 			}
@@ -201,8 +201,8 @@ void USEFASTCALL IntervalSubThread(PPC_APPINFO *cinfo,SUBTHREADSTRUCT *sts)
 		int posType;
 
 		GetCursorPos(&pos);
-		ScreenToClient(cinfo->info.hWnd,&pos);
-		posType = GetItemTypeFromPoint(cinfo,&pos,NULL);
+		ScreenToClient(cinfo->info.hWnd, &pos);
+		posType = GetItemTypeFromPoint(cinfo, &pos, NULL);
 		if ( (cinfo->e.cellPoint >= 0) &&
 			 !( (posType == PPCR_CELLMARK) ||
 			 	(posType == PPCR_CELLTEXT) ||
@@ -211,32 +211,35 @@ void USEFASTCALL IntervalSubThread(PPC_APPINFO *cinfo,SUBTHREADSTRUCT *sts)
 
 			oldn = cinfo->e.cellPoint;
 			cinfo->e.cellPoint = -1;
-			RefleshCell(cinfo,oldn);
+			RefleshCell(cinfo, oldn);
+			if ( cinfo->Tip.states & STIP_CMD_HOVER ){
+				HideEntryTip(cinfo);
+			}
 		}
 		if ( (cinfo->Mpos >= 0) && (posType != PPCR_MENU) ){
 			cinfo->Mpos = -1;
-			InvalidateRect(cinfo->info.hWnd,&cinfo->BoxInfo,FALSE);	// 更新指定
+			InvalidateRect(cinfo->info.hWnd, &cinfo->BoxInfo, FALSE);	// 更新指定
 		}
 	}
 	// PopMsg の時限消去 ------------------------------------------------------
 	if ( cinfo->PopMsgTimer != 0 ){
 		if ( --cinfo->PopMsgTimer == 0 ){
-			StopPopMsg(cinfo,PMF_WAITTIMER);
+			StopPopMsg(cinfo, PMF_WAITTIMER);
 		}
 	}
 	// ディレクトリ更新後の再読み込み待ち -------------------------------------
 	if ( cinfo->FDirWrite == FDW_REQUEST ){ // グレー済みなので更新
 		if ( sts->DirCheck.FixRead ) sts->DirCheck.FixRead--;
 		if ( !sts->DirCheck.FixRead && !TinyCheckCellEdit(cinfo) ){
-			DEBUGLOGC("Subthred-Reload Q",0);
+			DEBUGLOGC("Subthred-Reload Q", 0);
 			cinfo->FDirWrite = FDW_REQUESTED;
-			PostMessage(cinfo->info.hWnd,WM_PPXCOMMAND,K_raw | K_c | K_F5,0);
+			PostMessage(cinfo->info.hWnd, WM_PPXCOMMAND, K_raw | K_c | K_F5, 0);
 		}
 	}
 	// 再読み込みより後にして、読込み開始までに１秒以上余裕を持たせた
 	if ( (cinfo->FDirWrite == FDW_WAITREQUEST) && !TinyCheckCellEdit(cinfo) ){
-		DEBUGLOGC("Subthred-StartReload",0);
-		StartReload(cinfo,&sts->DirCheck.FixRead);
+		DEBUGLOGC("Subthred-StartReload", 0);
+		StartReload(cinfo, &sts->DirCheck.FixRead);
 	}
 	// fileoperation thread のハングアップチェック ----------------------------
 	if ( sts->FOPcheck.ThreadID == 0 ){ // 待機中→対象を探す
@@ -247,7 +250,7 @@ void USEFASTCALL IntervalSubThread(PPC_APPINFO *cinfo,SUBTHREADSTRUCT *sts)
 		}
 	}else{ // 確認中
 		if ( --sts->FOPcheck.Count == 0 ){
-			FixThreads(cinfo,sts->FOPcheck.ThreadID);
+			FixThreads(cinfo, sts->FOPcheck.ThreadID);
 			sts->FOPcheck.ThreadID = 0;
 		}
 	}
@@ -260,7 +263,7 @@ DWORD WINAPI SubThread(LPDWORD lpdwParam)
 {
 	PPC_APPINFO *cinfo;
 	SubThreadData ThreadData = {
-		{{SubThreadName,XTHREAD_EXITENABLE,NULL,0,0},NULL,K_THREADRESTART,0}, /* threadstruct */
+		{{SubThreadName, XTHREAD_EXITENABLE, NULL, 0, 0}, NULL, K_THREADRESTART, 0}, /* threadstruct */
 		NULL
 	};
 
@@ -275,39 +278,39 @@ DWORD WINAPI SubThread(LPDWORD lpdwParam)
 	ThreadData.threeadinfo.hParentWnd = cinfo->info.hWnd;
 	PPxRegisterThread(&ThreadData.threeadinfo.threadinfo);
 
-	CoInitializeEx(NULL,COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE); // アイコン取得に使用する
+	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE); // アイコン取得に使用する
 	sts.FOPcheck.ThreadID = 0;
 	sts.DirCheck.FixRead = 0;
 
 	if ( DOpenThread == INVALID_HANDLE_VALUE ){
-		GETDLLPROC(GetModuleHandle(StrKernel32DLL),OpenThread);
+		GETDLLPROC(GetModuleHandle(StrKernel32DLL), OpenThread);
 	}
 
 	for ( ; ; ){
 		DWORD result;
 
 		result = WaitForMultipleObjects( (cinfo->SubT_dir != NULL) ?
-					SubTs : SubTs - 1,cinfo->SubT,FALSE,1000);
+					SubTs : SubTs - 1, cinfo->SubT, FALSE, 1000);
 		ThreadData.threeadinfo.threadinfo.flag = (ThreadData.threeadinfo.threadinfo.flag & 0x7f) | ( (result & 0x1ff) << 7 ) | ((cinfo->SubTCmdFlags) << 16);
 		switch (result){
 			case WAIT_TIMEOUT:	// 定期確認 -----------------------------------
-				IntervalSubThread(cinfo,&sts);
+				IntervalSubThread(cinfo, &sts);
 				continue;	// 定期確認終了
 
 			case (WAIT_OBJECT_0 + 0):	// SubT_cmd 指令発行 ------------------
 //			case (WAIT_ABANDONED_0 + 0):
 				ResetEvent(cinfo->SubT_cmd);
 										// 終了 ===============================
-				// ● test byte [cinfo->SubTCmdFlags],SUBT_EXIT
+				// ● test byte [cinfo->SubTCmdFlags], SUBT_EXIT
 				// je @@xxx
 				// のコードが、失敗することがあるようだ
 				// スレッド実行が異様に遅くなっている？
 				//
 				// ダミーの B31 を加えて
-				// test dword [cinfo->SubTCmdFlags],SUBT_EXIT or B31
+				// test dword [cinfo->SubTCmdFlags], SUBT_EXIT or B31
 				// とするのがよい？
 				if ( cinfo->SubTCmdFlags & SUBT_EXIT ){
-//					resetflag(cinfo->SubTCmdFlags,SUBT_EXIT); 廃棄するので不要
+//					resetflag(cinfo->SubTCmdFlags, SUBT_EXIT); 廃棄するので不要
 					CloseHandle(cinfo->SubT_cmd);
 					if ( cinfo->SubT_dir != NULL ){
 						FindCloseChangeNotification(cinfo->SubT_dir);
@@ -323,17 +326,17 @@ DWORD WINAPI SubThread(LPDWORD lpdwParam)
 				}
 										// 情報行のアイコンを取得 =======
 				if ( cinfo->SubTCmdFlags & SUBT_GETINFOICON ){
-					resetflag(cinfo->SubTCmdFlags,SUBT_GETINFOICON);
-					DEBUGLOGC("Subthred-GETINFOICON start",0);
+					resetflag(cinfo->SubTCmdFlags, SUBT_GETINFOICON);
+					DEBUGLOGC("Subthred-GETINFOICON start", 0);
 #ifndef DEBUGICON
-					GetInfoIcon(cinfo,&hInfoIcon,&ThreadData);
+					GetInfoIcon(cinfo, &hInfoIcon, &ThreadData);
 #endif
-					DEBUGLOGC("Subthred-GETINFOICON end",0);
+					DEBUGLOGC("Subthred-GETINFOICON end", 0);
 				}
 										// ディレクトリ監視を停止 ===========
 				if ( cinfo->SubTCmdFlags & SUBT_STOPDIRCHECK ){
-					DEBUGLOGC("Subthred-STOPDIRCHECK start",0);
-					resetflag(cinfo->SubTCmdFlags,SUBT_STOPDIRCHECK);
+					DEBUGLOGC("Subthred-STOPDIRCHECK start", 0);
+					resetflag(cinfo->SubTCmdFlags, SUBT_STOPDIRCHECK);
 					if ( cinfo->SubT_dir != NULL ){
 						FindCloseChangeNotification(cinfo->SubT_dir);
 						cinfo->SubT_dir = NULL;
@@ -341,12 +344,12 @@ DWORD WINAPI SubThread(LPDWORD lpdwParam)
 					if ( cinfo->ShNotifyID != 0 ){
 						DSHChangeNotifyDeregister(cinfo->ShNotifyID);
 					}
-					DEBUGLOGC("Subthred-STOPDIRCHECK end",0);
+					DEBUGLOGC("Subthred-STOPDIRCHECK end", 0);
 				}
 										// ディレクトリ監視を初期化 ===========
 				if ( cinfo->SubTCmdFlags & SUBT_INITDIRCHECK ){
-					DEBUGLOGC("Subthred-DIRCHECK start",0);
-					resetflag(cinfo->SubTCmdFlags,SUBT_INITDIRCHECK);
+					DEBUGLOGC("Subthred-DIRCHECK start", 0);
+					resetflag(cinfo->SubTCmdFlags, SUBT_INITDIRCHECK);
 					if ( cinfo->SubT_dir != NULL ){
 						FindCloseChangeNotification(cinfo->SubT_dir);
 					}
@@ -362,7 +365,7 @@ DWORD WINAPI SubThread(LPDWORD lpdwParam)
 						}
 					}else{
 						cinfo->SubT_dir = FindFirstChangeNotification(
-							cinfo->RealPath,FALSE,
+							cinfo->RealPath, FALSE,
 							FILE_NOTIFY_CHANGE_FILE_NAME |
 							FILE_NOTIFY_CHANGE_DIR_NAME |
 							FILE_NOTIFY_CHANGE_ATTRIBUTES |
@@ -374,25 +377,25 @@ DWORD WINAPI SubThread(LPDWORD lpdwParam)
 						sts.DirCheck.detects = 0;
 						sts.DirCheck.firstTick = GetTickCount();
 					}
-					DEBUGLOGC("Subthred-DIRCHECK end",0);
+					DEBUGLOGC("Subthred-DIRCHECK end", 0);
 				}
 										// セルに表示するアイコンを取得 =======
 				if ( cinfo->SubTCmdFlags & SUBT_GETCELLICON ){
-					resetflag(cinfo->SubTCmdFlags,SUBT_GETCELLICON);
+					resetflag(cinfo->SubTCmdFlags, SUBT_GETCELLICON);
 #ifndef DEBUGICON
-					DEBUGLOGC("Subthred-GETCELLICON start",0);
+					DEBUGLOGC("Subthred-GETCELLICON start", 0);
 					if ( cinfo->EntryIcons.hImage != NULL ){
 						ThreadData.threeadinfo.threadinfo.ThreadName = SubThreadThumbnail;
-						GetCellIcon(cinfo,&ThreadData);
+						GetCellIcon(cinfo, &ThreadData);
 						ThreadData.threeadinfo.threadinfo.ThreadName = SubThreadName;
 					}
-					DEBUGLOGC("Subthred-GETCELLICON end",0);
+					DEBUGLOGC("Subthred-GETCELLICON end", 0);
 #endif
 				}
 				// 時間経ってから更新(UpdateEntryがERROR_BUSYなので再試行) ====
 				if ( cinfo->SubTCmdFlags & SUBT_REQUESTRELOAD ){
-					DEBUGLOGC("Subthred-REQUESTRELOAD",0);
-					resetflag(cinfo->SubTCmdFlags,SUBT_REQUESTRELOAD);
+					DEBUGLOGC("Subthred-REQUESTRELOAD", 0);
+					resetflag(cinfo->SubTCmdFlags, SUBT_REQUESTRELOAD);
 					if ( cinfo->FDirWrite == FDW_REQUESTED ){
 						cinfo->FDirWrite = FDW_REQUEST;
 						sts.DirCheck.FixRead = XC_rrt[0]; // 既にUpdateEntry済みなので短い方で
@@ -400,29 +403,29 @@ DWORD WINAPI SubThread(LPDWORD lpdwParam)
 				}
 										// ディレクトリサイズのキャッシュ取得==
 				if ( cinfo->SubTCmdFlags & SUBT_GETDIRSIZECACHE ){
-					DEBUGLOGC("Subthred-SUBT_GETDIRSIZECACHE start",0);
-					resetflag(cinfo->SubTCmdFlags,SUBT_GETDIRSIZECACHE);
+					DEBUGLOGC("Subthred-SUBT_GETDIRSIZECACHE start", 0);
+					resetflag(cinfo->SubTCmdFlags, SUBT_GETDIRSIZECACHE);
 					GetDirSizeCache(cinfo);
-					DEBUGLOGC("Subthred-SUBT_GETDIRSIZECACHE end",0);
+					DEBUGLOGC("Subthred-SUBT_GETDIRSIZECACHE end", 0);
 				}
 										// カラム拡張内容取得==================
 				if ( cinfo->SubTCmdFlags & SUBT_GETCOLUMNEXT ){
-					DEBUGLOGC("Subthred-SUBT_GETCOLUMNEXT start",0);
-					resetflag(cinfo->SubTCmdFlags,SUBT_GETCOLUMNEXT);
+					DEBUGLOGC("Subthred-SUBT_GETCOLUMNEXT start", 0);
+					resetflag(cinfo->SubTCmdFlags, SUBT_GETCOLUMNEXT);
 					GetColumnExtData(cinfo);
-					DEBUGLOGC("Subthred-SUBT_GETCOLUMNEXT end",0);
+					DEBUGLOGC("Subthred-SUBT_GETCOLUMNEXT end", 0);
 				}
 										// 空き容量取得 =================
 				if ( cinfo->SubTCmdFlags & SUBT_GETFREESPACE ){
-					resetflag(cinfo->SubTCmdFlags,SUBT_GETFREESPACE);
-					GetDirectoryFreeSpace(cinfo,TRUE);
+					resetflag(cinfo->SubTCmdFlags, SUBT_GETFREESPACE);
+					GetDirectoryFreeSpace(cinfo, TRUE);
 				}
 										// シェルによる変更通知 ===============
 				if ( cinfo->SubTCmdFlags & SUBT_FOLDERCHANGE ){
-					resetflag(cinfo->SubTCmdFlags,SUBT_FOLDERCHANGE);
+					resetflag(cinfo->SubTCmdFlags, SUBT_FOLDERCHANGE);
 					if ( cinfo->FDirWrite == FDW_NORMAL ){ // まだ未検出の状態
 						if ( !TinyCheckCellEdit(cinfo) ){
-							StartReload(cinfo,&sts.DirCheck.FixRead); // すぐにグレー化
+							StartReload(cinfo, &sts.DirCheck.FixRead); // すぐにグレー化
 						}else{ // グレー待機
 							cinfo->FDirWrite = FDW_WAITREQUEST;
 						}
@@ -432,11 +435,11 @@ DWORD WINAPI SubThread(LPDWORD lpdwParam)
 
 			case (WAIT_OBJECT_0 + 1): {	// SubT_dir ディレクトリ書き込み監視 --
 				int OldFDirWrite = cinfo->FDirWrite;
-				DEBUGLOGC("Subthred-Found Change start",0);
+				DEBUGLOGC("Subthred-Found Change start", 0);
 
 				if ( cinfo->FDirWrite == FDW_NORMAL ){ // まだ未検出の状態
 					if ( !TinyCheckCellEdit(cinfo) ){
-						StartReload(cinfo,&sts.DirCheck.FixRead); // すぐにグレー化
+						StartReload(cinfo, &sts.DirCheck.FixRead); // すぐにグレー化
 					}else{ // グレー待機
 						cinfo->FDirWrite = FDW_WAITREQUEST;
 					}
@@ -450,7 +453,7 @@ DWORD WINAPI SubThread(LPDWORD lpdwParam)
 					if ( (tick - sts.DirCheck.firstTick) <= DCHECK_WDOGTIME ){
 						FindCloseChangeNotification(cinfo->SubT_dir);
 						cinfo->SubT_dir = NULL;
-						setflag(cinfo->SubTCmdFlags,SUBT_INITDIRCHECK);
+						setflag(cinfo->SubTCmdFlags, SUBT_INITDIRCHECK);
 						SetEvent(cinfo->SubT_cmd);
 						continue;
 					}
@@ -467,18 +470,18 @@ DWORD WINAPI SubThread(LPDWORD lpdwParam)
 					Sleep(10); // 連続しないように少し待機
 				}
 
-				DEBUGLOGC("Subthred-Found Change end",0);
+				DEBUGLOGC("Subthred-Found Change end", 0);
 				continue;
 			}
 			default: // 待機失敗(WAIT_FAILED等) -------------------------------
 												// 同期オブジェクトを再作成
 				CloseHandle(cinfo->SubT_cmd);
-				cinfo->SubT_cmd = CreateEvent(NULL,TRUE,FALSE,NULL);
+				cinfo->SubT_cmd = CreateEvent(NULL, TRUE, FALSE, NULL);
 												// ディレクトリ監視を一旦閉じる
 				if ( cinfo->SubT_dir != NULL ){
 					FindCloseChangeNotification(cinfo->SubT_dir);
 					cinfo->SubT_dir = NULL;
-					setflag(cinfo->SubTCmdFlags,SUBT_INITDIRCHECK);
+					setflag(cinfo->SubTCmdFlags, SUBT_INITDIRCHECK);
 				}
 				Sleep(10); // 連続しないように少し待機
 				continue;
@@ -490,7 +493,7 @@ DWORD WINAPI SubThread(LPDWORD lpdwParam)
 // ヒストリからディレクトリサイズを取得して設定する
 void USEFASTCALL GetDirSizeCache(PPC_APPINFO *cinfo)
 {
-	int cnt,i,maxi;
+	int cnt, i, maxi;
 	ENTRYCELL *cell;
 	TCHAR path[VFPS];
 	BYTE *hist;
@@ -514,8 +517,8 @@ void USEFASTCALL GetDirSizeCache(PPC_APPINFO *cinfo)
 		}
 
 		UsePPx();
-		VFSFullPath(path,cell->f.cFileName,cinfo->path);
-		hist = (BYTE *)SearchHistory(PPXH_PPCPATH,path);
+		VFSFullPath(path, cell->f.cFileName, cinfo->path);
+		hist = (BYTE *)SearchHistory(PPXH_PPCPATH, path);
 		if ( (hist != NULL) &&
 			 (GetHistoryDataSize(hist) >= (sizeof(DWORD) * 4)) ){
 			int *sizes;
@@ -524,19 +527,19 @@ void USEFASTCALL GetDirSizeCache(PPC_APPINFO *cinfo)
 			if ( sizes[3] != -1 ){
 				cell->f.nFileSizeLow = sizes[2];
 				cell->f.nFileSizeHigh = sizes[3];
-				setflag(cell->attr,ECA_DIRG | ECA_DIRC | ECA_DIRNOH);
-				RefleshCell(cinfo,i);
+				setflag(cell->attr, ECA_DIRG | ECA_DIRC | ECA_DIRNOH);
+				RefleshCell(cinfo, i);
 			}else{
-				setflag(cell->attr,ECA_DIRNOH); // チェック済みの印を付加
+				setflag(cell->attr, ECA_DIRNOH); // チェック済みの印を付加
 			}
 		}else{
-			setflag(cell->attr,ECA_DIRNOH); // チェック済みの印を付加
+			setflag(cell->attr, ECA_DIRNOH); // チェック済みの印を付加
 		}
 		FreePPx();
 
 		cnt--;
 		if ( cnt == 0 ){
-			setflag(cinfo->SubTCmdFlags,SUBT_GETDIRSIZECACHE);
+			setflag(cinfo->SubTCmdFlags, SUBT_GETDIRSIZECACHE);
 			SetEvent(cinfo->SubT_cmd);
 			break;
 		}
@@ -544,17 +547,17 @@ void USEFASTCALL GetDirSizeCache(PPC_APPINFO *cinfo)
 	LeaveCellEdit(cinfo);
 }
 
-void WINAPI ColumnCallback(TCHAR *dst,const TCHAR *src)
+void WINAPI ColumnCallback(TCHAR *dst, const TCHAR *src)
 {
-	tstrlimcpy(dst,src,CMDLINESIZE);
+	tstrlimcpy(dst, src, CMDLINESIZE);
 }
 
 // カラム拡張内容取得
 void GetColumnExtData(PPC_APPINFO *cinfo)
 {
-	int cnt,i,maxi;
+	int cnt, i, maxi;
 	ENTRYCELL *cell;
-	TCHAR path[VFPS],text[CMDLINESIZE];
+	TCHAR path[VFPS], text[CMDLINESIZE];
 	DWORD useLoadCounter;
 
 	EnterCellEdit(cinfo);
@@ -596,12 +599,12 @@ void GetColumnExtData(PPC_APPINFO *cinfo)
 				int itemindex;
 				DWORD attributes;
 
-				VFSFullPath(path,cell->f.cFileName,cinfo->RealPath);
+				VFSFullPath(path, cell->f.cFileName, cinfo->RealPath);
 				text[0] = '\0';
 				itemindex = cdsptr->itemindex;
 				attributes = cell->f.dwFileAttributes;
 				LeaveCellEdit(cinfo);
-				ExtGetData(&cinfo->ColumnExtDlls,itemindex,path,attributes,(GETINFOTIPCALLBACK)ColumnCallback,text);
+				ExtGetData(&cinfo->ColumnExtDlls, itemindex, path, attributes, (GETINFOTIPCALLBACK)ColumnCallback, text);
 				EnterCellEdit(cinfo);
 				if ( useLoadCounter != cinfo->LoadCounter ){
 					LeaveCellEdit(cinfo);
@@ -610,7 +613,7 @@ void GetColumnExtData(PPC_APPINFO *cinfo)
 				// EnterCellEdit の前で ColumnData.bottom が変化する恐れ有り
 				cdsptr = (COLUMNDATASTRUCT *)(BYTE *)(cinfo->ColumnData.bottom + nowptroffset);
 				cdsptr->textoffset = cinfo->ColumnData.top;
-				ThAppend(&cinfo->ColumnData,text,TSTRSIZE32(text));
+				ThAppend(&cinfo->ColumnData, text, TSTRSIZE32(text));
 				refrash = TRUE;
 			}
 			if ( ptroffset == 0 ) break;
@@ -618,13 +621,13 @@ void GetColumnExtData(PPC_APPINFO *cinfo)
 		if ( useLoadCounter != cinfo->LoadCounter ) break;
 
 		if ( IsTrue(refrash) ){ // 取得有り
-			RefleshCell(cinfo,i);
+			RefleshCell(cinfo, i);
 		}else{ // 取得無し…次へ
 			continue;
 		}
 		cnt--;
 		if ( cnt == 0 ){
-			setflag(cinfo->SubTCmdFlags,SUBT_GETCOLUMNEXT);
+			setflag(cinfo->SubTCmdFlags, SUBT_GETCOLUMNEXT);
 			SetEvent(cinfo->SubT_cmd);
 			break;
 		}

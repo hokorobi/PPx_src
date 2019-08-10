@@ -14,17 +14,17 @@
 TCHAR SEPSPACE[] = CAPTIONSEPARATOR; // タイトルバーに表示するメッセージの表示間隔
 TCHAR SEPSPACEFMT[] = CAPTIONSEPARATOR T("%s");
 
-PPXDLL void PPXAPI SetMessageOnCaption(HWND hWnd,const TCHAR *message)
+PPXDLL void PPXAPI SetMessageOnCaption(HWND hWnd, const TCHAR *message)
 {
-	TCHAR buf[CMDLINESIZE],*p;
+	TCHAR buf[CMDLINESIZE], *p;
 
 	buf[0] = '\0';
-	GetWindowText(hWnd,buf,TSIZEOF(buf));
-	p = tstrstr(buf,SEPSPACE);	// 区切りを求める
+	GetWindowText(hWnd, buf, TSIZEOF(buf));
+	p = tstrstr(buf, SEPSPACE);	// 区切りを求める
 	if ( message != NULL ){
 		message = MessageText(message);
 		if ( p == NULL ) p = buf + tstrlen(buf);
-		wsprintf(p,SEPSPACEFMT,message);
+		wsprintf(p, SEPSPACEFMT, message);
 	}else{
 		if ( p == NULL ) return;
 		if ( *(p + 8) == '@' ){
@@ -33,37 +33,37 @@ PPXDLL void PPXAPI SetMessageOnCaption(HWND hWnd,const TCHAR *message)
 			*p = '\0';
 		}
 	}
-	SetWindowText(hWnd,buf);
+	SetWindowText(hWnd, buf);
 }
 
-void USEFASTCALL SetMessageForEdit(HWND hWnd,const TCHAR *message)
+void USEFASTCALL SetMessageForEdit(HWND hWnd, const TCHAR *message)
 {
 	HWND hParentWnd = GetParent(hWnd);
 
-	if ( GetWindowLongPtr(hParentWnd,GWL_STYLE) & (WS_CAPTION & ~WS_BORDER) ){
-		SetMessageOnCaption(hParentWnd,message);
+	if ( GetWindowLongPtr(hParentWnd, GWL_STYLE) & (WS_CAPTION & ~WS_BORDER) ){
+		SetMessageOnCaption(hParentWnd, message);
 	}
 }
 
-TCHAR *AllocEditTextBuf(HWND hWnd,int *len)
+TCHAR *AllocEditTextBuf(HWND hWnd, int *len)
 {
 	TCHAR *ptr;
 
 	*len = GetWindowTextLength(hWnd);
 	if ( *len > MB ){
-		xmessage(XM_GrERRld,MES_EOLT);
+		xmessage(XM_GrERRld, MES_EOLT);
 		return NULL;
 	}
-	ptr = HeapAlloc(DLLheap,0,TSTROFF(*len + 1));
+	ptr = HeapAlloc(DLLheap, 0, TSTROFF(*len + 1));
 	if ( ptr == NULL ){
-		xmessage(XM_GrERRld,MES_ENOM);
+		xmessage(XM_GrERRld, MES_ENOM);
 	}
 	return ptr;
 }
 
 #ifndef UNICODE
 // Multi(ANSI) 仕様→Wide 仕様 に修正
-void USEFASTCALL CaretFixToW(const char *str,DWORD *of)
+void USEFASTCALL CaretFixToW(const char *str, DWORD *of)
 {
 	int i;
 	const char *last;
@@ -78,7 +78,7 @@ void USEFASTCALL CaretFixToW(const char *str,DWORD *of)
 }
 
 // Wide 仕様から→ Multi(ANSI) 仕様に修正
-void USEFASTCALL CaretFixToA(const char *str,DWORD *of)
+void USEFASTCALL CaretFixToA(const char *str, DWORD *of)
 {
 	int i;
 	const char *ptr;
@@ -96,28 +96,28 @@ void USEFASTCALL CaretFixToA(const char *str,DWORD *of)
 #endif
 
 #ifndef UNICODE
-void GetEditSel(HWND hWnd,TCHAR *buf,ECURSOR *cursor)
+void GetEditSel(HWND hWnd, TCHAR *buf, ECURSOR *cursor)
 {
-	SendMessage(hWnd,EM_GETSEL,(WPARAM)&cursor->start,(LPARAM)&cursor->end);
+	SendMessage(hWnd, EM_GETSEL, (WPARAM)&cursor->start, (LPARAM)&cursor->end);
 	if ( xpbug < 0 ){
-		CaretFixToA(buf,&cursor->start);
-		CaretFixToA(buf,&cursor->end);
+		CaretFixToA(buf, &cursor->start);
+		CaretFixToA(buf, &cursor->end);
 	}
 }
 
-void SetEditSel(HWND hWnd,TCHAR *buf,DWORD start,DWORD end)
+void SetEditSel(HWND hWnd, TCHAR *buf, DWORD start, DWORD end)
 {
 	if ( xpbug < 0 ){
-		CaretFixToW(buf,&start);
-		CaretFixToW(buf,&end);
+		CaretFixToW(buf, &start);
+		CaretFixToW(buf, &end);
 	}
-	SendMessage(hWnd,EM_SETSEL,start,end);
+	SendMessage(hWnd, EM_SETSEL, start, end);
 }
 #endif
 
 BOOL InitPPeFindReplace(PPxEDSTRUCT *PES)
 {
-	PES->findrep = (struct PPeFindReplace *)HeapAlloc(DLLheap,0,sizeof(struct PPeFindReplace));
+	PES->findrep = (struct PPeFindReplace *)HeapAlloc(DLLheap, 0, sizeof(struct PPeFindReplace));
 	if ( PES->findrep == NULL ) return FALSE;
 
 	PES->findrep->findtext[0] = '\0';
@@ -125,9 +125,9 @@ BOOL InitPPeFindReplace(PPxEDSTRUCT *PES)
 	return TRUE;
 }
 
-BOOL SearchStr(PPxEDSTRUCT *PES,int mode)
+BOOL SearchStr(PPxEDSTRUCT *PES, int mode)
 {
-	TCHAR *edittext,*maxptr,*ptr,*find = NULL,*findstr;
+	TCHAR *edittext, *maxptr, *ptr, *find = NULL, *findstr;
 	int len;
 	DWORD slen;
 	ECURSOR cursor;
@@ -137,40 +137,45 @@ BOOL SearchStr(PPxEDSTRUCT *PES,int mode)
 	}
 	findstr = PES->findrep->findtext;
 
-	if ( (mode == 0) || (findstr[0] == '\0') ){
-		if ( tInput(PES->hWnd,T("Find string"),findstr,
-				TSIZEOF(PES->findrep->findtext) - 1,PPXH_SEARCH,PPXH_SEARCH) <= 0 ){
+	if ( (mode == EDITDIST_DIALOG) || (findstr[0] == '\0') ){
+		if ( tInput(PES->hWnd, T("Find string"), findstr,
+				TSIZEOF(PES->findrep->findtext) - 1, PPXH_SEARCH, PPXH_SEARCH) <= 0 ){
 			return FALSE;
 		}
 		if ( findstr[0] == '\0' ) return FALSE;
 	}
 
-	edittext = AllocEditTextBuf(PES->hWnd,&len);
+	edittext = AllocEditTextBuf(PES->hWnd, &len);
 	if ( edittext == NULL ) return FALSE;
-	GetWindowText(PES->hWnd,edittext,len);
+	GetWindowText(PES->hWnd, edittext, len);
 
 	maxptr = edittext + len - 1;
 	slen = tstrlen32(findstr);
 
-	SendMessage(PES->hWnd,EM_GETSEL,(WPARAM)&cursor.start,(LPARAM)&cursor.end);
-	CaretFixToA(edittext,&cursor.start);
+	SendMessage(PES->hWnd, EM_GETSEL, (WPARAM)&cursor.start, (LPARAM)&cursor.end);
+	cursor.end -= cursor.start;
+	CaretFixToA(edittext, &cursor.start);
 	if ( mode >= 0 ){ // 進む
 		maxptr -= slen;
-#ifdef UNICODE
-		for ( ptr = edittext + cursor.start + 1 ; ptr < maxptr ; ptr++ ){
-#else
 		ptr = edittext + cursor.start;
-		ptr += Chrlen(*ptr);
+#ifdef UNICODE
+		for ( ; ptr < maxptr ; ptr++ ){
+#else
 		for ( ; ptr < maxptr ; ptr += Chrlen(*ptr) ){
 #endif
-			if ( tstrnicmp(ptr,findstr,slen) == 0 ){
+			if ( tstrnicmp(ptr, findstr, slen) == 0 ){
+				if ( ptr == (edittext + cursor.start) ){
+					if ( (mode != EDITDIST_NEXT_WITHNOW) || (cursor.end != 0) ){
+						continue; // 先頭に一致する文字列があるとき、EDITDIST_NEXT なら無視、EDITDIST_NEXT_WITHNOW なら範囲選択してなければ無視
+					}
+				}
 				find = ptr;
 				break;
 			}
 		}
 	}else{ // 戻る
 		for ( ptr = edittext + cursor.start - 1 ; ptr >= edittext ; ptr-- ){
-			if ( tstrnicmp(ptr,findstr,slen) == 0 ){
+			if ( tstrnicmp(ptr, findstr, slen) == 0 ){
 				find = ptr;
 				break;
 			}
@@ -179,12 +184,12 @@ BOOL SearchStr(PPxEDSTRUCT *PES,int mode)
 
 	if ( find != NULL ){
 		cursor.start = find - edittext;
-		SetEditSel(PES->hWnd,edittext,cursor.start,cursor.start + slen);
-		SendMessage(PES->hWnd,EM_SCROLLCARET,0,0);
-		HeapFree(DLLheap,0,edittext);
+		SetEditSel(PES->hWnd, edittext, cursor.start, cursor.start + slen);
+		SendMessage(PES->hWnd, EM_SCROLLCARET, 0, 0);
+		HeapFree(DLLheap, 0, edittext);
 		return TRUE;
 	}else{
-		HeapFree(DLLheap,0,edittext);
+		HeapFree(DLLheap, 0, edittext);
 		return FALSE;
 	}
 }
@@ -193,36 +198,36 @@ BOOL SearchStr(PPxEDSTRUCT *PES,int mode)
 BOOL SearchFileInedInit(ESTRUCT *ED, TCHAR *str, WIN32_FIND_DATA *ff)
 {
 	PPXCMDENUMSTRUCT work;
-	TCHAR spath[VFPS],cdir[VFPS],word[MAX_PATH];
-	TCHAR *slashp,*sepp;
+	TCHAR spath[VFPS], cdir[VFPS], word[MAX_PATH];
+	TCHAR *slashp, *sepp;
 	DWORD length;
 
 	length = tstrlen32(str);
 	if ( length >= VFPS ) return FALSE; // 全体が長すぎ
 
-	while ( (slashp = tstrchr(str,'/')) != NULL ) *slashp = '\\';
+	while ( (slashp = tstrchr(str, '/')) != NULL ) *slashp = '\\';
 
-	tstrcpy(spath,str);
+	tstrcpy(spath, str);
 	sepp = FindLastEntryPoint(spath);
 	if ( (length - (sepp - spath)) >= 256 ) return FALSE; // ファイル名長すぎ(これ以上長いと APIで落ちる)
 
-	tstrcpy(word,sepp);
+	tstrcpy(word, sepp);
 	*sepp = '*';
 	*(sepp + 1) = '\0';
 
-	tstrcpy(ED->Fname,str);
+	tstrcpy(ED->Fname, str);
 
 	if ( spath[0] == '%' ){
 		if ( spath[1] == '\'' ){
-			PP_ExtractMacro(NULL,NULL,NULL,spath,cdir,XEO_DISPONLY);
+			PP_ExtractMacro(NULL, NULL, NULL, spath, cdir, XEO_DISPONLY);
 		}else{
-			ExpandEnvironmentStrings(spath,cdir,VFPS);
+			ExpandEnvironmentStrings(spath, cdir, VFPS);
 		}
-		tstrcpy(spath,cdir);
+		tstrcpy(spath, cdir);
 	}
 
 	if ( ED->info != NULL ){
-		PPxEnumInfoFunc(ED->info,'1',cdir,&work);
+		PPxEnumInfoFunc(ED->info, '1', cdir, &work);
 	}else{
 		cdir[0] = '\0';
 	}
@@ -230,15 +235,15 @@ BOOL SearchFileInedInit(ESTRUCT *ED, TCHAR *str, WIN32_FIND_DATA *ff)
 	if ( (ED->cmdsearch & CMDSEARCH_NOUNC) && (spath[0] == '\\') ){
 		return FALSE; // UNC は検索対象外
 	}
-	ED->hF = FindFirstFileL(spath,ff);
+	ED->hF = FindFirstFileL(spath, ff);
 	if ( ED->hF == INVALID_HANDLE_VALUE ){
 		ED->hF = NULL;
 		return FALSE;
 	}
 
-	tstrcpy(ED->Fsrc,spath);
+	tstrcpy(ED->Fsrc, spath);
 	ED->Fword = ED->Fsrc + tstrlen(ED->Fsrc) + 1;
-	tstrcpy(ED->Fword,word);
+	tstrcpy(ED->Fword, word);
 									// 検索文字列からパスを分離
 	ED->FnameP = FindLastEntryPoint(ED->Fname);
 //	if ( ED->cmdsearch & CMDSEARCH_ROMA ) ED->romahandle = 0;
@@ -394,6 +399,7 @@ PPXDLL TCHAR * PPXAPI SearchFileIned(ESTRUCT *ED, TCHAR *line, ECURSOR *cursor, 
 #endif
 	if ( mode & CMDSEARCHI_SAVEWORD ){
 		if ( braket ) setflag( mode,CMDSEARCHI_FINDBRAKET );
+		if ( ED->FnameP == NULL ) return NULL;
 		tstrcpy(ED->FnameP,line + nwP);
 	}
 	p = SearchFileInedMain(ED,line + nwP,mode);
@@ -532,10 +538,10 @@ BOOL USEFASTCALL SelectEditStringsS(PPxEDSTRUCT *PES,TEXTSEL *ts,int mode)
 
 BOOL USEFASTCALL SelectEditStringsM(PPxEDSTRUCT *PES,TEXTSEL *ts,int mode)
 {
-	size_t line,topline,bufsize;
+	size_t line, topline, buflength;
 	LRESULT wLP,wBP;
 	TCHAR *destptr;
-	TCHAR tmp[0x1000];
+	TCHAR tmpbuf[EDITBUFSIZE];
 	DWORD pos;
 #ifndef UNICODE
 	DWORD pos2;
@@ -556,21 +562,20 @@ BOOL USEFASTCALL SelectEditStringsM(PPxEDSTRUCT *PES,TEXTSEL *ts,int mode)
 	}
 									// 行単位で読み込み -----------------------
 	destptr = ts->text;
-	bufsize = EDITBUFSIZE;
+	buflength = EDITBUFSIZE;
 	wBP = wLP = SendMessage(PES->hWnd,EM_LINEINDEX,(WPARAM)line,0);
 	if ( (LONG_PTR)wLP >= 0 ) do {
 		size_t len;
 
-		*(WORD *)tmp = TSIZEOF(tmp) - 2 - 1;
+		*(WORD *)tmpbuf = TSIZEOF(tmpbuf) - 2 - 1; // 改行+Nil分追加
 		// 行テキストと文字数(xpbug影響なし)を取得
-		len = SendMessage(PES->hWnd,EM_GETLINE,(WPARAM)line,(LPARAM)tmp);
+		len = SendMessage(PES->hWnd, EM_GETLINE, (WPARAM)line, (LPARAM)tmpbuf);
 		// len=0 (読み込み失敗の可能性あり)でも、続行する必要あり
-		if ( bufsize < len ) return FALSE;	// バッファ不足
-		bufsize -= len;
-		memcpy(destptr,tmp,TSTROFF(len));
+		if ( buflength < len ) return FALSE;	// バッファ不足
+		buflength -= len;
+		memcpy(destptr, tmpbuf, TSTROFF(len));
 
 		// 次の行へ & 改行があれば改行を追加
-		line++;
 		#ifndef UNICODE
 		if ( xpbug < 0 ){
 			size_t i = 0;
@@ -588,11 +593,14 @@ BOOL USEFASTCALL SelectEditStringsM(PPxEDSTRUCT *PES,TEXTSEL *ts,int mode)
 			destptr += len;
 			len += wLP;
 		#endif
-		wLP = SendMessage(PES->hWnd,EM_LINEINDEX,(WPARAM)line,0);
+		// len : 次の行を示す wLP (改行がないので、ずれが起きる)
+		line++;
+		wLP = SendMessage(PES->hWnd, EM_LINEINDEX, (WPARAM)line, 0);
 		if ( (LONG_PTR)wLP < 0 ) break;				// これ以上行がない
 
 		if ( len < (size_t)wLP ){	// 改行が隠れている
-			if ( 1 > (bufsize -= 2) ) return FALSE;	// バッファ不足
+			if ( buflength < 3 ) return FALSE;	// バッファ不足
+			buflength -= 2;
 			*destptr++ = '\r';
 			*destptr++ = '\n';
 		}
@@ -676,7 +684,7 @@ BOOL SelectEditStrings(PPxEDSTRUCT *PES,TEXTSEL *ts,int mode)
 {
 	BOOL result;
 
-	if ( PES->flag & PPXEDIT_TEXTEDIT ){
+	if ( PES->flags & PPXEDIT_TEXTEDIT ){
 		SendMessage(PES->hWnd,WM_SETREDRAW,FALSE,0);
 		result = SelectEditStringsM(PES,ts,mode);	// マルチライン用
 	}else{

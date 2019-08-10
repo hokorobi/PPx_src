@@ -24,7 +24,7 @@
 #undef HMONITOR_DECLARED
 
 #if DWMGLASS
-  #define RenderTargetProperties_OPTION D2D1_RENDER_TARGET_TYPE_DEFAULT,D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM,D2D1_ALPHA_MODE_PREMULTIPLIED)
+  #define RenderTargetProperties_OPTION D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
 #else
   #define RenderTargetProperties_OPTION
 #endif
@@ -46,11 +46,11 @@ BOOL DxEnableDLL = FALSE;
 HMODULE hD2D1 = NULL;
 HMODULE hDWRITE = NULL;
 
-DefineWinAPI(HRESULT,D2D1CreateFactory,(D2D1_FACTORY_TYPE,REFIID,CONST D2D1_FACTORY_OPTIONS *,IUnknown **));
-DefineWinAPI(void,D2D1MakeRotateMatrix,(FLOAT,D2D1_POINT_2F,D2D1_MATRIX_3X2_F *));
-DefineWinAPI(HRESULT,DWriteCreateFactory,(DWRITE_FACTORY_TYPE,REFIID,IUnknown **));
+DefineWinAPI(HRESULT, D2D1CreateFactory, (D2D1_FACTORY_TYPE, REFIID, CONST D2D1_FACTORY_OPTIONS *, IUnknown **));
+DefineWinAPI(void, D2D1MakeRotateMatrix, (FLOAT, D2D1_POINT_2F, D2D1_MATRIX_3X2_F *));
+DefineWinAPI(HRESULT, DWriteCreateFactory, (DWRITE_FACTORY_TYPE, REFIID, IUnknown **));
 
-extern "C" UTCHAR GetCommandParameter(LPCTSTR *commandline,TCHAR *param,size_t paramlen);
+extern "C" UTCHAR GetCommandParameter(LPCTSTR *commandline, TCHAR *param, size_t paramlen);
 
 D2D1_DRAW_TEXT_OPTIONS TextOption;
 
@@ -91,7 +91,7 @@ extern "C" typedef struct tagDXDRAWSTRUCT {
 	DXBRUSHSTRUCT TextBrush; // 文字描画用ブラシ
 	WCHAR fontName[LF_FACESIZE];
 	WCHAR fontNameSub[LF_FACESIZE];
-	float fontW,fontH;
+	float fontW, fontH;
 	COLORREF BackTextColor;
 	int BkMode;
 
@@ -113,7 +113,7 @@ extern "C" typedef struct tagDXDRAWSTRUCT {
 
 const WCHAR strtail[1] = {L'…'};
 
-BOOL CreateDxDraw(DXDRAWSTRUCT **DxDrawPtr,HWND hWnd)
+BOOL CreateDxDraw(DXDRAWSTRUCT **DxDrawPtr, HWND hWnd)
 {
 	DXDRAWSTRUCT *DxDraw;
 
@@ -124,34 +124,34 @@ BOOL CreateDxDraw(DXDRAWSTRUCT **DxDrawPtr,HWND hWnd)
 		hD2D1 = LoadLibrary(T("d2d1.dll"));
 		if ( hD2D1 == NULL ){
 			hD2D1 = static_cast<HMODULE>(INVALID_HANDLE_VALUE);
-			xmessage(XM_FaERRld,T("d2d1.dll not found"));
+			xmessage(XM_FaERRld, T("d2d1.dll not found"));
 			return FALSE;
 		}
-		GETDLLPROC(hD2D1,D2D1CreateFactory);
-		GETDLLPROC(hD2D1,D2D1MakeRotateMatrix);
+		GETDLLPROC(hD2D1, D2D1CreateFactory);
+		GETDLLPROC(hD2D1, D2D1MakeRotateMatrix);
 
 		if ( hDWRITE != NULL ) return FALSE;
 
 		hDWRITE = LoadLibrary(T("dwrite.dll"));
 		if ( hDWRITE == NULL ){
 			hDWRITE = static_cast<HMODULE>(INVALID_HANDLE_VALUE);
-			xmessage(XM_FaERRld,T("dwrite.dll not found"));
+			xmessage(XM_FaERRld, T("dwrite.dll not found"));
 			return FALSE;
 		}
-		GETDLLPROC(hDWRITE,DWriteCreateFactory);
+		GETDLLPROC(hDWRITE, DWriteCreateFactory);
 		DxEnableDLL = TRUE;
 	}
 
 #if DWMGLASS
 	MARGINS margins = { -1 };
 
-	DwmExtendFrameIntoClientArea(hWnd,&margins);
+	DwmExtendFrameIntoClientArea(hWnd, &margins);
 #endif
 	*DxDrawPtr = DxDraw = new DXDRAWSTRUCT;
 	DxDraw->hWnd = hWnd;
 	DxDraw->HwndRenderTarget = NULL;
 	DxDraw->HwndRenderTargetCounter = 0;
-	memset(&DxDraw->bmpCache,0,sizeof(DxDraw->bmpCache));
+	memset(&DxDraw->bmpCache, 0, sizeof(DxDraw->bmpCache));
 	DxDraw->BmpAtlas.bmp = NULL;
 	DxDraw->BmpAtlas.IndexNow = 1;
 
@@ -166,21 +166,21 @@ BOOL CreateDxDraw(DXDRAWSTRUCT **DxDrawPtr,HWND hWnd)
 	DxDraw->DefaultTransform = D2D1::Matrix3x2F::Identity();
 	DxDraw->HitPointTransform = D2D1::Matrix3x2F::Identity();
 //	DxDraw->BMPTransform = D2D1::Matrix3x2F::Identity();
-	wcscpy(DxDraw->fontName,L"ＭＳ ゴシック");
-	wcscpy(DxDraw->fontNameSub,L"ＭＳ Ｐゴシック");
+	wcscpy(DxDraw->fontName, L"ＭＳ ゴシック");
+	wcscpy(DxDraw->fontNameSub, L"ＭＳ Ｐゴシック");
 	DxDraw->fontH = 12.0f;
 	DxDraw->BkMode = OPAQUE;
 
 	DxDraw->WicFactory = NULL;
 
 #if 1
-	if ( FAILED(DD2D1CreateFactory(/*D2D1_FACTORY_TYPE_MULTI_THREADED */ D2D1_FACTORY_TYPE_SINGLE_THREADED,__uuidof(*DxDraw->d2dFactory),NULL,reinterpret_cast<IUnknown**>(&DxDraw->d2dFactory))) )
+	if ( FAILED(DD2D1CreateFactory(/*D2D1_FACTORY_TYPE_MULTI_THREADED */ D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(*DxDraw->d2dFactory), NULL, reinterpret_cast<IUnknown**>(&DxDraw->d2dFactory))) )
 #else
 	D2D1_FACTORY_OPTIONS options;
 	options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
 	OutputDebugString(T("******************** D2D1CreateFactory *******************"));
 
-	if ( FAILED(DD2D1CreateFactory(/*D2D1_FACTORY_TYPE_MULTI_THREADED */ D2D1_FACTORY_TYPE_SINGLE_THREADED,__uuidof(*DxDraw->d2dFactory),options,reinterpret_cast<IUnknown**>(&DxDraw->d2dFactory))) )
+	if ( FAILED(DD2D1CreateFactory(/*D2D1_FACTORY_TYPE_MULTI_THREADED */ D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(*DxDraw->d2dFactory), options, reinterpret_cast<IUnknown**>(&DxDraw->d2dFactory))) )
 #endif
 	{
 		return FALSE;
@@ -198,7 +198,7 @@ BOOL CreateDxDraw(DXDRAWSTRUCT **DxDrawPtr,HWND hWnd)
 	}
 
 	// ログオフしない限り値は変化しない
-	DxDraw->d2dFactory->GetDesktopDpi(&DxDraw->DeskScale.x,&DxDraw->DeskScale.y);
+	DxDraw->d2dFactory->GetDesktopDpi(&DxDraw->DeskScale.x, &DxDraw->DeskScale.y);
 	DxDraw->DeskScaleRate.x = DEFAULT_DPI / DxDraw->DeskScale.x;
 	DxDraw->DeskScaleRate.y = DEFAULT_DPI / DxDraw->DeskScale.y;
 	if ( DxDraw->DeskScale.x != DEFAULT_DPI ){
@@ -261,28 +261,28 @@ BOOL CloseDxDraw(DXDRAWSTRUCT **DxDrawPtr)
 void InitRenderTarget(DXDRAWSTRUCT *DxDraw)
 {
 	// RenderTarget 生成
-	GetClientRect(DxDraw->hWnd,&DxDraw->clientBox);
+	GetClientRect(DxDraw->hWnd, &DxDraw->clientBox);
 	DxDraw->clientArea.width  = DxDraw->clientBox.right;
 	DxDraw->clientArea.height = DxDraw->clientBox.bottom;
 
-	SetRotate(DxDraw,0);
+	SetRotate(DxDraw, 0);
 // BMP の最大サイズ(HwndRenderTarget->GetMaximumBitmapSize())を緩和
 // D2D1::RenderTargetProperties();
 // properties.type = D2D1_RENDER_TARGET_TYPE_SOFTWARE;
 	DxDraw->d2dFactory->CreateHwndRenderTarget(
 			D2D1::RenderTargetProperties(RenderTargetProperties_OPTION),
-			D2D1::HwndRenderTargetProperties(DxDraw->hWnd,DxDraw->clientArea),
+			D2D1::HwndRenderTargetProperties(DxDraw->hWnd, DxDraw->clientArea),
 			&DxDraw->HwndRenderTarget);
 
 	// パラメータ設定
-	TCHAR buf[0x400],param[0x100];
-	const TCHAR *ptr,*pptr;
+	TCHAR buf[0x400], param[0x100];
+	const TCHAR *ptr, *pptr;
 	int size;
 
-	float Gamma,EnhancedContrast,ClearTypeLevel;
+	float Gamma, EnhancedContrast, ClearTypeLevel;
 	DWRITE_RENDERING_MODE RenderingMode;
 
-	IDWriteRenderingParams *OldRparams = NULL,*NewRparams = NULL;
+	IDWriteRenderingParams *OldRparams = NULL, *NewRparams = NULL;
 
 	DxDraw->dwFactory->CreateRenderingParams(&OldRparams);
 	Gamma            = OldRparams->GetGamma();
@@ -290,54 +290,54 @@ void InitRenderTarget(DXDRAWSTRUCT *DxDraw)
 	ClearTypeLevel   = OldRparams->GetClearTypeLevel();
 	RenderingMode    = OldRparams->GetRenderingMode();
 
-	size = (wsprintf(buf,T("%d,%d,,%d,%d,"),
+	size = (wsprintf(buf, T("%d,%d,,%d,%d,"),
 		static_cast<int>(Gamma * 100.0f),
 		static_cast<int>(EnhancedContrast * 100.0f),
 		/*grayscaleEnhancedContrast, */
 		static_cast<int>(ClearTypeLevel * 100.0f),
-		RenderingMode /*,gridFitMode*/ ) + 1 ) * sizeof(TCHAR);
-	SetCustTable(T("_others"),T("dwenv_def"),buf,size);
+		RenderingMode /*, gridFitMode*/ ) + 1 ) * sizeof(TCHAR);
+	SetCustTable(T("_others"), T("dwenv_def"), buf, size);
 
 	buf[0] = '\0';
-	if ( NO_ERROR != GetCustTable(T("_others"),T("dwenv"),buf,sizeof(buf)) ){
+	if ( NO_ERROR != GetCustTable(T("_others"), T("dwenv"), buf, sizeof(buf)) ){
 		tstrcpy(buf,T(",,,,5"));
 	}
 	ptr = buf;
 	for (;;){
 		// Gamma
-		if ( GetCommandParameter(&ptr,param,TSIZEOF(param)) == '\0') break;
+		if ( GetCommandParameter(&ptr, param, TSIZEOF(param)) == '\0') break;
 		if ( Isdigit(param[0]) ){
 			pptr = param;
 			Gamma = static_cast<float>(GetNumber(&pptr)) / 100.0f;
 		}
 		NextParameter(&ptr);
 		// EnhancedContrast
-		if ( GetCommandParameter(&ptr,param,TSIZEOF(param)) == '\0') break;
+		if ( GetCommandParameter(&ptr, param, TSIZEOF(param)) == '\0') break;
 		if ( Isdigit(param[0]) ){
 			pptr = param;
 			EnhancedContrast = static_cast<float>(GetNumber(&pptr)) / 100.0f;
 		}
 		NextParameter(&ptr);
 		// grayscaleEnhancedContrast // IDWriteFactory2 , Win8.1
-		if ( GetCommandParameter(&ptr,param,TSIZEOF(param)) == '\0') break;
+		if ( GetCommandParameter(&ptr, param, TSIZEOF(param)) == '\0') break;
 		NextParameter(&ptr);
 		// ClearTypeLevel
-		if ( GetCommandParameter(&ptr,param,TSIZEOF(param)) == '\0') break;
+		if ( GetCommandParameter(&ptr, param, TSIZEOF(param)) == '\0') break;
 		if ( Isdigit(param[0]) ){
 			pptr = param;
 			ClearTypeLevel = static_cast<float>(GetNumber(&pptr)) / 100.0f;
 		}
 		NextParameter(&ptr);
 		// RenderingMode
-		if ( GetCommandParameter(&ptr,param,TSIZEOF(param)) == '\0') break;
+		if ( GetCommandParameter(&ptr, param, TSIZEOF(param)) == '\0') break;
 		if ( Isdigit(param[0]) ){
 			pptr = param;
 			RenderingMode = static_cast<DWRITE_RENDERING_MODE>(GetNumber(&pptr));
 		}
 		// gridFitMode // IDWriteFactory2 , Win8.1
-		if ( GetCommandParameter(&ptr,param,TSIZEOF(param)) == '\0') break;
+		if ( GetCommandParameter(&ptr, param, TSIZEOF(param)) == '\0') break;
 		// COLOR_FONT
-		if ( GetCommandParameter(&ptr,param,TSIZEOF(param)) == '\0') break;
+		if ( GetCommandParameter(&ptr, param, TSIZEOF(param)) == '\0') break;
 		if ( Isdigit(param[0]) ){
 			if ( (param[0] == '1') &&
 				 (((OSver.dwMajorVersion << 16) | OSver.dwMinorVersion) >= 0x60003) ){
@@ -350,8 +350,8 @@ void InitRenderTarget(DXDRAWSTRUCT *DxDraw)
 	}
 
 	if ( SUCCEEDED(DxDraw->dwFactory->CreateCustomRenderingParams(
-			Gamma,EnhancedContrast,ClearTypeLevel,
-			OldRparams->GetPixelGeometry(),RenderingMode,&NewRparams)) ){
+			Gamma, EnhancedContrast, ClearTypeLevel,
+			OldRparams->GetPixelGeometry(), RenderingMode, &NewRparams)) ){
 		DxDraw->HwndRenderTarget->SetTextRenderingParams(NewRparams);
 		NewRparams->Release();
 	}
@@ -359,11 +359,11 @@ void InitRenderTarget(DXDRAWSTRUCT *DxDraw)
 
 }
 
-int BeginDrawDxDraw(DXDRAWSTRUCT *DxDraw,PAINTSTRUCT *ps)
+int BeginDrawDxDraw(DXDRAWSTRUCT *DxDraw, PAINTSTRUCT *ps)
 {
 	if ( DxDraw == NULL ) return DXSTART_GDI;
 	if ( GetKeyState(VK_SCROLL) & 1 ){
-		BeginPaint(DxDraw->hWnd,ps);
+		BeginPaint(DxDraw->hWnd, ps);
 		return DXSTART_GDI;
 	}
 
@@ -374,12 +374,12 @@ int BeginDrawDxDraw(DXDRAWSTRUCT *DxDraw,PAINTSTRUCT *ps)
 	if ( DxDraw->TextBrush.brush == NULL ){ // TextBrush が 初期化されていない時用
 		// 今のところ、アクティブ時に１回使用している
 		DxDraw->HwndRenderTarget->CreateSolidColorBrush(
-				D2D1::ColorF(D3DCOLORfromCOLORREF(DxDraw->TextBrush.color),1.0f),
+				D2D1::ColorF(D3DCOLORfromCOLORREF(DxDraw->TextBrush.color), 1.0f),
 				&DxDraw->TextBrush.brush);
 	}
 
 	if ( DxDraw->HwndRenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED ){
-		ValidateRect(DxDraw->hWnd,NULL);
+		ValidateRect(DxDraw->hWnd, NULL);
 		return DXSTART_NODRAW; // 描画の必要なし
 	}
 
@@ -387,7 +387,7 @@ int BeginDrawDxDraw(DXDRAWSTRUCT *DxDraw,PAINTSTRUCT *ps)
 	DxDraw->HwndRenderTarget->SetTransform(DxDraw->DefaultTransform);
 
 #if DWMGLASS
-	DxDraw->HwndRenderTarget->Clear(D2D1::ColorF(0.0f,0.0f,0.0f,0.0f));
+	DxDraw->HwndRenderTarget->Clear(D2D1::ColorF(0.0f, 0.0f, 0.0f, 0.0f));
 #else
 	DxDraw->HwndRenderTarget->Clear(D2D1::ColorF(D3DCOLORfromCOLORREF(DxDraw->BackBrush.color)));
 #endif
@@ -404,15 +404,15 @@ BOOL EndDrawDxDraw(DXDRAWSTRUCT *DxDraw)
 		if ( DxDraw->HwndRenderTarget->EndDraw() == D2DERR_RECREATE_TARGET ){
 			ResetDxDraw(DxDraw);
 			Sleep(50);
-			InvalidateRect(DxDraw->hWnd,NULL,TRUE);
+			InvalidateRect(DxDraw->hWnd, NULL, TRUE);
 			return TRUE;
 		}
 	}
-	ValidateRect(DxDraw->hWnd,NULL);
+	ValidateRect(DxDraw->hWnd, NULL);
 	return TRUE;
 }
 
-void SetRotate(DXDRAWSTRUCT *DxDraw,int rel_angle)
+void SetRotate(DXDRAWSTRUCT *DxDraw, int rel_angle)
 {
 	float height;
 	D2D1_POINT_2F centerPoint;
@@ -424,7 +424,7 @@ void SetRotate(DXDRAWSTRUCT *DxDraw,int rel_angle)
 	while ( DxDraw->RotateAngle >= 360 ) DxDraw->RotateAngle -= 360;
 
 	height = static_cast<float>(DxDraw->clientArea.height) / 2.0f;
-	centerPoint = D2D1::Point2F(0.0f,height / ((DxDraw->DeskScale.y / DEFAULT_DPI - 1.0f) / 2.0f + 1.0f));
+	centerPoint = D2D1::Point2F(0.0f, height / ((DxDraw->DeskScale.y / DEFAULT_DPI - 1.0f) / 2.0f + 1.0f));
 
 	if ( DxDraw->RotateAngle == 0 ){ // DeskScaleRate
 		DxDraw->DefaultTransform = D2D1::Matrix3x2F::Identity();
@@ -433,15 +433,15 @@ void SetRotate(DXDRAWSTRUCT *DxDraw,int rel_angle)
 
 		// 上下反転
 		DxDraw->BMPTransform = D2D1::Matrix3x2F::Scale(
-				DxDraw->DeskScaleRate.x, -DxDraw->DeskScaleRate.y,centerPoint);
+				DxDraw->DeskScaleRate.x, -DxDraw->DeskScaleRate.y, centerPoint);
 	}else{ // DotScaleRate
 		float RotateAngle = static_cast<float>(DxDraw->RotateAngle);
 		float width = static_cast<float>(DxDraw->clientArea.width) / 2.0f;
 
 		DD2D1MakeRotateMatrix(RotateAngle,
-				D2D1::Point2F(width,height),&DxDraw->DefaultTransform);
+				D2D1::Point2F(width, height), &DxDraw->DefaultTransform);
 		DD2D1MakeRotateMatrix(-RotateAngle,
-				D2D1::Point2F(width,height),&DxDraw->HitPointTransform);
+				D2D1::Point2F(width, height), &DxDraw->HitPointTransform);
 		DxDraw->BMPTransform.SetProduct(
 				D2D1::Matrix3x2F::Scale(
 						DxDraw->DeskScaleRate.x, -DxDraw->DeskScaleRate.y,
@@ -450,7 +450,7 @@ void SetRotate(DXDRAWSTRUCT *DxDraw,int rel_angle)
 	}
 }
 
-void DxTransformPoint(DXDRAWSTRUCT *DxDraw,LPARAM *lParam)
+void DxTransformPoint(DXDRAWSTRUCT *DxDraw, LPARAM *lParam)
 {
 	if ( DxDraw == NULL ) return;
 	if ( DxDraw->RotateAngle == 0 ) return;
@@ -473,17 +473,21 @@ HRESULT InitMainFont(DXDRAWSTRUCT *DxDraw)
 
 	result = DxDraw->dwFactory->CreateTextFormat(DxDraw->fontName,
 			NULL,
-			DWRITE_FONT_WEIGHT_NORMAL,DWRITE_FONT_STYLE_NORMAL,
+			DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL,
 			DWRITE_FONT_STRETCH_NORMAL,
 			DxDraw->fontH * DxDraw->DotScaleRate,
 			L"",
 			&DxDraw->textFormatMain);
-	DxDraw->textFormatMain->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
-	DxDraw->textFormat = DxDraw->textFormatMain;
+	if ( SUCCEEDED(result) ){
+		DxDraw->textFormatMain->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+		DxDraw->textFormat = DxDraw->textFormatMain;
+	}else{
+		DxDraw->textFormatMain = NULL;
+	}
 	return result;
 }
 
-HRESULT InitSubFont(DXDRAWSTRUCT *DxDraw,int type)
+HRESULT InitSubFont(DXDRAWSTRUCT *DxDraw, int type)
 {
 	HRESULT result;
 
@@ -494,16 +498,20 @@ HRESULT InitSubFont(DXDRAWSTRUCT *DxDraw,int type)
 
 	result = DxDraw->dwFactory->CreateTextFormat(DxDraw->fontNameSub,
 			NULL,
-			DWRITE_FONT_WEIGHT_NORMAL,DWRITE_FONT_STYLE_NORMAL,
+			DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL,
 			DWRITE_FONT_STRETCH_NORMAL,
 			DxDraw->fontH * DxDraw->DotScaleRate,
 			(type == 2) ? L"en-us" : L"",
 			&DxDraw->textFormatSub);
-	DxDraw->textFormatMain->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+	if ( SUCCEEDED(result) ){
+		DxDraw->textFormatSub->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+	}else{
+		DxDraw->textFormatSub = NULL;
+	}
 	return result;
 }
 
-void DxSelectFont(DXDRAWSTRUCT *DxDraw,int type)
+void DxSelectFont(DXDRAWSTRUCT *DxDraw, int type)
 {
 	if ( type == 0 ){
 		if ( DxDraw->textFormatMain == NULL ){ // 初期化していない時用
@@ -512,13 +520,13 @@ void DxSelectFont(DXDRAWSTRUCT *DxDraw,int type)
 		DxDraw->textFormat = DxDraw->textFormatMain;
 	}else{
 		if ( DxDraw->textFormatSub == NULL ){ // 初期化していない時用
-			if ( FAILED(InitSubFont(DxDraw,type)) ) return;
+			if ( FAILED(InitSubFont(DxDraw, type)) ) return;
 		}
 		DxDraw->textFormat = DxDraw->textFormatSub;
 	}
 }
 
-DWORD SetFontDxDraw(DXDRAWSTRUCT *DxDraw,HFONT hFont,int type)
+DWORD SetFontDxDraw(DXDRAWSTRUCT *DxDraw, HFONT hFont, int type)
 {
 	LOGFONT lfont;
 	#ifndef UNICODE
@@ -531,22 +539,22 @@ DWORD SetFontDxDraw(DXDRAWSTRUCT *DxDraw,HFONT hFont,int type)
 	HGDIOBJ hOldGDI;
 
 	hDC = GetDC(DxDraw->hWnd);
-	hOldGDI = SelectObject(hDC,hFont);
+	hOldGDI = SelectObject(hDC, hFont);
 
 	if ( type == 0 ){
-		DxDraw->DotScaleRate = DEFAULT_DPI / static_cast<float>(PPxCommonExtCommand(K_GETDISPDPI,(WPARAM)DxDraw->hWnd));
+		DxDraw->DotScaleRate = DEFAULT_DPI / static_cast<float>(PPxCommonExtCommand(K_GETDISPDPI, (WPARAM)DxDraw->hWnd));
 
 		if ( DxDraw->textFormatMain != NULL ){
 			DxDraw->textFormatMain->Release();
 			DxDraw->textFormatMain = NULL;
 			DxDraw->textFormat = NULL;
 		}
-		GetObject(hFont,sizeof(LOGFONT),static_cast<LPVOID>(&lfont));
+		GetObject(hFont, sizeof(LOGFONT), static_cast<LPVOID>(&lfont));
 		DxDraw->fontH = static_cast<float>( (lfont.lfHeight >= 0) ?
 				 lfont.lfHeight : -lfont.lfHeight) / DxDraw->DotScaleRate;
-		strcpyToW(DxDraw->fontName,lfont.lfFaceName,LF_FACESIZE);
-		SelectObject(hDC,hOldGDI);
-		ReleaseDC(DxDraw->hWnd,hDC);
+		strcpyToW(DxDraw->fontName, lfont.lfFaceName, LF_FACESIZE);
+		SelectObject(hDC, hOldGDI);
+		ReleaseDC(DxDraw->hWnd, hDC);
 	}else{
 		if ( DxDraw->textFormatSub != NULL ){
 			if ( DxDraw->textFormat == DxDraw->textFormatSub ){
@@ -557,13 +565,13 @@ DWORD SetFontDxDraw(DXDRAWSTRUCT *DxDraw,HFONT hFont,int type)
 		}
 
 		#ifdef UNICODE
-			GetTextFace(hDC,LF_FACESIZE,DxDraw->fontNameSub);
+			GetTextFace(hDC, LF_FACESIZE, DxDraw->fontNameSub);
 		#else
-			GetTextFace(hDC,LF_FACESIZE,fontnameA);
-			AnsiToUnicode(fontnameA,DxDraw->fontNameSub,LF_FACESIZE);
+			GetTextFace(hDC, LF_FACESIZE, fontnameA);
+			AnsiToUnicode(fontnameA, DxDraw->fontNameSub, LF_FACESIZE);
 		#endif
-		SelectObject(hDC,hOldGDI);
-		ReleaseDC(DxDraw->hWnd,hDC);
+		SelectObject(hDC, hOldGDI);
+		ReleaseDC(DxDraw->hWnd, hDC);
 		return 1;
 	}
 
@@ -579,7 +587,7 @@ DWORD SetFontDxDraw(DXDRAWSTRUCT *DxDraw,HFONT hFont,int type)
 	DWRITE_TEXT_METRICS strMet;
 	IDWriteTextLayout *dwLayout;
 
-	if ( SUCCEEDED(DxDraw->dwFactory->CreateGdiCompatibleTextLayout(chr,TSIZEOFW(chr) - 1,DxDraw->textFormat,32000,32000,1.0f,NULL,TRUE,&dwLayout)) ){
+	if ( SUCCEEDED(DxDraw->dwFactory->CreateGdiCompatibleTextLayout(chr, TSIZEOFW(chr) - 1, DxDraw->textFormat, 32000, 32000, 1.0f, NULL, TRUE, &dwLayout)) ){
 		dwLayout->GetMetrics(&strMet);
 		dwLayout->Release();
 
@@ -591,45 +599,45 @@ DWORD SetFontDxDraw(DXDRAWSTRUCT *DxDraw,HFONT hFont,int type)
 	return static_cast<int>(DxDraw->fontW);
 }
 
-void USEFASTCALL DxMoveToEx(DXDRAWSTRUCT *DxDraw,HDC hDC,int x,int y)
+void USEFASTCALL DxMoveToEx(DXDRAWSTRUCT *DxDraw, HDC hDC, int x, int y)
 {
 	IfGDImode(hDC){
-		MoveToEx(hDC,x,y,NULL);
+		MoveToEx(hDC, x, y, NULL);
 		return;
 	}
 	DxDraw->lastpos.x = static_cast<float>(x);
 	DxDraw->lastpos.y = static_cast<float>(y);
 }
 
-void USEFASTCALL DxGetCurrentPositionEx(DXDRAWSTRUCT *DxDraw,HDC hDC,POINT *lp)
+void USEFASTCALL DxGetCurrentPositionEx(DXDRAWSTRUCT *DxDraw, HDC hDC, POINT *lp)
 {
 	IfGDImode(hDC){
-		GetCurrentPositionEx(hDC,lp);
+		GetCurrentPositionEx(hDC, lp);
 		return;
 	}
 	lp->x = static_cast<LONG>(DxDraw->lastpos.x);
 	lp->y = static_cast<LONG>(DxDraw->lastpos.y);
 }
 
-int DxSetBkMode(DXDRAWSTRUCT *DxDraw,HDC hDC,int mode)
+int DxSetBkMode(DXDRAWSTRUCT *DxDraw, HDC hDC, int mode)
 {
-	IfGDImode(hDC) return SetBkMode(hDC,mode);
+	IfGDImode(hDC) return SetBkMode(hDC, mode);
 
 	int oldmode = DxDraw->BkMode;
 	DxDraw->BkMode = mode;
 	return mode;
 }
 
-COLORREF DxSetBkColor(DXDRAWSTRUCT *DxDraw,HDC hDC,COLORREF color)
+COLORREF DxSetBkColor(DXDRAWSTRUCT *DxDraw, HDC hDC, COLORREF color)
 {
-	IfGDImode(hDC) return SetBkColor(hDC,color);
+	IfGDImode(hDC) return SetBkColor(hDC, color);
 
 	COLORREF oldcolor = DxDraw->BackTextColor;
 	DxDraw->BackTextColor = color;
 	return oldcolor;
 }
 
-COLORREF SetDxBrush(DXDRAWSTRUCT *DxDraw,DXBRUSHSTRUCT *brush,COLORREF color)
+COLORREF SetDxBrush(DXDRAWSTRUCT *DxDraw, DXBRUSHSTRUCT *brush, COLORREF color)
 {
 	COLORREF oldcolor = brush->color;
 
@@ -647,27 +655,27 @@ COLORREF SetDxBrush(DXDRAWSTRUCT *DxDraw,DXBRUSHSTRUCT *brush,COLORREF color)
 	return oldcolor;
 }
 
-COLORREF DxSetTextColor(DXDRAWSTRUCT *DxDraw,HDC hDC,COLORREF color)
+COLORREF DxSetTextColor(DXDRAWSTRUCT *DxDraw, HDC hDC, COLORREF color)
 {
-	IfGDImode(hDC) return SetTextColor(hDC,color);
-	return SetDxBrush(DxDraw,&DxDraw->TextBrush,color | 0xff000000);
+	IfGDImode(hDC) return SetTextColor(hDC, color);
+	return SetDxBrush(DxDraw, &DxDraw->TextBrush, color | 0xff000000);
 }
 
-ID2D1SolidColorBrush *GetDxBrush(DXDRAWSTRUCT *DxDraw,COLORREF color)
+ID2D1SolidColorBrush *GetDxBrush(DXDRAWSTRUCT *DxDraw, COLORREF color)
 {
 	if ( color == DxDraw->BackBrush.color ){
-		SetDxBrush(DxDraw,&DxDraw->BackBrush,color);
+		SetDxBrush(DxDraw, &DxDraw->BackBrush, color);
 		return DxDraw->BackBrush.brush;
 	}else if ( color == DxDraw->TextBrush.color ){
-		SetDxBrush(DxDraw,&DxDraw->TextBrush,color);
+		SetDxBrush(DxDraw, &DxDraw->TextBrush, color);
 		return DxDraw->TextBrush.brush;
 	}else{
-		SetDxBrush(DxDraw,&DxDraw->SubBrush,color);
+		SetDxBrush(DxDraw, &DxDraw->SubBrush, color);
 		return DxDraw->SubBrush.brush;
 	}
 }
 
-void DxDrawBack(DXDRAWSTRUCT *DxDraw,HDC hDC,const RECT *box,COLORREF color)
+void DxDrawBack(DXDRAWSTRUCT *DxDraw, HDC hDC, const RECT *box, COLORREF color)
 {
 	IfGDImode(hDC) return;
 
@@ -676,10 +684,10 @@ void DxDrawBack(DXDRAWSTRUCT *DxDraw,HDC hDC,const RECT *box,COLORREF color)
 			static_cast<float>(box->top),
 			static_cast<float>(box->right),
 			static_cast<float>(box->bottom) };
-	DxDraw->HwndRenderTarget->FillRectangle(&d2box,GetDxBrush(DxDraw,color));
+	DxDraw->HwndRenderTarget->FillRectangle(&d2box, GetDxBrush(DxDraw, color));
 }
 
-void DxDrawFrameRect(DXDRAWSTRUCT *DxDraw,HDC hDC,const RECT *box,COLORREF color)
+void DxDrawFrameRect(DXDRAWSTRUCT *DxDraw, HDC hDC, const RECT *box, COLORREF color)
 {
 	IfGDImode(hDC) return;
 
@@ -688,15 +696,15 @@ void DxDrawFrameRect(DXDRAWSTRUCT *DxDraw,HDC hDC,const RECT *box,COLORREF color
 			static_cast<float>(box->top),
 			static_cast<float>(box->right),
 			static_cast<float>(box->bottom) };
-	DxDraw->HwndRenderTarget->DrawRectangle(&d2box,GetDxBrush(DxDraw,color | 0xff000000));
+	DxDraw->HwndRenderTarget->DrawRectangle(&d2box, GetDxBrush(DxDraw, color | 0xff000000));
 }
 
-BOOL ChangeSizeDxDraw(DXDRAWSTRUCT *DxDraw,COLORREF backcolor)
+BOOL ChangeSizeDxDraw(DXDRAWSTRUCT *DxDraw, COLORREF backcolor)
 {
 	if ( DxDraw == NULL ) return FALSE;
 
 	// RenderTarget 生成
-	GetClientRect(DxDraw->hWnd,&DxDraw->clientBox);
+	GetClientRect(DxDraw->hWnd, &DxDraw->clientBox);
 	if ( (DxDraw->clientArea.width  != DxDraw->clientBox.right) ||
 		 (DxDraw->clientArea.height != DxDraw->clientBox.bottom) ){
 		DxDraw->clientArea.width  = DxDraw->clientBox.right;
@@ -705,7 +713,7 @@ BOOL ChangeSizeDxDraw(DXDRAWSTRUCT *DxDraw,COLORREF backcolor)
 			DxDraw->HwndRenderTarget->Resize(DxDraw->clientArea);
 		}
 
-		SetRotate(DxDraw,0);
+		SetRotate(DxDraw, 0);
 	}
 	if ( DxDraw->BackBrush.color != backcolor ){
 		DxDraw->BackColor = backcolor;
@@ -718,12 +726,12 @@ BOOL ChangeSizeDxDraw(DXDRAWSTRUCT *DxDraw,COLORREF backcolor)
 	return TRUE;
 }
 
-void DxGetTextExtentExPoint(DXDRAWSTRUCT *DxDraw,HDC hDC,const TCHAR *str,int len,int maxwidth,int *fitlem,int *alptbl,SIZE *blksize)
+void DxGetTextExtentExPoint(DXDRAWSTRUCT *DxDraw, HDC hDC, const TCHAR *str, int len, int maxwidth, int *fitlem, int *alptbl, SIZE *blksize)
 {
 	IDWriteTextLayout *dwLayout;
 
 	IfGDImode(hDC){
-		GetTextExtentExPoint(hDC,str,len,maxwidth,fitlem,alptbl,blksize);
+		GetTextExtentExPoint(hDC, str, len, maxwidth, fitlem, alptbl, blksize);
 		return;
 	}
 
@@ -741,11 +749,11 @@ void DxGetTextExtentExPoint(DXDRAWSTRUCT *DxDraw,HDC hDC,const TCHAR *str,int le
 		#define DRAWSTR str
 	#else
 		WCHAR DRAWSTR[0x200];
-		int DRAWLEN = MultiByteToWideChar(CP_ACP,MB_PRECOMPOSED,str,len,DRAWSTR,TSIZEOFW(DRAWSTR));
+		int DRAWLEN = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, str, len, DRAWSTR, TSIZEOFW(DRAWSTR));
 	#endif
 
 	for (;;){
-		if ( SUCCEEDED(DxDraw->dwFactory->CreateGdiCompatibleTextLayout(DRAWSTR,DRAWLEN,DxDraw->textFormat,32000,32000,1.0f,NULL,FALSE,&dwLayout)) ){
+		if ( SUCCEEDED(DxDraw->dwFactory->CreateGdiCompatibleTextLayout(DRAWSTR, DRAWLEN, DxDraw->textFormat, 32000, 32000, 1.0f, NULL, FALSE, &dwLayout)) ){
 			#undef DRAWLEN
 			#undef DRAWSTR
 
@@ -765,22 +773,22 @@ void DxGetTextExtentExPoint(DXDRAWSTRUCT *DxDraw,HDC hDC,const TCHAR *str,int le
 	*fitlem = len;
 }
 
-void DxDrawTextBack(DXDRAWSTRUCT *DxDraw,DWRITE_TEXT_METRICS &strMet)
+void DxDrawTextBack(DXDRAWSTRUCT *DxDraw, DWRITE_TEXT_METRICS &strMet)
 {
 	D2D1_RECT_F d2box = {
 			DxDraw->lastpos.x,
 			DxDraw->lastpos.y,
 			DxDraw->lastpos.x + strMet.widthIncludingTrailingWhitespace,
 			DxDraw->lastpos.y + strMet.height };
-	DxDraw->HwndRenderTarget->FillRectangle(&d2box,GetDxBrush(DxDraw,DxDraw->BackTextColor | 0xff000000));
+	DxDraw->HwndRenderTarget->FillRectangle(&d2box, GetDxBrush(DxDraw, DxDraw->BackTextColor | 0xff000000));
 }
 
-void DxTextOutRel(DXDRAWSTRUCT *DxDraw,HDC hDC,const TCHAR *str,int len)
+void DxTextOutRel(DXDRAWSTRUCT *DxDraw, HDC hDC, const TCHAR *str, int len)
 {
 	IDWriteTextLayout *dwLayout;
 
 	IfGDImode(hDC){
-		TextOut(hDC,0,0,str,len);
+		TextOut(hDC, 0, 0, str, len);
 		return;
 	}
 	if ( DxDraw == NULL ) return;
@@ -794,10 +802,10 @@ void DxTextOutRel(DXDRAWSTRUCT *DxDraw,HDC hDC,const TCHAR *str,int len)
 		#define DRAWSTR str
 	#else
 		WCHAR DRAWSTR[0x200];
-		int DRAWLEN = MultiByteToWideChar(CP_ACP,MB_PRECOMPOSED,str,len,DRAWSTR,TSIZEOFW(DRAWSTR) );
+		int DRAWLEN = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, str, len, DRAWSTR, TSIZEOFW(DRAWSTR) );
 	#endif
 
-	if ( FAILED(DxDraw->dwFactory->CreateGdiCompatibleTextLayout(DRAWSTR,DRAWLEN,DxDraw->textFormat,32000,32000,1.0f,NULL,FALSE,&dwLayout)) ){
+	if ( FAILED(DxDraw->dwFactory->CreateGdiCompatibleTextLayout(DRAWSTR, DRAWLEN, DxDraw->textFormat, 32000, 32000, 1.0f, NULL, FALSE, &dwLayout)) ){
 		return;
 	}
 
@@ -805,9 +813,9 @@ void DxTextOutRel(DXDRAWSTRUCT *DxDraw,HDC hDC,const TCHAR *str,int len)
 	dwLayout->GetMetrics(&strMet);
 
 	if ( DxDraw->BackTextColor != DxDraw->BackColor ){
-		DxDrawTextBack(DxDraw,strMet);
+		DxDrawTextBack(DxDraw, strMet);
 	}
-	DxDraw->HwndRenderTarget->DrawTextLayout(DxDraw->lastpos,dwLayout,DxDraw->TextBrush.brush,TextOption);
+	DxDraw->HwndRenderTarget->DrawTextLayout(DxDraw->lastpos, dwLayout, DxDraw->TextBrush.brush, TextOption);
 	dwLayout->Release();
 
 	DxDraw->lastpos.x += strMet.widthIncludingTrailingWhitespace;
@@ -816,12 +824,12 @@ void DxTextOutRel(DXDRAWSTRUCT *DxDraw,HDC hDC,const TCHAR *str,int len)
 }
 
 #ifndef UNICODE
-void DxTextOutRelW(DXDRAWSTRUCT *DxDraw,HDC hDC,const WCHAR *str,int len)
+void DxTextOutRelW(DXDRAWSTRUCT *DxDraw, HDC hDC, const WCHAR *str, int len)
 {
 	IDWriteTextLayout *dwLayout;
 
 	IfGDImode(hDC){
-		TextOutW(hDC,0,0,str,len);
+		TextOutW(hDC, 0, 0, str, len);
 		return;
 	}
 	if ( DxDraw == NULL ) return;
@@ -829,16 +837,16 @@ void DxTextOutRelW(DXDRAWSTRUCT *DxDraw,HDC hDC,const WCHAR *str,int len)
 	#define DRAWLEN len
 	#define DRAWSTR str
 
-	DxDraw->dwFactory->CreateTextLayout(DRAWSTR,DRAWLEN,DxDraw->textFormat,32000,32000,&dwLayout);
+	DxDraw->dwFactory->CreateTextLayout(DRAWSTR, DRAWLEN, DxDraw->textFormat, 32000, 32000, &dwLayout);
 
 	DWRITE_TEXT_METRICS strMet;
 	dwLayout->GetMetrics(&strMet);
 
 	if ( DxDraw->BackTextColor != DxDraw->BackColor ){
-		DxDrawTextBack(DxDraw,strMet);
+		DxDrawTextBack(DxDraw, strMet);
 	}
 
-	DxDraw->HwndRenderTarget->DrawTextLayout(DxDraw->lastpos,dwLayout,DxDraw->TextBrush.brush,TextOption);
+	DxDraw->HwndRenderTarget->DrawTextLayout(DxDraw->lastpos, dwLayout, DxDraw->TextBrush.brush, TextOption);
 	dwLayout->Release();
 	DxDraw->lastpos.x += strMet.widthIncludingTrailingWhitespace;
 
@@ -847,7 +855,7 @@ void DxTextOutRelW(DXDRAWSTRUCT *DxDraw,HDC hDC,const WCHAR *str,int len)
 }
 #endif
 
-void DxDrawText(DXDRAWSTRUCT *DxDraw,HDC hDC,const TCHAR *str,int len,RECT *box,DWORD flags)
+void DxDrawText(DXDRAWSTRUCT *DxDraw, HDC hDC, const TCHAR *str, int len, RECT *box, DWORD flags)
 {
 	IDWriteTextLayout *dwLayout;
 	float drawWidth;
@@ -863,7 +871,7 @@ void DxDrawText(DXDRAWSTRUCT *DxDraw,HDC hDC,const TCHAR *str,int len,RECT *box,
 				strp++;
 				slen--;
 			}
-			GetTextExtentPoint32(hDC,strp,slen,&fsize);
+			GetTextExtentPoint32(hDC, strp, slen, &fsize);
 			if ( fsize.cx < (box->right - box->left) ){
 				RECT tmpbox;
 				int drawX = box->right - fsize.cx;
@@ -874,15 +882,15 @@ void DxDrawText(DXDRAWSTRUCT *DxDraw,HDC hDC,const TCHAR *str,int len,RECT *box,
 					tmpbox = *box;
 					tmpbox.right = drawX;
 					hBackBrush = CreateSolidBrush(GetBkColor(hDC));
-					FillRect(hDC,&tmpbox,hBackBrush);
+					FillRect(hDC, &tmpbox, hBackBrush);
 					DeleteObject(hBackBrush);
 				}
-				MoveToEx(hDC,drawX,box->top,NULL);
-				TextOut(hDC,drawX,box->top,strp,len);
+				MoveToEx(hDC, drawX, box->top, NULL);
+				TextOut(hDC, drawX, box->top, strp, len);
 				return;
 			}
 		}
-		DrawText(hDC,str,len,box,flags);
+		DrawText(hDC, str, len, box, flags);
 		return;
 	}
 	if ( DxDraw == NULL ) return;
@@ -898,7 +906,7 @@ void DxDrawText(DXDRAWSTRUCT *DxDraw,HDC hDC,const TCHAR *str,int len,RECT *box,
 		if ( len == -1 ) len = wcslen32(str);
 	#else
 		WCHAR DRAWSTR[0x200];
-		int DRAWLEN = MultiByteToWideChar(CP_ACP,MB_PRECOMPOSED,str,len,DRAWSTR,TSIZEOFW(DRAWSTR) );
+		int DRAWLEN = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, str, len, DRAWSTR, TSIZEOFW(DRAWSTR) );
 	#endif
 
 	if ( flags & DT_WORDBREAK ){
@@ -924,11 +932,11 @@ void DxDrawText(DXDRAWSTRUCT *DxDraw,HDC hDC,const TCHAR *str,int len,RECT *box,
 
 		strMet.widthIncludingTrailingWhitespace = drawWidth;
 
-		DxDraw->dwFactory->CreateTextLayout(strtail, 1, DxDraw->textFormat,32000,32000,&dwTailLayout);
+		DxDraw->dwFactory->CreateTextLayout(strtail, 1, DxDraw->textFormat, 32000, 32000, &dwTailLayout);
 		dwTailLayout->GetMetrics(&strMetTail);
 
 		if ( DxDraw->BackTextColor != DxDraw->BackColor ){ // 背景描画
-			DxDrawTextBack(DxDraw,strMet);
+			DxDrawTextBack(DxDraw, strMet);
 		}
 
 		D2D1_POINT_2F pos = {
@@ -940,7 +948,7 @@ void DxDrawText(DXDRAWSTRUCT *DxDraw,HDC hDC,const TCHAR *str,int len,RECT *box,
 
 		dwLayout->SetMaxWidth(drawWidth - strMetTail.widthIncludingTrailingWhitespace);
 	}else if ( DxDraw->BackTextColor != DxDraw->BackColor ){ // 背景描画
-		DxDrawTextBack(DxDraw,strMet);
+		DxDrawTextBack(DxDraw, strMet);
 	}
 	if ( flags & DT_RIGHT ){
 		DxDraw->lastpos.x += drawWidth - strMet.widthIncludingTrailingWhitespace;
@@ -962,10 +970,10 @@ void DxDrawText(DXDRAWSTRUCT *DxDraw,HDC hDC,const TCHAR *str,int len,RECT *box,
 extern "C" typedef struct tagDXBMPCACHE {
 	DXDRAWSTRUCT *DxDraw;
 	D2D1_SIZE_U bmpsize;
-	int cacheIndex,HwndRenderTargetCounter;
+	int cacheIndex, HwndRenderTargetCounter;
 } DXBMPCACHE;
 
-HBITMAP BmpColorConvert(BITMAPINFOHEADER *bmiHeader,LPVOID *lpBits)
+HBITMAP BmpColorConvert(BITMAPINFOHEADER *bmiHeader, LPVOID *lpBits)
 {
 	LPVOID TemplpBits;
 	BITMAPINFO bmi;
@@ -973,30 +981,30 @@ HBITMAP BmpColorConvert(BITMAPINFOHEADER *bmiHeader,LPVOID *lpBits)
 	HDC hDC;
 	HBITMAP hConvertBmp;
 
-	memset(&bmi.bmiHeader,0,sizeof(BITMAPINFOHEADER));
+	memset(&bmi.bmiHeader, 0, sizeof(BITMAPINFOHEADER));
 	bmi.bmiHeader.biSize     = sizeof(BITMAPINFOHEADER);
 	bmi.bmiHeader.biWidth    = bmiHeader->biWidth;
 	bmi.bmiHeader.biHeight   = bmiHeader->biHeight;
 	bmi.bmiHeader.biPlanes   = 1;
 	bmi.bmiHeader.biBitCount = 32;
 
-	hConvertBmp = CreateDIBSection(NULL,&bmi,DIB_RGB_COLORS,&TemplpBits,NULL,0);
+	hConvertBmp = CreateDIBSection(NULL, &bmi, DIB_RGB_COLORS, &TemplpBits, NULL, 0);
 	hDC = CreateCompatibleDC(NULL);
-	hOldBmp = SelectObject(hDC,hConvertBmp);
+	hOldBmp = SelectObject(hDC, hConvertBmp);
 
 	SetDIBitsToDevice(hDC,
-			0,0, bmi.bmiHeader.biWidth,bmi.bmiHeader.biHeight,
-			0,0,  0,bmi.bmiHeader.biHeight,
+			0, 0, bmi.bmiHeader.biWidth, bmi.bmiHeader.biHeight,
+			0, 0,  0, bmi.bmiHeader.biHeight,
 			*lpBits,
-			(BITMAPINFO *)bmiHeader,DIB_RGB_COLORS);
+			(BITMAPINFO *)bmiHeader, DIB_RGB_COLORS);
 
 	*lpBits = TemplpBits;
-	SelectObject(hDC,hOldBmp);
+	SelectObject(hDC, hOldBmp);
 	DeleteDC(hDC);
 	return hConvertBmp;
 }
 
-BOOL DxDrawDIB(DXDRAWSTRUCT *DxDraw,BITMAPINFOHEADER *bmiHeader,LPVOID lpBits,const RECT *box,const RECT *clipArea,DXBMPCACHE **cache)
+BOOL DxDrawDIB(DXDRAWSTRUCT *DxDraw, BITMAPINFOHEADER *bmiHeader, LPVOID lpBits, const RECT *box, const RECT *clipArea, DXBMPCACHE **cache)
 {
 	ID2D1Bitmap *d2bmp;
 	D2D1_SIZE_U bmpsize;
@@ -1012,7 +1020,7 @@ BOOL DxDrawDIB(DXDRAWSTRUCT *DxDraw,BITMAPINFOHEADER *bmiHeader,LPVOID lpBits,co
 
 		if ( bmiHeader->biBitCount != 32 ){
 			convert = TRUE;
-			hConvertBmp = BmpColorConvert(bmiHeader,&lpBits);
+			hConvertBmp = BmpColorConvert(bmiHeader, &lpBits);
 		}
 
 		bmpprop.dpiX = DxDraw->DeskScale.x;
@@ -1022,7 +1030,7 @@ BOOL DxDrawDIB(DXDRAWSTRUCT *DxDraw,BITMAPINFOHEADER *bmiHeader,LPVOID lpBits,co
 //				D2D1_ALPHA_MODE_STRAIGHT);
 				D2D1_ALPHA_MODE_IGNORE);
 
-		HRESULT hr = DxDraw->HwndRenderTarget->CreateBitmap(bmpsize,lpBits,bmpsize.width * 4/* Alignment済み*/ ,bmpprop,&d2bmp);
+		HRESULT hr = DxDraw->HwndRenderTarget->CreateBitmap(bmpsize, lpBits, bmpsize.width * 4/* Alignment済み*/ , bmpprop, &d2bmp);
 		if ( convert ) DeleteObject(hConvertBmp); // ビットマップのメモリも削除
 
 		if ( SUCCEEDED(hr) ){
@@ -1047,7 +1055,7 @@ BOOL DxDrawDIB(DXDRAWSTRUCT *DxDraw,BITMAPINFOHEADER *bmiHeader,LPVOID lpBits,co
 		// キャッシュ廃棄？
 		if ( ((*cache)->HwndRenderTargetCounter != DxDraw->HwndRenderTargetCounter) || (d2bmp == NULL) ){
 			DxDrawFreeBMPCache(cache);
-			return DxDrawDIB(DxDraw,bmiHeader,lpBits,box,clipArea,cache);
+			return DxDrawDIB(DxDraw, bmiHeader, lpBits, box, clipArea, cache);
 		}
 		// キャッシュ使用
 		bmpsize = (*cache)->bmpsize;
@@ -1056,11 +1064,11 @@ BOOL DxDrawDIB(DXDRAWSTRUCT *DxDraw,BITMAPINFOHEADER *bmiHeader,LPVOID lpBits,co
 	if ( clipArea == NULL ) clipArea = &DxDraw->clientBox;
 
 	D2D1_RECT_F d2bmpbox = {
-		0.0f,0.0f,
-		static_cast<float>(bmpsize.width),static_cast<float>(bmpsize.height) };
+		0.0f, 0.0f,
+		static_cast<float>(bmpsize.width), static_cast<float>(bmpsize.height) };
 	D2D1_RECT_F d2box = {
-		static_cast<float>(box->left),0.0f,
-		static_cast<float>(box->left + box->right),0.0f};
+		static_cast<float>(box->left), 0.0f,
+		static_cast<float>(box->left + box->right), 0.0f};
 
 	if ( bmiHeader->biHeight > 0 ){ // ボトムアップ----------------------------
 		d2box.top = static_cast<float>(static_cast<int>(DxDraw->clientArea.height) - (box->top + box->bottom));
@@ -1105,13 +1113,13 @@ BOOL DxDrawDIB(DXDRAWSTRUCT *DxDraw,BITMAPINFOHEADER *bmiHeader,LPVOID lpBits,co
 
 	d2bmpbox.bottom *= DxDraw->DeskScaleRate.y;
 	d2bmpbox.right *= DxDraw->DeskScaleRate.x;
-	DxDraw->HwndRenderTarget->DrawBitmap(d2bmp,d2box ,1.0f,D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,d2bmpbox );
+	DxDraw->HwndRenderTarget->DrawBitmap(d2bmp, d2box , 1.0f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, d2bmpbox );
 	DxDraw->HwndRenderTarget->SetTransform(DxDraw->DefaultTransform);
 	if ( (cache == NULL) || (*cache == NULL) ) d2bmp->Release();
 	return TRUE;
 }
 
-void DxGDIDrawIcon(DXDRAWSTRUCT *DxDraw,HICON icon,const RECT *box,DXBMPCACHE **cache)
+void DxGDIDrawIcon(DXDRAWSTRUCT *DxDraw, HICON icon, const RECT *box, DXBMPCACHE **cache)
 {
 	BITMAPINFO bmi;
 	LPVOID lpBits;
@@ -1120,28 +1128,28 @@ void DxGDIDrawIcon(DXDRAWSTRUCT *DxDraw,HICON icon,const RECT *box,DXBMPCACHE **
 	HDC hDC;
 	HBRUSH hBackBrush;
 
-	memset(&bmi.bmiHeader,0,sizeof(BITMAPINFOHEADER));
+	memset(&bmi.bmiHeader, 0, sizeof(BITMAPINFOHEADER));
 	bmi.bmiHeader.biSize     = sizeof(BITMAPINFOHEADER);
 	bmi.bmiHeader.biWidth    = 32;
 	bmi.bmiHeader.biHeight   = 32;
 	bmi.bmiHeader.biPlanes   = 1;
 	bmi.bmiHeader.biBitCount = 32;
-	hbmp = CreateDIBSection(NULL,(LPBITMAPINFO)&bmi,DIB_RGB_COLORS,&lpBits, NULL,0);
+	hbmp = CreateDIBSection(NULL, (LPBITMAPINFO)&bmi, DIB_RGB_COLORS, &lpBits, NULL, 0);
 	hDC = CreateCompatibleDC(NULL);
-	hOldBmp = SelectObject(hDC,hbmp);
+	hOldBmp = SelectObject(hDC, hbmp);
 	hBackBrush = CreateSolidBrush(DxDraw->BackColor);
-	DrawIconEx(hDC,0,0,icon,bmi.bmiHeader.biWidth,bmi.bmiHeader.biHeight,0,hBackBrush,DI_NORMAL);
+	DrawIconEx(hDC, 0, 0, icon, bmi.bmiHeader.biWidth, bmi.bmiHeader.biHeight, 0, hBackBrush, DI_NORMAL);
 	DeleteObject(hBackBrush);
-	SelectObject(hDC,hOldBmp);
+	SelectObject(hDC, hOldBmp);
 	DeleteDC(hDC);
 
-	DxDrawDIB(DxDraw,&bmi.bmiHeader,lpBits,box,NULL,cache);
+	DxDrawDIB(DxDraw, &bmi.bmiHeader, lpBits, box, NULL, cache);
 	DeleteObject(hbmp); // ビットマップのメモリも削除
 }
 
-const IID IID_IWICImagingFactory = {0xec5ec8a9,0xc395,0x4314,{0x9c,0x77,0x54,0xd7,0xa9,0x35,0xff,0x70}};
+const IID IID_IWICImagingFactory = {0xec5ec8a9, 0xc395, 0x4314, {0x9c, 0x77, 0x54, 0xd7, 0xa9, 0x35, 0xff, 0x70}};
 
-void DxDrawIcon(DXDRAWSTRUCT *DxDraw,HICON icon,const RECT *box,DXBMPCACHE **cache)
+void DxDrawIcon(DXDRAWSTRUCT *DxDraw, HICON icon, const RECT *box, DXBMPCACHE **cache)
 {
 	if ( DxDraw == NULL ) return;
 
@@ -1149,8 +1157,8 @@ void DxDrawIcon(DXDRAWSTRUCT *DxDraw,HICON icon,const RECT *box,DXBMPCACHE **cac
 	   ((*cache)->HwndRenderTargetCounter != DxDraw->HwndRenderTargetCounter) ||
 	   (DxDraw->bmpCache[(*cache)->cacheIndex] == NULL) ){
 		if ( (DxDraw->WicFactory != NULL) ||
-			SUCCEEDED(::CoCreateInstance(CLSID_WICImagingFactory,NULL,
-				CLSCTX_INPROC_SERVER,IID_IWICImagingFactory,
+			SUCCEEDED(::CoCreateInstance(CLSID_WICImagingFactory, NULL,
+				CLSCTX_INPROC_SERVER, IID_IWICImagingFactory,
 				reinterpret_cast<void**>(&DxDraw->WicFactory))) ){
 			IWICBitmap *wicbmp;
 			ID2D1Bitmap *d2bmp;
@@ -1158,15 +1166,15 @@ void DxDrawIcon(DXDRAWSTRUCT *DxDraw,HICON icon,const RECT *box,DXBMPCACHE **cac
 			IWICFormatConverter *wicConverter;
 
 			if ( SUCCEEDED(DxDraw->WicFactory->CreateBitmapFromHICON(
-					icon,&wicbmp)) ){
-				wicbmp->GetSize(&bmpsize.width,&bmpsize.height);
+					icon, &wicbmp)) ){
+				wicbmp->GetSize(&bmpsize.width, &bmpsize.height);
 
 				DxDraw->WicFactory->CreateFormatConverter(&wicConverter);
 
-				wicConverter->Initialize(wicbmp,GUID_WICPixelFormat32bppPBGRA,WICBitmapDitherTypeNone, NULL, 0, WICBitmapPaletteTypeMedianCut);
+				wicConverter->Initialize(wicbmp, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, NULL, 0, WICBitmapPaletteTypeMedianCut);
 
 				if ( SUCCEEDED(DxDraw->HwndRenderTarget->
-						CreateBitmapFromWicBitmap(wicConverter,&d2bmp)) ){
+						CreateBitmapFromWicBitmap(wicConverter, &d2bmp)) ){
 					BOOL destroy = TRUE;
 
 					if ( cache != NULL ){
@@ -1190,18 +1198,18 @@ void DxDrawIcon(DXDRAWSTRUCT *DxDraw,HICON icon,const RECT *box,DXBMPCACHE **cac
 						static_cast<float>(box->left + box->right),
 						static_cast<float>(box->top + box->bottom) };
 					D2D1_RECT_F d2bmpbox = {
-						0.0f,0.0f,
+						0.0f, 0.0f,
 						static_cast<float>(bmpsize.width),
 						static_cast<float>(bmpsize.height) };
 
-					DxDraw->HwndRenderTarget->DrawBitmap(d2bmp,d2box ,1.0f,D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,d2bmpbox );
+					DxDraw->HwndRenderTarget->DrawBitmap(d2bmp, d2box , 1.0f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, d2bmpbox );
 					if ( IsTrue(destroy) ) d2bmp->Release();
 				}
 				wicConverter->Release();
 				wicbmp->Release();
 			}
 		}else{
-			DxGDIDrawIcon(DxDraw,icon,box,cache);
+			DxGDIDrawIcon(DxDraw, icon, box, cache);
 		}
 	// キャッシュを使用しようと試みる
 	}else if ( DxDraw->WicFactory != NULL ){
@@ -1211,7 +1219,7 @@ void DxDrawIcon(DXDRAWSTRUCT *DxDraw,HICON icon,const RECT *box,DXBMPCACHE **cac
 		// キャッシュ廃棄？
 		if ( ((*cache)->HwndRenderTargetCounter != DxDraw->HwndRenderTargetCounter) || (d2bmp == NULL) ){
 			DxDrawFreeBMPCache(cache);
-			DxDrawIcon(DxDraw,icon,box,cache);
+			DxDrawIcon(DxDraw, icon, box, cache);
 			return;
 		}
 		// キャッシュ使用
@@ -1221,13 +1229,13 @@ void DxDrawIcon(DXDRAWSTRUCT *DxDraw,HICON icon,const RECT *box,DXBMPCACHE **cac
 			static_cast<float>(box->left + box->right),
 			static_cast<float>(box->top + box->bottom) };
 		D2D1_RECT_F d2bmpbox = {
-			0.0f,0.0f,
+			0.0f, 0.0f,
 			static_cast<float>((*cache)->bmpsize.width),
 			static_cast<float>((*cache)->bmpsize.height) };
 
-		DxDraw->HwndRenderTarget->DrawBitmap(d2bmp,d2box ,1.0f,D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,d2bmpbox );
+		DxDraw->HwndRenderTarget->DrawBitmap(d2bmp, d2box , 1.0f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, d2bmpbox );
 	}else{ // GDI取得(上下反転)
-		DxDrawDIB(DxDraw,NULL,NULL,box,NULL,cache);
+		DxDrawDIB(DxDraw, NULL, NULL, box, NULL, cache);
 	}
 }
 
@@ -1254,7 +1262,7 @@ void ResetDxDrawAtlas(DXDRAWSTRUCT *DxDraw)
 	DxDraw->BmpAtlas.bmp = NULL;
 }
 
-BOOL DxDrawAtlas_Check(DXDRAWSTRUCT *DxDraw,DWORD *CacheID)
+BOOL DxDrawAtlas_Check(DXDRAWSTRUCT *DxDraw, DWORD *CacheID)
 {
 	DWORD id;
 
@@ -1283,13 +1291,13 @@ BOOL DxDrawAtlas_Check(DXDRAWSTRUCT *DxDraw,DWORD *CacheID)
 	return FALSE;
 }
 
-void DxDrawAtlas(DXDRAWSTRUCT *DxDraw,BITMAPINFOHEADER *bmiHeader,LPVOID lpBits,const RECT *box)
+void DxDrawAtlas(DXDRAWSTRUCT *DxDraw, BITMAPINFOHEADER *bmiHeader, LPVOID lpBits, const RECT *box)
 {
 	// 保存用の bitmap を用意
 	if ( (DxDraw->BmpAtlas.bmp == NULL) &&
 		 (bmiHeader->biWidth <= DEFATLASSIZE) &&
 		 (bmiHeader->biHeight <= DEFATLASSIZE) ){
-		D2D1_SIZE_U atlassize = { DEFATLASSIZE,DEFATLASSIZE };
+		D2D1_SIZE_U atlassize = { DEFATLASSIZE, DEFATLASSIZE };
 		D2D1_BITMAP_PROPERTIES bmpprop;
 
 		bmpprop.dpiX = DxDraw->DeskScale.x;
@@ -1298,7 +1306,7 @@ void DxDrawAtlas(DXDRAWSTRUCT *DxDraw,BITMAPINFOHEADER *bmiHeader,LPVOID lpBits,
 				DXGI_FORMAT_B8G8R8A8_UNORM,
 				D2D1_ALPHA_MODE_PREMULTIPLIED);
 
-		if ( SUCCEEDED(DxDraw->HwndRenderTarget->CreateBitmap(atlassize,bmpprop,&DxDraw->BmpAtlas.bmp)) ){
+		if ( SUCCEEDED(DxDraw->HwndRenderTarget->CreateBitmap(atlassize, bmpprop, &DxDraw->BmpAtlas.bmp)) ){
 			DxDraw->BmpAtlas.AtlasCols = (DEFATLASSIZE / bmiHeader->biWidth);
 			DxDraw->BmpAtlas.AtlasItems =
 					DxDraw->BmpAtlas.AtlasCols *
@@ -1330,14 +1338,14 @@ void DxDrawAtlas(DXDRAWSTRUCT *DxDraw,BITMAPINFOHEADER *bmiHeader,LPVOID lpBits,
 			destbox.top  = (DxDraw->BmpAtlas.useIndex / DxDraw->BmpAtlas.AtlasCols) * bmiHeader->biHeight;
 			destbox.right  = destbox.left + bmiHeader->biWidth;
 			destbox.bottom = destbox.top + bmiHeader->biHeight;
-			DxDraw->BmpAtlas.bmp->CopyFromMemory(&destbox,lpBits,bmiHeader->biWidth * sizeof(DWORD));
+			DxDraw->BmpAtlas.bmp->CopyFromMemory(&destbox, lpBits, bmiHeader->biWidth * sizeof(DWORD));
 
 			d2bmpbox.left = static_cast<float>(destbox.left) * DxDraw->DeskScaleRate.x;
 			d2bmpbox.top  = static_cast<float>(destbox.top) * DxDraw->DeskScaleRate.x;
 			d2bmpbox.right  = static_cast<float>(destbox.right) * DxDraw->DeskScaleRate.x;
 			d2bmpbox.bottom = static_cast<float>(destbox.bottom) * DxDraw->DeskScaleRate.x;
 		}
-		DxDraw->HwndRenderTarget->DrawBitmap(DxDraw->BmpAtlas.bmp,d2box ,1.0f,D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,d2bmpbox );
+		DxDraw->HwndRenderTarget->DrawBitmap(DxDraw->BmpAtlas.bmp, d2box , 1.0f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, d2bmpbox );
 		return;
 	}else{ // キャッシュができないので描画のみする
 		ID2D1Bitmap *d2bmp;
@@ -1352,13 +1360,13 @@ void DxDrawAtlas(DXDRAWSTRUCT *DxDraw,BITMAPINFOHEADER *bmiHeader,LPVOID lpBits,
 		bmpsize.width = bmiHeader->biWidth;
 		bmpsize.height = bmiHeader->biHeight;
 
-		if ( SUCCEEDED(DxDraw->HwndRenderTarget->CreateBitmap(bmpsize,lpBits,bmiHeader->biWidth * 4/* Alignment済み*/ ,bmpprop,&d2bmp)) ){
+		if ( SUCCEEDED(DxDraw->HwndRenderTarget->CreateBitmap(bmpsize, lpBits, bmiHeader->biWidth * 4/* Alignment済み*/ , bmpprop, &d2bmp)) ){
 			d2bmpbox.left = 0.0f;
 			d2bmpbox.top  = 0.0f;
 			d2bmpbox.right  = static_cast<float>(bmpsize.width);
 			d2bmpbox.bottom = static_cast<float>(bmpsize.height);
 
-			DxDraw->HwndRenderTarget->DrawBitmap(d2bmp,d2box ,1.0f,D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,d2bmpbox );
+			DxDraw->HwndRenderTarget->DrawBitmap(d2bmp, d2box , 1.0f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, d2bmpbox );
 			d2bmp->Release();
 		}
 	}
@@ -1409,41 +1417,41 @@ float fixd = 0;
 struct ScreenInfo {
 	HWND hWnd;
 	LPDIRECT3DDEVICE9 D3DDev;
-	float ClientWidth,ClientHeight;
-	int ClientWidthInt,ClientHeightInt;
+	float ClientWidth, ClientHeight;
+	int ClientWidthInt, ClientHeightInt;
 	int fontH;
 	COLORREF backgroundcolor;
-	COLORREF TextColor,TextBackColor;
+	COLORREF TextColor, TextBackColor;
 	IDirect3DVertexBuffer9 *PanelVertex;
 	POINT lastpos;
 	int BkMode;
 };
 
-D3DPRESENT_PARAMETERS defaultd3dpp = {0,0,D3DFMT_UNKNOWN,0,
-		D3DMULTISAMPLE_NONE,0,
+D3DPRESENT_PARAMETERS defaultd3dpp = {0, 0, D3DFMT_UNKNOWN, 0,
+		D3DMULTISAMPLE_NONE, 0,
 		D3DSWAPEFFECT_DISCARD /*D3DSWAPEFFECT_FLIP*/,
-		NULL,TRUE,TRUE,D3DFMT_D16,0,0,D3DPRESENT_INTERVAL_DEFAULT};
+		NULL, TRUE, TRUE, D3DFMT_D16, 0, 0, D3DPRESENT_INTERVAL_DEFAULT};
 
 #define FVF_DEFFVF ( D3DFVF_XYZ | D3DFVF_DIFFUSE | D3DFVF_TEX1 )
 struct VEX_DEFFVF {
-	float x,y,z; // 頂点座標
+	float x, y, z; // 頂点座標
 	D3DCOLOR color;
-	float u,v; //　テクスチャ座標
+	float u, v; //　テクスチャ座標
 };
 
 #define VFS_DEFPANEL 4
 const VEX_DEFFVF vf_defpanel[VFS_DEFPANEL]= {
-	{  1.0f,  0.0f, 0.0f, D3DCOLOR_RGBA(255,255,255,255), 1.0f, 0.0f},
-	{  1.0f,  1.0f, 0.0f, D3DCOLOR_RGBA(255,255,255,255), 1.0f, 1.0f},
-	{  0.0f,  0.0f, 0.0f, D3DCOLOR_RGBA(255,255,255,255), 0.0f, 0.0f},
-	{  0.0f,  1.0f, 0.0f, D3DCOLOR_RGBA(255,255,255,255), 0.0f, 1.0f}
+	{  1.0f,  0.0f, 0.0f, D3DCOLOR_RGBA(255, 255, 255, 255), 1.0f, 0.0f},
+	{  1.0f,  1.0f, 0.0f, D3DCOLOR_RGBA(255, 255, 255, 255), 1.0f, 1.0f},
+	{  0.0f,  0.0f, 0.0f, D3DCOLOR_RGBA(255, 255, 255, 255), 0.0f, 0.0f},
+	{  0.0f,  1.0f, 0.0f, D3DCOLOR_RGBA(255, 255, 255, 255), 0.0f, 1.0f}
 };
 
 const D3DMATRIX IdentityMatrix = { // 単位行列
-	{1.0f,0.0f,0.0f,0.0f,
-	 0.0f,1.0f,0.0f,0.0f,
-	 0.0f,0.0f,1.0f,0.0f,
-	 0.0f,0.0f,0.0f,1.0f}
+	{1.0f, 0.0f, 0.0f, 0.0f,
+	 0.0f, 1.0f, 0.0f, 0.0f,
+	 0.0f, 0.0f, 1.0f, 0.0f,
+	 0.0f, 0.0f, 0.0f, 1.0f}
 };
 
 /* 標準プロジェクト行列
@@ -1451,23 +1459,23 @@ const D3DMATRIX IdentityMatrix = { // 単位行列
 	#include <stdlib.h>
 	char a[300];
 
-	D3DXMatrixPerspectiveFovLH(&matProj,D3D_Angle,1.0f,0.01f,100.0f);
-	sprintf(a,"%f %f %f %f / %f %f %f %f / %f %f %f %f / %f %f %f %f",
-	matProj._11,matProj._12,matProj._13,matProj._14,
-	matProj._21,matProj._22,matProj._23,matProj._24,
-	matProj._31,matProj._32,matProj._33,matProj._34,
-	matProj._41,matProj._42,matProj._43,matProj._44);
-	XMessage(NULL,NULL,XM_DbgLOG,T("%s"),a);
+	D3DXMatrixPerspectiveFovLH(&matProj, D3D_Angle, 1.0f, 0.01f, 100.0f);
+	sprintf(a, "%f %f %f %f / %f %f %f %f / %f %f %f %f / %f %f %f %f",
+	matProj._11, matProj._12, matProj._13, matProj._14,
+	matProj._21, matProj._22, matProj._23, matProj._24,
+	matProj._31, matProj._32, matProj._33, matProj._34,
+	matProj._41, matProj._42, matProj._43, matProj._44);
+	XMessage(NULL, NULL, XM_DbgLOG, T("%s"), a);
 */
 const D3DMATRIX DefProjMatrix = {
-	{3.732051618f,0.0f,0.0f,0.0f,
-	 0.0f,3.732051618f,0.0f,0.0f,
-	 0.0f,0.0f,1.0001f,1.0f,
-	 0.0f,0.0f,-0.010001f,0.0f}
+	{3.732051618f, 0.0f, 0.0f, 0.0f,
+	 0.0f, 3.732051618f, 0.0f, 0.0f,
+	 0.0f, 0.0f, 1.0001f, 1.0f,
+	 0.0f, 0.0f, -0.010001f, 0.0f}
 };
 
 // 大きさと平行移動を 2D で設定する(回転不可)
-#define SetMatrix2D_ST(mat,x,y,w,h) { mat._11 = w ; mat._22 = h ; mat._41 = x ;mat._42 = y; }
+#define SetMatrix2D_ST(mat, x, y, w, h) { mat._11 = w ; mat._22 = h ; mat._41 = x ;mat._42 = y; }
 
 #define DEBUGMESSIZE 3000
 TCHAR g_DebugMes[DEBUGMESSIZE];
@@ -1479,22 +1487,22 @@ void PutLog(const TCHAR *string, ...)
 
 	len = tstrlen(g_DebugMes);
 	if ( (len + (DEBUGMESSIZE / 10)) >= DEBUGMESSIZE ) return;
-	va_start(argptr,string);
+	va_start(argptr, string);
 #ifdef UNICODE
-	vswprintf(g_DebugMes + len,string,argptr);
+	vswprintf(g_DebugMes + len, string, argptr);
 #else
-	vsprintf(g_DebugMes + len,string,argptr);
+	vsprintf(g_DebugMes + len, string, argptr);
 #endif
 	va_end(argptr);
-	tstrcat(g_DebugMes + len,T("\n"));
+	tstrcat(g_DebugMes + len, T("\n"));
 }
 
-#define DDCI_ReturnLog(result,mes) {Release(); PutLog(mes); return result;}
+#define DDCI_ReturnLog(result, mes) {Release(); PutLog(mes); return result;}
 
-void DrawDIB(ScreenInfo *sinfo,BITMAPINFOHEADER *bmiHeader,LPVOID lpBits,const RECT *box);
-void DrawTex(ScreenInfo *sinfo,IDirect3DTexture9 *Tex,int left,int top,int width,int height);
+void DrawDIB(ScreenInfo *sinfo, BITMAPINFOHEADER *bmiHeader, LPVOID lpBits, const RECT *box);
+void DrawTex(ScreenInfo *sinfo, IDirect3DTexture9 *Tex, int left, int top, int width, int height);
 
-enum D3DDC_STATE { D3DDC_DRAWING,D3DDC_ENABLE,D3DDC_REQDISABLE,D3DDC_DISABLE,D3DDC_INIT};
+enum D3DDC_STATE { D3DDC_DRAWING, D3DDC_ENABLE, D3DDC_REQDISABLE, D3DDC_DISABLE, D3DDC_INIT};
 
 class D3DDeviceClass
 {
@@ -1524,7 +1532,7 @@ public:
 		Release();
 	}
 
-	D3DXMATRIX MatView3D,MatView2D;
+	D3DXMATRIX MatView3D, MatView2D;
 
 	BOOL Init(ScreenInfo *sinfo)
 	{
@@ -1532,14 +1540,14 @@ public:
 		IDirect3DDevice9 *D3DDev;
 
 		m_sinfo = sinfo;
-		m_ThreadID = GetWindowThreadProcessId(m_sinfo->hWnd,NULL);
+		m_ThreadID = GetWindowThreadProcessId(m_sinfo->hWnd, NULL);
 		m_sinfo->D3DDev = NULL;
 		if ( m_ThreadID != GetCurrentThreadId() ){
 		//	Message(T("D3DDevice->Init thread error!"));
 			return FALSE;
 		}
 
-		// CoInitializeEx(NULL,COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+		// CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 		m_D3D = Direct3DCreate9(D3D_SDK_VERSION);
 		if ( m_D3D == NULL ){
 			Release();
@@ -1547,18 +1555,18 @@ public:
 			return FALSE;
 		}
 
-		m_D3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT,&dmode);
+		m_D3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, &dmode);
 
 		m_d3dpp = defaultd3dpp;
 		m_d3dpp.hDeviceWindow = sinfo->hWnd;
 		m_d3dpp.BackBufferFormat = dmode.Format;
-		if( FAILED(m_D3D->CreateDevice(D3DADAPTER_DEFAULT,D3DDEVTYPE_HAL,
-				sinfo->hWnd,D3DCREATE_HARDWARE_VERTEXPROCESSING,
-				&m_d3dpp,&D3DDev)) ){
-			if( FAILED(m_D3D->CreateDevice(D3DADAPTER_DEFAULT,D3DDEVTYPE_HAL,
-					sinfo->hWnd,D3DCREATE_SOFTWARE_VERTEXPROCESSING,
-					&m_d3dpp,&D3DDev)) ){
-				DDCI_ReturnLog(FALSE,T("CreateDevice error"));
+		if( FAILED(m_D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,
+				sinfo->hWnd, D3DCREATE_HARDWARE_VERTEXPROCESSING,
+				&m_d3dpp, &D3DDev)) ){
+			if( FAILED(m_D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,
+					sinfo->hWnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING,
+					&m_d3dpp, &D3DDev)) ){
+				DDCI_ReturnLog(FALSE, T("CreateDevice error"));
 			}
 		}
 		m_sinfo->D3DDev = D3DDev;
@@ -1566,17 +1574,17 @@ public:
 
 		// 汎用頂点バッファ作成
 		if( FAILED(m_sinfo->D3DDev->CreateVertexBuffer(
-				sizeof(VEX_DEFFVF) * VFS_DEFPANEL,D3DUSAGE_WRITEONLY,
-				FVF_DEFFVF,D3DPOOL_MANAGED,&m_sinfo->PanelVertex,NULL))){
+				sizeof(VEX_DEFFVF) * VFS_DEFPANEL, D3DUSAGE_WRITEONLY,
+				FVF_DEFFVF, D3DPOOL_MANAGED, &m_sinfo->PanelVertex, NULL))){
 			return FALSE;
 		}else{ // 頂点情報の書き込み
 			void *pData;
 
 			if( FAILED(m_sinfo->PanelVertex->Lock(0,
-					sizeof(VEX_DEFFVF) * VFS_DEFPANEL,(void**)&pData,0)) ){
+					sizeof(VEX_DEFFVF) * VFS_DEFPANEL, (void**)&pData, 0)) ){
 				return FALSE;
 			}
-			memcpy(pData,vf_defpanel,sizeof(vf_defpanel));
+			memcpy(pData, vf_defpanel, sizeof(vf_defpanel));
 			m_sinfo->PanelVertex->Unlock();
 		}
 		InitDevice();
@@ -1592,30 +1600,30 @@ public:
 			return FALSE;
 		}
 #if USEDXTEXT
-		if ( FAILED(D3DXCreateFontW(D3DDev,10,0,FW_BOLD,0,FALSE,
-				DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,DEFAULT_QUALITY,
-				DEFAULT_PITCH | FF_DONTCARE,L"ＭＳ 明朝",&MesFont)) ){
-			DDCI_ReturnLog(FALSE,T("D3DXCreateFont error"));
+		if ( FAILED(D3DXCreateFontW(D3DDev, 10, 0, FW_BOLD, 0, FALSE,
+				DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY,
+				DEFAULT_PITCH | FF_DONTCARE, L"ＭＳ 明朝", &MesFont)) ){
+			DDCI_ReturnLog(FALSE, T("D3DXCreateFont error"));
 		}
 #endif
-		D3DDev->SetRenderState(D3DRS_CULLMODE,D3DCULL_NONE);
-		D3DDev->SetRenderState(D3DRS_ZENABLE,TRUE);
+		D3DDev->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+		D3DDev->SetRenderState(D3DRS_ZENABLE, TRUE);
 
-		D3DDev->SetRenderState(D3DRS_LIGHTING,FALSE);
+		D3DDev->SetRenderState(D3DRS_LIGHTING, FALSE);
 		// AlphaBlend
-		D3DDev->SetRenderState(D3DRS_ALPHABLENDENABLE,TRUE);
-		D3DDev->SetRenderState(D3DRS_SRCBLEND,D3DBLEND_SRCALPHA);
-		D3DDev->SetRenderState(D3DRS_DESTBLEND,D3DBLEND_INVSRCALPHA);
+		D3DDev->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+		D3DDev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+		D3DDev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
 
-		D3DDev->SetRenderState(D3DRS_AMBIENT,0x101010);
+		D3DDev->SetRenderState(D3DRS_AMBIENT, 0x101010);
 
-		D3DDev->SetRenderState(D3DRS_DITHERENABLE,TRUE);
-//		D3DDev->SetRenderState(D3DRS_NORMALIZENORMALS,TRUE);
+		D3DDev->SetRenderState(D3DRS_DITHERENABLE, TRUE);
+//		D3DDev->SetRenderState(D3DRS_NORMALIZENORMALS, TRUE);
 
-//		D3DDev->SetSamplerState(0,D3DSAMP_MAGFILTER,D3DTEXF_POINT);
-//		D3DDev->SetSamplerState(0,D3DSAMP_MINFILTER,D3DTEXF_POINT);
-		D3DDev->SetSamplerState(0,D3DSAMP_MAGFILTER,D3DTEXF_LINEAR);
-		D3DDev->SetSamplerState(0,D3DSAMP_MINFILTER,D3DTEXF_LINEAR);
+//		D3DDev->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+//		D3DDev->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+		D3DDev->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+		D3DDev->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 
 		//	Z軸正の方向から原点
 		float Aspect = (m_sinfo->ClientHeight / m_sinfo->ClientWidth);
@@ -1623,35 +1631,35 @@ public:
 		float CameraY = (m_sinfo->ClientHeight + 0.0f) * (D3D_ProjScaleY * 0.5f);
 		float CameraZ = D3D_CameraZrate * CameraX * Aspect;
 
-		D3DXVECTOR3 vec3From(CameraX,CameraY,CameraZ);
-		D3DXVECTOR3 vec3At(CameraX,CameraY,CameraZ + 1.0f);
-		D3DXVECTOR3 vec3Up(0.0f,1.0f,0.0f);
-		D3DXMatrixLookAtLH(&MatView3D,&vec3From,&vec3At,&vec3Up);
+		D3DXVECTOR3 vec3From(CameraX, CameraY, CameraZ);
+		D3DXVECTOR3 vec3At(CameraX, CameraY, CameraZ + 1.0f);
+		D3DXVECTOR3 vec3Up(0.0f, 1.0f, 0.0f);
+		D3DXMatrixLookAtLH(&MatView3D, &vec3From, &vec3At, &vec3Up);
 
 		D3DXMatrixOrthoLH(&MatView2D,
-				MAG2D * m_sinfo->ClientHeight,MAG2D * m_sinfo->ClientHeight,
-				-1.0f,1.0f);
+				MAG2D * m_sinfo->ClientHeight, MAG2D * m_sinfo->ClientHeight,
+				-1.0f, 1.0f);
 		D3DXMATRIX matD = IdentityMatrix;
 		matD = IdentityMatrix;
 		matD._41 -= OF2D / Aspect;
 		matD._42 += OF2D;
-		D3DXMatrixMultiply(&MatView2D,&MatView2D,&matD);
+		D3DXMatrixMultiply(&MatView2D, &MatView2D, &matD);
 
-		D3DDev->SetTransform(D3DTS_VIEW,&MatView2D);
+		D3DDev->SetTransform(D3DTS_VIEW, &MatView2D);
 
 		//プロジェクション
 #if 1
 		D3DMATRIX matProj = DefProjMatrix;
 
 		matProj._11 *= m_sinfo->ClientHeight / m_sinfo->ClientWidth;
-		D3DDev->SetTransform(D3DTS_PROJECTION,&matProj);
+		D3DDev->SetTransform(D3DTS_PROJECTION, &matProj);
 #else // 等価処理
 		#define D3D_Angle 0.523598667f // (M_PI / 6) = 30°
 		D3DXMATRIX matProj;
-		D3DXMatrixPerspectiveFovLH(&matProj,D3D_Angle,
+		D3DXMatrixPerspectiveFovLH(&matProj, D3D_Angle,
 				m_sinfo->ClientWidth / m_sinfo->ClientHeight,
-				0.01f,100.0f);
-		D3DDev->SetTransform(D3DTS_PROJECTION,&matProj);
+				0.01f, 100.0f);
+		D3DDev->SetTransform(D3DTS_PROJECTION, &matProj);
 #endif
 		m_State = D3DDC_ENABLE;
 		return TRUE;
@@ -1690,7 +1698,7 @@ public:
 		// CoUninitialize();
 	}
 
-	void DrawIcon(HICON icon,const RECT *box)
+	void DrawIcon(HICON icon, const RECT *box)
 	{
 		LPVOID lpBits;
 		BITMAPINFO bmi;
@@ -1699,21 +1707,21 @@ public:
 		HGDIOBJ hOldBmp;
 		HDC hDC;
 
-		memset(&bmiHeader,0,sizeof(BITMAPINFOHEADER));
+		memset(&bmiHeader, 0, sizeof(BITMAPINFOHEADER));
 		bmiHeader.biSize      = sizeof(BITMAPINFOHEADER);
 		bmiHeader.biWidth     = 32;
 		bmiHeader.biHeight    = 32;
 		bmiHeader.biPlanes    = 1;
 		bmiHeader.biBitCount  = 32;
 		bmi.bmiHeader = bmiHeader;
-		hbmp = CreateDIBSection(NULL,(LPBITMAPINFO)&bmi,DIB_RGB_COLORS,&lpBits, NULL,0);
+		hbmp = CreateDIBSection(NULL, (LPBITMAPINFO)&bmi, DIB_RGB_COLORS, &lpBits, NULL, 0);
 		hDC = CreateCompatibleDC(NULL);
-		hOldBmp = SelectObject(hDC,hbmp);
-		DrawIconEx(hDC,0,0,icon,bmiHeader.biWidth,bmiHeader.biHeight,0,NULL,DI_NORMAL);
-		SelectObject(hDC,hOldBmp);
+		hOldBmp = SelectObject(hDC, hbmp);
+		DrawIconEx(hDC, 0, 0, icon, bmiHeader.biWidth, bmiHeader.biHeight, 0, NULL, DI_NORMAL);
+		SelectObject(hDC, hOldBmp);
 		DeleteDC(hDC);
 
-		DrawDIB(m_sinfo,&bmiHeader,lpBits,box);
+		DrawDIB(m_sinfo, &bmiHeader, lpBits, box);
 
 		DeleteObject(hbmp); // ビットマップのメモリも削除
 	}
@@ -1724,7 +1732,7 @@ public:
 
 		IDirect3DDevice9 *D3DDev = m_sinfo->D3DDev;
 
-		D3DDev->Clear(0,NULL,D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER /*| D3DCLEAR_STENCIL*/,m_BackColor,1.0f,0);
+		D3DDev->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER /*| D3DCLEAR_STENCIL*/, m_BackColor, 1.0f, 0);
 		D3DDev->BeginScene();
 		m_State = D3DDC_DRAWING;
 		return TRUE;
@@ -1738,7 +1746,7 @@ public:
 		IDirect3DDevice9 *D3DDev = m_sinfo->D3DDev;
 
 		D3DDev->EndScene();
-		if ( D3DDev->Present(NULL,NULL,NULL,NULL) == D3DERR_DEVICELOST ){
+		if ( D3DDev->Present(NULL, NULL, NULL, NULL) == D3DERR_DEVICELOST ){
 			RequestReset();
 			return FALSE;
 		}
@@ -1786,7 +1794,7 @@ public:
 			return FALSE; // まだリセットできない
 		}
 
-		m_D3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT,&dmode);
+		m_D3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, &dmode);
 		m_d3dpp.BackBufferWidth = 0;
 		m_d3dpp.BackBufferHeight = 0;
 		m_d3dpp.BackBufferFormat = dmode.Format;
@@ -1799,28 +1807,28 @@ public:
 		}
 	}
 #if USEDXTEXT
-	void DrawText(const TCHAR *str,RECT *box)
+	void DrawText(const TCHAR *str, RECT *box)
 	{
 		if ( box == NULL ){
-			RECT dummybox = {0,0,800,80};
+			RECT dummybox = {0, 0, 800, 80};
 
 			box = &dummybox;
 		}
 		if ( MesFont != NULL ){
-			MesFont->DrawText(NULL,str,-1,box,DT_NOCLIP,D3DXCOLOR(1.0f,1.0f,1.0f,1.0f ));
+			MesFont->DrawText(NULL, str, -1, box, DT_NOCLIP, D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f ));
 		}
 	}
 #endif
 };
 
 struct FontInfoStruct {
-	WORD dataX,dataY; // データの位置
+	WORD dataX, dataY; // データの位置
 	WORD Xoffset; // 表示位置X
 	WORD showW; // 表示幅
 	WORD cellW; // 字送りの幅
 };
 
-const MAT2 GetFontBmpMat = {{0,1},{0,0},{0,0},{0,1}};
+const MAT2 GetFontBmpMat = {{0, 1}, {0, 0}, {0, 0}, {0, 1}};
 
 class DxCellCursorClass
 {
@@ -1829,7 +1837,7 @@ private:
 	D3DMATRIX m_ShowPosMat; // 表示位置を決める行列
 	D3DMATRIX m_ShowBackPosMat; // 表示位置を決める行列
 	IDirect3DTexture9 *m_Tex;
-	int m_boxwidth,m_boxheight;
+	int m_boxwidth, m_boxheight;
 
 	void MakeTex(void)
 	{
@@ -1842,16 +1850,16 @@ private:
 		TRIVERTEX vt[2];
 
 		SAFE_RELEASE(m_Tex);
-		memset(&bmiHeader,0,sizeof(BITMAPINFOHEADER));
+		memset(&bmiHeader, 0, sizeof(BITMAPINFOHEADER));
 		bmiHeader.biSize      = sizeof(BITMAPINFOHEADER);
 		bmiHeader.biWidth     = m_boxwidth;
 		bmiHeader.biHeight    = m_boxheight;
 		bmiHeader.biPlanes    = 1;
 		bmiHeader.biBitCount  = 32;
 		bmi.bmiHeader = bmiHeader;
-		hbmp = CreateDIBSection(NULL,&bmi,DIB_RGB_COLORS,&lpBits,NULL,0);
+		hbmp = CreateDIBSection(NULL, &bmi, DIB_RGB_COLORS, &lpBits, NULL, 0);
 		hDC = CreateCompatibleDC(NULL);
-		hOldBmp = SelectObject(hDC,hbmp);
+		hOldBmp = SelectObject(hDC, hbmp);
 
 		COLORREF c1 = CURSOR_G1_COLOR;
 		COLORREF c2 = CURSOR_G2_COLOR;
@@ -1872,25 +1880,25 @@ private:
 		gr.UpperLeft = 1;
 		gr.LowerRight = 0;
 
-		GradientFill(hDC,vt,2,&gr,1,GRADIENT_FILL_RECT_V);
+		GradientFill(hDC, vt, 2, &gr, 1, GRADIENT_FILL_RECT_V);
 
-		HGDIOBJ hOldPen = SelectObject(hDC,GetStockObject(WHITE_PEN));
-		HGDIOBJ hOldBrush = SelectObject(hDC,GetStockObject(HOLLOW_BRUSH));
+		HGDIOBJ hOldPen = SelectObject(hDC, GetStockObject(WHITE_PEN));
+		HGDIOBJ hOldBrush = SelectObject(hDC, GetStockObject(HOLLOW_BRUSH));
 
-		RoundRect(hDC,0,0,bmiHeader.biWidth,bmiHeader.biHeight,bmiHeader.biHeight / 3,bmiHeader.biHeight / 3);
+		RoundRect(hDC, 0, 0, bmiHeader.biWidth, bmiHeader.biHeight, bmiHeader.biHeight / 3, bmiHeader.biHeight / 3);
 
-		SelectObject(hDC,hOldBrush);
-		SelectObject(hDC,hOldPen);
+		SelectObject(hDC, hOldBrush);
+		SelectObject(hDC, hOldPen);
 
-		SelectObject(hDC,hOldBmp);
+		SelectObject(hDC, hOldBmp);
 		DeleteDC(hDC);
 
 		D3DLOCKED_RECT LockedRect;
 
 		if ( SUCCEEDED(m_sinfo->D3DDev->CreateTexture(
-				bmiHeader.biWidth,bmiHeader.biHeight,1,D3DUSAGE_DYNAMIC,
-				D3DFMT_A8R8G8B8,D3DPOOL_DEFAULT,&m_Tex,NULL)) ){
-			if( SUCCEEDED(m_Tex->LockRect(0,&LockedRect,NULL,D3DLOCK_DISCARD)) ){
+				bmiHeader.biWidth, bmiHeader.biHeight, 1, D3DUSAGE_DYNAMIC,
+				D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &m_Tex, NULL)) ){
+			if( SUCCEEDED(m_Tex->LockRect(0, &LockedRect, NULL, D3DLOCK_DISCARD)) ){
 				DWORD blockW = bmiHeader.biWidth;
 
 				for ( int y = bmiHeader.biHeight - 1 ; y >= 0 ; y-- ){
@@ -1930,7 +1938,7 @@ public:
 		SAFE_RELEASE(m_Tex);
 	}
 
-	int Draw(int x,int y,int width,int height,COLORREF color)
+	int Draw(int x, int y, int width, int height, COLORREF color)
 	{
 		IDirect3DDevice9 *D3DDev = m_sinfo->D3DDev;
 
@@ -1941,61 +1949,61 @@ public:
 		}
 
 		D3DDev->SetFVF(FVF_DEFFVF);
-		D3DDev->SetTexture(0,m_Tex);
-		D3DDev->SetTextureStageState(0,D3DTSS_TEXTURETRANSFORMFLAGS,D3DTTFF_DISABLE);
-		D3DDev->SetStreamSource(0,m_sinfo->PanelVertex,0,sizeof(VEX_DEFFVF));
+		D3DDev->SetTexture(0, m_Tex);
+		D3DDev->SetTextureStageState(0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE);
+		D3DDev->SetStreamSource(0, m_sinfo->PanelVertex, 0, sizeof(VEX_DEFFVF));
 
-//		D3DDev->SetTextureStageState(0,D3DTSS_COLOROP  ,D3DTOP_SELECTARG1);
-		D3DDev->SetTextureStageState(0,D3DTSS_COLOROP  ,D3DTOP_MODULATE);
-		D3DDev->SetTextureStageState(0,D3DTSS_COLORARG1,D3DTA_TEXTURE);
-		D3DDev->SetTextureStageState(0,D3DTSS_COLORARG2,D3DTA_TFACTOR);
+//		D3DDev->SetTextureStageState(0, D3DTSS_COLOROP  , D3DTOP_SELECTARG1);
+		D3DDev->SetTextureStageState(0, D3DTSS_COLOROP  , D3DTOP_MODULATE);
+		D3DDev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+		D3DDev->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_TFACTOR);
 
-		D3DDev->SetRenderState(D3DRS_TEXTUREFACTOR,D3DCOLORfromCOLORREF(color));
+		D3DDev->SetRenderState(D3DRS_TEXTUREFACTOR, D3DCOLORfromCOLORREF(color));
 
-		D3DDev->SetTextureStageState(0,D3DTSS_ALPHAOP  ,D3DTOP_SELECTARG1);
-		D3DDev->SetTextureStageState(0,D3DTSS_ALPHAARG1,D3DTA_TEXTURE);
+		D3DDev->SetTextureStageState(0, D3DTSS_ALPHAOP  , D3DTOP_SELECTARG1);
+		D3DDev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
 
 		SetMatrix2D_ST(m_ShowPosMat,
 				(float)x * D3D_ProjScaleX,		(float)y * D3D_ProjScaleY,
 				(float)width * D3D_ProjScaleX,	(float)height * D3D_ProjScaleY
 		);
-		D3DDev->SetTransform(D3DTS_WORLD,&m_ShowPosMat);
+		D3DDev->SetTransform(D3DTS_WORLD, &m_ShowPosMat);
 
-		D3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP,0,2);
+		D3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2);
 		return TRUE;
 	}
 
-	int DrawBack(int x,int y,int width,int height,COLORREF color)
+	int DrawBack(int x, int y, int width, int height, COLORREF color)
 	{
 		IDirect3DDevice9 *D3DDev = m_sinfo->D3DDev;
 
 		D3DDev->SetFVF(FVF_DEFFVF);
 
-		D3DDev->SetStreamSource(0,m_sinfo->PanelVertex,0,sizeof(VEX_DEFFVF));
+		D3DDev->SetStreamSource(0, m_sinfo->PanelVertex, 0, sizeof(VEX_DEFFVF));
 
-		D3DDev->SetTextureStageState(0,D3DTSS_COLOROP  ,D3DTOP_SELECTARG1);
-		D3DDev->SetTextureStageState(0,D3DTSS_COLORARG1,D3DTA_TFACTOR);
-		D3DDev->SetRenderState(D3DRS_TEXTUREFACTOR,D3DCOLORfromCOLORREF(color) | CURSOR_ALPHA);
+		D3DDev->SetTextureStageState(0, D3DTSS_COLOROP  , D3DTOP_SELECTARG1);
+		D3DDev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TFACTOR);
+		D3DDev->SetRenderState(D3DRS_TEXTUREFACTOR, D3DCOLORfromCOLORREF(color) | CURSOR_ALPHA);
 
-		D3DDev->SetTextureStageState(0,D3DTSS_ALPHAOP  ,D3DTOP_SELECTARG1);
-		D3DDev->SetTextureStageState(0,D3DTSS_ALPHAARG1,D3DTA_TFACTOR);
+		D3DDev->SetTextureStageState(0, D3DTSS_ALPHAOP  , D3DTOP_SELECTARG1);
+		D3DDev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TFACTOR);
 
 		SetMatrix2D_ST(m_ShowBackPosMat,
 				(float)x * D3D_ProjScaleX,		(float)y * D3D_ProjScaleY,
 				(float)width * D3D_ProjScaleX,	(float)height * D3D_ProjScaleY
 		);
-		D3DDev->SetTransform(D3DTS_WORLD,&m_ShowBackPosMat);
+		D3DDev->SetTransform(D3DTS_WORLD, &m_ShowBackPosMat);
 
-		D3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP,0,2);
+		D3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2);
 		return TRUE;
 	}
 };
 
 #ifdef UNICODE
-	#define GetCodeAndNext(text,max) *text++
+	#define GetCodeAndNext(text, max) *text++
 #else
-	#define GetCodeAndNext(text,max) GetCodeAndNextMain(&text,max)
-	WORD USEFASTCALL GetCodeAndNextMain(const char **text,const char *max)
+	#define GetCodeAndNext(text, max) GetCodeAndNextMain(&text, max)
+	WORD USEFASTCALL GetCodeAndNextMain(const char **text, const char *max)
 	{
 		WORD code;
 
@@ -2019,8 +2027,8 @@ private:
 	HFONT m_hFont;
 	FontInfoStruct m_fontinfo[0x10000]; // 各文字の情報 indexは文字コード
 	struct {
-		DWORD writeX,writeY; // 書き込み位置
-		DWORD tmAveCharWidth,tmHeight;
+		DWORD writeX, writeY; // 書き込み位置
+		DWORD tmAveCharWidth, tmHeight;
 		DWORD FixY; // ビットマップを書き込むときの補正値
 	} m_make;
 	DWORD m_omsize; // 省略符号表示幅
@@ -2050,19 +2058,19 @@ public:
 
 	void Free(void)
 	{
-		memset(m_fontinfo,0,sizeof(m_fontinfo));
+		memset(m_fontinfo, 0, sizeof(m_fontinfo));
 		SAFE_RELEASE(m_Tex);
 	}
 
-	void SetFontGlyph(WORD code,HDC hDC,D3DLOCKED_RECT LockedRect)
+	void SetFontGlyph(WORD code, HDC hDC, D3DLOCKED_RECT LockedRect)
 	{
 		GLYPHMETRICS gm;
 		BYTE fontbmp[FONTSIZEH * FONTSIZEH * 4];
 		UINT mode = GGO_BITMAP;
 //		UINT mode = GGO_GRAY8_BITMAP;
 
-		if ( (GetGlyphOutline(hDC,code,mode,&gm,sizeof(fontbmp),
-				&fontbmp,&GetFontBmpMat) == 0) || (gm.gmBlackBoxX == 0) ){
+		if ( (GetGlyphOutline(hDC, code, mode, &gm, sizeof(fontbmp),
+				&fontbmp, &GetFontBmpMat) == 0) || (gm.gmBlackBoxX == 0) ){
 			gm.gmBlackBoxX = 0;
 			gm.gmCellIncX = (WORD)m_make.tmAveCharWidth;
 		}else{
@@ -2107,11 +2115,11 @@ public:
 		m_fontinfo[code].Xoffset = (WORD)gm.gmptGlyphOrigin.x;
 		m_fontinfo[code].showW = (WORD)gm.gmBlackBoxX;
 		m_fontinfo[code].cellW = (WORD)gm.gmCellIncX;
-//		XMessage(NULL,NULL,XM_DbgLOG,T("Code:%x (%d,%d) %d %d"),code,m_make.writeX,m_make.writeY,gm.gmBlackBoxX,gm.gmCellIncX);
+//		XMessage(NULL, NULL, XM_DbgLOG, T("Code:%x (%d,%d) %d %d"), code, m_make.writeX, m_make.writeY, gm.gmBlackBoxX, gm.gmCellIncX);
 		m_make.writeX += gm.gmBlackBoxX + 1; // 文字が隣接するとアンチエイリアスによってゴミが入るので隙間を空ける
 	}
 
-	void MakeGlyph(const TCHAR *text,const TCHAR *max)
+	void MakeGlyph(const TCHAR *text, const TCHAR *max)
 	{
 		D3DLOCKED_RECT LockedRect;
 		IDirect3DDevice9 *D3DDev = m_sinfo->D3DDev;
@@ -2122,20 +2130,20 @@ public:
 		if ( m_Tex == NULL ){ // テクスチャ作成・初期化
 			TEXTMETRIC tm;
 //A4R4G4B4
-			if ( FAILED(D3DDev->CreateTexture(TEXSIZE,TEXSIZE,1,
-					D3DUSAGE_DYNAMIC,D3DFMT_A8R8G8B8,D3DPOOL_DEFAULT,
-					&m_Tex,NULL)) ){
+			if ( FAILED(D3DDev->CreateTexture(TEXSIZE, TEXSIZE, 1,
+					D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT,
+					&m_Tex, NULL)) ){
 				m_Tex = NULL;
 				return;
 			}
-			if( FAILED(m_Tex->LockRect(0,&LockedRect,NULL,D3DLOCK_DISCARD)) ){
+			if( FAILED(m_Tex->LockRect(0, &LockedRect, NULL, D3DLOCK_DISCARD)) ){
 				return;
 			}
-			memset((BYTE *)LockedRect.pBits,0,TEXSIZE * TEXSIZE * sizeof(DWORD));
+			memset((BYTE *)LockedRect.pBits, 0, TEXSIZE * TEXSIZE * sizeof(DWORD));
 			hDC = GetDC(m_sinfo->hWnd);
-			hOldFont = SelectObject(hDC,m_hFont);
+			hOldFont = SelectObject(hDC, m_hFont);
 
-			GetAndFixTextMetrics(hDC,&tm);
+			GetAndFixTextMetrics(hDC, &tm);
 
 			m_TextureTransMat._22 = (float)tm.tmHeight * (1.0f / (float)TEXSIZE); // height
 
@@ -2151,26 +2159,26 @@ public:
 			}
 
 			for ( WORD code = 33 ; code < 127 ; code++ ){ // ASCII
-				SetFontGlyph(code,hDC,LockedRect);
+				SetFontGlyph(code, hDC, LockedRect);
 			}
 
-			m_omsize = min((m_fontinfo['.'].showW + 1) * 3,tm.tmAveCharWidth);
+			m_omsize = min((m_fontinfo['.'].showW + 1) * 3, tm.tmAveCharWidth);
 		}else{
 			// D3DLOCK_DISCARD だと失敗することがある…
-			if( FAILED(m_Tex->LockRect(0,&LockedRect,NULL,0)) ){
+			if( FAILED(m_Tex->LockRect(0, &LockedRect, NULL, 0)) ){
 				return;
 			}
 			hDC = GetDC(m_sinfo->hWnd);
-			hOldFont = SelectObject(hDC,m_hFont);
+			hOldFont = SelectObject(hDC, m_hFont);
 		}
 
 		while ( text < max ){ // 未作成の文字を一気に作成
-			code = GetCodeAndNext(text,max);
+			code = GetCodeAndNext(text, max);
 			if ( m_fontinfo[code].dataX != 0 ) continue;
-			SetFontGlyph(code,hDC,LockedRect);
+			SetFontGlyph(code, hDC, LockedRect);
 		}
-		SelectObject(hDC,hOldFont);
-		ReleaseDC(m_sinfo->hWnd,hDC);
+		SelectObject(hDC, hOldFont);
+		ReleaseDC(m_sinfo->hWnd, hDC);
 		m_Tex->UnlockRect(0);
 	}
 
@@ -2189,29 +2197,29 @@ public:
 
 	void DrawTest(void)
 	{
-		if ( m_Tex != NULL ) ::DrawTex(m_sinfo,m_Tex,0,0,TEXSIZE,TEXSIZE);
+		if ( m_Tex != NULL ) ::DrawTex(m_sinfo, m_Tex, 0, 0, TEXSIZE, TEXSIZE);
 	}
 
-	int Draw(const TCHAR *text,int x,int y,int maxX,int len)
+	int Draw(const TCHAR *text, int x, int y, int maxX, int len)
 	{
 		IDirect3DDevice9 *D3DDev = m_sinfo->D3DDev;
 
 		if ( m_Tex == NULL ){ // テクスチャ作成
 			if ( m_hFont == NULL ) return x;
-			MakeGlyph(text,text + len);
+			MakeGlyph(text, text + len);
 			if ( m_Tex == NULL ) return x;
 		}
 		D3DDev->SetFVF(FVF_DEFFVF);
-		D3DDev->SetTexture(0,m_Tex);
-		D3DDev->SetTextureStageState(0,D3DTSS_TEXTURETRANSFORMFLAGS,D3DTTFF_COUNT2);
-		D3DDev->SetStreamSource(0,m_sinfo->PanelVertex,0,sizeof(VEX_DEFFVF));
+		D3DDev->SetTexture(0, m_Tex);
+		D3DDev->SetTextureStageState(0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_COUNT2);
+		D3DDev->SetStreamSource(0, m_sinfo->PanelVertex, 0, sizeof(VEX_DEFFVF));
 
-		D3DDev->SetTextureStageState(0,D3DTSS_COLOROP  ,D3DTOP_SELECTARG1);
-		D3DDev->SetTextureStageState(0,D3DTSS_COLORARG1,D3DTA_TFACTOR);
-		D3DDev->SetRenderState(D3DRS_TEXTUREFACTOR,m_textcolor);
+		D3DDev->SetTextureStageState(0, D3DTSS_COLOROP  , D3DTOP_SELECTARG1);
+		D3DDev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TFACTOR);
+		D3DDev->SetRenderState(D3DRS_TEXTUREFACTOR, m_textcolor);
 
-		D3DDev->SetTextureStageState(0,D3DTSS_ALPHAOP  ,D3DTOP_SELECTARG1);
-		D3DDev->SetTextureStageState(0,D3DTSS_ALPHAARG1,D3DTA_TEXTURE);
+		D3DDev->SetTextureStageState(0, D3DTSS_ALPHAOP  , D3DTOP_SELECTARG1);
+		D3DDev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
 
 		m_ShowPosMat._22 = (float)m_sinfo->fontH * D3D_ProjScaleY * 0.88f; // height
 		m_ShowPosMat._42 = (float)y * D3D_ProjScaleY; // Y
@@ -2222,12 +2230,12 @@ public:
 			WORD code;
 			const TCHAR *oldtext;
 
-//			XMessage(NULL,NULL,XM_DbgLOG,T(">%d %d %s"),x,y,text);
+//			XMessage(NULL, NULL, XM_DbgLOG, T(">%d %d %s"), x, y, text);
 			oldtext = text;
-			code = GetCodeAndNext(text,max);
+			code = GetCodeAndNext(text, max);
 //			if ( code == '\0' ) return x;
 			if ( m_fontinfo[code].dataX == 0 ){
-				MakeGlyph(oldtext,max);
+				MakeGlyph(oldtext, max);
 			}
 			// 表示範囲をはみ出したときの、dot 表示
 			if ( ((x + m_fontinfo[code].cellW) > FmaxX) &&
@@ -2239,12 +2247,12 @@ public:
 				m_TextureTransMat._11 = (float)showW * (1.0f / (float)TEXSIZE); // width
 				m_TextureTransMat._31 = (float)m_fontinfo['.'].dataX * (1.0f / (float)TEXSIZE); // delta X
 				m_TextureTransMat._32 = (float)m_fontinfo['.'].dataY * (1.0f / (float)TEXSIZE); // delta Y
-				D3DDev->SetTransform(D3DTS_TEXTURE0,&m_TextureTransMat);
+				D3DDev->SetTransform(D3DTS_TEXTURE0, &m_TextureTransMat);
 
 				while ( (x + showW) <= maxX ){
 					m_ShowPosMat._41 = (float)x * D3D_ProjScaleX; // X
-					D3DDev->SetTransform(D3DTS_WORLD,&m_ShowPosMat);
-					D3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP,0,2);
+					D3DDev->SetTransform(D3DTS_WORLD, &m_ShowPosMat);
+					D3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2);
 					x += showW + 1;
 				}
 				break;
@@ -2255,31 +2263,31 @@ public:
 				m_TextureTransMat._11 = (float)m_fontinfo[code].showW * (1.0f / (float)TEXSIZE); // width
 				m_TextureTransMat._31 = (float)m_fontinfo[code].dataX * (1.0f / (float)TEXSIZE); // delta X
 				m_TextureTransMat._32 = (float)m_fontinfo[code].dataY * (1.0f / (float)TEXSIZE); // delta Y
-				D3DDev->SetTransform(D3DTS_TEXTURE0,&m_TextureTransMat);
+				D3DDev->SetTransform(D3DTS_TEXTURE0, &m_TextureTransMat);
 		#if 1
 				m_ShowPosMat._41 = (float)(x + m_fontinfo[code].Xoffset) * D3D_ProjScaleX; // X
 				m_ShowPosMat._11 = (float)m_fontinfo[code].showW * D3D_ProjScaleX; // width
-				D3DDev->SetTransform(D3DTS_WORLD,&m_ShowPosMat);
-				D3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP,0,2);
+				D3DDev->SetTransform(D3DTS_WORLD, &m_ShowPosMat);
+				D3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2);
 		#else // 影付き表示
 				m_ShowPosMat._41 = (float)(x + m_fontinfo[code].Xoffset) * D3D_ProjScaleX + EXXF; // X
 				m_ShowPosMat._11 = (float)m_fontinfo[code].showW * D3D_ProjScaleX; // width
 
 
-				D3DDev->SetRenderState(D3DRS_TEXTUREFACTOR,0xffffff);
+				D3DDev->SetRenderState(D3DRS_TEXTUREFACTOR, 0xffffff);
 				m_ShowPosMat._42 -= EXXF; // Y
 				m_ShowPosMat._43 += ZPOS_TEXT; // Z
-				D3DDev->SetTransform(D3DTS_WORLD,&m_ShowPosMat);
-				D3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP,0,2);
+				D3DDev->SetTransform(D3DTS_WORLD, &m_ShowPosMat);
+				D3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2);
 
 
-				D3DDev->SetRenderState(D3DRS_TEXTUREFACTOR,m_textcolor);
+				D3DDev->SetRenderState(D3DRS_TEXTUREFACTOR, m_textcolor);
 				m_ShowPosMat._41 -= EXXF; // X
 				m_ShowPosMat._42 += EXXF; // Y
 //				m_ShowPosMat._43 -= ZPOS_TEXT; // Z
 
-				D3DDev->SetTransform(D3DTS_WORLD,&m_ShowPosMat);
-				D3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP,0,2);
+				D3DDev->SetTransform(D3DTS_WORLD, &m_ShowPosMat);
+				D3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2);
 		#endif
 
 			}
@@ -2288,13 +2296,13 @@ public:
 		return x;
 	}
 
-	int Calc(const TCHAR *text,int maxX,int &len)
+	int Calc(const TCHAR *text, int maxX, int &len)
 	{
 		IDirect3DDevice9 *D3DDev = m_sinfo->D3DDev;
 
 		if ( m_Tex == NULL ){ // テクスチャ作成
 			if ( m_hFont == NULL ) return 0;
-			MakeGlyph(text,text + len);
+			MakeGlyph(text, text + len);
 			if ( m_Tex == NULL ) return 0;
 		}
 		const TCHAR *textptr = text;
@@ -2306,10 +2314,10 @@ public:
 			const TCHAR *oldtext;
 
 			oldtext = textptr;
-			code = GetCodeAndNext(textptr,textmax);
+			code = GetCodeAndNext(textptr, textmax);
 //			if ( code == '\0' ) return x;
 			if ( m_fontinfo[code].dataX == 0 ){
-				MakeGlyph(oldtext,textmax);
+				MakeGlyph(oldtext, textmax);
 			}
 			if ( ((x + m_fontinfo[code].cellW) > FmaxX) &&
 				  !((textptr == textmax) && ((x + m_fontinfo[code].cellW) <= maxX)) ){
@@ -2368,50 +2376,50 @@ public:
 		SAFE_RELEASE(m_mesh);
 	}
 
-	BOOL Init(ScreenInfo *sinfo,const TCHAR *filename)
+	BOOL Init(ScreenInfo *sinfo, const TCHAR *filename)
 	{
-		WCHAR path[MAX_PATH],*wp;
+		WCHAR path[MAX_PATH], *wp;
 		LPD3DXBUFFER pAdjacencyBuffer;
 		LPD3DXBUFFER objmaterials;
 		IDirect3DDevice9 *D3DDev = sinfo->D3DDev;
 
 		m_sinfo = sinfo;
-		if ( FAILED(D3DXLoadMeshFromX(filename,D3DXMESH_MANAGED,D3DDev,
-				&pAdjacencyBuffer,&objmaterials,
-				NULL,&m_nummaterials,&m_mesh)) ){
+		if ( FAILED(D3DXLoadMeshFromX(filename, D3DXMESH_MANAGED, D3DDev,
+				&pAdjacencyBuffer, &objmaterials,
+				NULL, &m_nummaterials, &m_mesh)) ){
 			return FALSE;
 		}
 		m_mesh->OptimizeInplace(D3DXMESHOPT_COMPACT | D3DXMESHOPT_ATTRSORT |
 				D3DXMESHOPT_VERTEXCACHE,
-				(DWORD*)pAdjacencyBuffer->GetBufferPointer(),NULL,NULL,NULL);
+				(DWORD*)pAdjacencyBuffer->GetBufferPointer(), NULL, NULL, NULL);
 
 		if( !(m_mesh->GetFVF() & D3DFVF_NORMAL) ){ // 法線の補完
 			ID3DXMesh* TempMesh;
 
 			m_mesh->CloneMeshFVF(m_mesh->GetOptions(),
-					m_mesh->GetFVF() | D3DFVF_NORMAL,D3DDev,&TempMesh );
-			D3DXComputeNormals(TempMesh,NULL);
+					m_mesh->GetFVF() | D3DFVF_NORMAL, D3DDev, &TempMesh );
+			D3DXComputeNormals(TempMesh, NULL);
 			SAFE_RELEASE(m_mesh);
 			m_mesh = TempMesh;
 		}
-		strcpyToW(path,filename,MAX_PATH);
-		wp = strchrW(path,'\\');
+		strcpyToW(path, filename, MAX_PATH);
+		wp = strchrW(path, '\\');
 		if ( wp != NULL ){
 			*(wp + 1) = '\0';
 		}else{
 			path[0] = '\0';
 		}
 
-		CreateMaterials(path,(D3DXMATERIAL*)objmaterials->GetBufferPointer());
+		CreateMaterials(path, (D3DXMATERIAL*)objmaterials->GetBufferPointer());
 		objmaterials->Release();
 
 		// 大きさ調整を行う
 		const float fRadius = 0.5f;
-		D3DXMatrixScaling(&m_MatCharFixPos,fRadius,fRadius,fRadius);
+		D3DXMatrixScaling(&m_MatCharFixPos, fRadius, fRadius, fRadius);
 		return TRUE;
 	}
 
-	HRESULT CreateMaterials(WCHAR *path,D3DXMATERIAL *d3dxMtrls)
+	HRESULT CreateMaterials(WCHAR *path, D3DXMATERIAL *d3dxMtrls)
 	{
 		IDirect3DDevice9 *D3DDev = m_sinfo->D3DDev;
 
@@ -2432,19 +2440,19 @@ public:
 
 			if( d3dxMtrls[i].pTextureFilename == NULL ) continue;
 
-			AnsiToUnicode(d3dxMtrls[i].pTextureFilename,TexName,MAX_PATH);
-			strcpyW(TexPath,path);
-			strcatW(TexPath,TexName);
-			if ( FAILED( D3DXGetImageInfoFromFileW(TexPath,&ImgInfo) ) ){
-				PutLog(T("Load Error %s"),TexPath);
+			AnsiToUnicode(d3dxMtrls[i].pTextureFilename, TexName, MAX_PATH);
+			strcpyW(TexPath, path);
+			strcatW(TexPath, TexName);
+			if ( FAILED( D3DXGetImageInfoFromFileW(TexPath, &ImgInfo) ) ){
+				PutLog(T("Load Error %s"), TexPath);
 				return E_OUTOFMEMORY;
 			}
 			switch( ImgInfo.ResourceType ){
 				case D3DRTYPE_TEXTURE: {
 					IDirect3DTexture9 *pTex;
 
-					if( SUCCEEDED( D3DXCreateTextureFromFileW(D3DDev,TexPath,&pTex) ) ){
-						pTex->QueryInterface(IID_IDirect3DBaseTexture9,(LPVOID*)&m_Textures[i] );
+					if( SUCCEEDED( D3DXCreateTextureFromFileW(D3DDev, TexPath, &pTex) ) ){
+						pTex->QueryInterface(IID_IDirect3DBaseTexture9, (LPVOID*)&m_Textures[i] );
 						pTex->Release();
 					}
 					break;
@@ -2452,8 +2460,8 @@ public:
 				case D3DRTYPE_CUBETEXTURE: {
 					IDirect3DCubeTexture9 *pTex;
 
-					if( SUCCEEDED( D3DXCreateCubeTextureFromFileW(D3DDev,TexPath,&pTex ) ) ){
-						pTex->QueryInterface(IID_IDirect3DBaseTexture9,(LPVOID*)&m_Textures[i] );
+					if( SUCCEEDED( D3DXCreateCubeTextureFromFileW(D3DDev, TexPath, &pTex ) ) ){
+						pTex->QueryInterface(IID_IDirect3DBaseTexture9, (LPVOID*)&m_Textures[i] );
 						pTex->Release();
 					}
 					break;
@@ -2461,8 +2469,8 @@ public:
 				case D3DRTYPE_VOLUMETEXTURE: {
 					IDirect3DVolumeTexture9 *pTex;
 
-					if( SUCCEEDED( D3DXCreateVolumeTextureFromFileW( D3DDev,TexPath, &pTex ) ) ){
-						pTex->QueryInterface(IID_IDirect3DBaseTexture9,(LPVOID*)&m_Textures[i] );
+					if( SUCCEEDED( D3DXCreateVolumeTextureFromFileW( D3DDev, TexPath, &pTex ) ) ){
+						pTex->QueryInterface(IID_IDirect3DBaseTexture9, (LPVOID*)&m_Textures[i] );
 						pTex->Release();
 					}
 					break;
@@ -2472,41 +2480,41 @@ public:
 		return S_OK;
 	}
 
-	void Draw(float x,float y,float z,float rx,float ry,float rz)
+	void Draw(float x, float y, float z, float rx, float ry, float rz)
 	{
 		if ( m_mesh == NULL ) return;
 
-		D3DXMATRIXA16 matWorld,matRot,matSub,mxProj;
+		D3DXMATRIXA16 matWorld, matRot, matSub, mxProj;
 			// 回転
-		D3DXMatrixRotationYawPitchRoll(&matSub,ry + m_r,rx - 0.5f,rz);
+		D3DXMatrixRotationYawPitchRoll(&matSub, ry + m_r, rx - 0.5f, rz);
 		m_r += 0.03f;
-		D3DXMatrixMultiply(&matWorld,&m_MatCharFixPos,&matSub);
+		D3DXMatrixMultiply(&matWorld, &m_MatCharFixPos, &matSub);
 			// 位置
-		D3DXMatrixTranslation(&matSub,x,y,z);
-		D3DXMatrixMultiply(&matWorld,&matWorld,&matSub);
+		D3DXMatrixTranslation(&matSub, x, y, z);
+		D3DXMatrixMultiply(&matWorld, &matWorld, &matSub);
 
 		IDirect3DDevice9 *D3DDev = m_sinfo->D3DDev;
 
-		D3DDev->SetRenderState(D3DRS_LIGHTING,TRUE);
+		D3DDev->SetRenderState(D3DRS_LIGHTING, TRUE);
 
-		D3DDev->SetTextureStageState(0,D3DTSS_COLOROP  ,D3DTOP_SELECTARG1);
-		D3DDev->SetTextureStageState(0,D3DTSS_COLORARG1,D3DTA_DIFFUSE);
+		D3DDev->SetTextureStageState(0, D3DTSS_COLOROP  , D3DTOP_SELECTARG1);
+		D3DDev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
 
-		D3DDev->SetTextureStageState(0,D3DTSS_ALPHAOP  ,D3DTOP_MODULATE);
-		D3DDev->SetTextureStageState(0,D3DTSS_ALPHAARG1,D3DTA_DIFFUSE);
-		D3DDev->SetTextureStageState(0,D3DTSS_ALPHAARG2,D3DTA_TFACTOR);
-		D3DDev->SetRenderState(D3DRS_TEXTUREFACTOR,0x50606060);
+		D3DDev->SetTextureStageState(0, D3DTSS_ALPHAOP  , D3DTOP_MODULATE);
+		D3DDev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE);
+		D3DDev->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_TFACTOR);
+		D3DDev->SetRenderState(D3DRS_TEXTUREFACTOR, 0x50606060);
 
-		D3DDev->SetTransform(D3DTS_WORLD,&matWorld);
+		D3DDev->SetTransform(D3DTS_WORLD, &matWorld);
 		for ( DWORD i = 0 ; i < m_nummaterials ; i++ ){
 			D3DDev->SetMaterial(&m_Materials[i]);
 			if ( m_Textures && m_Textures[i] ){
-				D3DDev->SetTexture(0,m_Textures[i]);
+				D3DDev->SetTexture(0, m_Textures[i]);
 			}
 			m_mesh->DrawSubset(i);
 		}
 
-		D3DDev->SetRenderState(D3DRS_LIGHTING,FALSE);
+		D3DDev->SetRenderState(D3DRS_LIGHTING, FALSE);
 	}
 };
 
@@ -2552,7 +2560,7 @@ public:
 		return TRUE;
 	}
 
-	void Draw(BITMAPINFOHEADER *bmiHeader,LPVOID lpBits,const RECT *box)
+	void Draw(BITMAPINFOHEADER *bmiHeader, LPVOID lpBits, const RECT *box)
 	{
 		D3DLOCKED_RECT LockedRect;
 
@@ -2563,25 +2571,25 @@ public:
 			m_bmiHeader = *bmiHeader;
 
 			m_sinfo->D3DDev->CreateTexture(
-					m_bmiHeader.biWidth,m_bmiHeader.biHeight,1,
-					D3DUSAGE_DYNAMIC,D3DFMT_A8R8G8B8,D3DPOOL_DEFAULT,
-					&m_Tex,NULL);
+					m_bmiHeader.biWidth, m_bmiHeader.biHeight, 1,
+					D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT,
+					&m_Tex, NULL);
 		}
 		if ( m_Tex == NULL ) return;
 
 		if ( lpBits != NULL ){
-			if( SUCCEEDED(m_Tex->LockRect(0,&LockedRect,NULL,D3DLOCK_DISCARD)) ){
+			if( SUCCEEDED(m_Tex->LockRect(0, &LockedRect, NULL, D3DLOCK_DISCARD)) ){
 				DWORD blockW = m_bmiHeader.biWidth;
 
 				for ( int y = m_bmiHeader.biHeight - 1 ; y >= 0 ; y-- ){
 					const DWORD *src = (DWORD *)(BYTE *)lpBits + (m_bmiHeader.biHeight - 1 - y) * blockW;
 					DWORD *dest = (DWORD *)(BYTE *)((BYTE *)LockedRect.pBits + y * LockedRect.Pitch);
-					memcpy(dest,src,m_bmiHeader.biWidth * sizeof(DWORD));
+					memcpy(dest, src, m_bmiHeader.biWidth * sizeof(DWORD));
 				}
 				m_Tex->UnlockRect(0);
 			}
 		}
-		::DrawTex(m_sinfo,m_Tex,box->left,box->top,box->right,box->bottom);
+		::DrawTex(m_sinfo, m_Tex, box->left, box->top, box->right, box->bottom);
 	}
 };
 
@@ -2609,44 +2617,44 @@ extern "C" typedef struct tagDXDRAWSTRUCT {
 	DWORD MotionTick;
 } DXDRAWSTRUCT;
 
-void DrawTex(ScreenInfo *sinfo,IDirect3DTexture9 *Tex,int left,int top,int width,int height)
+void DrawTex(ScreenInfo *sinfo, IDirect3DTexture9 *Tex, int left, int top, int width, int height)
 {
 	IDirect3DDevice9 *D3DDev = sinfo->D3DDev;
 
 	D3DDev->SetFVF(FVF_DEFFVF);
-	D3DDev->SetTexture(0,Tex);
-	D3DDev->SetTextureStageState(0,D3DTSS_TEXTURETRANSFORMFLAGS,D3DTTFF_DISABLE);
-	D3DDev->SetStreamSource(0,sinfo->PanelVertex,0,sizeof(VEX_DEFFVF) );
+	D3DDev->SetTexture(0, Tex);
+	D3DDev->SetTextureStageState(0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE);
+	D3DDev->SetStreamSource(0, sinfo->PanelVertex, 0, sizeof(VEX_DEFFVF) );
 
-	D3DDev->SetTextureStageState(0,D3DTSS_COLOROP  ,D3DTOP_SELECTARG1);
-	D3DDev->SetTextureStageState(0,D3DTSS_COLORARG1,D3DTA_TEXTURE);
+	D3DDev->SetTextureStageState(0, D3DTSS_COLOROP  , D3DTOP_SELECTARG1);
+	D3DDev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
 
-	D3DDev->SetTextureStageState(0,D3DTSS_ALPHAOP  ,D3DTOP_SELECTARG1);
-	D3DDev->SetTextureStageState(0,D3DTSS_ALPHAARG1,D3DTA_TFACTOR);
-	D3DDev->SetRenderState(D3DRS_TEXTUREFACTOR,0xffc0c0c0);
+	D3DDev->SetTextureStageState(0, D3DTSS_ALPHAOP  , D3DTOP_SELECTARG1);
+	D3DDev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TFACTOR);
+	D3DDev->SetRenderState(D3DRS_TEXTUREFACTOR, 0xffc0c0c0);
 
 	D3DMATRIX mat = IdentityMatrix;
 	SetMatrix2D_ST(mat,
 			(float)left * D3D_ProjScaleX,	(float)top * D3D_ProjScaleY,
 			(float)width * D3D_ProjScaleX,	(float)height * D3D_ProjScaleY
 	);
-	D3DDev->SetTransform(D3DTS_WORLD,&mat);
+	D3DDev->SetTransform(D3DTS_WORLD, &mat);
 
-	D3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP,0,2);
+	D3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2);
 }
 
-BOOL DrawDIB(ScreenInfo *sinfo,BITMAPINFOHEADER *bmiHeader,LPVOID lpBits,const RECT *box)
+BOOL DrawDIB(ScreenInfo *sinfo, BITMAPINFOHEADER *bmiHeader, LPVOID lpBits, const RECT *box)
 {
 	IDirect3DTexture9 *Tex;
 	D3DLOCKED_RECT LockedRect;
 
 	if ( FAILED(sinfo->D3DDev->CreateTexture(
-			bmiHeader->biWidth,bmiHeader->biHeight,1,
-			D3DUSAGE_DYNAMIC,D3DFMT_A8R8G8B8,D3DPOOL_DEFAULT,&Tex,NULL)) ){
+			bmiHeader->biWidth, bmiHeader->biHeight, 1,
+			D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &Tex, NULL)) ){
 		return FALSE;
 	}
 
-	if ( SUCCEEDED(Tex->LockRect(0,&LockedRect,NULL,D3DLOCK_DISCARD)) ){
+	if ( SUCCEEDED(Tex->LockRect(0, &LockedRect, NULL, D3DLOCK_DISCARD)) ){
 		switch (bmiHeader->biBitCount){
 			case 1: {
 				DWORD *palette;
@@ -2734,17 +2742,17 @@ BOOL DrawDIB(ScreenInfo *sinfo,BITMAPINFOHEADER *bmiHeader,LPVOID lpBits,const R
 				for ( int y = bmiHeader->biHeight - 1 ; y >= 0 ; y-- ){
 					const DWORD *src = (DWORD *)(BYTE *)lpBits + (bmiHeader->biHeight - 1 - y) * blockW;
 					DWORD *dest = (DWORD *)(BYTE *)((BYTE *)LockedRect.pBits + y * LockedRect.Pitch);
-					memcpy(dest,src,blockW * sizeof(DWORD));
+					memcpy(dest, src, blockW * sizeof(DWORD));
 				}
 				break;
 			}
 
 			default:
-//				Messagef("Bad format %d",bmiHeader->biBitCount);
+//				Messagef("Bad format %d", bmiHeader->biBitCount);
 				break;
 		}
 		Tex->UnlockRect(0);
-		DrawTex(sinfo,Tex,box->left,box->top,box->right,box->bottom);
+		DrawTex(sinfo, Tex, box->left, box->top, box->right, box->bottom);
 	}
 	Tex->Release();
 	return TRUE;
@@ -2772,7 +2780,7 @@ void USEFASTCALL FreeDxObject(DXDRAWSTRUCT *DxDraw)
 	}
 }
 
-BOOL CreateDxDraw(DXDRAWSTRUCT **DxDrawPtr,HWND hWnd)
+BOOL CreateDxDraw(DXDRAWSTRUCT **DxDrawPtr, HWND hWnd)
 {
 	DXDRAWSTRUCT *DxDraw;
 	TCHAR path[MAX_PATH];
@@ -2790,9 +2798,9 @@ BOOL CreateDxDraw(DXDRAWSTRUCT **DxDrawPtr,HWND hWnd)
 	DxDraw->dxCursor.Init(&DxDraw->sinfo);
 	DxDraw->dxCacheDIB.Init(&DxDraw->sinfo);
 
-	GetModuleFileName(NULL,path,MAX_PATH);
-	tstrcpy(tstrrchr(path,'\\'),T("\\ppc.x"));
-	DxDraw->dxMesh.Init(&DxDraw->sinfo,path);
+	GetModuleFileName(NULL, path, MAX_PATH);
+	tstrcpy(tstrrchr(path, '\\'), T("\\ppc.x"));
+	DxDraw->dxMesh.Init(&DxDraw->sinfo, path);
 
 	DxDraw->SubGround = NULL;
 	DxDraw->SubDepthStencilSurf = NULL;
@@ -2813,13 +2821,13 @@ BOOL CloseDxDraw(DXDRAWSTRUCT **DxDrawPtr)
 	return TRUE;
 }
 
-int BeginDrawDxDraw(DXDRAWSTRUCT *DxDraw,PAINTSTRUCT *ps)
+int BeginDrawDxDraw(DXDRAWSTRUCT *DxDraw, PAINTSTRUCT *ps)
 {
 	int result;
 
 	if ( DxDraw == NULL ) return DXSTART_GDI;
 	if ( GetKeyState(VK_SCROLL) & 1 ){
-		BeginPaint(DxDraw->sinfo.hWnd,ps);
+		BeginPaint(DxDraw->sinfo.hWnd, ps);
 		return DXSTART_GDI;
 	}
 
@@ -2832,23 +2840,23 @@ int BeginDrawDxDraw(DXDRAWSTRUCT *DxDraw,PAINTSTRUCT *ps)
 		result = DxDraw->d3d.BeginRender();
 	}
 	if ( result == FALSE ){
-		ValidateRect(DxDraw->sinfo.hWnd,NULL);
+		ValidateRect(DxDraw->sinfo.hWnd, NULL);
 		return DXSTART_NODRAW;
 	}
 
 	if ( IsTrue(DxDraw->CaptureMode) ){
 		if ( DxDraw->SubGround == NULL ){
 			if ( FAILED(DxDraw->sinfo.D3DDev->CreateTexture(
-					DxDraw->sinfo.ClientWidthInt,DxDraw->sinfo.ClientHeightInt,
-					1,D3DUSAGE_RENDERTARGET,D3DFMT_A8R8G8B8,D3DPOOL_DEFAULT,
-					&DxDraw->SubGround,NULL)) ){
+					DxDraw->sinfo.ClientWidthInt, DxDraw->sinfo.ClientHeightInt,
+					1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT,
+					&DxDraw->SubGround, NULL)) ){
 				DxDraw->SubGround = NULL;
 			}else{
 				DxDraw->sinfo.D3DDev->CreateDepthStencilSurface(
 						DxDraw->sinfo.ClientWidthInt,
 						DxDraw->sinfo.ClientHeightInt,
-						D3DFMT_D16,D3DMULTISAMPLE_NONE,0,FALSE,
-						&DxDraw->SubDepthStencilSurf,NULL);
+						D3DFMT_D16, D3DMULTISAMPLE_NONE, 0, FALSE,
+						&DxDraw->SubDepthStencilSurf, NULL);
 			}
 		}
 		if ( DxDraw->SubGround != NULL ){
@@ -2857,11 +2865,11 @@ int BeginDrawDxDraw(DXDRAWSTRUCT *DxDraw,PAINTSTRUCT *ps)
 			DxDraw->sinfo.D3DDev->GetDepthStencilSurface(&DxDraw->BackupDepthStencilSurf);
 
 			IDirect3DSurface9 *pSurf = NULL;
-			DxDraw->SubGround->GetSurfaceLevel(0,&pSurf);
-			DxDraw->sinfo.D3DDev->SetRenderTarget(0,pSurf);
+			DxDraw->SubGround->GetSurfaceLevel(0, &pSurf);
+			DxDraw->sinfo.D3DDev->SetRenderTarget(0, pSurf);
 			DxDraw->sinfo.D3DDev->SetDepthStencilSurface(DxDraw->SubDepthStencilSurf);
 			pSurf->Release();
-			DxDraw->sinfo.D3DDev->Clear(0,NULL,D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER /*| D3DCLEAR_STENCIL*/,0x00FFFFFF,1.0f,0);
+			DxDraw->sinfo.D3DDev->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER /*| D3DCLEAR_STENCIL*/, 0x00FFFFFF, 1.0f, 0);
 
 		}
 	}
@@ -2871,21 +2879,21 @@ int BeginDrawDxDraw(DXDRAWSTRUCT *DxDraw,PAINTSTRUCT *ps)
 	ps->rcPaint.right  = DxDraw->sinfo.ClientWidthInt;
 	ps->rcPaint.bottom = DxDraw->sinfo.ClientHeightInt;
 
-	DxExtDraw(DxDraw,&ps->rcPaint);
+	DxExtDraw(DxDraw, &ps->rcPaint);
 	return DXSTART_DX;
 }
 
 
 BOOL EndDrawDxDraw(DXDRAWSTRUCT *DxDraw)
 {
-	RECT box = {0,0,800,80};
+	RECT box = {0, 0, 800, 80};
 
 	if ( DxDraw == NULL ) return FALSE;
-	ValidateRect(DxDraw->sinfo.hWnd,NULL);
+	ValidateRect(DxDraw->sinfo.hWnd, NULL);
 
 	if ( DxDraw->SubGround != NULL ){
 		if ( IsTrue(DxDraw->CaptureMode) ){
-			DxDraw->sinfo.D3DDev->SetRenderTarget(0,DxDraw->BackupSurf);
+			DxDraw->sinfo.D3DDev->SetRenderTarget(0, DxDraw->BackupSurf);
 			DxDraw->BackupSurf->Release();
 			DxDraw->sinfo.D3DDev->SetDepthStencilSurface(DxDraw->BackupDepthStencilSurf);
 			DxDraw->BackupDepthStencilSurf->Release();
@@ -2893,25 +2901,25 @@ BOOL EndDrawDxDraw(DXDRAWSTRUCT *DxDraw)
 		IDirect3DDevice9 *D3DDev = DxDraw->sinfo.D3DDev;
 
 		D3DDev->SetFVF(FVF_DEFFVF);
-		D3DDev->SetTexture(0,DxDraw->SubGround);
-		D3DDev->SetTextureStageState(0,D3DTSS_TEXTURETRANSFORMFLAGS,D3DTTFF_DISABLE);
-		D3DDev->SetStreamSource(0,DxDraw->sinfo.PanelVertex,0,sizeof(VEX_DEFFVF) );
-		D3DDev->SetTextureStageState(0,D3DTSS_COLOROP  ,D3DTOP_SELECTARG1);
-		D3DDev->SetTextureStageState(0,D3DTSS_COLORARG1,D3DTA_TEXTURE);
+		D3DDev->SetTexture(0, DxDraw->SubGround);
+		D3DDev->SetTextureStageState(0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE);
+		D3DDev->SetStreamSource(0, DxDraw->sinfo.PanelVertex, 0, sizeof(VEX_DEFFVF) );
+		D3DDev->SetTextureStageState(0, D3DTSS_COLOROP  , D3DTOP_SELECTARG1);
+		D3DDev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
 
-		D3DDev->SetTextureStageState(0,D3DTSS_ALPHAOP  ,D3DTOP_SELECTARG1);
-		D3DDev->SetTextureStageState(0,D3DTSS_ALPHAARG1,D3DTA_TEXTURE);
+		D3DDev->SetTextureStageState(0, D3DTSS_ALPHAOP  , D3DTOP_SELECTARG1);
+		D3DDev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
 
 		D3DXMATRIXA16 mat = IdentityMatrix;
 
 		SetMatrix2D_ST(mat,
-				0.0f , 0.0f ,//0 * D3D_ProjScaleX,	(float)0 * D3D_ProjScaleY,
+				0.0f , 0.0f , //0 * D3D_ProjScaleX,	(float)0 * D3D_ProjScaleY,
 				DxDraw->sinfo.ClientWidth * D3D_ProjScaleX,	DxDraw->sinfo.ClientHeight * D3D_ProjScaleY
 		);
 
 		if ( IsTrue(DxDraw->CaptureMode) ){
-			D3DDev->SetTransform(D3DTS_WORLD,&mat);
-			D3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP,0,2);
+			D3DDev->SetTransform(D3DTS_WORLD, &mat);
+			D3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2);
 			DxDraw->CaptureMode = FALSE;
 		}
 
@@ -2920,12 +2928,12 @@ BOOL EndDrawDxDraw(DXDRAWSTRUCT *DxDraw)
 
 		switch ( DxDraw->MotionMode ){
 			case DXMOTION_Launch:
-				SetMatrix2D_ST(matV,-DxDraw->MM_r / 10.0f,DxDraw->MM_r / 10.0f,DxDraw->MM_r + 1.0f,DxDraw->MM_r + 1.0f);
+				SetMatrix2D_ST(matV, -DxDraw->MM_r / 10.0f, DxDraw->MM_r / 10.0f, DxDraw->MM_r + 1.0f, DxDraw->MM_r + 1.0f);
 				break;
 
 			case DXMOTION_Root: {
 				float mag = 1.0f - (DxDraw->MM_r / (D3D_ProjScaleX * DxDraw->sinfo.ClientWidth)) * 0.4f;
-				SetMatrix2D_ST(matV,DxDraw->MM_r,0.0f,mag,mag);
+				SetMatrix2D_ST(matV, DxDraw->MM_r, 0.0f, mag, mag);
 				break;
 			}
 
@@ -2933,35 +2941,35 @@ BOOL EndDrawDxDraw(DXDRAWSTRUCT *DxDraw)
 			case DXMOTION_ChangePath:
 
 			case DXMOTION_ChangeDrive:
-				SetMatrix2D_ST(matV,DxDraw->MM_r,0.0f,1.0f,1.0f);
+				SetMatrix2D_ST(matV, DxDraw->MM_r, 0.0f, 1.0f, 1.0f);
 				break;
 
 			case DXMOTION_UpDir:
 			case DXMOTION_DownDir:
-				SetMatrix2D_ST(matV,0.0f,DxDraw->MM_r,1.0f,1.0f);
+				SetMatrix2D_ST(matV, 0.0f, DxDraw->MM_r, 1.0f, 1.0f);
 				break;
 
 			case DXMOTION_Busy:
-				D3DXMatrixRotationYawPitchRoll(&matV,0.0f + DxDraw->MM_r,0.0f - 0.5f,0.0f);
+				D3DXMatrixRotationYawPitchRoll(&matV, 0.0f + DxDraw->MM_r, 0.0f - 0.5f, 0.0f);
 				break;
 		}
 
-		D3DXMatrixMultiply(&mat,&mat,&matV);
+		D3DXMatrixMultiply(&mat, &mat, &matV);
 
 		// 斜視投影で描画
-		D3DDev->SetTransform(D3DTS_VIEW,&DxDraw->d3d.MatView3D);
-		D3DDev->SetTransform(D3DTS_WORLD,&mat);
-		D3DDev->SetTextureStageState(0,D3DTSS_ALPHAOP  ,D3DTOP_MODULATE);
-		D3DDev->SetTextureStageState(0,D3DTSS_ALPHAARG1,D3DTA_TFACTOR);
-		D3DDev->SetTextureStageState(0,D3DTSS_ALPHAARG2,D3DTA_TEXTURE);
-		D3DDev->SetRenderState(D3DRS_TEXTUREFACTOR,DxDraw->MM_c);
-		D3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP,0,2);
-		D3DDev->SetTransform(D3DTS_VIEW,&DxDraw->d3d.MatView2D);
+		D3DDev->SetTransform(D3DTS_VIEW, &DxDraw->d3d.MatView3D);
+		D3DDev->SetTransform(D3DTS_WORLD, &mat);
+		D3DDev->SetTextureStageState(0, D3DTSS_ALPHAOP  , D3DTOP_MODULATE);
+		D3DDev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TFACTOR);
+		D3DDev->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_TEXTURE);
+		D3DDev->SetRenderState(D3DRS_TEXTUREFACTOR, DxDraw->MM_c);
+		D3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2);
+		D3DDev->SetTransform(D3DTS_VIEW, &DxDraw->d3d.MatView2D);
 
 		#define MM_STEP 10
 		#define MM_WAIT 20
 		if ( DxDraw->MotionMode ){
-			DWORD tick = GetTickCount(),oldtick;
+			DWORD tick = GetTickCount(), oldtick;
 
 			oldtick = DxDraw->MotionTick;
 			if ( (tick - oldtick) > MM_WAIT ){
@@ -3015,11 +3023,11 @@ BOOL EndDrawDxDraw(DXDRAWSTRUCT *DxDraw)
 
 	if ( g_DebugMes[0] ){
 #if USEDXTEXT
-		DxDraw->d3d.DrawText(g_DebugMes,&box);
+		DxDraw->d3d.DrawText(g_DebugMes, &box);
 #else
 		DxDraw->sinfo.lastpos.x = 0;
 		DxDraw->sinfo.lastpos.y = 0;
-		DxDraw->dxText.Draw(g_DebugMes,0,0,0x10000,tstrlen(g_DebugMes));
+		DxDraw->dxText.Draw(g_DebugMes, 0, 0, 0x10000, tstrlen(g_DebugMes));
 #endif
 	}
 	DxDraw->d3d.EndRender();
@@ -3027,13 +3035,13 @@ BOOL EndDrawDxDraw(DXDRAWSTRUCT *DxDraw)
 }
 
 
-BOOL ChangeSizeDxDraw(DXDRAWSTRUCT *DxDraw,COLORREF backcolor)
+BOOL ChangeSizeDxDraw(DXDRAWSTRUCT *DxDraw, COLORREF backcolor)
 {
 	RECT ClientBox;
 
 	if ( DxDraw == NULL ) return FALSE;
 	DxDraw->sinfo.backgroundcolor = backcolor;
-	GetClientRect(DxDraw->sinfo.hWnd,&ClientBox);
+	GetClientRect(DxDraw->sinfo.hWnd, &ClientBox);
 	if ( (ClientBox.right > 0) && (ClientBox.bottom > 0) &&
 		((DxDraw->sinfo.ClientWidthInt != ClientBox.right) ||
 		(DxDraw->sinfo.ClientHeightInt != ClientBox.bottom))
@@ -3052,7 +3060,7 @@ BOOL ChangeSizeDxDraw(DXDRAWSTRUCT *DxDraw,COLORREF backcolor)
 	return TRUE;
 }
 
-DWORD SetFontDxDraw(DXDRAWSTRUCT *DxDraw,HFONT hFont,int type)
+DWORD SetFontDxDraw(DXDRAWSTRUCT *DxDraw, HFONT hFont, int type)
 {
 	LOGFONT lfont;
 
@@ -3060,115 +3068,115 @@ DWORD SetFontDxDraw(DXDRAWSTRUCT *DxDraw,HFONT hFont,int type)
 	DxDraw->dxText.SetFont(hFont);
 
 	if ( type == 0 ){
-		GetObject(hFont,sizeof(LOGFONT),static_cast<LPVOID>(&lfont));
+		GetObject(hFont, sizeof(LOGFONT), static_cast<LPVOID>(&lfont));
 		DxDraw->sinfo.fontH =
 				(lfont.lfHeight >= 0) ? lfont.lfHeight : -lfont.lfHeight;
 	}
 	return 1;
 }
 
-void USEFASTCALL DxMoveToEx(DXDRAWSTRUCT *DxDraw,HDC hDC,int x,int y)
+void USEFASTCALL DxMoveToEx(DXDRAWSTRUCT *DxDraw, HDC hDC, int x, int y)
 {
 	IfGDImode(hDC){
-		MoveToEx(hDC,x,y,NULL);
+		MoveToEx(hDC, x, y, NULL);
 		return;
 	}
 	DxDraw->sinfo.lastpos.x = x;
 	DxDraw->sinfo.lastpos.y = y;
 }
 
-void USEFASTCALL DxGetCurrentPositionEx(DXDRAWSTRUCT *DxDraw,HDC hDC,POINT *lp)
+void USEFASTCALL DxGetCurrentPositionEx(DXDRAWSTRUCT *DxDraw, HDC hDC, POINT *lp)
 {
 	IfGDImode(hDC){
-		GetCurrentPositionEx(hDC,lp);
+		GetCurrentPositionEx(hDC, lp);
 		return;
 	}
 	*lp = DxDraw->sinfo.lastpos;
 }
 
-void DxTextOutRel(DXDRAWSTRUCT *DxDraw,HDC hDC,const TCHAR *str,int len)
+void DxTextOutRel(DXDRAWSTRUCT *DxDraw, HDC hDC, const TCHAR *str, int len)
 {
 	IfGDImode(hDC){
-		TextOut(hDC,0,0,str,len);
+		TextOut(hDC, 0, 0, str, len);
 		return;
 	}
-	DxDraw->sinfo.lastpos.x = DxDraw->dxText.Draw(str,DxDraw->sinfo.lastpos.x,DxDraw->sinfo.lastpos.y,0xffffff,len);
+	DxDraw->sinfo.lastpos.x = DxDraw->dxText.Draw(str, DxDraw->sinfo.lastpos.x, DxDraw->sinfo.lastpos.y, 0xffffff, len);
 }
 
-void DxTextOutBack(DXDRAWSTRUCT *DxDraw,HDC hDC,const TCHAR *str,int len)
+void DxTextOutBack(DXDRAWSTRUCT *DxDraw, HDC hDC, const TCHAR *str, int len)
 {
 	IfGDImode(hDC){
-		TextOut(hDC,0,0,str,len);
+		TextOut(hDC, 0, 0, str, len);
 		return;
 	}
-	int width = DxDraw->dxText.Calc(str,0x70ffffff,len);
-	DxDraw->dxCursor.DrawBack(DxDraw->sinfo.lastpos.x,DxDraw->sinfo.lastpos.y,
-			width,DxDraw->sinfo.fontH,DxDraw->sinfo.TextBackColor);
-	DxDraw->sinfo.lastpos.x = DxDraw->dxText.Draw(str,DxDraw->sinfo.lastpos.x,DxDraw->sinfo.lastpos.y,0x70ffffff,len);
+	int width = DxDraw->dxText.Calc(str, 0x70ffffff, len);
+	DxDraw->dxCursor.DrawBack(DxDraw->sinfo.lastpos.x, DxDraw->sinfo.lastpos.y,
+			width, DxDraw->sinfo.fontH, DxDraw->sinfo.TextBackColor);
+	DxDraw->sinfo.lastpos.x = DxDraw->dxText.Draw(str, DxDraw->sinfo.lastpos.x, DxDraw->sinfo.lastpos.y, 0x70ffffff, len);
 }
 
-void DxGetTextExtentExPoint(DXDRAWSTRUCT *DxDraw,HDC hDC,const TCHAR *str,int len,int maxwidth,int *fitlem,int *alptbl,SIZE *blksize)
+void DxGetTextExtentExPoint(DXDRAWSTRUCT *DxDraw, HDC hDC, const TCHAR *str, int len, int maxwidth, int *fitlem, int *alptbl, SIZE *blksize)
 {
 	IfGDImode(hDC){
-		GetTextExtentExPoint(hDC,str,len,maxwidth,fitlem,alptbl,blksize);
+		GetTextExtentExPoint(hDC, str, len, maxwidth, fitlem, alptbl, blksize);
 		return;
 	}
 	*fitlem = len;
-	blksize->cx = DxDraw->dxText.Calc(str,maxwidth,*fitlem);
+	blksize->cx = DxDraw->dxText.Calc(str, maxwidth, *fitlem);
 }
 
-void DxDrawCursor(DXDRAWSTRUCT *DxDraw,HDC hDC,const RECT *box,COLORREF color)
+void DxDrawCursor(DXDRAWSTRUCT *DxDraw, HDC hDC, const RECT *box, COLORREF color)
 {
 	IfGDImode(hDC) return;
-	DxDraw->dxCursor.Draw(box->left,box->top,box->right - box->left,box->bottom - box->top,color);
+	DxDraw->dxCursor.Draw(box->left, box->top, box->right - box->left, box->bottom - box->top, color);
 }
 
-void DxDrawBack(DXDRAWSTRUCT *DxDraw,HDC hDC,const RECT *box,COLORREF color)
+void DxDrawBack(DXDRAWSTRUCT *DxDraw, HDC hDC, const RECT *box, COLORREF color)
 {
 	IfGDImode(hDC) return;
-	DxDraw->dxCursor.DrawBack(box->left,box->top,box->right - box->left,box->bottom - box->top,color);
+	DxDraw->dxCursor.DrawBack(box->left, box->top, box->right - box->left, box->bottom - box->top, color);
 }
 
-BOOL DxDrawAtlas_Check(DXDRAWSTRUCT *DxDraw,DWORD *CacheID)
+BOOL DxDrawAtlas_Check(DXDRAWSTRUCT *DxDraw, DWORD *CacheID)
 {
 	return DxDraw->dxCacheDIB.Check(CacheID);
 }
 
-void DxDrawAtlas(DXDRAWSTRUCT *DxDraw,BITMAPINFOHEADER *bmiHeader,LPVOID lpBits,const RECT *box)
+void DxDrawAtlas(DXDRAWSTRUCT *DxDraw, BITMAPINFOHEADER *bmiHeader, LPVOID lpBits, const RECT *box)
 {
-	DxDraw->dxCacheDIB.Draw(bmiHeader,lpBits,box);
+	DxDraw->dxCacheDIB.Draw(bmiHeader, lpBits, box);
 }
 
-BOOL DxDrawDIB(DXDRAWSTRUCT *DxDraw,BITMAPINFOHEADER *bmiHeader,LPVOID lpBits,const RECT *box,const RECT *,DXBMPCACHE **)
+BOOL DxDrawDIB(DXDRAWSTRUCT *DxDraw, BITMAPINFOHEADER *bmiHeader, LPVOID lpBits, const RECT *box, const RECT *, DXBMPCACHE **)
 {
-	return DrawDIB(&DxDraw->sinfo,bmiHeader,lpBits,box);
+	return DrawDIB(&DxDraw->sinfo, bmiHeader, lpBits, box);
 }
 
-void DxDrawIcon(DXDRAWSTRUCT *DxDraw,HICON icon,const RECT *box,DXBMPCACHE **)
+void DxDrawIcon(DXDRAWSTRUCT *DxDraw, HICON icon, const RECT *box, DXBMPCACHE **)
 {
 	if ( DxDraw == NULL ) return;
-	DxDraw->d3d.DrawIcon(icon,box);
+	DxDraw->d3d.DrawIcon(icon, box);
 }
 
 void DxDrawFreeBMPCache(DXBMPCACHE **)
 {
 }
 
-void USEFASTCALL DxDrawText(DXDRAWSTRUCT *DxDraw,HDC hDC,const TCHAR *str,int len,const RECT *box,DWORD flags)
+void USEFASTCALL DxDrawText(DXDRAWSTRUCT *DxDraw, HDC hDC, const TCHAR *str, int len, const RECT *box, DWORD flags)
 {
 	IfGDImode(hDC){
-		DrawText(hDC,str,len,(LPRECT)box,flags);
+		DrawText(hDC, str, len, (LPRECT)box, flags);
 		return;
 	}
 	if ( len < 0 ) len = tstrlen(str);
-	DxDraw->sinfo.lastpos.x = DxDraw->dxText.Draw(str,box->left,box->top,box->right,len);
+	DxDraw->sinfo.lastpos.x = DxDraw->dxText.Draw(str, box->left, box->top, box->right, len);
 }
 
-COLORREF DxSetTextColor(DXDRAWSTRUCT *DxDraw,HDC hDC,COLORREF color)
+COLORREF DxSetTextColor(DXDRAWSTRUCT *DxDraw, HDC hDC, COLORREF color)
 {
 	COLORREF oldcolor;
 
-	IfGDImode(hDC) return SetTextColor(hDC,color);
+	IfGDImode(hDC) return SetTextColor(hDC, color);
 
 	DxDraw->dxText.SetTextColor(color);
 	oldcolor = DxDraw->sinfo.TextColor;
@@ -3176,32 +3184,32 @@ COLORREF DxSetTextColor(DXDRAWSTRUCT *DxDraw,HDC hDC,COLORREF color)
 	return oldcolor;
 }
 
-COLORREF USEFASTCALL DxGetTextColor(DXDRAWSTRUCT *DxDraw,HDC hDC)
+COLORREF USEFASTCALL DxGetTextColor(DXDRAWSTRUCT *DxDraw, HDC hDC)
 {
 	IfGDImode(hDC) return GetTextColor(hDC);
 
 	return DxDraw->sinfo.TextColor;
 }
 
-COLORREF DxSetBkColor(DXDRAWSTRUCT *DxDraw,HDC hDC,COLORREF color)
+COLORREF DxSetBkColor(DXDRAWSTRUCT *DxDraw, HDC hDC, COLORREF color)
 {
 	COLORREF oldcolor;
 
-	IfGDImode(hDC) return SetBkColor(hDC,color);
+	IfGDImode(hDC) return SetBkColor(hDC, color);
 
 	oldcolor = DxDraw->sinfo.TextBackColor;
 	DxDraw->sinfo.TextBackColor = color;
 	return oldcolor;
 }
 
-COLORREF USEFASTCALL DxGetBkColor(DXDRAWSTRUCT *DxDraw,HDC hDC)
+COLORREF USEFASTCALL DxGetBkColor(DXDRAWSTRUCT *DxDraw, HDC hDC)
 {
 	IfGDImode(hDC) return GetBkColor(hDC);
 
 	return DxDraw->sinfo.TextBackColor;
 }
 
-void USEFASTCALL DxSetBenchmarkMode(DXDRAWSTRUCT *DxDraw,BOOL mode)
+void USEFASTCALL DxSetBenchmarkMode(DXDRAWSTRUCT *DxDraw, BOOL mode)
 {
 	if ( DxDraw == NULL ) return;
 	if ( IsTrue(DxDraw->d3d.SetBenchmarkMode(mode)) ){
@@ -3211,16 +3219,16 @@ void USEFASTCALL DxSetBenchmarkMode(DXDRAWSTRUCT *DxDraw,BOOL mode)
 }
 
 // おまけ表示
-void USEFASTCALL DxExtDraw(DXDRAWSTRUCT *DxDraw,RECT *client)
+void USEFASTCALL DxExtDraw(DXDRAWSTRUCT *DxDraw, RECT *client)
 {
 	DxDraw->dxMesh.Draw(
 			(static_cast<float>(client->right) - 23.0f) * D3D_ProjScaleX,
 			(static_cast<float>(client->top) + 28.0f) * D3D_ProjScaleY,
-			ZPOS_MESH,  0.0f,0.0f,0.0f);
+			ZPOS_MESH,  0.0f, 0.0f, 0.0f);
 //	DxDraw->dxText.DrawTest();
 }
 
-void DxSetMotion(DXDRAWSTRUCT *DxDraw,int mode)
+void DxSetMotion(DXDRAWSTRUCT *DxDraw, int mode)
 {
 	if ( DxDraw == NULL ) return;
 	switch ( mode ){
@@ -3258,13 +3266,13 @@ void DxSetMotion(DXDRAWSTRUCT *DxDraw,int mode)
 	DxDraw->CaptureMode = TRUE;
 	DxDraw->MotionTick = GetTickCount();
 
-	InvalidateRect(DxDraw->sinfo.hWnd,NULL,TRUE);
+	InvalidateRect(DxDraw->sinfo.hWnd, NULL, TRUE);
 	UpdateWindow(DxDraw->sinfo.hWnd);
 }
 
-int DxSetBkMode(DXDRAWSTRUCT *DxDraw,HDC hDC,int mode)
+int DxSetBkMode(DXDRAWSTRUCT *DxDraw, HDC hDC, int mode)
 {
-	IfGDImode(hDC) return SetBkMode(hDC,mode);
+	IfGDImode(hDC) return SetBkMode(hDC, mode);
 
 	int oldmode = DxDraw->sinfo.BkMode;
 	DxDraw->sinfo.BkMode = mode;
@@ -3278,17 +3286,17 @@ void ResetDxDraw(DXDRAWSTRUCT *DxDraw)
 	DxDraw->d3d.ResetDevice();
 }
 #ifndef UNICODE
-void DxTextOutRelW(DXDRAWSTRUCT *DxDraw,HDC hDC,const WCHAR *str,int len)
+void DxTextOutRelW(DXDRAWSTRUCT *DxDraw, HDC hDC, const WCHAR *str, int len)
 {
 	char text[0x1000];
 
 	IfGDImode(hDC){
-		TextOutW(hDC,0,0,str,len);
+		TextOutW(hDC, 0, 0, str, len);
 		return;
 	}
 
-	int lenA = WideCharToMultiByte(CP_ACP,0,str,len,text,0x1000,NULL,NULL);
-	DxTextOutBack(DxDraw,hDC,text,lenA);
+	int lenA = WideCharToMultiByte(CP_ACP, 0, str, len, text, 0x1000, NULL, NULL);
+	DxTextOutBack(DxDraw, hDC, text, lenA);
 }
 #endif
 #endif // DRAWMODE_3D

@@ -25,15 +25,14 @@
 	file://computername/sharename	unc drive
 	ftp://[user[:pass]@]host[:port]/dir	ftp url			※
 	http://[user[:pass]@]host[:port]/dir	http url		※
-	mailto://			pop3 address			※
-	shell://pidlname		PIDL SpecialFolder
+	shell:pidlname			PIDL SpecialFolder
+	\\.\(driveletter):		driveパーティションアクセス
 参考
 	\\.\TAPE(n)			Device名
 	\\.\CdRom(n)			Device名
 	\\.\COM(nn)  			Device名(nnは２桁以上)
 	\\.\PhysicalDisk(n)		物理ドライブアクセス
 	\\.\PhysicalDrive(n)		物理ドライブアクセス
-	\\.\(driveletter):		driveパーティションアクセス
 	CONIN$ CONOUT$			console
 	\\?\(driveletter):		(UNICODE only),解析無し,MAXPATH→0x8000
 	\\?\UNC\(computername)\(sharename) (UNICODE only),解析無し,MAXPATHover
@@ -41,6 +40,7 @@
 	\\.\mailslot
 	con prn aux nul			console,printer,aux(com),null
 	com1-com9,lpt1-lpt9
+	mailto://			pop3 address
 [directoryname]
 	[\][filename][\]...
 	:				virtual drive ( A:\path\:path )
@@ -49,7 +49,7 @@
 [option]
 	::cd				cd/dvd image
 	::disk				disk image
-	::stream			stream list
+	::stream			alt stream list
 	::listfile			Listfile
 	::DLLName			use DLL(undll / susie / xxxFLDR.DLL)
 

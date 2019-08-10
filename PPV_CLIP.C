@@ -15,15 +15,15 @@
 
 #ifdef UNICODE
 #define TSelCol SelColW
-WCHAR *SelColW(WCHAR *str,int col)
+WCHAR *SelColW(WCHAR *str, int col)
 {
 	SIZE szt;
-	int colx,x = 0,left = 0;
+	int colx, x = 0, left = 0;
 	HDC hDC;
 	HGDIOBJ hOldFont;
 
 	hDC = GetDC(hMainWnd);
-	hOldFont = SelectObject(hDC,hBoxFont);
+	hOldFont = SelectObject(hDC, hBoxFont);
 
 	colx = col * fontX;
 	szt.cx = 0;
@@ -39,7 +39,7 @@ WCHAR *SelColW(WCHAR *str,int col)
 			szt.cx = 0;
 		}else{
 			x++;
-			GetTextExtentPoint32W(hDC,str,x,&szt);
+			GetTextExtentPoint32W(hDC, str, x, &szt);
 			if ( (left + szt.cx) > colx ){
 				x--;
 				break;
@@ -47,8 +47,8 @@ WCHAR *SelColW(WCHAR *str,int col)
 		}
 		if ( *(str + x) == '\0' ) break;
 	}
-	SelectObject(hDC,hOldFont);
-	ReleaseDC(hMainWnd,hDC);
+	SelectObject(hDC, hOldFont);
+	ReleaseDC(hMainWnd, hDC);
 	return str + x;
 }
 #else
@@ -57,7 +57,7 @@ WCHAR *SelColW(WCHAR *str,int col)
 
 #endif
 
-char *SelColA(char *str,int col)
+char *SelColA(char *str, int col)
 {
 	int i;
 
@@ -88,10 +88,10 @@ int CalcHexX(int off)
 	return off;
 }
 
-BOOL ClipHexMem(TMS_struct *text,int StartLine,int EndLine)
+BOOL ClipHexMem(TMS_struct *text, int StartLine, int EndLine)
 {
 	char *bottom;
-	int	size,tsize;
+	int	size, tsize;
 
 	if ( StartLine < 0 ){
 		bottom = (char *)vo_.file.image + VOsel.bottom.y.line * 16;
@@ -108,30 +108,30 @@ BOOL ClipHexMem(TMS_struct *text,int StartLine,int EndLine)
 	}
 
 	TMS_reset(text);
-	if ( (size == 0) || (TM_check(&text->tm,size + 2) == FALSE) ) return FALSE;
+	if ( (size == 0) || (TM_check(&text->tm, size + 2) == FALSE) ) return FALSE;
 	text->p = size;
 
-	memcpy(text->tm.p,bottom,size);
+	memcpy(text->tm.p, bottom, size);
 
 	((BYTE *)text->tm.p)[size] = '\0';
 	((BYTE *)text->tm.p)[size + 1] = '\0';
 	return TRUE;
 }
 
-BOOL ClipMem(TMS_struct *text,int StartLine,int EndLine)
+BOOL ClipMem(TMS_struct *text, int StartLine, int EndLine)
 {
 	#ifdef UNICODE
 		WCHAR wbuf[TEXTBUFSIZE];
 	#else
 		char abuf[TEXTBUFSIZE];
 	#endif
-	BYTE form[TEXTBUFSIZE],*p;
+	BYTE form[TEXTBUFSIZE], *p;
 	int off;
-	int bottom,top;
+	int bottom, top;
 	int XV_bctl3bk;
 	MAKETEXTINFO mti;
 
-	if ( vo_.DModeType == DISPT_HEX ) return ClipHexMem(text,StartLine,EndLine);
+	if ( vo_.DModeType == DISPT_HEX ) return ClipHexMem(text, StartLine, EndLine);
 
 	XV_bctl3bk = XV_bctl[2];
 	XV_bctl[2] = 0;
@@ -153,7 +153,7 @@ BOOL ClipMem(TMS_struct *text,int StartLine,int EndLine)
 	if ( top >= VOi->line ) top = VOi->line - 1;
 
 	mti.destbuf = form;
-	mti.srcmax = vo_.file.image + vo_.file.size.l;
+	mti.srcmax = vo_.file.image + vo_.file.UseSize;
 	mti.writetbl = FALSE;
 	mti.paintmode = FALSE;
 
@@ -161,7 +161,7 @@ BOOL ClipMem(TMS_struct *text,int StartLine,int EndLine)
 	for ( off = bottom ; off <= top ; off++ ){
 		int CharX;
 
-		VOi->MakeText(&mti,&VOi->ti[off]);
+		VOi->MakeText(&mti, &VOi->ti[off]);
 		p = form;
 
 		CharX = 0;
@@ -169,7 +169,7 @@ BOOL ClipMem(TMS_struct *text,int StartLine,int EndLine)
 			case VCODE_CONTROL:
 			case VCODE_ASCII: 	// ASCII Text ---------------------------------
 			{
-				int length,copylength;
+				int length, copylength;
 				char *src;
 
 				src = (char *)p + 1;
@@ -195,11 +195,11 @@ BOOL ClipMem(TMS_struct *text,int StartLine,int EndLine)
 				}
 
 			#ifdef UNICODE
-				AnsiToUnicode(src,wbuf,TEXTBUFSIZE);
-				TMS_set(text,wbuf);
+				AnsiToUnicode(src, wbuf, TEXTBUFSIZE);
+				TMS_set(text, wbuf);
 				text->p -= 2;
 			#else
-				TMS_setA(text,src);
+				TMS_setA(text, src);
 				text->p--;
 			#endif
 				p += length + 1 + 1; // VCODE_ASCII + 文字列 + \0
@@ -211,7 +211,7 @@ BOOL ClipMem(TMS_struct *text,int StartLine,int EndLine)
 				p++;
 			case VCODE_UNICODE:		// UNICODE Text ---------------------------
 			{
-				int length,copylength;
+				int length, copylength;
 				WCHAR *src;
 
 				src = (WCHAR *)(p + 1);
@@ -237,11 +237,11 @@ BOOL ClipMem(TMS_struct *text,int StartLine,int EndLine)
 				}
 
 			#ifdef UNICODE
-				TMS_set(text,src);
+				TMS_set(text, src);
 				text->p -= 2;
 			#else
-				WideCharToMultiByte(CP_ACP,0,src,-1,abuf,sizeof abuf,"・",NULL);
-				TMS_setA(text,abuf);
+				WideCharToMultiByte(CP_ACP, 0, src, -1, abuf, sizeof abuf, "・", NULL);
+				TMS_setA(text, abuf);
 				text->p--;
 			#endif
 				p += (length + 1) * sizeof(WCHAR) + 1; // VCODE_UNICODE + 文字列 + \0
@@ -274,7 +274,7 @@ BOOL ClipMem(TMS_struct *text,int StartLine,int EndLine)
 						}
 					}
 				}
-				TMS_set(text,T("\t"));
+				TMS_set(text, T("\t"));
 				text->p -= sizeof(TCHAR);
 				CharX++;
 				break;
@@ -283,7 +283,7 @@ BOOL ClipMem(TMS_struct *text,int StartLine,int EndLine)
 				p++;
 			case VCODE_PAGE:
 			case VCODE_PARA:
-				TMS_set(text,T("\r\n"));
+				TMS_set(text, T("\r\n"));
 				text->p -= sizeof(TCHAR);
 				p++;
 				break;
@@ -310,26 +310,37 @@ BOOL ClipMem(TMS_struct *text,int StartLine,int EndLine)
 	return TRUE;
 }
 
+BOOL OpenClipboardV(HWND hWnd)
+{
+	int trycount = 6;
+
+	for (;;){
+		if ( IsTrue(OpenClipboard(hWnd)) ) return TRUE;
+		if ( --trycount == 0 ) return FALSE;
+		Sleep(20);
+	}
+}
+
 void ClipText(HWND hWnd)
 {
-	TMS_struct text = {{NULL,0,NULL},0};
+	TMS_struct text = {{NULL, 0, NULL}, 0};
 	HGLOBAL hTmp;
 
-	if ( ClipMem(&text,-1,-1) == FALSE ) return;
+	if ( ClipMem(&text, -1, -1) == FALSE ) return;
 	TM_off(&text.tm);
-	hTmp = GlobalReAlloc(text.tm.h,text.p + sizeof(TCHAR),GMEM_MOVEABLE);
+	hTmp = GlobalReAlloc(text.tm.h, text.p + sizeof(TCHAR), GMEM_MOVEABLE);
 	if ( hTmp != NULL ) text.tm.h = hTmp;
 
-	OpenClipboard(hWnd);
+	OpenClipboardV(hWnd);
 	EmptyClipboard();
 	#ifdef UNICODE
 		if ( (vo_.DModeType == DISPT_HEX) || (OSver.dwPlatformId != VER_PLATFORM_WIN32_NT) ){
-			SetClipboardData(CF_TEXT,text.tm.h);
+			SetClipboardData(CF_TEXT, text.tm.h);
 		}else{
-			SetClipboardData(CF_UNICODETEXT,text.tm.h);
+			SetClipboardData(CF_UNICODETEXT, text.tm.h);
 		}
 	#else
-		SetClipboardData(CF_TEXT,text.tm.h);
+		SetClipboardData(CF_TEXT, text.tm.h);
 	#endif
 	CloseClipboard();
 }
@@ -341,30 +352,30 @@ void ClipText(HWND hWnd)
 #define URI_PATH 3
 #define URI_ANCHOR 0x10
 
-BOOL MakeURIs2(HMENU hMenu,int *index,const char *bottom,const char *start,const char *end,int use)
+BOOL MakeURIs2(HMENU hMenu, int *index, const char *bottom, const char *start, const char *end, int use)
 {
-	char buf[0x400],tmp[0x400],*destp;
+	char buf[0x400], tmp[0x400], *destp;
 	int i;
 	BOOL ahres = FALSE;
 
 	destp = buf;
 	if ( use == URI_URL ){
-		const char *sptr,*newstart = start;
+		const char *sptr, *newstart = start;
 
 		if ( *start == ':' ) start++; // URLでない : と思われる
 		for ( sptr = start ; sptr < end ; sptr++ ){ // 記号を除去
 			if ( *sptr == ':') break;
-			if ( !IslowerA(*sptr) && (strchr(".-_%#?=&/\\",*sptr) == NULL) ){
+			if ( !IslowerA(*sptr) && (strchr(".-_%#?=&/\\", *sptr) == NULL) ){
 				newstart = sptr + 1;
 			}
 		}
 		if ( *sptr == ':' ){
 			start = newstart;
-			if ( (sptr >= (start + 3)) && !memcmp(sptr - 3,"ttp",3) ){
+			if ( (sptr >= (start + 3)) && !memcmp(sptr - 3, "ttp", 3) ){
 				start = sptr + 1;
 				sptr = NULL;
 			}
-			if ( (sptr >= (start + 4)) && !memcmp(sptr - 4,"ttps",4) ){
+			if ( (sptr >= (start + 4)) && !memcmp(sptr - 4, "ttps", 4) ){
 				start = sptr - 4;
 				*destp++ = 'h';
 			}
@@ -373,7 +384,7 @@ BOOL MakeURIs2(HMENU hMenu,int *index,const char *bottom,const char *start,const
 		}
 
 		if ( sptr == NULL ){
-			strcpy(destp,"http:");
+			strcpy(destp, "http:");
 			destp += 5;
 
 			if ( (vo_.file.source[0] == '\0') && (*start != '/') ){
@@ -397,7 +408,7 @@ BOOL MakeURIs2(HMENU hMenu,int *index,const char *bottom,const char *start,const
 		if ( (bottom < ptr) && (*(ptr - 1) == '=') ){
 			ptr--;
 			while ( (bottom < ptr) && (*(ptr - 1) == ' ') ) ptr--;
-			if ( ((bottom + 3) < ptr) && (memicmp(ptr - 4,"href",4) == 0) ){
+			if ( ((bottom + 3) < ptr) && (memicmp(ptr - 4, "href", 4) == 0) ){
 				ahres = TRUE;
 			}
 		}
@@ -410,7 +421,7 @@ BOOL MakeURIs2(HMENU hMenu,int *index,const char *bottom,const char *start,const
 		}
 		*destp++ = *start++;
 	}
-	while ( (destp > buf) && (strchr(">)]",*(destp - 1)) != NULL) ) destp--;
+	while ( (destp > buf) && (strchr(">)]", *(destp - 1)) != NULL) ) destp--;
 	*destp = '\0';
 
 	if ( use == URI_URL ){	// 「:」
@@ -422,7 +433,7 @@ BOOL MakeURIs2(HMENU hMenu,int *index,const char *bottom,const char *start,const
 				if ( *destp == ':' ) break;
 				if ( !IsdigitA(*destp) ) return FALSE;
 			}
-		}else if ( strchr(destp,':') != NULL ){
+		}else if ( strchr(destp, ':') != NULL ){
 			for ( ; *destp ; destp++ ){
 				if ( *destp == ':' ) break;
 				if ( !IslowerA(*destp) ) return FALSE;
@@ -430,39 +441,39 @@ BOOL MakeURIs2(HMENU hMenu,int *index,const char *bottom,const char *start,const
 		}
 		if ( (*destp == ':') && !*(destp + 1) ) return FALSE;
 	}else if ( use == URI_MAIL ){	// 「@」
-		if ( strchr(buf,'$') ) return FALSE;
+		if ( strchr(buf, '$') ) return FALSE;
 		if ( *(destp - 1) == '@' ) return FALSE;
 	}else if ( use == URI_PATH ){
 //		if ( buf[0] != '#' )
-		if ( strchr(buf,'/') && !strchr(buf,'\\') && !strchr(buf,'.') ){
+		if ( strchr(buf, '/') && !strchr(buf, '\\') && !strchr(buf, '.') ){
 			return FALSE;
 		}
 	}
-	if ( ((strchr(buf,'/') != NULL) || (ahres && (buf[0] != '#'))) &&
+	if ( ((strchr(buf, '/') != NULL) || (ahres && (buf[0] != '#'))) &&
 		 (vo_.file.source[0] != '\0') ){
 		#ifdef UNICODE
 			TCHAR name[VFPS];
 
-			AnsiToUnicode(buf,name,VFPS);
-			VFSFullPath(NULL,name,vo_.file.source);
-			UnicodeToAnsi(name,buf,VFPS);
+			AnsiToUnicode(buf, name, VFPS);
+			VFSFullPath(NULL, name, vo_.file.source);
+			UnicodeToAnsi(name, buf, VFPS);
 		#else
-			VFSFullPath(NULL,buf,vo_.file.source);
+			VFSFullPath(NULL, buf, vo_.file.source);
 		#endif
 	}
 
 	for ( i = MENUID_URI ; i <= *index ; i++ ){
-		GetMenuStringA(hMenu,i,tmp,TSIZEOF(tmp),MF_BYCOMMAND);
-		if ( strcmp(tmp,buf) == 0 ){
+		GetMenuStringA(hMenu, i, tmp, TSIZEOF(tmp), MF_BYCOMMAND);
+		if ( strcmp(tmp, buf) == 0 ){
 			i = -1;
 			break;
 		}
 	}
-	if ( i >= 0 ) AppendMenuA(hMenu,MF_CHKES(ahres),(*index)++,buf);
+	if ( i >= 0 ) AppendMenuA(hMenu, MF_CHKES(ahres), (*index)++, buf);
 	return TRUE;
 }
 
-void URIDUMP(const char *bottom,const char *top,const TCHAR *title)
+void URIDUMP(const char *bottom, const char *top, const TCHAR *title)
 {
 	TCHAR buf[0x800];
 
@@ -471,24 +482,24 @@ void URIDUMP(const char *bottom,const char *top,const TCHAR *title)
 	{
 		int len;
 
-		len = (int)MultiByteToWideChar(CP_ACP,MB_PRECOMPOSED,bottom,top - bottom,buf,0x800);
+		len = (int)MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, bottom, top - bottom, buf, 0x800);
 		buf[len] = '\0';
 	}
 	#else
-		memcpy(buf,bottom,top - bottom);
+		memcpy(buf, bottom, top - bottom);
 		buf[top - bottom] = '\0';
 	#endif
-	XMessage(NULL,NULL,XM_DbgLOG,T("%s %s"),title,buf);
+	XMessage(NULL, NULL, XM_DbgLOG, T("%s %s"), title, buf);
 }
 
-void MakeURIs(HMENU hMenu,int index)
+void MakeURIs(HMENU hMenu, int index)
 {
-	char *p,*start = NULL;
-	char *textbottom,*texttop,*maxptr;
-	int use = URI_NO,top;
+	char *p, *start = NULL;
+	char *textbottom, *texttop, *maxptr;
+	int use = URI_NO, top;
 
 	if ( vo_.file.source[0] != '\0' ){
-		AppendMenu(hMenu,MF_ES,index++,vo_.file.source);
+		AppendMenu(hMenu, MF_ES, index++, vo_.file.source);
 	}
 
 	if ( VOsel.select != FALSE ){	// 選択中
@@ -504,9 +515,9 @@ void MakeURIs(HMENU hMenu,int index)
 	maxptr = (char *)VOi->ti[VOi->cline].ptr;
 
 	if ( GetAsyncKeyState(0xF0 /*VK_CAPITAL*/) & KEYSTATE_PUSH ){
-		XMessage(NULL,NULL,XM_DbgLOG,T("MakeURI bottom:%x top:%x cline:%d max:%x  Base:%s"),textbottom,texttop,VOi->cline,maxptr,vo_.file.source);
-		URIDUMP(textbottom,texttop,T("top"));
-		URIDUMP(textbottom,texttop,T("max"));
+		XMessage(NULL, NULL, XM_DbgLOG, T("MakeURI bottom:%x top:%x cline:%d max:%x  Base:%s"), textbottom, texttop, VOi->cline, maxptr, vo_.file.source);
+		URIDUMP(textbottom, texttop, T("top"));
+		URIDUMP(textbottom, texttop, T("max"));
 	}
 
 	for ( p = textbottom ; p < maxptr ; ){
@@ -523,7 +534,7 @@ void MakeURIs(HMENU hMenu,int index)
 				char c;
 
 				c = *skipp;
-				if ( Isalnum(c) || (strchr("\\/?%#.~",c) != NULL) ){
+				if ( Isalnum(c) || (strchr("\\/?%#.~", c) != NULL) ){
 					skipp++;
 					continue;
 				}
@@ -531,16 +542,16 @@ void MakeURIs(HMENU hMenu,int index)
 			}
 			if ( skipp != p ){ // 改行後も連結可能
 				if ( use != URI_NO ){
-					MakeURIs2(hMenu,&index,textbottom,start,p,use);
+					MakeURIs2(hMenu, &index, textbottom, start, p, use);
 					if ( index > MENUID_URIMAX ) break;
-					MakeURIs2(hMenu,&index,textbottom,start,skipp,use);
+					MakeURIs2(hMenu, &index, textbottom, start, skipp, use);
 					use = URI_NO;
 					if ( index > MENUID_URIMAX ) break;
 					start = NULL;
 				}
 			}else{ // 改行で終わり
 				if ( use != URI_NO ){
-					MakeURIs2(hMenu,&index,textbottom,start,p,use);
+					MakeURIs2(hMenu, &index, textbottom, start, p, use);
 					use = URI_NO;
 					if ( index > MENUID_URIMAX ) break;
 				}
@@ -551,9 +562,9 @@ void MakeURIs(HMENU hMenu,int index)
 			continue;
 		}
 		if ( (code > (UCHAR)' ') && (code < (UCHAR)0x7f ) &&
-			 (strchr("\"<>|",*p) == NULL) ){ // 該当文字( ASCII 内で "<>| 除く)
+			 (strchr("\"<>|", *p) == NULL) ){ // 該当文字( ASCII 内で "<>| 除く)
 			if ( start == NULL ){
-				if ( strchr("([{",*p) == NULL ){ // 括弧でなければ検索開始地点
+				if ( strchr("([{", *p) == NULL ){ // 括弧でなければ検索開始地点
 					start = p;
 /*
 					if ( (p > textbottom) && (*(p - 1) == '\"') ){
@@ -569,7 +580,7 @@ void MakeURIs(HMENU hMenu,int index)
 			}
 		}else{
 			if ( use != URI_NO ){
-				MakeURIs2(hMenu,&index,textbottom,start,p,use);
+				MakeURIs2(hMenu, &index, textbottom, start, p, use);
 				use = URI_NO;
 				if ( index > MENUID_URIMAX ) break;
 			}
@@ -582,5 +593,5 @@ void MakeURIs(HMENU hMenu,int index)
 		}
 		p++;
 	}
-	if ( use != URI_NO ) MakeURIs2(hMenu,&index,textbottom,start,p,use);
+	if ( use != URI_NO ) MakeURIs2(hMenu, &index, textbottom, start, p, use);
 }

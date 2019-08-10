@@ -2125,6 +2125,12 @@ AH(0x28,4," EMF",vfd_EMF,	":EMF",		"Enhanced MetaFile","EMF",DT_emf),
 AH(0,3,"FWS",NULL,			":SWF",		"Flash Contents","swf",DT_scp),
 AH(0,3,"CWS",NULL,			":SWF",		"Flash Contents(Compressed)","swf",DT_scp),
 AH(0,3,"FLV",NULL,			":FLV",		"Flash Video","flv",DT_scp),
+
+AH(0,15,"binary stl file",NULL,	":STLB", "STL vector image","stl",DT_scp),
+AH(0,11,"solid ascii",NULL,	":STLA",	"STL vector image","stl",DT_scp),
+AH(0,9,"ISO-10303",NULL,	":STEP",	"STEP CAD image","stp",DT_scp),
+AH(0,6,"#VRML ",NULL,		":VRML",	"VRML vector image","wrl",DT_scp),
+AH(0,4,"glTF",NULL,			":GLTF",	"GL Transmission Format","glb",DT_scp),
 //	Encapsulated PostScript File  %!PS-Adobe-?.? EPSF
 										// Etc --------------------------------
 AH(0,5,"\0\0\x1a\0\0",NULL,	":123",		"Lotus1-2-3","WK3",DT_scp),

@@ -8,7 +8,7 @@
 #include "PPV_FUNC.H"
 #pragma hdrstop
 
-#pragma pack(push,4)
+#pragma pack(push, 4)
 typedef struct {
 	DWORD bV5Size;
 	LONG  bV5Width;
@@ -48,7 +48,7 @@ void CreateDIBtoPalette(PPvViewObject *vo)
 	PALETTEENTRY *ppal;
 	RGBQUAD *rgb;
 	int ClrUsed;
-	BYTE *src,*dst;
+	BYTE *src, *dst;
 	BITMAPINFOHEADER *dib = vo->bitmap.ShowInfo;
 
 	vo->bitmap.hPal = NULL;
@@ -61,7 +61,7 @@ void CreateDIBtoPalette(PPvViewObject *vo)
 	lPal.palVersion = 0x300;
 	ppal = lPal.palPalEntry;
 	if ( ClrUsed > 256 ){ //フルカラー画像は全体に散らばったパレットを作成
-		int r,g,b;
+		int r, g, b;
 
 		if ( VideoBits > 8 ){
 			return; // パレット作成不要
@@ -74,7 +74,7 @@ void CreateDIBtoPalette(PPvViewObject *vo)
 			lPal.palNumEntries = 6*6*6;
 			for ( b = 0 ; b <= 255 ; b += 51 ){
 				for ( g = 0 ; g <= 255 ; g += 51 ){
-					for ( r = 0 ; r <= 255 ; r += 51,ppal++){
+					for ( r = 0 ; r <= 255 ; r += 51, ppal++){
 						rgb->rgbRed = ppal->peRed   = (BYTE)r;
 						rgb->rgbGreen = ppal->peGreen = (BYTE)g;
 						rgb->rgbBlue = ppal->peBlue  = (BYTE)b;
@@ -85,7 +85,7 @@ void CreateDIBtoPalette(PPvViewObject *vo)
 			}
 
 			if ( dib->biBitCount == 24 ){
-				int x,y;
+				int x, y;
 
 				src = dst = vo->bitmap.bits.ptr;
 				dib->biSizeImage = vo->bitmap.rawsize.cx * vo->bitmap.rawsize.cy;
@@ -105,7 +105,7 @@ void CreateDIBtoPalette(PPvViewObject *vo)
 				dib->biClrImportant = 0;
 				nb.dib2 = *dib;
 
-				HeapFree(PPvHeap,0,vo->bitmap.ShowInfo);
+				HeapFree(PPvHeap, 0, vo->bitmap.ShowInfo);
 				vo->bitmap.AllocShowInfo = FALSE;
 				vo->bitmap.ShowInfo = &nb.dib2;
 			}
@@ -115,8 +115,8 @@ void CreateDIBtoPalette(PPvViewObject *vo)
 		int i;
 
 		rgb = (LPRGBQUAD)((LPSTR)dib + sizeof(BITMAPINFOHEADER));
-		if ( IsBadReadPtr(rgb,ClrUsed * sizeof(RGBQUAD)) ) return;
-		for ( i = 0 ; i < ClrUsed ; i++, rgb++,ppal++ ){
+		if ( IsBadReadPtr(rgb, ClrUsed * sizeof(RGBQUAD)) ) return;
+		for ( i = 0 ; i < ClrUsed ; i++, rgb++, ppal++ ){
 			ppal->peRed   = rgb->rgbRed;
 			ppal->peGreen = rgb->rgbGreen;
 			ppal->peBlue  = rgb->rgbBlue;
@@ -192,14 +192,14 @@ void ClipBitmap(HWND hWnd)
 	tmpsize = DwordBitSize(vo_.bitmap.rawsize.cx * color) * vo_.bitmap.rawsize.cy;
 	if ( (bitmapsize == 0) || (tmpsize > bitmapsize) ) bitmapsize = tmpsize;
 
-	hImage = GlobalAlloc(GMEM_MOVEABLE,headersize + palettesize + bitmapsize + profilesize);
+	hImage = GlobalAlloc(GMEM_MOVEABLE, headersize + palettesize + bitmapsize + profilesize);
 	if ( hImage != NULL ){
 		img = GlobalLock(hImage);
 		if ( img == NULL ){
 			GlobalFree(hImage);
 			return;
 		}
-		memcpy(img,vo_.bitmap.info,headersize);
+		memcpy(img, vo_.bitmap.info, headersize);
 		if ( headersize >= sizeof(BITMAPINFOHEADER) ){ // biSizeImage を修正
 			((BITMAPINFOHEADER *)img)->biSizeImage = bitmapsize;
 		}
@@ -208,9 +208,9 @@ void ClipBitmap(HWND hWnd)
 			int i;
 
 			pe = (PALETTEENTRY *)(img + vo_.bitmap.info->biSize);
-			GetPaletteEntries(vo_.bitmap.hPal, 0, palette,pe); // C4701ok
+			GetPaletteEntries(vo_.bitmap.hPal, 0, palette, pe); // C4701ok
 						// PALETTEENTRY → RGBQUAD に修復
-			for ( i = 0 ; i < palette ; i++,pe++ ){
+			for ( i = 0 ; i < palette ; i++, pe++ ){
 				BYTE tmp;
 
 				tmp = pe->peRed;
@@ -224,13 +224,13 @@ void ClipBitmap(HWND hWnd)
 		if ( profilesize != 0 ){ // ICC プロファイルあり
 			 ((BITMAPV5HEADER_ *)img)->bV5ProfileData = headersize + palettesize + bitmapsize;
 			// 末尾にプロファイルを用意
-			memcpy(img + headersize + palettesize + bitmapsize,(char *)vo_.bitmap.info + headersize,profilesize);
+			memcpy(img + headersize + palettesize + bitmapsize, (char *)vo_.bitmap.info + headersize, profilesize);
 
-			hImageNP = GlobalAlloc(GMEM_MOVEABLE,headersize + palettesize + bitmapsize);
+			hImageNP = GlobalAlloc(GMEM_MOVEABLE, headersize + palettesize + bitmapsize);
 			// プロファイル無しBMPを用意
 			if ( hImageNP != NULL ){
 				imgNP = GlobalLock(hImageNP);
-				memcpy(imgNP,img,headersize + palettesize + bitmapsize);
+				memcpy(imgNP, img, headersize + palettesize + bitmapsize);
 				((BITMAPV5HEADER_ *)imgNP)->bV5ProfileData = 0;
 				GlobalUnlock(hImageNP);
 			}
@@ -238,9 +238,9 @@ void ClipBitmap(HWND hWnd)
 		GlobalUnlock(hImage);
 	}
 	if ( hImage == NULL ){
-		SetPopMsg(POPMSG_NOLOGMSG,T("Clip error"));
+		SetPopMsg(POPMSG_NOLOGMSG, T("Clip error"));
 	}else{
-		OpenClipboard(hWnd);
+		OpenClipboardV(hWnd);
 		EmptyClipboard();
 		SetClipboardData(ClipType, hImage);
 		if ( (profilesize != 0) && (hImageNP != NULL) ){ // profile無しを保存
@@ -252,7 +252,7 @@ void ClipBitmap(HWND hWnd)
 	return;
 }
 
-void Rotate(HWND hWnd,int d)
+void Rotate(HWND hWnd, int d)
 {
 	BITMAPINFOHEADER *NewBmpInfo;
 	BYTE *NewDib, *src, *dest;
@@ -263,14 +263,14 @@ void Rotate(HWND hWnd,int d)
 	if ( (vo_.bitmap.info->biBitCount > 32) ||
 		 ((vo_.bitmap.info->biCompression != BI_RGB) &&
 			(vo_.bitmap.info->biCompression != BI_BITFIELDS)) ){
-		SetPopMsg(POPMSG_NOLOGMSG,T("Unsupport format"));
+		SetPopMsg(POPMSG_NOLOGMSG, T("Unsupport format"));
 		return;
 	}
 	srcwidth = DwordBitSize(vo_.bitmap.rawsize.cx * vo_.bitmap.info->biBitCount);
 	width = DwordBitSize(vo_.bitmap.rawsize.cy * vo_.bitmap.info->biBitCount);
-	hDib = LocalAlloc(LMEM_FIXED,width * vo_.bitmap.rawsize.cx);
+	hDib = LocalAlloc(LMEM_FIXED, width * vo_.bitmap.rawsize.cx);
 	if ( hDib == NULL ){
-		SetPopMsg(POPMSG_MSG,T("Memory alloc error."));
+		SetPopMsg(POPMSG_MSG, T("Memory alloc error."));
 		return;
 	}
 	NewDib = LocalLock(hDib);
@@ -286,7 +286,7 @@ void Rotate(HWND hWnd,int d)
 	hBmpInfo = LocalAlloc(LMEM_FIXED, x);
 	if ( hBmpInfo == NULL ) return;
 	NewBmpInfo = LocalLock(hBmpInfo);
-	memcpy(NewBmpInfo,vo_.bitmap.info,x);
+	memcpy(NewBmpInfo, vo_.bitmap.info, x);
 	NewBmpInfo->biWidth = vo_.bitmap.info->biHeight;
 	NewBmpInfo->biHeight = vo_.bitmap.info->biWidth;
 	NewBmpInfo->biSizeImage = width * vo_.bitmap.rawsize.cx;
@@ -338,7 +338,7 @@ void Rotate(HWND hWnd,int d)
 				}
 			}
 		}else if ( vo_.bitmap.info->biBitCount == 4 ){
-			BYTE bits,srcB;
+			BYTE bits, srcB;
 			int bitI;
 
 			bits = 0;
@@ -356,7 +356,7 @@ void Rotate(HWND hWnd,int d)
 				if ( bitI ) *dest = (BYTE)(bits << 4);
 			}
 		}else{ // vo_.bitmap.info->biBitCount == 1
-			BYTE bits,srcB;
+			BYTE bits, srcB;
 			int bitI;
 
 			bits = 0;
@@ -416,7 +416,7 @@ void Rotate(HWND hWnd,int d)
 				}
 			}
 		}else if ( vo_.bitmap.info->biBitCount == 4 ){
-			BYTE bits,srcB;
+			BYTE bits, srcB;
 			int bitI;
 
 			bits = 0;
@@ -434,7 +434,7 @@ void Rotate(HWND hWnd,int d)
 				if ( bitI ) *dest = (BYTE)(bits << 4);
 			}
 		}else{ // vo_.bitmap.info->biBitCount == 1
-			BYTE bits,srcB;
+			BYTE bits, srcB;
 			int bitI;
 
 			bits = 0;
@@ -473,14 +473,14 @@ void Rotate(HWND hWnd,int d)
 
 	if ( (d == -1) || (d == 1) ){
 		vo_.bitmap.rotate += d;
-		InvalidateRect(hWnd,NULL,TRUE);
+		InvalidateRect(hWnd, NULL, TRUE);
 		SetScrollBar();
 	}
 }
 
-#pragma pack(push,1)
+#pragma pack(push, 1)
 typedef struct {
-	BYTE B,G,R,A;
+	BYTE B, G, R, A;
 } MaskBits;
 #pragma pack(pop)
 
@@ -492,9 +492,9 @@ typedef struct {
 
 void ModifyAlpha16(void)
 {
-	BYTE *bit,*maxbit;
-	int backleft,backcountX,backcountY,width;
-	BYTE backLcolor,backcolor,transcolor,transcolorH;
+	BYTE *bit, *maxbit;
+	int backleft, backcountX, backcountY, width;
+	BYTE backLcolor, backcolor, transcolor, transcolorH;
 
 	bit = vo_.bitmap.bits.ptr;
 	width = DwordAlignment(vo_.bitmap.rawsize.cx / 2);
@@ -537,9 +537,9 @@ void ModifyAlpha16(void)
 
 void ModifyAlpha256(void)
 {
-	BYTE *bit,*maxbit;
-	int backleft,backcountX,backcountY,width;
-	BYTE backLcolor,backcolor,transcolor;
+	BYTE *bit, *maxbit;
+	int backleft, backcountX, backcountY, width;
+	BYTE backLcolor, backcolor, transcolor;
 
 	bit = vo_.bitmap.bits.ptr;
 	width = DwordAlignment(vo_.bitmap.rawsize.cx);
@@ -577,9 +577,9 @@ void ModifyAlpha256(void)
 
 void ModifyAlpha(HWND hWnd)
 {
-	MaskBits *bit,*maxbit;
-	int backleft,backcountX,backcountY;
-	WORD backLcolor,backcolor;
+	MaskBits *bit, *maxbit;
+	int backleft, backcountX, backcountY;
+	WORD backLcolor, backcolor;
 
 	if ( vo_.bitmap.info->biBitCount < 32 ){
 		if ( vo_.bitmap.info->biBitCount == 8 ){
@@ -598,7 +598,7 @@ void ModifyAlpha(HWND hWnd)
 		backLcolor = backcolor = backdefcolor;
 
 		for ( ; bit < maxbit ; bit++ ){
-			WORD A,backAcolor;
+			WORD A, backAcolor;
 
 			A = (WORD)bit->A;
 			if ( A != 0xff ){
@@ -628,5 +628,5 @@ void ModifyAlpha(HWND hWnd)
 			}
 		}
 	}
-	InvalidateRect(hWnd,NULL,TRUE);
+	InvalidateRect(hWnd, NULL, TRUE);
 }

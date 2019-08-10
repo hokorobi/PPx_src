@@ -33,7 +33,7 @@ enum fop_states {
 
 struct tagFOPSTRUCT;
 
-#pragma pack(push,1)
+#pragma pack(push, 1)
 typedef struct {			// カスタマイズ内容(X_fopt)
 							// Same Name Action -------------------------------
 	int		sameSW;			// (ALL&W)同名ファイルの対処方法が設定済みなら !0
@@ -141,7 +141,7 @@ struct ProgressInfo {
 	DWORD LEskips, EXskips, errors; // 軽微エラー無視によるスキップ数、上書き無しスキップ数、エラー数
 	DWORD busybar;			// ワーキングカウンタ
 	DWORD count_exists; // 数算出時に検出した同名ファイル数
-	DWORD exists[3]; // 比較結果 new date,same date,old date
+	DWORD exists[3]; // 比較結果 new date, same date, old date
 };
 
 #define PROGRESS_INTERVAL_TICK 100
@@ -244,34 +244,36 @@ typedef struct {
 #define WINY_FULL	188
 #define WINY_MAX	(144+41-1)
 
-enum foplogtypes { LOG_COPY = 0,LOG_COPYOVERWRITE,LOG_MOVE,LOG_MOVEOVERWRITE,
-	LOG_APPEND,LOG_BACKUP,LOG_LINK,LOG_SKIP,LOG_DIR,LOG_DIR_DELETE,
-	LOG_DELETE,LOG_STRING,LOG_MAKEDIR
+enum foplogtypes {
+	LOG_COPY = 0, LOG_COPYOVERWRITE, LOG_MOVE, LOG_MOVEOVERWRITE,
+	LOG_APPEND, LOG_BACKUP, LOG_LINK, LOG_SKIP,
+	LOG_DIR, LOG_DIR_DELETE, LOG_DELETE, LOG_STRING,
+	LOG_MAKEDIR
 };
 
-#define CreateFile_OpenSource(SRC,FILEMODE) CreateFileL(SRC,GENERIC_READ,FILE_SHARE_READ | FILE_SHARE_WRITE,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN | FILEMODE,NULL)
+#define CreateFile_OpenSource(SRC, FILEMODE) CreateFileL(SRC, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN | FILEMODE, NULL)
 
-void FopLog(FOPSTRUCT *FS,const TCHAR *src,const TCHAR *dst,enum foplogtypes type);
+void FopLog(FOPSTRUCT *FS, const TCHAR *src, const TCHAR *dst, enum foplogtypes type);
 
 //----------------------------------------------------------------- vfs_fop.c
 extern BOOL OperationStart(FOPSTRUCT *FS);
-extern void FWriteLogMsg(FOPSTRUCT *FS,const TCHAR *mes);
-extern void FWriteErrorLogs(FOPSTRUCT *FS,const TCHAR *mes,const TCHAR *type,ERRORCODE error);
+extern void FWriteLogMsg(FOPSTRUCT *FS, const TCHAR *mes);
+extern void FWriteErrorLogs(FOPSTRUCT *FS, const TCHAR *mes, const TCHAR *type, ERRORCODE error);
 extern void DisplaySrcNameNow(FOPSTRUCT *FS);
 extern void TinyDisplayProgress(FOPSTRUCT *FS);
-extern void FullDisplayProgress(struct _ProgressWndInfo *Progs,LARGE_INTEGER TotalTransSize,LARGE_INTEGER TotalSize);
+extern void FullDisplayProgress(struct _ProgressWndInfo *Progs, LARGE_INTEGER TotalTransSize, LARGE_INTEGER TotalSize);
 
 #define ACTION_CREATE NO_ERROR
 #define ACTION_SKIP		MAX32
 #define ACTION_RETRY	(MAX32-1)
 #define ACTION_APPEND	(MAX32-2)
 #define ACTION_OVERWRITE (MAX32-3)
-ERRORCODE SameNameAction(FOPSTRUCT *FS,HANDLE dstH,BY_HANDLE_FILE_INFORMATION *srcfinfo,BY_HANDLE_FILE_INFORMATION *dstfinfo,const TCHAR *src,TCHAR *dst);
+ERRORCODE SameNameAction(FOPSTRUCT *FS, HANDLE dstH, BY_HANDLE_FILE_INFORMATION *srcfinfo, BY_HANDLE_FILE_INFORMATION *dstfinfo, const TCHAR *src, TCHAR *dst);
 
-DWORD CALLBACK CopyProgress(LARGE_INTEGER TotalSize,LARGE_INTEGER TotalTransSize,LARGE_INTEGER StreamSize,LARGE_INTEGER StreamTransSize,DWORD StreamNumber,DWORD reason,HANDLE hSourceFile,HANDLE hDestinationFile,LPVOID lpData);
+DWORD CALLBACK CopyProgress(LARGE_INTEGER TotalSize, LARGE_INTEGER TotalTransSize, LARGE_INTEGER StreamSize, LARGE_INTEGER StreamTransSize, DWORD StreamNumber, DWORD reason, HANDLE hSourceFile, HANDLE hDestinationFile, LPVOID lpData);
 
-extern ERRORCODE TestDest(FOPSTRUCT *FS,const TCHAR *src,TCHAR *dst);
-extern void FWriteLog(HWND hEWnd,const TCHAR *message);
+extern ERRORCODE TestDest(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst);
+extern void FWriteLog(HWND hEWnd, const TCHAR *message);
 extern void CreateFWriteLogWindow(FOPSTRUCT *FS);
 extern void EndingOperation(FOPSTRUCT *FS);
 extern HWND FopGetMsgParentWnd(FOPSTRUCT *FS);
@@ -312,52 +314,52 @@ extern ERRORCODE DlgCopyFile(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD 
 extern ERRORCODE CheckEntryMask(FOPSTRUCT *FS, const TCHAR *src, DWORD srcatr);
 
 //----------------------------------------------------------------- vfs_odel.c
-extern DWORD_PTR USECDECL FopDeleteInfoFunc(PPXAPPINFO *ppxa,DWORD cmdID,PPXAPPINFOUNION *uptr);
+extern DWORD_PTR USECDECL FopDeleteInfoFunc(PPXAPPINFO *ppxa, DWORD cmdID, PPXAPPINFOUNION *uptr);
 
 //----------------------------------------------------------------- vfs_odlg.c
-extern void Enables(FOPSTRUCT *FS,int setting,int samesetting);
+extern void Enables(FOPSTRUCT *FS, int setting, int samesetting);
 extern void USEFASTCALL PeekMessageLoopSub(FOPSTRUCT *FS);
 extern void PeekMessageLoop(FOPSTRUCT *FS);
-extern void SetWindowY(FOPSTRUCT *FS,int y);
-extern void DispAttr(HWND hDlg,UINT cID,BY_HANDLE_FILE_INFORMATION *src,BY_HANDLE_FILE_INFORMATION *dst);
+extern void SetWindowY(FOPSTRUCT *FS, int y);
+extern void DispAttr(HWND hDlg, UINT cID, BY_HANDLE_FILE_INFORMATION *src, BY_HANDLE_FILE_INFORMATION *dst);
 extern void SaveControlData(FOPSTRUCT *FS);
-extern INT_PTR CALLBACK FileOperationDlgBox(HWND hDlg,UINT iMsg,WPARAM wParam,LPARAM lParam);
-extern void SetFopTab(FOPSTRUCT *FS,int id);
-extern void SetStateOnCaption(FOPSTRUCT *FS,const TCHAR *text);
+extern INT_PTR CALLBACK FileOperationDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
+extern void SetFopTab(FOPSTRUCT *FS, int id);
+extern void SetStateOnCaption(FOPSTRUCT *FS, const TCHAR *text);
 
 //----------------------------------------------------------------- vfs_oflt.c
-extern ERRORCODE LFNfilter(struct FopOption *opt,TCHAR *src);
+extern ERRORCODE LFNfilter(struct FopOption *opt, TCHAR *src);
 
 //----------------------------------------------------------------- vfs_oimg.c
-extern BOOL OperationStartListFile(FOPSTRUCT *FS,const TCHAR *srcDIR,TCHAR *dstDIR);
-extern int OperationStartToFile(FOPSTRUCT *FS,const TCHAR *srcDIR,TCHAR *dstDIR);
-extern void ImgExtract(FOPSTRUCT *FS,const TCHAR *srcDIR,const TCHAR *dstDIR);
+extern BOOL OperationStartListFile(FOPSTRUCT *FS, const TCHAR *srcDIR, TCHAR *dstDIR);
+extern int OperationStartToFile(FOPSTRUCT *FS, const TCHAR *srcDIR, TCHAR *dstDIR);
+extern void ImgExtract(FOPSTRUCT *FS, const TCHAR *srcDIR, const TCHAR *dstDIR);
 
 //----------------------------------------------------------------- vfs_olnk.c
 #ifndef SYMBOLIC_LINK_FLAG_DIRECTORY
 #define SYMBOLIC_LINK_FLAG_DIRECTORY (0x1)
 #endif
-TypedefWinAPI(BOOL,CreateHardLink,
-		(LPCTSTR lpFileName,LPCTSTR lpExistingFileName,
+TypedefWinAPI(BOOL, CreateHardLink,
+		(LPCTSTR lpFileName, LPCTSTR lpExistingFileName,
 		LPSECURITY_ATTRIBUTES lpSecurityAttributes));
 
-extern ERRORCODE FOPMakeShortCut(const TCHAR *src,TCHAR *dst,BOOL directory,BOOL test);
-extern ERRORCODE FopCreateSymlink(const TCHAR *FileName,const TCHAR *ExistingFileName,DWORD flags);
+extern ERRORCODE FOPMakeShortCut(const TCHAR *src, TCHAR *dst, BOOL directory, BOOL test);
+extern ERRORCODE FopCreateSymlink(const TCHAR *FileName, const TCHAR *ExistingFileName, DWORD flags);
 extern ValueWinAPI(CreateHardLink);
 
 //----------------------------------------------------------------- vfs_osub.c
-extern ERRORCODE CopySecurity(FOPSTRUCT *FS,const TCHAR *src,const TCHAR *dst);
-extern ERRORCODE BackupFile(FOPSTRUCT *FS,const TCHAR *src);
+extern ERRORCODE CopySecurity(FOPSTRUCT *FS, const TCHAR *src, const TCHAR *dst);
+extern ERRORCODE BackupFile(FOPSTRUCT *FS, const TCHAR *src);
 extern void SetFopLowPriority(FOPSTRUCT *FS);
-extern void FopCompareFile(HWND hWnd,const TCHAR *src,const TCHAR *dest);
+extern void FopCompareFile(HWND hWnd, const TCHAR *src, const TCHAR *dest);
 extern BOOL UndoCommand(FOPSTRUCT *FS);
 extern void GetUndoLogFileName(TCHAR *name);
-extern ERRORCODE FileOperationReparse(FOPSTRUCT *FS,const TCHAR *src,TCHAR *dst,DWORD attr);
-extern int FopOperationMsgBox(FOPSTRUCT *FS,const TCHAR *msg,const TCHAR *title,UINT flags);
+extern ERRORCODE FileOperationReparse(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD attr);
+extern int FopOperationMsgBox(FOPSTRUCT *FS, const TCHAR *msg, const TCHAR *title, UINT flags);
 
 typedef struct {
 	PPXAPPINFO info;
 	const TCHAR *filename;
 } FILENAMEINFOSTRUCT;
-extern DWORD_PTR USECDECL FilenameInfoFunc(FILENAMEINFOSTRUCT *linfo,DWORD cmdID,PPXAPPINFOUNION *uptr);
+extern DWORD_PTR USECDECL FilenameInfoFunc(FILENAMEINFOSTRUCT *linfo, DWORD cmdID, PPXAPPINFOUNION *uptr);
 

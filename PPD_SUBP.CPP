@@ -26,12 +26,12 @@ class CddpIDropSource: public IDropSource{
 		CddpIDropSource();
 		~CddpIDropSource();
 										// IUnknown members -------------------
-		STDMETHOD(QueryInterface)(REFIID,void **);
-		STDMETHOD_(ULONG,AddRef)(void);
-		STDMETHOD_(ULONG,Release)(void);
+		STDMETHOD(QueryInterface)(REFIID, void **);
+		STDMETHOD_(ULONG, AddRef)(void);
+		STDMETHOD_(ULONG, Release)(void);
 										// IDataObject members ----------------
 		STDMETHOD(GiveFeedback)(DWORD dwEffect);
-		STDMETHOD(QueryContinueDrag)(BOOL fEscapePressed,DWORD grfKeyState);
+		STDMETHOD(QueryContinueDrag)(BOOL fEscapePressed, DWORD grfKeyState);
 };
 
 //------------------------------------- ƒRƒ“ƒXƒgƒ‰ƒNƒ^
@@ -42,10 +42,10 @@ CddpIDropSource::CddpIDropSource()
 //------------------------------------- ƒfƒRƒ“ƒXƒgƒ‰ƒNƒ^
 CddpIDropSource::~CddpIDropSource()
 {
-//	if(m_cRefCount != 0) xmessage(XM_FaERRld,T("~CddpIDropSource"));
+//	if(m_cRefCount != 0) xmessage(XM_FaERRld, T("~CddpIDropSource"));
 }
 //------------------------------------- ’èŒ^•”•ª ------------------------------
-STDMETHODIMP CddpIDropSource::QueryInterface(REFIID refiid,void ** ppv)
+STDMETHODIMP CddpIDropSource::QueryInterface(REFIID refiid, void ** ppv)
 {
 	if ( XIID_IUnknown == refiid || XIID_IDropSource == refiid ){
 		*ppv = this;
@@ -76,7 +76,7 @@ STDMETHODIMP CddpIDropSource::GiveFeedback(DWORD)
 	return ResultFromScode(DRAGDROP_S_USEDEFAULTCURSORS);
 }
 
-STDMETHODIMP CddpIDropSource::QueryContinueDrag(BOOL fEscapePressed,DWORD grfKeyState)
+STDMETHODIMP CddpIDropSource::QueryContinueDrag(BOOL fEscapePressed, DWORD grfKeyState)
 {
 	if ( fEscapePressed ||
 		 ( (grfKeyState & (MK_LBUTTON | MK_RBUTTON)) ==
@@ -88,20 +88,20 @@ STDMETHODIMP CddpIDropSource::QueryContinueDrag(BOOL fEscapePressed,DWORD grfKey
 	}
 	return ResultFromScode(S_OK);
 }
-void DragDropPath(HWND hWnd,const TCHAR *path)
+void DragDropPath(HWND hWnd, const TCHAR *path)
 {
 	LPDATAOBJECT pDO;
 	CddpIDropSource *DropSource;
 	DWORD dwEffect;
 
 	if( FAILED(::OleInitialize(NULL)) ) return;
-	pDO = (LPDATAOBJECT)GetPathInterface(hWnd,path,XIID_IDataObject,NULL);
+	pDO = (LPDATAOBJECT)GetPathInterface(hWnd, path, XIID_IDataObject, NULL);
 	if ( pDO != NULL ){
 		DropSource = new CddpIDropSource;
 
-		::DoDragDrop(pDO,DropSource,
+		::DoDragDrop(pDO, DropSource,
 				DROPEFFECT_COPY | DROPEFFECT_MOVE | DROPEFFECT_LINK |
-				DROPEFFECT_SCROLL,&dwEffect);
+				DROPEFFECT_SCROLL, &dwEffect);
 
 		DropSource->Release();
 		pDO->Release();
@@ -116,28 +116,28 @@ void AutoDDDLL_Register(HWND hTargetWnd)
 	hOleaut32DLLHOOK = LoadSystemWinAPI(SYSTEMDLL_OLEAUT32, OLEAUT32_SysStr);
 	if ( hOleaut32DLLHOOK == NULL ) return;
 	// DropTarget ‚ðŽæ“¾‚·‚é
-	DropTarget = (IDropTarget *)GetProp(hTargetWnd,DROPTARGETPROPNAME);
+	DropTarget = (IDropTarget *)GetProp(hTargetWnd, DROPTARGETPROPNAME);
 	if ( DropTarget == NULL ) return;
 
 	if( FAILED(::OleInitialize(NULL)) ) return;
 	DropTarget->AddRef();
-	::CoLockObjectExternal(DropTarget,TRUE,TRUE);
+	::CoLockObjectExternal(DropTarget, TRUE, TRUE);
 	// ROT ‚É DropTarget ‚ð“o˜^
-	::DRegisterActiveObject(DropTarget,XCLSID_IDATAOBJECT_AUTODD,ACTIVEOBJECT_WEAK,&regobjectID);
+	::DRegisterActiveObject(DropTarget, XCLSID_IDATAOBJECT_AUTODD, ACTIVEOBJECT_WEAK, &regobjectID);
 }
 
 void AutoDDDLL_Revoke(void)
 {
 	if ( !regobjectID ) return; // “o˜^‚µ‚Ä‚¢‚È‚¢
-	DRevokeActiveObject(regobjectID,NULL);
+	DRevokeActiveObject(regobjectID, NULL);
 	regobjectID = 0;
-	::CoLockObjectExternal(DropTarget,FALSE,TRUE);
+	::CoLockObjectExternal(DropTarget, FALSE, TRUE);
 	DropTarget->Release();
 	::OleUninitialize();
 	FreeLibrary(hOleaut32DLLHOOK);
 }
 
-LRESULT CALLBACK AutoDDDLLProc(int nCode,WPARAM,CWPSTRUCT *cwps)
+LRESULT CALLBACK AutoDDDLLProc(int nCode, WPARAM, CWPSTRUCT *cwps)
 {
 	if ( (nCode == HC_ACTION) && (cwps->message == WM_PPXCOMMAND) ){
 		if ( cwps->wParam == KC_REGISTADDPROC ){
@@ -151,10 +151,10 @@ LRESULT CALLBACK AutoDDDLLProc(int nCode,WPARAM,CWPSTRUCT *cwps)
 
 // ƒJƒ‰ƒ€Šg’£ŠÖŒW =============================================================
 const TCHAR HandlersKey[] = T("Folder\\shellex\\ColumnHandlers");
-const CLSID XCLSID_PropertySystem = {0xb8967f85,0x58ae,0x4f46,{0x9f,0xb2,0x5d,0x79,0x04,0x79,0x8f,0x4b}};
-const IID XIID_IPropertySystem = {0xca724e8a,0xc3e6,0x442b,{0x88,0xa4,0x6f,0xb0,0xdb,0x80,0x35,0xa3}};
-const IID XIID_IPropertyDescriptionList = {0x1f9fc1d0,0xc39b,0x4b26,{0x81,0x7f,0x01,0x19,0x67,0xd3,0x44,0x0e}};
-const IID XIID_IPropertyDescription = {0x6f79d558,0x3e96,0x4549,{0xa1,0xd1,0x7d,0x75,0xd2,0x28,0x88,0x14}};
+const CLSID XCLSID_PropertySystem = {0xb8967f85, 0x58ae, 0x4f46, {0x9f, 0xb2, 0x5d, 0x79, 0x04, 0x79, 0x8f, 0x4b}};
+const IID XIID_IPropertySystem = {0xca724e8a, 0xc3e6, 0x442b, {0x88, 0xa4, 0x6f, 0xb0, 0xdb, 0x80, 0x35, 0xa3}};
+const IID XIID_IPropertyDescriptionList = {0x1f9fc1d0, 0xc39b, 0x4b26, {0x81, 0x7f, 0x01, 0x19, 0x67, 0xd3, 0x44, 0x0e}};
+const IID XIID_IPropertyDescription = {0x6f79d558, 0x3e96, 0x4549, {0xa1, 0xd1, 0x7d, 0x75, 0xd2, 0x28, 0x88, 0x14}};
 
 const WCHAR SystemName[] = L"System";
 
@@ -169,25 +169,25 @@ void CloseColumnExtMenu(ThSTRUCT *thEcdata)
 	ThFree(thEcdata);
 }
 
-PPXDLL void PPXAPI GetColumnExtMenu(ThSTRUCT *thEcdata,const TCHAR *targetpath,HMENU hMenu,DWORD index)
+PPXDLL void PPXAPI GetColumnExtMenu(ThSTRUCT *thEcdata, const TCHAR *targetpath, HMENU hMenu, DWORD index)
 {
 	HKEY hKey;
 	int enumno = 0;
 	DWORD itemoffset;
 	DWORD oldcndi = 0;
 	int writeoffset = 0;
-	IColumnProvider *Icp,**Icps;
-	COLUMNEXTDATAINFO *cndi,newcndi;
+	IColumnProvider *Icp, **Icps;
+	COLUMNEXTDATAINFO *cndi, newcndi;
 
 	if ( targetpath == NULL ){
 		CloseColumnExtMenu(thEcdata);
 		return;
 	}
 								// €–Ú‚Ö‚ÌƒIƒtƒZƒbƒg(Œ»Žž“_‚Å‚Íƒ_ƒ~[)‚ð—pˆÓ
-	::ThAppend(thEcdata,&writeoffset,sizeof(writeoffset));
-	// Windows 2000,XP ========================================================
+	::ThAppend(thEcdata, &writeoffset, sizeof(writeoffset));
+	// Windows 2000, XP ========================================================
 								// IColumnProvider ‚Ìˆê——‚ðì¬
-	if ( ::RegOpenKeyEx(HKEY_CLASSES_ROOT,HandlersKey,0,KEY_READ,&hKey) == ERROR_SUCCESS ){
+	if ( ::RegOpenKeyEx(HKEY_CLASSES_ROOT, HandlersKey, 0, KEY_READ, &hKey) == ERROR_SUCCESS ){
 		for ( ; ; ){
 			TCHAR keyname[MAX_PATH];
 			CLSID hid;
@@ -197,7 +197,7 @@ PPXDLL void PPXAPI GetColumnExtMenu(ThSTRUCT *thEcdata,const TCHAR *targetpath,H
 			SHCOLUMNINIT cci;
 
 			s = MAX_PATH;
-			if ( ::RegEnumKeyEx(hKey,enumno++,keyname,&s,NULL,NULL,NULL,&ft) !=
+			if ( ::RegEnumKeyEx(hKey, enumno++, keyname, &s, NULL, NULL, NULL, &ft) !=
 					ERROR_SUCCESS){
 				break;
 			}
@@ -207,21 +207,21 @@ PPXDLL void PPXAPI GetColumnExtMenu(ThSTRUCT *thEcdata,const TCHAR *targetpath,H
 				WCHAR idnameW[MAX_PATH];
 				#define tidname idnameW
 
-				AnsiToUnicode(keyname,idnameW,MAX_PATH);
-				AnsiToUnicode(targetpath,cci.wszFolder,MAX_PATH);
+				AnsiToUnicode(keyname, idnameW, MAX_PATH);
+				AnsiToUnicode(targetpath, cci.wszFolder, MAX_PATH);
 			#else
 				#define tidname keyname
-				tstrcpy(cci.wszFolder,targetpath);
+				tstrcpy(cci.wszFolder, targetpath);
 			#endif
-			::CLSIDFromString(tidname,&hid);
-			hres = ::CoCreateInstance(hid,NULL,CLSCTX_INPROC_SERVER,
-					XIID_IColumnProvider,(LPVOID *)&Icp);
+			::CLSIDFromString(tidname, &hid);
+			hres = ::CoCreateInstance(hid, NULL, CLSCTX_INPROC_SERVER,
+					XIID_IColumnProvider, (LPVOID *)&Icp);
 			if ( FAILED(hres) ) continue;
 
 			cci.dwFlags = 0;
 			cci.dwReserved = 0;
 			if ( Icp->Initialize(&cci) == S_OK ){
-				::ThAppend(thEcdata,&Icp,sizeof(IColumnProvider *));
+				::ThAppend(thEcdata, &Icp, sizeof(IColumnProvider *));
 			}else{
 				Icp->Release();
 			}
@@ -229,7 +229,7 @@ PPXDLL void PPXAPI GetColumnExtMenu(ThSTRUCT *thEcdata,const TCHAR *targetpath,H
 		::RegCloseKey(hKey);
 	}
 	Icp = NULL;
-	::ThAppend(thEcdata,&Icp,sizeof(IColumnProvider *)); // terminater
+	::ThAppend(thEcdata, &Icp, sizeof(IColumnProvider *)); // terminater
 
 // IColumnProvider ‚Ìˆê——‚©‚ç€–Ú(SHCOLUMNID–ˆ‚ÌCOLUMNEXTDATAINFO‚Ìˆê——)‚ðì¬
 	Icps = (IColumnProvider **)(BYTE *)(thEcdata->bottom + sizeof(int));
@@ -252,14 +252,14 @@ PPXDLL void PPXAPI GetColumnExtMenu(ThSTRUCT *thEcdata,const TCHAR *targetpath,H
 				#define title sci.wszTitle
 			#endif
 
-			if ( newcndi.icps.Icp->GetColumnInfo(subindex++,&sci) != S_OK ){
+			if ( newcndi.icps.Icp->GetColumnInfo(subindex++, &sci) != S_OK ){
 				break;
 			}
 			if ( sci.wszTitle[0] == '\0' ) continue;
 			offset = itemoffset;
 			while ( offset < thEcdata->top ){ // “¯SHCOLUMNID‚Ì€–Ú‚ª‚È‚¢‚©’T‚·
 				cndi = (COLUMNEXTDATAINFO *)(BYTE *)(thEcdata->bottom + offset);
-				if ( !memcmp(&sci.scid,&cndi->id.scid,sizeof(sci.scid)) ){ // ŠY“–—L‚è¨’Ç‰Á“o˜^
+				if ( !memcmp(&sci.scid, &cndi->id.scid, sizeof(sci.scid)) ){ // ŠY“–—L‚è¨’Ç‰Á“o˜^
 					COLUMNEXTDATAINFO_ICP *icps;
 
 					icps = &cndi->icps;
@@ -267,7 +267,7 @@ PPXDLL void PPXAPI GetColumnExtMenu(ThSTRUCT *thEcdata,const TCHAR *targetpath,H
 						icps = (COLUMNEXTDATAINFO_ICP *)(BYTE *)(thEcdata->bottom + icps->next);
 					}
 					icps->next = thEcdata->top;
-					::ThAppend(thEcdata,&newcndi.icps,sizeof(newcndi.icps));
+					::ThAppend(thEcdata, &newcndi.icps, sizeof(newcndi.icps));
 					offset = 0;
 					break;
 				}
@@ -280,59 +280,59 @@ PPXDLL void PPXAPI GetColumnExtMenu(ThSTRUCT *thEcdata,const TCHAR *targetpath,H
 			oldcndi = thEcdata->top;
 			newcndi.next = 0x7fffffff;
 			newcndi.id.scid = sci.scid;
-			::ThAppend(thEcdata,&newcndi,sizeof(newcndi));
+			::ThAppend(thEcdata, &newcndi, sizeof(newcndi));
 
 			// €–Ú–¼‚ðƒƒjƒ…[‚É“o˜^
 			#ifndef UNICODE
-				UnicodeToAnsi(sci.wszTitle,titleA,MAX_COLUMN_NAME_LEN);
+				UnicodeToAnsi(sci.wszTitle, titleA, MAX_COLUMN_NAME_LEN);
 			#endif
 			if ( hMenu != NULL ){
 				if ( index ){
-					::AppendMenuString(hMenu,index++,title);
+					::AppendMenuString(hMenu, index++, title);
 				/* 1.46+3 ”pŽ~
 				}else{
 					TCHAR buf[MAX_PATH];
 
-					wsprintf(buf,T("\"%s\""),title);
-					::SendMessage((HWND)hMenu,CB_ADDSTRING,0,(LPARAM)buf);
+					wsprintf(buf, T("\"%s\""), title);
+					::SendMessage((HWND)hMenu, CB_ADDSTRING, 0, (LPARAM)buf);
 				*/
 				}
 			}else{
-				::ThAppend(thEcdata,title,TSTRSIZE32(title));
+				::ThAppend(thEcdata, title, TSTRSIZE32(title));
 			}
 		}
 		Icps++;
 	}
 
-	// Windows Vista,7 ========================================================
+	// Windows Vista, 7 ========================================================
 	IPropertySystem *ps;
 	IPropertyDescriptionList *pdl;
 	IPropertyDescription *pd;
-	if ( SUCCEEDED(::CoCreateInstance(XCLSID_PropertySystem,NULL,
-			CLSCTX_INPROC_SERVER,XIID_IPropertySystem,(void **)&ps)) ){
-		UINT count = 0,i;
+	if ( SUCCEEDED(::CoCreateInstance(XCLSID_PropertySystem, NULL,
+			CLSCTX_INPROC_SERVER, XIID_IPropertySystem, (void **)&ps)) ){
+		UINT count = 0, i;
 		int group = 1;
-		HMENU hSubMenu,hSystemMenu;
+		HMENU hSubMenu, hSystemMenu;
 
 		if ( (hMenu != NULL) && index ){
 			hSystemMenu = CreatePopupMenu();
-			::AppendMenu(hMenu,MF_EPOP,(UINT_PTR)hSystemMenu,MessageText(MES_MGNR));
+			::AppendMenu(hMenu, MF_EPOP, (UINT_PTR)hSystemMenu, MessageText(MES_MGNR));
 		}
 
 		ps->EnumeratePropertyDescriptions(PDEF_COLUMN, //PDEF_ALL,
-				XIID_IPropertyDescriptionList,(void**)&pdl);
+				XIID_IPropertyDescriptionList, (void**)&pdl);
 		pdl->GetCount(&count);
 		for ( i = 0 ; i < count; i++ ){
-			if ( FAILED(pdl->GetAt(i,XIID_IPropertyDescription,(void**)&pd)) ){
+			if ( FAILED(pdl->GetAt(i, XIID_IPropertyDescription, (void**)&pd)) ){
 				continue;
 			}
-			LPWSTR dname,cname;
+			LPWSTR dname, cname;
 			if ( SUCCEEDED(pd->GetDisplayName(&dname)) ){
 				#undef title
 				#ifndef UNICODE
 					char titleA[MAX_PATH];
 					#define title titleA
-					UnicodeToAnsi(dname,titleA,MAX_PATH);
+					UnicodeToAnsi(dname, titleA, MAX_PATH);
 				#else
 					#define title dname
 				#endif
@@ -347,11 +347,11 @@ PPXDLL void PPXAPI GetColumnExtMenu(ThSTRUCT *thEcdata,const TCHAR *targetpath,H
 				pd->GetPropertyKey(&newcndi.id.pkey);
 				newcndi.icps.next = 0;
 				newcndi.icps.Icp = NULL;
-				::ThAppend(thEcdata,&newcndi,sizeof(newcndi));
+				::ThAppend(thEcdata, &newcndi, sizeof(newcndi));
 
 				if ( hMenu != NULL ){
 					pd->GetCanonicalName(&cname);
-					WCHAR *grouplast = strrchrW(cname,'.');
+					WCHAR *grouplast = strrchrW(cname, '.');
 					if ( grouplast == NULL ){
 						hSubMenu = hMenu;
 					}else{
@@ -360,33 +360,33 @@ PPXDLL void PPXAPI GetColumnExtMenu(ThSTRUCT *thEcdata,const TCHAR *targetpath,H
 						if ( len != group ){
 							*grouplast = '\0';
 							grouplast = cname;
-							if ( memcmp(cname,SystemName,TSIZEOFW(SystemName) - 1 ) == 0 ){
+							if ( memcmp(cname, SystemName, TSIZEOFW(SystemName) - 1 ) == 0 ){
 								grouplast = cname + TSIZEOFW(SystemName) - 1;
 							}
 							if ( index ){
-								if ( strcmpW(cname,SystemName) == 0 ){
+								if ( strcmpW(cname, SystemName) == 0 ){
 									hSubMenu = hSystemMenu;
 								}else{
 									#ifdef UNICODE
 										hSubMenu = CreatePopupMenu();
-										::AppendMenu(hMenu,MF_EPOP,(UINT_PTR)hSubMenu,grouplast);
+										::AppendMenu(hMenu, MF_EPOP, (UINT_PTR)hSubMenu, grouplast);
 									#else
 										TCHAR buf[MAX_PATH];
 
 										hSubMenu = CreatePopupMenu();
-										UnicodeToAnsi(grouplast,buf,200);
-										::AppendMenu(hMenu,MF_EPOP,(UINT_PTR)hSubMenu,buf);
+										UnicodeToAnsi(grouplast, buf, 200);
+										::AppendMenu(hMenu, MF_EPOP, (UINT_PTR)hSubMenu, buf);
 									#endif
 								}
 							/* 1.46+3 ”pŽ~
 							}else{
 								#ifdef UNICODE
-									wsprintf(buf,L"----- %s",grouplast);
+									wsprintf(buf, L"----- %s", grouplast);
 								#else
-									tstrcpy(buf,T("----- "));
-									UnicodeToAnsi(grouplast,buf + 6,200);
+									tstrcpy(buf, T("----- "));
+									UnicodeToAnsi(grouplast, buf + 6, 200);
 								#endif
-								::SendMessage((HWND)hMenu,CB_ADDSTRING,0,(LPARAM)buf);
+								::SendMessage((HWND)hMenu, CB_ADDSTRING, 0, (LPARAM)buf);
 							*/
 							}
 							group = len;
@@ -394,16 +394,16 @@ PPXDLL void PPXAPI GetColumnExtMenu(ThSTRUCT *thEcdata,const TCHAR *targetpath,H
 					}
 
 					if ( index ){
-						::AppendMenuString(hSubMenu,index++,title);
+						::AppendMenuString(hSubMenu, index++, title);
 					/* 1.46+3 ”pŽ~
 					}else{
-						wsprintf(buf,T("\"%s\""),title);
-						::SendMessage((HWND)hMenu,CB_ADDSTRING,0,(LPARAM)buf);
+						wsprintf(buf, T("\"%s\""), title);
+						::SendMessage((HWND)hMenu, CB_ADDSTRING, 0, (LPARAM)buf);
 					*/
 					}
 					CoTaskMemFree(cname);
 				}else{
-					::ThAppend(thEcdata,title,TSTRSIZE32(title));
+					::ThAppend(thEcdata, title, TSTRSIZE32(title));
 				}
 				CoTaskMemFree(dname);
 			}
@@ -414,31 +414,31 @@ PPXDLL void PPXAPI GetColumnExtMenu(ThSTRUCT *thEcdata,const TCHAR *targetpath,H
 	}
 }
 
-HRESULT GetLink(HWND hWnd,const TCHAR *LinkFile,TCHAR *Original)
+HRESULT GetLink(HWND hWnd, const TCHAR *LinkFile, TCHAR *Original)
 {
 	HRESULT hres;
 	IShellLink *psl;
 	WIN32_FIND_DATA ff;
 										// IShellLink interface ‚ðŽæ“¾
-	hres = ::CoCreateInstance(XCLSID_ShellLink,NULL,
-			CLSCTX_INPROC_SERVER,XIID_IShellLink,(LPVOID *)&psl);
+	hres = ::CoCreateInstance(XCLSID_ShellLink, NULL,
+			CLSCTX_INPROC_SERVER, XIID_IShellLink, (LPVOID *)&psl);
 	if ( SUCCEEDED(hres) ){
 		IPersistFile *ppf;
 									// IShellLink ‚©‚ç IPersistFile interface
-		hres = psl->QueryInterface(XIID_IPersistFile,(LPVOID *)&ppf);
+		hres = psl->QueryInterface(XIID_IPersistFile, (LPVOID *)&ppf);
 		if ( SUCCEEDED(hres) ){
 			#ifdef UNICODE
-				hres = ppf->Load(LinkFile,STGM_READ);	// link ‚ðŽæ“¾
+				hres = ppf->Load(LinkFile, STGM_READ);	// link ‚ðŽæ“¾
 			#else
 				WCHAR wsz[VFPS];
 
-				::MultiByteToWideChar(CP_ACP,0,LinkFile,-1,wsz,TSIZEOF(wsz));
-				hres = ppf->Load(wsz,STGM_READ);	// link ‚ðŽæ“¾
+				::MultiByteToWideChar(CP_ACP, 0, LinkFile, -1, wsz, TSIZEOF(wsz));
+				hres = ppf->Load(wsz, STGM_READ);	// link ‚ðŽæ“¾
 			#endif
 			if ( SUCCEEDED(hres) ){
-				hres = psl->Resolve(hWnd,SLR_ANY_MATCH);
+				hres = psl->Resolve(hWnd, SLR_ANY_MATCH);
 				if ( SUCCEEDED(hres) ){
-					hres = psl->GetPath(Original,MAX_PATH,&ff,SLGP_UNCPRIORITY);
+					hres = psl->GetPath(Original, MAX_PATH, &ff, SLGP_UNCPRIORITY);
 					if ( FAILED(hres) || (Original[0] == '\0') ){
 						LPITEMIDLIST idl;
 
@@ -446,7 +446,7 @@ HRESULT GetLink(HWND hWnd,const TCHAR *LinkFile,TCHAR *Original)
 							LPSHELLFOLDER pSF;
 
 							SHGetDesktopFolder(&pSF);
-							GetIDLSub(Original,pSF,idl);
+							GetIDLSub(Original, pSF, idl);
 							pSF->Release();
 
 							FreePIDL(idl);

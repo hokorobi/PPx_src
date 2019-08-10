@@ -14,7 +14,7 @@
 #include "PPC_DD.H"
 #pragma hdrstop
 
-TCHAR * USEFASTCALL FixName(PPC_APPINFO *cinfo,ENTRYCELL *cell)
+TCHAR * USEFASTCALL FixName(PPC_APPINFO *cinfo, ENTRYCELL *cell)
 {
 	TCHAR *cfilename;
 
@@ -28,20 +28,20 @@ TCHAR * USEFASTCALL FixName(PPC_APPINFO *cinfo,ENTRYCELL *cell)
 HGLOBAL CreateHText(PPC_APPINFO *cinfo)
 {
 	TCHAR buf[VFPS];
-	TMS_struct files = {{NULL,0,NULL},0};
+	TMS_struct files = {{NULL, 0, NULL}, 0};
 	ENTRYCELL *cell;
-	int work,count = 0;
+	int work, count = 0;
 
 	TMS_reset(&files);
-	InitEnumMarkCell(cinfo,&work);
-	while ( (cell = EnumMarkCell(cinfo,&work)) != NULL ){
+	InitEnumMarkCell(cinfo, &work);
+	while ( (cell = EnumMarkCell(cinfo, &work)) != NULL ){
 		if ( cinfo->RealPath[0] == '?' ){
-			VFSFullPath(buf,FixName(cinfo,cell),cinfo->path);
+			VFSFullPath(buf, FixName(cinfo, cell), cinfo->path);
 		}else{
-			VFSFullPath(buf,FixName(cinfo,cell),cinfo->RealPath);
+			VFSFullPath(buf, FixName(cinfo, cell), cinfo->RealPath);
 		}
-		tstrcat(buf,T("\r\n"));
-		TMS_set(&files,buf);
+		tstrcat(buf, T("\r\n"));
+		TMS_set(&files, buf);
 		files.p -= sizeof(TCHAR);
 		count++;
 	}
@@ -50,13 +50,13 @@ HGLOBAL CreateHText(PPC_APPINFO *cinfo)
 		*((TCHAR *)files.tm.p + files.p) = '\0';
 	}
 	TMS_off(&files);
-	return ::GlobalReAlloc(files.tm.h,files.p + sizeof(TCHAR),GMEM_MOVEABLE);
+	return ::GlobalReAlloc(files.tm.h, files.p + sizeof(TCHAR), GMEM_MOVEABLE);
 }
 //-----------------------------------------------------------------------------
 HGLOBAL CreateHDrop(PPC_APPINFO *cinfo)
 {
 	TCHAR buf[VFPS];
-	TMS_struct files = {{NULL,0,NULL},0};
+	TMS_struct files = {{NULL, 0, NULL}, 0};
 	ENTRYCELL *cell;
 	int work;
 	DROPFILES *dp;
@@ -64,47 +64,47 @@ HGLOBAL CreateHDrop(PPC_APPINFO *cinfo)
 	if (cinfo->RealPath[0] == '?') return NULL;
 
 	TMS_reset(&files);
-	TM_check(&files.tm,sizeof(DROPFILES));
+	TM_check(&files.tm, sizeof(DROPFILES));
 	dp = (DROPFILES *)((BYTE *)files.tm.p + files.p);
 	dp->pFiles = sizeof(DROPFILES);
 	dp->pt.x = 0;
 	dp->pt.y = 0;
 	dp->fNC = FALSE;
 	files.p = sizeof(DROPFILES);
-	InitEnumMarkCell(cinfo,&work);
+	InitEnumMarkCell(cinfo, &work);
 
 #ifndef UNICODE
 	if ( OSver.dwPlatformId != VER_PLATFORM_WIN32_NT ){
 		dp->fWide = FALSE;	// OEM charset
-		while ( (cell = EnumMarkCell(cinfo,&work)) != NULL ){
-			VFSFullPath(buf,FixName(cinfo,cell),cinfo->RealPath);
-			TMS_set(&files,buf);
+		while ( (cell = EnumMarkCell(cinfo, &work)) != NULL ){
+			VFSFullPath(buf, FixName(cinfo, cell), cinfo->RealPath);
+			TMS_set(&files, buf);
 		}
-		TMS_set(&files,"");
+		TMS_set(&files, "");
 	}else
 #endif
 	{
 		dp->fWide = TRUE;	// UNICODE
 
-		while ( (cell = EnumMarkCell(cinfo,&work)) != NULL ){
+		while ( (cell = EnumMarkCell(cinfo, &work)) != NULL ){
 			int l;
 #ifndef UNICODE
 			OLECHAR olePath[VFPS];
 
-			VFSFullPath(buf,FixName(cinfo,cell),cinfo->RealPath);
-			l = ::MultiByteToWideChar(CP_ACP,MB_PRECOMPOSED,buf,-1,
-										olePath,VFPS) * sizeof(WCHAR);
-			if ( TM_check(&files.tm,files.p + l + sizeof(WCHAR)) == FALSE ){
+			VFSFullPath(buf, FixName(cinfo, cell), cinfo->RealPath);
+			l = ::MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, buf,-1,
+					olePath,VFPS) * sizeof(WCHAR);
+			if ( TM_check(&files.tm, files.p + l + sizeof(WCHAR)) == FALSE ){
 				goto memerror;
 			}
-			memcpy((char *)files.tm.p + files.p,olePath,l);
+			memcpy((char *)files.tm.p + files.p, olePath, l);
 #else
-			VFSFullPath(buf,FixName(cinfo,cell),cinfo->RealPath);
+			VFSFullPath(buf, FixName(cinfo, cell), cinfo->RealPath);
 			l = TSTRSIZE32(buf);
-			if ( TM_check(&files.tm,files.p + l + sizeof(WCHAR)) == FALSE ){
+			if ( TM_check(&files.tm, files.p + l + sizeof(WCHAR)) == FALSE ){
 				goto memerror;
 			}
-			memcpy((char *)files.tm.p + files.p,buf,l);
+			memcpy((char *)files.tm.p + files.p, buf, l);
 #endif
 			files.p += l;
 		}
@@ -113,7 +113,7 @@ HGLOBAL CreateHDrop(PPC_APPINFO *cinfo)
 	}
 
 	TMS_off(&files);
-	return ::GlobalReAlloc(files.tm.h,files.p,GMEM_MOVEABLE);
+	return ::GlobalReAlloc(files.tm.h, files.p, GMEM_MOVEABLE);
 memerror:
 	TMS_kill(&files);
 	return NULL;
@@ -128,42 +128,42 @@ HGLOBAL CreateShellIdList(PPC_APPINFO *cinfo)
 	LPMALLOC pMA;
 
 	ENTRYCELL *cell;
-	int work,j = 0;
+	int work, j = 0;
 
 	LPITEMIDLIST pRootPidl;
 	LPSHELLFOLDER pParentFolder =
-			VFPtoIShell(cinfo->info.hWnd,cinfo->path,&pRootPidl);
+			VFPtoIShell(cinfo->info.hWnd, cinfo->path, &pRootPidl);
 
 	if ( pParentFolder == NULL ) return NULL;
 	int sizeofPidl = GetPidlSize(pRootPidl);
 
 	DWORD TotalSize = (DWORD)(sizeof(CIDA) + sizeof(UINT) * cnt
 												+ sizeofPidl * (cnt + 1) );
-	hGlobal = ::GlobalAlloc(GHND | GMEM_SHARE,TotalSize);
+	hGlobal = ::GlobalAlloc(GHND | GMEM_SHARE, TotalSize);
 	if ( hGlobal == NULL ) return NULL;
 
 	LPIDA pIdA = (LPIDA)::GlobalLock(hGlobal);
 	pIdA->cidl = cnt;
 	pIdA->aoffset[0] = CurPosition;
-	memcpy((LPBYTE)(pIdA) + CurPosition,(LPBYTE)pRootPidl,sizeofPidl);
+	memcpy((LPBYTE)(pIdA) + CurPosition, (LPBYTE)pRootPidl, sizeofPidl);
 	CurPosition += sizeofPidl;
 
 	::SHGetMalloc(&pMA);
 	pMA->Free(pRootPidl);
 
-	InitEnumMarkCell(cinfo,&work);
-	while ( (cell = EnumMarkCell(cinfo,&work)) != NULL ){
+	InitEnumMarkCell(cinfo, &work);
+	while ( (cell = EnumMarkCell(cinfo, &work)) != NULL ){
 		TCHAR FileName[VFPS];
 		LPITEMIDLIST pItemPidl;
 
-		tstrcpy(FileName,FixName(cinfo,cell));
-		pItemPidl = BindIShellAndFname(pParentFolder,FileName);
+		tstrcpy(FileName, FixName(cinfo, cell));
+		pItemPidl = BindIShellAndFname(pParentFolder, FileName);
 		pIdA->aoffset[j + 1] = CurPosition;
 		sizeofPidl = GetPidlSize(pItemPidl);
 		if( TotalSize < (CurPosition + sizeofPidl) ){
 			::GlobalUnlock(hGlobal);
 			TotalSize += (cnt - j) * sizeofPidl;
-			hGlobal = ::GlobalReAlloc(hGlobal,TotalSize,GHND | GMEM_SHARE);
+			hGlobal = ::GlobalReAlloc(hGlobal, TotalSize, GHND | GMEM_SHARE);
 			if(hGlobal == NULL){
 				pParentFolder->Release();
 				pMA->Release();
@@ -171,7 +171,7 @@ HGLOBAL CreateShellIdList(PPC_APPINFO *cinfo)
 			}
 			pIdA = (LPIDA)::GlobalLock(hGlobal);
 		}
-		memcpy((LPBYTE)(pIdA) + CurPosition,(LPBYTE)pItemPidl,sizeofPidl);
+		memcpy((LPBYTE)(pIdA) + CurPosition, (LPBYTE)pItemPidl, sizeofPidl);
 		pMA->Free(pItemPidl);
 		CurPosition += sizeofPidl;
 		j++;

@@ -254,11 +254,11 @@ typedef INT ENTRYCOUNT; // エントリ数
 //#define NextEntryData(edo) (edo++)
 //#define GetNextEntryData(edo) (edo + 1)
 
-#pragma pack(push,1)
+#pragma pack(push, 1)
 typedef struct {
 									// マーク用ポインタ（テーブルは経由せず）--
-	ENTRYDATAOFFSET mark_fw; // 次のマーク位置 (NO_MARK_ID:マーク無し,ENDMARK_ID:末端)
-	ENTRYDATAOFFSET mark_bk; // 前のマーク位置 (NO_MARK_ID:(未使用)  ,ENDMARK_ID:先頭)
+	ENTRYDATAOFFSET mark_fw; // 次のマーク位置 (NO_MARK_ID:マーク無し, ENDMARK_ID:末端)
+	ENTRYDATAOFFSET mark_bk; // 前のマーク位置 (NO_MARK_ID:(未使用)  , ENDMARK_ID:先頭)
 									// 拡張子・ファイル種類関係
 	COLORREF extC;	// 拡張子の色
 
@@ -274,7 +274,7 @@ typedef struct {
 #define CCI_NOLOAD	-1 // 未取得
 #define CCI_NODATA	-2 // カラム情報無し
 	int cellcolumn;	// カラムインデックス(ColumnData 内の offset)
-	int icon;		// アイコンインデックス (-1:未登録,-2:空白)
+	int icon;		// アイコンインデックス (-1:未登録, -2:空白)
 	DIRECTXDEFINE(int iconcache) // DirectX BMP 用index
 									// ファイル情報 ---------------------------
 	WIN32_FIND_DATA f;		// ファイル情報(MultiByte なら WORD分余分)
@@ -290,6 +290,7 @@ typedef struct {
 #endif
 } ENTRYCELL;
 #pragma pack(pop)
+#define ENTRYCELL_LIMIT ((int)(DWORD_PTR)(((DWORD_PTR)2 * GB) / sizeof(ENTRYCELL) - 10)) // 最大エントリ数、x32, M:600万 / x32 x64, U:340万
 
 /* 参考：ファイル属性
  DOS 互換系
@@ -339,17 +340,19 @@ typedef struct {
 #define CMPDOWN			B7 // コマンド実行元窓、コマンド処理窓の反対窓
 #define CMPSUBDIR		B15 // サブディレクトリ以下
 #define CMPWAIT			B31 // 実行完了まで待つ、なければ非同期
+#define CMP_1HASH 999
 enum {
-	CMP_1SIZE = CMP_1WINDOW,CMP_1COMMENT,CMP_1END
+	CMP_1SIZE = CMP_1WINDOW, CMP_1COMMENT, CMP_1END
 };
 enum {
-	CMP_NEW = CMP_2WINDOW,CMP_TIME,CMP_EXIST,CMP_SIZE,CMP_LARGE,
-	CMP_SAMESIZETIME,CMP_BINARY,CMP_SIZEONLY,CMP_NEWONLY,CMP_SHA1,
+	CMP_NEW = CMP_2WINDOW, CMP_TIME, CMP_EXIST, CMP_SIZE, CMP_LARGE,
+	CMP_SAMESIZETIME, CMP_BINARY, CMP_SIZEONLY, CMP_NEWONLY, CMP_SHA1,
 	CMP_2END
 };
 // ↓ +1 は、CMP_EXIST | CMPWITHOUT_EXT 分
 #define CMP2TYPES (CMP_2END - CMP_2WINDOW + 1)	 // ２窓間比較方法の数
 
+#define USEWINHASH 0
 //------------------------------------------------------------------
 /* 設定ファイル内の構造体
 typedef struct {
@@ -361,7 +364,7 @@ typedef struct {
 	WORD		nextline; // 次の行へのオフセット
 	BYTE		fmt[];	// 書式
 } XC_CFMT_SETTING;
-※ XC_celDは fc,bc,csr,mark, XC_celF/MC_celSはwidth,fmt が入る
+※ XC_celDは fc, bc, csr, mark, XC_celF/MC_celSはwidth, fmt が入る
 */
 typedef struct {
 	COLORREF	fc;		// 前景色
@@ -412,18 +415,18 @@ typedef struct {
 struct dirinfo { // SetCountedDirectorySize 用
 	TCHAR path[VFPS];
 	TCHAR name[MAX_PATH];
-	DWORD low,high;
+	DWORD low, high;
 };
 
 #if defined(_INC_COMMCTRL)
-TypedefWinAPI(HIMAGELIST,ImageList_Create,(int cx,int cy,UINT flags,int cInitial,int cGrow));
-TypedefWinAPI(BOOL,ImageList_Destroy,(HIMAGELIST himl));
-TypedefWinAPI(int,ImageList_Add,(HIMAGELIST himl,HBITMAP hbmImage,HBITMAP hbmMask));
-TypedefWinAPI(int,ImageList_Replace,(HIMAGELIST himl,int i,HBITMAP hbmImage,HBITMAP hbmMask));
-TypedefWinAPI(int,ImageList_ReplaceIcon,(HIMAGELIST himl,int i,HICON hicon));
-TypedefWinAPI(COLORREF,ImageList_SetBkColor,(HIMAGELIST himl,COLORREF clrBk));
-TypedefWinAPI(BOOL,ImageList_Draw,(HIMAGELIST himl,int i,HDC hdcDst,int x,int y,UINT fStyle));
-TypedefWinAPI(BOOL,ImageList_DrawEx,(HIMAGELIST himl,int i,HDC hdcDst,int x,int y,int dx,int dy,COLORREF rgbBk,COLORREF rgbFg,UINT fStyle));
+TypedefWinAPI(HIMAGELIST, ImageList_Create, (int cx, int cy, UINT flags, int cInitial, int cGrow));
+TypedefWinAPI(BOOL, ImageList_Destroy, (HIMAGELIST himl));
+TypedefWinAPI(int, ImageList_Add, (HIMAGELIST himl, HBITMAP hbmImage, HBITMAP hbmMask));
+TypedefWinAPI(int, ImageList_Replace, (HIMAGELIST himl, int i, HBITMAP hbmImage, HBITMAP hbmMask));
+TypedefWinAPI(int, ImageList_ReplaceIcon, (HIMAGELIST himl, int i, HICON hicon));
+TypedefWinAPI(COLORREF, ImageList_SetBkColor, (HIMAGELIST himl, COLORREF clrBk));
+TypedefWinAPI(BOOL, ImageList_Draw, (HIMAGELIST himl, int i, HDC hdcDst, int x, int y, UINT fStyle));
+TypedefWinAPI(BOOL, ImageList_DrawEx, (HIMAGELIST himl, int i, HDC hdcDst, int x, int y, int dx, int dy, COLORREF rgbBk, COLORREF rgbFg, UINT fStyle));
 #define DImageList_AddIcon(himl, hicon) DImageList_ReplaceIcon(himl, -1, hicon)
 #else
 	#define HIMAGELIST void *
@@ -489,8 +492,10 @@ typedef struct {
 	DWORD sdir;	// 0 か FILE_ATTRIBUTE_DIRECTORY で判断
 	BOOL vfs;
 	DWORD exmode; // 検索対象 WDEXM_xx
+	BOOL readlistfile; // 終了後読み込み
+	BOOL appendmode; // 直接挿入
 
-	FN_REGEXP fn1,fn2;
+	FN_REGEXP fn1, fn2;
 	DWORD OldTime; // 経過表示用
 	DWORD imgsize; // X_wsiz の値
 	struct tagPPC_APPINFO *cinfo;
@@ -512,10 +517,10 @@ typedef struct {
 #define SWIN_WQUIT		B3	// 同時終了
 #define SWIN_FIXACTIVE	B4	// アクティブ窓を固定
 #define SWIN_FIXPOSIZ	B5	// B4=1のとき、=0:大きさ =1:大きさ+位置
-#define SWIN_JOINMASK	(B6 | B7)	// (B6,B7)	左右連結
-#define SWIN_LRJOIN		0	// (B6,B7)	左右連結
-#define SWIN_UDJOIN		B6	// (B6,B7)	上下連結
-#define SWIN_PILEJOIN	B7	// (B6,B7)	重ね
+#define SWIN_JOINMASK	(B6 | B7)	// (B6, B7)	左右連結
+#define SWIN_LRJOIN		0	// (B6, B7)	左右連結
+#define SWIN_UDJOIN		B6	// (B6, B7)	上下連結
+#define SWIN_PILEJOIN	B7	// (B6, B7)	重ね
 #define SWIN_WACTIVE	B8	//  B8:=1 同時前面
 #define SWIN_SWAPMODE	B16	//	B16:[G]Swap Sw		=0:Normal	=1:Swap
 #define SWIN_BFOCUES	B17	//	B17:Focus PPC		=0:A	=1:B
@@ -546,9 +551,9 @@ typedef struct tagFREEPOSPOINT {
 typedef struct {
 	HIMAGELIST hImage; // NULL:アイコン無し、INVALID_HANDLE_VALUE:CacheIcon使用
 	int maskmode; // マスク処理の有無
-	int minID,maxID;	// 有効なindexの範囲
+	int minID, maxID;	// 有効なindexの範囲
 	int minIDindex;		// minIDに相当するindex
-	int nextfixID;		// maxIDがこれに到達したら,minを変更する
+	int nextfixID;		// maxIDがこれに到達したら, minを変更する
 	int shift; // １回のシフト量
 	int size;		// キャッシュ可能な個数
 	int writeIndex;	// alloc==FALSE時に、キャッシュに書き込みする位置
@@ -597,7 +602,7 @@ typedef struct {
 } ControlFontStruct;
 
 typedef struct {
-	DWORD l,h;
+	DWORD l, h;
 } D_DWORD;
 
 typedef struct { // ディレクトリの情報
@@ -607,20 +612,20 @@ typedef struct { // ディレクトリの情報
 	ENTRYCOUNT RelativeDirs;	// 相対ディレクトリ(.. .)の数(表示分のみ)
 	ENTRYCOUNT Directories;	// ディレクトリの数
 
-	TM_struct CELLDATA;		// ディレクトリエントリ情報(×ENTRYCELL)
-	TM_struct INDEXDATA;	// ディレクトリエントリインデックス(×ENTRYINDEX)
+	TM_struct CELLDATA;		// ディレクトリエントリ情報(cellDataMax x ENTRYCELL)
+	TM_struct INDEXDATA;	// ディレクトリエントリインデックス((cellIMax + cellStack) x ENTRYINDEX)
 
 			// エクスプローラ風マークをおこなう基準位置 -1:基準位置無し
 	ENTRYINDEX cellNref;
 	ENTRYINDEX cellN;		// 参照中の Cell 位置
 	ENTRYINDEX cellIMax;		// Cell の個数、INDEXDATA の有効数、表示個数
 	ENTRYDATAOFFSET cellDataMax; // Cell の個数、CELLDATA の有効数、格納数
-	ENTRYINDEX cellStack;	// スタックされたセルの数
+	int cellStack;	// スタックされたセルの数
 	ENTRYINDEX cellPoint;	// マウスカーソルが示す位置
 	int cellPointType; // マウスカーソルが示す位置の種類 PPCR_xxx
 	D_DWORD MarkSize;
 
-	 //マークリスト管理。-1:なし,-2:最終,他:そこへ繋がる
+	 //マークリスト管理。-1:なし, -2:最終, 他:そこへ繋がる
 	ENTRYDATAOFFSET markTop;	// マークの先頭
 	ENTRYDATAOFFSET markLast;	// 最後のマーク
 	ENTRYCOUNT markC;			// マーク数
@@ -666,7 +671,7 @@ typedef struct tagPPC_APPINFO {
 	ThSTRUCT	PathTrackingList;	// パス追跡リスト
 	BOOL		SlowMode;		// 低速モードが有効かのフラグ
 
-	TCHAR		path[VFPS],RealPath[VFPS]; // 現在の読み込みパス、VFSでないパス
+	TCHAR		path[VFPS], RealPath[VFPS]; // 現在の読み込みパス、VFSでないパス
 	TCHAR		ArcPathMask[VFPS];	// パス表示マスク
 	TCHAR		OrgPath[VFPS];	// テンポラリの元となっているパス
 	TCHAR		PathSeparater;	// パス区切りに用いる文字
@@ -682,7 +687,7 @@ typedef struct tagPPC_APPINFO {
 	PPC_DIRECTORYDATA e;
 
 	struct {
-		ULARGE_INTEGER free,total,used;
+		ULARGE_INTEGER free, total, used;
 	} DiskSizes;
 	TCHAR		CommentFile[VFPS];	// 使用したコメントファイル
 											// Cell の実体
@@ -694,7 +699,7 @@ typedef struct tagPPC_APPINFO {
 	ENTRYINDEX	cellWMin;		// 窓の cell 開始番号
 
 #if USEDELAYCURSOR | FREEPOSMODE
-	POINT		cellNpos,TargetNpos; // カーソル移動のアニメーション位置
+	POINT		cellNpos, TargetNpos; // カーソル移動のアニメーション位置
 	BOOL		freeCell;
 	COLORREF	cellNbc;
 #endif
@@ -703,11 +708,11 @@ typedef struct tagPPC_APPINFO {
 	HWND		hActiveWnd;		// フォーカスが来たときにアクティブにする窓。
 								//		NULL ならファイル一覧に
 	HFONT		hBoxFont;		// オリジナルフォントのハンドル
-	int			fontX,fontY;	// フォント大きさ(X,Y)
+	int			fontX, fontY;	// フォント大きさ(X, Y)
 	DWORD		FontDPI;		// 表示解像度
 	ControlFontStruct cfs;		// ヘッダ用フォント
 	int			X_textmag;		// フォントの拡大率
-	COLORREF	BackColor,CursorColor;
+	COLORREF	BackColor, CursorColor;
 	HBRUSH		C_BackBrush;	// 背景用ブラシ
 	HBRUSH		linebrush;		// 枠用ペン先
 
@@ -739,6 +744,8 @@ typedef struct tagPPC_APPINFO {
 	int			PopMsgTimer;	// PMF_WAITTIMER のカウンタ
 	int			PopMsgFlag;
 											// 内部動作
+		#define MARKMASK_FILE 0xf
+		#define MARKMASK_DIRFILE 0x1f
 	int			MarkMask;			// マークする属性
 	TCHAR		UserInfo[0x60];		// タイトルバーに表示するユーザ名
 
@@ -758,7 +765,7 @@ typedef struct tagPPC_APPINFO {
 
 	HWND		FOPlog;			// エラー用のログ
 	BOOL		UnpackFix;		// (暫定)書庫内ファイルの参照中
-	TCHAR		*UnpackFixOldPath,*UnpackFixOldRealPath; // (暫定)
+	TCHAR		*UnpackFixOldPath, *UnpackFixOldRealPath; // (暫定)
 	TCHAR		IncSearchString[MAX_PATH];
 	TCHAR		Jfname[VFPS];	// readentry 時に移動する場所
 
@@ -776,11 +783,6 @@ typedef struct tagPPC_APPINFO {
 
 	struct {
 		HWND hTipWnd;
-			#define TWS_HIDE 0  // 非表示中
-			#define TWS_SHOWNOW 1 // すぐに表示
-			#define TWS_READY 2 // 表示のタイミング待ち
-			#define TWS_SHOW 3 // 表示中
-		int WndState;
 			#define stip_mode_filename	1
 			#define stip_mode_fileinfo	2
 			#define stip_mode_comment	3
@@ -788,8 +790,20 @@ typedef struct tagPPC_APPINFO {
 			#define stip_mode_text		5
 			#define stip_mode_togglemax	stip_mode_preview
 		int X_stip_mode;
-		DWORD mode;
-		ENTRYINDEX target; // stip_mode_preview 用
+			// 表示指示＆指示状況
+			#define STIP_CMD_DELAY	B0	// WM_PAINT 中に表示指示
+			#define STIP_CMD_NOW	B1	// コマンド/HOVER/TAILによる
+			#define STIP_CMD_HOVER	B2 // HOVERによる表示のため、マウスカーソル移動時に消去が必要
+			#define STIP_CMD_MOUSE	B3 // マウス操作(HOVER/TAIL)による表示のため、表示位置をマウスに合わせる。なければCELL位置
+			#define STIP_CMD_MASK	(B0 | B1 | B3)
+			// 状態
+			#define STIP_STATE_SHOW	B4	// 表示中
+			#define STIP_STATE_DELAY	B5	// 遅延表示待機中
+			#define STIP_STATE_READYMASK	(B4 | B5)
+			// その他
+			#define STIP_REQ_DELAY		B6	// 遅延表示要求
+			#define STIP_SHOWTAILAREA	B7	// TAIL 範囲の表示
+		DWORD states;
 	} Tip;
 
 	BOOL		ModifyComment;	// コメント編集がされたかどうか
@@ -806,7 +820,7 @@ typedef struct tagPPC_APPINFO {
 	int			KeyChar;		// WM_KEYUP 中は 1
 	ENTRYINDEX	cellNbeforePush;	// クリック前のcellNの値
 
-	int			DDpagemode,DDpage;
+	int			DDpagemode, DDpage;
 	UINT		ddtimer_id;
 
 	HIDDENMENUS	HiddenMenu;
@@ -821,7 +835,7 @@ typedef struct tagPPC_APPINFO {
 	XC_DSET		dset;			// ドライブ毎の設定
 	int			iconR;			// アイコンの右端のX座標(0:表示せず)
 	SIZE		XC_ifix_size;	// 情報行アイコンの大きさ
-	int			X_lspc,X_lspcOrg;
+	int			X_lspc, X_lspcOrg;
 
 	WHEREDIALOG	Pws;			// Where is の内容
 	volatile int FDirWrite;		// ディレクトリ更新要求管理
@@ -891,30 +905,12 @@ typedef struct tagPPC_APPINFO {
 	DWORD		FreePosEntries;
 #endif
 #if SHOWFRAMERATE
-	DWORD	FrameCount,FrameTime,FrameRate;
+	DWORD	FrameCount, FrameTime, FrameRate;
 #endif
 } PPC_APPINFO;
 
-typedef struct tagcomparestruct {
-	ENTRYCELL *SrcCell;
-	ENTRYCELL *DstCell;
-	PPC_APPINFO *cinfo;
-	int (USEFASTCALL *SortF) (struct tagcomparestruct *cs); // 1つのみ
-	int (USEFASTCALL *SortF1)(struct tagcomparestruct *cs); // 3つ使用/1つ目
-	int (USEFASTCALL *SortF2)(struct tagcomparestruct *cs); // 3つ使用/2つ目
-	int (USEFASTCALL *SortF3)(struct tagcomparestruct *cs); // 3つ使用/3つ目
-	ENTRYINDEX *worktbl; // merge sort 用 index table
-	DWORD MaskAtr; // 属性ソート用ファイル属性
-	DWORD option; // 文字列比較時のオプション
-	DWORD columnID; // カラム拡張・拡張コメントソート時に使用するID
-} COMPARESTRUCT;
-
 typedef struct {
-	int (USEFASTCALL *f)(COMPARESTRUCT *cs);
-} CMPFUNCSTRUCT;
-
-typedef struct {
-	DWORD realtime,dirmask,wordmatch;
+	DWORD realtime, dirmask, wordmatch;
 } WildCardOptions;
 
 typedef struct {
@@ -945,7 +941,7 @@ typedef struct {
 } ANYSIZEICON;
 
 typedef struct {
-	DWORD mode,width;
+	DWORD mode, width;
 	TCHAR name[VFPS];
 } PPCTREESETTINGS;
 
@@ -956,6 +952,59 @@ typedef struct {
 	DWORD LoadCounter;
 } SENDSETCOMMENT;
 
+
+#ifndef SORT_DIGITSASNUMBERS
+#define SORT_DIGITSASNUMBERS 0x08 // Win7
+#endif
+
+#define SORTE_IGNORECASE	NORM_IGNORECASE		// B0 0x01 Sort:on a→Aに変えてソート
+#define SORTE_NONSPACE		NORM_IGNORENONSPACE	// B1 0x02 Sort:on CASE同時不可
+#define SORTE_SYMBOLS		NORM_IGNORESYMBOLS	// B2 0x04 Sort:on CASE同時不可  !(@ とかを削除してソート)
+#define SORTE_NUMBERS		SORT_DIGITSASNUMBERS // B3 0x08 Sort:of 指定可能(Win7)
+// #define LINGUISTIC_IGNOREDIACRITIC		// B5 0x20
+// #define LCMAP_LOWERCASE					// B8 0x100
+// #define LCMAP_UPPERCASE  				// B9 0x200
+// #define LCMAP_TITLECASE					//    0x300 // Win7
+// #define LCMAP_SORTKEY					// B10 0x400
+// #define LCMAP_BYTEREV					// B11 0x800
+// #define SORT_STRINGSORT					// B12 0x1000 // Sort:of CASE同時不可
+#define SORTE_KANATYPE	NORM_IGNOREKANATYPE	// B16 0x1 0000 Sort:on CASE同時不可
+#define SORTE_WIDE		NORM_IGNOREWIDTH	// B17 0x2 0000 Sort:on CASE同時不可
+// #define LCMAP_HASH						// B18 0x4 0000 // Win8
+// #define LCMAP_HIRAGANA					// B20 0x10 0000
+// #define LCMAP_KATAKANA					// B21 0x20 0000
+// #define LCMAP_HALFWIDTH					// B22 0x40 0000
+// #define LCMAP_FULLWIDTH					// B23 0x80 0000
+// #define LCMAP_LINGUISTIC_CASING			// B24 0x100 0000
+// #define LCMAP_SIMPLIFIED_CHINESE			// B25 0x200 0000
+// #define LCMAP_TRADITIONAL_CHINESE		// B26 0x400 0000
+// #define NORM_LINGUISTIC_CASING			// B27 0x800 0000
+// #define LCMAP_SORTHANDLE					// B29 0x2000 0000 // Win8
+#define SORTE_DEFAULT_VALUE SORTE_IGNORECASE
+#define SORTE_DEFAULT_MASK (SORTE_IGNORECASE | SORTE_NONSPACE | SORTE_SYMBOLS | SORTE_NUMBERS | SORTE_KANATYPE | SORTE_WIDE)
+#define SORTE_NUMBER	B24		// 独自数値考慮 compare
+#define SORTE_LASTENTRY	B25		// ディレクトリ無視
+#define SORTE_EXMASK (SORTE_NUMBER | SORTE_LASTENTRY)
+
+
+#define WLFC_DETAIL 	0	// PPx独自形式
+#define WLFC_NAMEONLY	B0	// ファイル名のみにする
+#define WLFC_OPTIONSTR	B1	// 末尾に csv用の文字列を追加する
+#define WLFC_WITHMARK	B2	// マークがあるときに、M:1,を記載
+#define WLFC_COMMENT	B3	// コメント出力を有効にする
+#define WLFC_SYSMSG		B4	// システムメッセージを出力する
+#define WLFC_MARKEDONLY	B5	// マーク付きのみ出力
+
+#define WLFC_COMMAND_DEFAULT	(WLFC_DETAIL | WLFC_OPTIONSTR | WLFC_COMMENT)
+#define WLFC_WRITEDIR_DEFAULT	(WLFC_DETAIL | WLFC_OPTIONSTR | WLFC_COMMENT)
+/*
+#define WLF_NORMAL 0 // 全エントリ、マーク情報無し
+#define WLF_MARKEDENTRY 1 // マークしたエントリのみ、マーク情報無し
+#define WLF_WITHMARK 2 // 全エントリ、マーク情報有り
+#define WLF_NAME 3 // 名前のみ
+*/
+
+
 typedef struct {
 	PPC_APPINFO *cinfo;
 	XC_SORT *xc;
@@ -963,12 +1012,12 @@ typedef struct {
 
 extern LOADWINAPISTRUCT OLEAUT32APIS[];
 extern HANDLE hOleaut32;
-extern HRESULT (STDAPICALLTYPE *DRegisterActiveObject)(IUnknown * punk,REFCLSID rclsid,DWORD dwFlags, DWORD *pdwRegister);
-extern HRESULT (STDAPICALLTYPE *DRevokeActiveObject)(DWORD dwRegister,void *pvReserved);
-extern HRESULT (STDAPICALLTYPE *DGetActiveObject)(REFCLSID rclsid, void * pvReserved,IUnknown ** ppunk);
+extern HRESULT (STDAPICALLTYPE *DRegisterActiveObject)(IUnknown * punk, REFCLSID rclsid, DWORD dwFlags, DWORD *pdwRegister);
+extern HRESULT (STDAPICALLTYPE *DRevokeActiveObject)(DWORD dwRegister, void *pvReserved);
+extern HRESULT (STDAPICALLTYPE *DGetActiveObject)(REFCLSID rclsid, void * pvReserved, IUnknown ** ppunk);
 
-ExternWinAPI(HRESULT,DwmIsCompositionEnabled,(BOOL *pfEnabled));
-ExternWinAPI(void,NotifyWinEvent,(DWORD event,HWND hwnd,LONG idObject,LONG idChild));
+ExternWinAPI(HRESULT, DwmIsCompositionEnabled, (BOOL *pfEnabled));
+ExternWinAPI(void, NotifyWinEvent, (DWORD event, HWND hwnd, LONG idObject, LONG idChild));
 
 typedef struct tagGESTURECONFIG {
 	DWORD dwID;
@@ -976,8 +1025,8 @@ typedef struct tagGESTURECONFIG {
 	DWORD dwBlock;
 } GESTURECONFIG, *PGESTURECONFIG;
 
-ExternWinAPI(BOOL,SetGestureConfig,(HWND hwnd,DWORD dwReserved,UINT cIDs,PGESTURECONFIG pGestureConfig,UINT cbSize));
-ExternWinAPI(BOOL,GetGestureInfo,(HGESTUREINFO hGestureInfo,PGESTUREINFO pGestureInfo));
+ExternWinAPI(BOOL, SetGestureConfig, (HWND hwnd, DWORD dwReserved, UINT cIDs, PGESTURECONFIG pGestureConfig, UINT cbSize));
+ExternWinAPI(BOOL, GetGestureInfo, (HGESTUREINFO hGestureInfo, PGESTUREINFO pGestureInfo));
 
 extern const IID XIID_IShellItem;
 

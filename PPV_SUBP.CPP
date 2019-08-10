@@ -24,29 +24,29 @@
 
 
 #if !defined(RELEASE) && 0
-	#define MSGMSG(t,s) XMessage(NULL,NULL,XM_DbgLOG,T(t),s);
-	#define MSGMSGA(t,s) MSGMSG(t,s)
+	#define MSGMSG(t, s) XMessage(NULL, NULL, XM_DbgLOG, T(t), s);
+	#define MSGMSGA(t, s) MSGMSG(t, s)
 #else
-	#define MSGMSG(t,s)
-	#define MSGMSGA(t,s) UnUsedParam(s);
+	#define MSGMSG(t, s)
+	#define MSGMSGA(t, s) UnUsedParam(s);
 #endif
 
 IID xIID_IAccessible = xIID_IAccessibleIID;
 
-HRESULT (STDAPICALLTYPE *DCreateStdAccessibleObject)(HWND,LONG,REFIID,void **);
-LRESULT (STDAPICALLTYPE *DLresultFromObject)(REFIID,WPARAM,LPUNKNOWN);
+HRESULT (STDAPICALLTYPE *DCreateStdAccessibleObject)(HWND, LONG, REFIID, void **);
+LRESULT (STDAPICALLTYPE *DLresultFromObject)(REFIID, WPARAM, LPUNKNOWN);
 
 BSTR (STDAPICALLTYPE *DSysAllocString)(const OLECHAR *) = NULL;
 
 LOADWINAPISTRUCT OLEACCDLL[] = {
 	LOADWINAPI1(CreateStdAccessibleObject),
 	LOADWINAPI1(LresultFromObject),
-	{NULL,NULL}
+	{NULL, NULL}
 };
 
 LOADWINAPISTRUCT OLEAUTDLL[] = {
 	LOADWINAPI1(SysAllocString),
-	{NULL,NULL}
+	{NULL, NULL}
 };
 
 class CPPvAccServer : public IAccessible , public IEnumVARIANT
@@ -64,45 +64,45 @@ public:
 	~CPPvAccServer();
 
 	// IUnknown
-	STDMETHOD(QueryInterface)(REFIID riid,void **ppvObj);
-	STDMETHOD_(ULONG,AddRef)(void);
-	STDMETHOD_(ULONG,Release)(void);
+	STDMETHOD(QueryInterface)(REFIID riid, void **ppvObj);
+	STDMETHOD_(ULONG, AddRef)(void);
+	STDMETHOD_(ULONG, Release)(void);
 
 	// IDispatch
 	STDMETHOD(GetTypeInfoCount)(UINT *pctinfo);
-	STDMETHOD(GetTypeInfo)(UINT itinfo,LCID lcid,ITypeInfo **pptinfo);
+	STDMETHOD(GetTypeInfo)(UINT itinfo, LCID lcid, ITypeInfo **pptinfo);
 	STDMETHOD(GetIDsOfNames)(REFIID riid,
-			OLECHAR **rgszNames,UINT cNames,LCID lcid,
+			OLECHAR **rgszNames, UINT cNames, LCID lcid,
 			DISPID *rgdispid);
-	STDMETHOD(Invoke)(DISPID dispidMember,REFIID riid,LCID lcid,WORD wFlags,
-			DISPPARAMS *pdispparams,VARIANT *pvarResult,EXCEPINFO *pexcepinfo,
+	STDMETHOD(Invoke)(DISPID dispidMember, REFIID riid, LCID lcid, WORD wFlags,
+			DISPPARAMS *pdispparams, VARIANT *pvarResult, EXCEPINFO *pexcepinfo,
 			UINT *puArgErr);
 
 	// IAccessible
 	STDMETHOD(get_accParent)(IDispatch **ppdispParent);
 	STDMETHOD(get_accChildCount)(long *pcountChildren);
-	STDMETHOD(get_accChild)(VARIANT varChild,IDispatch **ppdispChild);
-	STDMETHOD(get_accName)(VARIANT varChild,BSTR *pszName);
-	STDMETHOD(get_accValue)(VARIANT varChild,BSTR *pszValue);
-	STDMETHOD(get_accDescription)(VARIANT varChild,BSTR *pszDescription);
-	STDMETHOD(get_accRole)(VARIANT varChild,VARIANT *pvarRole);
-	STDMETHOD(get_accState)(VARIANT varChild,VARIANT *pvarState);
-	STDMETHOD(get_accHelp)(VARIANT varChild,BSTR *pszHelp);
-	STDMETHOD(get_accHelpTopic)(BSTR *pszHelpFile,VARIANT varChild,long *pidTopic);
-	STDMETHOD(get_accKeyboardShortcut)(VARIANT varChild,BSTR *pszKeyboardShortcut);
+	STDMETHOD(get_accChild)(VARIANT varChild, IDispatch **ppdispChild);
+	STDMETHOD(get_accName)(VARIANT varChild, BSTR *pszName);
+	STDMETHOD(get_accValue)(VARIANT varChild, BSTR *pszValue);
+	STDMETHOD(get_accDescription)(VARIANT varChild, BSTR *pszDescription);
+	STDMETHOD(get_accRole)(VARIANT varChild, VARIANT *pvarRole);
+	STDMETHOD(get_accState)(VARIANT varChild, VARIANT *pvarState);
+	STDMETHOD(get_accHelp)(VARIANT varChild, BSTR *pszHelp);
+	STDMETHOD(get_accHelpTopic)(BSTR *pszHelpFile, VARIANT varChild, long *pidTopic);
+	STDMETHOD(get_accKeyboardShortcut)(VARIANT varChild, BSTR *pszKeyboardShortcut);
 	STDMETHOD(get_accFocus)(VARIANT *pvarChild);
 	STDMETHOD(get_accSelection)(VARIANT *pvarChildren);
-	STDMETHOD(get_accDefaultAction)(VARIANT varChild,BSTR *pszDefaultAction);
-	STDMETHOD(accSelect)(long flagsSelect,VARIANT varChild);
-	STDMETHOD(accLocation)(long *pxLeft,long *pyTop,long *pcxWidth,long *pcyHeight,VARIANT varChild);
-	STDMETHOD(accNavigate)(long navDir,VARIANT varStart,VARIANT *pvarEndUpAt);
-	STDMETHOD(accHitTest)(long xLeft,long yTop,VARIANT *pvarChild);
+	STDMETHOD(get_accDefaultAction)(VARIANT varChild, BSTR *pszDefaultAction);
+	STDMETHOD(accSelect)(long flagsSelect, VARIANT varChild);
+	STDMETHOD(accLocation)(long *pxLeft, long *pyTop, long *pcxWidth, long *pcyHeight, VARIANT varChild);
+	STDMETHOD(accNavigate)(long navDir, VARIANT varStart, VARIANT *pvarEndUpAt);
+	STDMETHOD(accHitTest)(long xLeft, long yTop, VARIANT *pvarChild);
 	STDMETHOD(accDoDefaultAction)(VARIANT varChild);
-	STDMETHOD(put_accName)(VARIANT varChild,BSTR szName);
-	STDMETHOD(put_accValue)(VARIANT varChild,BSTR szValue);
+	STDMETHOD(put_accName)(VARIANT varChild, BSTR szName);
+	STDMETHOD(put_accValue)(VARIANT varChild, BSTR szValue);
 
 	// IEnumVARIANT
-	STDMETHOD(Next)(ULONG celt,VARIANT *rgVar,ULONG *pCeltFetched);
+	STDMETHOD(Next)(ULONG celt, VARIANT *rgVar, ULONG *pCeltFetched);
 	STDMETHOD(Skip)(ULONG celt);
 	STDMETHOD(Reset)();
 	STDMETHOD(Clone)(IEnumVARIANT **ppEnum);
@@ -113,8 +113,8 @@ CPPvAccServer::CPPvAccServer()
 	m_cRefCount = 1;
 	m_enumCount = 0;
 
-	DCreateStdAccessibleObject(vinfo.info.hWnd,OBJID_CLIENT,
-			xIID_IAccessible,(void **)&m_AccessibleServer);
+	DCreateStdAccessibleObject(vinfo.info.hWnd, OBJID_CLIENT,
+			xIID_IAccessible, (void **)&m_AccessibleServer);
 }
 
 CPPvAccServer::~CPPvAccServer()
@@ -123,7 +123,7 @@ CPPvAccServer::~CPPvAccServer()
 }
 
 //==================================================================== IUnknown
-STDMETHODIMP CPPvAccServer::QueryInterface(REFIID iid,void **ppv)
+STDMETHODIMP CPPvAccServer::QueryInterface(REFIID iid, void **ppv)
 {
 	if ( (iid == IID_IUnknown) || (iid == xIID_IAccessible) ){
 		*ppv = static_cast<IAccessible*>(this);
@@ -162,22 +162,22 @@ STDMETHODIMP_(ULONG) CPPvAccServer::Release(void)
 //=================================================================== IDispatch
 STDMETHODIMP CPPvAccServer::GetTypeInfoCount(UINT *pctinfo)
 {
-	MSGMSG("GetTypeInfoCount",0);
+	MSGMSG("GetTypeInfoCount", 0);
 	*pctinfo = 0;
 	return E_NOTIMPL;
 };
 
-STDMETHODIMP CPPvAccServer::GetTypeInfo(UINT,LCID,ITypeInfo **pptinfo)
+STDMETHODIMP CPPvAccServer::GetTypeInfo(UINT, LCID, ITypeInfo **pptinfo)
 {
-	MSGMSG("GetTypeInfo",0);
+	MSGMSG("GetTypeInfo", 0);
 	*pptinfo = NULL;
 	return E_NOTIMPL;
 };
 
 #pragma argsused
-STDMETHODIMP CPPvAccServer::GetIDsOfNames(REFIID ,OLECHAR **rgszNames,UINT cNames,LCID,DISPID *rgDispId)
+STDMETHODIMP CPPvAccServer::GetIDsOfNames(REFIID , OLECHAR **rgszNames, UINT cNames, LCID, DISPID *rgDispId)
 {
-	MSGMSGA("GetIDsOfNames %d",cNames);
+	MSGMSGA("GetIDsOfNames %d", cNames);
 
 	*rgszNames = NULL;
 	*rgDispId = DISPID_UNKNOWN;
@@ -185,22 +185,22 @@ STDMETHODIMP CPPvAccServer::GetIDsOfNames(REFIID ,OLECHAR **rgszNames,UINT cName
 };
 
 #pragma argsused
-STDMETHODIMP CPPvAccServer::Invoke(DISPID dispIdMember,REFIID riid,LCID,WORD,DISPPARAMS *,VARIANT *pVarResult,EXCEPINFO *,UINT *)
+STDMETHODIMP CPPvAccServer::Invoke(DISPID dispIdMember, REFIID riid, LCID, WORD, DISPPARAMS *, VARIANT *pVarResult, EXCEPINFO *, UINT *)
 {
-	MSGMSGA("Invoke %d",dispIdMember);
+	MSGMSGA("Invoke %d", dispIdMember);
 	if ( pVarResult != NULL ) V_VT(pVarResult) = VT_EMPTY;
 	if ( riid != IID_NULL ) return DISP_E_UNKNOWNINTERFACE;
 	return E_NOTIMPL;
 };
 
 //================================================================ IEnumVARIANT
-STDMETHODIMP CPPvAccServer::Next(ULONG celt,VARIANT *rgVar,ULONG *pCeltFetched)
+STDMETHODIMP CPPvAccServer::Next(ULONG celt, VARIANT *rgVar, ULONG *pCeltFetched)
 {
 	HRESULT hr = S_OK;
 	long fetched = 0;
 
 	ModeCheckMacro;
-	MSGMSG("next",0);
+	MSGMSG("next", 0);
 	if ( !rgVar || !pCeltFetched || (celt < 1) ) return E_INVALIDARG;
 	for ( ULONG x = 0 ; x < celt ; x++ ){
 		if ( ++m_enumCount <= (ULONG)m_GetMax() ){
@@ -218,7 +218,7 @@ STDMETHODIMP CPPvAccServer::Next(ULONG celt,VARIANT *rgVar,ULONG *pCeltFetched)
 
 STDMETHODIMP CPPvAccServer::Skip(ULONG celt)
 {
-	MSGMSG("skip",0);
+	MSGMSG("skip", 0);
 	if ( (m_enumCount + celt) >= (ULONG)m_GetMax() ){
 		return S_FALSE;
 	}else{
@@ -229,14 +229,14 @@ STDMETHODIMP CPPvAccServer::Skip(ULONG celt)
 
 STDMETHODIMP CPPvAccServer::Reset()
 {
-	MSGMSG("reset",0);
+	MSGMSG("reset", 0);
 	m_enumCount = 0;
 	return S_OK;
 }
 
 STDMETHODIMP CPPvAccServer::Clone(IEnumVARIANT **ppEnum)
 {
-	MSGMSG("clone",0);
+	MSGMSG("clone", 0);
 	CPPvAccServer *pAcc = new CPPvAccServer();
 	pAcc->m_enumCount = m_enumCount;
 	*ppEnum = static_cast<IEnumVARIANT*>(pAcc);
@@ -245,7 +245,7 @@ STDMETHODIMP CPPvAccServer::Clone(IEnumVARIANT **ppEnum)
 //================================================================ IAccessible
 STDMETHODIMP CPPvAccServer::get_accParent(IDispatch **ppdispParent)
 {
-	MSGMSG("get_accParent",0);
+	MSGMSG("get_accParent", 0);
 	return m_AccessibleServer->get_accParent(ppdispParent);
 };
 
@@ -253,14 +253,14 @@ STDMETHODIMP CPPvAccServer::get_accChildCount(long *pcountChildren)
 {
 	ModeCheckMacro;
 	*pcountChildren = m_GetMax();
-	MSGMSG("get_accChildCount %d",*pcountChildren);
+	MSGMSG("get_accChildCount %d", *pcountChildren);
 	return S_OK;
 };
 
-STDMETHODIMP CPPvAccServer::get_accChild(VARIANT varChild,IDispatch **ppdispChild)
+STDMETHODIMP CPPvAccServer::get_accChild(VARIANT varChild, IDispatch **ppdispChild)
 {
 	ModeCheckMacro;
-	MSGMSG("get_accChild %d",V_I4(&varChild));
+	MSGMSG("get_accChild %d", V_I4(&varChild));
 	*ppdispChild = NULL;
 	if ( (V_VT(&varChild) != VT_I4) || (V_I4(&varChild) > m_GetMax()) ){
 		return E_INVALIDARG;
@@ -268,13 +268,13 @@ STDMETHODIMP CPPvAccServer::get_accChild(VARIANT varChild,IDispatch **ppdispChil
 	return S_FALSE;
 };
 
-STDMETHODIMP CPPvAccServer::get_accName(VARIANT varChild,BSTR *pszName)
+STDMETHODIMP CPPvAccServer::get_accName(VARIANT varChild, BSTR *pszName)
 {
 	*pszName = NULL;
 
 	if ( V_I4(&varChild) == CHILDID_SELF ){
-		MSGMSG("get_accName CHILDID_SELF",0);
-		return m_AccessibleServer->get_accName(varChild,pszName);
+		MSGMSG("get_accName CHILDID_SELF", 0);
+		return m_AccessibleServer->get_accName(varChild, pszName);
 	}else{
 		ModeCheckMacro;
 		if ( (V_VT(&varChild) != VT_I4) || (V_I4(&varChild) > m_GetMax()) ){
@@ -282,45 +282,45 @@ STDMETHODIMP CPPvAccServer::get_accName(VARIANT varChild,BSTR *pszName)
 			return E_INVALIDARG;
 		}
 		int line = LogicalLineToDisplayLine(V_I4(&varChild)) - 1; // Šî’ê‚ª0
-		TMS_struct text = {{NULL,0,NULL},0};
-		if ( ClipMem(&text,line,line + 1) == FALSE ) text.tm.p = (void *)NilStr;
+		TMS_struct text = {{NULL, 0, NULL}, 0};
+		if ( ClipMem(&text, line, line + 1) == FALSE ) text.tm.p = (void *)NilStr;
 
 		#ifdef UNICODE
 			*pszName = DSysAllocString((WCHAR *)text.tm.p);
 		#else
 			WCHAR name[0x2000];
 
-			AnsiToUnicode((char *)text.tm.p,name,0x2000);
+			AnsiToUnicode((char *)text.tm.p, name, 0x2000);
 			*pszName = DSysAllocString(name);
 		#endif
 
 		TM_kill(&text.tm);
 
 		if ( pszName == NULL ) return E_OUTOFMEMORY;
-		MSGMSG("get_accName %s",pszName);
+		MSGMSG("get_accName %s", pszName);
 	}
 	return S_OK;
 };
 
-STDMETHODIMP CPPvAccServer::get_accValue(VARIANT varChild,BSTR *pszValue)
+STDMETHODIMP CPPvAccServer::get_accValue(VARIANT varChild, BSTR *pszValue)
 {
-	MSGMSG("get_accValue %d",V_I4(&varChild));
+	MSGMSG("get_accValue %d", V_I4(&varChild));
 	if ( V_VT(&varChild) != VT_I4 ) return E_INVALIDARG;
 	*pszValue = NULL;
 	return DISP_E_MEMBERNOTFOUND;
 };
 
-STDMETHODIMP CPPvAccServer::get_accDescription(VARIANT varChild,BSTR *pszDescription)
+STDMETHODIMP CPPvAccServer::get_accDescription(VARIANT varChild, BSTR *pszDescription)
 {
-	MSGMSG("get_accDescription",0);
+	MSGMSG("get_accDescription", 0);
 	*pszDescription = NULL;
 	if ( V_VT(&varChild) != VT_I4 ) return E_INVALIDARG;
 	return DISP_E_MEMBERNOTFOUND;
 };
 
-STDMETHODIMP CPPvAccServer::get_accRole(VARIANT varChild,VARIANT *pvarRole)
+STDMETHODIMP CPPvAccServer::get_accRole(VARIANT varChild, VARIANT *pvarRole)
 {
-	MSGMSG("get_accRole %d",V_I4(&varChild));
+	MSGMSG("get_accRole %d", V_I4(&varChild));
 	if ( V_VT(&varChild) != VT_I4 ) return E_INVALIDARG;
 
 	V_VT(pvarRole) = VT_I4;
@@ -337,14 +337,14 @@ STDMETHODIMP CPPvAccServer::get_accRole(VARIANT varChild,VARIANT *pvarRole)
 	return S_OK;
 };
 
-STDMETHODIMP CPPvAccServer::get_accState(VARIANT varChild,VARIANT *pvarState)
+STDMETHODIMP CPPvAccServer::get_accState(VARIANT varChild, VARIANT *pvarState)
 {
-	MSGMSG("get_accState %d",V_I4(&varChild));
+	MSGMSG("get_accState %d", V_I4(&varChild));
 	V_VT(pvarState) = VT_EMPTY;
 
 	if ( V_VT(&varChild) != VT_I4 ) return E_INVALIDARG;
 	if ( V_I4(&varChild) == CHILDID_SELF ){
-		return m_AccessibleServer->get_accState(varChild,pvarState);
+		return m_AccessibleServer->get_accState(varChild, pvarState);
 	}else{
 		ModeCheckMacro;
 		if ( V_I4(&varChild) > m_GetMax() ) return E_INVALIDARG;
@@ -356,29 +356,29 @@ STDMETHODIMP CPPvAccServer::get_accState(VARIANT varChild,VARIANT *pvarState)
 	return S_OK;
 };
 
-STDMETHODIMP CPPvAccServer::get_accHelp(VARIANT,BSTR *)
+STDMETHODIMP CPPvAccServer::get_accHelp(VARIANT, BSTR *)
 {
-	MSGMSG("get_accHelp",0);
+	MSGMSG("get_accHelp", 0);
 	return S_FALSE;
 };
 
-STDMETHODIMP CPPvAccServer::get_accHelpTopic(BSTR *pszHelpFile,VARIANT,long *)
+STDMETHODIMP CPPvAccServer::get_accHelpTopic(BSTR *pszHelpFile, VARIANT, long *)
 {
-	MSGMSG("get_accHelpTopic",0);
+	MSGMSG("get_accHelpTopic", 0);
 	*pszHelpFile = NULL;
 	return S_FALSE;
 };
 
-STDMETHODIMP CPPvAccServer::get_accKeyboardShortcut(VARIANT,BSTR *pszKeyboardShortcut)
+STDMETHODIMP CPPvAccServer::get_accKeyboardShortcut(VARIANT, BSTR *pszKeyboardShortcut)
 {
-	MSGMSG("get_accKeyboardShortcut",0);
+	MSGMSG("get_accKeyboardShortcut", 0);
 	*pszKeyboardShortcut = NULL;
 	return S_FALSE;
 };
 
 STDMETHODIMP CPPvAccServer::get_accFocus(VARIANT *pvarChild)
 {
-	MSGMSG("get_accFocus",0);
+	MSGMSG("get_accFocus", 0);
 
 	m_AccessibleServer->get_accFocus(pvarChild);
 	if ( V_VT(pvarChild) != VT_I4 ){
@@ -393,15 +393,15 @@ STDMETHODIMP CPPvAccServer::get_accFocus(VARIANT *pvarChild)
 STDMETHODIMP CPPvAccServer::get_accSelection(VARIANT *pvarChildren)
 {
 	ModeCheckMacro;
-	MSGMSG("get_accSelection",0);
+	MSGMSG("get_accSelection", 0);
 	V_VT(pvarChildren) = VT_I4;
 	V_I4(pvarChildren) = m_GetMax(); // Šî’ê‚ª1
 	return S_OK;
 };
 
-STDMETHODIMP CPPvAccServer::get_accDefaultAction(VARIANT varChild,BSTR *pszDefaultAction)
+STDMETHODIMP CPPvAccServer::get_accDefaultAction(VARIANT varChild, BSTR *pszDefaultAction)
 {
-	MSGMSG("get_accDefaultAction",0);
+	MSGMSG("get_accDefaultAction", 0);
 
 	if ( V_I4(&varChild) == CHILDID_SELF ){
 		*pszDefaultAction = NULL;
@@ -417,9 +417,9 @@ STDMETHODIMP CPPvAccServer::get_accDefaultAction(VARIANT varChild,BSTR *pszDefau
 	return S_OK;
 };
 
-STDMETHODIMP CPPvAccServer::accSelect(long flagsSelect,VARIANT varChild)
+STDMETHODIMP CPPvAccServer::accSelect(long flagsSelect, VARIANT varChild)
 {
-	MSGMSG("accSelect",0);
+	MSGMSG("accSelect", 0);
 
 	if ( flagsSelect & ~(SELFLAG_TAKEFOCUS | SELFLAG_TAKESELECTION) ){
 		return E_INVALIDARG;
@@ -433,9 +433,9 @@ STDMETHODIMP CPPvAccServer::accSelect(long flagsSelect,VARIANT varChild)
 	return S_OK;
 };
 
-STDMETHODIMP CPPvAccServer::accLocation(long *pxLeft,long *pyTop,long *pcxWidth,long *pcyHeight,VARIANT varChild)
+STDMETHODIMP CPPvAccServer::accLocation(long *pxLeft, long *pyTop, long *pcxWidth, long *pcyHeight, VARIANT varChild)
 {
-	MSGMSG("accLocation",0);
+	MSGMSG("accLocation", 0);
 	POINT pos;
 	*pxLeft = 0;
 	*pyTop = 0;
@@ -444,7 +444,7 @@ STDMETHODIMP CPPvAccServer::accLocation(long *pxLeft,long *pyTop,long *pcxWidth,
 
 	if ( V_VT(&varChild) != VT_I4 ) return E_INVALIDARG;
 	if ( V_I4(&varChild) == CHILDID_SELF ){
-		return m_AccessibleServer->accLocation(pxLeft,pyTop,pcxWidth,pcyHeight,varChild);
+		return m_AccessibleServer->accLocation(pxLeft, pyTop, pcxWidth, pcyHeight, varChild);
 	}else{
 		ModeCheckMacro;
 		if ( V_I4(&varChild) > m_GetMax() ) return E_INVALIDARG;
@@ -452,7 +452,7 @@ STDMETHODIMP CPPvAccServer::accLocation(long *pxLeft,long *pyTop,long *pcxWidth,
 		int y  = V_I4(&varChild) - 1 - VOi->offY;
 		pos.x = BoxView.left;
 		pos.y = BoxView.top + y * LineY;
-		ClientToScreen(vinfo.info.hWnd,&pos);
+		ClientToScreen(vinfo.info.hWnd, &pos);
 
 		*pxLeft = pos.x;
 		*pyTop  = pos.y;
@@ -462,9 +462,9 @@ STDMETHODIMP CPPvAccServer::accLocation(long *pxLeft,long *pyTop,long *pcxWidth,
 	}
 };
 
-STDMETHODIMP CPPvAccServer::accNavigate(long navDir,VARIANT varStart,VARIANT *pvarEndUpAt)
+STDMETHODIMP CPPvAccServer::accNavigate(long navDir, VARIANT varStart, VARIANT *pvarEndUpAt)
 {
-	MSGMSG("accNavigate",0);
+	MSGMSG("accNavigate", 0);
 	V_VT(pvarEndUpAt) = VT_EMPTY;
 
 	ModeCheckMacro;
@@ -500,7 +500,7 @@ STDMETHODIMP CPPvAccServer::accNavigate(long navDir,VARIANT varStart,VARIANT *pv
 					return S_FALSE;
 				}
 			}else{
-				return m_AccessibleServer->accNavigate(navDir,varStart,pvarEndUpAt);
+				return m_AccessibleServer->accNavigate(navDir, varStart, pvarEndUpAt);
 			}
 			break;
 
@@ -515,14 +515,14 @@ STDMETHODIMP CPPvAccServer::accNavigate(long navDir,VARIANT varStart,VARIANT *pv
 					return S_FALSE;
 				}
 			}else{
-				return m_AccessibleServer->accNavigate(navDir,varStart,pvarEndUpAt);
+				return m_AccessibleServer->accNavigate(navDir, varStart, pvarEndUpAt);
 			}
 			break;
 
 		case NAVDIR_LEFT:
 		case NAVDIR_RIGHT:
 			if ( V_I4(&varStart) == CHILDID_SELF ){
-				return m_AccessibleServer->accNavigate(navDir,varStart,pvarEndUpAt);
+				return m_AccessibleServer->accNavigate(navDir, varStart, pvarEndUpAt);
 			}else{
 				V_VT(pvarEndUpAt) = VT_EMPTY;
 				return S_FALSE;
@@ -534,15 +534,15 @@ STDMETHODIMP CPPvAccServer::accNavigate(long navDir,VARIANT varStart,VARIANT *pv
 	return S_OK;
 };
 
-STDMETHODIMP CPPvAccServer::accHitTest(long xLeft,long yTop,VARIANT *pvarChild)
+STDMETHODIMP CPPvAccServer::accHitTest(long xLeft, long yTop, VARIANT *pvarChild)
 {
-	MSGMSG("accHitTest",0);
+	MSGMSG("accHitTest", 0);
 	int y = -1;
-	POINT pos = {xLeft,yTop};
+	POINT pos = {xLeft, yTop};
 
 	V_VT(pvarChild) = VT_I4;
 	ModeCheckMacro;
-	ScreenToClient(vinfo.info.hWnd,&pos);
+	ScreenToClient(vinfo.info.hWnd, &pos);
 
 	if ( (pos.y >= BoxView.top) && (pos.y < BoxView.bottom) ){
 		y = (pos.y - BoxView.top) / LineY + VOi->offY;
@@ -563,7 +563,7 @@ STDMETHODIMP CPPvAccServer::accHitTest(long xLeft,long yTop,VARIANT *pvarChild)
 
 STDMETHODIMP CPPvAccServer::accDoDefaultAction(VARIANT varChild)
 {
-	MSGMSG("accDoDefaultAction",0);
+	MSGMSG("accDoDefaultAction", 0);
 	if ( V_VT(&varChild) != VT_I4 ) return E_INVALIDARG;
 	if ( V_I4(&varChild) != CHILDID_SELF ){
 		ModeCheckMacro;
@@ -572,15 +572,15 @@ STDMETHODIMP CPPvAccServer::accDoDefaultAction(VARIANT varChild)
 	return S_OK;
 };
 
-STDMETHODIMP CPPvAccServer::put_accName(VARIANT,BSTR)
+STDMETHODIMP CPPvAccServer::put_accName(VARIANT, BSTR)
 {
-	MSGMSG("put_accName",0);
+	MSGMSG("put_accName", 0);
 	return E_NOTIMPL;
 };
 
-STDMETHODIMP CPPvAccServer::put_accValue(VARIANT,BSTR)
+STDMETHODIMP CPPvAccServer::put_accValue(VARIANT, BSTR)
 {
-	MSGMSG("put_accValue",0);
+	MSGMSG("put_accValue", 0);
 	return E_NOTIMPL;
 };
 
@@ -612,30 +612,30 @@ IAccessible *PPvAccServer = NULL;
 LRESULT WmGetObject(WPARAM wParam)
 {
 	if ( hOleaccDLL == NULL ){
-		hOleaccDLL = LoadWinAPI("OLEACC.DLL",NULL,OLEACCDLL,LOADWINAPI_LOAD);
+		hOleaccDLL = LoadWinAPI("OLEACC.DLL", NULL, OLEACCDLL, LOADWINAPI_LOAD);
 		if ( hOleaccDLL == NULL ) return 0;
 		if ( hOleautDLL == NULL ){
-			hOleautDLL = LoadWinAPI("OLEAUT32.DLL",NULL,OLEAUTDLL,LOADWINAPI_LOAD);
+			hOleautDLL = LoadWinAPI("OLEAUT32.DLL", NULL, OLEAUTDLL, LOADWINAPI_LOAD);
 			if ( hOleautDLL == NULL ) return 0;
 		}
 	}
 	if ( PPvAccServer != NULL ){
 		// static_cast<IAccessible*>(PPvAccServer)->AddRef(); •s—v
-		MSGMSG("WmGetObject 2 %d",PPvAccServer);
-		return DLresultFromObject(xIID_IAccessible,wParam,
+		MSGMSG("WmGetObject 2 %d", PPvAccServer);
+		return DLresultFromObject(xIID_IAccessible, wParam,
 				static_cast<IAccessible*>(PPvAccServer));
 	}else{
 		CPPvAccServer *pAccServer = new CPPvAccServer();
 		if ( pAccServer != NULL ){
 			PPvAccServer = static_cast<IAccessible*>(pAccServer);
 			if ( DNotifyWinEvent == DummyNotifyWinEvent ){
-				GETDLLPROC(GetModuleHandle(StrUser32DLL),NotifyWinEvent);
+				GETDLLPROC(GetModuleHandle(StrUser32DLL), NotifyWinEvent);
 				if ( DNotifyWinEvent == NULL ){
 					DNotifyWinEvent = DummyNotifyWinEvent;
 				}
 			}
-			MSGMSG("WmGetObject 1 %d",pAccServer);
-			return DLresultFromObject(xIID_IAccessible,wParam,
+			MSGMSG("WmGetObject 1 %d", pAccServer);
+			return DLresultFromObject(xIID_IAccessible, wParam,
 					static_cast<IAccessible*>(pAccServer));
 		}
 	}

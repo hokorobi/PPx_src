@@ -31,7 +31,7 @@
 	bae0-baff	  PPtray
 	ba80-badf	  PPtree
 	ba40-ba7f	  combo window
-	x000-x7FF(x:3,B)WM_SYSCOMMAND
+	x000-x7FF(x:3, B)WM_SYSCOMMAND
 */
 
 #define K_alt	(K_v | VK_MENU)		// [ALT][GRPH]
@@ -184,7 +184,7 @@ typedef struct {
 #define K_THREADUNREG	0xbff6		// スレッドを管理外にする
 #define K_THREADRESTART	0xbff7		// スレッドが異常終了したので再起動
 #define K_POPOPS	0xbff8			// ポップアップ用に使う座標を指定・取得
-				// HIWORD(wParam)=PPT_ lParam=MAKELPARAM(x,y)  (SAVED用)
+				// HIWORD(wParam)=PPT_ lParam=MAKELPARAM(x, y)  (SAVED用)
 	#define PPT_FOCUS	0	// キャレット/エントリ等のフォーカス位置を基準に (キーボード時)
 	#define PPT_MOUSE	1	// マウス位置を基準に (マウス時)
 	#define PPT_SAVED	2	// PopupPosを基準に
@@ -365,16 +365,16 @@ typedef struct {
 
 #define KCW_capture		0xba4b		// 任意のウィンドウを取り込む lParam:HWND
 #define KCW_tree		0xba4c		// ツリー表示する lParam:TCHAR*カレントpath
-#define KCW_tabrotate	0xba4d		// タブのローテーション HI(wParam),lParam
+#define KCW_tabrotate	0xba4d		// タブのローテーション HI(wParam), lParam
 #define KCW_reqsize		0xba4e		// ウィンドウサイズ変更依頼通知 lParam : HWND
 #define KCW_drawstatus	0xba4f		// ステータス行の描画を指令する
 typedef struct {
 	HWND hWnd;
-	int offsetx,offsety,mode;
+	int offsetx, offsety, mode;
 } SCW_REQSIZE;
 #define KCW_panecommand	0xba50		// ウィンドウサイズ変更依頼通知 lParam : param
 #define KCW_addressbar	0xba51		// addressbar にフォーカス設定
-#define KCW_dock		0xba52		// *Dock コマンド実行 HI(wParam),lParam:chr
+#define KCW_dock		0xba52		// *Dock コマンド実行 HI(wParam), lParam:chr
 #define KCW_ready		0xba53		// 全窓の初期化完了の通知、lP:HWND
 #define KCW_setmenu		0xba54		// メニュー変更の通知 lP:HMENU
 #define KCW_getsite		0xba55		// 指定窓の左右位置を取得 lParam:HWND
@@ -387,7 +387,7 @@ typedef struct {
 #define KCW_ppclist		0xba5c		// ppc一覧のメモリを取得
 
 #define KCW_captureEx	0xba5f		// キャプチャされた窓がPPx対応かを確認する
-									// 戻り値が MAKELPARAM(1,KCW_captureEx)なら
+									// 戻り値が MAKELPARAM(1, KCW_captureEx)なら
 									// PPx対応
 #define KCW_enteraddress 0xba60		// address bar に入力があったことが通知
 #define KCW_showjoblist  0xba61		// job一覧窓を表示

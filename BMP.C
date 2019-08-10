@@ -13,7 +13,7 @@
 #endif
 
 /* DIBのヘッダからパレットを作成する */
-HPALETTE DIBtoPalette(HTBMP *hTbmp,int mode,int maxY)
+HPALETTE DIBtoPalette(HTBMP *hTbmp, int mode, int maxY)
 {
 	struct {
 		WORD palVersion;
@@ -22,9 +22,9 @@ HPALETTE DIBtoPalette(HTBMP *hTbmp,int mode,int maxY)
 	} lPal;
 	PALETTEENTRY *ppal;
 	RGBQUAD *rgb;
-	int r,g,b;
+	int r, g, b;
 	DWORD ClrUsed;
-	BYTE *src,*dst;
+	BYTE *src, *dst;
 	BITMAPINFOHEADER *dib;
 
 	dib = hTbmp->DIB;
@@ -37,15 +37,15 @@ HPALETTE DIBtoPalette(HTBMP *hTbmp,int mode,int maxY)
 		int VideoBits;
 
 		hDC = GetDC(NULL);
-		VideoBits = GetDeviceCaps(hDC,BITSPIXEL);
-		ReleaseDC(NULL,hDC);
+		VideoBits = GetDeviceCaps(hDC, BITSPIXEL);
+		ReleaseDC(NULL, hDC);
 		if ( VideoBits > 8 ) return NULL; // 画面が256超なのでそのまま表示可能
 
 		rgb = hTbmp->nb.rgb2;
 		lPal.palNumEntries = 6*6*6;
 		for( b = 0 ; b <= 255 ; b += 51 ){
 			for(g = 0 ; g <= 255 ; g += 51){
-				for(r = 0 ; r <= 255 ; r += 51,ppal++){
+				for(r = 0 ; r <= 255 ; r += 51, ppal++){
 					rgb->rgbRed = ppal->peRed     = (BYTE)r;
 					rgb->rgbGreen = ppal->peGreen = (BYTE)g;
 					rgb->rgbBlue = ppal->peBlue   = (BYTE)b;
@@ -56,7 +56,7 @@ HPALETTE DIBtoPalette(HTBMP *hTbmp,int mode,int maxY)
 		}
 
 		if ( dib->biBitCount == 24 ){
-			int x,y;
+			int x, y;
 
 			src = dst = hTbmp->bits;
 			dib->biSizeImage = hTbmp->size.cx * maxY;
@@ -81,7 +81,7 @@ HPALETTE DIBtoPalette(HTBMP *hTbmp,int mode,int maxY)
 		DWORD ci;
 
 		rgb = (LPRGBQUAD)((BYTE *)hTbmp->DIB + hTbmp->PaletteOffset);
-		if ( IsBadReadPtr(rgb,ClrUsed * sizeof(RGBQUAD)) ) return NULL;
+		if ( IsBadReadPtr(rgb, ClrUsed * sizeof(RGBQUAD)) ) return NULL;
 
 		for ( ci = 0; ci < ClrUsed; ci++, rgb++, ppal++ ){
 			if ( mode == BMPFIX_TOOLBAR ){
@@ -104,7 +104,7 @@ HPALETTE DIBtoPalette(HTBMP *hTbmp,int mode,int maxY)
 	return CreatePalette((LOGPALETTE *)&lPal);
 }
 
-#define ColorFix(src,bright) \
+#define ColorFix(src, bright) \
 {\
 	int c;\
 	c = *src * bright >> 8;\
@@ -125,9 +125,9 @@ PPXDLL BOOL PPXAPI InitBMP(HTBMP *hTbmp, const TCHAR *filename, DWORD size, int 
 			(*(hTbmp->dibfile + 6) != 0)	||
 			(*(hTbmp->dibfile + 7) != 0)	){
 		VFSOn(VFS_BMP);
-		if ( !VFSGetDibDelay(filename,hTbmp->dibfile,size,
+		if ( !VFSGetDibDelay(filename, hTbmp->dibfile, size,
 					(bright == BMPFIX_PREVIEW) ? (TCHAR *)(DWORD_PTR)1 : NULL,
-					&hTbmp->info,&hTbmp->bm,NULL) ){ // C4306ok
+					&hTbmp->info, &hTbmp->bm, NULL) ){ // C4306ok
 			VFSOff();
 			if ( hTbmp->hPalette != NULL ) return FALSE;
 			goto error;
@@ -136,7 +136,7 @@ PPXDLL BOOL PPXAPI InitBMP(HTBMP *hTbmp, const TCHAR *filename, DWORD size, int 
 		if ( (hTbmp->DIB = LocalLock(hTbmp->info)) == NULL ) goto error;
 		if ( (hTbmp->bits = LocalLock(hTbmp->bm)) == NULL ) goto error;
 		size = (DWORD)LocalSize(hTbmp->bm);
-		HeapFree(GetProcessHeap(),0,hTbmp->dibfile);
+		HeapFree(GetProcessHeap(), 0, hTbmp->dibfile);
 		hTbmp->dibfile = NULL;
 	}else{
 		if ( size < (sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER)) ){
@@ -181,7 +181,7 @@ PPXDLL BOOL PPXAPI InitBMP(HTBMP *hTbmp, const TCHAR *filename, DWORD size, int 
 
 	if ( (bright != 100) && (bright > -200) ){ // 明度調節
 		BYTE *src;
-		int x,y,xm;
+		int x, y, xm;
 
 		bright = bright * 256 / 100;
 		if ( color == 32 ){
@@ -190,9 +190,9 @@ PPXDLL BOOL PPXAPI InitBMP(HTBMP *hTbmp, const TCHAR *filename, DWORD size, int 
 
 			for ( y = maxY ; y ; y-- ){
 				for ( x = xm ; x ; x-- ){
-					ColorFix(src,bright);
-					ColorFix(src,bright);
-					ColorFix(src,bright);
+					ColorFix(src, bright);
+					ColorFix(src, bright);
+					ColorFix(src, bright);
 					src++;
 				}
 			}
@@ -202,9 +202,9 @@ PPXDLL BOOL PPXAPI InitBMP(HTBMP *hTbmp, const TCHAR *filename, DWORD size, int 
 
 			for ( y = maxY ; y ; y-- ){
 				for ( x = xm ; x ; x-- ){
-					ColorFix(src,bright);
-					ColorFix(src,bright);
-					ColorFix(src,bright);
+					ColorFix(src, bright);
+					ColorFix(src, bright);
+					ColorFix(src, bright);
 				}
 				src += (4 - ALIGNMENT_BITS(src)) & 3;
 			}
@@ -214,7 +214,7 @@ PPXDLL BOOL PPXAPI InitBMP(HTBMP *hTbmp, const TCHAR *filename, DWORD size, int 
 
 			for ( y = maxY ; y ; y-- ){
 				for ( x = xm ; x ; x-- ){
-					WORD csrc,cdest,c;
+					WORD csrc, cdest, c;
 // ビット割当てが 565
 					csrc = *(WORD *)src;
 					c = (WORD)((int)(csrc & 0x1f) * bright >> 8);
@@ -251,23 +251,23 @@ PPXDLL BOOL PPXAPI InitBMP(HTBMP *hTbmp, const TCHAR *filename, DWORD size, int 
 			xm = hTbmp->DIB->biClrUsed ?
 				hTbmp->DIB->biClrUsed : (DWORD)(1 << color);
 			for ( x = xm ; x ; x-- ){
-				ColorFix(src,bright);
-				ColorFix(src,bright);
-				ColorFix(src,bright);
+				ColorFix(src, bright);
+				ColorFix(src, bright);
+				ColorFix(src, bright);
 				src++;
 			}
 		}
 	}
-	hTbmp->hPalette = DIBtoPalette(hTbmp,bright,maxY);
+	hTbmp->hPalette = DIBtoPalette(hTbmp, bright, maxY);
 	return TRUE;
 error:
-	if ( hTbmp->dibfile != NULL ) HeapFree(GetProcessHeap(),0,hTbmp->dibfile);
+	if ( hTbmp->dibfile != NULL ) HeapFree(GetProcessHeap(), 0, hTbmp->dibfile);
 	hTbmp->DIB = NULL;
 	hTbmp->hPalette = NULL;
 	return FALSE;
 }
 
-PPXDLL BOOL PPXAPI LoadBMP(HTBMP *hTbmp,const TCHAR *filename,int bright)
+PPXDLL BOOL PPXAPI LoadBMP(HTBMP *hTbmp, const TCHAR *filename, int bright)
 {
 	DWORD size;
 	hTbmp->dibfile = NULL;
@@ -275,30 +275,30 @@ PPXDLL BOOL PPXAPI LoadBMP(HTBMP *hTbmp,const TCHAR *filename,int bright)
 	hTbmp->info = NULL;
 	hTbmp->bm = NULL;
 
-	if ( NO_ERROR != LoadFileImage(filename,0,
-			(char **)&hTbmp->dibfile,&size,(bright == 100) ? LFI_ALWAYSLIMIT : LFI_ALWAYSLIMITLESS) ){
+	if ( NO_ERROR != LoadFileImage(filename, 0,
+			(char **)&hTbmp->dibfile, &size, (bright == 100) ? LFI_ALWAYSLIMIT : LFI_ALWAYSLIMITLESS) ){
 		return FALSE;
 	}
-	return InitBMP(hTbmp,filename,size,bright);
+	return InitBMP(hTbmp, filename, size, bright);
 }
 
-PPXDLL BOOL PPXAPI DrawBMP(HDC hDC,_In_ HTBMP *hTbmp,int x,int y)
+PPXDLL BOOL PPXAPI DrawBMP(HDC hDC, _In_ HTBMP *hTbmp, int x, int y)
 {
 	HPALETTE hOldPal C4701CHECK;
 
 	if ( (hTbmp == NULL) || (hTbmp->DIB == NULL) ) return FALSE;
 											// hPalの論理パレットに変更する。
 	if ( hTbmp->hPalette != NULL ){
-		hOldPal = SelectPalette(hDC,hTbmp->hPalette,FALSE);
+		hOldPal = SelectPalette(hDC, hTbmp->hPalette, FALSE);
 								// 論理パレットを現在のDCにマッピングする。
 		RealizePalette(hDC);
 	}
 											// DIBを画面に転送
-	SetDIBitsToDevice(hDC,x,y,hTbmp->size.cx,hTbmp->size.cy,
-			0,0,0,hTbmp->size.cy,hTbmp->bits,
-			(BITMAPINFO *)hTbmp->DIB,DIB_RGB_COLORS);
+	SetDIBitsToDevice(hDC, x, y, hTbmp->size.cx, hTbmp->size.cy,
+			0, 0, 0, hTbmp->size.cy, hTbmp->bits,
+			(BITMAPINFO *)hTbmp->DIB, DIB_RGB_COLORS);
 											// 前のパレットに戻す。
-	if ( hTbmp->hPalette != NULL ) SelectPalette(hDC,hOldPal,FALSE); // C4701ok
+	if ( hTbmp->hPalette != NULL ) SelectPalette(hDC, hOldPal, FALSE); // C4701ok
 	return TRUE;
 }
 
@@ -306,7 +306,7 @@ PPXDLL BOOL PPXAPI FreeBMP(_Inout_ HTBMP *hTbmp)
 {
 	if ( (hTbmp == NULL) || (hTbmp->DIB == NULL) ) return FALSE;
 	if ( hTbmp->hPalette != NULL) DeleteObject(hTbmp->hPalette);
-	if ( hTbmp->dibfile != NULL ) HeapFree(GetProcessHeap(),0,hTbmp->dibfile);
+	if ( hTbmp->dibfile != NULL ) HeapFree(GetProcessHeap(), 0, hTbmp->dibfile);
 	if ( hTbmp->info != NULL ){
 		LocalUnlock(hTbmp->info);
 		LocalFree(hTbmp->info);

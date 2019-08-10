@@ -4,28 +4,28 @@
 #ifdef GLOBALEXTERN
 	#define GVAR extern
 	#define GPARAM(x)
-	#define GPARAM2(x,y)
+	#define GPARAM2(x, y)
 	#define DLLGVAR extern
 	#define DLLGPARAM(x)
-	#define DLLGPARAM2(x,y)
+	#define DLLGPARAM2(x, y)
 #else
 	#undef GVAR
 	#undef GPARAM
 	#undef GPARAM2
 	#define GVAR
 	#define GPARAM(x) = x
-	#define GPARAM2(x,y) = {x,y}
+	#define GPARAM2(x, y) = {x, y}
 	#if NODLL
 		#define DLLGVAR extern
 		#define DLLGPARAM(x)
-		#define DLLGPARAM2(x,y)
+		#define DLLGPARAM2(x, y)
 	#else
 		#undef DLLGVAR
 		#undef DLLGPARAM
 		#undef DLLGPARAM2
 		#define DLLGVAR
 		#define DLLGPARAM(x) = x
-		#define DLLGPARAM2(x,y) = {x,y}
+		#define DLLGPARAM2(x, y) = {x, y}
 	#endif
 #endif
 
@@ -88,15 +88,16 @@ GVAR BOOL Embed GPARAM(FALSE); // ウィンドウ埋め込み
 
 //--------------------------------------------------------- 色関係
 GVAR HBRUSH C_BackBrush GPARAM(NULL);	// 背景用ブラシ
-GVAR int VideoBits;					// 画面の色数(4,8,16,24,32)
+GVAR int VideoBits;					// 画面の色数(4, 8, 16, 24, 32)
 
 GVAR TCHAR PopMsgStr[VFPS] GPARAM(T(""));
 GVAR int PopMsgFlag GPARAM(0);
 
 //----------------------------------------------------------------- Window 管理
 GVAR HWND hViewParentWnd GPARAM(NULL);
+GVAR BOOL ParentPopup GPARAM(FALSE);
 GVAR RECT winS;
-GVAR SIZE WndSize GPARAM2(1,1);
+GVAR SIZE WndSize GPARAM2(1, 1);
 GVAR DYNAMICMENUSTRUCT DynamicMenu;
 GVAR UINT WM_PPXCOMMAND;				// PPx 間通信用 Window Message
 GVAR HWND hCommonWnd GPARAM(NULL);	// タスクを隠すときのPPtray
@@ -120,8 +121,8 @@ GVAR HFONT hANSIFont GPARAM(INVALID_HANDLE_VALUE);
 GVAR HFONT hIBMFont GPARAM(INVALID_HANDLE_VALUE);
 GVAR HFONT hSYMFont GPARAM(INVALID_HANDLE_VALUE);
 GVAR HBRUSH hStatusLine;
-GVAR int fontX GPARAM(1),fontY GPARAM(1),LineY GPARAM(1);
-GVAR int fontSYMY; // fontANSIY,fontIBMY;
+GVAR int fontX GPARAM(1), fontY GPARAM(1), LineY GPARAM(1);
+GVAR int fontSYMY; // fontANSIY, fontIBMY;
 GVAR int fontWW;		// 漢字のときの補正値
 GVAR BOOL XV_unff GPARAM(FALSE);
 
@@ -149,7 +150,7 @@ GVAR TCHAR RegID[REGIDSIZE] GPARAM(T(PPV_REGID));
 
 #ifdef GLOBALEXTERN
 typedef enum {
-	DOCMODE_NONE = 0,DOCMODE_TEXT = B0,DOCMODE_HEX = B1,DOCMODE_BMP = B2,DOCMODE_EMETA = B3,DOCMODE_RAWIMAGE = B4
+	DOCMODE_NONE = 0, DOCMODE_TEXT = B0, DOCMODE_HEX = B1, DOCMODE_BMP = B2, DOCMODE_EMETA = B3, DOCMODE_RAWIMAGE = B4
 } DOCMODELIST;
 #endif
 
@@ -167,7 +168,7 @@ GVAR int VO_Ttag;	//GPARAM(1); // 0:未処理 1:隠す 2:ハイライト
 GVAR int VO_Tshow_script;	//GPARAM(1);
 GVAR int VO_Tshow_css;	//GPARAM(1);
 GVAR int VO_Tquoted;	//GPARAM(0);
-GVAR VIEWOPTIONS *VO_opt,VO_optdata;
+GVAR VIEWOPTIONS *VO_opt, VO_optdata;
 GVAR int VO_CodePage GPARAM(0);
 GVAR BOOL VO_CodePageChanged; // テキスト中のコードページ指定による変更済
 GVAR BOOL VO_CodePageValid; // 指定コードページが有効か
@@ -187,13 +188,13 @@ GVAR FDM FileDivideMode GPARAM(FDM_NODIV);
 GVAR DDWORDST FileRealSize;
 GVAR DDWORDST FileDividePointer
 #ifndef GLOBALEXTERN
-={0,0}
+={0, 0}
 #endif
 ;
 
 GVAR DWORD X_lspc GPARAM(0);
 
-GVAR VO_INFO VO_I[DISPT_MAX],*VOi GPARAM(VO_I);
+GVAR VO_INFO VO_I[DISPT_MAX], *VOi GPARAM(VO_I);
 
 GVAR VIEWOPTIONS viewopt_def; // 初期値オプション
 GVAR VIEWOPTIONS viewopt_opentime; // ファイルを開いたときに適用しているオプション
@@ -237,7 +238,7 @@ GVAR const TCHAR *VO_textM[]
 #endif
 ;
 
-GVAR int BackupSelY,BackupOffY,BackuplastY;
+GVAR int BackupSelY, BackupOffY, BackuplastY;
 GVAR BOOL UseActiveEvent;
 
 DLLGVAR const TCHAR NilStr[1] DLLGPARAM(T(""));
@@ -275,17 +276,17 @@ GVAR VO_SELECT VOsel	// 選択状態の保存
 ={
 	FALSE,			// cursor
 
-	FALSE,FALSE,	// select,line
-	{{0,0},{0,0}},	// start
-	{{0,0},{0,0}},	// now
-	{{0,0},{0,0}},	// bottom
-	{{0,0},{0,0}},	// top
-	0,0,			// bottomOY,topOY
+	FALSE, FALSE,	// select, line
+	{{0, 0}, {0, 0}},	// start
+	{{0, 0}, {0, 0}},	// now
+	{{0, 0}, {0, 0}},	// bottom
+	{{0, 0}, {0, 0}},	// top
+	0, 0,			// bottomOY, topOY
 	0,				// posdiffX
 
 	FALSE,			// highlight
-	-1,-1,			// lastY,foundY
-	"",L""			// string
+	-1, -1,			// lastY, foundY
+	"", L""			// string
 };
 #endif
 ;
@@ -311,7 +312,7 @@ GVAR HANDLE hReadStream GPARAM(NULL);
 
 #ifdef GLOBALEXTERN
 typedef enum {
-	READ_NONE = 0,READ_FILE,READ_STDIN
+	READ_NONE = 0, READ_FILE, READ_STDIN
 } READSMODE;
 #endif
 
@@ -319,7 +320,7 @@ GVAR READSMODE ReadingStream GPARAM(READ_NONE);
 
 GVAR VO_MAKETEXTINFO mtinfo
 #ifndef GLOBALEXTERN
-= { NULL,NULL,0,-1,0,0 }
+= { NULL, NULL, 0, -1, 0, 0 }
 #endif
 ;
 
@@ -335,11 +336,11 @@ GVAR DXDRAWSTRUCT *DxDraw GPARAM(NULL);
 //================================================================ Customize 系
 GVAR PPVVAR XV
 #ifndef GLOBALEXTERN
-= {	{0,NULL},	// HiddenMenu
-	{{IMGD_AUTOWINDOWSIZE,HALFTONE},	// imgD
+= {	{0, NULL},	// HiddenMenu
+	{{IMGD_AUTOWINDOWSIZE, HALFTONE},	// imgD
 	 IMGD_MM_FULLSCALE,	// MagMode
 	 0, //AspectRate
-	 0,0 // AspectW,AspectH
+	 0, 0 // AspectW, AspectH
 	}
 }
 #endif
@@ -361,7 +362,7 @@ GVAR int X_IME GPARAM(0);
 GVAR BOOL XV_pctl GPARAM(TRUE);
 GVAR int XV_bctl[3]
 #ifndef GLOBALEXTERN
-= {3,3,0};	// tab,lf,space
+= {3, 3, 0};	// tab, lf, space
 #endif
 ;
 GVAR int X_fles GPARAM(0);
@@ -374,7 +375,7 @@ GVAR int XV_left GPARAM(2);
 GVAR int X_textmag GPARAM(100);
 GVAR int X_swmt GPARAM(0);
 
-GVAR int X_pppv GPARAM(0);
+GVAR TCHAR X_pppv GPARAM(0);
 
 
 #define CTRLSIG_CRLF	0
@@ -403,7 +404,7 @@ GVAR int X_dds GPARAM(1);
 GVAR DWORD X_askp GPARAM(0);
 GVAR int XV_drag[4]
 #ifndef GLOBALEXTERN
-= {MOUSEBUTTON_L,MOUSEBUTTON_R,MOUSEBUTTON_M,0}
+= {MOUSEBUTTON_L, MOUSEBUTTON_R, MOUSEBUTTON_M, 0}
 #endif
 ;
 #define XV_DragScr XV_drag[0]
@@ -425,23 +426,23 @@ GVAR COLORREF CV_spc	GPARAM(C_DBLUE);
 GVAR COLORREF CV_link	GPARAM(C_BLUE);
 GVAR COLORREF CV_syn[2]
 #ifndef GLOBALEXTERN
-= {C_DGREEN,C_SBLUE};
+= {C_DGREEN, C_SBLUE};
 #endif
 ;
 GVAR COLORREF	C_res[2]
 #ifndef GLOBALEXTERN
-= {C_AUTO,C_AUTO};
+= {C_AUTO, C_AUTO};
 #endif
 ;
 GVAR COLORREF	CV_lnum[2]
 #ifndef GLOBALEXTERN
-= {C_CYAN,C_GRAY};
+= {C_CYAN, C_GRAY};
 #endif
 ;
 
 GVAR COLORREF	CV_lbak[3]
 #ifndef GLOBALEXTERN
-= {C_RED,C_CYAN,C_AUTO};
+= {C_RED, C_CYAN, C_AUTO};
 #endif
 ;
 
@@ -465,7 +466,7 @@ GVAR COLORREF	CV_hili[9]
 // 内部用 ---------------------------------------------------------------------
 GVAR WINPOS WinPos
 #ifndef GLOBALEXTERN
-= {{CW_USEDEFAULT,CW_USEDEFAULT,640,400},0,0}			// 表示位置
+= {{CW_USEDEFAULT, CW_USEDEFAULT, 640, 400}, 0, 0}			// 表示位置
 #endif
 ;
 GVAR int OpenEntryNow GPARAM(0);	// Open 再入防止
@@ -475,6 +476,6 @@ DLLGVAR int X_pmc[4] DLLGPARAM({X_pmc_defvalue});
 // 印刷 -----------------------------------------------------------------------
 GVAR PRINTINFO PrintInfo
 #ifndef GLOBALEXTERN
-= {{{20,15,10,10},0},1,1,80,50}
+= {{{20, 15, 10, 10}, 0}, 1, 1, 80, 50}
 #endif
 ;

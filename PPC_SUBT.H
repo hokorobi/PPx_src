@@ -15,6 +15,6 @@ typedef struct {
 	OverlayClassTable *LayPtr;
 } SubThreadData;
 
-extern void GetInfoIcon(PPC_APPINFO *cinfo,HICON *hInfoIcon,SubThreadData *threaddata);
-extern void USEFASTCALL GetCellIcon(PPC_APPINFO *cinfo,SubThreadData *threeaddata);
+extern void GetInfoIcon(PPC_APPINFO *cinfo, HICON *hInfoIcon, SubThreadData *threaddata);
+extern void USEFASTCALL GetCellIcon(PPC_APPINFO *cinfo, SubThreadData *threeaddata);
 extern void FreeOverlayClass(OverlayClassTable *oc);

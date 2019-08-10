@@ -536,6 +536,9 @@
 #define IDC_SORT_TYPE3	0x78ea
 #define IDC_SORT_TYPE4	0x78eb
 #define IDX_SORT_LE		0x78ec
+#define IDX_SORT_REV1	0x78ed
+#define IDX_SORT_REV2	0x78ee
+#define IDX_SORT_REV3	0x78ef
 //-------------------------------------- Whereis
 #define IDD_WHERE		0x78f0
 #define IDS_WHERE_SRC	0x78f1

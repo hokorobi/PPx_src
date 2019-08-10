@@ -37,31 +37,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 									// グローバル初期化
 	hInst = hInstance;
 	MainThreadID = GetCurrentThreadId();
-	CoInitializeEx(NULL,COINIT_APARTMENTTHREADED);
+	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 	InitPPcGlobal();
 	psp.show = nShowCmd;
 	#ifdef UNICODE
-	if ( LoadParam(&psp,NULL) == FALSE ){
+	if ( LoadParam(&psp, NULL) == FALSE ){
 		result = EXIT_FAILURE;
 		goto fin;
 	}
 	#else
-	if ( LoadParam(&psp,lpCmdLine) == FALSE ){
+	if ( LoadParam(&psp, lpCmdLine) == FALSE ){
 		result = EXIT_FAILURE;
 		goto fin;
 	}
 	#endif
 
 #if 0
-	XMessage(NULL,NULL,XM_DbgLOG,T("PSP SingleProcess:%d Reuse:%d UseCmd:%d AllocCmd:%d alone:%d show:%d Focus:%c"),
-		psp.SingleProcess,psp.Reuse,psp.UseCmd,psp.AllocCmd,psp.alone,psp.show,psp.Focus);
+	XMessage(NULL, NULL, XM_DbgLOG, T("PSP SingleProcess:%d Reuse:%d UseCmd:%d AllocCmd:%d alone:%d show:%d Focus:%c"),
+		psp.SingleProcess, psp.Reuse, psp.UseCmd, psp.AllocCmd, psp.alone, psp.show, psp.Focus);
 	{
 		PSPONE *next;
 
 		next = psp.next;
 		while ( next != NULL ){
 			if ( next->id.RegID[0] == '\0' ) break;
-			XMessage(NULL,NULL,XM_DbgLOG,T("PSPone RegID:%s RegMode:%d Pair:%d Combo:%d Lock:%d Pane:%d Path:%s"),
+			XMessage(NULL, NULL, XM_DbgLOG, T("PSPone RegID:%s RegMode:%d Pair:%d Combo:%d Lock:%d Pane:%d Path:%s"),
 				next->id.RegID, next->id.RegMode, next->id.Pair,
 				next->combo.use, next->combo.dirlock, next->combo.pane,
 				next->path);
@@ -83,7 +83,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		 if ( IsTrue(psp.SingleProcess) ){
 			if ( psp.ComboID == '\0' ){
-				if ( IsTrue(CallPPc(&psp,NULL)) ){
+				if ( IsTrue(CallPPc(&psp, NULL)) ){
 					result = EXIT_SUCCESS;
 					goto fin;
 				}
@@ -108,14 +108,14 @@ fin:
 	FreeOverlayCom();
 	DeleteCriticalSection(&SHGetFileInfoSection);
 	DeleteCriticalSection(&FindFirstAsyncSection);
-	PPxCommonCommand(NULL,0,K_CLEANUP);
+	PPxCommonCommand(NULL, 0, K_CLEANUP);
 	CoUninitialize();
 	return result;
 }
 
 void FindParamComboTarget(PPCSTARTPARAM *psp, TCHAR ID, int subid, BOOL dirlock, int showpane)
 {
-	PSPONE newpspo,*pspo,*foundPspo = NULL;
+	PSPONE newpspo, *pspo, *foundPspo = NULL;
 
 	pspo = psp->next;
 	if ( pspo != NULL ){
@@ -159,8 +159,8 @@ void FindParamComboTarget(PPCSTARTPARAM *psp, TCHAR ID, int subid, BOOL dirlock,
 	newpspo.combo.dirlock = dirlock;
 	newpspo.combo.pane = showpane;
 	newpspo.path[0] = '\0';
-	ThAppend(&psp->th,&newpspo,ToSIZE32_T((char *)&newpspo.path[0] - (char *)&newpspo.id.RegID + sizeof(TCHAR)));
-	ThAppend(&psp->th,NilStr,TSTROFF(1));
+	ThAppend(&psp->th, &newpspo, ToSIZE32_T((char *)&newpspo.path[0] - (char *)&newpspo.id.RegID + sizeof(TCHAR)));
+	ThAppend(&psp->th, NilStr, TSTROFF(1));
 
 	psp->next = (PSPONE *)psp->th.bottom;
 }
@@ -181,7 +181,7 @@ BOOL ComboFix(PPCSTARTPARAM *psp)
 		if ( IsTrue(psp->Reuse) ){
 			HWND hAloneWnd;
 
-			hAloneWnd = PPcGetWindow(psp->ComboID - 'A',CGETW_GETCOMBOHWND);
+			hAloneWnd = PPcGetWindow(psp->ComboID - 'A', CGETW_GETCOMBOHWND);
 			if ( hAloneWnd != NULL  ) { // 既存aloneを使用
 				CallPPc(psp, hAloneWnd);
 				if ( (psp->show != SW_SHOWNOACTIVATE) &&
@@ -197,14 +197,14 @@ BOOL ComboFix(PPCSTARTPARAM *psp)
 		return TRUE;
 	}else if ( IsTrue(psp->Reuse) ){
 		// -r 時、既に別のPPcがあるなら、CallPPc をさせる
-		if ( PPcGetWindow(0,CGETW_GETFOCUS) != NULL ) return TRUE;
+		if ( PPcGetWindow(0, CGETW_GETFOCUS) != NULL ) return TRUE;
 	}
 
 	if ( X_combos[1] & CMBS1_NORESTORETAB ) return TRUE;
 	if ( psp->usealone ) return TRUE; // alone 時はペインの再現を行わない
 	// 元の状態を取得
 	list[0] = '\0';
-	GetCustTable(T("_Path"),comboid,list,sizeof(list));
+	GetCustTable(T("_Path"), comboid, list, sizeof(list));
 	if ( (list[0] == '\0') || (list[1] == '\0') || (list[2] == '\0') ){
 		return TRUE;
 	}
@@ -218,7 +218,7 @@ BOOL ComboFix(PPCSTARTPARAM *psp)
 	// listptr は、ペイン・タブ並びの先頭を示す
 
 	{ //Z が複数ある場合、無効にする
-		TCHAR *Zfirst = tstrchr(listptr,'Z');
+		TCHAR *Zfirst = tstrchr(listptr, 'Z');
 
 		if ( Zfirst != NULL ){
 			TCHAR *Znext;
@@ -227,7 +227,7 @@ BOOL ComboFix(PPCSTARTPARAM *psp)
 			for ( ;; ) {
 				int i;
 
-				Znext = tstrchr(Znext + 1,'Z');
+				Znext = tstrchr(Znext + 1, 'Z');
 				if ( Znext == NULL ) break;
 				for ( i = 1 ; ; i++ ){
 					if ( Islower(*(Zfirst + i)) ){
@@ -358,7 +358,7 @@ BOOL ComboFix(PPCSTARTPARAM *psp)
 		pspo = psp->next;
 		sindex = 0;
 		while ( pspo->id.RegID[0] ){
-			XMessage(NULL,NULL,XM_DbgDIA,T("index=%d   ID=%s.%d"),sindex++,pspo->id.RegID,pspo->id.SubID);
+			XMessage(NULL, NULL, XM_DbgDIA, T("index=%d   ID=%s.%d"), sindex++, pspo->id.RegID, pspo->id.SubID);
 			pspo = PSPONE_next(pspo);
 		}
 	}
@@ -366,29 +366,29 @@ BOOL ComboFix(PPCSTARTPARAM *psp)
 	return TRUE;
 }
 
-void USEFASTCALL PPCuiWithPathForLock(PPC_APPINFO *cinfo,const TCHAR *path)
+void USEFASTCALL PPCuiWithPathForLock(PPC_APPINFO *cinfo, const TCHAR *path)
 {
 	TCHAR cmdline[CMDLINESIZE];
 
 	if ( X_combos[0] & CMBS_REUSETLOCK ){
-		if ( SendMessage(cinfo->hComboWnd,WM_PPXCOMMAND,KCW_pathfocus,(LPARAM)path) == (SENDCOMBO_OK + 1) ){
+		if ( SendMessage(cinfo->hComboWnd, WM_PPXCOMMAND, KCW_pathfocus, (LPARAM)path) == (SENDCOMBO_OK + 1) ){
 			return;
 		}
 	}
 
 	if ( cinfo->combo ){
 		if ( cinfo->info.hWnd != hComboFocus ){
-			wsprintf(cmdline,T("\"%s\" -noactive"),path);
+			wsprintf(cmdline, T("\"%s\" -noactive"), path);
 		}else{
-			wsprintf(cmdline,T("\"%s\""),path);
+			wsprintf(cmdline, T("\"%s\""), path);
 		}
-		CallPPcParam(Combo.hWnd,cmdline);
+		CallPPcParam(Combo.hWnd, cmdline);
 		return;
 	}
-	PPCuiWithPath(cinfo->info.hWnd,path);
+	PPCuiWithPath(cinfo->info.hWnd, path);
 }
 
-void RunNewPPc(PPCSTARTPARAM *psp,MAINWINDOWSTRUCT *mws)
+void RunNewPPc(PPCSTARTPARAM *psp, MAINWINDOWSTRUCT *mws)
 {
 	DWORD tmp;
 
@@ -399,20 +399,20 @@ void RunNewPPc(PPCSTARTPARAM *psp,MAINWINDOWSTRUCT *mws)
 	GlobalMemoryStatus(&mstate);
 
 	if ( mstate.dwAvailVirtual < (500 * MB) ){
-		XMessage(NULL,NULL,XM_ImWRNld,MemWarnStr);
+		XMessage(NULL, NULL, XM_ImWRNld, MemWarnStr);
 	}
 #endif
 	if ( X_MultiThread == 0 ){
 		if ( IsTrue(PPxRegisterThread(NULL)) ){
-			CreatePPcWindow(psp,mws);
+			CreatePPcWindow(psp, mws);
 			return;
 		}
 		// PPcMain を通さずに初期化されている状態？ 将来削除可能。
-		PPxCommonExtCommand(K_SENDREPORT,(WPARAM)T("RunNewPPc"));
+		PPxCommonExtCommand(K_SENDREPORT, (WPARAM)T("RunNewPPc"));
 		return;
 	}
 
-	CloseHandle(CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)PPcMain,psp,0,&tmp));
+	CloseHandle(CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)PPcMain, psp, 0, &tmp));
 }
 
 int GetPPcSubID(const TCHAR *idstr, TCHAR *dest)
@@ -428,7 +428,7 @@ int GetPPcSubID(const TCHAR *idstr, TCHAR *dest)
 	return strptr - idstr;
 }
 
-BOOL CreatePPcWindow(PPCSTARTPARAM *psp,MAINWINDOWSTRUCT *mws)
+BOOL CreatePPcWindow(PPCSTARTPARAM *psp, MAINWINDOWSTRUCT *mws)
 {
 	BOOL usepath = FALSE;
 	DWORD tmp;
@@ -444,9 +444,9 @@ BOOL CreatePPcWindow(PPCSTARTPARAM *psp,MAINWINDOWSTRUCT *mws)
 		select = psp->next->combo.select;
 	}
 
-	cinfo = (PPC_APPINFO *)HeapAlloc( hProcessHeap,HEAP_ZERO_MEMORY,sizeof(PPC_APPINFO));
+	cinfo = (PPC_APPINFO *)HeapAlloc( hProcessHeap, HEAP_ZERO_MEMORY, sizeof(PPC_APPINFO));
 	if ( cinfo == NULL ){
-		XMessage(NULL,NULL,XM_GrERRld,T("mem alloc error"));
+		XMessage(NULL, NULL, XM_GrERRld, T("mem alloc error"));
 		return FALSE;
 	}
 	// cinfo は 0 fill 済み
@@ -485,18 +485,18 @@ BOOL CreatePPcWindow(PPCSTARTPARAM *psp,MAINWINDOWSTRUCT *mws)
 	if ( cinfo->combo == 0 ){
 		if ( cinfo->WinPos.pos.left == (int)CW_USEDEFAULT ){ // 幅が未定義なら調節
 			// ShowWindow より前に指定する必要有り
-			PostMessage(cinfo->info.hWnd,WM_PPXCOMMAND,K_raw | K_a | K_F6,0);
+			PostMessage(cinfo->info.hWnd, WM_PPXCOMMAND, K_raw | K_a | K_F6, 0);
 		}
-		ShowWindow(cinfo->info.hWnd,cinfo->WinPos.show);
-		read_entry(cinfo,RENTRY_READ);
+		ShowWindow(cinfo->info.hWnd, cinfo->WinPos.show);
+		read_entry(cinfo, RENTRY_READ);
 	}
 	// X_IME == 1 のときは、WM_SETFOCUS で IMEOFF
-	if ( X_IME == 2 ) PostMessage(cinfo->info.hWnd,WM_PPXCOMMAND,K_IMEOFF,0);
+	if ( X_IME == 2 ) PostMessage(cinfo->info.hWnd, WM_PPXCOMMAND, K_IMEOFF, 0);
 										// メインウインドウの表示を更新 -------
-	PPxRegist(cinfo->info.hWnd,cinfo->RegID,PPXREGIST_SETHWND);	// 正式登録
+	PPxRegist(cinfo->info.hWnd, cinfo->RegID, PPXREGIST_SETHWND);	// 正式登録
 
-	cinfo->hSubThread = CreateThread(NULL,0,
-			(LPTHREAD_START_ROUTINE)SubThread,cinfo,0,&tmp);
+	cinfo->hSubThread = CreateThread(NULL, 0,
+			(LPTHREAD_START_ROUTINE)SubThread, cinfo, 0, &tmp);
 
 	dd_init(cinfo);
 										// フォーカスの再設定
@@ -509,12 +509,12 @@ BOOL CreatePPcWindow(PPCSTARTPARAM *psp,MAINWINDOWSTRUCT *mws)
 		keycmd = ((cinfo->WinPos.show != SW_SHOWNOACTIVATE) ?
 						KCW_entry : (KCW_entry + KCW_entry_NOACTIVE)) +
 				(showpane + 1) * KCW_entry_DEFPANE;
-		if ( select ) setflag(keycmd,KCW_entry_SELECTNA);
+		if ( select ) setflag(keycmd, KCW_entry_SELECTNA);
 
 		//↓２枚目以降は計算されていないことがあるので対策
 		WmWindowPosChanged(cinfo);
-		SendMessage(cinfo->hComboWnd,WM_PPXCOMMAND,
-				keycmd,(LPARAM)cinfo->info.hWnd); // 内部でFocusいじるのでSend
+		SendMessage(cinfo->hComboWnd, WM_PPXCOMMAND,
+				keycmd, (LPARAM)cinfo->info.hWnd); // 内部でFocusいじるのでSend
 	}else if ( (cinfo->swin & SWIN_WBOOT) && (cinfo->WinPos.show != SW_SHOWNOACTIVATE) ){
 	// 連結時
 		HWND PairHWnd;
@@ -530,11 +530,11 @@ BOOL CreatePPcWindow(PPCSTARTPARAM *psp,MAINWINDOWSTRUCT *mws)
 		}
 	}
 										// 初期化が完了したのでFixを有効
-	resetflag(cinfo->swin,SWIN_BUSY);
-	IOX_win(cinfo,TRUE);
+	resetflag(cinfo->swin, SWIN_BUSY);
+	IOX_win(cinfo, TRUE);
 
 	if ( (!cinfo->combo || !(X_combos[0] & CMBS_COMMONTREE)) && cinfo->XC_tree.mode ){
-		PPC_Tree(cinfo,cinfo->XC_tree.mode);
+		PPC_Tree(cinfo, cinfo->XC_tree.mode);
 	}
 
 	if ( !(psp && psp->next && psp->next->id.RegID[0]) && // ←別のを呼び出しなし
@@ -572,22 +572,22 @@ BOOL CreatePPcWindow(PPCSTARTPARAM *psp,MAINWINDOWSTRUCT *mws)
 	}
 
 	if ( cinfo->combo ){	// 一体化完了後読み込みをしたいがまだ効果が薄すぎ
-		read_entry(cinfo,RENTRY_READ);
+		read_entry(cinfo, RENTRY_READ);
 	}
 
 	if ( CountCustTable(T("_Delayed")) > 0 ){
-		PostMessage(cinfo->info.hWnd,WM_PPXCOMMAND,KC_DODO,0);
+		PostMessage(cinfo->info.hWnd, WM_PPXCOMMAND, KC_DODO, 0);
 	}
 	if ( cinfo->FirstCommand != NULL ){
-		PostMessage(cinfo->info.hWnd,WM_PPXCOMMAND,K_FIRSTCMD,0);
+		PostMessage(cinfo->info.hWnd, WM_PPXCOMMAND, K_FIRSTCMD, 0);
 	}
-	if ( IsExistCustTable(StrKC_main,T("FIRSTEVENT")) ){
-		PostMessage(cinfo->info.hWnd,WM_PPXCOMMAND,K_E_FIRST,0);
+	if ( IsExistCustTable(StrKC_main, T("FIRSTEVENT")) ){
+		PostMessage(cinfo->info.hWnd, WM_PPXCOMMAND, K_E_FIRST, 0);
 	}
 	if ( lastinit && firstinit ){
 		if ( cinfo->combo ){
-			if ( Combo.BaseCount < X_mpane.min ){
-				MorePPc(NULL,&cinfo->mws);
+			if ( Combo.BaseCount < X_mpane.first ){
+				MorePPc(NULL, &cinfo->mws);
 			}else{
 				HWND hWnd;
 
@@ -600,7 +600,7 @@ BOOL CreatePPcWindow(PPCSTARTPARAM *psp,MAINWINDOWSTRUCT *mws)
 					hFocusWnd = GetHwndFromIDCombo(focusID);
 					if ( hFocusWnd != NULL ) hWnd = hFocusWnd;
 				}
-				PostMessage(cinfo->hComboWnd,WM_PPXCOMMAND,KCW_ready,(LPARAM)hWnd);
+				PostMessage(cinfo->hComboWnd, WM_PPXCOMMAND, KCW_ready, (LPARAM)hWnd);
 			}
 		}
 	}
@@ -613,20 +613,20 @@ BOOL CreatePPcWindow(PPCSTARTPARAM *psp,MAINWINDOWSTRUCT *mws)
 	cinfo->mws.next = mws->next;
 	mws->next = &cinfo->mws;
 	FreePPx();
-	DxSetMotion(cinfo->DxDraw,DXMOTION_NewWindow);
+	DxSetMotion(cinfo->DxDraw, DXMOTION_NewWindow);
 
 #if XTOUCH
 	{
 		HMODULE hUser32;
 
 		hUser32 = GetModuleHandle(StrUser32DLL);
-		GETDLLPROC(hUser32,RegisterTouchWindow);
+		GETDLLPROC(hUser32, RegisterTouchWindow);
 		if ( DRegisterTouchWindow != NULL ){
-			if ( DRegisterTouchWindow(cinfo->info.hWnd,0) ){
-				SetPopMsg(cinfo,POPMSG_MSG,T("enable touch"));
+			if ( DRegisterTouchWindow(cinfo->info.hWnd, 0) ){
+				SetPopMsg(cinfo, POPMSG_MSG, T("enable touch"));
 			}
-			GETDLLPROC(hUser32,GetTouchInputInfo);
-			GETDLLPROC(hUser32,CloseTouchInputHandle);
+			GETDLLPROC(hUser32, GetTouchInputInfo);
+			GETDLLPROC(hUser32, CloseTouchInputHandle);
 		}
 	}
 #endif
@@ -634,21 +634,21 @@ BOOL CreatePPcWindow(PPCSTARTPARAM *psp,MAINWINDOWSTRUCT *mws)
 		HMODULE hUser32;
 
 		hUser32 = GetModuleHandle(StrUser32DLL);
-		GETDLLPROC(hUser32,GetGestureInfo);
+		GETDLLPROC(hUser32, GetGestureInfo);
 	}
 
 	if ( XC_page == 0 ){
 		HMODULE hUser32;
 
 		hUser32 = GetModuleHandle(StrUser32DLL);
-		GETDLLPROC(hUser32,SetGestureConfig);
+		GETDLLPROC(hUser32, SetGestureConfig);
 		if ( DSetGestureConfig != NULL ){
-			DSetGestureConfig(cinfo->info.hWnd,0,H_GestureConfig_count,H_GestureConfig,sizeof(GESTURECONFIG));
+			DSetGestureConfig(cinfo->info.hWnd, 0, H_GestureConfig_count, H_GestureConfig, sizeof(GESTURECONFIG));
 		}
 	}
 
 	if ( cinfo->combo ){ // サイズ通知を有効にする
-		PostMessage(cinfo->info.hWnd,WM_PPXCOMMAND,KCW_ready,0);
+		PostMessage(cinfo->info.hWnd, WM_PPXCOMMAND, KCW_ready, 0);
 	}
 	return TRUE;
 }
@@ -695,49 +695,49 @@ void PPCui(HWND hWnd, const TCHAR *cmdline)
 	}
 }
 
-void MorePPc(const TCHAR *cmdline,MAINWINDOWSTRUCT *mws)
+void MorePPc(const TCHAR *cmdline, MAINWINDOWSTRUCT *mws)
 {
-	DWORD nexttop C4701CHECK,cmdtop C4701CHECK;
-	PPCSTARTPARAM *psp = NULL,defpsp;
+	DWORD nexttop C4701CHECK, cmdtop C4701CHECK;
+	PPCSTARTPARAM *psp = NULL, defpsp;
 	ThSTRUCT th;
 
-	if ( (cmdline == NULL) && X_combo && (X_combos[0] & CMBS_TABMAXALONE) && (Combo.ShowCount >= X_mpane.max) ){
-		PPCui(NULL,RunAlone);
+	if ( (cmdline == NULL) && X_combo && (X_combos[0] & CMBS_TABMAXALONE) && (Combo.ShowCount >= X_mpane.limit) ){
+		PPCui(NULL, RunAlone);
 		return;
 	}
 
 	if ( cmdline != NULL ){
 		defpsp.show = SW_SHOW;
 
-		LoadParam(&defpsp,cmdline);
+		LoadParam(&defpsp, cmdline);
 
 //		if ( defpsp.alone ){ // 新規プロセスが必要なオプション
 //			return FALSE;
 //		}
 
 		ThInit(&th);
-		ThAppend(&th,&defpsp,sizeof(PPCSTARTPARAM));
+		ThAppend(&th, &defpsp, sizeof(PPCSTARTPARAM));
 		if ( defpsp.next != NULL ){
 			nexttop = th.top;
-			ThAppend(&th,defpsp.next,defpsp.th.top);
+			ThAppend(&th, defpsp.next, defpsp.th.top);
 			ThFree(&defpsp.th);
 		}
 		if ( IsTrue(defpsp.UseCmd) ){
 			cmdtop = th.top;
 			((PPCSTARTPARAM *)th.bottom)->AllocCmd = TRUE;
 			((PPCSTARTPARAM *)th.bottom)->cmd = (const TCHAR *)(DWORD_PTR)th.top;
-			ThAddString(&th,defpsp.cmd);
+			ThAddString(&th, defpsp.cmd);
 		}
 		psp = (PPCSTARTPARAM *)th.bottom;
 		psp->th = th;
 		if ( defpsp.next != NULL ){
-			psp->next = (PSPONE *)ThPointer(&th,nexttop);  // C4701ok
+			psp->next = (PSPONE *)ThPointer(&th, nexttop);  // C4701ok
 		}
 		if ( IsTrue(defpsp.UseCmd) ){
-			psp->cmd = ThPointerT(&th,cmdtop);  // C4701ok
+			psp->cmd = ThPointerT(&th, cmdtop);  // C4701ok
 		}
 	}
-	RunNewPPc(psp,mws);
+	RunNewPPc(psp, mws);
 }
 
 // WM_COPYDATA 経由で PPc 操作を行う
@@ -747,25 +747,25 @@ void SendCallPPc(COPYDATASTRUCT *copydata)
 	ThSTRUCT th;
 
 	ThInit(&th);
-	ThAppend(&th,copydata->lpData,copydata->cbData);
+	ThAppend(&th, copydata->lpData, copydata->cbData);
 	ReplyMessage(TRUE);
 
 	PSP->th = th;
 	// ポインタをオフセットから実際の値に変換
 	if ( IsTrue(PSP->UseCmd) ){
 		PSP->AllocCmd = TRUE;
-		PSP->cmd = ThPointerT(&th,(size_t)(PSP->cmd));
+		PSP->cmd = ThPointerT(&th, (size_t)(PSP->cmd));
 	}
 	if ( PSP->next != NULL ){
-		PSP->next = (PSPONE *)ThPointer(&th,sizeof(PPCSTARTPARAM));
+		PSP->next = (PSPONE *)ThPointer(&th, sizeof(PPCSTARTPARAM));
 		if ( IsTrue(PSP->Reuse) ) ReuseFix(PSP); // /R なら ID割当て
 	}
-	RunNewPPc(PSP,&MainWindows);
+	RunNewPPc(PSP, &MainWindows);
 #undef PSP
 }
 
 #pragma argsused
-DWORD_PTR USECDECL PPxGetDummyIInfo(PPXAPPINFO *info,DWORD cmdID,PPXAPPINFOUNION *uptr)
+DWORD_PTR USECDECL PPxGetDummyIInfo(PPXAPPINFO *info, DWORD cmdID, PPXAPPINFOUNION *uptr)
 {
 	UnUsedParam(info);
 

@@ -64,16 +64,16 @@ typedef struct {
 	const TCHAR *dispname;
 } INSTALLFILES;
 
-enum {	PAGE_GUIDE = 0,PAGE_SETTYPE,PAGE_UN_EXEC,PAGE_DEST,PAGE_REG,PAGE_PPCW,
-		PAGE_KEY,PAGE_APP,PAGE_LINK,PAGE_READY,PAGE_COPY,PAGE_UP};
+enum {	PAGE_GUIDE = 0, PAGE_SETTYPE, PAGE_UN_EXEC, PAGE_DEST, PAGE_REG, PAGE_PPCW,
+		PAGE_KEY, PAGE_APP, PAGE_LINK, PAGE_READY, PAGE_COPY, PAGE_UP};
 
-enum {	RESULT_NORMAL = 0,RESULT_FAULT,RESULT_SUCCESS,RESULT_ALLDONE,
-		RESULTINFO_UNINSTALLDATA,RESULTINFO_INSTALL,
-		MSG_UNICODE,MSG_SELECTPPX,MSG_OVERINSTALL,MSG_SELECTDIR,
-		MSG_DEFAULTDIR,MSG_NOCOPY,MSG_SELECTEDITOR,MSG_SELECTVIEWER,
-		MSG_SELECTSUSIE,MSG_ABORT,MSG_FAILACCESS,MSG_FAILCOPY,
-		MSG_DLLLOADERROR,MSG_SITEERROR,MSG_RELOADARCHIVE,
-		MSG_BACKUP,MSG_FOUND,MSG_RUNAS,MSG_UNZIP,MSG_BADSIG,
+enum {	RESULT_NORMAL = 0, RESULT_FAULT, RESULT_SUCCESS, RESULT_ALLDONE,
+		RESULTINFO_UNINSTALLDATA, RESULTINFO_INSTALL,
+		MSG_UNICODE, MSG_SELECTPPX, MSG_OVERINSTALL, MSG_SELECTDIR,
+		MSG_DEFAULTDIR, MSG_NOCOPY, MSG_SELECTEDITOR, MSG_SELECTVIEWER,
+		MSG_SELECTSUSIE, MSG_ABORT, MSG_FAILACCESS, MSG_FAILCOPY,
+		MSG_DLLLOADERROR, MSG_SITEERROR, MSG_RELOADARCHIVE,
+		MSG_BACKUP, MSG_FOUND, MSG_RUNAS, MSG_UNZIP, MSG_BADSIG,
 		MSG_COPYNOFILE,
 		MSG_DLL_LOADERROR_PART,
 };
@@ -121,27 +121,27 @@ typedef int (PPXAPI * PASSETCUSTTABLEA)(const char *str, const char *sub, void *
 typedef int (PPXAPI * PASSETCUSTTABLEW)(const WCHAR *str, const WCHAR *sub, void *bin, DWORD b_size);
 typedef HRESULT (PPXAPI * MAKESHORTCUTA)(const char *LinkedFile, const char *LinkFname, const char *DestPath);
 typedef HRESULT (PPXAPI * MAKESHORTCUTW)(const WCHAR *LinkedFile, const WCHAR *LinkFname, const WCHAR *DestPath);
-typedef void (PPXAPI * PASXSEND)(UINT uMsg,WPARAM wParam,LPARAM lParam);
-typedef void (USECDECL * OLDXSEND)(UINT uMsg,WPARAM wParam,LPARAM lParam);
+typedef void (PPXAPI * PASXSEND)(UINT uMsg, WPARAM wParam, LPARAM lParam);
+typedef void (USECDECL * OLDXSEND)(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 // WINAPI
-ExternWinAPI(HRESULT,SHGetFolderPath,(HWND hwnd,int csidl,HANDLE hToken,DWORD dwFlags,LPTSTR pszPath));
+ExternWinAPI(HRESULT, SHGetFolderPath, (HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlags, LPTSTR pszPath));
 
 // ダイアログ
-INT_PTR CALLBACK StyleDlgProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam);
+INT_PTR CALLBACK StyleDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
-INT_PTR CALLBACK GuideDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam);
-INT_PTR CALLBACK SetTypeDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam);
-INT_PTR CALLBACK UnExecDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam);
-INT_PTR CALLBACK DestDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam);
-INT_PTR CALLBACK RegDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam);
-INT_PTR CALLBACK PPcwDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam);
-INT_PTR CALLBACK KeyDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam);
-INT_PTR CALLBACK AppDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam);
-INT_PTR CALLBACK LinkDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam);
-INT_PTR CALLBACK UpDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam);
-INT_PTR CALLBACK CopyDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam);
-INT_PTR CALLBACK ReadyDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam);
+INT_PTR CALLBACK GuideDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK SetTypeDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK UnExecDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK DestDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK RegDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK PPcwDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK KeyDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK AppDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK LinkDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK UpDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK CopyDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK ReadyDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #define AUTOSETUP_FIN	0
 #define AUTOSETUP_COPYDIALOG	1
@@ -166,21 +166,21 @@ extern const TCHAR msgboxtitle[];
 
 //------------------------------------------------------------------ PPSET_S.C
 extern void Cmd(TCHAR *param);
-extern void CheckDlgButtons(HWND hDlg,int start,int end,int check);
-extern void CloseAllPPxLocal(TCHAR *destpath,BOOL setuppath);
-extern BOOL CopyPPxFiles(HWND hWnd,const TCHAR *srcpath,const TCHAR *destpath);
-extern int GetDlgButtons(HWND hDlg,int start,int end);
-extern BOOL GetRegStrLocal(HKEY hKey,const TCHAR *path,const TCHAR *name,_Out_ TCHAR *dest);
+extern void CheckDlgButtons(HWND hDlg, int start, int end, int check);
+extern void CloseAllPPxLocal(TCHAR *destpath, BOOL setuppath);
+extern BOOL CopyPPxFiles(HWND hWnd, const TCHAR *srcpath, const TCHAR *destpath);
+extern int GetDlgButtons(HWND hDlg, int start, int end);
+extern BOOL GetRegStrLocal(HKEY hKey, const TCHAR *path, const TCHAR *name, _Out_ TCHAR *dest);
 extern BOOL SearchPPx(void);
-extern BOOL SelectDirectory(HWND hWnd,const TCHAR *title,UINT flag,BFFCALLBACK proc,TCHAR *path);
-extern int CALLBACK SelDirProc(HWND hWnd,UINT uMsg,LPARAM lParam,LPARAM lpData);
-extern int CALLBACK SelInstPPxProc(HWND hWnd,UINT uMsg,LPARAM lParam,LPARAM lpData);
-extern void SetExecuteFile(HWND hWnd,int ID,const TCHAR *title);
+extern BOOL SelectDirectory(HWND hWnd, const TCHAR *title, UINT flag, BFFCALLBACK proc, TCHAR *path);
+extern int CALLBACK SelDirProc(HWND hWnd, UINT uMsg, LPARAM lParam, LPARAM lpData);
+extern int CALLBACK SelInstPPxProc(HWND hWnd, UINT uMsg, LPARAM lParam, LPARAM lpData);
+extern void SetExecuteFile(HWND hWnd, int ID, const TCHAR *title);
 extern void USEFASTCALL SMessage(const TCHAR *str);
 
-extern void WriteResult(const TCHAR *str,int add);
+extern void WriteResult(const TCHAR *str, int add);
 extern BOOL DeleteDir(const TCHAR *path);
-extern BOOL GetWinAppDir(int csidl,TCHAR *path);
+extern BOOL GetWinAppDir(int csidl, TCHAR *path);
 
 #define ADMINMODE_NOADMIN	0
 #define ADMINMODE_ADMIN		1

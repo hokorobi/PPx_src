@@ -325,10 +325,11 @@ int SpliterItem(WORD *item,TCHAR *str)
 			TCHAR oc;
 
 			oc = upper(*p);
-			if ( oc == 'H' ){		offset = 1988; // ïΩê¨1989. 1.08-
+			if ( oc == 'R' ){		offset = 2018; // óﬂòa2019. 5.01-
+			}else if ( oc == 'H' ){	offset = 1988; // ïΩê¨1989. 1.08-2019. 4.30
 			}else if ( oc == 'S' ){	offset = 1925; // è∫òa1926.12.25-1989. 1.07
 			}else if ( oc == 'T' ){	offset = 1911; // ëÂê≥1912. 7.30-1926.12.25
-			}else if ( oc == 'M' ){	offset = 1867; // ñæé°1868. 9.08-1912. 7.30
+			}else if ( oc == 'M' ){	offset = 1867; // ñæé°1868. 1.01-1912. 7.30
 			}else{
 				if ( (offset = GetExtGENGOU(NULL,NULL,oc)) == 0 ){ // ñ¢ímå≥çÜ
 					// AM/PM åﬂëO/åﬂå„

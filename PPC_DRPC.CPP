@@ -29,10 +29,10 @@ int comboscrollcount;
 POINT oldcombopos;
 */
 //==============================================================
-void CALLBACK ComboDDTimerProc(HWND,UINT,UINT_PTR,DWORD)
+void CALLBACK ComboDDTimerProc(HWND, UINT, UINT_PTR, DWORD)
 {
 	POINT pos; // ,cpos;
-	HWND hTargetWnd,hTargetWnd2;
+	HWND hTargetWnd, hTargetWnd2;
 /*
 	int x = GetSystemMetrics(SM_CXDRAG);
 	int y = GetSystemMetrics(SM_CYDRAG);
@@ -55,9 +55,9 @@ void CALLBACK ComboDDTimerProc(HWND,UINT,UINT_PTR,DWORD)
 			comboscrollcount++;
 			if ( comboscrollcount > (1500 / TIMER_DRAGSCROLL) ){
 				cpos = pos;
-				ScreenToClient(hTargetWnd,&cpos);
-				PostMessage(hTargetWnd,WM_LBUTTONDOWN,0,TMAKELPARAM(cpos.x,cpos.y));
-				PostMessage(hTargetWnd,WM_LBUTTONUP,0,TMAKELPARAM(cpos.x,cpos.y));
+				ScreenToClient(hTargetWnd, &cpos);
+				PostMessage(hTargetWnd, WM_LBUTTONDOWN, 0, TMAKELPARAM(cpos.x, cpos.y));
+				PostMessage(hTargetWnd, WM_LBUTTONUP, 0, TMAKELPARAM(cpos.x, cpos.y));
 			}
 			return;
 		}
@@ -65,7 +65,7 @@ void CALLBACK ComboDDTimerProc(HWND,UINT,UINT_PTR,DWORD)
 	comboscrollcount = 0;
 */
 	if ( (hTargetWnd == Combo.hTreeWnd) || (hTargetWnd2 == Combo.hTreeWnd) ){
-		::SendMessage(Combo.hTreeWnd,VTM_SCROLL,0,0);
+		::SendMessage(Combo.hTreeWnd, VTM_SCROLL, 0, 0);
 	}
 	return;
 }
@@ -76,11 +76,11 @@ void CmbSetDDScroll(BOOL reg)
 		if ( ((Combo.hTreeWnd != NULL) || Combo.Tabs) && !comboscrolltimerID){
 //			comboscrollcount = 0;
 			comboscrolltimerID = SetTimer(Combo.hWnd,
-				TIMERID_COMBODRAGSCROLL,TIMER_DRAGSCROLL,ComboDDTimerProc);
+				TIMERID_COMBODRAGSCROLL, TIMER_DRAGSCROLL, ComboDDTimerProc);
 		}
 	}else{					// 登録解除
 		if (comboscrolltimerID){
-			KillTimer(Combo.hWnd,TIMERID_COMBODRAGSCROLL);
+			KillTimer(Combo.hWnd, TIMERID_COMBODRAGSCROLL);
 			comboscrolltimerID = 0;
 		}
 	}
@@ -92,9 +92,9 @@ ComboDropTarget::ComboDropTarget()
 	refs = 1;
 }
 //==================================================================== IUnknown
-STDMETHODIMP ComboDropTarget::QueryInterface(REFIID iid,void **ppv)
+STDMETHODIMP ComboDropTarget::QueryInterface(REFIID iid, void **ppv)
 {
-	// Explorer では、IMarshal,不明{0000001B-0000-0000-C000-000000000046}が実装されている。
+	// Explorer では、IMarshal, 不明{0000001B-0000-0000-C000-000000000046}が実装されている。
 	if( (iid == IID_IUnknown) || (iid == IID_IDropTarget) ){
 		*ppv = this;
 		AddRef();
@@ -118,65 +118,65 @@ STDMETHODIMP_(ULONG) ComboDropTarget::Release(void)
 	return refs;
 }
 
-STDMETHODIMP ComboDropTarget::DragEnter(LPDATAOBJECT pDataObj,DWORD grfKeyState,POINTL pt,LPDWORD pdwEffect)
+STDMETHODIMP ComboDropTarget::DragEnter(LPDATAOBJECT pDataObj, DWORD grfKeyState, POINTL pt, LPDWORD pdwEffect)
 {
 	mTitem = 0;
 	mTargetPath[0] = '\0';
-	GetSourcePath(pDataObj,mSourcePath);
-	return QueryDrop(grfKeyState,&pt,pdwEffect);
+	GetSourcePath(pDataObj, mSourcePath);
+	return QueryDrop(grfKeyState, &pt, pdwEffect);
 }
 
-STDMETHODIMP ComboDropTarget::DragOver(DWORD grfKeyState,POINTL pt,LPDWORD pdwEffect)
+STDMETHODIMP ComboDropTarget::DragOver(DWORD grfKeyState, POINTL pt, LPDWORD pdwEffect)
 {
 	mKeyState = grfKeyState;
 	CmbSetDDScroll(TRUE);
-	return QueryDrop(grfKeyState,&pt,pdwEffect);
+	return QueryDrop(grfKeyState, &pt, pdwEffect);
 }
 STDMETHODIMP ComboDropTarget::DragLeave(void)
 {
 	CmbSetDDScroll(FALSE);
 	if ( Combo.hTreeWnd != NULL ){
-		::SendMessage(Combo.hTreeWnd,VTM_POINTPATH,0,(LPARAM)NULL);
+		::SendMessage(Combo.hTreeWnd, VTM_POINTPATH, 0, (LPARAM)NULL);
 	}
 	mTitem = 0;
 	mTargetPath[0] = '\0';
 	return S_OK;
 }
 
-void ComboDropTarget::ComboDropDDFormat(LPDATAOBJECT pDataObj,DWORD pdwEffect,TCHAR *TargetPath)
+void ComboDropTarget::ComboDropDDFormat(LPDATAOBJECT pDataObj, DWORD pdwEffect, TCHAR *TargetPath)
 {
-	TMS_struct files = {{NULL,0,NULL},0};
+	TMS_struct files = {{NULL, 0, NULL}, 0};
 	TCHAR *sDrop;
 	int mode;
 
-	if ( GetDropData(pDataObj,&files) == FALSE ) return;
+	if ( GetDropData(pDataObj, &files) == FALSE ) return;
 	sDrop = (TCHAR *)files.tm.p;
 
-	if ( VFSGetDriveType(TargetPath,&mode,NULL) != NULL ){
+	if ( VFSGetDriveType(TargetPath, &mode, NULL) != NULL ){
 		if ( (mode <= VFSPT_SHN_DESK) || (mode <= VFSPT_UNC) ){
-			VFSGetRealPath(NULL,TargetPath,TargetPath);
+			VFSGetRealPath(NULL, TargetPath, TargetPath);
 		}
 	}
 	switch( pdwEffect ){
 //=============================================================================
 		case DROPEFFECT_ADDTREEITEM:
-			::SendMessage(Combo.hTreeWnd,VTM_ADDTREEITEM,0,(LPARAM)sDrop);
+			::SendMessage(Combo.hTreeWnd, VTM_ADDTREEITEM, 0, (LPARAM)sDrop);
 			break;
 
 		case DROPEFFECT_MAKELIST: {
 			TCHAR destpath[VFPS];
 
-			ListDrop(Combo.hWnd,sDrop,TargetPath,destpath);
+			ListDrop(Combo.hWnd, sDrop, TargetPath, destpath);
 			if ( mTargettype == TARGET_TREE ){
-				::SendMessage(Combo.hTreeWnd,VTM_SETPATH,0,(LPARAM)TargetPath);
+				::SendMessage(Combo.hTreeWnd, VTM_SETPATH, 0, (LPARAM)TargetPath);
 			}
 			break;
 		}
 
 		case DROPEFFECT_LINK:
-			LinkDrop(Combo.hWnd,sDrop,TargetPath);
+			LinkDrop(Combo.hWnd, sDrop, TargetPath);
 			if ( mTargettype == TARGET_TREE ){
-				::SendMessage(Combo.hTreeWnd,VTM_SETPATH,0,(LPARAM)TargetPath);
+				::SendMessage(Combo.hTreeWnd, VTM_SETPATH, 0, (LPARAM)TargetPath);
 			}
 			break;
 //=============================================================================
@@ -186,14 +186,14 @@ void ComboDropTarget::ComboDropDDFormat(LPDATAOBJECT pDataObj,DWORD pdwEffect,TC
 		case DROPEFFECT_OPENWITH:
 			break;
 		default:
-			::ExecFileOperation(pdwEffect,TargetPath,&files,NULL,NULL);
+			::ExecFileOperation(pdwEffect, TargetPath, &files, NULL, NULL);
 			if ( mTargettype == TARGET_TREE ){
-				::SendMessage(Combo.hTreeWnd,VTM_SETPATH,0,(LPARAM)TargetPath);
+				::SendMessage(Combo.hTreeWnd, VTM_SETPATH, 0, (LPARAM)TargetPath);
 			}
 /*
-			if ( IsTrue(::ExecFileOperation(pdwEffect,TargetPath,&files,NULL,NULL)) ){
+			if ( IsTrue(::ExecFileOperation(pdwEffect, TargetPath, &files, NULL, NULL)) ){
 				if ( mTargettype == TARGET_TREE ){
-					::SendMessage(Combo.hTreeWnd,VTM_SETPATH,0,(LPARAM)TargetPath);
+					::SendMessage(Combo.hTreeWnd, VTM_SETPATH, 0, (LPARAM)TargetPath);
 				}
 			}
 */
@@ -203,29 +203,29 @@ void ComboDropTarget::ComboDropDDFormat(LPDATAOBJECT pDataObj,DWORD pdwEffect,TC
 	TMS_kill(&files);
 }
 
-STDMETHODIMP ComboDropTarget::Drop(LPDATAOBJECT pDataObj,DWORD,POINTL pt,LPDWORD pdwEffect)
+STDMETHODIMP ComboDropTarget::Drop(LPDATAOBJECT pDataObj, DWORD, POINTL pt, LPDWORD pdwEffect)
 {
 	DROPTYPE DDtype;
 	DWORD orgEffect = *pdwEffect;
 
 	CmbSetDDScroll(FALSE);
-	if ( QueryDrop(mKeyState,&pt,pdwEffect) == S_OK ){
-		GetDropFormat(DDtype,pDataObj);
+	if ( QueryDrop(mKeyState, &pt, pdwEffect) == S_OK ){
+		GetDropFormat(DDtype, pDataObj);
 
 		if ( (mTargettype == TARGET_TOOLBAR) || (mTargettype == TARGET_TREE) || (mTargettype == TARGET_PPC) ){
 			// 一体化時に非アクティブPPcからD&Dするとメッセージループが
 			// 回らなくなるための対策
 			if ( ::SelfDD_hWnd != NULL ){
-				::SendMessage(::SelfDD_hWnd,WM_PPCSETFOCUS,0,0);
+				::SendMessage(::SelfDD_hWnd, WM_PPCSETFOCUS, 0, 0);
 			}
 
-			::DDMenu(Combo.hWnd,&pt,pdwEffect,orgEffect,mKeyState,pDataObj,
-					((mTargettype == TARGET_TREE) || (mTargettype == TARGET_TOOLBAR)) ? DDCELL_CONTROL : DDCELL_SPACE,DDtype,NULL,
-					mTargetPath,mDropModeFlags);
+			::DDMenu(Combo.hWnd, &pt, pdwEffect, orgEffect, mKeyState, pDataObj,
+					((mTargettype == TARGET_TREE) || (mTargettype == TARGET_TOOLBAR)) ? DDCELL_CONTROL : DDCELL_SPACE, DDtype, NULL,
+					mTargetPath, mDropModeFlags);
 		}
 
 		if ( (Combo.hTreeWnd != NULL) && (*pdwEffect != DROPEFFECT_ADDTREEITEM) ){
-			::SendMessage(Combo.hTreeWnd,VTM_POINTPATH,0,(LPARAM)NULL);
+			::SendMessage(Combo.hTreeWnd, VTM_POINTPATH, 0, (LPARAM)NULL);
 		}
 		if ( (*pdwEffect > DROPEFFECT_OBJECTSTART) &&
 			 (*pdwEffect <= DROPEFFECT_OBJECTEND) ){
@@ -237,30 +237,30 @@ STDMETHODIMP ComboDropTarget::Drop(LPDATAOBJECT pDataObj,DWORD,POINTL pt,LPDWORD
 		if ( *pdwEffect != DROPEFFECT_NONE ){
 			if ( mTargettype == TARGET_TOOLBAR ){
 				if ( *pdwEffect != DROPEFFECT_ADDTOOLBAR ){
-					ComboDropDDFormat(pDataObj,*pdwEffect,mTargetPath);
+					ComboDropDDFormat(pDataObj, *pdwEffect, mTargetPath);
 					return S_OK;
 				}
 			}
 
 			if ( mTargettype == TARGET_TREE ){
-				ComboDropDDFormat(pDataObj,*pdwEffect,mTargetPath);
+				ComboDropDDFormat(pDataObj, *pdwEffect, mTargetPath);
 				return S_OK;
 			}
 			{
-				TMS_struct files = {{NULL,0,NULL},0};
+				TMS_struct files = {{NULL, 0, NULL}, 0};
 				TCHAR *sDrop;
 
-				if ( GetDropData(pDataObj,&files) == FALSE ) return S_OK;
+				if ( GetDropData(pDataObj, &files) == FALSE ) return S_OK;
 				sDrop = (TCHAR *)files.tm.p;
 
 				if ( (mTargettype == TARGET_TOOLBAR) && (*pdwEffect == DROPEFFECT_ADDTOOLBAR)  ){
-					AddToolBarButton(Combo.hWnd,sDrop,mToolBarName);
+					AddToolBarButton(Combo.hWnd, sDrop, mToolBarName);
 				}else if ( mTargettype == TARGET_REPORT ){
-					::SendMessage(Combo.Report.hWnd,EM_REPLACESEL,0,(LPARAM)sDrop);
+					::SendMessage(Combo.Report.hWnd, EM_REPLACESEL, 0, (LPARAM)sDrop);
 				}else if ( mTargettype == TARGET_ADDR ){
-					::SendMessage(Combo.hAddressWnd,WM_SETTEXT,0,(LPARAM)sDrop);
+					::SendMessage(Combo.hAddressWnd, WM_SETTEXT, 0, (LPARAM)sDrop);
 				}else if ( mTargettype == TARGET_PPC ){
-					ComboDropDDFormat(pDataObj,*pdwEffect,mTargetPath);
+					ComboDropDDFormat(pDataObj, *pdwEffect, mTargetPath);
 				}
 			TMS_kill(&files);
 			}
@@ -271,9 +271,9 @@ STDMETHODIMP ComboDropTarget::Drop(LPDATAOBJECT pDataObj,DWORD,POINTL pt,LPDWORD
 	return E_INVALIDARG;
 }
 
-STDMETHODIMP ComboDropTarget::QueryDrop(DWORD grfKeyState,POINTL *pt,DWORD *pdwEffect)
+STDMETHODIMP ComboDropTarget::QueryDrop(DWORD grfKeyState, POINTL *pt, DWORD *pdwEffect)
 {
-	HWND hTargetWnd,hTargetWnd2;
+	HWND hTargetWnd, hTargetWnd2;
 	POINT cpos;
 
 	mDefAction = DROPEFFECT_COPY;
@@ -287,21 +287,21 @@ STDMETHODIMP ComboDropTarget::QueryDrop(DWORD grfKeyState,POINTL *pt,DWORD *pdwE
 	if ( hTargetWnd2 == NULL ) hTargetWnd2 = BADHWND;
 
 	if ( hTargetWnd2 == comboDocks.t.hWnd ){
-		return QueryDrop_Dock(grfKeyState,pdwEffect,hTargetWnd,&cpos,&comboDocks.t);
+		return QueryDrop_Dock(grfKeyState, pdwEffect, hTargetWnd, &cpos, &comboDocks.t);
 	}
 
 	if ( hTargetWnd2 == comboDocks.b.hWnd ){
-		return QueryDrop_Dock(grfKeyState,pdwEffect,hTargetWnd,&cpos,&comboDocks.b);
+		return QueryDrop_Dock(grfKeyState, pdwEffect, hTargetWnd, &cpos, &comboDocks.b);
 	}
 
 	if ( hTargetWnd == Combo.ToolBar.hWnd ){
 		mToolBarName = T("B_cdef");
-		return QueryDrop_ToolBar(grfKeyState,pdwEffect,hTargetWnd,&cpos,&thGuiWork);
+		return QueryDrop_ToolBar(grfKeyState, pdwEffect, hTargetWnd, &cpos, &thGuiWork);
 	}
 
 												// ツリーウィンドウ =======
 	if ( (hTargetWnd == Combo.hTreeWnd) || (hTargetWnd2 == Combo.hTreeWnd) ){
-		if ( IsTrue(QueryDrop_Tree(Combo.hTreeWnd,pt,pdwEffect)) ) return S_OK;
+		if ( IsTrue(QueryDrop_Tree(Combo.hTreeWnd, pt, pdwEffect)) ) return S_OK;
 	}else  if (hTargetWnd == Combo.Report.hWnd){
 		mTargettype = TARGET_REPORT;
 		mDefAction = DROPEFFECT_LINK;
@@ -311,15 +311,15 @@ STDMETHODIMP ComboDropTarget::QueryDrop(DWORD grfKeyState,POINTL *pt,DWORD *pdwE
 	}else{
 		PPC_APPINFO *cinfo;
 
-		cinfo = ::GetComboTarget(hTargetWnd,&cpos);
+		cinfo = ::GetComboTarget(hTargetWnd, &cpos);
 		if ( cinfo != NULL ){
-			tstrcpy(mTargetPath,(cinfo->e.Dtype.mode != VFSDT_LFILE) ? cinfo->RealPath : cinfo->path);
+			tstrcpy(mTargetPath, (cinfo->e.Dtype.mode != VFSDT_LFILE) ? cinfo->RealPath : cinfo->path);
 			mTargettype = TARGET_PPC;
 			SetDirectoryDefAction();
 		}
 	}
 
-	if (::GetDDEffect(FILE_ATTRIBUTE_DIRECTORY,grfKeyState,pdwEffect,mDefAction)){
+	if (::GetDDEffect(FILE_ATTRIBUTE_DIRECTORY, grfKeyState, pdwEffect, mDefAction)){
 		return S_OK;
 	}
 

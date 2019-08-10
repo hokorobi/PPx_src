@@ -29,7 +29,7 @@ enum { TREETYPE_DIRECTORY = 1, TREETYPE_FAVORITE,
 	TREETYPE__RENAMEITEM, TREETYPE__DELETEITEM,
 	TREETYPE__USERLIST
 };
-const BYTE NullTable[4] = {0,0,0,0};
+const BYTE NullTable[4] = {0, 0, 0, 0};
 
 int splitbarwide = 4;		// 仕切の幅
 int TreeIconSize = 16;		// アイコンの大きさ
@@ -72,10 +72,10 @@ DWORD X_dlf_ddt;
 	#define TVM_SETEXTENDEDSTYLE (TV_FIRST + 44)
 #endif
 
-DefineWinAPI(HIMAGELIST,ImageList_Create,(int cx,int cy,UINT flags,int cInitial,int cGrow)) = 0;
-DefineWinAPI(BOOL,ImageList_Destroy,(HIMAGELIST himl));
-DefineWinAPI(COLORREF,ImageList_SetBkColor,(HIMAGELIST himl,COLORREF clrBk));
-DefineWinAPI(int,ImageList_ReplaceIcon,(HIMAGELIST himl,int i,HICON hicon));
+DefineWinAPI(HIMAGELIST, ImageList_Create, (int cx, int cy, UINT flags, int cInitial, int cGrow)) = 0;
+DefineWinAPI(BOOL, ImageList_Destroy, (HIMAGELIST himl));
+DefineWinAPI(COLORREF, ImageList_SetBkColor, (HIMAGELIST himl, COLORREF clrBk));
+DefineWinAPI(int, ImageList_ReplaceIcon, (HIMAGELIST himl, int i, HICON hicon));
 #define DImageList_AddIcon(himl, hicon) DImageList_ReplaceIcon(himl, -1, hicon)
 
 LOADWINAPISTRUCT ImageCtltDLL[] = {
@@ -83,7 +83,7 @@ LOADWINAPISTRUCT ImageCtltDLL[] = {
 	LOADWINAPI1(ImageList_Destroy),
 	LOADWINAPI1(ImageList_SetBkColor),
 	LOADWINAPI1(ImageList_ReplaceIcon),
-	{NULL,NULL}
+	{NULL, NULL}
 };
 
 #ifndef CCS_VERT
@@ -113,17 +113,17 @@ typedef struct _SHChangeNotifyEntry
 #define DSHChangeNotification_Lock SHChangeNotification_Lock
 #define DSHChangeNotification_Unlock SHChangeNotification_Unlock
 #else
-DefineWinAPI(ULONG,SHChangeNotifyRegister,(HWND hwnd, int fSources, LONG fEvents, UINT wMsg, int cEntries, const SHChangeNotifyEntry *pshcne));
-DefineWinAPI(BOOL,SHChangeNotifyDeregister,(unsigned long ulID));
-DefineWinAPI(HANDLE,SHChangeNotification_Lock,(HANDLE hChange,DWORD dwProcId,LPITEMIDLIST **pppidl,LONG *plEvent));
-DefineWinAPI(BOOL,SHChangeNotification_Unlock,(HANDLE hLock));
+DefineWinAPI(ULONG, SHChangeNotifyRegister, (HWND hwnd, int fSources, LONG fEvents, UINT wMsg, int cEntries, const SHChangeNotifyEntry *pshcne));
+DefineWinAPI(BOOL, SHChangeNotifyDeregister, (unsigned long ulID));
+DefineWinAPI(HANDLE, SHChangeNotification_Lock, (HANDLE hChange, DWORD dwProcId, LPITEMIDLIST **pppidl, LONG *plEvent));
+DefineWinAPI(BOOL, SHChangeNotification_Unlock, (HANDLE hLock));
 
 LOADWINAPISTRUCT SHChangeNotifyDLL[] = {
 	LOADWINAPI1(SHChangeNotifyRegister),
 	LOADWINAPI1(SHChangeNotifyDeregister),
 	LOADWINAPI1(SHChangeNotification_Lock),
 	LOADWINAPI1(SHChangeNotification_Unlock),
-	{NULL,NULL}
+	{NULL, NULL}
 };
 #endif
 
@@ -148,7 +148,7 @@ typedef struct {
 	TCHAR *resultStrPtr;
 
 #if TreeCollapseCheck
-	volatile DWORD CollapseCheck,CollapseID;
+	volatile DWORD CollapseCheck, CollapseID;
 	#define CollapseCheckID 0xf0c08040
 #endif
 	DWORD flags;		// 動作指定 VFSTREE_
@@ -201,7 +201,7 @@ void WaitTreeViewThread(VFSTREESTRUCT *VTS, BOOL sub)
 		if ( VTS->ThreadCount <= 1 ) break;
 
 		if ( sub == FALSE ){ // メッセージポンプを回して、同期等を処理する
-			while ( PeekMessage(&msg,VTS->vtinfo.hWnd,0,0,PM_REMOVE) ){
+			while ( PeekMessage(&msg, VTS->vtinfo.hWnd, 0, 0, PM_REMOVE) ){
 				if ( msg.message == WM_QUIT ) break;
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
@@ -209,7 +209,7 @@ void WaitTreeViewThread(VFSTREESTRUCT *VTS, BOOL sub)
 		}
 		Sleep(20);
 		if ( --count == 0 ){
-//			XMessage(NULL,NULL,XM_DbgLOG,T("WaitTreeViewThread timeout"));
+//			XMessage(NULL, NULL, XM_DbgLOG, T("WaitTreeViewThread timeout"));
 			return; // タイムアウト
 		}
 	}
@@ -220,37 +220,37 @@ void FreeVTS(VFSTREESTRUCT *VTS)
 {
 	ThFree(&VTS->cmdwork);
 	ThFree(&VTS->itemdata);
-	HeapFree(DLLheap,0,VTS);
+	HeapFree(DLLheap, 0, VTS);
 }
 
 #if TreeCollapseCheck
 void WMTreeDestroy_LOG(VFSTREESTRUCT *VTS)
 {
-	TCHAR buf[0x1000],*dest;
+	TCHAR buf[0x1000], *dest;
 	int size = 32;
 	BYTE *srcp = (BYTE *)VTS;
 
-	dest = buf + wsprintf(buf,T("Tree管理メモリの破損:%x"),VTS->CollapseID);
+	dest = buf + wsprintf(buf, T("Tree管理メモリの破損:%x"), VTS->CollapseID);
 	while( size ){
-		dest += wsprintf(dest,T(" %02X"),*srcp++);
+		dest += wsprintf(dest, T(" %02X"), *srcp++);
 		size--;
 	}
-	wsprintf(dest,T("/") T(PTRPRINTFORMAT) T("/") T(PTRPRINTFORMAT),VTS->hImage,VTS->resultCodePtr);
-	XMessage(NULL,NULL,XM_DbgLOG,T("%s"),buf);
+	wsprintf(dest, T("/") T(PTRPRINTFORMAT) T("/") T(PTRPRINTFORMAT), VTS->hImage, VTS->resultCodePtr);
+	XMessage(NULL, NULL, XM_DbgLOG, T("%s"), buf);
 }
 
 void WMTreeDestroy_DUMP(VFSTREESTRUCT *VTS)
 {
-	TCHAR buf[0x1000],*dest;
+	TCHAR buf[0x1000], *dest;
 	int size = 32;
 	BYTE *srcp = (BYTE *)&VTS->hParentWnd;
 
-	dest = buf + wsprintf(buf,T("Tree管理メモリ破損2:%x"),VTS->CollapseID);
+	dest = buf + wsprintf(buf, T("Tree管理メモリ破損2:%x"), VTS->CollapseID);
 	while( size ){
-		dest += wsprintf(dest,T(" %02X"),*srcp++);
+		dest += wsprintf(dest, T(" %02X"), *srcp++);
 		size--;
 	}
-	wsprintf(dest,T("/") T(PTRPRINTFORMAT),VTS->hImage);
+	wsprintf(dest, T("/") T(PTRPRINTFORMAT), VTS->hImage);
 	PPxSendReport(buf);
 }
 #endif
@@ -294,7 +294,7 @@ void WMTreeDestroy(VFSTREESTRUCT *VTS)
 		VTS->ShNotifyID = 0;
 	}
 
-	WaitTreeViewThread(VTS,FALSE);
+	WaitTreeViewThread(VTS, FALSE);
 
 #if TreeCollapseCheck
 	if ( (VTS->CollapseCheck != CollapseCheckID) &&
@@ -317,7 +317,7 @@ void WMTreeDestroy(VFSTREESTRUCT *VTS)
 		VTS->hTreeFont = NULL;
 	}
 
-	SetWindowLongPtr(VTS->vtinfo.hWnd,GWLP_USERDATA,(LONG_PTR)0);
+	SetWindowLongPtr(VTS->vtinfo.hWnd, GWLP_USERDATA, (LONG_PTR)0);
 #if TreeCollapseCheck
 	if ( VTS->CollapseCheck != CollapseCheckID ){
 		WMTreeDestroy_DUMP(VTS);
@@ -339,7 +339,7 @@ void WMTreeDestroy(VFSTREESTRUCT *VTS)
 	if ( VTS->ThreadCount > 0 ){
 		// メモリリークになるが、他のスレッドが閉じれない時は解放しない
 		if ( --VTS->ThreadCount == 0 ){
-			DefWindowProc(VTS->vtinfo.hWnd,WM_DESTROY,0,0);
+			DefWindowProc(VTS->vtinfo.hWnd, WM_DESTROY, 0, 0);
 			FreeVTS(VTS);
 		}
 	}
@@ -347,35 +347,35 @@ void WMTreeDestroy(VFSTREESTRUCT *VTS)
 
 DWORD WINAPI InitTreeViewItems_Thread(InitTreeViewItems_Thread_Struct *ITVI_TI)
 {
-	THREADSTRUCT threadstruct = {T("TreeBuild"),XTHREAD_EXITENABLE | XTHREAD_TERMENABLE,NULL,0,0};
+	THREADSTRUCT threadstruct = {T("TreeBuild"), XTHREAD_EXITENABLE | XTHREAD_TERMENABLE, NULL, 0, 0};
 
 	PPxRegisterThread(&threadstruct);
-	CoInitializeEx(NULL,COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-	WaitTreeViewThread(ITVI_TI->VTS,TRUE);
+	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	WaitTreeViewThread(ITVI_TI->VTS, TRUE);
 	ITVI_TI->VTS->ThreadCount++;
-	InitTreeViewItems(ITVI_TI->VTS,ITVI_TI->path);
+	InitTreeViewItems(ITVI_TI->VTS, ITVI_TI->path);
 	if ( --ITVI_TI->VTS->ThreadCount == 0 ) FreeVTS(ITVI_TI->VTS);
-	HeapFree(DLLheap,0,ITVI_TI);
+	HeapFree(DLLheap, 0, ITVI_TI);
 	CoUninitialize();
 	PPxUnRegisterThread();
 	return 0;
 }
 
-void Start_InitTreeViewItems(VFSTREESTRUCT *VTS,const TCHAR *param)
+void Start_InitTreeViewItems(VFSTREESTRUCT *VTS, const TCHAR *param)
 {
 	InitTreeViewItems_Thread_Struct *ITVI_TI;
 
 	if ( VTS->ThreadCount > MaxTreeThreads ) return; // スレッドが多すぎるので中止する
 
-	if ( (ITVI_TI = HeapAlloc(DLLheap,0,sizeof(InitTreeViewItems_Thread_Struct))) == NULL ){
+	if ( (ITVI_TI = HeapAlloc(DLLheap, 0, sizeof(InitTreeViewItems_Thread_Struct))) == NULL ){
 		return;
 	}
 
 	ITVI_TI->VTS = VTS;
 	if ( param == NULL ){
-		TreeProc(VTS->vtinfo.hWnd,VTM_GETSETTINGS,0,(LPARAM)ITVI_TI->path);
+		TreeProc(VTS->vtinfo.hWnd, VTM_GETSETTINGS, 0, (LPARAM)ITVI_TI->path);
 	}else{
-		tstrcpy(ITVI_TI->path,param);
+		tstrcpy(ITVI_TI->path, param);
 	}
 
 	#ifndef WINEGCC
@@ -387,45 +387,45 @@ void Start_InitTreeViewItems(VFSTREESTRUCT *VTS,const TCHAR *param)
 	){
 		HANDLE hThread;
 
-		hThread = CreateThread(NULL,0,
-			(LPTHREAD_START_ROUTINE)InitTreeViewItems_Thread,ITVI_TI,0,(DWORD *)&VTS->ActiveThreadID);
+		hThread = CreateThread(NULL, 0,
+			(LPTHREAD_START_ROUTINE)InitTreeViewItems_Thread, ITVI_TI, 0, (DWORD *)&VTS->ActiveThreadID);
 		if ( hThread != NULL ){
-			SetThreadPriority(hThread,THREAD_PRIORITY_LOWEST);
+			SetThreadPriority(hThread, THREAD_PRIORITY_LOWEST);
 			CloseHandle(hThread);
 			return;
 		}
 	}
 	#endif
-	InitTreeViewItems(VTS,ITVI_TI->path);
-	HeapFree(DLLheap,0,ITVI_TI);
+	InitTreeViewItems(VTS, ITVI_TI->path);
+	HeapFree(DLLheap, 0, ITVI_TI);
 }
 
 DWORD WINAPI TreeSetDirPath_Thread(InitTreeViewItems_Thread_Struct *ITVI_TI)
 {
-	THREADSTRUCT threadstruct = {T("TreeSetPath"),XTHREAD_EXITENABLE | XTHREAD_TERMENABLE,NULL,0,0};
+	THREADSTRUCT threadstruct = {T("TreeSetPath"), XTHREAD_EXITENABLE | XTHREAD_TERMENABLE, NULL, 0, 0};
 
 	PPxRegisterThread(&threadstruct);
-	CoInitializeEx(NULL,COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-	WaitTreeViewThread(ITVI_TI->VTS,TRUE);
+	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	WaitTreeViewThread(ITVI_TI->VTS, TRUE);
 	ITVI_TI->VTS->ThreadCount++;
-	SetPathItems(ITVI_TI->VTS,TreeView_GetRoot(ITVI_TI->VTS->hTViewWnd),ITVI_TI->path,0);
+	SetPathItems(ITVI_TI->VTS, TreeView_GetRoot(ITVI_TI->VTS->hTViewWnd), ITVI_TI->path, 0);
 	if ( --ITVI_TI->VTS->ThreadCount == 0 ) FreeVTS(ITVI_TI->VTS);
-	HeapFree(DLLheap,0,ITVI_TI);
+	HeapFree(DLLheap, 0, ITVI_TI);
 	CoUninitialize();
 	PPxUnRegisterThread();
 	return 0;
 }
 
-void Start_TreeSetDirPath(VFSTREESTRUCT *VTS,const TCHAR *param)
+void Start_TreeSetDirPath(VFSTREESTRUCT *VTS, const TCHAR *param)
 {
 	InitTreeViewItems_Thread_Struct *ITVI_TI;
 
-	if ( (ITVI_TI = HeapAlloc(DLLheap,0,sizeof(InitTreeViewItems_Thread_Struct))) == NULL ){
+	if ( (ITVI_TI = HeapAlloc(DLLheap, 0, sizeof(InitTreeViewItems_Thread_Struct))) == NULL ){
 		return;
 	}
 	ITVI_TI->VTS = VTS;
 
-	tstrcpy(ITVI_TI->path,param);
+	tstrcpy(ITVI_TI->path, param);
 
 	#ifndef WINEGCC
 	if ( ((VTS->TreeType == TREETYPE_DIRECTORY) ||
@@ -436,44 +436,44 @@ void Start_TreeSetDirPath(VFSTREESTRUCT *VTS,const TCHAR *param)
 	){
 		HANDLE hThread;
 
-		hThread = CreateThread(NULL,0,
-			(LPTHREAD_START_ROUTINE)TreeSetDirPath_Thread,ITVI_TI,0,(DWORD *)&VTS->ActiveThreadID);
+		hThread = CreateThread(NULL, 0,
+			(LPTHREAD_START_ROUTINE)TreeSetDirPath_Thread, ITVI_TI, 0, (DWORD *)&VTS->ActiveThreadID);
 		if ( hThread != NULL ){
-			SetThreadPriority(hThread,THREAD_PRIORITY_LOWEST);
+			SetThreadPriority(hThread, THREAD_PRIORITY_LOWEST);
 			CloseHandle(hThread);
 			return;
 		}
 	}
 	#endif
-	SetPathItems(VTS,TreeView_GetRoot(VTS->hTViewWnd),ITVI_TI->path,0);
-	HeapFree(DLLheap,0,ITVI_TI);
+	SetPathItems(VTS, TreeView_GetRoot(VTS->hTViewWnd), ITVI_TI->path, 0);
+	HeapFree(DLLheap, 0, ITVI_TI);
 }
 
 void VFSTreeClose(VFSTREESTRUCT *VTS)
 {
 	if ( VTS->hNotifyWnd != NULL ){
-		PostMessage(VTS->hNotifyWnd,WM_PPXCOMMAND,KTN_close,0);
+		PostMessage(VTS->hNotifyWnd, WM_PPXCOMMAND, KTN_close, 0);
 	}else{
-		PostMessage(VTS->hTViewWnd,WM_CLOSE,0,0);
+		PostMessage(VTS->hTViewWnd, WM_CLOSE, 0, 0);
 	}
 }
 
 //-------------------------------------- キー拡張したときのスーパークラス
-LRESULT CALLBACK TreeViewProc(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
+LRESULT CALLBACK TreeViewProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 	VFSTREESTRUCT *VTS;
 
-	VTS = (VFSTREESTRUCT *)GetProp(hWnd,StrTreeProp);
+	VTS = (VFSTREESTRUCT *)GetProp(hWnd, StrTreeProp);
 	switch(iMsg){
 		case WM_MENUCHAR:
 		case WM_MENUSELECT:
 		case WM_MENUDRAG:
 		case WM_MENURBUTTONUP:
-			return PPxMenuProc(hWnd,iMsg,wParam,lParam);
+			return PPxMenuProc(hWnd, iMsg, wParam, lParam);
 
 		case WM_SYSKEYDOWN:
 		case WM_KEYDOWN:
-			if ( TreeKeyCommand(VTS,(WORD)(wParam | GetShiftKey() | K_v))
+			if ( TreeKeyCommand(VTS, (WORD)(wParam | GetShiftKey() | K_v))
 					!= ERROR_INVALID_FUNCTION ){
 				return 0;
 			}
@@ -482,7 +482,7 @@ LRESULT CALLBACK TreeViewProc(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
 		case WM_SYSCHAR:
 		case WM_CHAR:
 			if ( ((WORD)wParam < 0x80) ){
-				if ( TreeKeyCommand(VTS,FixCharKeycode((WORD)wParam))
+				if ( TreeKeyCommand(VTS, FixCharKeycode((WORD)wParam))
 						!= ERROR_INVALID_FUNCTION ){
 					return 0;
 				}
@@ -490,32 +490,32 @@ LRESULT CALLBACK TreeViewProc(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
 			break;
 
 	}
-	return CallWindowProc(VTS->OldTreeWndProc,hWnd,iMsg,wParam,lParam);
+	return CallWindowProc(VTS->OldTreeWndProc, hWnd, iMsg, wParam, lParam);
 }
 
-void TreeCommand(VFSTREESTRUCT *VTS,const TCHAR *param) // *tree 本体
+void TreeCommand(VFSTREESTRUCT *VTS, const TCHAR *param) // *tree 本体
 {
 	TCHAR code, code2, cmdstr[CMDLINESIZE];
 	const TCHAR *treetype;
 
-	GetCommandParameter(&param,cmdstr,TSIZEOF(cmdstr));
-	if ( !tstrcmp(cmdstr,T("menu")) ){
-		TreeTypeMenu(VTS,INVALID_HANDLE_VALUE,0);
+	GetCommandParameter(&param, cmdstr, TSIZEOF(cmdstr));
+	if ( !tstrcmp(cmdstr, T("menu")) ){
+		TreeTypeMenu(VTS, INVALID_HANDLE_VALUE, 0);
 		return;
 	}
-	if ( !tstrcmp(cmdstr,T("on")) ) return; // 表示→表示済み
-	if ( !tstrcmp(cmdstr,T("focus")) ){
+	if ( !tstrcmp(cmdstr, T("on")) ) return; // 表示→表示済み
+	if ( !tstrcmp(cmdstr, T("focus")) ){
 		SetFocus(VTS->hTViewWnd);
 		return;
 	}
-	if ( !tstrcmp(cmdstr,T("unfocus")) ){
-		TreeKeyCommand(VTS,K_raw | VK_TAB);
+	if ( !tstrcmp(cmdstr, T("unfocus")) ){
+		TreeKeyCommand(VTS, K_raw | VK_TAB);
 		return;
 	}
 
 	code = cmdstr[0];
 	code2 = cmdstr[1];
-	if ( !tstrcmp(cmdstr,T("off")) || (code == '\0') ){
+	if ( !tstrcmp(cmdstr, T("off")) || (code == '\0') ){
 		VFSTreeClose(VTS);
 		return;
 	}
@@ -523,23 +523,23 @@ void TreeCommand(VFSTREESTRUCT *VTS,const TCHAR *param) // *tree 本体
 	if ( (code == 'M') && (cmdstr[1] == '_') ){
 		VTS->TreeType = TREETYPE_FAVORITE;
 		treetype = cmdstr;
-	}else if ( ((code == '1') && (code2 == '\0')) || !tstrcmp(cmdstr,T("favorite")) ){
+	}else if ( ((code == '1') && (code2 == '\0')) || !tstrcmp(cmdstr, T("favorite")) ){
 		VTS->TreeType = TREETYPE_FAVORITE;
 		treetype = DefaultTreeListName;
-	}else if ( ((code == '2') && (code2 == '\0')) || !tstrcmp(cmdstr,T("ppclist")) ){
+	}else if ( ((code == '2') && (code2 == '\0')) || !tstrcmp(cmdstr, T("ppclist")) ){
 		VTS->TreeType = TREETYPE_PPCLIST;
 		treetype = NilStr;
-	}else if ( !tstrcmp(cmdstr,T("focusppc")) ){
+	}else if ( !tstrcmp(cmdstr, T("focusppc")) ){
 		VTS->TreeType = TREETYPE_FOCUSPPC;
 		treetype = NilStr;
-	}else if ( ((code == '0') && (code2 == '\0')) || !tstrcmp(cmdstr,T("root"))){
+	}else if ( ((code == '0') && (code2 == '\0')) || !tstrcmp(cmdstr, T("root"))){
 		VTS->TreeType = TREETYPE_DIRECTORY;
 		treetype = NilStr;
 	}else{
 		VTS->TreeType = TREETYPE_VFS;
 		treetype = cmdstr;
 	}
-	InitTreeViewItems(VTS,treetype);
+	InitTreeViewItems(VTS, treetype);
 }
 
 //-------------------------------------- Command からのコールバック
@@ -573,10 +573,10 @@ DWORD USEFASTCALL GetTreeWindowStyle(VFSTREESTRUCT *VTS)
 		TVS_SHOWSELALWAYS;
 
 	if ( !(VTS->X_tree & XTREE_NOLINE) ){
-		setflag(style,TVS_HASLINES | TVS_LINESATROOT);
+		setflag(style, TVS_HASLINES | TVS_LINESATROOT);
 	}
-	if ( VTS->X_tree & XTREE_SINGLENODE ) setflag(style,TVS_SINGLEEXPAND);
-	if ( GetCustDword(T("X_poshl"),1) ) setflag(style,TVS_TRACKSELECT);
+	if ( VTS->X_tree & XTREE_SINGLENODE ) setflag(style, TVS_SINGLEEXPAND);
+	if ( GetCustDword(T("X_poshl"), 1) ) setflag(style, TVS_TRACKSELECT);
 	return style;
 }
 
@@ -585,7 +585,7 @@ void USEFASTCALL InitTreeIcon(VFSTREESTRUCT *VTS)
 	if ( !(VTS->X_tree & XTREE_SHOWICON) ) return;
 	if ( DImageList_Create != NULL ) return;
 	// 初めての呼び出しなら関数準備
-	LoadWinAPI(NULL,LoadCommonControls(ICC_TREEVIEW_CLASSES),ImageCtltDLL,LOADWINAPI_HANDLE);
+	LoadWinAPI(NULL, LoadCommonControls(ICC_TREEVIEW_CLASSES), ImageCtltDLL, LOADWINAPI_HANDLE);
 }
 
 #ifndef TVM_SETITEMHEIGHT
@@ -593,7 +593,7 @@ void USEFASTCALL InitTreeIcon(VFSTREESTRUCT *VTS)
 	#define TVM_GETITEMHEIGHT (TV_FIRST + 28)
 #endif
 
-BOOL InitTreeFont(VFSTREESTRUCT *VTS,int dpi)
+BOOL InitTreeFont(VFSTREESTRUCT *VTS, int dpi)
 {
 	LOGFONTWITHDPI cursfont;
 	HDC hDC;
@@ -601,34 +601,34 @@ BOOL InitTreeFont(VFSTREESTRUCT *VTS,int dpi)
 
 	// 区切り線の太さを決定
 	hDC = GetDC(VTS->vtinfo.hWnd);
-	splitbarwide = (GetSystemMetrics(SM_CXSIZEFRAME) * dpi) / GetDeviceCaps(hDC,LOGPIXELSX);
-	ReleaseDC(VTS->vtinfo.hWnd,hDC);
+	splitbarwide = (GetSystemMetrics(SM_CXSIZEFRAME) * dpi) / GetDeviceCaps(hDC, LOGPIXELSX);
+	ReleaseDC(VTS->vtinfo.hWnd, hDC);
 
 	// フォントを取得
-	GetPPxFont(PPXFONT_F_tree,dpi,&cursfont);
+	GetPPxFont(PPXFONT_F_tree, dpi, &cursfont);
 	if ( cursfont.font.lfFaceName[0] != '\0' ){
 		VTS->hTreeFont = CreateFontIndirect(&cursfont.font);
-		SendMessage(VTS->hTViewWnd,WM_SETFONT,
-				(WPARAM)VTS->hTreeFont,TMAKELPARAM(FALSE,0));
+		SendMessage(VTS->hTViewWnd, WM_SETFONT,
+				(WPARAM)VTS->hTreeFont, TMAKELPARAM(FALSE, 0));
 		changed = TRUE;
 	}
 
 	if ( TouchMode & TOUCH_LARGEHEIGHT ){
-		int nowheight = (int)(LRESULT)SendMessage(VTS->hTViewWnd,TVM_GETITEMHEIGHT,0,0);
+		int nowheight = (int)(LRESULT)SendMessage(VTS->hTViewWnd, TVM_GETITEMHEIGHT, 0, 0);
 		int minheight = (dpi * 60) >> 8; // 6.0mm ( 60 / 254 ) の近似値
 		if ( nowheight < minheight ){
-			SendMessage(VTS->hTViewWnd,TVM_SETITEMHEIGHT,minheight,0);
+			SendMessage(VTS->hTViewWnd, TVM_SETITEMHEIGHT, minheight, 0);
 		}
 	}
 	return changed;
 }
 
-void TreeDpiChanged(VFSTREESTRUCT *VTS,WPARAM wParam)
+void TreeDpiChanged(VFSTREESTRUCT *VTS, WPARAM wParam)
 {
 	HFONT hOldFont;
 
-	hOldFont = (HFONT)SendMessage(VTS->hTViewWnd,WM_GETFONT,0,0);
-	if ( InitTreeFont(VTS,HIWORD(wParam)) && (hOldFont != NULL) ){
+	hOldFont = (HFONT)SendMessage(VTS->hTViewWnd, WM_GETFONT, 0, 0);
+	if ( InitTreeFont(VTS, HIWORD(wParam)) && (hOldFont != NULL) ){
 		DeleteObject(hOldFont);
 	}
 }
@@ -660,41 +660,41 @@ void WMTreeCreate(HWND hWnd)
 #endif
 	ThInit(&VTS->itemdata);
 	ThInit(&VTS->cmdwork);
-	SetWindowLongPtr(hWnd,GWLP_USERDATA,(LONG_PTR)VTS);
+	SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)VTS);
 
-	VTS->hTViewWnd = CreateWindowEx(WS_EX_CLIENTEDGE,WC_TREEVIEW,NilStr,
-			GetTreeWindowStyle(VTS),0,0,100,100,hWnd,NULL,DLLhInst,NULL);
-	if ( X_dss & DSS_COMCTRL ) SendMessage(VTS->hTViewWnd,CCM_DPISCALE,TRUE,0);
+	VTS->hTViewWnd = CreateWindowEx(WS_EX_CLIENTEDGE, WC_TREEVIEW, NilStr,
+			GetTreeWindowStyle(VTS), 0, 0, 100, 100, hWnd, NULL, DLLhInst, NULL);
+	if ( X_dss & DSS_COMCTRL ) SendMessage(VTS->hTViewWnd, CCM_DPISCALE, TRUE, 0);
 
-	InitTreeFont(VTS,GetMonitorDPI(hWnd));
+	InitTreeFont(VTS, GetMonitorDPI(hWnd));
 
 	InitTreeIcon(VTS);
-	ShowWindow(VTS->hTViewWnd,SW_SHOWNORMAL);
+	ShowWindow(VTS->hTViewWnd, SW_SHOWNORMAL);
 	#ifndef _WIN64
 	if ( DSHChangeNotifyRegister == NULL ){
-		LoadWinAPI(NULL,hShell32,SHChangeNotifyDLL,LOADWINAPI_HANDLE);
+		LoadWinAPI(NULL, hShell32, SHChangeNotifyDLL, LOADWINAPI_HANDLE);
 	}
 	if ( DSHChangeNotifyRegister == NULL ) return;
 	#endif
 	{
 		SHChangeNotifyEntry req_entry;
 
-		SHGetSpecialFolderLocation(hWnd,CSIDL_DESKTOP,(LPITEMIDLIST *)&req_entry.pidl);
+		SHGetSpecialFolderLocation(hWnd, CSIDL_DESKTOP, (LPITEMIDLIST *)&req_entry.pidl);
 		req_entry.fRecursive = TRUE;
 		VTS->ShNotifyID = DSHChangeNotifyRegister(hWnd,
 				SHCNRF_ShellLevel | SHCNRF_NewDelivery,
 				SHCNE_MKDIR | SHCNE_RMDIR | SHCNE_UPDATEDIR |
 				SHCNE_RENAMEFOLDER | SHCNE_DRIVEADD | SHCNE_DRIVEREMOVED,
-				VTM_I_CHANGENOTIFY,1,&req_entry);
+				VTM_I_CHANGENOTIFY, 1, &req_entry);
 		FreePIDL(req_entry.pidl);
 	}
 }
 
 void SetPPcColor(HWND hTWnd)
 {
-	COLORREF CC_tree[2] = {C_AUTO,C_AUTO};
+	COLORREF CC_tree[2] = {C_AUTO, C_AUTO};
 
-	if ( NO_ERROR != GetCustData(T("CC_tree"),&CC_tree,sizeof(CC_tree)) ){
+	if ( NO_ERROR != GetCustData(T("CC_tree"), &CC_tree, sizeof(CC_tree)) ){
 		return;
 	}
 	if ( CC_tree[0] == C_AUTO){
@@ -702,46 +702,46 @@ void SetPPcColor(HWND hTWnd)
 		CC_tree[0] = GetSysColor(COLOR_WINDOWTEXT);
 	}
 	if ( CC_tree[1] == C_AUTO) CC_tree[1] = GetSysColor(COLOR_WINDOW);
-	(void)TreeView_SetTextColor(hTWnd,CC_tree[0]);
-	(void)TreeView_SetBkColor(hTWnd,CC_tree[1]);
+	(void)TreeView_SetTextColor(hTWnd, CC_tree[0]);
+	(void)TreeView_SetBkColor(hTWnd, CC_tree[1]);
 	FixColor = TRUE;
 }
 
-const TCHAR *GetTreeItemCustname(VFSTREESTRUCT *VTS,HTREEITEM hTitem,HTREEITEM *hParentTreeItem)
+const TCHAR *GetTreeItemCustname(VFSTREESTRUCT *VTS, HTREEITEM hTitem, HTREEITEM *hParentTreeItem)
 {
 	HTREEITEM hParentItem;
 	TV_ITEM tvi;
 
-	hParentItem = TreeView_GetParent(VTS->hTViewWnd,hTitem);
+	hParentItem = TreeView_GetParent(VTS->hTViewWnd, hTitem);
 	if ( hParentItem == NULL ){
 		if ( hParentTreeItem != NULL ) *hParentTreeItem = TVI_ROOT;
-		return ThPointerT(&VTS->itemdata,0);
+		return ThPointerT(&VTS->itemdata, 0);
 	}else{
 		TCHAR *custname;
 
 		if ( hParentTreeItem != NULL ) *hParentTreeItem = hParentItem;
 		tvi.hItem = hParentItem;
 		tvi.mask = TVIF_PARAM;
-		TreeView_GetItem(VTS->hTViewWnd,&tvi);
-		custname = ThPointerT(&VTS->itemdata,tvi.lParam);
+		TreeView_GetItem(VTS->hTViewWnd, &tvi);
+		custname = ThPointerT(&VTS->itemdata, tvi.lParam);
 		if ( *custname == '%' ) return custname + 1;
 		return NULL;
 	}
 }
 
-int FindCustTarget(VFSTREESTRUCT *VTS,HTREEITEM hSrcItem,const TCHAR *srcname,TCHAR *custnamebuf,TCHAR *keyword,TCHAR *param,int *sizebuf)
+int FindCustTarget(VFSTREESTRUCT *VTS, HTREEITEM hSrcItem, const TCHAR *srcname, TCHAR *custnamebuf, TCHAR *keyword, TCHAR *param, int *sizebuf)
 {
-	int index = 0,size;
+	int index = 0, size;
 	const TCHAR *custname;
 
-	custname = GetTreeItemCustname(VTS,hSrcItem,NULL);
+	custname = GetTreeItemCustname(VTS, hSrcItem, NULL);
 	if ( custname == NULL ) return -1;
-	while( (size = EnumCustTable(index,custname,keyword,param,TSTROFF(CMDLINESIZE))) >= 0 ){
+	while( (size = EnumCustTable(index, custname, keyword, param, TSTROFF(CMDLINESIZE))) >= 0 ){
 		if ( (keyword[1] != '\0') ?
-			(tstrcmp(keyword,srcname) == 0) :
+			(tstrcmp(keyword, srcname) == 0) :
 			((srcname[0] == keyword[0]) && (srcname[1] == ':') &&
-			 (srcname[2] == ' ') && (tstrcmp(param,srcname + 3) == 0)) ){
-			tstrcpy(custnamebuf,custname);
+			 (srcname[2] == ' ') && (tstrcmp(param, srcname + 3) == 0)) ){
+			tstrcpy(custnamebuf, custname);
 			*sizebuf = size;
 			return index;
 		}
@@ -750,9 +750,9 @@ int FindCustTarget(VFSTREESTRUCT *VTS,HTREEITEM hSrcItem,const TCHAR *srcname,TC
 	return -1;
 }
 
-BOOL TreeRenameMain(VFSTREESTRUCT *VTS,HTREEITEM hSrcItem,const TCHAR *srcname,const TCHAR *destname)
+BOOL TreeRenameMain(VFSTREESTRUCT *VTS, HTREEITEM hSrcItem, const TCHAR *srcname, const TCHAR *destname)
 {
-	TCHAR custname[MAX_PATH],keyword[CMDLINESIZE],param[CMDLINESIZE];
+	TCHAR custname[MAX_PATH], keyword[CMDLINESIZE], param[CMDLINESIZE];
 
 	TV_ITEM tvi;
 
@@ -762,39 +762,39 @@ BOOL TreeRenameMain(VFSTREESTRUCT *VTS,HTREEITEM hSrcItem,const TCHAR *srcname,c
 			#define destbuf param
 
 			if ( GetTreePath(VTS, hSrcItem, srcbuf) == FALSE ) break;
-			tstrcpy(destbuf,srcbuf);
-			tstrcpy(FindLastEntryPoint(destbuf),destname);
-			if ( MoveFileL(srcbuf,destbuf) == FALSE ){
+			tstrcpy(destbuf, srcbuf);
+			tstrcpy(FindLastEntryPoint(destbuf), destname);
+			if ( MoveFileL(srcbuf, destbuf) == FALSE ){
 				ERRORCODE result;
 
 				result = GetLastError();
-				PPErrorBox(VTS->hTViewWnd,NULL,result);
+				PPErrorBox(VTS->hTViewWnd, NULL, result);
 				if ( (result == ERROR_ALREADY_EXISTS) ||
 					 (result == ERROR_INVALID_NAME) ){
 					return FALSE;
 				}
 				return TRUE;
 			}else{
-				SHChangeNotify(SHCNE_RENAMEFOLDER,SHCNF_PATH,srcbuf,destbuf);
+				SHChangeNotify(SHCNE_RENAMEFOLDER, SHCNF_PATH, srcbuf, destbuf);
 			}
 			break;
 			#undef srcbuf
 			#undef destbuf
 		}
 		case TREETYPE_FAVORITE: {
-			int size,index;
+			int size, index;
 
-			index = FindCustTarget(VTS,hSrcItem,srcname,custname,keyword,param,&size);
+			index = FindCustTarget(VTS, hSrcItem, srcname, custname, keyword, param, &size);
 			if ( index < 0 ){
-				XMessage(VTS->hTViewWnd,NULL,XM_GrERRld,T("Can't rename"));
+				XMessage(VTS->hTViewWnd, NULL, XM_GrERRld, T("Can't rename"));
 				return TRUE;
 			}
-			DeleteCustTable(custname,NULL,index);
+			DeleteCustTable(custname, NULL, index);
 			if ( param[0] == '\0' ){
-				tstrcpy(param,keyword);
+				tstrcpy(param, keyword);
 				size = TSTRSIZE32(param);
 			}
-			InsertCustTable(custname,destname,index,param,size);
+			InsertCustTable(custname, destname, index, param, size);
 			break;
 		}
 		default:
@@ -805,11 +805,11 @@ BOOL TreeRenameMain(VFSTREESTRUCT *VTS,HTREEITEM hSrcItem,const TCHAR *srcname,c
 	tvi.hItem = hSrcItem;
 	tvi.pszText = (TCHAR *)destname;
 	tvi.cchTextMax = tstrlen32(destname);
-	TreeView_SetItem(VTS->hTViewWnd,&tvi);
+	TreeView_SetItem(VTS->hTViewWnd, &tvi);
 	return TRUE;
 }
 
-void TreeItemEdit(VFSTREESTRUCT *VTS,TV_DISPINFO *dispinfo)
+void TreeItemEdit(VFSTREESTRUCT *VTS, TV_DISPINFO *dispinfo)
 {
 	TV_ITEM tvi;
 	TCHAR tvibuf[VFPS];
@@ -818,21 +818,21 @@ void TreeItemEdit(VFSTREESTRUCT *VTS,TV_DISPINFO *dispinfo)
 	tvi.hItem = dispinfo->item.hItem;
 	tvi.pszText = tvibuf;
 	tvi.cchTextMax = TSIZEOF(tvibuf);
-	TreeView_GetItem(VTS->hTViewWnd,&tvi);
+	TreeView_GetItem(VTS->hTViewWnd, &tvi);
 								// 名前変更無し
 	if ( (dispinfo->item.pszText == NULL) ||
-		 (0 == tstrcmp(dispinfo->item.pszText,tvibuf)) ){
+		 (0 == tstrcmp(dispinfo->item.pszText, tvibuf)) ){
 		return;
 	}
-	TreeRenameMain(VTS,dispinfo->item.hItem,tvibuf,dispinfo->item.pszText);
+	TreeRenameMain(VTS, dispinfo->item.hItem, tvibuf, dispinfo->item.pszText);
 }
 
-int StartTreeRename(VFSTREESTRUCT *VTS,HTREEITEM hTreeitem,const TCHAR *name)
+int StartTreeRename(VFSTREESTRUCT *VTS, HTREEITEM hTreeitem, const TCHAR *name)
 {
 	if ( (VTS->TreeType == TREETYPE_FAVORITE) ||
 		 (VTS->TreeType == TREETYPE_DIRECTORY) ){
 		if ( VTS->TreeType == TREETYPE_DIRECTORY ){
-			if ( TreeView_GetParent(VTS->hTViewWnd,hTreeitem) == NULL ){
+			if ( TreeView_GetParent(VTS->hTViewWnd, hTreeitem) == NULL ){
 				return 1; // : / \\ / drive: は変更できない
 			}
 		}
@@ -849,12 +849,12 @@ int StartTreeRename(VFSTREESTRUCT *VTS,HTREEITEM hTreeitem,const TCHAR *name)
 			tinput.size		= TSIZEOF(buf);
 			tinput.info		= &VTS->vtinfo;
 
-			tstrcpy(buf,name);
+			tstrcpy(buf, name);
 
 			for ( ; ; ){
 				tinput.flag = TIEX_USEREFLINE | TIEX_USEINFO | TIEX_SINGLEREF | TIEX_FIXFORPATH;
 				if ( tInputEx(&tinput) <= 0 ) break;
-				if ( FALSE != TreeRenameMain(VTS,hTreeitem,name,buf) ){
+				if ( FALSE != TreeRenameMain(VTS, hTreeitem, name, buf) ){
 					break;
 				}
 			}
@@ -878,22 +878,22 @@ void USEFASTCALL SwitchXtree(VFSTREESTRUCT *VTS, DWORD flags)
 	SetCustData(StrX_tree, data, sizeof(data));
 }
 
-void ChangeTreeWindowStyle(VFSTREESTRUCT *VTS,DWORD flags)
+void ChangeTreeWindowStyle(VFSTREESTRUCT *VTS, DWORD flags)
 {
-	SwitchXtree(VTS,flags);
-	SetWindowLongPtr(VTS->hTViewWnd,GWL_STYLE,GetTreeWindowStyle(VTS));
-	InvalidateRect(VTS->hTViewWnd,NULL,TRUE);
+	SwitchXtree(VTS, flags);
+	SetWindowLongPtr(VTS->hTViewWnd, GWL_STYLE, GetTreeWindowStyle(VTS));
+	InvalidateRect(VTS->hTViewWnd, NULL, TRUE);
 }
 
-void TreeTypeMenu(VFSTREESTRUCT *VTS,HTREEITEM hTItem,WORD key)
+void TreeTypeMenu(VFSTREESTRUCT *VTS, HTREEITEM hTItem, WORD key)
 {
 	HTREEITEM hItem;
-	HMENU hMenu,hSubMenu;
+	HMENU hMenu, hSubMenu;
 	POINT pos;
 	int index;
 	int enumcount = 0;
 
-	TCHAR keyword[CMDLINESIZE],name[CMDLINESIZE];
+	TCHAR keyword[CMDLINESIZE], name[CMDLINESIZE];
 	TCHAR custname[MAX_PATH];
 	TCHAR itemstr[VFPS];
 
@@ -911,23 +911,23 @@ void TreeTypeMenu(VFSTREESTRUCT *VTS,HTREEITEM hTItem,WORD key)
 		 (VTS->TreeType == TREETYPE_DIRECTORY) ){
 		if ( hItem != NULL ){
 			if ( VTS->TreeType == TREETYPE_FAVORITE ){
-				int size,findindex;
+				int size, findindex;
 				TV_ITEM tvi;
 
 				tvi.mask = TVIF_TEXT | TVIF_PARAM;
 				tvi.hItem = hItem;
 				tvi.pszText = itemstr;
 				tvi.cchTextMax = TSIZEOF(itemstr);
-				TreeView_GetItem(VTS->hTViewWnd,&tvi);
-				findindex = FindCustTarget(VTS,hItem,itemstr,custname,keyword,name,&size);
+				TreeView_GetItem(VTS->hTViewWnd, &tvi);
+				findindex = FindCustTarget(VTS, hItem, itemstr, custname, keyword, name, &size);
 				if ( findindex >= 0 ){
-					AppendMenuString(hMenu,TREETYPE__RENAMEITEM,MES_TREN);
-					AppendMenuString(hMenu,TREETYPE__DELETEITEM,MES_TCLR);
+					AppendMenuString(hMenu, TREETYPE__RENAMEITEM, MES_TREN);
+					AppendMenuString(hMenu, TREETYPE__DELETEITEM, MES_TCLR);
 				}
 			}
 		}
-		AppendMenuString(hMenu,TREETYPE__NEWFOLDER,MES_MTNF);
-		AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
+		AppendMenuString(hMenu, TREETYPE__NEWFOLDER, MES_MTNF);
+		AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
 	}
 		// ツリーの表示形式
 	AppendMenuCheckString(hMenu, TREETYPE_DIRECTORY, MES_MTFO, VTS->TreeType == TREETYPE_DIRECTORY);
@@ -935,75 +935,75 @@ void TreeTypeMenu(VFSTREESTRUCT *VTS,HTREEITEM hTItem,WORD key)
 	AppendMenuCheckString(hMenu, TREETYPE_PPCLIST, MES_MTPL, VTS->TreeType == TREETYPE_PPCLIST);
 	AppendMenuCheckString(hMenu, TREETYPE_FOCUSPPC, MES_MTFP, VTS->TreeType == TREETYPE_FOCUSPPC);
 
-	while( EnumCustTable(enumcount,T("Mt_type"),keyword,name,sizeof(name)) >= 0 ){
-		AppendMenuString(hMenu,enumcount + TREETYPE__USERLIST,keyword);
+	while( EnumCustTable(enumcount, T("Mt_type"), keyword, name, sizeof(name)) >= 0 ){
+		AppendMenuString(hMenu, enumcount + TREETYPE__USERLIST, keyword);
 		enumcount++;
 	}
-	AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
+	AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
 
-	AppendMenuString(hMenu,TREETYPE__NEWLIST,MES_MTNU);
-	AppendMenuString(hMenu,TREETYPE__LISTCUSTOMIZE,MES_MTUE);
-	AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
+	AppendMenuString(hMenu, TREETYPE__NEWLIST, MES_MTNU);
+	AppendMenuString(hMenu, TREETYPE__LISTCUSTOMIZE, MES_MTUE);
+	AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
 
 	// 設定
-	AppendMenu(hMenu,MF_EPOP,(UINT_PTR)hSubMenu,MessageText(MES_MTST));
-	AppendMenuCheckString(hSubMenu,TREETYPE__SHOWICON,MES_MTSI,
+	AppendMenu(hMenu, MF_EPOP, (UINT_PTR)hSubMenu, MessageText(MES_MTST));
+	AppendMenuCheckString(hSubMenu, TREETYPE__SHOWICON, MES_MTSI,
 			VTS->X_tree & XTREE_SHOWICON);
 	if ( VTS->X_tree & XTREE_SHOWICON ){
-		AppendMenuCheckString(hSubMenu,TREETYPE__SIMPLEICON,MES_MTMI,
+		AppendMenuCheckString(hSubMenu, TREETYPE__SIMPLEICON, MES_MTMI,
 				VTS->X_tree & XTREE_SIMPLEICON);
 		if ( !(VTS->X_tree & XTREE_SIMPLEICON) ){
-			AppendMenuCheckString(hSubMenu,TREETYPE__SHOWOVERLAY,MES_MTOL,
+			AppendMenuCheckString(hSubMenu, TREETYPE__SHOWOVERLAY, MES_MTOL,
 					!(VTS->X_tree & XTREE_DISABLEOVERLAY) );
 		}
 	}
 	if ( IsExistCustData(T("B_tree")) ){
-		AppendMenuCheckString(hSubMenu,TREETYPE__SHOWTOOLBAR,MES_MTSB,
+		AppendMenuCheckString(hSubMenu, TREETYPE__SHOWTOOLBAR, MES_MTSB,
 				VTS->X_tree & XTREE_SHOWTOOLBAR);
 	}
-	AppendMenuCheckString(hSubMenu,TREETYPE__NOLINE,MES_MTSL,
+	AppendMenuCheckString(hSubMenu, TREETYPE__NOLINE, MES_MTSL,
 			!(VTS->X_tree & XTREE_NOLINE));
 	if ( VTS->flags & VFSTREE_PPC ){
-		AppendMenuCheckString(hSubMenu,TREETYPE__SYNCSELECT,MES_MTSS,
+		AppendMenuCheckString(hSubMenu, TREETYPE__SYNCSELECT, MES_MTSS,
 				VTS->X_tree & XTREE_SYNCSELECT);
 	}
-	AppendMenuCheckString(hSubMenu,TREETYPE__SINGLENODE,MES_MTSN,
+	AppendMenuCheckString(hSubMenu, TREETYPE__SINGLENODE, MES_MTSN,
 			VTS->X_tree & XTREE_SINGLENODE);
-	AppendMenuCheckString(hSubMenu,TREETYPE__DIALOGRENAME,MES_MTDR,
+	AppendMenuCheckString(hSubMenu, TREETYPE__DIALOGRENAME, MES_MTDR,
 			VTS->X_tree & XTREE_DIALOGRENAME);
-	AppendMenuCheckString(hSubMenu,TREETYPE__SHOWSUPERHIDEEN,MES_MTSH,
+	AppendMenuCheckString(hSubMenu, TREETYPE__SHOWSUPERHIDEEN, MES_MTSH,
 			VTS->X_tree & XTREE_SHOWSUPERHIDEEN);
 
-	AppendMenuString(hMenu,TREETYPE__RELOAD,MES_MTRL);
+	AppendMenuString(hMenu, TREETYPE__RELOAD, MES_MTRL);
 
-	AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
-	AppendMenuString(hMenu,TREETYPE__CLOSE,MES_MTCL);
+	AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
+	AppendMenuString(hMenu, TREETYPE__CLOSE, MES_MTCL);
 
-	GetPopMenuPos(VTS->hTViewWnd,&pos,key);
-	index = TrackPopupMenu(hMenu,TPM_TDEFAULT,pos.x,pos.y,0,VTS->hTViewWnd,NULL);
+	GetPopMenuPos(VTS->hTViewWnd, &pos, key);
+	index = TrackPopupMenu(hMenu, TPM_TDEFAULT, pos.x, pos.y, 0, VTS->hTViewWnd, NULL);
 	switch (index){
 		case TREETYPE_DIRECTORY:
 			VTS->TreeType = TREETYPE_DIRECTORY;
-			Start_InitTreeViewItems(VTS,NilStr);
+			Start_InitTreeViewItems(VTS, NilStr);
 			break;
 
 		case TREETYPE_FAVORITE:
 			VTS->TreeType = TREETYPE_FAVORITE;
-			Start_InitTreeViewItems(VTS,DefaultTreeListName);
+			Start_InitTreeViewItems(VTS, DefaultTreeListName);
 			break;
 
 		case TREETYPE_PPCLIST:
 			VTS->TreeType = TREETYPE_PPCLIST;
-			Start_InitTreeViewItems(VTS,NilStr);
+			Start_InitTreeViewItems(VTS, NilStr);
 			break;
 
 		case TREETYPE_FOCUSPPC:
 			VTS->TreeType = TREETYPE_FOCUSPPC;
-			Start_InitTreeViewItems(VTS,NilStr);
+			Start_InitTreeViewItems(VTS, NilStr);
 			break;
 
 		case TREETYPE__RELOAD:
-			TreeKeyCommand(VTS,K_raw | VK_F5);
+			TreeKeyCommand(VTS, K_raw | VK_F5);
 			break;
 
 		case TREETYPE__CLOSE:
@@ -1011,45 +1011,45 @@ void TreeTypeMenu(VFSTREESTRUCT *VTS,HTREEITEM hTItem,WORD key)
 			break;
 
 		case TREETYPE__SHOWICON:
-			SwitchXtree(VTS,XTREE_SHOWICON);
+			SwitchXtree(VTS, XTREE_SHOWICON);
 			InitTreeIcon(VTS);
-			TreeKeyCommand(VTS,K_raw | VK_F5);
+			TreeKeyCommand(VTS, K_raw | VK_F5);
 			break;
 
 		case TREETYPE__SIMPLEICON:
-			SwitchXtree(VTS,XTREE_SIMPLEICON);
-			TreeKeyCommand(VTS,K_raw | VK_F5);
+			SwitchXtree(VTS, XTREE_SIMPLEICON);
+			TreeKeyCommand(VTS, K_raw | VK_F5);
 			break;
 
 		case TREETYPE__SHOWTOOLBAR:
-			SwitchXtree(VTS,XTREE_SHOWTOOLBAR);
+			SwitchXtree(VTS, XTREE_SHOWTOOLBAR);
 			VfsTreeSetFlagFix(VTS);
 			break;
 
 		case TREETYPE__DIALOGRENAME:
-			SwitchXtree(VTS,XTREE_DIALOGRENAME);
+			SwitchXtree(VTS, XTREE_DIALOGRENAME);
 			break;
 
 		case TREETYPE__SYNCSELECT:
-			SwitchXtree(VTS,XTREE_SYNCSELECT);
+			SwitchXtree(VTS, XTREE_SYNCSELECT);
 			break;
 
 		case TREETYPE__SINGLENODE:
-			ChangeTreeWindowStyle(VTS,XTREE_SINGLENODE);
+			ChangeTreeWindowStyle(VTS, XTREE_SINGLENODE);
 			break;
 
 		case TREETYPE__NOLINE:
-			ChangeTreeWindowStyle(VTS,XTREE_NOLINE);
+			ChangeTreeWindowStyle(VTS, XTREE_NOLINE);
 			break;
 
 		case TREETYPE__SHOWOVERLAY:
-			SwitchXtree(VTS,XTREE_DISABLEOVERLAY);
-			TreeKeyCommand(VTS,K_raw | VK_F5);
+			SwitchXtree(VTS, XTREE_DISABLEOVERLAY);
+			TreeKeyCommand(VTS, K_raw | VK_F5);
 			break;
 
 		case TREETYPE__SHOWSUPERHIDEEN:
-			SwitchXtree(VTS,XTREE_SHOWSUPERHIDEEN);
-			TreeKeyCommand(VTS,K_raw | VK_F5);
+			SwitchXtree(VTS, XTREE_SHOWSUPERHIDEEN);
+			TreeKeyCommand(VTS, K_raw | VK_F5);
 			break;
 
 		case TREETYPE__NEWFOLDER:{
@@ -1057,66 +1057,66 @@ void TreeTypeMenu(VFSTREESTRUCT *VTS,HTREEITEM hTItem,WORD key)
 			if ( VTS->TreeType == TREETYPE_DIRECTORY ){
 				if( GetTreePath(VTS, hItem, itemstr) == FALSE ) break;
 				PP_ExtractMacro(VTS->vtinfo.hWnd, &VTS->vtinfo, NULL, MessageText(MES_NWDN), name, 0);
-				CatPath(NULL,itemstr,name);
+				CatPath(NULL, itemstr, name);
 				GetUniqueEntryName(itemstr);
-				if ( IsTrue(CreateDirectoryL(itemstr,NULL)) ){
-					AddItemToTree(VTS,FindLastEntryPoint(itemstr),hItem);
+				if ( IsTrue(CreateDirectoryL(itemstr, NULL)) ){
+					AddItemToTree(VTS, FindLastEntryPoint(itemstr), hItem);
 				}
 			}else if ( VTS->TreeType == TREETYPE_FAVORITE ){
 				int count = 1;
 				const TCHAR *favname;
 
-				favname = GetTreeItemCustname(VTS,hItem,NULL);
+				favname = GetTreeItemCustname(VTS, hItem, NULL);
 				if ( favname == NULL ) break;
 
 				for (;;){
-					wsprintf(name,T("%%M_treelist%02d"),count++);
-					if ( tstricmp(name + 1,favname) == 0 ) continue;
+					wsprintf(name, T("%%M_treelist%02d"), count++);
+					if ( tstricmp(name + 1, favname) == 0 ) continue;
 					if ( !IsExistCustData(name + 1) ) break;
 				}
-				SetCustData(name + 1,&NullTable,4);
-				InsertCustTable(favname,T("Folder"),0x7fffffff,name,TSTRSIZE(name));
-				AppendItemToTreeV(VTS,T("Folder"),hItem,0,name);
+				SetCustData(name + 1, &NullTable, 4);
+				InsertCustTable(favname, T("Folder"), 0x7fffffff, name, TSTRSIZE(name));
+				AppendItemToTreeV(VTS, T("Folder"), hItem, 0, name);
 			}
 			tvi.mask = TVIF_CHILDREN;
 			tvi.hItem = hItem;
 			tvi.cChildren = 1;
-			TreeView_SetItem(VTS->hTViewWnd,&tvi);
-			TreeView_Expand(VTS->hTViewWnd,hItem,TVE_EXPAND);
+			TreeView_SetItem(VTS->hTViewWnd, &tvi);
+			TreeView_Expand(VTS->hTViewWnd, hItem, TVE_EXPAND);
 			break;
 		}
 		case TREETYPE__NEWLIST: {
 			int count = 1;
 
 			for(;;){
-				wsprintf(name,T("M_treelist%02d"),count++);
+				wsprintf(name, T("M_treelist%02d"), count++);
 				if ( !IsExistCustData(name) ) break;
 			}
 			VTS->TreeType = TREETYPE_FAVORITE;
-			Start_InitTreeViewItems(VTS,name);
+			Start_InitTreeViewItems(VTS, name);
 			break;
 		}
 
 		case TREETYPE__LISTCUSTOMIZE:
-			PP_ExtractMacro(VTS->hTViewWnd,NULL,NULL,T("%Ob *ppcust /:Mt_type"),NULL,0);
+			PP_ExtractMacro(VTS->hTViewWnd, NULL, NULL, T("%Ob *ppcust /:Mt_type"), NULL, 0);
 			break;
 
 		case TREETYPE__RENAMEITEM:
-			if ( StartTreeRename(VTS,hItem,itemstr) == 0 ){
-				SendMessage(VTS->hTViewWnd,TVM_EDITLABEL,0,(LPARAM)hItem);
+			if ( StartTreeRename(VTS, hItem, itemstr) == 0 ){
+				SendMessage(VTS->hTViewWnd, TVM_EDITLABEL, 0, (LPARAM)hItem);
 			}
 			break;
 
 		case TREETYPE__DELETEITEM:
-			TreeItemDelete(VTS,VK_DELETE,hItem);
+			TreeItemDelete(VTS, VK_DELETE, hItem);
 			break;
 
 		default:
 			if ( index >= TREETYPE__USERLIST ){
 				name[0] = '\0';
-				EnumCustTable(index - TREETYPE__USERLIST,T("Mt_type"),keyword,name,sizeof(name));
+				EnumCustTable(index - TREETYPE__USERLIST, T("Mt_type"), keyword, name, sizeof(name));
 				VTS->TreeType = TREETYPE_FAVORITE;
-				Start_InitTreeViewItems(VTS,name);
+				Start_InitTreeViewItems(VTS, name);
 			}
 			break;
 	}
@@ -1135,23 +1135,23 @@ void FixTreeSize(VFSTREESTRUCT *VTS)
 	}
 	if ( VTS->hBarWnd != NULL ){
 		if ( VTS->flags & VFSTREE_PPC ){ // 上側にツールバー
-			SetWindowPos(VTS->hBarWnd,NULL,
-					0,box.top, box.right,VTS->BarSize.cy,SWP_NOACTIVATE | SWP_NOZORDER);
+			SetWindowPos(VTS->hBarWnd, NULL,
+					0, box.top, box.right, VTS->BarSize.cy, SWP_NOACTIVATE | SWP_NOZORDER);
 			if ( VTS->BarSize.cy < box.bottom ){
 				box.top += VTS->BarSize.cy;
 				box.bottom -= VTS->BarSize.cy;
 			}
 		}else{ // 左側にツールバー
-			SetWindowPos(VTS->hBarWnd,NULL,
-					0,box.top, VTS->BarSize.cy,box.bottom,SWP_NOACTIVATE | SWP_NOZORDER);
+			SetWindowPos(VTS->hBarWnd, NULL,
+					0, box.top, VTS->BarSize.cy, box.bottom, SWP_NOACTIVATE | SWP_NOZORDER);
 			if ( VTS->BarSize.cy < box.right ){
 				box.left += VTS->BarSize.cy;
 				box.right -= VTS->BarSize.cy;
 			}
 		}
 	}
-	SetWindowPos(VTS->hTViewWnd,NULL,
-			box.left,box.top,box.right,box.bottom,SWP_NOACTIVATE | SWP_NOZORDER);
+	SetWindowPos(VTS->hTViewWnd, NULL,
+			box.left, box.top, box.right, box.bottom, SWP_NOACTIVATE | SWP_NOZORDER);
 }
 
 void VfsTreeSetFlagFix(VFSTREESTRUCT *VTS)
@@ -1161,18 +1161,18 @@ void VfsTreeSetFlagFix(VFSTREESTRUCT *VTS)
 		if ( VTS->hBarWnd == NULL ){
 			UINT ID = IDW_INTERNALMIN;
 
-			VTS->hBarWnd = CreateToolBar(&VTS->cmdwork, VTS->vtinfo.hWnd,&ID,
-					T("B_tree"),DLLpath,
+			VTS->hBarWnd = CreateToolBar(&VTS->cmdwork, VTS->vtinfo.hWnd, &ID,
+					T("B_tree"), DLLpath,
 					(VTS->flags & VFSTREE_PPC) ? 0 : TBSTYLE_WRAPABLE);
 			if ( VTS->hBarWnd != NULL ){
 				RECT box;
 
 				if ( VTS->flags & VFSTREE_PPC ){
-					GetWindowRect(VTS->hBarWnd,&box);
+					GetWindowRect(VTS->hBarWnd, &box);
 					VTS->BarSize.cy = box.bottom - box.top;
 				}else{
 					SendMessage(VTS->hBarWnd,
-							TB_SETROWS,TMAKEWPARAM(500,TRUE),(LPARAM)&box);
+							TB_SETROWS, TMAKEWPARAM(500, TRUE), (LPARAM)&box);
 					VTS->BarSize.cy = box.right - box.left;
 					FixTreeSize(VTS);
 				}
@@ -1182,8 +1182,9 @@ void VfsTreeSetFlagFix(VFSTREESTRUCT *VTS)
 		if ( VTS->hBarWnd != NULL ){
 			DestroyWindow(VTS->hBarWnd);
 			VTS->hBarWnd = NULL;
-			FixTreeSize(VTS);
+//			FixTreeSize(VTS);
 		}
+			FixTreeSize(VTS); // *entrytip で大きさ調整されないことある
 	}
 
 	if ( VTS->flags & VFSTREE_PPC ) SetPPcColor(VTS->hTViewWnd);
@@ -1192,53 +1193,53 @@ void VfsTreeSetFlagFix(VFSTREESTRUCT *VTS)
 	if ( IsExistCustData( (VTS->flags & VFSTREE_PPC) ?
 			T("KC_tree") : T("K_tree")) ){ //TreeKeyカスタマイズ有り
 		if ( VTS->OldTreeWndProc == NULL ){
-			SetProp(VTS->hTViewWnd,StrTreeProp,(HANDLE)VTS);
+			SetProp(VTS->hTViewWnd, StrTreeProp, (HANDLE)VTS);
 			VTS->OldTreeWndProc = (WNDPROC)SetWindowLongPtr(
-					VTS->hTViewWnd,GWLP_WNDPROC,(LONG_PTR)TreeViewProc);
+					VTS->hTViewWnd, GWLP_WNDPROC, (LONG_PTR)TreeViewProc);
 		}
 	}
 }
 
 // VTM_POINTPATH メイン:指定されたスクリーン座標上のアイテムのフルパスを得る --
-LRESULT GetPathPoint(VFSTREESTRUCT *VTS,VTMPOINTPATHSTRUCT *vpps)
+LRESULT GetPathPoint(VFSTREESTRUCT *VTS, VTMPOINTPATHSTRUCT *vpps)
 {
 	HTREEITEM hTitem;
 	TV_HITTESTINFO hit;
 	HWND hTWnd = VTS->hTViewWnd;
 
 	if ( vpps == NULL ){ // 選択解除
-		TREEVOID TreeView_SelectDropTarget(hTWnd,NULL);
+		TREEVOID TreeView_SelectDropTarget(hTWnd, NULL);
 		return VTS->TreeType;
 	}
 
 	hit.pt = vpps->pos;
-	ScreenToClient(hTWnd,&hit.pt);
-	hTitem = TreeView_HitTest(hTWnd,&hit);
+	ScreenToClient(hTWnd, &hit.pt);
+	hTitem = TreeView_HitTest(hTWnd, &hit);
 	if ( hTitem == (HTREEITEM)vpps->Titem ) return VTS->TreeType; // 変化無し
 
 	vpps->Titem = (DWORD_PTR)hTitem;
 	if ( hTitem == NULL ) goto notarget;
 	if ( !(hit.flags & (TVHT_ONITEM | TVHT_ONITEMRIGHT)) ) goto notarget;
-	TREEVOID TreeView_SelectDropTarget(hTWnd,hTitem);
+	TREEVOID TreeView_SelectDropTarget(hTWnd, hTitem);
 	if ( GetTreePath(VTS, hTitem, vpps->path) == FALSE ) vpps->Titem = 0;
 	return VTS->TreeType;
 notarget:
-	TREEVOID TreeView_SelectDropTarget(hTWnd,NULL);
+	TREEVOID TreeView_SelectDropTarget(hTWnd, NULL);
 	vpps->Titem = 0;
 	return VTS->TreeType;
 }
 
 // VTM_SCROLL メイン:マウスカーソル位置に応じたスクロールを行う ---------------
-void ScrollTreeView(HWND hTWnd,HTREEITEM *hHitItem)
+void ScrollTreeView(HWND hTWnd, HTREEITEM *hHitItem)
 {
 	HTREEITEM hTitem;
 	TV_HITTESTINFO hit;
 	RECT box;
-	int x = 0,y = 0;
+	int x = 0, y = 0;
 
-	GetClientRect(hTWnd,&box);
+	GetClientRect(hTWnd, &box);
 	GetCursorPos(&hit.pt);
-	ScreenToClient(hTWnd,&hit.pt);
+	ScreenToClient(hTWnd, &hit.pt);
 
 	if ( hit.pt.x < GRID ){
 		x = (hit.pt.x / GRID) * 3 - 3;
@@ -1248,11 +1249,11 @@ void ScrollTreeView(HWND hTWnd,HTREEITEM *hHitItem)
 	if ( x ){
 		if ( x < 0 ){
 			for ( ; x ; x++ ){
-				SendMessage(hTWnd,WM_HSCROLL,(WPARAM)SB_LINELEFT,0);
+				SendMessage(hTWnd, WM_HSCROLL, (WPARAM)SB_LINELEFT, 0);
 			}
 		}else{
 			for ( ; x ; x-- ){
-				SendMessage(hTWnd,WM_HSCROLL,(WPARAM)SB_LINERIGHT,0);
+				SendMessage(hTWnd, WM_HSCROLL, (WPARAM)SB_LINERIGHT, 0);
 			}
 		}
 	}
@@ -1266,22 +1267,22 @@ void ScrollTreeView(HWND hTWnd,HTREEITEM *hHitItem)
 	if ( y ){
 		hTitem = TreeView_GetFirstVisible(hTWnd);
 		if ( y > 0 ){
-			for ( ; y ; y-- ) hTitem = TreeView_GetNextVisible(hTWnd,hTitem);
+			for ( ; y ; y-- ) hTitem = TreeView_GetNextVisible(hTWnd, hTitem);
 		}else{
-			for ( ; y ; y++ ) hTitem = TreeView_GetPrevVisible(hTWnd,hTitem);
+			for ( ; y ; y++ ) hTitem = TreeView_GetPrevVisible(hTWnd, hTitem);
 		}
-		TREEVOID TreeView_SelectSetFirstVisible(hTWnd,hTitem);
+		TREEVOID TreeView_SelectSetFirstVisible(hTWnd, hTitem);
 	}
 
 	if ( !y && !x ){
-		hTitem = TreeView_HitTest(hTWnd,&hit);
+		hTitem = TreeView_HitTest(hTWnd, &hit);
 		if ( (hTitem == NULL) ||
 		  !(hit.flags & (TVHT_ONITEMBUTTON | TVHT_ONITEM | TVHT_ONITEMRIGHT))){
 			*hHitItem = NULL;
 		}else if ( *hHitItem != hTitem ){
 			*hHitItem = hTitem;
 		}else{
-			TreeView_Expand(hTWnd,hTitem,
+			TreeView_Expand(hTWnd, hTitem,
 				(hit.flags & TVHT_ONITEMBUTTON) ? TVE_TOGGLE : TVE_EXPAND);
 			*hHitItem = NULL;
 		}
@@ -1294,11 +1295,11 @@ void FixTreeCaret(HWND hTWnd)
 
 	hTreeitem = TreeView_GetSelection(hTWnd);
 	if ( hTreeitem == NULL ) return;
-	SendMessage(hTWnd,TVM_ENSUREVISIBLE,0,(LPARAM)hTreeitem);
+	SendMessage(hTWnd, TVM_ENSUREVISIBLE, 0, (LPARAM)hTreeitem);
 }
 
 //-------------------------------------- アイテムを登録する
-HTREEITEM AddItemToTree(VFSTREESTRUCT *VTS,const TCHAR *itemname,HTREEITEM hParent)
+HTREEITEM AddItemToTree(VFSTREESTRUCT *VTS, const TCHAR *itemname, HTREEITEM hParent)
 {
 	TV_ITEM tvi;
 	TV_INSERTSTRUCT tvins;
@@ -1317,7 +1318,7 @@ HTREEITEM AddItemToTree(VFSTREESTRUCT *VTS,const TCHAR *itemname,HTREEITEM hPare
 	TreeInsertItemValue(tvins) = tvi;
 
 	return (HTREEITEM)SendMessage(VTS->hTViewWnd,
-			TVM_INSERTITEM,0,(LPARAM)(LPTV_INSERTSTRUCT)&tvins);
+			TVM_INSERTITEM, 0, (LPARAM)(LPTV_INSERTSTRUCT)&tvins);
 }
 
 HTREEITEM AppendItemToTreeV(VFSTREESTRUCT *VTS, const TCHAR *itemname, HTREEITEM hParent, int icontype, const TCHAR *datastr)
@@ -1341,7 +1342,7 @@ HTREEITEM AppendItemToTreeV(VFSTREESTRUCT *VTS, const TCHAR *itemname, HTREEITEM
 		tvi.lParam = MAXLPARAM;
 	}else{
 		tvi.lParam = VTS->itemdata.top;
-		ThAddString(&VTS->itemdata,datastr);
+		ThAddString(&VTS->itemdata, datastr);
 	}
 
 	tvins.hParent = hParent;
@@ -1352,30 +1353,30 @@ HTREEITEM AppendItemToTreeV(VFSTREESTRUCT *VTS, const TCHAR *itemname, HTREEITEM
 			TVM_INSERTITEM, 0, (LPARAM)(LPTV_INSERTSTRUCT)&tvins);
 }
 
-void SeletTreeItem(VFSTREESTRUCT *VTS,HTREEITEM hItem)
+void SeletTreeItem(VFSTREESTRUCT *VTS, HTREEITEM hItem)
 {
 	DWORD id = GetCurrentThreadId();
 
 	// スレッドがメインスレッドか、最後に始めたスレッドでなければ選択しない
 	if ( (id != VTS->MainThreadID) && (id != VTS->ActiveThreadID) ) return;
 
-	SendMessage(VTS->hTViewWnd,TVM_SELECTITEM,TVGN_CARET,(LPARAM)hItem);
+	SendMessage(VTS->hTViewWnd, TVM_SELECTITEM, TVGN_CARET, (LPARAM)hItem);
 }
 
 //-------------------------------------- 指定したパスを強制追加する
 void AddItemToTreeForce(VFSTREESTRUCT *VTS, HTREEITEM hItem, const TCHAR *path, BOOL focusset)
 {
-	TCHAR *p,*np,buf[VFPS],buf2[VFPS];
+	TCHAR *p, *np, buf[VFPS], buf2[VFPS];
 
 	if ( hItem == NULL ) hItem = TVI_ROOT;
-	tstrcpy(buf,path);
+	tstrcpy(buf, path);
 	p = buf;
 
 	for ( ; ; ){
 		np = FindPathSeparator(p);
 		if ( np == NULL ){ // 末尾
-			if ( *p != '\0' ) hItem = AddItemToTree(VTS,p,hItem);
-			if ( IsTrue(focusset) ) SeletTreeItem(VTS,hItem);
+			if ( *p != '\0' ) hItem = AddItemToTree(VTS, p, hItem);
+			if ( IsTrue(focusset) ) SeletTreeItem(VTS, hItem);
 			return;
 		}
 		if ( (hItem == TVI_ROOT) && (*np == '/') ){ // http://xxx や aux://xxx
@@ -1385,15 +1386,15 @@ void AddItemToTreeForce(VFSTREESTRUCT *VTS, HTREEITEM hItem, const TCHAR *path, 
 		*np = '\0';
 		if ( *p != '\0' ){
 			if ( (hItem == TVI_ROOT) && (Isalpha(*p)) && (*(p + 1) == ':') &&
-				 (GetCustDword(StrX_dlf,0) & XDLF_DISPDRIVETITLE) ){
+				 (GetCustDword(StrX_dlf, 0) & XDLF_DISPDRIVETITLE) ){
 				buf2[0] = *p;
 				buf2[1] = ':';
 				buf2[2] = '>';
 				buf2[3] = ' ';
-				GetDriveNameTitle(buf2 + 4,buf2[0]);
+				GetDriveNameTitle(buf2 + 4, buf2[0]);
 				p = buf2;
 			}
-			hItem = AddItemToTree(VTS,p,hItem);
+			hItem = AddItemToTree(VTS, p, hItem);
 		}
 		p = np + 1;
 	}
@@ -1407,28 +1408,28 @@ HICON LoadTreeIcon(VFSTREESTRUCT *VTS, const TCHAR *path, const TCHAR *name)
 	if ( path[0] == '#' ){
 		XLPEXTRACTICON pEI;
 
-		pEI = GetPathInterface(GetFocus(),name,&IID_IExtractIcon,path);
+		pEI = GetPathInterface(GetFocus(), name, &IID_IExtractIcon, path);
 		if ( pEI != NULL ){
 			HICON hIcon = NULL;
 			TCHAR iconname[MAX_PATH];
 			int index;
 			UINT flags;
 
-			pEI->lpVtbl->GetIconLocation(pEI,0,iconname,MAX_PATH,&index,&flags);
+			pEI->lpVtbl->GetIconLocation(pEI, 0, iconname, MAX_PATH, &index, &flags);
 			if ( flags & GIL_NOTFILENAME ){
 				if ( OSver.dwMajorVersion < 6 ){
 					HICON hSmallIcon;
 
-					if ( SUCCEEDED(pEI->lpVtbl->Extract(pEI,iconname,index,
-							&hIcon,&hSmallIcon,TreeIconSize) ) ){
+					if ( SUCCEEDED(pEI->lpVtbl->Extract(pEI, iconname, index,
+							&hIcon, &hSmallIcon, TreeIconSize) ) ){
 						DestroyIcon(hSmallIcon);
 					}
 				}else{
-					pEI->lpVtbl->Extract(pEI,iconname,index,
-							&hIcon,NULL,TreeIconSize);
+					pEI->lpVtbl->Extract(pEI, iconname, index,
+							&hIcon, NULL, TreeIconSize);
 				}
 			}else{
-				ExtractIconEx(iconname,index,NULL,&hIcon,1);
+				ExtractIconEx(iconname, index, NULL, &hIcon, 1);
 			}
 			pEI->lpVtbl->Release(pEI);
 			if ( hIcon != NULL ) return hIcon;
@@ -1437,9 +1438,9 @@ HICON LoadTreeIcon(VFSTREESTRUCT *VTS, const TCHAR *path, const TCHAR *name)
 		SHFILEINFO shfinfo;
 		DWORD_PTR result;
 
-		if ( VFSFullPath(buf,(TCHAR *)name,path) == NULL ) return NULL;
+		if ( VFSFullPath(buf, (TCHAR *)name, path) == NULL ) return NULL;
 		// C6001OK. SHGFI_ATTR_SPECIFIED がなければ[in]ではない
-		result = SHGetFileInfo(buf,0,&shfinfo,sizeof(shfinfo),
+		result = SHGetFileInfo(buf, 0, &shfinfo, sizeof(shfinfo),
 				( VTS->X_tree & XTREE_DISABLEOVERLAY ) ?
 				XTREE_DISABLEOVERLAY : (TreeIconSHflag | SHGFI_ADDOVERLAYS) );
 		if ( result != 0 ) return shfinfo.hIcon;
@@ -1449,14 +1450,14 @@ HICON LoadTreeIcon(VFSTREESTRUCT *VTS, const TCHAR *path, const TCHAR *name)
 
 //-------------------------------------- 現在パスに関するアイテム登録
 // 関係あるパスだったら 1、そうでなければ 0
-int AddItemToTreePath(VFSTREESTRUCT *VTS, const TCHAR *itemname, HTREEITEM hParent,const TCHAR *path)
+int AddItemToTreePath(VFSTREESTRUCT *VTS, const TCHAR *itemname, HTREEITEM hParent, const TCHAR *path)
 {
 	HTREEITEM hChild;
 	size_t size;
 	TCHAR *p;
 
 	if ( !(VTS->X_tree & XTREE_SHOWICON) ){
-		hChild = AddItemToTree(VTS,itemname,hParent);
+		hChild = AddItemToTree(VTS, itemname, hParent);
 	}else{								// アイコン表示有り
 		if ( (hParent == TVI_ROOT) && (itemname[1] == ':') &&
 			 ((itemname[2] == '\0') || (itemname[2] == '>') ||
@@ -1467,18 +1468,18 @@ int AddItemToTreePath(VFSTREESTRUCT *VTS, const TCHAR *itemname, HTREEITEM hPare
 			int icon;
 
 			icon = 0;
-			wsprintf(drivename,T("%c:\\"),itemname[0]);
+			wsprintf(drivename, T("%c:\\"), itemname[0]);
 
 			// C6001OK. SHGFI_ATTR_SPECIFIED がなければ[in]ではない
-			hSysImage = (HIMAGELIST)SHGetFileInfo(drivename,0,&shfinfo,
-					sizeof(shfinfo),TreeIconSHflag);
+			hSysImage = (HIMAGELIST)SHGetFileInfo(drivename, 0, &shfinfo,
+					sizeof(shfinfo), TreeIconSHflag);
 			if ( hSysImage != NULL ){
-				icon = DImageList_AddIcon(VTS->hImage,shfinfo.hIcon);
+				icon = DImageList_AddIcon(VTS->hImage, shfinfo.hIcon);
 				DestroyIcon(shfinfo.hIcon);
 			}
-			hChild = AppendItemToTreeV(VTS,itemname,hParent,icon,NULL);
+			hChild = AppendItemToTreeV(VTS, itemname, hParent, icon, NULL);
 		}else if ( (VTS->X_tree & XTREE_SIMPLEICON) ){
-			hChild = AddItemToTree(VTS,itemname,hParent);
+			hChild = AddItemToTree(VTS, itemname, hParent);
 		}else{
 			HICON hIcon;
 			int icon = 0;
@@ -1488,26 +1489,26 @@ int AddItemToTreePath(VFSTREESTRUCT *VTS, const TCHAR *itemname, HTREEITEM hPare
 			if ( hParent != TVI_ROOT ) GetTreePath(VTS, hParent, fullpath);
 			hIcon = LoadTreeIcon(VTS, fullpath, itemname);
 			if ( hIcon != NULL ){
-				icon = DImageList_AddIcon(VTS->hImage,hIcon);
+				icon = DImageList_AddIcon(VTS->hImage, hIcon);
 				DestroyIcon(hIcon);
 			}
-			hChild = AppendItemToTreeV(VTS,itemname,hParent,icon,NULL);
+			hChild = AppendItemToTreeV(VTS, itemname, hParent, icon, NULL);
 		}
 	}
 	if ( path == NULL ) return 0;
 
 	size = tstrlen(itemname);
-	p = tstrchr(itemname,'>');
+	p = tstrchr(itemname, '>');
 	if ( p != NULL ) size = p - itemname;
 
-	if ( tstrnicmp(itemname,path,size) ) return 0; // 無関係だった
+	if ( tstrnicmp(itemname, path, size) ) return 0; // 無関係だった
 
 	path += size;
 		 // 途中まで文字列が一致していても無関係
 	if ( ((*itemname != '\\')&&(*itemname != '>')) && (*path != '\\') && (*path != '\0') ) return 0;
 	if ( (*path == '\0') || ((*path == '\\') && (*(path + 1) == '\0'))  ){
-		DEBUGLOGF("Tree select(AddItemToTreePath) %s",itemname);
-		SeletTreeItem(VTS,hChild);
+		DEBUGLOGF("Tree select(AddItemToTreePath) %s", itemname);
+		SeletTreeItem(VTS, hChild);
 		return 1;
 	}
 	if ( *path != '\\' ){
@@ -1515,9 +1516,9 @@ int AddItemToTreePath(VFSTREESTRUCT *VTS, const TCHAR *itemname, HTREEITEM hPare
 	}else{
 		path++;
 	}
-	DEBUGLOGF("Tree Expand(AddItemToTreePath) %s",itemname);
+	DEBUGLOGF("Tree Expand(AddItemToTreePath) %s", itemname);
 
-	ExpandTree(VTS,hChild,path); // 下層を展開する
+	ExpandTree(VTS, hChild, path); // 下層を展開する
 	return 1;
 }
 
@@ -1532,18 +1533,18 @@ BOOL GetTreePath(VFSTREESTRUCT *VTS, HTREEITEM hTreeitem, TCHAR *buf)
 	tvi.hItem = hTreeitem;
 	tvi.pszText = tvibuf;
 	tvi.cchTextMax = TSIZEOF(tvibuf);
-	TreeView_GetItem(VTS->hTViewWnd,&tvi);
+	TreeView_GetItem(VTS->hTViewWnd, &tvi);
 
 	if ( VTS->TreeType == TREETYPE_PPCLIST ){
 		if ( tvi.lParam == MAXLPARAM ) return FALSE;
-		tstrlimcpy(buf,tvibuf,VFPS);
+		tstrlimcpy(buf, tvibuf, VFPS);
 		return TRUE;
 	}
 
 	if ( ((DWORD_PTR)tvi.lParam < (DWORD_PTR)VTS->itemdata.size) ){
 		TCHAR *path;
 
-		path = ThPointerT(&VTS->itemdata,tvi.lParam);
+		path = ThPointerT(&VTS->itemdata, tvi.lParam);
 		if ( (*path == '\0') || (*path == '%') ) return FALSE;
 
 		if ( VTS->TreeType == TREETYPE_FOCUSPPC ){
@@ -1552,7 +1553,7 @@ BOOL GetTreePath(VFSTREESTRUCT *VTS, HTREEITEM hTreeitem, TCHAR *buf)
 			return FALSE;
 		}
 
-		VFSFullPath(buf,path,NULL);
+		VFSFullPath(buf, path, NULL);
 		return TRUE;
 	}
 
@@ -1560,9 +1561,9 @@ BOOL GetTreePath(VFSTREESTRUCT *VTS, HTREEITEM hTreeitem, TCHAR *buf)
 	if ( hTreeNextitem == NULL ){ // Root ?
 		TCHAR *p;
 
-		p = tstrchr(tvibuf,'>');
+		p = tstrchr(tvibuf, '>');
 		if ( p != NULL ) *p = '\0';
-		if ( tstrchr(tvibuf,'/') == NULL ){
+		if ( tstrchr(tvibuf, '/') == NULL ){
 			CatPath(buf, tvibuf, NilStr);
 		}else{
 			tstrcpy(buf, tvibuf);
@@ -1574,7 +1575,7 @@ BOOL GetTreePath(VFSTREESTRUCT *VTS, HTREEITEM hTreeitem, TCHAR *buf)
 	if ( tvi.pszText[0] == '\\' ){ // UNC 先頭
 		tstrlimcpy(buf, tvi.pszText, VFPS);
 	}else{
-		if ( tstrchr(buf,'/') == NULL ){
+		if ( tstrchr(buf, '/') == NULL ){
 			CatPath(NULL, buf, tvi.pszText);
 		}else{
 			TCHAR *p;
@@ -1587,7 +1588,7 @@ BOOL GetTreePath(VFSTREESTRUCT *VTS, HTREEITEM hTreeitem, TCHAR *buf)
 	return TRUE;
 }
 
-void TreeItemDelete(VFSTREESTRUCT *VTS,WORD key,HTREEITEM hTreeitem)
+void TreeItemDelete(VFSTREESTRUCT *VTS, WORD key, HTREEITEM hTreeitem)
 {
 	DWORD X_wdel[4] = X_wdel_default;
 	int result;
@@ -1602,22 +1603,22 @@ void TreeItemDelete(VFSTREESTRUCT *VTS,WORD key,HTREEITEM hTreeitem)
 	if ( hTreeitem == NULL ) return;
 
 	if ( VTS->TreeType == TREETYPE_DIRECTORY ){
-		if ( TreeView_GetParent(VTS->hTViewWnd,hTreeitem) == NULL ){
+		if ( TreeView_GetParent(VTS->hTViewWnd, hTreeitem) == NULL ){
 			return; // : / \\ / drive: は削除できない
 		}
 	}
-	GetCustData(T("X_wdel"),&X_wdel,sizeof(X_wdel));
+	GetCustData(T("X_wdel"), &X_wdel, sizeof(X_wdel));
 
 	tvi.mask = TVIF_TEXT;
 	tvi.hItem = hTreeitem;
 	tvi.pszText = tvibuf;
 	tvi.cchTextMax = TSIZEOF(tvibuf);
-	TreeView_GetItem(VTS->hTViewWnd,&tvi);
+	TreeView_GetItem(VTS->hTViewWnd, &tvi);
 
-	wsprintf(buf,T("%s %s"),tvibuf,
+	wsprintf(buf, T("%s %s"), tvibuf,
 			MessageText((VTS->TreeType == TREETYPE_DIRECTORY) ?
 			MES_QDL1 : MES_QDL4));
-	result = PMessageBox(VTS->hTViewWnd,buf,MES_TDEL,treedeletemesboxstyle[X_wdel[2]]);
+	result = PMessageBox(VTS->hTViewWnd, buf, MES_TDEL, treedeletemesboxstyle[X_wdel[2]]);
 	if ( (result != IDOK) && (result != IDYES) ) return;
 
 	switch ( VTS->TreeType ){
@@ -1635,28 +1636,28 @@ void TreeItemDelete(VFSTREESTRUCT *VTS,WORD key,HTREEITEM hTreeitem)
 				dstat.warnattr = X_wdel[1];
 				dstat.info = &VTS->vtinfo;
 
-				if ( VFSDeleteEntry(&dstat,buf,GetFileAttributes(buf)) != NO_ERROR){
+				if ( VFSDeleteEntry(&dstat, buf, GetFileAttributes(buf)) != NO_ERROR){
 					return;
 				}
 			}else{
-				TreeContextMenu(VTS,T("delete"),key);
+				TreeContextMenu(VTS, T("delete"), key);
 			}
 			break;
 		}
 
 		case TREETYPE_FAVORITE: {
-			int size,index;
-			TCHAR custname[MAX_PATH],keyword[MAX_PATH];
+			int size, index;
+			TCHAR custname[MAX_PATH], keyword[MAX_PATH];
 
-			index = FindCustTarget(VTS,hTreeitem,tvibuf,custname,keyword,buf,&size);
+			index = FindCustTarget(VTS, hTreeitem, tvibuf, custname, keyword, buf, &size);
 			if ( index < 0 ){
-				XMessage(VTS->hTViewWnd,NULL,XM_GrERRld,T("Can't delete"));
+				XMessage(VTS->hTViewWnd, NULL, XM_GrERRld, T("Can't delete"));
 				return;
 			}
-			DeleteCustTable(custname,NULL,index);
+			DeleteCustTable(custname, NULL, index);
 			if ( (buf[0] == '%') && (buf[1] == 'M') ){
-				wsprintf(tvibuf,T("%s %s"),buf + 1,MessageText(MES_QDL1));
-				result = PMessageBox(VTS->hTViewWnd,tvibuf,MES_TDEL,treedeletemesboxstyle[X_wdel[2]]);
+				wsprintf(tvibuf, T("%s %s"), buf + 1, MessageText(MES_QDL1));
+				result = PMessageBox(VTS->hTViewWnd, tvibuf, MES_TDEL, treedeletemesboxstyle[X_wdel[2]]);
 				if ( (result == IDOK) || (result == IDYES) ){
 					DeleteCustData(buf + 1);
 				}
@@ -1668,14 +1669,14 @@ void TreeItemDelete(VFSTREESTRUCT *VTS,WORD key,HTREEITEM hTreeitem)
 			return;
 	}
 	// 成功したので後処理をする
-	TreeView_DeleteItem(VTS->hTViewWnd,hTreeitem);
+	TreeView_DeleteItem(VTS->hTViewWnd, hTreeitem);
 	return;
 }
 
 #define IsHidden(ff) (!(VTS->X_tree & XTREE_SHOWSUPERHIDEEN) && ((ff.dwFileAttributes & (FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN)) == (FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN)))
 
 const TCHAR LoadingStr[] = T(" loading... ");
-HTREEITEM SetLoadingItem(VFSTREESTRUCT *VTS,HTREEITEM hTreeitem)
+HTREEITEM SetLoadingItem(VFSTREESTRUCT *VTS, HTREEITEM hTreeitem)
 {
 	HTREEITEM hShowBusyItem;
 	TV_INSERTSTRUCT tvins;
@@ -1689,17 +1690,17 @@ HTREEITEM SetLoadingItem(VFSTREESTRUCT *VTS,HTREEITEM hTreeitem)
 	tvins.hInsertAfter = TVI_SORT;
 	TreeInsertItemValue(tvins) = tvi;
 	hShowBusyItem = (HTREEITEM)SendMessage(VTS->hTViewWnd,
-			TVM_INSERTITEM,0,(LPARAM)(LPTV_INSERTSTRUCT)&tvins);
+			TVM_INSERTITEM, 0, (LPARAM)(LPTV_INSERTSTRUCT)&tvins);
 
 	tvi.mask = TVIF_CHILDREN;
 	tvi.hItem = hTreeitem;
 	tvi.cChildren = 1;
-	TreeView_SetItem(VTS->hTViewWnd,&tvi);
-	TreeView_Expand(VTS->hTViewWnd,hTreeitem,TVE_EXPAND);
+	TreeView_SetItem(VTS->hTViewWnd, &tvi);
+	TreeView_Expand(VTS->hTViewWnd, hTreeitem, TVE_EXPAND);
 	return hShowBusyItem;
 }
 //-------------------------------------- 指定アイテムの下層を展開
-BOOL ExpandTree(VFSTREESTRUCT *VTS,HTREEITEM hTreeitem,const TCHAR *pathptr)
+BOOL ExpandTree(VFSTREESTRUCT *VTS, HTREEITEM hTreeitem, const TCHAR *pathptr)
 {
 	TCHAR path[VFPS];
 	HANDLE hFF;
@@ -1710,23 +1711,23 @@ BOOL ExpandTree(VFSTREESTRUCT *VTS,HTREEITEM hTreeitem,const TCHAR *pathptr)
 	int expanditem = 0; // 既に下層を展開済みなら 0 以外
 	HTREEITEM hShowBusyItem = NULL;
 										// 展開済みなら終了
-	if ( TreeView_GetChild(hTWnd,hTreeitem) != NULL ) return TRUE;
+	if ( TreeView_GetChild(hTWnd, hTreeitem) != NULL ) return TRUE;
 										// パス取得
 	if ( FALSE == GetTreePath(VTS, hTreeitem, path) ) return TRUE;
-	if ( (tstrchr(path,'/') != NULL) && (pathptr != NULL) ){
+	if ( (tstrchr(path, '/') != NULL) && (pathptr != NULL) ){
 		 // http:// ftp:// aux:// 等は列挙しない
 		 AddItemToTreeForce(VTS, hTreeitem, pathptr, TRUE);
 		 return TRUE;
 	}
-	CatPath(NULL,path,WildCard_All);
+	CatPath(NULL, path, WildCard_All);
 
 	// 手動展開＋時間が掛かりそうなパスなら、処理中表示を行う
 	if ( (pathptr == NULL) &&
 		 ((path[0] == '\\') || (path[0] == '#')) ){
-		hShowBusyItem = SetLoadingItem(VTS,hTreeitem);
+		hShowBusyItem = SetLoadingItem(VTS, hTreeitem);
 	}
 										// 列挙
-	hFF = VFSFindFirst(path,&ff);
+	hFF = VFSFindFirst(path, &ff);
 	if ( hFF == INVALID_HANDLE_VALUE ) goto error;	// 失敗
 	if ( pathptr == NULL ) expanditem = 1; // 下層はない
 	for ( ; ; ){
@@ -1738,23 +1739,23 @@ BOOL ExpandTree(VFSTREESTRUCT *VTS,HTREEITEM hTreeitem,const TCHAR *pathptr)
 			 (ff.dwFileAttributes & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTEX_FOLDER)) ){
 			if ( expanditem ){
 				if ( !(VTS->X_tree & XTREE_SIMPLEICON) ){
-					AddItemToTreePath(VTS,ff.cFileName,hTreeitem,NULL);
+					AddItemToTreePath(VTS, ff.cFileName, hTreeitem, NULL);
 				}else{
-					AddItemToTree(VTS,ff.cFileName,hTreeitem);
+					AddItemToTree(VTS, ff.cFileName, hTreeitem);
 				}
 			}else{
 				expanditem |=
-					AddItemToTreePath(VTS,ff.cFileName,hTreeitem,pathptr);
+					AddItemToTreePath(VTS, ff.cFileName, hTreeitem, pathptr);
 			}
 			items++;
 		}
 
-		if ( IsTrue(VFSFindNext(hFF,&ff)) ) continue;
+		if ( IsTrue(VFSFindNext(hFF, &ff)) ) continue;
 		errorcode = GetLastError();
 		chance = 10;
 		while ( errorcode == ERROR_MORE_DATA ){
 			Sleep(100);
-			if ( IsTrue(VFSFindNext(hFF,&ff)) ){
+			if ( IsTrue(VFSFindNext(hFF, &ff)) ){
 				errorcode = NO_ERROR;
 				break;
 			}
@@ -1768,26 +1769,26 @@ BOOL ExpandTree(VFSTREESTRUCT *VTS,HTREEITEM hTreeitem,const TCHAR *pathptr)
 
 	if ( (expanditem == 0) && (VTS->TreeType == TREETYPE_DIRECTORY) ){
 										// 該当エントリがなかったので追加する
-		AddItemToTreeForce(VTS,hTreeitem,pathptr,TRUE);
+		AddItemToTreeForce(VTS, hTreeitem, pathptr, TRUE);
 		items++;
 	}
 										// 「[+]」表示の再設定
 	tvi.mask = TVIF_CHILDREN;
 	tvi.hItem = hTreeitem;
 	tvi.cChildren = items;
-	TreeView_SetItem(hTWnd,&tvi);
+	TreeView_SetItem(hTWnd, &tvi);
 
 	if ( pathptr == NULL ){
 		if ( hShowBusyItem != NULL ){ // 処理中表示を削除
-			TreeView_DeleteItem(VTS->hTViewWnd,hShowBusyItem);
+			TreeView_DeleteItem(VTS->hTViewWnd, hShowBusyItem);
 		}
-		TreeView_Expand(VTS->hTViewWnd,hTreeitem,TVE_EXPAND);
+		TreeView_Expand(VTS->hTViewWnd, hTreeitem, TVE_EXPAND);
 	}
 	return TRUE;
 
 error:
 	if ( hShowBusyItem != NULL ){ // 処理中表示を削除
-		TreeView_DeleteItem(VTS->hTViewWnd,hShowBusyItem);
+		TreeView_DeleteItem(VTS->hTViewWnd, hShowBusyItem);
 	}
 	return FALSE;
 }
@@ -1799,24 +1800,24 @@ typedef struct {
 
 DWORD WINAPI ExpandTree_Thread(ExpandTree_Thread_Struct *ETTS)
 {
-	THREADSTRUCT threadstruct = {T("ExpandTree"),XTHREAD_EXITENABLE | XTHREAD_TERMENABLE,NULL,0,0};
+	THREADSTRUCT threadstruct = {T("ExpandTree"), XTHREAD_EXITENABLE | XTHREAD_TERMENABLE, NULL, 0, 0};
 
 	PPxRegisterThread(&threadstruct);
-	CoInitializeEx(NULL,COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
-	WaitTreeViewThread(ETTS->VTS,TRUE);
+	WaitTreeViewThread(ETTS->VTS, TRUE);
 
 	ETTS->VTS->ThreadCount++;
-	ExpandTree(ETTS->VTS,ETTS->hTreeitem,NULL);
+	ExpandTree(ETTS->VTS, ETTS->hTreeitem, NULL);
 	ETTS->VTS->ExpandCount--;
 	if ( --ETTS->VTS->ThreadCount == 0 ) FreeVTS(ETTS->VTS);
-	HeapFree(DLLheap,0,ETTS);
+	HeapFree(DLLheap, 0, ETTS);
 	CoUninitialize();
 	PPxUnRegisterThread();
 	return 0;
 }
 
-void Start_ExpandTree(VFSTREESTRUCT *VTS,HTREEITEM hTreeitem)
+void Start_ExpandTree(VFSTREESTRUCT *VTS, HTREEITEM hTreeitem)
 {
 	ExpandTree_Thread_Struct *ETTS;
 
@@ -1824,7 +1825,7 @@ void Start_ExpandTree(VFSTREESTRUCT *VTS,HTREEITEM hTreeitem)
 
 	if ( VTS->ThreadCount > MaxTreeThreads ) return; // スレッドが多すぎるので中止する
 
-	if ( (ETTS = HeapAlloc(DLLheap,0,sizeof(ExpandTree_Thread_Struct))) == NULL ){
+	if ( (ETTS = HeapAlloc(DLLheap, 0, sizeof(ExpandTree_Thread_Struct))) == NULL ){
 		return;
 	}
 	VTS->ExpandCount++;
@@ -1840,30 +1841,30 @@ void Start_ExpandTree(VFSTREESTRUCT *VTS,HTREEITEM hTreeitem)
 	){
 		HANDLE hThread;
 
-		hThread = CreateThread(NULL,0,
-			(LPTHREAD_START_ROUTINE)ExpandTree_Thread,ETTS,0,(DWORD *)&VTS->ActiveThreadID);
+		hThread = CreateThread(NULL, 0,
+			(LPTHREAD_START_ROUTINE)ExpandTree_Thread, ETTS, 0, (DWORD *)&VTS->ActiveThreadID);
 		if ( hThread != NULL ){
-			SetThreadPriority(hThread,THREAD_PRIORITY_LOWEST);
+			SetThreadPriority(hThread, THREAD_PRIORITY_LOWEST);
 			CloseHandle(hThread);
 			return;
 		}
 	}
 	#endif
-	ExpandTree(VTS,hTreeitem,NULL);
+	ExpandTree(VTS, hTreeitem, NULL);
 	VTS->ExpandCount--;
-	HeapFree(DLLheap,0,ETTS);
+	HeapFree(DLLheap, 0, ETTS);
 }
 
 //-------------------------------------- 窓の幅を調節する
-void ResizeTreeWindow(VFSTREESTRUCT *VTS,int sizeX,int sizeY)
+void ResizeTreeWindow(VFSTREESTRUCT *VTS, int sizeX, int sizeY)
 {
 	RECT box;
 	HWND hWnd;
 
 	if ( VTS->flags & VFSTREE_PPC ){
 		if ( sizeY != 0 ){
-			PostMessage(VTS->hNotifyWnd,WM_PPXCOMMAND,(sizeY < 0) ?
-					K_raw | K_s | K_a | K_up : K_raw | K_s | K_a | K_dw,0);
+			PostMessage(VTS->hNotifyWnd, WM_PPXCOMMAND, (sizeY < 0) ?
+					K_raw | K_s | K_a | K_up : K_raw | K_s | K_a | K_dw, 0);
 			return;
 		}
 		hWnd = VTS->vtinfo.hWnd;
@@ -1873,17 +1874,17 @@ void ResizeTreeWindow(VFSTREESTRUCT *VTS,int sizeX,int sizeY)
 		hWnd = GetParentCaptionWindow(VTS->vtinfo.hWnd);
 	}
 
-	GetWindowRect(hWnd,&box);
+	GetWindowRect(hWnd, &box);
 
 	box.right = box.right - box.left + sizeX;
 	box.bottom = box.bottom - box.top + sizeY;
 	if ( box.right < 8 ) box.right = 8;
 	if ( box.bottom < 8 ) box.bottom = 8;
-	SetWindowPos(hWnd,NULL,0,0,box.right,box.bottom,SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOMOVE);
+	SetWindowPos(hWnd, NULL, 0, 0, box.right, box.bottom, SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOMOVE);
 	return;
 }
 //-------------------------------------- 選択アイテムのパスを得る
-BOOL GetSelectedTreePath(VFSTREESTRUCT *VTS,TCHAR *path)
+BOOL GetSelectedTreePath(VFSTREESTRUCT *VTS, TCHAR *path)
 {
 	HTREEITEM hTreeitem;
 
@@ -1892,43 +1893,43 @@ BOOL GetSelectedTreePath(VFSTREESTRUCT *VTS,TCHAR *path)
 	return GetTreePath(VTS, hTreeitem, path);
 }
 
-void TreeContextMenu(VFSTREESTRUCT *VTS,const TCHAR *cmd,WORD key)
+void TreeContextMenu(VFSTREESTRUCT *VTS, const TCHAR *cmd, WORD key)
 {
 	TCHAR path[VFPS];
 	POINT pos;
 
-	if ( GetSelectedTreePath(VTS,path) == FALSE ){
-		TreeTypeMenu(VTS,INVALID_HANDLE_VALUE,key);
+	if ( GetSelectedTreePath(VTS, path) == FALSE ){
+		TreeTypeMenu(VTS, INVALID_HANDLE_VALUE, key);
 	}
-	GetPopMenuPos(VTS->hTViewWnd,&pos,key);
-	VFSSHContextMenu(VTS->vtinfo.hWnd, &pos, path,T("."), cmd);
+	GetPopMenuPos(VTS->hTViewWnd, &pos, key);
+	VFSSHContextMenu(VTS->vtinfo.hWnd, &pos, path, T("."), cmd);
 }
 
-void TreeSendKey(VFSTREESTRUCT *VTS,WORD key)
+void TreeSendKey(VFSTREESTRUCT *VTS, WORD key)
 {
-	CallWindowProc(VTS->OldTreeWndProc,VTS->hTViewWnd,WM_KEYDOWN,key & 0xff,0);
-	CallWindowProc(VTS->OldTreeWndProc,VTS->hTViewWnd,WM_KEYUP,key & 0xff,0);
+	CallWindowProc(VTS->OldTreeWndProc, VTS->hTViewWnd, WM_KEYDOWN, key & 0xff, 0);
+	CallWindowProc(VTS->OldTreeWndProc, VTS->hTViewWnd, WM_KEYUP, key & 0xff, 0);
 }
 
 void RemoveSendKey(void)
 {
 	MSG msg;
 
-	PeekMessage(&msg,NULL,WM_CHAR,WM_CHAR,PM_REMOVE);
+	PeekMessage(&msg, NULL, WM_CHAR, WM_CHAR, PM_REMOVE);
 }
 
 //-------------------------------------- キー操作処理メイン
-ERRORCODE TreeKeyCommand(VFSTREESTRUCT *VTS,WORD key)
+ERRORCODE TreeKeyCommand(VFSTREESTRUCT *VTS, WORD key)
 {
 	TCHAR path[VFPS];
 	TCHAR buf[CMDLINESIZE];
 
 	if ( !(key & K_raw) ){
-		PutKeyCode(buf,key);
+		PutKeyCode(buf, key);
 
 		if ( NO_ERROR == GetCustTable( (VTS->flags & VFSTREE_PPC) ?
-				T("KC_tree") : T("K_tree"),buf,buf,sizeof(buf)) ){
-			WORD *keyp,keypre;
+				T("KC_tree") : T("K_tree"), buf, buf, sizeof(buf)) ){
+			WORD *keyp, keypre;
 
 			if ( (UTCHAR)buf[0] == EXTCMD_CMD ){
 				PP_ExtractMacro(VTS->vtinfo.hWnd, &VTS->vtinfo, NULL, buf + 1, NULL, 0);
@@ -1940,17 +1941,17 @@ ERRORCODE TreeKeyCommand(VFSTREESTRUCT *VTS,WORD key)
 			if ( key == 0 ) return 0;
 			key |= keypre;
 			while( *(++keyp) != 0 ){
-				if ( TreeKeyCommand(VTS,key) ){
-					if ( VTS->OldTreeWndProc != NULL ) TreeSendKey(VTS,key);
+				if ( TreeKeyCommand(VTS, key) ){
+					if ( VTS->OldTreeWndProc != NULL ) TreeSendKey(VTS, key);
 				}
 				key = *keyp | keypre;
 			}
 			if ( VTS->OldTreeWndProc != NULL ){
-				if ( TreeKeyCommand(VTS,key) ) TreeSendKey(VTS,key);
+				if ( TreeKeyCommand(VTS, key) ) TreeSendKey(VTS, key);
 				return 0;
 			}
 			if ( !(key & K_raw) ){
-				TreeKeyCommand(VTS,key);
+				TreeKeyCommand(VTS, key);
 				return 0;
 			}
 		}
@@ -1958,12 +1959,12 @@ ERRORCODE TreeKeyCommand(VFSTREESTRUCT *VTS,WORD key)
 
 	switch ( key & ~(K_v | K_raw | K_mouse) ){ // エイリアスビットを無効にする
 		case VK_F5:
-			Start_InitTreeViewItems(VTS,NULL);
+			Start_InitTreeViewItems(VTS, NULL);
 			break;
 
 		case K_s | VK_DELETE:
 		case VK_DELETE:
-			TreeItemDelete(VTS,key,TreeView_GetSelection(VTS->hTViewWnd));
+			TreeItemDelete(VTS, key, TreeView_GetSelection(VTS->hTViewWnd));
 			break;
 
 		case VK_F2: {
@@ -1977,9 +1978,9 @@ ERRORCODE TreeKeyCommand(VFSTREESTRUCT *VTS,WORD key)
 				tvi.hItem = hTreeitem;
 				tvi.pszText = buf;
 				tvi.cchTextMax = TSIZEOF(buf);
-				TreeView_GetItem(VTS->hTViewWnd,&tvi);
-				if ( StartTreeRename(VTS,hTreeitem,buf) == 0 ){
-					SendMessage(VTS->hTViewWnd,TVM_EDITLABEL,0,(LPARAM)hTreeitem);
+				TreeView_GetItem(VTS->hTViewWnd, &tvi);
+				if ( StartTreeRename(VTS, hTreeitem, buf) == 0 ){
+					SendMessage(VTS->hTViewWnd, TVM_EDITLABEL, 0, (LPARAM)hTreeitem);
 				}
 			}
 			break;
@@ -1987,7 +1988,7 @@ ERRORCODE TreeKeyCommand(VFSTREESTRUCT *VTS,WORD key)
 
 		case VK_ESCAPE:
 			if ( VTS->hNotifyWnd != NULL ){
-				SendMessage(VTS->hNotifyWnd,WM_PPXCOMMAND,KTN_escape,0);
+				SendMessage(VTS->hNotifyWnd, WM_PPXCOMMAND, KTN_escape, 0);
 			}
 			if ( VTS->flags & VFSTREE_MENU ){
 				PostMessage(VTS->vtinfo.hWnd, WM_CLOSE, 0, 0);
@@ -1996,46 +1997,46 @@ ERRORCODE TreeKeyCommand(VFSTREESTRUCT *VTS,WORD key)
 
 		case VK_TAB:
 			if ( VTS->hNotifyWnd != NULL ){
-				SendMessage(VTS->hNotifyWnd,WM_PPXCOMMAND,KTN_focus,0);
-				PeekMessage((MSG *)path,VTS->hTViewWnd,WM_CHAR,WM_CHAR,PM_REMOVE); // [tab] の WM_CHAR を除去
+				SendMessage(VTS->hNotifyWnd, WM_PPXCOMMAND, KTN_focus, 0);
+				PeekMessage((MSG *)path, VTS->hTViewWnd, WM_CHAR, WM_CHAR, PM_REMOVE); // [tab] の WM_CHAR を除去
 			}
 			break;
 
 		case K_a | K_s | VK_LEFT:
 		case K_c | K_s | VK_LEFT:
-			ResizeTreeWindow(VTS,-8,0);
+			ResizeTreeWindow(VTS, -8, 0);
 			break;
 
 		case K_a | K_s | VK_RIGHT:
 		case K_c | K_s | VK_RIGHT:
-			ResizeTreeWindow(VTS,+8,0);
+			ResizeTreeWindow(VTS, +8, 0);
 			break;
 
 		case K_a | K_s | VK_UP:
 		case K_c | K_s | VK_UP:
-			ResizeTreeWindow(VTS,0,-8);
+			ResizeTreeWindow(VTS, 0, -8);
 			break;
 
 		case K_a | K_s | VK_DOWN:
 		case K_c | K_s | VK_DOWN:
-			ResizeTreeWindow(VTS,0,+8);
+			ResizeTreeWindow(VTS, 0, +8);
 			break;
 
 		case K_c | 'T':
 			RemoveSendKey();
-			TreeTypeMenu(VTS,INVALID_HANDLE_VALUE,key);
+			TreeTypeMenu(VTS, INVALID_HANDLE_VALUE, key);
 			break;
 
 		case K_c | 'C':
-			TreeContextMenu(VTS,T("copy"),key);
+			TreeContextMenu(VTS, T("copy"), key);
 			break;
 
 		case K_c | 'X':
-			TreeContextMenu(VTS,T("cut"),key);
+			TreeContextMenu(VTS, T("cut"), key);
 			break;
 
 		case K_c | 'V':
-			TreeContextMenu(VTS,T("paste"),key);
+			TreeContextMenu(VTS, T("paste"), key);
 			break;
 
 		case K_a | VK_UP:
@@ -2048,23 +2049,23 @@ ERRORCODE TreeKeyCommand(VFSTREESTRUCT *VTS,WORD key)
 		case K_s | VK_F10:
 		case VK_APPS:
 		case K_c | VK_RETURN:
-			TreeContextMenu(VTS,NULL,key);
+			TreeContextMenu(VTS, NULL, key);
 			break;
 
 		case K_a | VK_RETURN:
-			TreeContextMenu(VTS,T("properties"),key);
+			TreeContextMenu(VTS, T("properties"), key);
 			break;
 
 		case VK_RETURN:
 			if ( VTS->hNotifyWnd != NULL ){
-				if ( GetSelectedTreePath(VTS,path) == FALSE ) break;
+				if ( GetSelectedTreePath(VTS, path) == FALSE ) break;
 				SendMessage(VTS->hNotifyWnd,
-						WM_PPXCOMMAND,KTN_selected,(LPARAM)path);
-				PeekMessage((MSG *)path,VTS->hTViewWnd,WM_CHAR,WM_CHAR,PM_REMOVE); // [enter] の WM_CHAR を除去
+						WM_PPXCOMMAND, KTN_selected, (LPARAM)path);
+				PeekMessage((MSG *)path, VTS->hTViewWnd, WM_CHAR, WM_CHAR, PM_REMOVE); // [enter] の WM_CHAR を除去
 			}
 			if ( VTS->resultStrPtr != NULL ){
-				if ( GetSelectedTreePath(VTS,path) == FALSE ) break;
-				tstrcpy(VTS->resultStrPtr,path);
+				if ( GetSelectedTreePath(VTS, path) == FALSE ) break;
+				tstrcpy(VTS->resultStrPtr, path);
 			}
 			if ( VTS->resultCodePtr != NULL ){
 				*VTS->resultCodePtr = NO_ERROR;
@@ -2091,30 +2092,30 @@ void TreeRightContext(VFSTREESTRUCT *VTS)
 	POINT pos;
 	HWND hTWnd = VTS->hTViewWnd;
 
-	GetPopMenuPos(hTWnd,&hit.pt,K_mouse);
-	ScreenToClient(hTWnd,&hit.pt);
-	hTreeitem = TreeView_HitTest(hTWnd,&hit);
+	GetPopMenuPos(hTWnd, &hit.pt, K_mouse);
+	ScreenToClient(hTWnd, &hit.pt);
+	hTreeitem = TreeView_HitTest(hTWnd, &hit);
 	if ( (hTreeitem != NULL) &&
 		 (FALSE != GetTreePath(VTS, hTreeitem, path)) &&
 		 (hit.flags & (TVHT_ONITEM | TVHT_ONITEMRIGHT)) &&
-		 !((VTS->TreeType == TREETYPE_FAVORITE) && (TreeView_GetParent(VTS->hTViewWnd,hTreeitem) == NULL)) ){
-		GetPopMenuPos(hTWnd,&pos,K_mouse);
-		VFSSHContextMenu(hTWnd,&pos,path,T("."),NULL);
+		 !((VTS->TreeType == TREETYPE_FAVORITE) && (TreeView_GetParent(VTS->hTViewWnd, hTreeitem) == NULL)) ){
+		GetPopMenuPos(hTWnd, &pos, K_mouse);
+		VFSSHContextMenu(hTWnd, &pos, path, T("."), NULL);
 	}else{
-		TreeTypeMenu(VTS,hTreeitem,K_mouse);
+		TreeTypeMenu(VTS, hTreeitem, K_mouse);
 	}
 }
 
-void TreeDragDrop(VFSTREESTRUCT *VTS,HTREEITEM hTitem)
+void TreeDragDrop(VFSTREESTRUCT *VTS, HTREEITEM hTitem)
 {
 	TCHAR path[VFPS];
 
 	if ( VTS->flags & VFSTREE_DISABLEDRAG ) return;
 	if ( FALSE == GetTreePath(VTS, hTitem, path) ) return;
-	DragDropPath(VTS->hTViewWnd,path);
+	DragDropPath(VTS->hTViewWnd, path);
 }
 
-void AddTreeDriveRoot(VFSTREESTRUCT *VTS,int driveno,const TCHAR *selectpath)
+void AddTreeDriveRoot(VFSTREESTRUCT *VTS, int driveno, const TCHAR *selectpath)
 {
 	TCHAR name[VFPS];
 
@@ -2123,19 +2124,19 @@ void AddTreeDriveRoot(VFSTREESTRUCT *VTS,int driveno,const TCHAR *selectpath)
 	if ( X_dlf_ddt ){
 		name[2] = '>';
 		name[3] = ' ';
-		GetDriveNameTitle(name + 4,name[0]);
+		GetDriveNameTitle(name + 4, name[0]);
 	}else{
 		name[2] = '\0';
 	}
-	AddItemToTreePath(VTS,name,TVI_ROOT,selectpath);
+	AddItemToTreePath(VTS, name, TVI_ROOT, selectpath);
 }
 
 // ドライブが増えた／減ったときの処理
-void WmTreeDEVICECHANGE(VFSTREESTRUCT *VTS,WPARAM type,LPARAM lParam)
+void WmTreeDEVICECHANGE(VFSTREESTRUCT *VTS, WPARAM type, LPARAM lParam)
 {
 	if ( ((type == DBT_DEVICEARRIVAL) || (type == DBT_DEVICEREMOVECOMPLETE)) &&
 		(((PDEV_BROADCAST_HDR)lParam)->dbch_devicetype == DBT_DEVTYP_VOLUME) ){
-		int driveno,driveflags;
+		int driveno, driveflags;
 
 		driveflags = ((PDEV_BROADCAST_VOLUME)lParam)->dbcv_unitmask;
 		for ( driveno = 0 ; driveno < 26 ; driveno++ ){
@@ -2143,7 +2144,7 @@ void WmTreeDEVICECHANGE(VFSTREESTRUCT *VTS,WPARAM type,LPARAM lParam)
 				HTREEITEM hTreeitem;
 
 				// ドライブ登録済みかを確認
-				hTreeitem = TreeView_GetNextItem(VTS->hTViewWnd,NULL,TVGN_ROOT);
+				hTreeitem = TreeView_GetNextItem(VTS->hTViewWnd, NULL, TVGN_ROOT);
 				while ( hTreeitem != NULL ){
 					TV_ITEM tvi;
 					TCHAR tvibuf[MAX_PATH];
@@ -2152,15 +2153,15 @@ void WmTreeDEVICECHANGE(VFSTREESTRUCT *VTS,WPARAM type,LPARAM lParam)
 					tvi.hItem = hTreeitem;
 					tvi.pszText = tvibuf;
 					tvi.cchTextMax = TSIZEOF(tvibuf);
-					TreeView_GetItem(VTS->hTViewWnd,&tvi);
+					TreeView_GetItem(VTS->hTViewWnd, &tvi);
 					if ( (tvibuf[1] == ':') && (tvibuf[0] == (TCHAR)('A' + driveno)) ){
-						TreeView_DeleteItem(VTS->hTViewWnd,hTreeitem);
+						TreeView_DeleteItem(VTS->hTViewWnd, hTreeitem);
 						break;
 					}
-					hTreeitem = TreeView_GetNextItem(VTS->hTViewWnd,hTreeitem,TVGN_NEXT);
+					hTreeitem = TreeView_GetNextItem(VTS->hTViewWnd, hTreeitem, TVGN_NEXT);
 				}
 				if ( type == DBT_DEVICEARRIVAL ){
-					AddTreeDriveRoot(VTS,driveno,NULL); // 追加
+					AddTreeDriveRoot(VTS, driveno, NULL); // 追加
 				}
 			}
 			driveflags >>= 1;
@@ -2168,7 +2169,7 @@ void WmTreeDEVICECHANGE(VFSTREESTRUCT *VTS,WPARAM type,LPARAM lParam)
 	}
 }
 
-void PPtReceiveChangeNotify(HWND hWnd,HANDLE hChange,DWORD dwProcId)
+void PPtReceiveChangeNotify(HWND hWnd, HANDLE hChange, DWORD dwProcId)
 {
 	LONG EventType;
 	HANDLE hNotifyLock;
@@ -2176,26 +2177,26 @@ void PPtReceiveChangeNotify(HWND hWnd,HANDLE hChange,DWORD dwProcId)
 	LPMALLOC pMA;
 
 	hNotifyLock =
-			DSHChangeNotification_Lock(hChange,dwProcId,&pidl_list,&EventType);
+			DSHChangeNotification_Lock(hChange, dwProcId, &pidl_list, &EventType);
 	if ( hNotifyLock == NULL ) return;
 
 	if ( (EventType != 0) && SUCCEEDED(SHGetMalloc(&pMA)) ){
-		LPITEMIDLIST pidl = DupIdl(pMA,pidl_list[0]);
+		LPITEMIDLIST pidl = DupIdl(pMA, pidl_list[0]);
 
 		if ( EventType & SHCNE_UPDATEDIR ){
-			PostMessage(hWnd,VTM_I_CHANGEPATH_MAIN,(WPARAM)SHCNE_RMDIR,(LPARAM)DupIdl(pMA,pidl_list[0]));
+			PostMessage(hWnd, VTM_I_CHANGEPATH_MAIN, (WPARAM)SHCNE_RMDIR, (LPARAM)DupIdl(pMA, pidl_list[0]));
 			EventType = SHCNE_MKDIR;
 		}else if ( EventType == SHCNE_RENAMEFOLDER ){
-			PostMessage(hWnd,VTM_I_CHANGEPATH_MAIN,(WPARAM)SHCNE_MKDIR,(LPARAM)DupIdl(pMA,pidl_list[1]));
+			PostMessage(hWnd, VTM_I_CHANGEPATH_MAIN, (WPARAM)SHCNE_MKDIR, (LPARAM)DupIdl(pMA, pidl_list[1]));
 			EventType = SHCNE_RMDIR;
 		}
-		PostMessage(hWnd,VTM_I_CHANGEPATH_MAIN,(WPARAM)EventType,(LPARAM)pidl);
+		PostMessage(hWnd, VTM_I_CHANGEPATH_MAIN, (WPARAM)EventType, (LPARAM)pidl);
 		pMA->lpVtbl->Release(pMA);
 	}
 	DSHChangeNotification_Unlock(hNotifyLock);
 }
 
-void PPtChangeNotify(VFSTREESTRUCT *VTS,DWORD EventType,LPITEMIDLIST pidl)
+void PPtChangeNotify(VFSTREESTRUCT *VTS, DWORD EventType, LPITEMIDLIST pidl)
 {
 	LPMALLOC pMA;
 	LPSHELLFOLDER piDesktop;
@@ -2204,51 +2205,51 @@ void PPtChangeNotify(VFSTREESTRUCT *VTS,DWORD EventType,LPITEMIDLIST pidl)
 
 	if ( FAILED(SHGetMalloc(&pMA)) ) return;
 
-	WaitTreeViewThread(VTS,FALSE);
+	WaitTreeViewThread(VTS, FALSE);
 
 	hTreeRoot = TreeView_GetRoot(VTS->hTViewWnd);
 	if ( hTreeRoot != NULL ){
 			// 一般パスの調整
-		if ( SHGetPathFromIDList(pidl,path) != FALSE ){
-			SetPathItems(VTS,hTreeRoot,path,EventType);
+		if ( SHGetPathFromIDList(pidl, path) != FALSE ){
+			SetPathItems(VTS, hTreeRoot, path, EventType);
 		}else{
 			// エクスプローラパスを調整
 			SHGetDesktopFolder(&piDesktop);
-			GetIDLSub(path,piDesktop,pidl);
+			GetIDLSub(path, piDesktop, pidl);
 			piDesktop->lpVtbl->Release(piDesktop);
-			SetPathItems(VTS,hTreeRoot,path,EventType);
+			SetPathItems(VTS, hTreeRoot, path, EventType);
 		}
 	}
-	pMA->lpVtbl->Free(pMA,pidl);
+	pMA->lpVtbl->Free(pMA, pidl);
 	pMA->lpVtbl->Release(pMA);
 }
 
 void FixTreeHeight(VFSTREESTRUCT *VTS)
 {
-	RECT ParentBox,TreeBox,ItemBox;
+	RECT ParentBox, TreeBox, ItemBox;
 
 	GetWindowRect(VTS->vtinfo.hWnd, &ParentBox);
-	GetClientRect(VTS->hTViewWnd,&TreeBox);
+	GetClientRect(VTS->hTViewWnd, &TreeBox);
 
 	*(HTREEITEM *)&ItemBox = TreeView_GetRoot(VTS->hTViewWnd);
 	if ( *(HTREEITEM *)&ItemBox == NULL ) return;
-	SendMessage(VTS->hTViewWnd,TVM_SELECTITEM,(WPARAM)TVGN_CARET,(LPARAM)*(HTREEITEM *)&ItemBox);
-	SendMessage(VTS->hTViewWnd,TVM_GETITEMRECT,(WPARAM)FALSE,(LPARAM)&ItemBox);
+	SendMessage(VTS->hTViewWnd, TVM_SELECTITEM, (WPARAM)TVGN_CARET, (LPARAM)*(HTREEITEM *)&ItemBox);
+	SendMessage(VTS->hTViewWnd, TVM_GETITEMRECT, (WPARAM)FALSE, (LPARAM)&ItemBox);
 
-	SetWindowPos(VTS->vtinfo.hWnd, NULL, 0,0,
+	SetWindowPos(VTS->vtinfo.hWnd, NULL, 0, 0,
 			ParentBox.right - ParentBox.left,
 			(ParentBox.bottom - ParentBox.top) - // 全体の高さ
 			 (TreeBox.bottom - TreeBox.top) + // 元の高さを除去
 				(ItemBox.bottom - ItemBox.top) * // １行の高さ
-				 (int)(LRESULT)SendMessage(VTS->hTViewWnd,TVM_GETCOUNT,0,0), // 全アイテム数
+				 (int)(LRESULT)SendMessage(VTS->hTViewWnd, TVM_GETCOUNT, 0, 0), // 全アイテム数
 			SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOMOVE);
 }
 
-void PPtToolbarCommand(VFSTREESTRUCT *VTS,int id,int orcode)
+void PPtToolbarCommand(VFSTREESTRUCT *VTS, int id, int orcode)
 {
 	TCHAR *param;
 
-	param = GetToolBarCmd(VTS->hBarWnd,&VTS->cmdwork,id);
+	param = GetToolBarCmd(VTS->hBarWnd, &VTS->cmdwork, id);
 	if ( param == NULL ) return;
 	if ( orcode ){
 		if ( orcode < 0x100 ){ // 右クリック
@@ -2256,17 +2257,17 @@ void PPtToolbarCommand(VFSTREESTRUCT *VTS,int id,int orcode)
 			WORD key;
 
 			key = *(WORD *)(param + 1) | (WORD)orcode;
-			TreeKeyCommand(VTS,key | (WORD)K_mouse);
+			TreeKeyCommand(VTS, key | (WORD)K_mouse);
 		}
 	}else{
 		if ( (UTCHAR)*param == EXTCMD_CMD ){
-			PP_ExtractMacro(VTS->vtinfo.hWnd, &VTS->vtinfo, NULL, param + 1, NULL,0);
+			PP_ExtractMacro(VTS->vtinfo.hWnd, &VTS->vtinfo, NULL, param + 1, NULL, 0);
 		}else{
 			const WORD *key;
 
 			if ( (UTCHAR)*param == EXTCMD_KEY ) param++;
 			key = (WORD *)param;
-			while( *key ) TreeKeyCommand(VTS,*key++ | (WORD)K_mouse);
+			while( *key ) TreeKeyCommand(VTS, *key++ | (WORD)K_mouse);
 		}
 	}
 }
@@ -2276,19 +2277,19 @@ void WmTreePaint(HWND hWnd)
 	PAINTSTRUCT ps;
 	RECT box;
 
-	GetClientRect(hWnd,&box);
+	GetClientRect(hWnd, &box);
 	box.left = box.right - splitbarwide;
-	BeginPaint(hWnd,&ps);
+	BeginPaint(hWnd, &ps);
 	if ( ps.rcPaint.right > box.left ) ps.rcPaint.right = box.left;
 	if ( (ps.rcPaint.right - ps.rcPaint.left) > 0 ){
 		HBRUSH hBrsh;
 
 		hBrsh = CreateSolidBrush(GetSysColor(COLOR_3DFACE));
-		FillBox(ps.hdc,&ps.rcPaint,hBrsh);
+		FillBox(ps.hdc, &ps.rcPaint, hBrsh);
 		DeleteObject(hBrsh);
 	}
-	DrawEdge(ps.hdc,&box,EDGE_RAISED,BF_RIGHT | BF_MIDDLE); // BF_LEFT はなし
-	EndPaint(hWnd,&ps);
+	DrawEdge(ps.hdc, &box, EDGE_RAISED, BF_RIGHT | BF_MIDDLE); // BF_LEFT はなし
+	EndPaint(hWnd, &ps);
 }
 
 //--------------------------------------
@@ -2333,7 +2334,7 @@ LRESULT CALLBACK TreeProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 			FixTreeSize(VTS);
 			goto defchk;
-//			return DefWindowProc(hWnd,message,wParam,lParam);
+//			return DefWindowProc(hWnd, message, wParam, lParam);
 
 		case VTM_SETFLAG:
 			VTS->flags = (DWORD)lParam;
@@ -2449,7 +2450,7 @@ LRESULT CALLBACK TreeProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 				case TVN_KEYDOWN:
 					if ( VTS->OldTreeWndProc == NULL ){
-						TreeKeyCommand(VTS,(WORD)K_v | (WORD)GetShiftKey() |
+						TreeKeyCommand(VTS, (WORD)K_v | (WORD)GetShiftKey() |
 								((TV_KEYDOWN *)lParam)->wVKey );
 					}
 					break;
@@ -2550,28 +2551,28 @@ defchk:
 	return 0;
 }
 
-int AddFavoriteItem(VFSTREESTRUCT *VTS,HTREEITEM hParentTree,const TCHAR *custname)
+int AddFavoriteItem(VFSTREESTRUCT *VTS, HTREEITEM hParentTree, const TCHAR *custname)
 {
 	const TCHAR *p;
 	int count = 0;
-	TCHAR keyword[CMDLINESIZE],param[CMDLINESIZE];
+	TCHAR keyword[CMDLINESIZE], param[CMDLINESIZE];
 
-	if ( VTS->itemdata.top == 0 ) ThAddString(&VTS->itemdata,custname);
-	while( EnumCustTable(count,custname,keyword,param,sizeof(param)) >= 0 ){
+	if ( VTS->itemdata.top == 0 ) ThAddString(&VTS->itemdata, custname);
+	while( EnumCustTable(count, custname, keyword, param, sizeof(param)) >= 0 ){
 		count++;
-		if ( !tstrcmp(keyword,T("||")) ){		// 改桁 ======================
+		if ( !tstrcmp(keyword, T("||")) ){		// 改桁 ======================
 			continue;
-		}else if ( !tstrcmp(keyword,T("--")) ){	// セパレータ ================
+		}else if ( !tstrcmp(keyword, T("--")) ){	// セパレータ ================
 			continue;
 		}
 		p = param;							// 階層メニュー ==============
 		SkipSpace(&p);
-		if ( *p == '\0' ) tstrcpy(param,keyword);
+		if ( *p == '\0' ) tstrcpy(param, keyword);
 		if ( (*p == '%') && (*(p+1) == 'M') && (*(p+2) != 'E') ){
 			HTREEITEM hChildTree;
 
-			hChildTree = AppendItemToTreeV(VTS,keyword,hParentTree,0,p);
-			AddFavoriteItem(VTS,hChildTree,p + 1);
+			hChildTree = AppendItemToTreeV(VTS, keyword, hParentTree, 0, p);
+			AddFavoriteItem(VTS, hChildTree, p + 1);
 			continue;
 		}
 
@@ -2579,7 +2580,7 @@ int AddFavoriteItem(VFSTREESTRUCT *VTS,HTREEITEM hParentTree,const TCHAR *custna
 			if ( keyword[1] == '\0' ){	// キーワードが１文字の処理
 				keyword[1] = ':';
 				keyword[2] = ' ';
-				tstrcpy(&keyword[3],param);
+				tstrcpy(&keyword[3], param);
 			}else{
 				TCHAR *wp;
 
@@ -2588,64 +2589,64 @@ int AddFavoriteItem(VFSTREESTRUCT *VTS,HTREEITEM hParentTree,const TCHAR *custna
 					wp++;
 					if ( *wp == 't' ){
 						*(wp - 1) = ' ';
-						memmove(wp,wp + 1,TSTRLENGTH(wp));
+						memmove(wp, wp + 1, TSTRLENGTH(wp));
 						break;
 					}
 					if ( (*wp == '\\') && (*(wp+1) == 't') ){
-						memmove(wp,wp + 1,TSTRLENGTH(wp));
+						memmove(wp, wp + 1, TSTRLENGTH(wp));
 						break;
 					}
 				}
 			}
 		}
 		if ( keyword[0] ){
-			PP_ExtractMacro(NULL,NULL,NULL,keyword,keyword,XEO_DISPONLY);
+			PP_ExtractMacro(NULL, NULL, NULL, keyword, keyword, XEO_DISPONLY);
 		}else{
-			tstrcpy(keyword,T("???"));
+			tstrcpy(keyword, T("???"));
 		}
 
-		PP_ExtractMacro(NULL,NULL,NULL,param,param,XEO_DISPONLY);
+		PP_ExtractMacro(NULL, NULL, NULL, param, param, XEO_DISPONLY);
 
-		AppendItemToTreeV(VTS,keyword,hParentTree,0,param);
+		AppendItemToTreeV(VTS, keyword, hParentTree, 0, param);
 	}
 
 	if ( count == 0 ){
 		if ( hParentTree == TVI_ROOT ){
-			wsprintf(param,T("%s is not found"),custname);
-			AppendItemToTreeV(VTS,param,hParentTree,0,NilStr);
+			wsprintf(param, T("%s is not found"), custname);
+			AppendItemToTreeV(VTS, param, hParentTree, 0, NilStr);
 		}else{
 			TV_ITEM tvi;
 										// 「[+]」表示の再設定
 			tvi.mask = TVIF_CHILDREN;
 			tvi.hItem = hParentTree;
 			tvi.cChildren = 0;
-			TreeView_SetItem(VTS->hTViewWnd,&tvi);
+			TreeView_SetItem(VTS->hTViewWnd, &tvi);
 		}
 	}
 	return count;
 }
 
-void InitVFSListTree(VFSTREESTRUCT *VTS,const TCHAR *filename)
+void InitVFSListTree(VFSTREESTRUCT *VTS, const TCHAR *filename)
 {
 	TCHAR path[VFPS];
 	HANDLE hFF;
 	WIN32_FIND_DATA ff;
 	DWORD attr;
 
-	if ( VTS->itemdata.top == 0 ) ThAddString(&VTS->itemdata,filename);
+	if ( VTS->itemdata.top == 0 ) ThAddString(&VTS->itemdata, filename);
 	attr = GetFileAttributes(filename);
 	attr = ((attr == BADATTR) || !(attr & FILE_ATTRIBUTE_DIRECTORY)) ?
 			FILE_ATTRIBUTE_DIRECTORY : 0; // dir以外のときは全属性が対象
-	CatPath(path,(TCHAR *)filename,WildCard_All);
+	CatPath(path, (TCHAR *)filename, WildCard_All);
 										// 列挙
-	hFF = VFSFindFirst(path,&ff);
+	hFF = VFSFindFirst(path, &ff);
 	if ( hFF == INVALID_HANDLE_VALUE ){
-		wsprintf(path,T("%s read error"),filename);
-		AddItemToTree(VTS,path,TVI_ROOT);
+		wsprintf(path, T("%s read error"), filename);
+		AddItemToTree(VTS, path, TVI_ROOT);
 	}else{
 		HTREEITEM hTreeItem;
 
-		hTreeItem = AddItemToTree(VTS,filename,TVI_ROOT);
+		hTreeItem = AddItemToTree(VTS, filename, TVI_ROOT);
 		for ( ; ; ){
 			ERRORCODE errorcode;
 			int chance;
@@ -2654,17 +2655,17 @@ void InitVFSListTree(VFSTREESTRUCT *VTS,const TCHAR *filename)
 			if ( !IsRelativeDirectory(ff.cFileName) && !IsHidden(ff) &&
 				 ((ff.dwFileAttributes | attr ) & FILE_ATTRIBUTE_DIRECTORY) ){
 				if ( !(VTS->X_tree & XTREE_SIMPLEICON) ){
-					AddItemToTreePath(VTS,ff.cFileName,hTreeItem,NULL);
+					AddItemToTreePath(VTS, ff.cFileName, hTreeItem, NULL);
 				}else{
-					AddItemToTree(VTS,ff.cFileName,hTreeItem);
+					AddItemToTree(VTS, ff.cFileName, hTreeItem);
 				}
 			}
-			if ( IsTrue(VFSFindNext(hFF,&ff)) ) continue;
+			if ( IsTrue(VFSFindNext(hFF, &ff)) ) continue;
 			errorcode = GetLastError();
 			chance = 10;
 			while ( errorcode == ERROR_MORE_DATA ){
 				Sleep(100);
-				if ( IsTrue(VFSFindNext(hFF,&ff)) ){
+				if ( IsTrue(VFSFindNext(hFF, &ff)) ){
 					errorcode = NO_ERROR;
 					break;
 				}
@@ -2675,7 +2676,7 @@ void InitVFSListTree(VFSTREESTRUCT *VTS,const TCHAR *filename)
 			if ( errorcode != NO_ERROR ) break;
 		}
 		VFSFindClose(hFF);
-		TreeView_Expand(VTS->hTViewWnd,hTreeItem,TVE_EXPAND);
+		TreeView_Expand(VTS->hTViewWnd, hTreeItem, TVE_EXPAND);
 	}
 }
 
@@ -2694,11 +2695,11 @@ void AddTreeItemFromList(VFSTREESTRUCT *VTS, const TCHAR *list)
 	}else{
 		tvi.hItem = hParentItem;
 		tvi.mask = TVIF_PARAM;
-		TreeView_GetItem(hTWnd,&tvi);
+		TreeView_GetItem(hTWnd, &tvi);
 		if ( (DWORD_PTR)tvi.lParam >= (DWORD_PTR)VTS->itemdata.size ){
 			custname = NilStr;
 		}else{
-			custname = ThPointerT(&VTS->itemdata,tvi.lParam);
+			custname = ThPointerT(&VTS->itemdata, tvi.lParam);
 		}
 		if ( custname[0] != '%' ){
 			custname = GetTreeItemCustname(VTS, hParentItem, &hParentItem);
@@ -2731,7 +2732,7 @@ void AddTreeItemFromList(VFSTREESTRUCT *VTS, const TCHAR *list)
 			if ( tstrcmp(name, custname) == 0 ) return;
 			count++;
 		}
-		SetCustTable(T("Mt_type"), custname + 2, custname, TSTRSIZE(custname));
+		SetCustStringTable(T("Mt_type"), custname + 2, custname, 0);
 		if ( VTS->hBarWnd != NULL ){
 			struct {
 				DWORD index;
@@ -2739,8 +2740,8 @@ void AddTreeItemFromList(VFSTREESTRUCT *VTS, const TCHAR *list)
 			} bar;
 			bar.index = 11;
 			bar.cmd[0] = EXTCMD_CMD;
-			wsprintf(bar.cmd + 1,T("*tree %s"),custname);
-			InsertCustTable(T("B_tree"), custname + 2,0x7fffffff,&bar,sizeof(DWORD) + TSTRSIZE(bar.cmd) );
+			wsprintf(bar.cmd + 1, T("*tree %s"), custname);
+			InsertCustTable(T("B_tree"), custname + 2, 0x7fffffff, &bar, sizeof(DWORD) + TSTRSIZE(bar.cmd) );
 			DestroyWindow(VTS->hBarWnd);
 			VTS->hBarWnd = NULL;
 
@@ -2749,19 +2750,19 @@ void AddTreeItemFromList(VFSTREESTRUCT *VTS, const TCHAR *list)
 	}
 }
 
-void InitDirectroyTree(VFSTREESTRUCT *VTS,const TCHAR *selectpath)
+void InitDirectroyTree(VFSTREESTRUCT *VTS, const TCHAR *selectpath)
 {
-	TCHAR buf[VFPS],rpath[VFPS];
+	TCHAR buf[VFPS], rpath[VFPS];
 	int driveno;
 	TV_ITEM tvi;
 	TV_INSERTSTRUCT tvins;
 	TCHAR name[VFPS];
 	DWORD drive;
 										// #: ---------------------------------
-	wsprintf(buf,T("#:> %s"),MessageText(MES_FEXP));
-	AddItemToTreePath(VTS,buf,TVI_ROOT,selectpath);
+	wsprintf(buf, T("#:> %s"), MessageText(MES_FEXP));
+	AddItemToTreePath(VTS, buf, TVI_ROOT, selectpath);
 										// : ----------------------------------
-	tvi.cchTextMax = wsprintf(buf,T(":> %s"),MessageText(MES_FMYF));
+	tvi.cchTextMax = wsprintf(buf, T(":> %s"), MessageText(MES_FMYF));
 	tvi.pszText = buf;
 	tvi.lParam = MAXLPARAM;
 	if ( VTS->X_tree & XTREE_SHOWICON ){
@@ -2774,22 +2775,22 @@ void InitDirectroyTree(VFSTREESTRUCT *VTS,const TCHAR *selectpath)
 	tvins.hParent = TVI_ROOT;
 	tvins.hInsertAfter = TVI_FIRST;
 	TreeInsertItemValue(tvins) = tvi;
-	SendMessage(VTS->hTViewWnd,TVM_INSERTITEM,0,(LPARAM)(LPTV_INSERTSTRUCT)&tvins);
+	SendMessage(VTS->hTViewWnd, TVM_INSERTITEM, 0, (LPARAM)(LPTV_INSERTSTRUCT)&tvins);
 										// \\ ---------------------------------
-	wsprintf(buf,T("\\\\> %s"),MessageText(MES_FNET));
-	AddItemToTreePath(VTS,buf,TVI_ROOT,selectpath);
+	wsprintf(buf, T("\\\\> %s"), MessageText(MES_FNET));
+	AddItemToTreePath(VTS, buf, TVI_ROOT, selectpath);
 										// x: ---------------------------------
 	name[1] = ':';
-	X_dlf_ddt = GetCustDword(StrX_dlf,0) & XDLF_DISPDRIVETITLE;
+	X_dlf_ddt = GetCustDword(StrX_dlf, 0) & XDLF_DISPDRIVETITLE;
 	drive = GetLogicalDrives();
 	for ( driveno = 0 ; driveno < 26 ; driveno++ ){
 		if ( !(drive & LSBIT) ){ // ドライブ無し…未接続ネットワークがないか確認
 			rpath[0] = '\0';
-			wsprintf(buf,T("Network\\%c"),(TCHAR)(driveno + 'A'));
-			GetRegString(HKEY_CURRENT_USER,buf,RPATHSTR,rpath,TSIZEOF(rpath));
-			if ( rpath[0] ) setflag(drive,LSBIT);
+			wsprintf(buf, T("Network\\%c"), (TCHAR)(driveno + 'A'));
+			GetRegString(HKEY_CURRENT_USER, buf, RPATHSTR, rpath, TSIZEOF(rpath));
+			if ( rpath[0] ) setflag(drive, LSBIT);
 		}
-		if ( drive & LSBIT ) AddTreeDriveRoot(VTS,driveno,selectpath);
+		if ( drive & LSBIT ) AddTreeDriveRoot(VTS, driveno, selectpath);
 		drive >>= 1;
 	}
 }
@@ -2805,7 +2806,7 @@ void InitPPcListTree(VFSTREESTRUCT *VTS)
 		TCHAR *ppclist = (TCHAR *)SendMessage(hProcessComboWnd, WM_PPXCOMMAND, KCW_ppclist, 0);
 		if ( ppclist != NULL ){
 			TCHAR *listIDptr, *listPathPtr;
-			HTREEITEM hParentItem = AppendItemToTreeV(VTS,NilStr,TVI_ROOT,0,NULL);
+			HTREEITEM hParentItem = AppendItemToTreeV(VTS, NilStr, TVI_ROOT, 0, NULL);
 			listIDptr = ppclist;
 			for ( ; *listIDptr != '\0'; ){
 				listPathPtr = listIDptr + tstrlen(listIDptr) + 1;
@@ -2814,7 +2815,7 @@ void InitPPcListTree(VFSTREESTRUCT *VTS)
 					hParentItem = AppendItemToTreeV(VTS, NilStr, TVI_ROOT, 0, NULL);
 				}else{
 					if ( listIDptr[3] == '\0' ){ // ?Cx\0  CZxx でないとき
-						setflag(useppclist,1 << (listIDptr[2] - 'A'));
+						setflag(useppclist, 1 << (listIDptr[2] - 'A'));
 					}
 					if ( VTS->TreeType == TREETYPE_PPCLIST ){
 						AppendItemToTreeV(VTS, listPathPtr, hParentItem, 0, listPathPtr);
@@ -2825,8 +2826,8 @@ void InitPPcListTree(VFSTREESTRUCT *VTS)
 				}
 				listIDptr = listPathPtr + tstrlen(listPathPtr) + 1;
 			}
-			HeapFree(DLLheap,0,ppclist);
-			TreeView_Expand(VTS->hTViewWnd,hParentItem,TVE_EXPAND);
+			HeapFree(DLLheap, 0, ppclist);
+			TreeView_Expand(VTS->hTViewWnd, hParentItem, TVE_EXPAND);
 		}
 	}
 
@@ -2836,10 +2837,10 @@ void InitPPcListTree(VFSTREESTRUCT *VTS)
 		for ( i = 0 ; i < X_Mtask ; i++ ){
 			if ( CheckPPcID(i) && (Sm->P[i].ID[2] == no) ){
 				if ( VTS->TreeType == TREETYPE_PPCLIST ){
-					tstrcpy(disp,Sm->P[i].path);
+					tstrcpy(disp, Sm->P[i].path);
 					AppendItemToTreeV(VTS, disp, TVI_ROOT, 0, NULL);
 				}else{
-					wsprintf(disp,T("[%c] %s"), no, Sm->P[i].path);
+					wsprintf(disp, T("[%c] %s"), no, Sm->P[i].path);
 					AppendItemToTreeV(VTS, disp, TVI_ROOT, 0, Sm->P[i].ID + 2);
 				}
 				break;
@@ -2855,20 +2856,20 @@ HICON LoadDefaultDirTreeIcon(void)
 	TCHAR X_dicn[VFPS];
 	int retry = 10;
 
-	GetCustData(T("X_dicn"),X_dicn,sizeof(X_dicn));
+	GetCustData(T("X_dicn"), X_dicn, sizeof(X_dicn));
 
 	if ( X_dicn[0] != '\0' ){
 		VFSFixPath(NULL, X_dicn, DLLpath, VFSFIX_FULLPATH | VFSFIX_REALPATH);
 		// C6001OK. SHGFI_ATTR_SPECIFIED がなければ[in]ではない
-		if ( SHGetFileInfo(X_dicn,0,&shfinfo,sizeof(shfinfo),TreeIconSHflag) ){
+		if ( SHGetFileInfo(X_dicn, 0, &shfinfo, sizeof(shfinfo), TreeIconSHflag) ){
 			return shfinfo.hIcon;
 		}
 	}
-	PP_ExtractMacro(NULL,NULL,NULL,T("%'WinDir'"),X_dicn,0);
+	PP_ExtractMacro(NULL, NULL, NULL, T("%'WinDir'"), X_dicn, 0);
 	while ( retry-- ){
 		// C6001OK. SHGFI_ATTR_SPECIFIED がなければ[in]ではない
-		if ( SHGetFileInfo(X_dicn,FILE_ATTRIBUTE_DIRECTORY,&shfinfo,
-				sizeof(shfinfo),TreeIconSHflag | SHGFI_USEFILEATTRIBUTES) ){
+		if ( SHGetFileInfo(X_dicn, FILE_ATTRIBUTE_DIRECTORY, &shfinfo,
+				sizeof(shfinfo), TreeIconSHflag | SHGFI_USEFILEATTRIBUTES) ){
 			if ( shfinfo.hIcon != NULL ) break;
 		}
 		Sleep(10); // Errorcode 15106(リソース列挙の中断) 対策
@@ -2877,7 +2878,7 @@ HICON LoadDefaultDirTreeIcon(void)
 }
 
 //-------------------------------------- ツリーアイテムを登録し直す
-BOOL InitTreeViewItems(VFSTREESTRUCT *VTS,const TCHAR *param)
+BOOL InitTreeViewItems(VFSTREESTRUCT *VTS, const TCHAR *param)
 {
 	HWND hTWnd = VTS->hTViewWnd;
 
@@ -2886,9 +2887,9 @@ BOOL InitTreeViewItems(VFSTREESTRUCT *VTS,const TCHAR *param)
 		if ( *param == '%' ){
 			param++;
 			VTS->TreeType = TREETYPE_FAVORITE;
-		}else if ( tstrcmp(param,TreePPcListName) == 0 ){
+		}else if ( tstrcmp(param, TreePPcListName) == 0 ){
 			VTS->TreeType = TREETYPE_PPCLIST;
-		}else if ( tstrcmp(param,TreeFocusPPcName) == 0 ){
+		}else if ( tstrcmp(param, TreeFocusPPcName) == 0 ){
 			VTS->TreeType = TREETYPE_FOCUSPPC;
 		}else if ( *param == '*' ){
 			param++;
@@ -2896,8 +2897,8 @@ BOOL InitTreeViewItems(VFSTREESTRUCT *VTS,const TCHAR *param)
 		}
 	}
 
-	SendMessage(hTWnd,WM_SETREDRAW,FALSE,0);
-	SendMessage(hTWnd,TVM_SELECTITEM,TVGN_CARET,(LPARAM)NULL); // 選択解除
+	SendMessage(hTWnd, WM_SETREDRAW, FALSE, 0);
+	SendMessage(hTWnd, TVM_SELECTITEM, TVGN_CARET, (LPARAM)NULL); // 選択解除
 	TreeView_DeleteAllItems(hTWnd); // 選択していると TVN_SELCHANGED が連続発行されるので注意！
 
 	if ( VTS->X_tree & XTREE_SHOWICON ){
@@ -2905,41 +2906,41 @@ BOOL InitTreeViewItems(VFSTREESTRUCT *VTS,const TCHAR *param)
 			HICON hIcon;
 			COLORREF bkcolor;
 
-			VTS->hImage = DImageList_Create(TreeIconSize,TreeIconSize,24/* | ILC_MASK*/,32,0);
+			VTS->hImage = DImageList_Create(TreeIconSize, TreeIconSize, 24/* | ILC_MASK*/, 32, 0);
 			bkcolor = (OSver.dwMajorVersion >= 5) ? TreeView_GetBkColor(hTWnd) : C_AUTO;
 			if ( bkcolor == C_AUTO ) bkcolor = GetSysColor(COLOR_WINDOW);
-			DImageList_SetBkColor(VTS->hImage,bkcolor);
+			DImageList_SetBkColor(VTS->hImage, bkcolor);
 			hIcon = LoadDefaultDirTreeIcon();
-			DImageList_AddIcon(VTS->hImage,hIcon);
+			DImageList_AddIcon(VTS->hImage, hIcon);
 			DestroyIcon(hIcon);
 
-			SendMessage(VTS->hTViewWnd,TVM_SETIMAGELIST,(WPARAM)TVSIL_NORMAL,(LPARAM)VTS->hImage);
+			SendMessage(VTS->hTViewWnd, TVM_SETIMAGELIST, (WPARAM)TVSIL_NORMAL, (LPARAM)VTS->hImage);
 		}
 	}else{
 		if ( VTS->hImage != NULL ){
-			SendMessage(VTS->hTViewWnd,TVM_SETIMAGELIST,(WPARAM)TVSIL_NORMAL,(LPARAM)NULL);
+			SendMessage(VTS->hTViewWnd, TVM_SETIMAGELIST, (WPARAM)TVSIL_NORMAL, (LPARAM)NULL);
 			DImageList_Destroy(VTS->hImage);
 			VTS->hImage = NULL;
 		}
 	}
 
-	SendMessage(hTWnd,WM_SETREDRAW,TRUE,0);
+	SendMessage(hTWnd, WM_SETREDRAW, TRUE, 0);
 	ThFree(&VTS->itemdata);
 
 	switch ( VTS->TreeType ){
 		case TREETYPE_FAVORITE:
-			AddFavoriteItem(VTS,TVI_ROOT,param);
+			AddFavoriteItem(VTS, TVI_ROOT, param);
 			break;
 		case TREETYPE_FOCUSPPC:
 		case TREETYPE_PPCLIST:
 			InitPPcListTree(VTS);
 			break;
 		case TREETYPE_VFS:
-			InitVFSListTree(VTS,param);
+			InitVFSListTree(VTS, param);
 			break;
 //		case TREETYPE_DIRECTORY:
 		default:
-			InitDirectroyTree(VTS,param);
+			InitDirectroyTree(VTS, param);
 			break;
 	}
 	FixTreeCaret(hTWnd);
@@ -2991,17 +2992,17 @@ BOOL SetPathItems(VFSTREESTRUCT *VTS, HTREEITEM hFirstItem, const TCHAR *path, D
 			}
 			if ( *p == '\0' ){ // *** 最終エントリまで見つけた ***
 				if ( EventType == 0 ){ // パス移動なら、フォーカス設定
-					SeletTreeItem(VTS,hCurrentItem);
+					SeletTreeItem(VTS, hCurrentItem);
 				}else if ( EventType & (SHCNE_RMDIR | SHCNE_DRIVEREMOVED) ){ // パス削除なら、削除
 					if ( (EventType == SHCNE_RMDIR) && (path[1] == ':') && (path[3] == '\0') ){ // ドライブ追加なのに SHCNE_RMDIR で送信 Win10 2016/04
 						return TRUE;
 					}
-					SendMessage(hTWnd,TVM_DELETEITEM,0,(LPARAM)hCurrentItem);
+					SendMessage(hTWnd, TVM_DELETEITEM, 0, (LPARAM)hCurrentItem);
 				}
 				return TRUE;
 			}
 
-			hItem = TreeView_GetChild(hTWnd,hCurrentItem);
+			hItem = TreeView_GetChild(hTWnd, hCurrentItem);
 			if ( hItem == NULL ){ // *** 次の子エントリがあるが、子ツリーが無い
 				// パス移動なら子ツリーを生成＆フォーカス設定
 				if ( EventType == 0 ){
@@ -3009,16 +3010,16 @@ BOOL SetPathItems(VFSTREESTRUCT *VTS, HTREEITEM hFirstItem, const TCHAR *path, D
 
 					if ( VTS->ExpandCount == 0 ){
 						VTS->ExpandCount++;
-						result = ExpandTree(VTS,hCurrentItem,p);
+						result = ExpandTree(VTS, hCurrentItem, p);
 						VTS->ExpandCount--;
 						return result;
 					}
 				}
 				return TRUE;
 			}
-			return SetPathItems(VTS,hItem,p,EventType); // 下位を検索
+			return SetPathItems(VTS, hItem, p, EventType); // 下位を検索
 		}
-		hCurrentItem = TreeView_GetNextSibling(hTWnd,hCurrentItem);
+		hCurrentItem = TreeView_GetNextSibling(hTWnd, hCurrentItem);
 	}
 	// *** 存在しないエントリ ***
 	// パス移動ならエントリ作成後フォーカス設定
@@ -3027,13 +3028,13 @@ BOOL SetPathItems(VFSTREESTRUCT *VTS, HTREEITEM hFirstItem, const TCHAR *path, D
 		 ((EventType & (SHCNE_MKDIR | SHCNE_DRIVEADD)) && IsTrue(FindPathSeparator_NoTml(path)))
 	){
 		tvi.mask = TVIF_CHILDREN;
-		tvi.hItem = TreeView_GetParent(hTWnd,hFirstItem);
-		TreeView_GetItem(hTWnd,&tvi);
+		tvi.hItem = TreeView_GetParent(hTWnd, hFirstItem);
+		TreeView_GetItem(hTWnd, &tvi);
 		if ( (tvi.cChildren == 0) && (tvi.hItem != TVI_ROOT) ){
 			tvi.cChildren = 1;
-			TreeView_SetItem(hTWnd,&tvi);
+			TreeView_SetItem(hTWnd, &tvi);
 		}
-		AddItemToTreeForce(VTS,tvi.hItem,path,(EventType == 0));
+		AddItemToTreeForce(VTS, tvi.hItem, path, (EventType == 0));
 	}
 	return TRUE;
 }
@@ -3050,7 +3051,7 @@ VFSDLL void PPXAPI InitVFSTree(void)
 	TreeClass.cbWndExtra	= 0;
 	TreeClass.hInstance		= NULL;
 	TreeClass.hIcon			= NULL;
-	TreeClass.hCursor		= LoadCursor(NULL,IDC_ARROW);
+	TreeClass.hCursor		= LoadCursor(NULL, IDC_ARROW);
 	TreeClass.hbrBackground	= NULL;
 	TreeClass.lpszMenuName	= NULL;
 	TreeClass.lpszClassName	= TreeClassStr;

@@ -15,7 +15,7 @@ extern "C" {
 #define VFS_FORCELOAD_PLUGIN B30 // 読み込み抑止しているPluginも読み込む
 
 typedef struct {
-	DWORD l,h;
+	DWORD l, h;
 } DDWORD;
 
 #define MAKEFLAG_EnumObjectsForFolder ((WinType >= WINTYPE_VISTA) ? ENUMOBJECTSFORFOLDERFLAG_VISTA : ENUMOBJECTSFORFOLDERFLAG_XP)
@@ -43,37 +43,37 @@ typedef WORD INTERNET_PORT;
 #define FTP_TRANSFER_TYPE_BINARY    0x00000002
 #endif
 
-TypedefWinAPI(HINTERNET,InternetOpen,(LPCTSTR lpszAgent,DWORD dwAccessType,LPCTSTR lpszProxy,LPCTSTR lpszProxyBypass,DWORD dwFlags));
-TypedefWinAPI(BOOL,InternetCloseHandle,(HINTERNET hInternet));
-TypedefWinAPI(HINTERNET,InternetConnect,(HINTERNET hInternet,LPCTSTR lpszServerName,INTERNET_PORT nServerPort,LPCTSTR lpszUserName,LPCTSTR lpszPassword,DWORD dwService,DWORD dwFlags,DWORD *dwContext));
-TypedefWinAPI(BOOL,FtpSetCurrentDirectory,(HINTERNET hConnect,LPCTSTR lpszDirectory));
-TypedefWinAPI(BOOL,FtpGetCurrentDirectory,(HINTERNET hConnect,LPTSTR lpszCurrentDirectory,LPDWORD lpdwCurrentDirectory));
-TypedefWinAPI(HINTERNET,FtpFindFirstFile,(HINTERNET hConnect,LPCTSTR lpszSearchFile,WIN32_FIND_DATA *lpFindFileData,DWORD dwFlags,DWORD *dwContext));
-TypedefWinAPI(BOOL,InternetFindNextFile,(HINTERNET hFind,LPVOID lpvFindData));
+TypedefWinAPI(HINTERNET, InternetOpen, (LPCTSTR lpszAgent, DWORD dwAccessType, LPCTSTR lpszProxy, LPCTSTR lpszProxyBypass, DWORD dwFlags));
+TypedefWinAPI(BOOL, InternetCloseHandle, (HINTERNET hInternet));
+TypedefWinAPI(HINTERNET, InternetConnect, (HINTERNET hInternet, LPCTSTR lpszServerName, INTERNET_PORT nServerPort, LPCTSTR lpszUserName, LPCTSTR lpszPassword, DWORD dwService, DWORD dwFlags, DWORD *dwContext));
+TypedefWinAPI(BOOL, FtpSetCurrentDirectory, (HINTERNET hConnect, LPCTSTR lpszDirectory));
+TypedefWinAPI(BOOL, FtpGetCurrentDirectory, (HINTERNET hConnect, LPTSTR lpszCurrentDirectory, LPDWORD lpdwCurrentDirectory));
+TypedefWinAPI(HINTERNET, FtpFindFirstFile, (HINTERNET hConnect, LPCTSTR lpszSearchFile, WIN32_FIND_DATA *lpFindFileData, DWORD dwFlags, DWORD *dwContext));
+TypedefWinAPI(BOOL, InternetFindNextFile, (HINTERNET hFind, LPVOID lpvFindData));
 
-TypedefWinAPI(BOOL,FtpGetFile,(HINTERNET hConnect,LPCTSTR lpszRemoteFile,LPCTSTR lpszNewFile,BOOL fFailIfExists,DWORD dwFlagsAndAttributes,DWORD dwFlags,DWORD dwContext));
+TypedefWinAPI(BOOL, FtpGetFile, (HINTERNET hConnect, LPCTSTR lpszRemoteFile, LPCTSTR lpszNewFile, BOOL fFailIfExists, DWORD dwFlagsAndAttributes, DWORD dwFlags, DWORD dwContext));
 
-TypedefWinAPI(BOOL,FtpPutFile,(HINTERNET hConnect,LPCTSTR lpszLocalFile,LPCTSTR lpszNewRemoteFile,DWORD dwFlags,DWORD dwContext));
+TypedefWinAPI(BOOL, FtpPutFile, (HINTERNET hConnect, LPCTSTR lpszLocalFile, LPCTSTR lpszNewRemoteFile, DWORD dwFlags, DWORD dwContext));
 
-TypedefWinAPI(BOOL,FtpRenameFile,(HINTERNET hConnect,LPCTSTR lpszExisting,LPCTSTR lpszNew));
+TypedefWinAPI(BOOL, FtpRenameFile, (HINTERNET hConnect, LPCTSTR lpszExisting, LPCTSTR lpszNew));
 
-TypedefWinAPI(BOOL,FtpDeleteFile,(HINTERNET hConnect,LPCTSTR lpszFileName));
+TypedefWinAPI(BOOL, FtpDeleteFile, (HINTERNET hConnect, LPCTSTR lpszFileName));
 
-TypedefWinAPI(BOOL,FtpCreateDirectory,(HINTERNET hConnect,LPCTSTR lpszDirectory));
+TypedefWinAPI(BOOL, FtpCreateDirectory, (HINTERNET hConnect, LPCTSTR lpszDirectory));
 
-TypedefWinAPI(BOOL,FtpRemoveDirectory,(HINTERNET hConnect,LPCTSTR lpszDirectory));
+TypedefWinAPI(BOOL, FtpRemoveDirectory, (HINTERNET hConnect, LPCTSTR lpszDirectory));
 
 #define FTPINET 0
 #define FTPHOST 1
-extern DWORD OpenFtp(TCHAR *url,HANDLE *hFtp);
-extern ERRORCODE MoveFtpFile(const TCHAR *ExistingFileName,const TCHAR *NewFileName);
+extern DWORD OpenFtp(TCHAR *url, HANDLE *hFtp);
+extern ERRORCODE MoveFtpFile(const TCHAR *ExistingFileName, const TCHAR *NewFileName);
 extern ERRORCODE CreateFtpDirectory(const TCHAR *path);
-extern ERRORCODE DeleteFtpEntry(const TCHAR *path,DWORD attributes);
+extern ERRORCODE DeleteFtpEntry(const TCHAR *path, DWORD attributes);
 extern ERRORCODE GetInetError(void);
 
 // CD-ROM/FAT 関連 ------------------------------------------------------------
 // FAT ********************************
-#pragma pack(push,1)
+#pragma pack(push, 1)
 					// FATエントリ情報
 typedef struct {
 	char	name[8];
@@ -121,7 +121,7 @@ typedef struct {
 
 					// CD-ROM
 typedef struct {
-	BYTE	type;		// 1:PVD,2:SVD
+	BYTE	type;		// 1:PVD, 2:SVD
 	char	ID[5];		// "CD001"
 	BYTE	version;	// ボリューム記述子版数(1)
 	BYTE	volumeflag;
@@ -202,19 +202,19 @@ typedef struct {	// 16bytes
 } UDFLONGAD;
 
 typedef struct {	// 16bytes
-	WORD id,ver;
-	BYTE checksum,reserved;
-	WORD SN,crc,len;
+	WORD id, ver;
+	BYTE checksum, reserved;
+	WORD SN, crc, len;
 	DWORD loc; // 現在位置
 } UDFTAG;
 
 typedef struct {	// 12bytes
-	WORD tz,year;
-	BYTE month,day, hour,minute,second, ssecond,msecond,csecond;
+	WORD tz, year;
+	BYTE month, day, hour, minute, second, ssecond, msecond, csecond;
 } UDFTIME;
 
 typedef struct {	// 64bytes
-	BYTE type,text[63];
+	BYTE type, text[63];
 } UDFCHARINFO;
 
 typedef struct {
@@ -251,11 +251,11 @@ typedef struct {
 
 typedef struct {
 	UDFTAG tag;
-	UDFEXTENTAD VDS,subVDS;
+	UDFEXTENTAD VDS, subVDS;
 } UDF_AVDP;
 
 //VDS***
-// VDS 内に配置される内容...PVD=1,IUVD=4,PD=5,LVD=6,USD=7,TD=8
+// VDS 内に配置される内容...PVD=1, IUVD=4, PD=5, LVD=6, USD=7, TD=8
 #define UDF_PD_ID 5
 typedef struct {
 	UDFTAG tag;
@@ -383,8 +383,8 @@ typedef struct {
 							// header	header が見つかった場所
 							// result	結果を書きこむ位置
 							// 戻り値が 0:成功 !0:失敗
-	ERRORCODE (*mChk)(const TCHAR *fname,const char *image,DWORD size,
-						const char *header,VFSFILETYPE *result);
+	ERRORCODE (*mChk)(const TCHAR *fname, const char *image, DWORD size,
+						const char *header, VFSFILETYPE *result);
 
 					// 結果用
 	const TCHAR *type;		// 種類名タグ
@@ -405,14 +405,14 @@ typedef struct {	// ディスクイメージ共用部
 } DCOMMONS;
 
 typedef struct {	// NTFS用
-	CLUSTERRINFO mft,readmft;
+	CLUSTERRINFO mft, readmft;
 	CLUSTERRINFO entry;
 	void *mftd;
 } NTFSS;
 
 typedef union {
 	NTFSS n;
-	DWORD e_useFAT; // exFAT,FAT参照の必要があるなら 1
+	DWORD e_useFAT; // exFAT, FAT参照の必要があるなら 1
 } FCOMMONS;
 //------------------------------------- FAT
 typedef struct {
@@ -421,12 +421,12 @@ typedef struct {
 	HANDLE	hFile;		// ディスクイメージのファイルハンドル
 	DWORD	Offset;		// ディスクイメージの実体の開始位置
 
-	DWORD	NowFAT;		// FATのアクセス場所(FAT32,exFATで使用)
-	BYTE	*FAT;		// FAT12/16:FATイメージ  FAT32,exFAT:キャッシュ中のFAT
+	DWORD	NowFAT;		// FATのアクセス場所(FAT32, exFATで使用)
+	BYTE	*FAT;		// FAT12/16:FATイメージ  FAT32, exFAT:キャッシュ中のFAT
 	BYTE	*Buffer;	// バッファ(１クラスタ分)
 
 	DWORD	BpS;		// セクタあたりのバイト数
-	DWORD	roots;		// ルートディレクトリのバイト数(FAT12,16)
+	DWORD	roots;		// ルートディレクトリのバイト数(FAT12, 16)
 	int		fattype;	// FAT の種類
 
 	DWORD	FATOffset;	// FATのファイルの位置
@@ -496,14 +496,14 @@ typedef struct {
 //==================================================================== Win32API
 #ifdef _SHLOBJ_H_
 typedef HRESULT (STDAPICALLTYPE * D_OLELOADPICTURE)(LPSTREAM lpstream,
-				LONG lSize,BOOL fRunmode,REFIID riid, LPVOID FAR* lplpvObj);
+				LONG lSize, BOOL fRunmode, REFIID riid, LPVOID FAR* lplpvObj);
 #endif
-typedef ERRORCODE (APIENTRY *DWNETOPENENUM)(DWORD fdwScope,DWORD fdwType,DWORD fdwUsage,LPNETRESOURCE lpNetResource,LPHANDLE lphEnum);
-typedef ERRORCODE (APIENTRY *DWNETENUMRESOURCE)(HANDLE hEnum,LPDWORD lpcEntries,LPVOID lpvBuffer,LPDWORD lpcbBuffer);
+typedef ERRORCODE (APIENTRY *DWNETOPENENUM)(DWORD fdwScope, DWORD fdwType, DWORD fdwUsage, LPNETRESOURCE lpNetResource, LPHANDLE lphEnum);
+typedef ERRORCODE (APIENTRY *DWNETENUMRESOURCE)(HANDLE hEnum, LPDWORD lpcEntries, LPVOID lpvBuffer, LPDWORD lpcbBuffer);
 typedef ERRORCODE (APIENTRY *DWNETCLOSEENUM)(HANDLE hEnum);
-typedef ERRORCODE (APIENTRY *DWNETADDCONNECTION3)(HWND hwndOwner,LPNETRESOURCE lpNetResource,LPTSTR lpPassword,LPTSTR lpUserName,DWORD fdwConnectio);
-//typedef ERRORCODE (APIENTRY *DWNETCANCELCONNECTION2)(LPTSTR lpszName,DWORD fdwConnection,BOOL fForce);
-//typedef ERRORCODE (APIENTRY *DWNETGETCONNECTION)(LPTSTR lpszLocalName,LPTSTR lpszRemoteName,DWORD *lpcchBuffer);
+typedef ERRORCODE (APIENTRY *DWNETADDCONNECTION3)(HWND hwndOwner, LPNETRESOURCE lpNetResource, LPTSTR lpPassword, LPTSTR lpUserName, DWORD fdwConnectio);
+//typedef ERRORCODE (APIENTRY *DWNETCANCELCONNECTION2)(LPTSTR lpszName, DWORD fdwConnection, BOOL fForce);
+//typedef ERRORCODE (APIENTRY *DWNETGETCONNECTION)(LPTSTR lpszLocalName, LPTSTR lpszRemoteName, DWORD *lpcchBuffer);
 
 extern DWNETOPENENUM DWNetOpenEnum;
 extern DWNETENUMRESOURCE DWNetEnumResource;
@@ -520,8 +520,8 @@ extern void USEFASTCALL CleanUpVFS(void);
 #define CHECKFAT_FAT 1
 #define CHECKFAT_EXFAT 2
 #define CHECKFAT_NTFS 3
-extern int USEFASTCALL CheckFATImage(const BYTE *image,const BYTE *max);
-extern ERRORCODE GetArchivefileImageFromTempExtract(TCHAR *ExtractPath,const TCHAR *EntryName,DWORD *sizeL,DWORD *sizeH,HANDLE *hMap,BYTE **mem);
+extern int USEFASTCALL CheckFATImage(const BYTE *image, const BYTE *max);
+extern ERRORCODE GetArchivefileImageFromTempExtract(TCHAR *ExtractPath, const TCHAR *EntryName, DWORD *sizeL, DWORD *sizeH, HANDLE *hMap, BYTE **mem);
 
 //------------------------------------------------------------------ vfs_arcd.c
 extern BOOL CheckAndLoadSusiePlugin(SUSIE_DLL *su, const TCHAR *filename, THREADSTRUCT *ts, DWORD mode);
@@ -536,71 +536,71 @@ extern BOOL VFS_check_GCA(UN_DLL *uD, VUCHECKSTRUCT *vcs);
 extern BOOL VFS_check_ZIP(UN_DLL *uD, VUCHECKSTRUCT *vcs);
 extern BOOL VFS_check_7Zip(UN_DLL *uD, VUCHECKSTRUCT *vcs);
 
-extern int DoUnarc(PPXAPPINFO *ppxa,const TCHAR *DllName,HWND hWnd,const TCHAR *param);
-extern int UnArc_ExecMain(const UN_DLL *uD,HWND hWnd,const TCHAR *Cmd,PPXAPPINFO *loginfo);
-extern int RunUnARCExec(PPXAPPINFO *loginfo,const void *dt_opt,TCHAR *param,const TCHAR *tmppath);
+extern int DoUnarc(PPXAPPINFO *ppxa, const TCHAR *DllName, HWND hWnd, const TCHAR *param);
+extern int UnArc_ExecMain(const UN_DLL *uD, HWND hWnd, const TCHAR *Cmd, PPXAPPINFO *loginfo);
+extern int RunUnARCExec(PPXAPPINFO *loginfo, const void *dt_opt, TCHAR *param, const TCHAR *tmppath);
 
 extern BOOL LoadUnDLL(UN_DLL *uD);
-extern void GetPackMenu(HMENU hMenuDest,ThSTRUCT *thMenuData,DWORD *PopupID);
-extern BOOL FindPackType(const TCHAR *dllname,TCHAR *arcname,TCHAR *arccommand);
+extern void GetPackMenu(HMENU hMenuDest, ThSTRUCT *thMenuData, DWORD *PopupID);
+extern BOOL FindPackType(const TCHAR *dllname, TCHAR *arcname, TCHAR *arccommand);
 
 //------------------------------------------------------------------ vfs_fchk.c
 extern char *usertypes;
 
 //------------------------------------------------------------------ vfs_fop.c
-extern TCHAR *MakeFOPlistFromPPx(PPXAPPINFO *info/*,int flag*/);
-extern TCHAR *MakeFOPlistFromParam(const TCHAR *param,const TCHAR *path);
+extern TCHAR *MakeFOPlistFromPPx(PPXAPPINFO *info/*, int flag*/);
+extern TCHAR *MakeFOPlistFromParam(const TCHAR *param, const TCHAR *path);
 //------------------------------------------------------------------ vfs_oimg.c
-extern BOOL NotifyFileSize(HANDLE hFile,DWORD sizeL,DWORD sizeH);
+extern BOOL NotifyFileSize(HANDLE hFile, DWORD sizeL, DWORD sizeH);
 
 //------------------------------------------------------------------ vfs_ffp.c
 extern BOOL LoadNetFunctions(void);
-extern BOOL CheckComputerActive(const TCHAR *fname,size_t strsize);
+extern BOOL CheckComputerActive(const TCHAR *fname, size_t strsize);
 
 //------------------------------------------------------------------ vfs_ffsh.c
 #ifdef _SHLOBJ_H_
-extern ERRORCODE VFPtoIShellSub(HWND hWnd,const TCHAR *vpath,int mode,LPSHELLFOLDER *nSF,LPITEMIDLIST *nIDL,DWORD *dirflags,LPMALLOC *nMA);
-extern LPITEMIDLIST CatPidl(LPMALLOC piMalloc,LPCITEMIDLIST idl1,LPCITEMIDLIST idl2);
+extern ERRORCODE VFPtoIShellSub(HWND hWnd, const TCHAR *vpath, int mode, LPSHELLFOLDER *nSF, LPITEMIDLIST *nIDL, DWORD *dirflags, LPMALLOC *nMA);
+extern LPITEMIDLIST CatPidl(LPMALLOC piMalloc, LPCITEMIDLIST idl1, LPCITEMIDLIST idl2);
 #endif
 //------------------------------------------------------------------ vfs_lapi.c
-extern BOOL CreateDirectoryExL(const TCHAR *FileName,const TCHAR *FileName2,LPSECURITY_ATTRIBUTES sa);
+extern BOOL CreateDirectoryExL(const TCHAR *FileName, const TCHAR *FileName2, LPSECURITY_ATTRIBUTES sa);
 
-TypedefWinAPI(HANDLE,FindFirstFile,(const TCHAR *lpFileName,WIN32_FIND_DATA *FindFileData));
+TypedefWinAPI(HANDLE, FindFirstFile, (const TCHAR *lpFileName, WIN32_FIND_DATA *FindFileData));
 extern impFindFirstFile DFindFirstFile;
-HANDLE WINAPI LoadFindFirstFile(const TCHAR *lpFileName,WIN32_FIND_DATA *FindFileData);
+HANDLE WINAPI LoadFindFirstFile(const TCHAR *lpFileName, WIN32_FIND_DATA *FindFileData);
 //------------------------------------------------------------------ vfs_path.c
 extern BOOL IsRelativeDirectory(const TCHAR *path);
 extern BOOL IsParentDirectory(const TCHAR *path);
 extern TCHAR *FindLastEntryPoint(const TCHAR *src);
-extern DWORD GetReparsePath(const TCHAR *path,TCHAR *pathbuf);
+extern DWORD GetReparsePath(const TCHAR *path, TCHAR *pathbuf);
 #ifdef _SHLOBJ_H_
-extern void GetIDLSub(TCHAR *path,LPSHELLFOLDER pSF,LPITEMIDLIST pSHidl);
+extern void GetIDLSub(TCHAR *path, LPSHELLFOLDER pSF, LPITEMIDLIST pSHidl);
 #endif
 
 //------------------------------------------------------------------ vfs_cd.c
-extern BOOL OpenCDImage(CDS *cds,const TCHAR *fname,int offset);
-extern BOOL FindEntryCDImage(CDS *cds,const TCHAR *fname,WIN32_FIND_DATA *ff);
+extern BOOL OpenCDImage(CDS *cds, const TCHAR *fname, int offset);
+extern BOOL FindEntryCDImage(CDS *cds, const TCHAR *fname, WIN32_FIND_DATA *ff);
 extern void CloseCDImage(CDS *cds);
-extern DWORD ReadCDCluster(CDS *cds,BYTE *dest,DWORD destsize);
+extern DWORD ReadCDCluster(CDS *cds, BYTE *dest, DWORD destsize);
 extern BOOL SetCDNextCluster(CDS *cds);
 
 //------------------------------------------------------------------ vfs_fat.c
-extern BOOL OpenFATImage(FATSTRUCT *fats,const TCHAR *fname,int offset);
+extern BOOL OpenFATImage(FATSTRUCT *fats, const TCHAR *fname, int offset);
 extern void CloseFATImage(FATSTRUCT *fats);
-extern BOOL FindEntryFATImage(FATSTRUCT *fats,TCHAR *fname,WIN32_FIND_DATA *ff);
-extern DWORD ReadFATCluster(FATSTRUCT *fats,BYTE *dest,DWORD destsize);
+extern BOOL FindEntryFATImage(FATSTRUCT *fats, TCHAR *fname, WIN32_FIND_DATA *ff);
+extern DWORD ReadFATCluster(FATSTRUCT *fats, BYTE *dest, DWORD destsize);
 extern BOOL SetFATNextCluster(FATSTRUCT *fats);
 extern DWORD GetPC9801FirstDriveSector(const BYTE *header);
 
 //------------------------------------------------------------------ vfs_shn.c
 #ifdef _SHLOBJ_H_
-extern LPITEMIDLIST DupIdl(LPMALLOC pMA,LPCITEMIDLIST pIDL);
-extern void FreePIDLS(LPITEMIDLIST *pidls,int cnt);
-extern BOOL CopyToDropTarget(IDataObject *DataObject,IDropTarget *DropTarget,BOOL droptype,HWND hTargetWnd,DWORD alloweffect);
+extern LPITEMIDLIST DupIdl(LPMALLOC pMA, LPCITEMIDLIST pIDL);
+extern void FreePIDLS(LPITEMIDLIST *pidls, int cnt);
+extern BOOL CopyToDropTarget(IDataObject *DataObject, IDropTarget *DropTarget, BOOL droptype, HWND hTargetWnd, DWORD alloweffect);
 #endif
 
-extern ERRORCODE AuxOperation(PPXAPPINFO *ParentInfo,const TCHAR *id,TCHAR *AuxPath,const TCHAR *src,const TCHAR *dst,TCHAR *resulttext);
-extern ERRORCODE FileOperationAux(const TCHAR *id,const TCHAR *AuxPath,const TCHAR *src,const TCHAR *dst);
+extern ERRORCODE AuxOperation(PPXAPPINFO *ParentInfo, const TCHAR *id, TCHAR *AuxPath, const TCHAR *src, const TCHAR *dst, TCHAR *resulttext);
+extern ERRORCODE FileOperationAux(const TCHAR *id, const TCHAR *AuxPath, const TCHAR *src, const TCHAR *dst);
 
 //---------------------------------------------------------------- vfs_shnp.cpp
 #ifdef _SHLOBJ_H_
@@ -611,7 +611,7 @@ typedef struct {
 	HRESULT ComInitResult;
 } ZIPFOLDERSTRUCT;
 
-extern ERRORCODE GetZipFolderImage(HWND hWnd,const TCHAR *ArchiveName,const TCHAR *EntryName,DWORD *sizeL,DWORD *sizeH,HANDLE *hMap,BYTE **mem,int type);
+extern ERRORCODE GetZipFolderImage(HWND hWnd, const TCHAR *ArchiveName, const TCHAR *EntryName, DWORD *sizeL, DWORD *sizeH, HANDLE *hMap, BYTE **mem, int type);
 
 #endif
 
@@ -625,9 +625,9 @@ typedef enum TBPFLAG {
 } TBPFLAG;
 #endif
 
-extern void SetTaskBarButtonProgress(HWND hWnd,int nowcount,int maxcount);
+extern void SetTaskBarButtonProgress(HWND hWnd, int nowcount, int maxcount);
 extern void InitTaskBarButtonIF(WPARAM wParam);
-extern void * GetPathInterface(HWND hWnd,const TCHAR *name,REFIID riid,const TCHAR *path);
+extern void * GetPathInterface(HWND hWnd, const TCHAR *name, REFIID riid, const TCHAR *path);
 //=============================================================================
 #ifndef GLOBALDEFINE
 	#define GVAR extern
@@ -663,7 +663,7 @@ GVAR BOOL usesusie GPARAM(FALSE);
 GVAR int susie_items GPARAM(0);		// SUSIE plug-in の数
 GVAR SUSIE_DLL *susie_list GPARAM(NULL);	// SUSIE plug-in 情報
 GVAR TCHAR susiedir[VFPS];
-GVAR ThSTRUCT Thsusie,Thsusie_str;
+GVAR ThSTRUCT Thsusie, Thsusie_str;
 
 //---------------------------------------------------------------------
 GVAR HMODULE hMPR	 GPARAM(NULL);

@@ -41,13 +41,13 @@ BOOL WINAPI DLLEntry(HINSTANCE hInst, DWORD reason, LPVOID reserved)
 		// DLL 初期化 ---------------------------------------------------------
 		case DLL_PROCESS_ATTACH:
 			DLLhInst = hInst;
-			GetModuleFileName(hInst,DLLpath,TSIZEOF(DLLpath));
+			GetModuleFileName(hInst, DLLpath, TSIZEOF(DLLpath));
 			InitializeCriticalSection(&ThreadSection);
 			return InitProcessDLL();
 
 		// DLL の終了処理 -----------------------------------------------------
 		case DLL_PROCESS_DETACH:
-			PPxCommonCommand(NULL,0,K_CLEANUP);
+			PPxCommonCommand(NULL, 0, K_CLEANUP);
 			Sm = NULL;
 			FileMappingOff(&SM_cust);
 			FileMappingOff(&SM_hist);
@@ -55,7 +55,7 @@ BOOL WINAPI DLLEntry(HINSTANCE hInst, DWORD reason, LPVOID reserved)
 
 			#ifndef _WIN64
 			if ( DRemoveVectoredExceptionHandler == NULL ){
-				SetUnhandledExceptionFilter(FUNCCAST(LPTOP_LEVEL_EXCEPTION_FILTER,UEFvec));
+				SetUnhandledExceptionFilter(FUNCCAST(LPTOP_LEVEL_EXCEPTION_FILTER, UEFvec));
 			}else
 			#endif
 			{
@@ -94,17 +94,17 @@ BOOL InitProcessDLL(void)
 	#endif
 	if ( WinType != WINTYPE_VISTA ){
 		tempsize = TSIZEOF(UserName);
-		if( GetUserName(UserName,&tempsize) == FALSE ){
+		if( GetUserName(UserName, &tempsize) == FALSE ){
 			UserName[0] = '\0';
 		}
-	}else{ // Vistaではこの段階でGetUserNameを使うと,runasによる実行時+
+	}else{ // Vistaではこの段階でGetUserNameを使うと、runasによる実行時+
 		// その後の GetUserName 実行時にアクセス違反が発生する。
 		// そのため、環境変数経由で取得してごまかし中…
 		UserName[0] = '\0';
-		ExpandEnvironmentStrings(usernamestr,UserName,TSIZEOF(UserName));
+		ExpandEnvironmentStrings(usernamestr, UserName, TSIZEOF(UserName));
 	}
 								// DLL 情報の取得 =====================
-	*(tstrrchr(DLLpath,'\\') + 1) = '\0';
+	*(tstrrchr(DLLpath, '\\') + 1) = '\0';
 	ProcHeap = GetProcessHeap();
 	WM_PPXCOMMAND = RegisterWindowMessageA(PPXCOMMAND_WM);
 	TempPath[0] = '\0';
@@ -113,22 +113,22 @@ BOOL InitProcessDLL(void)
 		DWORD i = 0;
 
 		for ( p = UserName ; *p ; p++ ) i += (UTCHAR)*p;
-		wsprintf(SyncTag,XNAME T("%05X"),i);
+		wsprintf(SyncTag, XNAME T("%05X"), i);
 	}
 								// 例外処理の組み込み =================
 	hKernel32 = GetModuleHandle(T("KERNEL32.DLL"));
 
 	#ifndef _WIN64
 		if ( OSver.dwMajorVersion >= 6 ){
-			GETDLLPROC(hKernel32,AddVectoredExceptionHandler);
-			GETDLLPROC(hKernel32,RemoveVectoredExceptionHandler);
+			GETDLLPROC(hKernel32, AddVectoredExceptionHandler);
+			GETDLLPROC(hKernel32, RemoveVectoredExceptionHandler);
 		}
 		if ( DAddVectoredExceptionHandler == NULL ){
-			UEFvec = FUNCCAST(PVOID,SetUnhandledExceptionFilter(PPxUnhandledExceptionFilter));
+			UEFvec = FUNCCAST(PVOID, SetUnhandledExceptionFilter(PPxUnhandledExceptionFilter));
 		}else
 	#endif
 		{
-			UEFvec = DAddVectoredExceptionHandler(0,PPxUnhandledExceptionFilter);
+			UEFvec = DAddVectoredExceptionHandler(0, PPxUnhandledExceptionFilter);
 		}
 								// 作業用共有メモリの用意 =============
 	{
@@ -147,7 +147,7 @@ BOOL InitProcessDLL(void)
 
 		Sm = (ShareM *)SM_tmp.ptr;
 		if ( mapresult != 0 ){	// 作業領域の初期化 ===================
-			memset(Sm,0,sizeof(ShareM));
+			memset(Sm, 0, sizeof(ShareM));
 			UsePPx();
 			Sm->Version = DLL_VersionValue;
 			// Sm->CustomizeWrite = 0; // 初期化済み
@@ -166,15 +166,15 @@ BOOL InitProcessDLL(void)
 	}
 
 	hShell32 = GetModuleHandle(T("SHELL32.DLL"));
-	GETDLLPROCT(hShell32,SHGetFolderPath);
+	GETDLLPROCT(hShell32, SHGetFolderPath);
 								// ヒストリのオープン =================
 	{
 		int mapresult;
 
-		MakeUserfilename(buf,HISTNAME,PPxRegPath);
+		MakeUserfilename(buf, HISTNAME, PPxRegPath);
 		UsePPx();
-		mapresult = FileMappingOn(&SM_hist,buf,HISTMEMNAME,
-				X_Hsize,FILE_ATTRIBUTE_NORMAL);
+		mapresult = FileMappingOn(&SM_hist, buf, HISTMEMNAME,
+				X_Hsize, FILE_ATTRIBUTE_NORMAL);
 		if ( mapresult < 0 ){
 			CriticalMessageBox(MSG_HITORYAREAERROR);
 			FreePPx();
@@ -186,8 +186,8 @@ BOOL InitProcessDLL(void)
 			InitHistory();			// 初期化
 		}
 	}
-	if ( strcmp(HistHeaderFromHisP->HeaderID,HistoryID) ){
-		if ( strcmp(HistHeaderFromHisP->HeaderID,"RST") ){
+	if ( strcmp(HistHeaderFromHisP->HeaderID, HistoryID) ){
+		if ( strcmp(HistHeaderFromHisP->HeaderID, "RST") ){
 			CriticalMessageBox(MSG_HISTORYIDCOLLAPSED);
 		}
 		InitHistory();
@@ -195,12 +195,12 @@ BOOL InitProcessDLL(void)
 	if ( X_Hsize != HistSizeFromHisP ){
 		X_Hsize = HistSizeFromHisP;
 		FileMappingOff(&SM_hist);
-		FileMappingOn(&SM_hist,buf,HISTMEMNAME,
-				X_Hsize,FILE_ATTRIBUTE_NORMAL);
+		FileMappingOn(&SM_hist, buf, HISTMEMNAME,
+				X_Hsize, FILE_ATTRIBUTE_NORMAL);
 		HisP = (BYTE *)SM_hist.ptr + HIST_HEADER_SIZE;
 	}
 	{
-		BYTE *p,*histmax;
+		BYTE *p, *histmax;
 
 		p = HisP;
 		histmax = HisP + X_Hsize - HIST_HEADER_FOOTER_SIZE;
@@ -223,9 +223,9 @@ BOOL InitProcessDLL(void)
 		int mapresult;
 
 		UsePPx();
-		MakeUserfilename(buf,CUSTNAME,PPxRegPath);
-		MakeCustMemSharename(buf2,Sm->CustomizeNameID);
-		mapresult = FileMappingOn(&SM_cust,buf,buf2,X_Csize,FILE_ATTRIBUTE_NORMAL);
+		MakeUserfilename(buf, CUSTNAME, PPxRegPath);
+		MakeCustMemSharename(buf2, Sm->CustomizeNameID);
+		mapresult = FileMappingOn(&SM_cust, buf, buf2, X_Csize, FILE_ATTRIBUTE_NORMAL);
 		if ( mapresult < 0 ){
 			CriticalMessageBox(MSG_CUSTOMIZETAREAERROR);
 			FreePPx();
@@ -237,8 +237,8 @@ BOOL InitProcessDLL(void)
 			InitCust();			// 初期化
 		}
 	}
-	if ( strcmp(CustHeaderFromCustP->HeaderID,CustID) ){
-		if ( strcmp(CustHeaderFromCustP->HeaderID,"RST") ){;
+	if ( strcmp(CustHeaderFromCustP->HeaderID, CustID) ){
+		if ( strcmp(CustHeaderFromCustP->HeaderID, "RST") ){;
 			CriticalMessageBox(MSG_CUSTOMIZEIDCOLLAPSED);
 		}
 		InitCust();
@@ -246,11 +246,11 @@ BOOL InitProcessDLL(void)
 	if ( X_Csize != CustSizeFromCustP ){
 		X_Csize = CustSizeFromCustP;
 		FileMappingOff(&SM_cust);
-		FileMappingOn(&SM_cust,buf,CUSTMEMNAME,X_Csize,FILE_ATTRIBUTE_NORMAL);
+		FileMappingOn(&SM_cust, buf, CUSTMEMNAME, X_Csize, FILE_ATTRIBUTE_NORMAL);
 		CustP = (BYTE *)SM_cust.ptr + CUST_HEADER_SIZE;
 	}
 	{
-		BYTE *p,*custmax;
+		BYTE *p, *custmax;
 
 		p = CustP;
 		custmax = CustP + X_Csize - CUST_HEADER_FOOTER_SIZE;
@@ -269,19 +269,19 @@ BOOL InitProcessDLL(void)
 	}
 	FreePPx();
 								// カスタマイズ内容の取り出し =========
-	GetCustData(T("X_mwid"),&X_mwid,sizeof(X_mwid));
-	GetCustData(T("X_es"),&X_es,sizeof(X_es));
+	GetCustData(T("X_mwid"), &X_mwid, sizeof(X_mwid));
+	GetCustData(T("X_es"), &X_es, sizeof(X_es));
 	X_es = X_es & 0xff;
 								// マルチバイト文字長さテーブルの補正
 	FixCharlengthTable(NULL);
 
-	GetCustData(T("X_log"),&X_log,sizeof(X_log));
+	GetCustData(T("X_log"), &X_log, sizeof(X_log));
 	return TRUE;
 }
 
 #if NODLL
 extern void InitCommonDll(HINSTANCE hInst)
 {
-	DllMain(hInst,DLL_PROCESS_ATTACH,NULL);
+	DllMain(hInst, DLL_PROCESS_ATTACH, NULL);
 }
 #endif

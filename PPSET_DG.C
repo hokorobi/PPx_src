@@ -13,9 +13,8 @@ const int jumpto[] = {
 #ifdef _WIN64
 const TCHAR UnbypassName[] = T("UNBYPASS.DLL");
 #endif
-typedef BOOL (PPXAPI *impGetImageByHttp)(const TCHAR *urladr,ThSTRUCT *th);
-typedef ERRORCODE (PPXAPI *impPP_ExtractMacro)(HWND hWnd,PPXAPPINFO *ParentInfo,
-			POINT *pos,const TCHAR *param,TCHAR *extract,int flag);
+typedef BOOL (PPXAPI *impGetImageByHttp)(const TCHAR *urladr, ThSTRUCT *th);
+typedef ERRORCODE (PPXAPI *impPP_ExtractMacro)(HWND hWnd, PPXAPPINFO *ParentInfo, POINT *pos, const TCHAR *param, TCHAR *extract, int flag);
 
 ERRORCODE Execute_ExtractMacro(const TCHAR *param)
 {
@@ -28,9 +27,9 @@ ERRORCODE Execute_ExtractMacro(const TCHAR *param)
 		SMessage(MessageStr[MSG_DLLLOADERROR]);
 		return 1;
 	}
-	GETDLLPROC(hDLL,PP_ExtractMacro);
+	GETDLLPROC(hDLL, PP_ExtractMacro);
 
-	result = DPP_ExtractMacro(GetActiveWindow(),NULL,NULL,param,NULL,0);
+	result = DPP_ExtractMacro(GetActiveWindow(),NULL,NULL, param,NULL, 0);
 
 	FreeLibrary(hDLL);
 	return result;
@@ -39,38 +38,38 @@ ERRORCODE Execute_ExtractMacro(const TCHAR *param)
 /*-----------------------------------------------------------------------------
   page 1:ガイド
 -----------------------------------------------------------------------------*/
-INT_PTR CALLBACK GuideDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK GuideDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	if ( msg == WM_NOTIFY ){
 			#define NHPTR ((NMHDR *)lParam)
 		switch (NHPTR->code){
 			case PSN_SETACTIVE:
-				PropSheet_SetWizButtons(NHPTR->hwndFrom,PSWIZB_NEXT);
+				PropSheet_SetWizButtons(NHPTR->hwndFrom, PSWIZB_NEXT);
 				//	PSN_QUERYCANCEL へ
 			case PSN_QUERYCANCEL:	// すぐ終了してもよし
 				return TRUE;
 		}
 		#undef NHPTR
 	}
-	return StyleDlgProc(hDlg,msg,wParam,lParam);
+	return StyleDlgProc(hDlg, msg, wParam, lParam);
 }
 /*-----------------------------------------------------------------------------
   page 2:種別選択
 -----------------------------------------------------------------------------*/
-INT_PTR CALLBACK SetTypeDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK SetTypeDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg){
 		case WM_INITDIALOG: {
 			BOOL enablestate;
 
-			SetDlgItemText(hDlg,IDS_INSTEDPPX,XX_setupedPPx);
+			SetDlgItemText(hDlg, IDS_INSTEDPPX, XX_setupedPPx);
 
 			enablestate = (XX_setupmode >= IDR_UPDATE) ||
 					 ((XX_setupedPPx[0] != '\0') && (XX_setupedPPx[0] != '?'));
-			EnableWindow(GetDlgItem(hDlg,IDR_UPDATE),enablestate);
-			EnableWindow(GetDlgItem(hDlg,IDR_CHECKUPDATE),enablestate);
-			EnableWindow(GetDlgItem(hDlg,IDR_UNINST),enablestate);
-			CheckDlgButtons(hDlg,IDR_AUTOINST,IDR_UNINST,XX_setupmode);
+			EnableWindow(GetDlgItem(hDlg, IDR_UPDATE), enablestate);
+			EnableWindow(GetDlgItem(hDlg, IDR_CHECKUPDATE), enablestate);
+			EnableWindow(GetDlgItem(hDlg, IDR_UNINST), enablestate);
+			CheckDlgButtons(hDlg, IDR_AUTOINST, IDR_UNINST, XX_setupmode);
 			break;
 		}
 
@@ -78,12 +77,12 @@ INT_PTR CALLBACK SetTypeDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 			if ( LOWORD(wParam) == IDB_SELINSTPPX ){
 				TCHAR buf[MAX_PATH];
 
-				if ( SelectDirectory(hDlg,MessageStr[MSG_SELECTPPX],
-						BIF_STATUSTEXT,SelInstPPxProc,buf) == FALSE ) break;
+				if ( SelectDirectory(hDlg, MessageStr[MSG_SELECTPPX],
+						BIF_STATUSTEXT, SelInstPPxProc, buf) == FALSE ) break;
 
-				tstrcpy(XX_setupedPPx,buf);
+				tstrcpy(XX_setupedPPx, buf);
 				XX_setupmode = IDR_UPDATE;
-				SetTypeDialog(hDlg,WM_INITDIALOG,0,0);
+				SetTypeDialog(hDlg, WM_INITDIALOG, 0, 0);
 			}
 			break;
 
@@ -99,35 +98,35 @@ INT_PTR CALLBACK SetTypeDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 #define PSN_QUERYINITIALFOCUS (PSN_SETACTIVE-13)
 #endif
 				case PSN_QUERYINITIALFOCUS:	// フォーカスを当てる
-					SetWindowLongPtr(hDlg,DWLP_MSGRESULT,
-							(LONG_PTR)GetDlgItem(hDlg,XX_setupmode))
+					SetWindowLongPtr(hDlg, DWLP_MSGRESULT,
+							(LONG_PTR)GetDlgItem(hDlg, XX_setupmode))
 					break;
 #endif
 				case PSN_SETACTIVE:
 					PropSheet_SetWizButtons(
-							NHPTR->hwndFrom,PSWIZB_BACK | PSWIZB_NEXT);
+							NHPTR->hwndFrom, PSWIZB_BACK | PSWIZB_NEXT);
 					break;
 
 				case PSN_WIZNEXT:{
-					XX_setupmode = GetDlgButtons(hDlg,IDR_AUTOINST,IDR_UNINST);
+					XX_setupmode = GetDlgButtons(hDlg, IDR_AUTOINST, IDR_UNINST);
 
 					if ( XX_setupmode == IDR_CHECKUPDATE ){
 						if ( Execute_ExtractMacro(T("*checkupdate")) != NO_ERROR ){
-							SetWindowLongPtr(hDlg,DWLP_MSGRESULT,
+							SetWindowLongPtr(hDlg, DWLP_MSGRESULT,
 									UsePageInfo[PAGE_SETTYPE].rID);
 							break;
 						}
 						PropSheet_PressButton( // 終了させる
-								NHPTR->hwndFrom,PSBTN_FINISH);
+								NHPTR->hwndFrom, PSBTN_FINISH);
 						return -1;
 					}
 
 					if ( (XX_setupmode <= IDR_CUSTINST) && XX_setupedPPx[0] ){
-						if ( MessageBox(hDlg,MessageStr[MSG_OVERINSTALL],
+						if ( MessageBox(hDlg, MessageStr[MSG_OVERINSTALL],
 								msgboxtitle,
 								MB_YESNO | MB_DEFBUTTON2 | MB_ICONQUESTION)
 																 != IDYES){
-							SetWindowLongPtr(hDlg,DWLP_MSGRESULT,
+							SetWindowLongPtr(hDlg, DWLP_MSGRESULT,
 									UsePageInfo[PAGE_SETTYPE].rID);
 							break;
 						}
@@ -156,7 +155,7 @@ INT_PTR CALLBACK SetTypeDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 							XX_link_cmenu	= 1;
 						}
 					}
-					SetWindowLongPtr(hDlg,DWLP_MSGRESULT,
+					SetWindowLongPtr(hDlg, DWLP_MSGRESULT,
 						UsePageInfo[jumpto[XX_setupmode - IDR_AUTOINST]].rID);
 					break;
 				}
@@ -164,20 +163,20 @@ INT_PTR CALLBACK SetTypeDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 					break;
 
 				default:
-					return StyleDlgProc(hDlg,msg,wParam,lParam);
+					return StyleDlgProc(hDlg, msg, wParam, lParam);
 			}
 			break;
 			#undef NHPTR
 
 		default:
-			return StyleDlgProc(hDlg,msg,wParam,lParam);
+			return StyleDlgProc(hDlg, msg, wParam, lParam);
 	}
 	return TRUE;
 }
 /*-----------------------------------------------------------------------------
   page install 1:インストール先
 -----------------------------------------------------------------------------*/
-INT_PTR CALLBACK DestDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK DestDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg){
 		case WM_COMMAND:
@@ -186,23 +185,23 @@ INT_PTR CALLBACK DestDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 					if ( HIWORD(wParam) == EN_CHANGE ){
 						XX_instdestM = IDR_SELCOPY;
 						CheckDlgButtons(hDlg,
-								IDR_PROGRAMS,IDR_SELCOPY,XX_instdestM);
+								IDR_PROGRAMS, IDR_SELCOPY, XX_instdestM);
 					}
 					break;
 
 				case IDB_SELCOPY:{
 					TCHAR buf[MAX_PATH];
 
-					if ( SelectDirectory(hDlg,MessageStr[MSG_SELECTDIR],
-							BIF_USENEWUI | BIF_RETURNONLYFSDIRS,SelDirProc,buf)
+					if ( SelectDirectory(hDlg, MessageStr[MSG_SELECTDIR],
+							BIF_USENEWUI | BIF_RETURNONLYFSDIRS, SelDirProc, buf)
 							== FALSE ){
 						break;
 					}
 
-					wsprintf(XX_instdestS,T("%s\\PPX"),buf);
-					CheckDlgButton(hDlg,XX_instdestM,FALSE);
+					wsprintf(XX_instdestS, T("%s\\PPX"), buf);
+					CheckDlgButton(hDlg, XX_instdestM, FALSE);
 					XX_instdestM = IDR_SELCOPY;
-					SetDlgItemText(hDlg,IDE_SELCOPY,XX_instdestS);
+					SetDlgItemText(hDlg, IDE_SELCOPY, XX_instdestS);
 					break;
 				}
 			}
@@ -216,23 +215,23 @@ INT_PTR CALLBACK DestDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 					int i;
 
 					i = XX_instdestM;
-					SetDlgItemText(hDlg,IDE_SELCOPY,XX_instdestS);
+					SetDlgItemText(hDlg, IDE_SELCOPY, XX_instdestS);
 					XX_instdestM = i;
-					wsprintf(buf,MessageStr[MSG_DEFAULTDIR],XX_instdestP);
-					SetDlgItemText(hDlg,IDR_PROGRAMS,buf);
-					wsprintf(buf,MessageStr[MSG_NOCOPY],MyPath);
-					SetDlgItemText(hDlg,IDR_NOCOPY,buf);
+					wsprintf(buf, MessageStr[MSG_DEFAULTDIR], XX_instdestP);
+					SetDlgItemText(hDlg, IDR_PROGRAMS, buf);
+					wsprintf(buf, MessageStr[MSG_NOCOPY], MyPath);
+					SetDlgItemText(hDlg, IDR_NOCOPY, buf);
 					CheckDlgButtons(hDlg,
-							IDR_PROGRAMS,IDR_SELCOPY,XX_instdestM);
+							IDR_PROGRAMS, IDR_SELCOPY, XX_instdestM);
 					break;
 				}
 				case PSN_WIZBACK:
-					SetWindowLongPtr(hDlg,DWLP_MSGRESULT,UsePageInfo[PAGE_SETTYPE].rID);
+					SetWindowLongPtr(hDlg, DWLP_MSGRESULT, UsePageInfo[PAGE_SETTYPE].rID);
 					break;
 				case PSN_WIZNEXT:
-					GetDlgItemText(hDlg,IDE_SELCOPY,XX_instdestS,MAX_PATH);
+					GetDlgItemText(hDlg, IDE_SELCOPY, XX_instdestS, MAX_PATH);
 					XX_instdestM = GetDlgButtons(hDlg,
-							IDR_PROGRAMS,IDR_SELCOPY);
+							IDR_PROGRAMS, IDR_SELCOPY);
 					XX_setupPPx = (XX_instdestM == IDR_PROGRAMS) ?
 							XX_instdestP : ((XX_instdestM == IDR_NOCOPY) ?
 								MyPath : XX_instdestS);
@@ -255,41 +254,41 @@ INT_PTR CALLBACK DestDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 /*-----------------------------------------------------------------------------
   page install 2:カスタマイズファイル保存先
 -----------------------------------------------------------------------------*/
-INT_PTR CALLBACK RegDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK RegDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg){
 		case WM_NOTIFY:
 			#define NHPTR ((NMHDR *)lParam)
 			switch( NHPTR->code ){
 				case PSN_SETACTIVE:
-					CheckDlgButtons(hDlg,IDR_USEREG,IDR_UUSEREG,XX_usereg);
+					CheckDlgButtons(hDlg, IDR_USEREG, IDR_UUSEREG, XX_usereg);
 					break;
 
 				case PSN_WIZNEXT:
-					XX_usereg = GetDlgButtons(hDlg,IDR_USEREG,IDR_UUSEREG);
+					XX_usereg = GetDlgButtons(hDlg, IDR_USEREG, IDR_UUSEREG);
 					break;
 
 				default:
-					return StyleDlgProc(hDlg,msg,wParam,lParam);
+					return StyleDlgProc(hDlg, msg, wParam, lParam);
 			}
 			break;
 			#undef NHPTR
 		default:
-			return StyleDlgProc(hDlg,msg,wParam,lParam);
+			return StyleDlgProc(hDlg, msg, wParam, lParam);
 	}
 	return TRUE;
 }
 /*-----------------------------------------------------------------------------
   page install 3:PPc 窓配置
 -----------------------------------------------------------------------------*/
-void ShowDlgWindows(const HWND hDlg,UINT minid,const UINT maxid,BOOL show)
+void ShowDlgWindows(const HWND hDlg, UINT minid, const UINT maxid, BOOL show)
 {
 	HWND hControlWnd;
 
 	for (;;){
-		hControlWnd = GetDlgItem(hDlg,minid);
+		hControlWnd = GetDlgItem(hDlg, minid);
 		if ( hControlWnd != NULL ){
-			ShowWindow(hControlWnd,show ? SW_SHOW : SW_HIDE);
+			ShowWindow(hControlWnd, show ? SW_SHOW : SW_HIDE);
 		}
 		if ( minid == maxid ) return;
 		minid++;
@@ -298,25 +297,25 @@ void ShowDlgWindows(const HWND hDlg,UINT minid,const UINT maxid,BOOL show)
 
 void FixWindowLayoutItems(HWND hDlg)
 {
-	CheckDlgButtons(hDlg,IDR_PPC_1WINDOW,IDR_PPC_JOINT,XX_ppc_window);
-	CheckDlgButton(hDlg,IDX_PPC_TREE,XX_ppc_tree);
-	CheckDlgButtons(hDlg,IDR_PPC_1PANE,IDR_PPC_2PANE_V,XX_ppc_pane);
-	CheckDlgButtons(hDlg,IDR_PPC_TAB_NO,IDR_PPC_TAB_SHARE,XX_ppc_tab);
-	CheckDlgButtons(hDlg,IDR_PPC_JOIN_H,IDR_PPC_JOIN_P,XX_ppc_join);
-	ShowDlgWindows(hDlg,IDR_PPC_1PANE,IDR_PPC_TAB_SHARE,( XX_ppc_window == IDR_PPC_COMBO ));
-	ShowDlgWindows(hDlg,IDR_PPC_JOIN_H,IDR_PPC_JOIN_P,( XX_ppc_window == IDR_PPC_JOINT ));
+	CheckDlgButtons(hDlg, IDR_PPC_1WINDOW, IDR_PPC_JOINT, XX_ppc_window);
+	CheckDlgButton(hDlg, IDX_PPC_TREE, XX_ppc_tree);
+	CheckDlgButtons(hDlg, IDR_PPC_1PANE, IDR_PPC_2PANE_V, XX_ppc_pane);
+	CheckDlgButtons(hDlg, IDR_PPC_TAB_NO, IDR_PPC_TAB_SHARE, XX_ppc_tab);
+	CheckDlgButtons(hDlg, IDR_PPC_JOIN_H, IDR_PPC_JOIN_P, XX_ppc_join);
+	ShowDlgWindows(hDlg, IDR_PPC_1PANE, IDR_PPC_TAB_SHARE, ( XX_ppc_window == IDR_PPC_COMBO ));
+	ShowDlgWindows(hDlg, IDR_PPC_JOIN_H, IDR_PPC_JOIN_P, ( XX_ppc_window == IDR_PPC_JOINT ));
 }
 
 void SaveWindowLayoutItems(HWND hDlg)
 {
-	XX_ppc_window = GetDlgButtons(hDlg,IDR_PPC_1WINDOW,IDR_PPC_JOINT);
-	XX_ppc_tree = IsDlgButtonChecked(hDlg,IDX_PPC_TREE);
-	XX_ppc_pane = GetDlgButtons(hDlg,IDR_PPC_1PANE,IDR_PPC_2PANE_V);
-	XX_ppc_tab = GetDlgButtons(hDlg,IDR_PPC_TAB_NO,IDR_PPC_TAB_SHARE);
-	XX_ppc_join = GetDlgButtons(hDlg,IDR_PPC_JOIN_H,IDR_PPC_JOIN_P);
+	XX_ppc_window = GetDlgButtons(hDlg, IDR_PPC_1WINDOW, IDR_PPC_JOINT);
+	XX_ppc_tree = IsDlgButtonChecked(hDlg, IDX_PPC_TREE);
+	XX_ppc_pane = GetDlgButtons(hDlg, IDR_PPC_1PANE, IDR_PPC_2PANE_V);
+	XX_ppc_tab = GetDlgButtons(hDlg, IDR_PPC_TAB_NO, IDR_PPC_TAB_SHARE);
+	XX_ppc_join = GetDlgButtons(hDlg, IDR_PPC_JOIN_H, IDR_PPC_JOIN_P);
 }
 
-INT_PTR CALLBACK PPcwDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK PPcwDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg){
 		case WM_NOTIFY:
@@ -328,7 +327,7 @@ INT_PTR CALLBACK PPcwDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 
 				case PSN_WIZBACK:
 					if ( XX_setupmode == IDR_AUTOINST ){
-						SetWindowLongPtr(hDlg,DWLP_MSGRESULT,UsePageInfo[PAGE_DEST].rID);
+						SetWindowLongPtr(hDlg, DWLP_MSGRESULT, UsePageInfo[PAGE_DEST].rID);
 					}
 					break;
 
@@ -337,7 +336,7 @@ INT_PTR CALLBACK PPcwDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 					break;
 
 				default:
-					return StyleDlgProc(hDlg,msg,wParam,lParam);
+					return StyleDlgProc(hDlg, msg, wParam, lParam);
 			}
 			break;
 			#undef NHPTR
@@ -350,20 +349,20 @@ INT_PTR CALLBACK PPcwDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 			}
 
 		default:
-			return StyleDlgProc(hDlg,msg,wParam,lParam);
+			return StyleDlgProc(hDlg, msg, wParam, lParam);
 	}
 	return TRUE;
 }
 /*-----------------------------------------------------------------------------
   page install 4:キー割り当て
 -----------------------------------------------------------------------------*/
-INT_PTR CALLBACK KeyDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK KeyDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg){
 		case WM_COMMAND:
 			switch ( LOWORD(wParam) ){
 				case IDR_XPRKEY:
-					CheckDlgButton(hDlg,IDX_DOSC,FALSE);
+					CheckDlgButton(hDlg, IDX_DOSC, FALSE);
 					break;
 			}
 			break;
@@ -372,52 +371,52 @@ INT_PTR CALLBACK KeyDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 			#define NHPTR ((NMHDR *)lParam)
 			switch( NHPTR->code ){
 				case PSN_SETACTIVE:
-					CheckDlgButtons(hDlg,IDR_PPXKEY,IDR_FMKEY,XX_keytype);
-					CheckDlgButton(hDlg,IDX_DIAKEY,XX_diakey);
-					CheckDlgButton(hDlg,IDX_EMENU,XX_emenu);
-					CheckDlgButton(hDlg,IDX_DOSC,XX_doscolor);
+					CheckDlgButtons(hDlg, IDR_PPXKEY, IDR_FMKEY, XX_keytype);
+					CheckDlgButton(hDlg, IDX_DIAKEY, XX_diakey);
+					CheckDlgButton(hDlg, IDX_EMENU, XX_emenu);
+					CheckDlgButton(hDlg, IDX_DOSC, XX_doscolor);
 					break;
 
 				case PSN_WIZNEXT:
-					XX_keytype = GetDlgButtons(hDlg,IDR_PPXKEY,IDR_FMKEY);
-					XX_diakey = IsDlgButtonChecked(hDlg,IDX_DIAKEY);
-					XX_emenu = IsDlgButtonChecked(hDlg,IDX_EMENU);
-					XX_doscolor = IsDlgButtonChecked(hDlg,IDX_DOSC);
+					XX_keytype = GetDlgButtons(hDlg, IDR_PPXKEY, IDR_FMKEY);
+					XX_diakey = IsDlgButtonChecked(hDlg, IDX_DIAKEY);
+					XX_emenu = IsDlgButtonChecked(hDlg, IDX_EMENU);
+					XX_doscolor = IsDlgButtonChecked(hDlg, IDX_DOSC);
 					break;
 
 				default:
-					return StyleDlgProc(hDlg,msg,wParam,lParam);
+					return StyleDlgProc(hDlg, msg, wParam, lParam);
 			}
 			break;
 			#undef NHPTR
 
 		default:
-			return StyleDlgProc(hDlg,msg,wParam,lParam);
+			return StyleDlgProc(hDlg, msg, wParam, lParam);
 	}
 	return TRUE;
 }
 /*-----------------------------------------------------------------------------
   page install 5:初期アプリケーション選択
 -----------------------------------------------------------------------------*/
-INT_PTR CALLBACK AppDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK AppDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg){
 		case WM_COMMAND:
 			switch ( LOWORD(wParam) ){
 				case IDB_TEXTEDIT:
-					SetExecuteFile(hDlg,IDE_TEXTEDIT,
+					SetExecuteFile(hDlg, IDE_TEXTEDIT,
 							MessageStr[MSG_SELECTEDITOR]);
 					break;
 				case IDB_UNIVIEW:
-					SetExecuteFile(hDlg,IDE_UNIVIEW,
+					SetExecuteFile(hDlg, IDE_UNIVIEW,
 							MessageStr[MSG_SELECTVIEWER]);
 					break;
 				case IDB_SUSIEDIR: {
 					TCHAR buf[MAX_PATH];
 
-					if ( SelectDirectory(hDlg,MessageStr[MSG_SELECTSUSIE],
-							BIF_RETURNONLYFSDIRS,NULL,buf) == FALSE ) break;
-					SetDlgItemText(hDlg,IDE_SUSIEDIR,buf);
+					if ( SelectDirectory(hDlg, MessageStr[MSG_SELECTSUSIE],
+							BIF_RETURNONLYFSDIRS,NULL, buf) == FALSE ) break;
+					SetDlgItemText(hDlg, IDE_SUSIEDIR, buf);
 					break;
 				}
 			}
@@ -429,10 +428,10 @@ INT_PTR CALLBACK AppDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 				case PSN_SETACTIVE: {
 					const TCHAR **arcs;
 
-					SetDlgItemText(hDlg,IDE_TEXTEDIT,XX_editor);
-					SetDlgItemText(hDlg,IDE_UNIVIEW,XX_viewer);
+					SetDlgItemText(hDlg, IDE_TEXTEDIT, XX_editor);
+					SetDlgItemText(hDlg, IDE_UNIVIEW, XX_viewer);
 					// UNARC --------------------------------------------------
-					SendDlgItemMessage(hDlg,IDC_UNARC,CB_RESETCONTENT,0,0);
+					SendDlgItemMessage(hDlg, IDC_UNARC, CB_RESETCONTENT, 0, 0);
 					for ( arcs = UNARCS ; *arcs ; arcs++ ){
 						HMODULE hDLL;
 
@@ -441,58 +440,58 @@ INT_PTR CALLBACK AppDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 						if ( hDLL != NULL ){
 							TCHAR dpath[MAX_PATH];
 
-							GetModuleFileName(hDLL,dpath,TSIZEOF(dpath));
-							SendDlgItemMessage(hDlg,IDC_UNARC,
-												CB_ADDSTRING,0,(LPARAM)dpath);
+							GetModuleFileName(hDLL, dpath, TSIZEOF(dpath));
+							SendDlgItemMessage(hDlg, IDC_UNARC,
+									CB_ADDSTRING, 0, (LPARAM)dpath);
 							FreeLibrary(hDLL);
 						}
 					}
-					SendDlgItemMessage(hDlg,IDC_UNARC,CB_SETCURSEL,0,0);
+					SendDlgItemMessage(hDlg, IDC_UNARC, CB_SETCURSEL, 0, 0);
 					// Susie --------------------------------------------------
-					SetDlgItemText(hDlg,IDE_SUSIEDIR,XX_susie);
+					SetDlgItemText(hDlg, IDE_SUSIEDIR, XX_susie);
 					break;
 				}
 
 				case PSN_WIZNEXT:
-					GetDlgItemText(hDlg,IDE_TEXTEDIT,XX_editor,MAX_PATH);
-					GetDlgItemText(hDlg,IDE_UNIVIEW,XX_viewer,MAX_PATH);
+					GetDlgItemText(hDlg, IDE_TEXTEDIT, XX_editor, MAX_PATH);
+					GetDlgItemText(hDlg, IDE_UNIVIEW, XX_viewer, MAX_PATH);
 					{
 						TCHAR dir[MAX_PATH];
-						GetDlgItemText(hDlg,IDE_SUSIEDIR,dir,MAX_PATH);
-						if ( tstrcmp(XX_susie,dir) ){
+						GetDlgItemText(hDlg, IDE_SUSIEDIR, dir, MAX_PATH);
+						if ( tstrcmp(XX_susie, dir) ){
 							XX_usesusie = TRUE;
-							tstrcpy(XX_susie,dir);
+							tstrcpy(XX_susie, dir);
 						}
 					}
 					if ( XX_setupmode == IDR_AUTOINST ){
-						SetWindowLongPtr(hDlg,DWLP_MSGRESULT,UsePageInfo[PAGE_READY].rID);
+						SetWindowLongPtr(hDlg, DWLP_MSGRESULT, UsePageInfo[PAGE_READY].rID);
 					}
 					break;
 
 				default:
-					return StyleDlgProc(hDlg,msg,wParam,lParam);
+					return StyleDlgProc(hDlg, msg, wParam, lParam);
 			}
 			break;
 			#undef NHPTR
 
 		default:
-			return StyleDlgProc(hDlg,msg,wParam,lParam);
+			return StyleDlgProc(hDlg, msg, wParam, lParam);
 	}
 	return TRUE;
 }
 /*-----------------------------------------------------------------------------
   page install 6:ショートカット作成先
 -----------------------------------------------------------------------------*/
-INT_PTR CALLBACK LinkDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK LinkDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg){
 		case WM_COMMAND:
 			switch ( LOWORD(wParam) ){
 				case IDX_MENU:
-					CheckDlgButton(hDlg,IDX_CMENU,FALSE);
+					CheckDlgButton(hDlg, IDX_CMENU, FALSE);
 					break;
 				case IDX_CMENU:
-					CheckDlgButton(hDlg,IDX_MENU,FALSE);
+					CheckDlgButton(hDlg, IDX_MENU, FALSE);
 					break;
 			}
 			break;
@@ -507,42 +506,42 @@ INT_PTR CALLBACK LinkDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 						XX_link_cmenu = XX_link_app = 0;
 					}
 					if ( OSver.dwPlatformId != VER_PLATFORM_WIN32_NT ){
-						EnableWindow(GetDlgItem(hDlg,IDX_CMENU),FALSE);
+						EnableWindow(GetDlgItem(hDlg, IDX_CMENU), FALSE);
 					}
-					CheckDlgButton(hDlg,IDX_MENU,XX_link_menu);
-					CheckDlgButton(hDlg,IDX_BOOT,XX_link_boot);
-					CheckDlgButton(hDlg,IDX_DESK,XX_link_desk);
-					CheckDlgButton(hDlg,IDX_CMENU,XX_link_cmenu);
-					CheckDlgButton(hDlg,IDX_APP,XX_link_app);
-					tstrcpy(buf,XX_setupPPx);
-					tstrcat(buf,T("\\PPX.EXE"));
-					SetDlgItemText(hDlg,IDE_LINKSMP,buf);
+					CheckDlgButton(hDlg, IDX_MENU, XX_link_menu);
+					CheckDlgButton(hDlg, IDX_BOOT, XX_link_boot);
+					CheckDlgButton(hDlg, IDX_DESK, XX_link_desk);
+					CheckDlgButton(hDlg, IDX_CMENU, XX_link_cmenu);
+					CheckDlgButton(hDlg, IDX_APP, XX_link_app);
+					tstrcpy(buf, XX_setupPPx);
+					tstrcat(buf, T("\\PPX.EXE"));
+					SetDlgItemText(hDlg, IDE_LINKSMP, buf);
 					break;
 				}
 
 				case PSN_WIZNEXT:
-					XX_link_menu = IsDlgButtonChecked(hDlg,IDX_MENU);
-					XX_link_boot = IsDlgButtonChecked(hDlg,IDX_BOOT);
-					XX_link_desk = IsDlgButtonChecked(hDlg,IDX_DESK);
-					XX_link_cmenu = IsDlgButtonChecked(hDlg,IDX_CMENU);
-					XX_link_app = IsDlgButtonChecked(hDlg,IDX_APP);
+					XX_link_menu = IsDlgButtonChecked(hDlg, IDX_MENU);
+					XX_link_boot = IsDlgButtonChecked(hDlg, IDX_BOOT);
+					XX_link_desk = IsDlgButtonChecked(hDlg, IDX_DESK);
+					XX_link_cmenu = IsDlgButtonChecked(hDlg, IDX_CMENU);
+					XX_link_app = IsDlgButtonChecked(hDlg, IDX_APP);
 					break;
 
 				default:
-					return StyleDlgProc(hDlg,msg,wParam,lParam);
+					return StyleDlgProc(hDlg, msg, wParam, lParam);
 			}
 			break;
 			#undef NHPTR
 
 		default:
-			return StyleDlgProc(hDlg,msg,wParam,lParam);
+			return StyleDlgProc(hDlg, msg, wParam, lParam);
 	}
 	return TRUE;
 }
 /*-----------------------------------------------------------------------------
   page install 7:実行確認
 -----------------------------------------------------------------------------*/
-INT_PTR CALLBACK ReadyDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK ReadyDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg){
 		case WM_NOTIFY:
@@ -550,55 +549,55 @@ INT_PTR CALLBACK ReadyDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 			switch( NHPTR->code ){
 				case PSN_WIZBACK:
 					if ( XX_setupmode == IDR_AUTOINST ){
-						SetWindowLongPtr(hDlg,DWLP_MSGRESULT,UsePageInfo[PAGE_APP].rID);
+						SetWindowLongPtr(hDlg, DWLP_MSGRESULT, UsePageInfo[PAGE_APP].rID);
 					}
 					break;
 
 				default:
-					return StyleDlgProc(hDlg,msg,wParam,lParam);
+					return StyleDlgProc(hDlg, msg, wParam, lParam);
 			}
 			break;
 			#undef NHPTR
 
 		default:
-			return StyleDlgProc(hDlg,msg,wParam,lParam);
+			return StyleDlgProc(hDlg, msg, wParam, lParam);
 	}
 	return TRUE;
 }
 /*-----------------------------------------------------------------------------
   page install 8/update:コピー進捗状況
 -----------------------------------------------------------------------------*/
-INT_PTR CALLBACK CopyDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK CopyDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	if ( msg == WM_NOTIFY ){
 		#define NHPTR ((NMHDR *)lParam)
 		switch(NHPTR->code){
 			case PSN_SETACTIVE:
-				hResultWnd = GetDlgItem(hDlg,IDE_RESULT);
+				hResultWnd = GetDlgItem(hDlg, IDE_RESULT);
 				// Vista は管理者権限で PPc を起動するため起動オプションを無効
 				if ( (OSver.dwMajorVersion >= 6) &&
 						(AdminCheck() == ADMINMODE_ELEVATE) ){
-					SetDlgItemText(hDlg,IDX_STARTPPC,NilStr);
-					CheckDlgButton(hDlg,IDX_STARTPPC,FALSE);
+					SetDlgItemText(hDlg, IDX_STARTPPC,NilStr);
+					CheckDlgButton(hDlg, IDX_STARTPPC, FALSE);
 				}else{
-					CheckDlgButton(hDlg,IDX_STARTPPC,TRUE);
+					CheckDlgButton(hDlg, IDX_STARTPPC, TRUE);
 				}
 				if ( XX_setupmode == IDR_UPDATE ){	// アップデート
 					SetupResult = SRESULT_NOERROR;
 					XX_setupPPx = XX_setupedPPx;
-					CloseAllPPxLocal(XX_setupPPx,TRUE); // PPxを終了させる
-					CopyPPxFiles(hDlg,XX_upsrc,XX_setupPPx);
+					CloseAllPPxLocal(XX_setupPPx, TRUE); // PPxを終了させる
+					CopyPPxFiles(hDlg, XX_upsrc, XX_setupPPx);
 					if ( SetupResult != SRESULT_NOERROR ){
-						CheckDlgButton(hDlg,IDX_STARTPPC,FALSE);
+						CheckDlgButton(hDlg, IDX_STARTPPC, FALSE);
 					}
 					WriteResult(NilStr,RESULT_ALLDONE);
 					if ( IsTrue(XX_resultquiet) && (SetupResult == SRESULT_NOERROR) ){
-						PropSheet_PressButton(NHPTR->hwndFrom,PSBTN_FINISH);
+						PropSheet_PressButton(NHPTR->hwndFrom, PSBTN_FINISH);
 					}
 				}else{
 					InstallMain(hDlg);
 				}
-				PropSheet_SetWizButtons(NHPTR->hwndFrom,PSWIZB_FINISH);
+				PropSheet_SetWizButtons(NHPTR->hwndFrom, PSWIZB_FINISH);
 				PropSheet_CancelToClose(NHPTR->hwndFrom);
 				//	PSN_QUERYCANCEL へ
 
@@ -608,10 +607,10 @@ INT_PTR CALLBACK CopyDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 			case PSN_WIZFINISH:
 				if ( ((OSver.dwMajorVersion < 6) ||
 					  (AdminCheck() != ADMINMODE_ELEVATE)) &&
-						IsDlgButtonChecked(hDlg,IDX_STARTPPC) ){
+						IsDlgButtonChecked(hDlg, IDX_STARTPPC) ){
 					TCHAR buf[CMDLINESIZE];
 
-					wsprintf(buf,T("\"%s\\") T(CEXE) T("\""), XX_setupPPx);
+					wsprintf(buf, T("\"%s\\") T(CEXE) T("\""), XX_setupPPx);
 
 					if ( IsTrue(XX_resultquiet) && (SetupResult == SRESULT_NOERROR) ){
 						tstrcat(buf, T(" /k %K\"about\""));
@@ -623,7 +622,7 @@ INT_PTR CALLBACK CopyDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 		}
 		#undef NHPTR
 	}
-	return StyleDlgProc(hDlg,msg,wParam,lParam);
+	return StyleDlgProc(hDlg, msg, wParam, lParam);
 }
 /*-----------------------------------------------------------------------------
   page update:アップデート先
@@ -632,24 +631,24 @@ BOOL SelfUpdate(void)
 {
 	TCHAR buf[MAX_PATH * 2];
 
-	wsprintf(buf,T("\"%s\\SETUP.EXE"),XX_upsrc);
+	wsprintf(buf, T("\"%s\\SETUP.EXE"), XX_upsrc);
 	if ( GetFileAttributes(buf + 1) == BADATTR ) return FALSE;
-	tstrcat(buf,T("\" /U "));
-	tstrcat(buf,XX_setupedPPx);
+	tstrcat(buf, T("\" /U "));
+	tstrcat(buf, XX_setupedPPx);
 	Cmd(buf);
 	return TRUE;
 }
 
-INT_PTR CALLBACK UpDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK UpDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg){
 		case WM_COMMAND:
 			switch ( LOWORD(wParam) ){
 				case IDB_UPSRC:{
 					TCHAR buf[MAX_PATH];
-					if ( SelectDirectory(hDlg,MessageStr[MSG_SELECTPPX],
-							BIF_RETURNONLYFSDIRS,NULL,buf) == FALSE ) break;
-					SetDlgItemText(hDlg,IDE_UPSRC,buf);
+					if ( SelectDirectory(hDlg, MessageStr[MSG_SELECTPPX],
+							BIF_RETURNONLYFSDIRS,NULL, buf) == FALSE ) break;
+					SetDlgItemText(hDlg, IDE_UPSRC, buf);
 					break;
 				}
 			}
@@ -660,37 +659,37 @@ INT_PTR CALLBACK UpDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 			switch( NHPTR->code ){
 				case PSN_SETACTIVE:
 										// コピー元
-					if ( tstricmp(MyPath,XX_setupedPPx) ){	// Setup がもとか?
-						SetDlgItemText(hDlg,IDE_UPSRC,MyPath);
+					if ( tstricmp(MyPath, XX_setupedPPx) ){	// Setup がもとか?
+						SetDlgItemText(hDlg, IDE_UPSRC, MyPath);
 					}
-					SetDlgItemText(hDlg,IDS_UPDEST,XX_setupedPPx);
+					SetDlgItemText(hDlg, IDS_UPDEST, XX_setupedPPx);
 					break;
 
 				case PSN_WIZBACK:
-					SetWindowLongPtr(hDlg,DWLP_MSGRESULT,UsePageInfo[PAGE_SETTYPE].rID);
+					SetWindowLongPtr(hDlg, DWLP_MSGRESULT, UsePageInfo[PAGE_SETTYPE].rID);
 					break;
 
 				case PSN_WIZNEXT:
-					GetDlgItemText(hDlg,IDE_UPSRC,XX_upsrc,sizeof(XX_upsrc));
+					GetDlgItemText(hDlg, IDE_UPSRC, XX_upsrc, TSIZEOF(XX_upsrc));
 							// インストール元に SETUP.EXE があれば、それを使う
-					if ( tstricmp(MyPath,XX_upsrc) ){
+					if ( tstricmp(MyPath, XX_upsrc) ){
 						if ( IsTrue(SelfUpdate()) ){
 							PropSheet_PressButton( // 終了させる
-									NHPTR->hwndFrom,PSBTN_FINISH);
+									NHPTR->hwndFrom, PSBTN_FINISH);
 							return -1;
 						}
 					}
-					SetWindowLongPtr(hDlg,DWLP_MSGRESULT,UsePageInfo[PAGE_COPY].rID);
+					SetWindowLongPtr(hDlg, DWLP_MSGRESULT, UsePageInfo[PAGE_COPY].rID);
 					break;
 
 				default:
-					return StyleDlgProc(hDlg,msg,wParam,lParam);
+					return StyleDlgProc(hDlg, msg, wParam, lParam);
 			}
 			break;
 			#undef NHPTR
 
 		default:
-			return StyleDlgProc(hDlg,msg,wParam,lParam);
+			return StyleDlgProc(hDlg, msg, wParam, lParam);
 	}
 	return TRUE;
 }
@@ -698,7 +697,7 @@ INT_PTR CALLBACK UpDialog(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
   page common
 -----------------------------------------------------------------------------*/
 #pragma argsused
-INT_PTR CALLBACK StyleDlgProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK StyleDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	UnUsedParam(wParam);
 
@@ -710,10 +709,10 @@ INT_PTR CALLBACK StyleDlgProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 //				case PSN_APPLY:
 //				case PSN_HELP:
 				case PSN_QUERYCANCEL:
-					if ( MessageBox(hDlg,MessageStr[MSG_ABORT],msgboxtitle,
+					if ( MessageBox(hDlg, MessageStr[MSG_ABORT], msgboxtitle,
 							MB_YESNO | MB_DEFBUTTON2 | MB_ICONQUESTION)
-																 != IDYES ){
-						SetWindowLongPtr(hDlg,DWLP_MSGRESULT,TRUE);
+								!= IDYES ){
+						SetWindowLongPtr(hDlg, DWLP_MSGRESULT, TRUE);
 					}
 					break;
 				default:
@@ -732,8 +731,8 @@ BOOL CreateSourceDirectory(TCHAR *dir)
 {
 	TCHAR buf[MAX_PATH];
 
-	GetTempPath(TSIZEOF(buf),buf);
-	wsprintf(dir,T("%s\\PPXUPDIR"),buf);
+	GetTempPath(TSIZEOF(buf), buf);
+	wsprintf(dir, T("%s\\PPXUPDIR"), buf);
 	DeleteDir(dir);
 	if ( CreateDirectory(dir,NULL) != FALSE ){
 		DeleteUpsrc = TRUE;
@@ -750,7 +749,7 @@ BOOL UnarcFile(const TCHAR *arcname, const char *arcfuncname, const char *arcpar
 	impUnarc unarcfunc;
 	BOOL result = FALSE;
 	TCHAR destdir[MAX_PATH];
-	char buf[CMDLINESIZE],log[0x1000];
+	char buf[CMDLINESIZE], log[0x1000];
 
 #ifdef _WIN64
 	if ( *arcname == '7' ){
@@ -768,30 +767,30 @@ BOOL UnarcFile(const TCHAR *arcname, const char *arcfuncname, const char *arcpar
 	hUN = LoadLibrary(arcname);
 #endif
 	if ( hUN == NULL ) return FALSE;
-	unarcfunc = (impUnarc)GetProcAddress(hUN,arcfuncname);
+	unarcfunc = (impUnarc)GetProcAddress(hUN, arcfuncname);
 	if ( unarcfunc != NULL ){
 		if ( CreateSourceDirectory(destdir) != FALSE ){
 #ifdef UNICODE
 			char XX_setupedPPxA[MAX_PATH];
 			char destdirA[MAX_PATH];
 
-			UnicodeToAnsi(XX_setupedPPx,XX_setupedPPxA,MAX_PATH);
+			UnicodeToAnsi(XX_setupedPPx, XX_setupedPPxA, MAX_PATH);
 			XX_setupedPPxA[MAX_PATH - 1] = '\0';
-			UnicodeToAnsi(destdir,destdirA,MAX_PATH);
+			UnicodeToAnsi(destdir, destdirA, MAX_PATH);
 			destdirA[MAX_PATH - 1] = '\0';
 			if ( (GetFileAttributesA(XX_setupedPPxA) == BADATTR) ||
 				 (GetFileAttributesA(destdirA) == BADATTR) ){
 				FreeLibrary(hUN);
 				return FALSE;
 			}
-			wsprintfA(buf,arcparam,XX_setupedPPxA,destdirA);
+			wsprintfA(buf, arcparam, XX_setupedPPxA, destdirA);
 #else
-			wsprintfA(buf,arcparam,XX_setupedPPx,destdir);
+			wsprintfA(buf, arcparam, XX_setupedPPx, destdir);
 #endif
-			if ( unarcfunc(NULL,buf,log,sizeof(log)) == 0 ){
+			if ( unarcfunc(NULL, buf, log, sizeof(log)) == 0 ){
 				result = TRUE;
-				tstrcpy(XX_upsrc,destdir);
-				tstrcpy(XX_setupedPPx,MyPath);
+				tstrcpy(XX_upsrc, destdir);
+				tstrcpy(XX_setupedPPx, MyPath);
 			}else{
 			#ifndef UNICODE
 				SMessage(log);
@@ -805,17 +804,17 @@ BOOL UnarcFile(const TCHAR *arcname, const char *arcfuncname, const char *arcpar
 
 ERRORCODE UnarcZipfolder(void)
 {
-	TCHAR dir[MAX_PATH],buf[CMDLINESIZE];
+	TCHAR dir[MAX_PATH], buf[CMDLINESIZE];
 	DWORD result;
 
 	if ( CreateSourceDirectory(dir) == FALSE ) return ERROR_ACCESS_DENIED;
 
-	wsprintf(buf,T("*checkupdate u \"%s\" \"%s\""),XX_setupedPPx,dir);
+	wsprintf(buf, T("*checkupdate u \"%s\" \"%s\""), XX_setupedPPx, dir);
 	result = Execute_ExtractMacro(buf);
 
 	if ( result == NO_ERROR ){
-		tstrcpy(XX_upsrc,dir);
-		tstrcpy(XX_setupedPPx,MyPath);
+		tstrcpy(XX_upsrc, dir);
+		tstrcpy(XX_setupedPPx, MyPath);
 	}
 	return result;
 }
@@ -825,8 +824,8 @@ BOOL DownLoadPPx(BOOL usebeta)
 	BOOL dosetup = FALSE;
 	HMODULE hDLL;
 	ThSTRUCT th;
-	char *ptr,*lp;
-	TCHAR dir[MAX_PATH],buf[CMDLINESIZE];
+	char *ptr, *lp;
+	TCHAR dir[MAX_PATH], buf[CMDLINESIZE];
 	#ifdef UNICODE
 		WCHAR ARCHIVENAME[MAX_PATH];
 	#else
@@ -840,14 +839,14 @@ BOOL DownLoadPPx(BOOL usebeta)
 		return FALSE;
 	}
 	// ファイル一覧を取得
-	GETDLLPROC(hDLL,GetImageByHttp);
-	if ( DGetImageByHttp(T(TOROsWEB) T(PPxWebPage),&th) == FALSE ){
+	GETDLLPROC(hDLL, GetImageByHttp);
+	if ( DGetImageByHttp(T(TOROsWEB) T(PPxWebPage), &th) == FALSE ){
 		ptr = NULL;
 	}else{ // ファイル名を抽出
-		ptr = strstr(th.bottom,"/ppxmes");
+		ptr = strstr(th.bottom, "/ppxmes");
 		if ( ptr != NULL ) *ptr = '\0';
 
-		ptr = strstr(th.bottom,ARCNAME);
+		ptr = strstr(th.bottom, ARCNAME);
 	}
 	if ( ptr == NULL ){
 		SMessage(MessageStr[MSG_SITEERROR]);
@@ -859,7 +858,7 @@ BOOL DownLoadPPx(BOOL usebeta)
 
 		nextptr = ptr;
 		for (;;){ // 開発版を抽出
-			nextptr = strstr(nextptr + 1,ARCNAME);
+			nextptr = strstr(nextptr + 1, ARCNAME);
 			if ( (nextptr == NULL) || (*(nextptr - 1) != '\n') ) break;
 #ifndef UNICODE
 			if ( *(nextptr + 5) == '6' ) continue;
@@ -869,22 +868,22 @@ BOOL DownLoadPPx(BOOL usebeta)
 	}
 
 	// 既存ファイルを確認
-	if ( (lp = strchr(ptr,'\r')) != NULL ) *lp = '\0';
-	if ( (lp = strchr(ptr,'\n')) != NULL ) *lp = '\0';
-	tstrcpy(dir,XX_setupedPPx);
-	if ( dir[0] != '\0' ) tstrcat(dir,T("\\"));
+	if ( (lp = strchr(ptr, '\r')) != NULL ) *lp = '\0';
+	if ( (lp = strchr(ptr, '\n')) != NULL ) *lp = '\0';
+	tstrcpy(dir, XX_setupedPPx);
+	if ( dir[0] != '\0' ) tstrcat(dir, T("\\"));
 	#ifdef UNICODE
-		AnsiToUnicode(ptr + 2,ARCHIVENAME,TSIZEOF(ARCHIVENAME));
+		AnsiToUnicode(ptr + 2, ARCHIVENAME, TSIZEOF(ARCHIVENAME));
 	#endif
-	wsprintf(XX_setupedPPx,T("%s%s"),dir,ARCHIVENAME);
+	wsprintf(XX_setupedPPx, T("%s%s"), dir, ARCHIVENAME);
 	if ( GetFileAttributes(XX_setupedPPx) != BADATTR ){
-		wsprintf(buf,MessageStr[MSG_RELOADARCHIVE],ARCHIVENAME);
-		if ( MessageBox(GetFocus(),buf,msgboxtitle,
+		wsprintf(buf, MessageStr[MSG_RELOADARCHIVE], ARCHIVENAME);
+		if ( MessageBox(GetFocus(), buf, msgboxtitle,
 				MB_YESNO | MB_DEFBUTTON2 | MB_ICONQUESTION) != IDYES ){
 			goto fin;
 		}
 	}
-	wsprintf(buf,T("*httpget \"") T(TOROsWEB) T("/%s\",\"%s\""),ARCHIVENAME,XX_setupedPPx);
+	wsprintf(buf, T("*httpget \"") T(TOROsWEB) T("/%s\",\"%s\""), ARCHIVENAME, XX_setupedPPx);
 	Execute_ExtractMacro(buf);
 	dosetup = TRUE;
 fin:
@@ -908,8 +907,8 @@ fin:
 */
 BOOL AutoSetup(const TCHAR *param)
 {
-	TCHAR option,*p;
-	TCHAR dir[MAX_PATH],buf[CMDLINESIZE];
+	TCHAR option, *p;
+	TCHAR dir[MAX_PATH], buf[CMDLINESIZE];
 
 	// パスを抽出
 	option = TinyCharUpper(*param);
@@ -920,11 +919,11 @@ BOOL AutoSetup(const TCHAR *param)
 	}
 	while ( *param == ' ' ) param++;
 	if ( *param == '\"' ) param++;
-	tstrcpy(XX_setupedPPx,param);
-	if ( (p = tstrchr(XX_setupedPPx,'\"')) != NULL ) *p = '\0';
+	tstrcpy(XX_setupedPPx, param);
+	if ( (p = tstrchr(XX_setupedPPx, '\"')) != NULL ) *p = '\0';
 
 	if ( option == 'U' ){
-		tstrcpy(XX_upsrc,MyPath);
+		tstrcpy(XX_upsrc, MyPath);
 		return AUTOSETUP_COPYDIALOG;
 	}
 	if ( option != 'S' ){
@@ -934,19 +933,19 @@ BOOL AutoSetup(const TCHAR *param)
 
 	if ( GetFileAttributes(XX_setupedPPx) & FILE_ATTRIBUTE_DIRECTORY ){
 		// ディレクトリを指定した
-		tstrcpy(dir,XX_setupedPPx);
+		tstrcpy(dir, XX_setupedPPx);
 	}else{
 		if ( OSver.dwMajorVersion >= 6 ){
-			wsprintf(buf,T("*checksignature !\"%s\""),XX_setupedPPx);
+			wsprintf(buf, T("*checksignature !\"%s\""), XX_setupedPPx);
 			if ( Execute_ExtractMacro(buf) == ERROR_INVALID_DATA ){
 				return AUTOSETUP_FIN;
 			}
 		}
 
 		if ( UnarcFile(T("7-ZIP32.DLL"),
-				"SevenZip","x \"%s\" \"-o%s\" *") == FALSE ){
+				"SevenZip", "x \"%s\" \"-o%s\" *") == FALSE ){
 			if ( UnarcFile(T("UNZIP32.DLL"),
-					"UnZip","-x \"%s\" \"%s\\\" *.*") == FALSE ){
+					"UnZip", "-x \"%s\" \"%s\\\" *.*") == FALSE ){
 				if ( UnarcZipfolder() != NO_ERROR ){
 					SMessage(MessageStr[MSG_UNZIP]);
 					return AUTOSETUP_FIN;
@@ -956,19 +955,19 @@ BOOL AutoSetup(const TCHAR *param)
 		if ( IsTrue(SelfUpdate()) ) return AUTOSETUP_FIN;
 		return AUTOSETUP_COPYDIALOG;
 	}
-	wsprintf(buf,T("%s\\setup.exe"),dir);
+	wsprintf(buf, T("%s\\setup.exe"), dir);
 	if ( GetFileAttributes(buf) == BADATTR ){	// 新規setup無し
-		tstrcpy(XX_upsrc,dir);
+		tstrcpy(XX_upsrc, dir);
 		if ( SearchPPx() == FALSE ){
-			if ( SelectDirectory(NULL,MessageStr[MSG_SELECTPPX],
-					BIF_STATUSTEXT,SelInstPPxProc,XX_setupedPPx) == FALSE ){
+			if ( SelectDirectory(NULL, MessageStr[MSG_SELECTPPX],
+					BIF_STATUSTEXT, SelInstPPxProc, XX_setupedPPx) == FALSE ){
 				return AUTOSETUP_FIN;
 			}
 		}
 		return AUTOSETUP_COPYDIALOG;
 	}										// 新規setupで処理
 	if ( IsTrue(SearchPPx()) ){
-		wsprintf(buf + tstrlen(buf),T(" /U%c %s"),
+		wsprintf(buf + tstrlen(buf), T(" /U%c %s"),
 				IsTrue(XX_resultquiet) ? 'q' : ' ',
 				XX_setupedPPx);
 	}

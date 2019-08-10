@@ -5,7 +5,7 @@ struct tagPPC_APPINFO;
 
 typedef struct {
 	HFONT h;
-	int X,Y;
+	int X, Y;
 } FONTINFO;
 extern HBITMAP hAddressBMP;
 
@@ -17,10 +17,10 @@ typedef struct {
 	HWND hWnd;			// ドックに使うリバーウィンドウのハンドル
 	struct tagPPC_APPINFO *cinfo; // 内容の表示対象となる PPc
 	ThSTRUCT *th;		// 各種の情報保存に使用する領域
-	TCHAR cust[8];		// カスタマイズに使用する名前(X_dock内の項目名,最大7字)
+	TCHAR cust[8];		// カスタマイズに使用する名前(X_dock内の項目名, 最大7字)
 	// ↑上の４つは外部参照のために変更禁止
 	RECT client;		// 表示領域
-	UINT IDmin,IDmax;	// WM_COMMAND で使用される IDmin～IDmax
+	UINT IDmin, IDmax;	// WM_COMMAND で使用される IDmin～IDmax
 	HWND hInfoWnd;		// XC_inf1/2 に使用するウィンドウ
 	HWND hStatusWnd;	// XC_stat に使用するウィンドウ
 	HWND hAddrWnd;		// アドレスバーのEDITウィンドウ
@@ -42,31 +42,31 @@ typedef struct {
 #define dock_size 7
 
 typedef struct {
-	PPXDOCK t,b;	// 上側、下側のドック
+	PPXDOCK t, b;	// 上側、下側のドック
 } PPXDOCKS;
 
 extern const TCHAR RMENUSTR_LOG[];
 extern const TCHAR RMENUSTR_JOB[];
 extern const TCHAR RMPATHSTR[];
 
-extern void DocksInit(PPXDOCKS *docks,HWND hWnd,struct tagPPC_APPINFO *cinfo,const TCHAR *RegID,HFONT hFont,int fontY,ThSTRUCT *th,UINT *CommandID);
-extern BOOL DocksWmCommand(PPXDOCKS *docks,WPARAM wParam,LPARAM lParam);
-extern BOOL DocksNotify(PPXDOCKS *docks,NMHDR *nmh);
-extern BOOL DocksNeedTextNotify(PPXDOCKS *docks,NMHDR *nmh);
+extern void DocksInit(PPXDOCKS *docks, HWND hWnd, struct tagPPC_APPINFO *cinfo, const TCHAR *RegID, HFONT hFont, int fontY, ThSTRUCT *th, UINT *CommandID);
+extern BOOL DocksWmCommand(PPXDOCKS *docks, WPARAM wParam, LPARAM lParam);
+extern BOOL DocksNotify(PPXDOCKS *docks, NMHDR *nmh);
+extern BOOL DocksNeedTextNotify(PPXDOCKS *docks, NMHDR *nmh);
 extern void DocksInfoRepaint(PPXDOCKS *docks);
 extern void DocksStatusRepaint(PPXDOCKS *docks);
-extern int GetHiddenMenuItemTypeFromPoint(struct tagPPC_APPINFO *cinfo,int bottomY,int height,POINT *pos,int *ItemNo);
+extern int GetHiddenMenuItemTypeFromPoint(struct tagPPC_APPINFO *cinfo, int bottomY, int height, POINT *pos, int *ItemNo);
 extern void DockFixPPcBarSize(PPXDOCK *dock);
-extern void DockModifyMenu(HWND hWnd,PPXDOCK *dock,POINT *menupos);
-extern BOOL DockAddBar(HWND hWnd,PPXDOCK *dock,const TCHAR *name);
-extern BOOL DockDropBar(struct tagPPC_APPINFO *cinfo,PPXDOCK *dock,const TCHAR *name);
-extern BOOL DockCommands(HWND hWnd,PPXDOCK *dock,int mode,const TCHAR *name);
+extern void DockModifyMenu(HWND hWnd, PPXDOCK *dock, POINT *menupos);
+extern BOOL DockAddBar(HWND hWnd, PPXDOCK *dock, const TCHAR *name);
+extern BOOL DockDropBar(struct tagPPC_APPINFO *cinfo, PPXDOCK *dock, const TCHAR *name);
+extern BOOL DockCommands(HWND hWnd, PPXDOCK *dock, int mode, const TCHAR *name);
 extern void InitEditColor(void); // EditControl関連CC_logの色設定
-extern BOOL ToolBarDirectoryButtonRClick(HWND hParentWnd,NMHDR *nmh,ThSTRUCT *th);
-extern void DocksWmDevicechange(PPXDOCKS *docks,WPARAM wParam,LPARAM lParam);
-extern HMENU MakeDockMenu(PPXDOCK *dock,HMENU hPopupMenu,DWORD *index,ThSTRUCT *TH);
+extern BOOL ToolBarDirectoryButtonRClick(HWND hParentWnd, NMHDR *nmh, ThSTRUCT *th);
+extern void DocksWmDevicechange(PPXDOCKS *docks, WPARAM wParam, LPARAM lParam);
+extern HMENU MakeDockMenu(PPXDOCK *dock, HMENU hPopupMenu, DWORD *index, ThSTRUCT *TH);
 extern void LoadAddressBitmap(void);
-extern void DrawAddressButton(HDC hDC,RECT *box);
+extern void DrawAddressButton(HDC hDC, RECT *box);
 
 // BCC 5.0 に無い定義
 #ifdef TOOLBARCLASSNAME

@@ -13,7 +13,7 @@
 #include "VFS_FF.H"
 #pragma hdrstop
 
-const DWORD CDoffset[] = { CDHEADEROFFSET1,CDHEADEROFFSET2,CDHEADEROFFSET3,MAX32 };
+const DWORD CDoffset[] = { CDHEADEROFFSET1, CDHEADEROFFSET2, CDHEADEROFFSET3, MAX32 };
 
 #define TypeName_Normal NilStr
 const TCHAR TypeName_stream[] = VFSFFTYPENAME_STREAM;
@@ -30,17 +30,17 @@ const TCHAR TypeName_Network[] = VFSFFTYPENAME_Network;
 const TCHAR TypeName_LongPath[] = VFSFFTYPENAME_LongPath;
 const TCHAR TypeName_SHN[] = VFSFFTYPENAME_SHN;
 
-const TCHAR *TypeName_Disk[] = { TypeName_FAT,VFSFFTYPENAME_exFAT,VFSFFTYPENAME_NTFS };
+const TCHAR *TypeName_Disk[] = { TypeName_FAT, VFSFFTYPENAME_exFAT, VFSFFTYPENAME_NTFS };
 
-HANDLE AuxOpFF(const TCHAR *Fname,WIN32_FIND_DATA *findfile)
+HANDLE AuxOpFF(const TCHAR *Fname, WIN32_FIND_DATA *findfile)
 {
 	ERRORCODE result;
-	TCHAR cmdstr[CMDLINESIZE],path[VFPS];
+	TCHAR cmdstr[CMDLINESIZE], path[VFPS];
 	HANDLE hFF;
 
 	for (;;){
-		tstrcpy(path,Fname + 4);
-		result = AuxOperation(NULL,T("list"),path,NilStr,NilStr,cmdstr);
+		tstrcpy(path, Fname + 4);
+		result = AuxOperation(NULL, T("list"), path, NilStr, NilStr, cmdstr);
 		if ( result != NO_ERROR ){
 			SetLastError(result);
 			return INVALID_HANDLE_VALUE;
@@ -50,8 +50,8 @@ HANDLE AuxOpFF(const TCHAR *Fname,WIN32_FIND_DATA *findfile)
 			SetLastError(ERROR_INVALID_DRIVE);
 			return INVALID_HANDLE_VALUE;
 		}
-		CatPath(NULL,cmdstr,T("*"));
-		hFF = VFSFindFirst(cmdstr,findfile);
+		CatPath(NULL, cmdstr, T("*"));
+		hFF = VFSFindFirst(cmdstr, findfile);
 		if ( hFF != INVALID_HANDLE_VALUE ) return hFF;
 		result = GetLastError();
 		if ( (result == ERROR_INVALID_PASSWORD) && (AuthHostCache[0] != '\0') ){
@@ -65,7 +65,7 @@ HANDLE AuxOpFF(const TCHAR *Fname,WIN32_FIND_DATA *findfile)
 }
 
 #define CP_UNDLL 0x106ffff
-BOOL FFCheckUndll(VFSFINDFIRST *VFF,VUCHECKSTRUCT *vcs,int floatheader,const TCHAR *DllName)
+BOOL FFCheckUndll(VFSFINDFIRST *VFF, VUCHECKSTRUCT *vcs, int floatheader, const TCHAR *DllName)
 {
 	UN_DLL *uD;
 	int i;
@@ -73,15 +73,15 @@ BOOL FFCheckUndll(VFSFINDFIRST *VFF,VUCHECKSTRUCT *vcs,int floatheader,const TCH
 	vcs->floatheader = floatheader;
 	vcs->header += floatheader; // float の場合は、少し後ろから検索
 	uD = undll_list;
-	for ( i = 0 ; i < undll_items ; i++,uD++ ){
+	for ( i = 0 ; i < undll_items ; i++, uD++ ){
 		if ( uD->flags & UNDLLFLAG_DISABLE_DIR ) continue;
-		if ( (DllName != NULL) && tstricmp(uD->DllName,DllName) ) continue;
- 		if ( uD->VUCheck(uD,vcs) == FALSE ) continue;
+		if ( (DllName != NULL) && tstricmp(uD->DllName, DllName) ) continue;
+ 		if ( uD->VUCheck(uD, vcs) == FALSE ) continue;
 		VFF->v.UN.uD = uD;
 		#ifdef UNICODE
 		if ( (uD->UnOpenArchiveW != NULL) && (UnDllCodepage == CP_ACP) ){
 			VFF->v.UN.Ha =
-				uD->UnOpenArchiveW(GetFocus(),vcs->filenameW,M_INIT_FILE_USE);
+				uD->UnOpenArchiveW(GetFocus(), vcs->filenameW, M_INIT_FILE_USE);
 			if ( VFF->v.UN.Ha == NULL ) continue;
 			uD->codepage = CP_UNDLL;
 		}else{
@@ -94,7 +94,7 @@ BOOL FFCheckUndll(VFSFINDFIRST *VFF,VUCHECKSTRUCT *vcs,int floatheader,const TCH
 				uD->codepage = UnDllCodepage;
 				name = vcs->filename;
 			}
-			VFF->v.UN.Ha = uD->UnOpenArchive(GetFocus(),name,M_INIT_FILE_USE);
+			VFF->v.UN.Ha = uD->UnOpenArchive(GetFocus(), name, M_INIT_FILE_USE);
 			if ( VFF->v.UN.Ha == NULL ){
 				VFF->v.UN.uD->SetUnicodeMode(FALSE);
 				continue;
@@ -102,7 +102,7 @@ BOOL FFCheckUndll(VFSFINDFIRST *VFF,VUCHECKSTRUCT *vcs,int floatheader,const TCH
 		}
 		#else
 			VFF->v.UN.Ha =
-				uD->UnOpenArchive(GetFocus(),vcs->filename,M_INIT_FILE_USE);
+				uD->UnOpenArchive(GetFocus(), vcs->filename, M_INIT_FILE_USE);
 			if ( VFF->v.UN.Ha == NULL ) continue;
 		#endif
 		return TRUE;
@@ -123,14 +123,14 @@ void USEFASTCALL SetDummyFindData(WIN32_FIND_DATA *findfile)
 	findfile->cAlternateFileName[0] = '\0';
 }
 
-void USEFASTCALL SetDummydir(WIN32_FIND_DATA *findfile,const TCHAR *name)
+void USEFASTCALL SetDummydir(WIN32_FIND_DATA *findfile, const TCHAR *name)
 {
 	SetDummyFindData(findfile);
 	findfile->dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY;
-	tstrcpy(findfile->cFileName,name);
+	tstrcpy(findfile->cFileName, name);
 }
 
-int USEFASTCALL FFStepInfo(WIN32_FIND_DATA *findfile,int *step)
+int USEFASTCALL FFStepInfo(WIN32_FIND_DATA *findfile, int *step)
 {
 	if ( *step >= FFSTEP_ENTRY ) return -1;
 	if ( *step <= FFSTEP_NOMORE ){
@@ -142,18 +142,18 @@ int USEFASTCALL FFStepInfo(WIN32_FIND_DATA *findfile,int *step)
 	return 1;
 }
 
-void AddDriveList(ThSTRUCT *dirs,const TCHAR *name)
+void AddDriveList(ThSTRUCT *dirs, const TCHAR *name)
 {
 	const TCHAR *lp;
 												// ダブリがないか検索
 	lp = (const TCHAR *)dirs->bottom;
 	while ( *lp != '\0' ){
-		if ( tstricmp(name,lp) == 0 ) break;
+		if ( tstricmp(name, lp) == 0 ) break;
 		lp += tstrlen(lp) + 1;
 	}
 	if ( *lp  != '\0' ) return;
 											// 保存
-	ThAddString(dirs,name);
+	ThAddString(dirs, name);
 }
 
 /*-----------------------------------------------------------------------------
@@ -187,13 +187,13 @@ VFSFINDFIRST * USEFASTCALL IsVFSFINDFIRST(HANDLE hFF)
 	VFSFINDFIRST *VFF;
 
 	VFF = (VFSFINDFIRST *)hFF;
-//	if ( IsTrue(IsBadWritePtr(VFF,sizeof(VFSFINDFIRST))) ) return NULL;
+//	if ( IsTrue(IsBadWritePtr(VFF, sizeof(VFSFINDFIRST))) ) return NULL;
 	if ( VFF->ID != VFSFINDFIRSTID ) return NULL;
 	return VFF;
 }
 /*-----------------------------------------------------------------------------
 -----------------------------------------------------------------------------*/
-VFSDLL void PPXAPI VFSGetFFInfo(HANDLE hFF,int *mode,TCHAR *type,void **dt_opt)
+VFSDLL void PPXAPI VFSGetFFInfo(HANDLE hFF, int *mode, TCHAR *type, void **dt_opt)
 {
 	VFSFINDFIRST *VFF;
 	TCHAR *p;
@@ -203,11 +203,11 @@ VFSDLL void PPXAPI VFSGetFFInfo(HANDLE hFF,int *mode,TCHAR *type,void **dt_opt)
 	switch( VFF->mode ){
 		case VFSDT_LFILE:
 			if ( (INT_PTR)mode == 1 ){
-				tstrcpy(type,VFF->v.LFILE.base);
+				tstrcpy(type, VFF->v.LFILE.base);
 				return;
 			}
 			if ( (INT_PTR)mode == 2 ){
-				tstrcpy(type,VFF->v.LFILE.search);
+				tstrcpy(type, VFF->v.LFILE.search);
 				return;
 			}
 			*dt_opt = VFF->v.LFILE.readptr;
@@ -223,7 +223,7 @@ VFSDLL void PPXAPI VFSGetFFInfo(HANDLE hFF,int *mode,TCHAR *type,void **dt_opt)
 	}
 	*mode = VFF->mode;
 
-	p = tstrlimcpy(type,VFF->TypeName,VFSGETFFINFO_TYPESIZE - 1);
+	p = tstrlimcpy(type, VFF->TypeName, VFSGETFFINFO_TYPESIZE - 1);
 	if ( p != type ){
 		*p = ' ';
 		*(p + 1) = '\0';
@@ -242,13 +242,13 @@ FF_MC *InitMCsubdir(VFSFINDFIRST *VFF)
 	ThInit(&mc->files);
 	mc->f_off = 0;
 	mc->d_off = 0;
-	ThAddString(&mc->dirs,T("."));
-	ThAddString(&mc->dirs,T(".."));
+	ThAddString(&mc->dirs, T("."));
+	ThAddString(&mc->dirs, T(".."));
 	return mc;
 }
 
 // Vista 以降の PC 一覧( \\ )
-ERRORCODE FindUncPClist(VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile)
+ERRORCODE FindUncPClist(VFSFINDFIRST *VFF, WIN32_FIND_DATA *findfile)
 {
 	FF_MC *mc;
 	TCHAR textbuf[VFPS];
@@ -260,11 +260,11 @@ ERRORCODE FindUncPClist(VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile)
 	SERVICE_STATUS fdinfo;
 
 	fdinfo.dwCurrentState = SERVICE_RUNNING;
-	hSCManager = OpenSCManager(NULL,NULL,GENERIC_READ);
+	hSCManager = OpenSCManager(NULL, NULL, GENERIC_READ);
 	if ( hSCManager != NULL ){
-		hService = OpenService(hSCManager,FDResPubString,SERVICE_QUERY_STATUS);
+		hService = OpenService(hSCManager, FDResPubString, SERVICE_QUERY_STATUS);
 		if ( hService != NULL ){
-			QueryServiceStatus(hService,&fdinfo);
+			QueryServiceStatus(hService, &fdinfo);
 			CloseServiceHandle(hService);
 		}
 		CloseServiceHandle(hSCManager);
@@ -276,10 +276,10 @@ ERRORCODE FindUncPClist(VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile)
 	mc = InitMCsubdir(VFF);
 	VFF->TypeName = TypeName_Network;
 
-	ThAddString(&mc->dirs,T("+"));	// 拡張 PC 一覧
+	ThAddString(&mc->dirs, T("+"));	// 拡張 PC 一覧
 
 	((DWORD *)textbuf)[3] = 0;
-	GetCustData(StrX_dlf,textbuf,sizeof(DWORD) * 4);
+	GetCustData(StrX_dlf, textbuf, sizeof(DWORD) * 4);
 	if ( !(((DWORD *)textbuf)[3] & XDLF_NODISPSHARE) ){
 									// ヒストリからPC名を抽出
 		UsePPx();
@@ -288,36 +288,36 @@ ERRORCODE FindUncPClist(VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile)
 			TCHAR *p;
 			int mode;
 
-			hisp = EnumHistory(PPXH_PPCPATH,index++);
+			hisp = EnumHistory(PPXH_PPCPATH, index++);
 			if ( hisp == NULL ) break;
 
-			p = VFSGetDriveType(hisp,&mode,NULL);
+			p = VFSGetDriveType(hisp, &mode, NULL);
 			// UNC 以外 / 「\\」は無視
 			if ( (p == NULL) || (mode != VFSPT_UNC) || (*p == '\0') ) continue;
 
-			tstrcpy(textbuf,hisp + 2); // 「\\」をスキップ
+			tstrcpy(textbuf, hisp + 2); // 「\\」をスキップ
 			p = FindPathSeparator(p);
 			if ( p != NULL ){
 				p = textbuf + (p - (hisp + 2));
 				*p = '\0';
 			}
-			AddDriveList(&mc->dirs,textbuf);
+			AddDriveList(&mc->dirs, textbuf);
 		}
 		FreePPx();
 	}
 
-	ThAddString(&mc->files,NilStr);
+	ThAddString(&mc->files, NilStr);
 
-	VFSFindNext((HANDLE)VFF,findfile);
+	VFSFindNext((HANDLE)VFF, findfile);
 	return NO_ERROR;
 /*
 ヒストリ列挙
 
 ad pc 列挙
 	tls.password[0] = '\0';
-	GetRegString(HKEY_LOCAL_MACHINE,DomainNameRegPathString,DomainNameRegNameString,tls.password,TSIZEOF(tls.password));
+	GetRegString(HKEY_LOCAL_MACHINE, DomainNameRegPathString, DomainNameRegNameString, tls.password, TSIZEOF(tls.password));
 	if ( tls.password[0] != '\0' ){
-		TCHAR *src,*dest;
+		TCHAR *src, *dest;
 
 
 				// f_dis 開始していなければ、ここで止める
@@ -334,39 +334,39 @@ ad pc 列挙
 // ERROR_BAD_PATHNAME	ファイルでなかった
 // ERROR_FILE_EXISTS	形式が分かったけど、完全でないファイル
 // ERROR_INVALID_DRIVE	形式が分からなかったファイル
-ERRORCODE FileDirectory(TCHAR *fname,VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile,const TCHAR *fwild,TCHAR *DllName)
+ERRORCODE FileDirectory(TCHAR *fname, VFSFINDFIRST *VFF, WIN32_FIND_DATA *findfile, const TCHAR *fwild, TCHAR *DllName)
 {
 	HANDLE hFile;
 	BYTE header[FDHEADERSIZE + FDHEADERMARGIN];
 	DWORD fsize;
-	TCHAR dir[VFPS],*subdir = T("");
+	TCHAR dir[VFPS], *subdir = T("");
 
-	hFile = CreateFileL(fname,GENERIC_READ,
-			FILE_SHARE_READ | FILE_SHARE_WRITE,NULL,OPEN_EXISTING,
-			FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+	hFile = CreateFileL(fname, GENERIC_READ,
+			FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+			FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if ( hFile == INVALID_HANDLE_VALUE ){
 		for ( ; ; ){				// 高速検索
-			tstrcpy(dir,fname);
-			subdir = tstrchr(dir,'.');
+			tstrcpy(dir, fname);
+			subdir = tstrchr(dir, '.');
 			if ( subdir == NULL ) break;
 			subdir = VFSFindLastEntry(subdir);
 			if ( *subdir != '\\' ) break;
 			*subdir = '\0';
 			subdir++;
-			hFile = CreateFileL(dir,GENERIC_READ,
-					FILE_SHARE_READ | FILE_SHARE_WRITE,NULL,OPEN_EXISTING,
-					FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+			hFile = CreateFileL(dir, GENERIC_READ,
+					FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+					FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 			break;
 		}
 		if ( hFile == INVALID_HANDLE_VALUE ){	// 完全検索
-			tstrcpy(dir,fname);
+			tstrcpy(dir, fname);
 			for ( ; ; ){
 				subdir = VFSFindLastEntry(dir);
 				if ( *subdir == '\0' ) return ERROR_BAD_PATHNAME; // ファイルでない
 				*subdir = '\0';
-				hFile = CreateFileL(dir,GENERIC_READ,
-						FILE_SHARE_READ | FILE_SHARE_WRITE,NULL,OPEN_EXISTING,
-						FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+				hFile = CreateFileL(dir, GENERIC_READ,
+						FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+						FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 				if ( hFile != INVALID_HANDLE_VALUE ) break;
 			}
 			subdir = fname + (subdir - dir);
@@ -382,22 +382,22 @@ ERRORCODE FileDirectory(TCHAR *fname,VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile
 			subdir = T("");
 		}
 
-		if ( tstrcmp(DllName,T("stream")) == 0 ){
-			FindFirstStream(hFile,&VFF->v.STREAM,fname);
+		if ( tstrcmp(DllName, T("stream")) == 0 ){
+			FindFirstStream(hFile, &VFF->v.STREAM, fname);
 			VFF->mode = VFSDT_STREAM;
 			VFF->TypeName = TypeName_stream;
-			VFSFindNext((HANDLE)VFF,findfile);
+			VFSFindNext((HANDLE)VFF, findfile);
 			return NO_ERROR;
 		}
 	}
-	fsize = ReadFileHeader(hFile,header,FDHEADERSIZE);
+	fsize = ReadFileHeader(hFile, header, FDHEADERSIZE);
 	CloseHandle(hFile); // ネットワークだと、ここで時間が掛かることがある
 										// List File --------------------------
-	if ( !memcmp(header,LHEADER,sizeof(LHEADER) - 1) ||
-		 !memcmp(header + 2,L";ListFile\r\n",
+	if ( !memcmp(header, LHEADER, sizeof(LHEADER) - 1) ||
+		 !memcmp(header + 2, L";ListFile\r\n",
 		 					sizeof(L";ListFile\r\n") - sizeof(WCHAR)) ){
 		if ( *subdir != '\0' ) return ERROR_INVALID_DRIVE;
-		return InitFindFirstListFile(VFF,fname,findfile);
+		return InitFindFirstListFile(VFF, fname, findfile);
 	}
 										// html File --------------------------
 	if ( *header == '<' ){
@@ -405,21 +405,21 @@ ERRORCODE FileDirectory(TCHAR *fname,VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile
 		DWORD i;
 
 		p = header + 1;
-		for ( i = 0 ; i < min(1000,fsize) ; i++,p++ ){
+		for ( i = 0 ; i < min(1000, fsize) ; i++, p++ ){
 			if ( (*p < 0x20) || (*p > 0x7f) ) break;
 			if ( *p == '>' ){
-				if ( MakeWebList(&VFF->v.MC,fname,TRUE) != NO_ERROR ){
+				if ( MakeWebList(&VFF->v.MC, fname, TRUE) != NO_ERROR ){
 					return ERROR_FILE_EXISTS;
 				}
 				VFF->mode = VFSDT_HTTP;
 				VFF->TypeName = TypeName_HTML;
-				VFSFindNext((HANDLE)VFF,findfile);
+				VFSFindNext((HANDLE)VFF, findfile);
 				return NO_ERROR;
 			}
 		}
 	}
 									// FAT Image ------------------------------
-	if ( (DllName == NULL) || (tstrcmp(DllName,T("disk")) == 0) ){
+	if ( (DllName == NULL) || (tstrcmp(DllName, T("disk")) == 0) ){
 		const DWORD *o;
 		DWORD pc9801drive;
 
@@ -429,16 +429,16 @@ ERRORCODE FileDirectory(TCHAR *fname,VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile
 		for ( o = FDIoffset ; *o != MAX32 ; o++ ){
 			int fatresult;
 
-			fatresult = CheckFATImage(header + *o,header + fsize);
+			fatresult = CheckFATImage(header + *o, header + fsize);
 			if ( fatresult == CHECKFAT_NONE ) continue;
 			VFF->TypeName = TypeName_Disk[fatresult - CHECKFAT_FIRST];
 			VFF->mode = VFSDT_FATIMG;
 
-			if ( OpenFATImage(&VFF->v.FAT.fats,fname,*o) == FALSE ){
+			if ( OpenFATImage(&VFF->v.FAT.fats, fname, *o) == FALSE ){
 				return ERROR_NO_MORE_FILES;
 			}
 
-			if ( FindEntryFATImage(&VFF->v.FAT.fats,subdir,findfile) == FALSE ){
+			if ( FindEntryFATImage(&VFF->v.FAT.fats, subdir, findfile) == FALSE ){
 				CloseFATImage(&VFF->v.FAT.fats);
 				return ERROR_NO_MORE_FILES;
 			}
@@ -447,11 +447,11 @@ ERRORCODE FileDirectory(TCHAR *fname,VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile
 		if ( (fsize >= 0x2000) && ((pc9801drive = GetPC9801FirstDriveSector(header)) != 0) ){
 			VFF->TypeName = TypeName_FAT;
 			VFF->mode = VFSDT_FATIMG;
-			if ( OpenFATImage(&VFF->v.FAT.fats,fname,pc9801drive) == FALSE ){
+			if ( OpenFATImage(&VFF->v.FAT.fats, fname, pc9801drive) == FALSE ){
 				return ERROR_NO_MORE_FILES;
 			}
 
-			if ( FindEntryFATImage(&VFF->v.FAT.fats,subdir,findfile) == FALSE ){
+			if ( FindEntryFATImage(&VFF->v.FAT.fats, subdir, findfile) == FALSE ){
 				CloseFATImage(&VFF->v.FAT.fats);
 				return ERROR_NO_MORE_FILES;
 			}
@@ -459,24 +459,24 @@ ERRORCODE FileDirectory(TCHAR *fname,VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile
 		}
 	}
 									// CD Image ------------------------------
-	if ( ((DllName == NULL) || (tstrcmp(DllName,TypeName_CD) == 0)) && (fsize > 38 * 1024) ){
+	if ( ((DllName == NULL) || (tstrcmp(DllName, TypeName_CD) == 0)) && (fsize > 38 * 1024) ){
 		const DWORD *o;
 
 		for ( o = CDoffset ; *o != MAX32 ; o++ ){
-			if ( memcmp( (char *)header + *o,StrISO9660,CDHEADERSIZE) &&
-				 memcmp( (char *)header + *o,StrUDF,CDHEADERSIZE) ) continue;
-			if ( OpenCDImage(&VFF->v.CD.cds,fname,*o) == FALSE ){
+			if ( memcmp( (char *)header + *o, StrISO9660, CDHEADERSIZE) &&
+				 memcmp( (char *)header + *o, StrUDF, CDHEADERSIZE) ) continue;
+			if ( OpenCDImage(&VFF->v.CD.cds, fname, *o) == FALSE ){
 				return ERROR_NO_MORE_FILES;
 			}
 			VFF->mode = VFSDT_CDIMG;
 			VFF->TypeName = TypeName_CD;
-			if ( FindEntryCDImage(&VFF->v.CD.cds,subdir,findfile) == FALSE ){
+			if ( FindEntryCDImage(&VFF->v.CD.cds, subdir, findfile) == FALSE ){
 				CloseCDImage(&VFF->v.CD.cds);
 				return ERROR_NO_MORE_FILES;
 			}
 			if ( (*fwild != '\0') && (*fwild != '*') ) for (;;){
-				if ( IsTrue(FindEntryCDImage(&VFF->v.CD.cds,NULL,findfile)) ){
-					if ( tstricmp(findfile->cFileName,fwild) == 0 ) break;
+				if ( IsTrue(FindEntryCDImage(&VFF->v.CD.cds, NULL, findfile)) ){
+					if ( tstricmp(findfile->cFileName, fwild) == 0 ) break;
 				}else{
 					CloseCDImage(&VFF->v.CD.cds);
 					return ERROR_NO_MORE_FILES;
@@ -493,8 +493,8 @@ ERRORCODE FileDirectory(TCHAR *fname,VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile
 			char UTemp[VFPS];
 			#define TFILENAME UTemp
 			vcs.filenameW = fname;
-			UnicodeToAnsi(fname,UTemp,VFPS);
-			WideCharToMultiByteU8(CP_UTF8,0,fname,-1,vcs.filename8,VFPS,NULL,NULL);
+			UnicodeToAnsi(fname, UTemp, VFPS);
+			WideCharToMultiByteU8(CP_UTF8, 0, fname, -1, vcs.filename8, VFPS, NULL, NULL);
 		#else
 			#define TFILENAME fname
 		#endif
@@ -504,23 +504,23 @@ ERRORCODE FileDirectory(TCHAR *fname,VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile
 		vcs.fsize = fsize;
 		#undef TFILENAME
 
-		if ( IsTrue(FFCheckUndll(VFF,&vcs,0,DllName)) ||
-			 IsTrue(FFCheckUndll(VFF,&vcs,1,DllName)) ){
+		if ( IsTrue(FFCheckUndll(VFF, &vcs, 0, DllName)) ||
+			 IsTrue(FFCheckUndll(VFF, &vcs, 1, DllName)) ){
 			VFF->mode = VFSDT_UN;
 			VFF->TypeName = VFF->TypeNameBuf;
 			#ifdef UNICODE
 				if ( VFF->v.UN.uD->UnFindFirstW != NULL ){
-					strcpyW(VFF->v.UN.wild,fwild);
+					strcpyW(VFF->v.UN.wild, fwild);
 				}else{
-					UnicodeToAnsi(fwild,(char *)VFF->v.UN.wild,sizeof(VFF->v.UN.wild));
+					UnicodeToAnsi(fwild, (char *)VFF->v.UN.wild, sizeof(VFF->v.UN.wild));
 				}
-				wcslimcpy(VFF->TypeNameBuf,VFF->v.UN.uD->DllName,VFSGETFFINFO_TYPESIZE - 1);
+				wcslimcpy(VFF->TypeNameBuf, VFF->v.UN.uD->DllName, VFSGETFFINFO_TYPESIZE - 1);
 			#else
-				strcpy(VFF->v.UN.wild,fwild);
-				strlimcpy(VFF->TypeNameBuf,VFF->v.UN.uD->DllName,VFSGETFFINFO_TYPESIZE - 1);
+				strcpy(VFF->v.UN.wild, fwild);
+				strlimcpy(VFF->TypeNameBuf, VFF->v.UN.uD->DllName, VFSGETFFINFO_TYPESIZE - 1);
 			#endif
 			VFF->v.UN.step = FFSTEP_THIS;
-			FFStepInfo(findfile,&VFF->v.UN.step);
+			FFStepInfo(findfile, &VFF->v.UN.step);
 			return NO_ERROR;
 		}
 										// Susie ------------------------------
@@ -533,7 +533,7 @@ ERRORCODE FileDirectory(TCHAR *fname,VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile
 			#ifdef UNICODE
 				char STemp[VFPS];
 				#define TFILENAME STemp
-				UnicodeToAnsi(fname,STemp,VFPS);
+				UnicodeToAnsi(fname, STemp, VFPS);
 			#else
 				#define TFILENAME fname
 			#endif
@@ -543,7 +543,7 @@ ERRORCODE FileDirectory(TCHAR *fname,VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile
 
 			fp = FindLastEntryPoint(fname);
 			sudll = susie_list;
-			for ( i = 0 ; i < susie_items ; i++,sudll++ ){
+			for ( i = 0 ; i < susie_items ; i++, sudll++ ){
 				int s;
 
 				if ( DllName == NULL ){
@@ -552,26 +552,26 @@ ERRORCODE FileDirectory(TCHAR *fname,VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile
 						continue;
 					}
 				}else if ( !(sudll->flags & VFSSUSIE_ARC) ||
-					tstricmp((TCHAR *)(Thsusie_str.bottom + sudll->DllNameOffset),DllName) ){
+					tstricmp((TCHAR *)(Thsusie_str.bottom + sudll->DllNameOffset), DllName) ){
 					continue;
 				}
-				if ( CheckAndLoadSusiePlugin(sudll,fp,ts,VFS_DIRECTORY) == FALSE){
+				if ( CheckAndLoadSusiePlugin(sudll, fp, ts, VFS_DIRECTORY) == FALSE){
 					continue;
 				}
 				#ifdef UNICODE
 					if ( sudll->IsSupportedW != NULL ){
-						if ( !sudll->IsSupportedW(fname,header) ) continue;
+						if ( !sudll->IsSupportedW(fname, header) ) continue;
 					}else{
-						if ( !sudll->IsSupported(TFILENAME,header) ) continue;
+						if ( !sudll->IsSupported(TFILENAME, header) ) continue;
 					}
 					VFF->v.SU.finfoW = NULL;
 				#else
-					if ( !sudll->IsSupported(TFILENAME,header) ) continue;
+					if ( !sudll->IsSupported(TFILENAME, header) ) continue;
 				#endif
 
 				#ifdef UNICODE
 					if ( sudll->GetArchiveInfoW != NULL ){
-						s = sudll->GetArchiveInfoW(fname,0,SUSIE_SOURCE_DISK,(HLOCAL *)&VFF->v.SU.fiH);
+						s = sudll->GetArchiveInfoW(fname, 0, SUSIE_SOURCE_DISK, (HLOCAL *)&VFF->v.SU.fiH);
 						if ( s != 0 ) continue;
 
 						VFF->v.SU.finfo = NULL;
@@ -581,7 +581,7 @@ ERRORCODE FileDirectory(TCHAR *fname,VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile
 					if ( VFF->v.SU.finfoW == NULL )
 				#endif
 				{
-					s = sudll->GetArchiveInfo(TFILENAME,0,SUSIE_SOURCE_DISK,(HLOCAL *)&VFF->v.SU.fiH);
+					s = sudll->GetArchiveInfo(TFILENAME, 0, SUSIE_SOURCE_DISK, (HLOCAL *)&VFF->v.SU.fiH);
 					if ( (s != 0) && (s != 2) ) continue; //2:LHASAD.SPIでの正常値
 					VFF->v.SU.finfo = LocalLock(VFF->v.SU.fiH);
 					if ( VFF->v.SU.finfo == NULL ) continue;
@@ -593,13 +593,13 @@ ERRORCODE FileDirectory(TCHAR *fname,VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile
 
 				VFF->TypeName = VFF->TypeNameBuf;
 				#ifdef UNICODE
-					wcslimcpy(VFF->TypeNameBuf,(WCHAR *)(Thsusie_str.bottom + sudll->DllNameOffset),VFSGETFFINFO_TYPESIZE - 1);
+					wcslimcpy(VFF->TypeNameBuf, (WCHAR *)(Thsusie_str.bottom + sudll->DllNameOffset), VFSGETFFINFO_TYPESIZE - 1);
 				#else
-					strlimcpy(VFF->TypeNameBuf,Thsusie_str.bottom + sudll->DllNameOffset,VFSGETFFINFO_TYPESIZE - 1);
+					strlimcpy(VFF->TypeNameBuf, Thsusie_str.bottom + sudll->DllNameOffset, VFSGETFFINFO_TYPESIZE - 1);
 				#endif
 
 				VFF->v.SU.step = FFSTEP_THIS;
-				FFStepInfo(findfile,&VFF->v.SU.step);
+				FFStepInfo(findfile, &VFF->v.SU.step);
 
 				if ( ts != NULL ) ts->ThreadName = OldTname;
 				return NO_ERROR;
@@ -609,9 +609,9 @@ ERRORCODE FileDirectory(TCHAR *fname,VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile
 		}
 	}
 									// ZIP (zipflder.dll) ---------------------
-	if ( (DllName == NULL) || (tstrcmp(DllName,zipfldrName) == 0) ){
+	if ( (DllName == NULL) || (tstrcmp(DllName, zipfldrName) == 0) ){
 		if ( (DllName != NULL) || ((header[0] == 'P') && (header[1] == 'K') && (header[2] == 0x3)) ){
-			if ( IsTrue(ZipFolderFF(&VFF->v.ZIPO,fname,subdir,findfile,0)) ){
+			if ( IsTrue(ZipFolderFF(&VFF->v.ZIPO, fname, subdir, findfile, 0)) ){
 				VFF->mode = VFSDT_ZIPFOLDER;
 				VFF->TypeName = TypeName_ZIPfolder;
 				return NO_ERROR;
@@ -619,9 +619,9 @@ ERRORCODE FileDirectory(TCHAR *fname,VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile
 		}
 	}
 									// LZH (lzhfldr2.dll) ---------------------
-	if ( (DllName == NULL) || (tstrcmp(DllName,lzhfldrName) == 0) ){
+	if ( (DllName == NULL) || (tstrcmp(DllName, lzhfldrName) == 0) ){
 		if ( (header[2] == '-') && (header[3] == 'l') && (header[4] == 'h') ){
-			if ( IsTrue(ZipFolderFF(&VFF->v.ZIPO,fname,subdir,findfile,1)) ){
+			if ( IsTrue(ZipFolderFF(&VFF->v.ZIPO, fname, subdir, findfile, 1)) ){
 				VFF->mode = VFSDT_LZHFOLDER;
 				VFF->TypeName = TypeName_LHAfolder;
 				return NO_ERROR;
@@ -629,9 +629,9 @@ ERRORCODE FileDirectory(TCHAR *fname,VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile
 		}
 	}
 									// CAB (cabview.dll) ---------------------
-	if ( (DllName == NULL) || (tstrcmp(DllName,cabfldrName) == 0) ){
+	if ( (DllName == NULL) || (tstrcmp(DllName, cabfldrName) == 0) ){
 		if ( (header[0] == 'M') && (header[1] == 'S') && (header[2] == 'C') ){
-			if ( IsTrue(ZipFolderFF(&VFF->v.ZIPO,fname,subdir,findfile,2)) ){
+			if ( IsTrue(ZipFolderFF(&VFF->v.ZIPO, fname, subdir, findfile, 2)) ){
 				VFF->mode = VFSDT_CABFOLDER;
 				VFF->TypeName = TypeName_CABfolder;
 				return NO_ERROR;
@@ -639,21 +639,21 @@ ERRORCODE FileDirectory(TCHAR *fname,VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile
 		}
 	}
 									// CD/DVD Image --------------------------
-	if ( ((DllName == NULL) || (tstrcmp(DllName,TypeName_CD) == 0)) && (fsize > 38 * 1024) && (*(DWORD *)header == 0) ){
-		hFile = CreateFileL(fname,GENERIC_READ,
-							FILE_SHARE_READ | FILE_SHARE_WRITE,NULL,
-							OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
-		if ( MAX32 == SetFilePointer(hFile,CDHEADEROFFSET4,NULL,FILE_BEGIN) ){
+	if ( ((DllName == NULL) || (tstrcmp(DllName, TypeName_CD) == 0)) && (fsize > 38 * 1024) && (*(DWORD *)header == 0) ){
+		hFile = CreateFileL(fname, GENERIC_READ,
+				FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+				OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		if ( MAX32 == SetFilePointer(hFile, CDHEADEROFFSET4, NULL, FILE_BEGIN) ){
 			CloseHandle(hFile);
 		}else{
 			CloseHandle(hFile);
 
-			if ( OpenCDImage(&VFF->v.CD.cds,fname,CDHEADEROFFSET4) == FALSE ){
+			if ( OpenCDImage(&VFF->v.CD.cds, fname, CDHEADEROFFSET4) == FALSE ){
 				return ERROR_NO_MORE_FILES;
 			}
 			VFF->mode = VFSDT_CDIMG;
 			VFF->TypeName = TypeName_CD;
-			if ( FindEntryCDImage(&VFF->v.CD.cds,subdir,findfile)==FALSE){
+			if ( FindEntryCDImage(&VFF->v.CD.cds, subdir, findfile)==FALSE){
 				CloseCDImage(&VFF->v.CD.cds);
 				return ERROR_NO_MORE_FILES;
 			}
@@ -665,29 +665,29 @@ ERRORCODE FileDirectory(TCHAR *fname,VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile
 /*-----------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------*/
-VFSDLL HANDLE PPXAPI VFSFindFirst(const TCHAR *dir,WIN32_FIND_DATA *findfile)
+VFSDLL HANDLE PPXAPI VFSFindFirst(const TCHAR *dir, WIN32_FIND_DATA *findfile)
 {
 	VFSFINDFIRST *VFF;
 	ERRORCODE errorcode;
 	ERRORCODE realerror = NO_ERROR; // GNC/UNCが可能:NO_ERROR / その結果
 	// ERROR_BADKEY : FindFirstFile を試さず、SHN を直接使用する (通常でないエラーを利用している)
-	TCHAR Fname[VFPS],*Fwild;
-	int mode,force;
+	TCHAR Fname[VFPS], *Fwild;
+	int mode, force;
 	TCHAR *vp;
 
 										// 検索対象の種類を判別 ---------------
-	tstrcpy(Fname,dir);
-	vp = VFSGetDriveType(Fname,&mode,&force);
+	tstrcpy(Fname, dir);
+	vp = VFSGetDriveType(Fname, &mode, &force);
 	if ( vp == NULL ){		// 種類が分からない→相対指定の可能性→絶対化
-		VFSFullPath(Fname,(TCHAR *)dir,NULL);
-		vp = VFSGetDriveType(Fname,&mode,&force);
+		VFSFullPath(Fname, (TCHAR *)dir, NULL);
+		vp = VFSGetDriveType(Fname, &mode, &force);
 		if ( vp == NULL ){	// それでも種類が分からない→エラー
 			errorcode = ERROR_BAD_PATHNAME;
 			goto error_nofree;
 		}
 	}
 										// 検索用ハンドルを作成 ---------------
-	VFF = HeapAlloc( DLLheap,0,sizeof(VFSFINDFIRST) );
+	VFF = HeapAlloc( DLLheap, 0, sizeof(VFSFINDFIRST) );
 	if ( VFF == NULL ){
 		errorcode = ERROR_NOT_ENOUGH_MEMORY;
 		goto error_nofree;
@@ -717,23 +717,23 @@ VFSDLL HANDLE PPXAPI VFSFindFirst(const TCHAR *dir,WIN32_FIND_DATA *findfile)
 		case VFSPT_RAWDISK: {	// "#A:" を "\\.\A:" に変換
 			TCHAR readdrive[8];
 
-			wsprintf(readdrive,T("\\\\.\\%c:"),*(vp - 2));
-			if ( IsTrue(OpenFATImage(&VFF->v.FAT.fats,readdrive,0)) ){
+			wsprintf(readdrive, T("\\\\.\\%c:"), *(vp - 2));
+			if ( IsTrue(OpenFATImage(&VFF->v.FAT.fats, readdrive, 0)) ){
 				VFF->mode = VFSDT_FATDISK;
 				VFF->TypeName = TypeName_FAT;
 				while ( *vp == '\\' ) vp++;
-				if ( FindEntryFATImage(&VFF->v.FAT.fats,vp,findfile) == FALSE ){
+				if ( FindEntryFATImage(&VFF->v.FAT.fats, vp, findfile) == FALSE ){
 					errorcode = *vp ? ERROR_PATH_NOT_FOUND : ERROR_FILE_NOT_FOUND;
 					CloseFATImage(&VFF->v.FAT.fats);
 					goto error;
 				}
 				return (HANDLE)VFF;
 			}
-			if ( IsTrue(OpenCDImage(&VFF->v.CD.cds,readdrive,CDHEADEROFFSET1)) ){
+			if ( IsTrue(OpenCDImage(&VFF->v.CD.cds, readdrive, CDHEADEROFFSET1)) ){
 				VFF->mode = VFSDT_CDDISK;
 				VFF->TypeName = TypeName_CD;
 				while ( *vp == '\\' ) vp++;
-				if ( FindEntryCDImage(&VFF->v.CD.cds,vp,findfile) == FALSE){
+				if ( FindEntryCDImage(&VFF->v.CD.cds, vp, findfile) == FALSE){
 					errorcode = *vp ? ERROR_PATH_NOT_FOUND : ERROR_FILE_NOT_FOUND;
 					CloseCDImage(&VFF->v.CD.cds);
 					goto error;
@@ -748,25 +748,25 @@ VFSDLL HANDLE PPXAPI VFSFindFirst(const TCHAR *dir,WIN32_FIND_DATA *findfile)
 			VFF->mode = VFSDT_DLIST;
 			VFF->TypeName = TypeName_DriveList;
 			MakeDriveList(&VFF->v.MC);
-			VFSFindNext((HANDLE)VFF,findfile);
+			VFSFindNext((HANDLE)VFF, findfile);
 			return (HANDLE)VFF;
 
 		case VFSPT_HTTP:
 			VFF->mode = VFSDT_HTTP;
 			VFF->TypeName = TypeName_HTML;
-			errorcode = MakeWebList(&VFF->v.MC,Fname,FALSE);
+			errorcode = MakeWebList(&VFF->v.MC, Fname, FALSE);
 			if ( errorcode != NO_ERROR ) goto error;
-			VFSFindNext((HANDLE)VFF,findfile);
+			VFSFindNext((HANDLE)VFF, findfile);
 			return (HANDLE)VFF;
 
 		case VFSPT_AUXOP:
-			HeapFree( DLLheap,0,VFF );
-			return AuxOpFF(Fname,findfile);
+			HeapFree( DLLheap, 0, VFF );
+			return AuxOpFF(Fname, findfile);
 
 		case VFSPT_FTP:
 			VFF->mode = VFSDT_FTP;
 			VFF->TypeName = TypeName_FTP;
-			errorcode = FTPff(&VFF->v.FTP,dir,findfile);
+			errorcode = FTPff(&VFF->v.FTP, dir, findfile);
 			if ( errorcode != NO_ERROR ) goto error;
 			return (HANDLE)VFF;
 #ifdef USESLASHPATH
@@ -774,9 +774,9 @@ VFSDLL HANDLE PPXAPI VFSFindFirst(const TCHAR *dir,WIN32_FIND_DATA *findfile)
 			VFF->mode = VFSDT_SLASH;
 			VFF->TypeName = TypeName_root;
 #ifdef WINEGCC
-			errorcode = FirstSlashDir(&VFF->v.SLASH,Fname,findfile);
+			errorcode = FirstSlashDir(&VFF->v.SLASH, Fname, findfile);
 #else
-			errorcode = FirstSlashDir(&VFF->v.SLASH,dir,findfile);
+			errorcode = FirstSlashDir(&VFF->v.SLASH, dir, findfile);
 #endif
 			if ( errorcode != NO_ERROR ) goto error;
 			return (HANDLE)VFF;
@@ -796,7 +796,7 @@ VFSDLL HANDLE PPXAPI VFSFindFirst(const TCHAR *dir,WIN32_FIND_DATA *findfile)
 					ps = vp;
 					while ( (ps = FindPathSeparator(ps)) != NULL) *ps++ = '/';
 				}
-				errorcode = FirstSlashDir(&VFF->v.SLASH,vp,findfile);
+				errorcode = FirstSlashDir(&VFF->v.SLASH, vp, findfile);
 				if ( errorcode == NO_ERROR ) return (HANDLE)VFF;
 				if ( errorcode != ERROR_DIRECTORY ) goto error;
 			}
@@ -819,11 +819,11 @@ VFSDLL HANDLE PPXAPI VFSFindFirst(const TCHAR *dir,WIN32_FIND_DATA *findfile)
 									// 「\\」 PC一覧
 			if ( Fwild <= vp ){
 				if ( WinType >= WINTYPE_VISTA ){
-					errorcode = FindUncPClist(VFF,findfile);
+					errorcode = FindUncPClist(VFF, findfile);
 					if ( errorcode == NO_ERROR ) return (HANDLE)VFF;
 					if ( errorcode != ERROR_DIRECTORY ) goto error;
 				}
-				memcpy(Fname,T("\\\\\0*.*"),TSTROFF(7));
+				memcpy(Fname, T("\\\\\0*.*"), TSTROFF(7));
 				vp = Fname;
 				Fwild = Fname + 3;
 				realerror = ERROR_BADKEY; // FindFirstFile のトライをスキップ
@@ -837,18 +837,18 @@ VFSDLL HANDLE PPXAPI VFSFindFirst(const TCHAR *dir,WIN32_FIND_DATA *findfile)
 					mc = InitMCsubdir(VFF);
 					VFF->TypeName = TypeName_Network;
 
-					EnumNetServer(&mc->dirs,TRUE);
+					EnumNetServer(&mc->dirs, TRUE);
 
-					ThAddString(&mc->files,NilStr);
-					VFSFindNext((HANDLE)VFF,findfile);
+					ThAddString(&mc->files, NilStr);
+					VFSFindNext((HANDLE)VFF, findfile);
 					return (HANDLE)VFF;
 				}
 
 				// リソース一覧 (SHNパスの場合キャッシュ無しだと数秒待たされる)
-				if ( IsTrue(MakeComputerResourceList(&VFF->v.MC,vp - 2)) ){
+				if ( IsTrue(MakeComputerResourceList(&VFF->v.MC, vp - 2)) ){
 					VFF->mode = VFSDT_DLIST;
 					VFF->TypeName = TypeName_Network;
-					VFSFindNext((HANDLE)VFF,findfile);
+					VFSFindNext((HANDLE)VFF, findfile);
 					return (HANDLE)VFF;
 				}
 				mode = -1 - CSIDL_NETWORK;
@@ -875,7 +875,7 @@ VFSDLL HANDLE PPXAPI VFSFindFirst(const TCHAR *dir,WIN32_FIND_DATA *findfile)
 	if ( realerror == NO_ERROR ){		// GNC/UNC ----------------------------
 		*(Fwild - 1) = '\\';
 		VFF->mode = VFSDT_PATH;
-		VFF->v.FFF.hFF = DFindFirstFile(vp,findfile);
+		VFF->v.FFF.hFF = DFindFirstFile(vp, findfile);
 		if ( VFF->v.FFF.hFF != INVALID_HANDLE_VALUE ){	// 成功
 			VFF->TypeName = TypeName_Normal;
 			return (HANDLE)VFF;
@@ -883,7 +883,7 @@ VFSDLL HANDLE PPXAPI VFSFindFirst(const TCHAR *dir,WIN32_FIND_DATA *findfile)
 		errorcode = GetLastError();
 		if ((errorcode == ERROR_FILENAME_EXCED_RANGE) ||
 		   ((errorcode == ERROR_PATH_NOT_FOUND) && (tstrlen(vp) >= MAX_PATH))){
-			VFF->v.FFF.hFF = FindFirstFileLs(vp,findfile);
+			VFF->v.FFF.hFF = FindFirstFileLs(vp, findfile);
 			if (VFF->v.FFF.hFF != INVALID_HANDLE_VALUE){	// 成功
 				VFF->TypeName = TypeName_LongPath;
 				return (HANDLE)VFF;
@@ -901,16 +901,16 @@ VFSDLL HANDLE PPXAPI VFSFindFirst(const TCHAR *dir,WIN32_FIND_DATA *findfile)
 			TCHAR *separator;
 			TCHAR *DllName = NULL;
 
-			separator = tstrrchr(vp,':'); // "::" を検索
+			separator = tstrrchr(vp, ':'); // "::" を検索
 			if ( (separator != NULL) &&
 				 (separator >= (vp + 2)) &&
 				 (*(separator - 1) == ':') ){
 				*(separator - 1) = '\0';
 													// 強制listfile ?
-				if ( !memcmp((TCHAR *)(separator + 1),StrListFileid + 2,TSTROFF(8))){
+				if ( !memcmp((TCHAR *)(separator + 1), StrListFileid + 2, TSTROFF(8))){
 					ERRORCODE result;
 
-					result = InitFindFirstListFile(VFF,vp,findfile);
+					result = InitFindFirstListFile(VFF, vp, findfile);
 					if ( result != NO_ERROR ){
 						errorcode = result;
 						goto error;
@@ -926,7 +926,7 @@ VFSDLL HANDLE PPXAPI VFSFindFirst(const TCHAR *dir,WIN32_FIND_DATA *findfile)
 			if ( errorcode == ERROR_INVALID_NAME ) goto error;
 
 										// FileDirectory ?
-			temperror = FileDirectory(Fname,VFF,findfile,Fwild,DllName);
+			temperror = FileDirectory(Fname, VFF, findfile, Fwild, DllName);
 			if ( temperror == NO_ERROR ) return (HANDLE)VFF;
 			if ( temperror != ERROR_INVALID_DRIVE ){
 				// temperror == ERROR_BAD_PATHNAME は、親で上位階層に移動させる
@@ -948,35 +948,35 @@ VFSDLL HANDLE PPXAPI VFSFindFirst(const TCHAR *dir,WIN32_FIND_DATA *findfile)
 		realerror = errorcode;
 							// 失敗→ Shell's Namespace が使えるか試す
 	}
-	errorcode = VFSFF_SHN(vp,&VFF->v.SHN,findfile,mode);
+	errorcode = VFSFF_SHN(vp, &VFF->v.SHN, findfile, mode);
 	if ( errorcode == NO_ERROR ){
 		VFF->mode = VFSDT_SHN;
 		VFF->TypeName = TypeName_SHN;
 		return (HANDLE)VFF;
 	}else if ( (errorcode == ERROR_BAD_PATHNAME)
 		&& ((mode < 0) || (mode == VFSDT_SHN)) ){
-		TCHAR *p = tstrstr(Fname,T("::"));
+		TCHAR *p = tstrstr(Fname, T("::"));
 
 		if ( (p != NULL) && (p != Fname) && (*(Fname - 1) != '\\') ){
 			*p = '\0';
-			if ( IsTrue(VFSGetRealPath(NULL,Fname,Fname)) ){
-				p = tstrstr(dir,T("::"));
-				if ( p != NULL ) tstrcat(Fname,p);
-				HeapFree( DLLheap,0,VFF );
-				return VFSFindFirst(Fname,findfile);
+			if ( IsTrue(VFSGetRealPath(NULL, Fname, Fname)) ){
+				p = tstrstr(dir, T("::"));
+				if ( p != NULL ) tstrcat(Fname, p);
+				HeapFree( DLLheap, 0, VFF );
+				return VFSFindFirst(Fname, findfile);
 			}
 		}
 	}
 	if ( realerror != ERROR_BADKEY ) errorcode = realerror;
 										// エラー終了処理 ---------------------
 error:
-	HeapFree( DLLheap,0,VFF );
+	HeapFree( DLLheap, 0, VFF );
 error_nofree:
 	SetLastError(errorcode);
 	return INVALID_HANDLE_VALUE;
 }
 
-BOOL FindSusieNext(VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile)
+BOOL FindSusieNext(VFSFINDFIRST *VFF, WIN32_FIND_DATA *findfile)
 {
 	ULONG_PTR tmptime;
 
@@ -985,7 +985,7 @@ BOOL FindSusieNext(VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile)
 	*/
 
 	if ( VFF->v.SU.step < FFSTEP_ENTRY ){
-		return FFStepInfo(findfile,&VFF->v.SU.step);
+		return FFStepInfo(findfile, &VFF->v.SU.step);
 	}
 	#ifdef UNICODE
 	if ( VFF->v.SU.finfo == NULL ){
@@ -1003,7 +1003,7 @@ BOOL FindSusieNext(VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile)
 			findfile->nFileSizeLow = VFF->v.SU.finfoW->filesize;
 		#endif
 		CatPath(findfile->cFileName,
-				VFF->v.SU.finfoW->path,VFF->v.SU.finfoW->filename);
+				VFF->v.SU.finfoW->path, VFF->v.SU.finfoW->filename);
 		VFF->v.SU.finfoW++;
 	}else
 	#endif
@@ -1025,12 +1025,12 @@ BOOL FindSusieNext(VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile)
 		{
 			TCHAR Temp[VFPS];
 
-			AnsiToUnicode(VFF->v.SU.finfo->path,findfile->cFileName,VFPS);
-			AnsiToUnicode(VFF->v.SU.finfo->filename,Temp,VFPS);
-			CatPath(NULL,findfile->cFileName,Temp);
+			AnsiToUnicode(VFF->v.SU.finfo->path, findfile->cFileName, MAX_PATH);
+			AnsiToUnicode(VFF->v.SU.finfo->filename, Temp, VFPS);
+			CatPath(NULL, findfile->cFileName, Temp);
 		}
 		#else
-			CatPath(findfile->cFileName,VFF->v.SU.finfo->path,VFF->v.SU.finfo->filename);
+			CatPath(findfile->cFileName, VFF->v.SU.finfo->path, VFF->v.SU.finfo->filename);
 		#endif
 		VFF->v.SU.finfo++;
 	}
@@ -1060,7 +1060,7 @@ BOOL FindSusieNext(VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile)
 }
 
 #ifdef UNICODE
-void SetVFFundllW(FF_UN *UN,WIN32_FIND_DATA *findfile,INDIVIDUALINFOW *arcinfo)
+void SetVFFundllW(FF_UN *UN, WIN32_FIND_DATA *findfile, INDIVIDUALINFOW *arcinfo)
 {
 	FILETIME ftime;
 	ARCSIZE64 s64;
@@ -1068,22 +1068,22 @@ void SetVFFundllW(FF_UN *UN,WIN32_FIND_DATA *findfile,INDIVIDUALINFOW *arcinfo)
 
 	findfile->dwFileAttributes = 0;
 	if ( ! ((UN->uD->UnGetWriteTimeEx != NULL) &&
-			IsTrue(UN->uD->UnGetWriteTimeEx(UN->Ha,&findfile->ftLastWriteTime)) ) ){
-		DosDateTimeToFileTime(arcinfo->wDate,arcinfo->wTime,&ftime);
-		LocalFileTimeToFileTime(&ftime,&findfile->ftLastWriteTime);
+			IsTrue(UN->uD->UnGetWriteTimeEx(UN->Ha, &findfile->ftLastWriteTime)) ) ){
+		DosDateTimeToFileTime(arcinfo->wDate, arcinfo->wTime, &ftime);
+		LocalFileTimeToFileTime(&ftime, &findfile->ftLastWriteTime);
 	}
 	if ( ! ((UN->uD->UnGetCreateTimeEx != NULL) &&
-			IsTrue(UN->uD->UnGetCreateTimeEx(UN->Ha,&findfile->ftCreationTime)) ) ){
+			IsTrue(UN->uD->UnGetCreateTimeEx(UN->Ha, &findfile->ftCreationTime)) ) ){
 		findfile->ftCreationTime.dwLowDateTime = 0;
 		findfile->ftCreationTime.dwHighDateTime = 0;
 	}
 	if ( ! ((UN->uD->UnGetAccessTimeEx != NULL) &&
-			IsTrue(UN->uD->UnGetAccessTimeEx(UN->Ha,&findfile->ftLastAccessTime)) ) ){
+			IsTrue(UN->uD->UnGetAccessTimeEx(UN->Ha, &findfile->ftLastAccessTime)) ) ){
 		findfile->ftLastAccessTime.dwLowDateTime = 0;
 		findfile->ftLastAccessTime.dwHighDateTime = 0;
 	}
 	if ( (UN->uD->UnGetOriginalSizeEx != NULL) &&
-		 IsTrue(UN->uD->UnGetOriginalSizeEx(UN->Ha,&s64)) ){
+		 IsTrue(UN->uD->UnGetOriginalSizeEx(UN->Ha, &s64)) ){
 		findfile->nFileSizeHigh = s64.h;
 		findfile->nFileSizeLow = s64.l;
 	}else{
@@ -1094,13 +1094,13 @@ void SetVFFundllW(FF_UN *UN,WIN32_FIND_DATA *findfile,INDIVIDUALINFOW *arcinfo)
 
 	p = arcinfo->szFileName;
 	p[MAX_PATH - 1] = '\0';		// 長さ調節
-	while ( (p = tstrchr(p,'/')) != NULL ) *p = '\\';
+	while ( (p = tstrchr(p, '/')) != NULL ) *p = '\\';
 
-	tstrcpy(findfile->cFileName,arcinfo->szFileName);
-//	tstrlimcpy(findfile->cFileName,arcinfo->szFileName,MAX_PATH);
+	tstrcpy(findfile->cFileName, arcinfo->szFileName);
+//	tstrlimcpy(findfile->cFileName, arcinfo->szFileName, MAX_PATH);
 }
 #endif
-void SetVFFundllA(FF_UN *UN,WIN32_FIND_DATA *findfile,INDIVIDUALINFOA *arcinfo)
+void SetVFFundllA(FF_UN *UN, WIN32_FIND_DATA *findfile, INDIVIDUALINFOA *arcinfo)
 {
 	FILETIME ftime;
 	ARCSIZE64 s64;
@@ -1108,22 +1108,22 @@ void SetVFFundllA(FF_UN *UN,WIN32_FIND_DATA *findfile,INDIVIDUALINFOA *arcinfo)
 
 	findfile->dwFileAttributes = 0;
 	if ( ! ((UN->uD->UnGetWriteTimeEx != NULL) &&
-			 IsTrue(UN->uD->UnGetWriteTimeEx(UN->Ha,&findfile->ftLastWriteTime)) ) ){
-		DosDateTimeToFileTime(arcinfo->wDate,arcinfo->wTime,&ftime);
-		LocalFileTimeToFileTime(&ftime,&findfile->ftLastWriteTime);
+			 IsTrue(UN->uD->UnGetWriteTimeEx(UN->Ha, &findfile->ftLastWriteTime)) ) ){
+		DosDateTimeToFileTime(arcinfo->wDate, arcinfo->wTime, &ftime);
+		LocalFileTimeToFileTime(&ftime, &findfile->ftLastWriteTime);
 	}
 	if ( ! ((UN->uD->UnGetCreateTimeEx != NULL) &&
-			 IsTrue(UN->uD->UnGetCreateTimeEx(UN->Ha,&findfile->ftCreationTime)) ) ){
+			 IsTrue(UN->uD->UnGetCreateTimeEx(UN->Ha, &findfile->ftCreationTime)) ) ){
 		findfile->ftCreationTime.dwLowDateTime = 0;
 		findfile->ftCreationTime.dwHighDateTime = 0;
 	}
 	if ( ! ((UN->uD->UnGetAccessTimeEx != NULL) &&
-			 IsTrue(UN->uD->UnGetAccessTimeEx(UN->Ha,&findfile->ftLastAccessTime)) ) ){
+			 IsTrue(UN->uD->UnGetAccessTimeEx(UN->Ha, &findfile->ftLastAccessTime)) ) ){
 		findfile->ftLastAccessTime.dwLowDateTime = 0;
 		findfile->ftLastAccessTime.dwHighDateTime = 0;
 	}
 	if ( (UN->uD->UnGetOriginalSizeEx != NULL) &&
-		 IsTrue(UN->uD->UnGetOriginalSizeEx(UN->Ha,&s64)) ){
+		 IsTrue(UN->uD->UnGetOriginalSizeEx(UN->Ha, &s64)) ){
 		findfile->nFileSizeHigh = s64.h;
 		findfile->nFileSizeLow = s64.l;
 	}else{
@@ -1134,19 +1134,19 @@ void SetVFFundllA(FF_UN *UN,WIN32_FIND_DATA *findfile,INDIVIDUALINFOA *arcinfo)
 
 	p = arcinfo->szFileName;
 	p[MAX_PATH - 1] = '\0';		// 長さ調節
-	while ( (p = strchr(p,'/')) != NULL ) *p = '\\';
+	while ( (p = strchr(p, '/')) != NULL ) *p = '\\';
 
 	#ifdef UNICODE
-		tstrcpy(findfile->cFileName,L"???");
+		tstrcpy(findfile->cFileName, L"???");
 		MultiByteToWideCharU8(UN->uD->codepage,
 				(UN->uD->codepage == CP_UTF8) ? 0 : MB_PRECOMPOSED,
-				arcinfo->szFileName,-1,findfile->cFileName,MAX_PATH);
+				arcinfo->szFileName, -1, findfile->cFileName, MAX_PATH);
 	#else
-		tstrlimcpy(findfile->cFileName,arcinfo->szFileName,MAX_PATH);
+		tstrlimcpy(findfile->cFileName, arcinfo->szFileName, MAX_PATH);
 	#endif
 }
 
-BOOL FindUnxNext(VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile)
+BOOL FindUnxNext(VFSFINDFIRST *VFF, WIN32_FIND_DATA *findfile)
 {
 	union {
 		INDIVIDUALINFOA A;
@@ -1159,21 +1159,21 @@ BOOL FindUnxNext(VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile)
 	if ( VFF->v.UN.uD->codepage == CP_UNDLL ){
 		switch( VFF->v.UN.step ){
 			case FFSTEP_ENTRYNEXT:
-				if ( VFF->v.UN.uD->UnFindNextW(VFF->v.UN.Ha,&arcinfo.W) ){
+				if ( VFF->v.UN.uD->UnFindNextW(VFF->v.UN.Ha, &arcinfo.W) ){
 					VFF->v.UN.step = FFSTEP_NOMORE;
 					break;
 				}
-				SetVFFundllW(&VFF->v.UN,findfile,&arcinfo.W);
+				SetVFFundllW(&VFF->v.UN, findfile, &arcinfo.W);
 				return TRUE;
 
 			case FFSTEP_ENTRY:
 				if ( VFF->v.UN.uD->UnFindFirstW(
-						VFF->v.UN.Ha,VFF->v.UN.wild,&arcinfo.W)){
+						VFF->v.UN.Ha, VFF->v.UN.wild, &arcinfo.W)){
 					VFF->v.UN.step = FFSTEP_NOMORE;
 					break;
 				}
 				VFF->v.UN.step++;
-				SetVFFundllW(&VFF->v.UN,findfile,&arcinfo.W);
+				SetVFFundllW(&VFF->v.UN, findfile, &arcinfo.W);
 				return TRUE;
 		}
 	}else
@@ -1181,29 +1181,29 @@ BOOL FindUnxNext(VFSFINDFIRST *VFF,WIN32_FIND_DATA *findfile)
 	{
 		switch( VFF->v.UN.step ){
 			case FFSTEP_ENTRYNEXT:
-				if ( VFF->v.UN.uD->UnFindNext(VFF->v.UN.Ha,&arcinfo.A) ){
+				if ( VFF->v.UN.uD->UnFindNext(VFF->v.UN.Ha, &arcinfo.A) ){
 					VFF->v.UN.step = FFSTEP_NOMORE;
 					break;
 				}
-				SetVFFundllA(&VFF->v.UN,findfile,&arcinfo.A);
+				SetVFFundllA(&VFF->v.UN, findfile, &arcinfo.A);
 				return TRUE;
 
 			case FFSTEP_ENTRY:
 				if ( VFF->v.UN.uD->UnFindFirst(
-						VFF->v.UN.Ha,(char *)VFF->v.UN.wild,&arcinfo.A)){
+						VFF->v.UN.Ha, (char *)VFF->v.UN.wild, &arcinfo.A)){
 					VFF->v.UN.step = FFSTEP_NOMORE;
 					break;
 				}
 				VFF->v.UN.step++;
-				SetVFFundllA(&VFF->v.UN,findfile,&arcinfo.A);
+				SetVFFundllA(&VFF->v.UN, findfile, &arcinfo.A);
 				return TRUE;
 		}
 	}
-	return FFStepInfo(findfile,&VFF->v.UN.step);
+	return FFStepInfo(findfile, &VFF->v.UN.step);
 }
 /*-----------------------------------------------------------------------------
 -----------------------------------------------------------------------------*/
-VFSDLL BOOL PPXAPI VFSFindNext(HANDLE hFF,WIN32_FIND_DATA *findfile)
+VFSDLL BOOL PPXAPI VFSFindNext(HANDLE hFF, WIN32_FIND_DATA *findfile)
 {
 	VFSFINDFIRST *VFF;
 	ERRORCODE errorcode;
@@ -1217,12 +1217,12 @@ VFSDLL BOOL PPXAPI VFSFindNext(HANDLE hFF,WIN32_FIND_DATA *findfile)
 	switch( VFF->mode ){
 		case VFSDT_PATH:				// GNC/UNC ----------------------------
 #if 0
-			return FindNextFile(VFF->v.FFF.hFF,findfile);
+			return FindNextFile(VFF->v.FFF.hFF, findfile);
 #else
 		{ // 64bit では nFileSizeLow に directory file のサイズが入るようだ
 			BOOL result;
 
-			result = FindNextFile(VFF->v.FFF.hFF,findfile);
+			result = FindNextFile(VFF->v.FFF.hFF, findfile);
 			#ifdef WINEGCC
 			if ( findfile->dwFileAttributes == BADATTR ){
 				findfile->dwFileAttributes = FILE_ATTRIBUTE_DEVICE;
@@ -1235,13 +1235,13 @@ VFSDLL BOOL PPXAPI VFSFindNext(HANDLE hFF,WIN32_FIND_DATA *findfile)
 		}
 #endif
 		case VFSDT_FTP:					// ftp  -------------------------------
-			return FTPnf(&VFF->v.FTP,findfile);
+			return FTPnf(&VFF->v.FTP, findfile);
 
 		case VFSDT_LFILE:					// ListFile -----------------------
 			if ( VFF->v.LFILE.type == VFSDT_LFILE_TYPE_LIST ){
-				return GetListLine(&VFF->v.LFILE,findfile);
+				return GetListLine(&VFF->v.LFILE, findfile);
 			}
-			SetDummydir(findfile,T(".."));
+			SetDummydir(findfile, T(".."));
 			findfile->dwReserved0 = 0;
 			findfile->dwReserved1 = 0;
 			VFF->v.LFILE.type = VFSDT_LFILE_TYPE_LIST;
@@ -1253,7 +1253,7 @@ VFSDLL BOOL PPXAPI VFSFindNext(HANDLE hFF,WIN32_FIND_DATA *findfile)
 
 			p = (TCHAR *)(VFF->v.MC.dirs.bottom + VFF->v.MC.d_off);
 			if ( (p != NULL) && *p ){
-				SetDummydir(findfile,p);
+				SetDummydir(findfile, p);
 				VFF->v.MC.d_off += TSTRSIZE32(p);
 				return TRUE;
 			}
@@ -1261,7 +1261,7 @@ VFSDLL BOOL PPXAPI VFSFindNext(HANDLE hFF,WIN32_FIND_DATA *findfile)
 			if ( (p != NULL) && *p ){
 				findfile->dwFileAttributes = FILE_ATTRIBUTE_READONLY;
 				SetDummyFindData(findfile);
-				tstrcpy(findfile->cFileName,p);
+				tstrcpy(findfile->cFileName, p);
 				VFF->v.MC.f_off += TSTRSIZE32(p);
 				return TRUE;
 			}
@@ -1270,14 +1270,14 @@ VFSDLL BOOL PPXAPI VFSFindNext(HANDLE hFF,WIN32_FIND_DATA *findfile)
 		}
 
 		case VFSDT_SHN:						// SHN ---------------------------
-			return VFSFN_SHN(&VFF->v.SHN,findfile);
+			return VFSFN_SHN(&VFF->v.SHN, findfile);
 
 		case VFSDT_STREAM:					// stream -------------------------
-			return FindNextStream(&VFF->v.STREAM,findfile);
+			return FindNextStream(&VFF->v.STREAM, findfile);
 
 		case VFSDT_FATIMG:					// FAT Image File ----------------
 		case VFSDT_FATDISK:					// FAT Disk ----------------
-			if ( IsTrue(FindEntryFATImage(&VFF->v.FAT.fats,NULL,findfile)) ){
+			if ( IsTrue(FindEntryFATImage(&VFF->v.FAT.fats, NULL, findfile)) ){
 				return TRUE;
 			}
 			SetLastError(ERROR_NO_MORE_FILES);
@@ -1285,7 +1285,7 @@ VFSDLL BOOL PPXAPI VFSFindNext(HANDLE hFF,WIN32_FIND_DATA *findfile)
 
 		case VFSDT_CDIMG:					// CD Image File ----------------
 		case VFSDT_CDDISK:					// CD ----------------
-			if ( IsTrue(FindEntryCDImage(&VFF->v.CD.cds,NULL,findfile)) ){
+			if ( IsTrue(FindEntryCDImage(&VFF->v.CD.cds, NULL, findfile)) ){
 				return TRUE;
 			}
 			SetLastError(ERROR_NO_MORE_FILES);
@@ -1294,24 +1294,24 @@ VFSDLL BOOL PPXAPI VFSFindNext(HANDLE hFF,WIN32_FIND_DATA *findfile)
 		case VFSDT_CABFOLDER:				// cab folder ----------------
 		case VFSDT_LZHFOLDER:				// lzh folder ----------------
 		case VFSDT_ZIPFOLDER:				// zip folder ----------------
-			if ( IsTrue(ZipFolderFN(&VFF->v.ZIPO,findfile)) ){
+			if ( IsTrue(ZipFolderFN(&VFF->v.ZIPO, findfile)) ){
 				return TRUE;
 			}
 			SetLastError(ERROR_NO_MORE_FILES);
 			return FALSE;
 #ifdef USESLASHPATH
 		case VFSDT_SLASH:					// / directory ----------------
-			if ( IsTrue(NextSlashDir(&VFF->v.SLASH,findfile)) ){
+			if ( IsTrue(NextSlashDir(&VFF->v.SLASH, findfile)) ){
 				return TRUE;
 			}
 			SetLastError(ERROR_NO_MORE_FILES);
 			return FALSE;
 #endif
 		case VFSDT_SUSIE:					// SUSIE --------------------------
-			return FindSusieNext(VFF,findfile);
+			return FindSusieNext(VFF, findfile);
 
 		case VFSDT_UN:						// UNx --------------------------
-			return FindUnxNext(VFF,findfile);
+			return FindUnxNext(VFF, findfile);
 
 //		default: ここでは処理せず
 	}
@@ -1341,7 +1341,7 @@ VFSDLL BOOL PPXAPI VFSFindClose(HANDLE hFF)
 			FTPclose(&VFF->v.FTP);
 			break;
 		case VFSDT_LFILE:
-			HeapFree(DLLheap,0,VFF->v.LFILE.mem);
+			HeapFree(DLLheap, 0, VFF->v.LFILE.mem);
 			break;
 		case VFSDT_HTTP:
 		case VFSDT_DLIST:
@@ -1393,11 +1393,11 @@ VFSDLL BOOL PPXAPI VFSFindClose(HANDLE hFF)
 			break;
 #endif
 	}
-	HeapFree(DLLheap,0,VFF);
+	HeapFree(DLLheap, 0, VFF);
 	return TRUE;
 }
 
-VFSDLL BOOL PPXAPI VFSFindOptionData(HANDLE hFF,DWORD optionID,void *data)
+VFSDLL BOOL PPXAPI VFSFindOptionData(HANDLE hFF, DWORD optionID, void *data)
 {
 	VFSFINDFIRST *VFF;
 
@@ -1412,12 +1412,12 @@ VFSDLL BOOL PPXAPI VFSFindOptionData(HANDLE hFF,DWORD optionID,void *data)
 			switch ( optionID ){
 				case FINDOPTIONDATA_LONGNAME:
 					if ( VFF->v.LFILE.longname == NULL ) break;
-					tstrcpy((TCHAR *)data,VFF->v.LFILE.longname);
+					tstrlimcpy((TCHAR *)data, VFF->v.LFILE.longname, VFPS);
 					return TRUE;
 
 				case FINDOPTIONDATA_COMMENT:
 					if ( VFF->v.LFILE.comment == NULL ) break;
-					tstrcpy((TCHAR *)data,VFF->v.LFILE.comment);
+					tstrlimcpy((TCHAR *)data, VFF->v.LFILE.comment, CMDLINESIZE);
 					return TRUE;
 			}
 			break;

@@ -13,54 +13,54 @@
 
 UINT CF_SHELLIDLIST;
 
-INT_PTR CALLBACK GetPasteTypeMain(HWND hDlg,UINT iMsg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK GetPasteTypeMain(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch(iMsg){
 		case WM_INITDIALOG: {
 			UINT cliptype = 0;
 			int index = 0;
 
-			SetWindowLongPtr(hDlg,DWLP_USER,(LONG_PTR)lParam);
-			LocalizeDialogText(hDlg,IDD_PASTETYPE);
+			SetWindowLongPtr(hDlg, DWLP_USER, (LONG_PTR)lParam);
+			LocalizeDialogText(hDlg, IDD_PASTETYPE);
 			while ( (cliptype = EnumClipboardFormats(cliptype)) != 0 ){
 				TCHAR name[VFPS];
 
-				GetClipboardTypeName(name,cliptype);
-				SendDlgItemMessage(hDlg,IDL_PT_LIST,
-							LB_ADDSTRING,0,(LPARAM)name);
-				SendDlgItemMessage(hDlg,IDL_PT_LIST,
-							LB_SETITEMDATA,(WPARAM)index++,(LPARAM)cliptype);
+				GetClipboardTypeName(name, cliptype);
+				SendDlgItemMessage(hDlg, IDL_PT_LIST,
+							LB_ADDSTRING, 0, (LPARAM)name);
+				SendDlgItemMessage(hDlg, IDL_PT_LIST,
+							LB_SETITEMDATA, (WPARAM)index++, (LPARAM)cliptype);
 			}
-			SendDlgItemMessage(hDlg,IDL_PT_LIST,LB_SETCURSEL,(WPARAM)0,0);
-			GetPasteTypeMain(hDlg,WM_COMMAND,
-					TMAKELPARAM(IDL_PT_LIST,LBN_SELCHANGE),
-					(LPARAM)GetDlgItem(hDlg,IDL_PT_LIST));
+			SendDlgItemMessage(hDlg, IDL_PT_LIST, LB_SETCURSEL, (WPARAM)0, 0);
+			GetPasteTypeMain(hDlg, WM_COMMAND,
+					TMAKELPARAM(IDL_PT_LIST, LBN_SELCHANGE),
+					(LPARAM)GetDlgItem(hDlg, IDL_PT_LIST));
 			return TRUE;
 		}
 		case WM_COMMAND:
 			switch ( LOWORD(wParam) ){
 				case IDOK:
-					EndDialog(hDlg,1);
+					EndDialog(hDlg, 1);
 					break;
 				case IDCANCEL:
-					EndDialog(hDlg,0);
+					EndDialog(hDlg, 0);
 					break;
 				case IDL_PT_LIST:
 					if ( HIWORD(wParam) == LBN_SELCHANGE ){
 						LRESULT type;
 
-						type = SendMessage((HWND)lParam,LB_GETCURSEL,0,0);
+						type = SendMessage((HWND)lParam, LB_GETCURSEL, 0, 0);
 						if ( type == LB_ERR ) break;
-						*(UINT *)GetWindowLongPtr(hDlg,DWLP_USER) =
+						*(UINT *)GetWindowLongPtr(hDlg, DWLP_USER) =
 								SendMessage((HWND)lParam,
-											LB_GETITEMDATA,(WPARAM)type,0);
+											LB_GETITEMDATA, (WPARAM)type, 0);
 					}
 					break;
 			}
 			break;
 
 		case WM_CLOSE:
-			EndDialog(hDlg,0);
+			EndDialog(hDlg, 0);
 			break;
 	}
 	return FALSE;
@@ -72,22 +72,22 @@ UINT GetPasteType(HWND hWnd)
 
 	if ( !CountClipboardFormats() ) return 0;
 
-	if ( PPxDialogBoxParam(hInst,MAKEINTRESOURCE(IDD_PASTETYPE),hWnd,
-				GetPasteTypeMain,(LPARAM)&result) > 0 ){
+	if ( PPxDialogBoxParam(hInst, MAKEINTRESOURCE(IDD_PASTETYPE), hWnd,
+				GetPasteTypeMain, (LPARAM)&result) > 0 ){
 		return result;
 	}else{
 		return 0;
 	}
 }
 
-HGLOBAL PasteMain(UINT type,VIEWOPTIONS *viewopts)
+HGLOBAL PasteMain(UINT type, VIEWOPTIONS *viewopts)
 {
 	TCHAR *result;
 	HGLOBAL viewdata C4701CHECK;
 	HANDLE clipdata;
 	DWORD size;
 	BOOL resize = FALSE;
-	char *src,*dst;
+	char *src, *dst;
 
 	InitViewOptions(viewopts);
 	for (;;){
@@ -100,15 +100,15 @@ HGLOBAL PasteMain(UINT type,VIEWOPTIONS *viewopts)
 			HENHMETAFILE hEMeta;
 
 			hEMeta = clipdata;
-			size = GetEnhMetaFileBits(hEMeta,0,NULL);
+			size = GetEnhMetaFileBits(hEMeta, 0, NULL);
 
-			viewdata = GlobalAlloc(GMEM_MOVEABLE,size);
+			viewdata = GlobalAlloc(GMEM_MOVEABLE, size);
 			if ( viewdata == NULL ){
 				result = T("Alloc error");
 				break;
 			}
 			dst = GlobalLock(viewdata);
-			GetEnhMetaFileBits(hEMeta,size,(LPBYTE)dst);
+			GetEnhMetaFileBits(hEMeta, size, (LPBYTE)dst);
 			GlobalUnlock(viewdata);
 			result = NULL;
 			break;
@@ -117,14 +117,14 @@ HGLOBAL PasteMain(UINT type,VIEWOPTIONS *viewopts)
 			TCHAR text[0x10000];
 			DWORD sisize;
 
-			GetTextFromCF_SHELLIDLIST(text,0x10000,clipdata,TRUE);
+			GetTextFromCF_SHELLIDLIST(text, 0x10000, clipdata, TRUE);
 			sisize = TSTRLENGTH32(text);
-			viewdata = GlobalAlloc(GMEM_MOVEABLE,sisize);
+			viewdata = GlobalAlloc(GMEM_MOVEABLE, sisize);
 			if ( viewdata == NULL ){
 				result = T("Alloc error");
 				break;
 			}
-			memcpy(GlobalLock(viewdata),text,sisize);
+			memcpy(GlobalLock(viewdata), text, sisize);
 			GlobalUnlock(viewdata);
 			result = NULL;
 			break;
@@ -137,7 +137,7 @@ HGLOBAL PasteMain(UINT type,VIEWOPTIONS *viewopts)
 		}
 		if ( (type == CF_DIB) || (type == CF_DIBV5) ){
 			size += sizeof(BITMAPFILEHEADER);
-			viewdata = GlobalAlloc(GMEM_MOVEABLE,size);
+			viewdata = GlobalAlloc(GMEM_MOVEABLE, size);
 			if ( viewdata == NULL ){
 				result = T("Alloc error");
 				break;
@@ -156,10 +156,10 @@ HGLOBAL PasteMain(UINT type,VIEWOPTIONS *viewopts)
 			((BITMAPFILEHEADER *)dst)->bfOffBits =
 					CalcBmpHeaderSize( (BITMAPINFOHEADER *)src ) +
 					sizeof(BITMAPFILEHEADER);
-			memcpy(dst + sizeof(BITMAPFILEHEADER),src,
+			memcpy(dst + sizeof(BITMAPFILEHEADER), src,
 					size - sizeof(BITMAPFILEHEADER));
 		}else{
-			viewdata = GlobalAlloc(GMEM_MOVEABLE,size);
+			viewdata = GlobalAlloc(GMEM_MOVEABLE, size);
 			if ( viewdata == NULL ){
 				result = T("Alloc error");
 				break;
@@ -179,21 +179,21 @@ HGLOBAL PasteMain(UINT type,VIEWOPTIONS *viewopts)
 				size = strlenW32((const WCHAR *)src) * sizeof(WCHAR);
 				viewopts->T_code = VTYPE_UNICODE;
 			}
-			memcpy(dst,src,size);
+			memcpy(dst, src, size);
 		}
 		GlobalUnlock(clipdata);
 		GlobalUnlock(viewdata);
 		if ( resize != FALSE ){
 			HGLOBAL hNew;
 
-			hNew = GlobalReAlloc(viewdata,size,GMEM_MOVEABLE);
+			hNew = GlobalReAlloc(viewdata, size, GMEM_MOVEABLE);
 			if ( hNew != NULL ) viewdata = hNew;
 		}
 		result = NULL;
 		break;
 	}
 	if ( result != NULL ){
-		SetPopMsg(0,result);
+		SetPopMsg(0, result);
 		return NULL;
 	}else{
 		return viewdata; // C4701ok
@@ -202,12 +202,12 @@ HGLOBAL PasteMain(UINT type,VIEWOPTIONS *viewopts)
 
 void PPvPaste(HWND hWnd)
 {
-	UINT type,tmptype;
+	UINT type, tmptype;
 	HGLOBAL viewdata;
 	VIEWOPTIONS viewopts;
 
-	if ( OpenClipboard(hWnd) == FALSE ){
-		SetPopMsg(POPMSG_NOLOGMSG,T(" Clipboard open error "));
+	if ( OpenClipboardV(hWnd) == FALSE ){
+		SetPopMsg(POPMSG_NOLOGMSG, T(" Clipboard open error "));
 		return;
 	}
 	if ( !CountClipboardFormats() ) return; // ‰½‚à‚È‚¢
@@ -225,7 +225,7 @@ void PPvPaste(HWND hWnd)
 
 			clipdata = GetClipboardData(CF_UNICODETEXT);
 			src = GlobalLock(clipdata);
-			size = WideCharToMultiByte(CP_ACP,0,src,-1,NULL,0,NULL,&inwchar);
+			size = WideCharToMultiByte(CP_ACP, 0, src, -1, NULL, 0, NULL, &inwchar);
 			GlobalUnlock(clipdata);
 			if ( (size != 0) && inwchar ){
 				type = CF_UNICODETEXT;
@@ -247,10 +247,10 @@ void PPvPaste(HWND hWnd)
 		CloseClipboard();
 		return;
 	}
-	viewdata = PasteMain(type,&viewopts);
+	viewdata = PasteMain(type, &viewopts);
 	CloseClipboard();
 	if ( viewdata != NULL ){
-		OpenAndFollowViewObject(&vinfo,T("Clipboard"),viewdata,&viewopts,0);
+		OpenAndFollowViewObject(&vinfo, T("Clipboard"), viewdata, &viewopts, 0);
 	}
 }
 
@@ -260,8 +260,8 @@ ERRORCODE PPvPasteType(HWND hWnd)
 	HGLOBAL viewdata;
 	VIEWOPTIONS viewopts;
 
-	if ( OpenClipboard(hWnd) == FALSE ){
-		SetPopMsg(POPMSG_NOLOGMSG,T(" Clipboard open error "));
+	if ( OpenClipboardV(hWnd) == FALSE ){
+		SetPopMsg(POPMSG_NOLOGMSG, T(" Clipboard open error "));
 		return ERROR_BAD_COMMAND;
 	}
 
@@ -271,10 +271,10 @@ ERRORCODE PPvPasteType(HWND hWnd)
 		return ERROR_CANCELLED;
 	}
 	CF_SHELLIDLIST = RegisterClipboardFormat(CFSTR_SHELLIDLIST);
-	viewdata = PasteMain(type,&viewopts);
+	viewdata = PasteMain(type, &viewopts);
 	CloseClipboard();
 	if ( viewdata != NULL ){
-		OpenAndFollowViewObject(&vinfo,T("Clipboard"),viewdata,&viewopts,0);
+		OpenAndFollowViewObject(&vinfo, T("Clipboard"), viewdata, &viewopts, 0);
 	}
 	return NO_ERROR;
 }

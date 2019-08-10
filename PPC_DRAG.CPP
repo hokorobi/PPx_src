@@ -19,7 +19,7 @@ const TCHAR targetnames[] = T("EDIT,RichEdit*,TEDIT");
 const TCHAR menustr[] = T("%MC_mdds");
 
 //
-void CalcDragTarget(PPC_APPINFO *cinfo,POINT *pos,RECT *area)
+void CalcDragTarget(PPC_APPINFO *cinfo, POINT *pos, RECT *area)
 {
 	POINT start;
 	RECT box;
@@ -82,16 +82,16 @@ void CalcDragTarget(PPC_APPINFO *cinfo,POINT *pos,RECT *area)
 	if ( area != NULL ) *area = box;
 }
 
-void DrawDragFrame(HWND hWnd,const RECT *area)
+void DrawDragFrame(HWND hWnd, const RECT *area)
 {
 	HDC hDC;
 
 	hDC = GetDC(hWnd);
-	::DrawFocusRect(hDC,area);
-	::ReleaseDC(hWnd,hDC);
+	::DrawFocusRect(hDC, area);
+	::ReleaseDC(hWnd, hDC);
 }
 
-int MinusDiv(int v1,int v2) // 負数被除数の丸め処理を調整した割り算
+int MinusDiv(int v1, int v2) // 負数被除数の丸め処理を調整した割り算
 {
 	return (v1 >= 0) ? (v1 / v2) : -((-v1 + (v2 - 1)) / v2);
 }
@@ -99,7 +99,7 @@ int MinusDiv(int v1,int v2) // 負数被除数の丸め処理を調整した割り算
 void MarkDragArea(PPC_APPINFO *cinfo, RECT *area, int markmode)
 {
 	RECT box;
-	int ofL,ofR;
+	int ofL, ofR;
 
 	if( !(cinfo->cel.Size.cx && cinfo->cel.Size.cy) ) return;
 
@@ -126,7 +126,7 @@ void MarkDragArea(PPC_APPINFO *cinfo, RECT *area, int markmode)
 			return;
 		}
 	}
-	cinfo->MarkMask = 0x1f;
+	cinfo->MarkMask = MARKMASK_DIRFILE;
 
 #if FREEPOSMODE
 	{ // FreePos の該当物を探す
@@ -134,7 +134,7 @@ void MarkDragArea(PPC_APPINFO *cinfo, RECT *area, int markmode)
 		for ( index = 0 ; index < cinfo->FreePosEntries ; index++ ){
 			ENTRYCELL *cell;
 			int cellindex;
-			RECT cellbox,tmpbox,bbox;
+			RECT cellbox, tmpbox, bbox;
 
 			cellindex = cinfo->FreePosList[index].index;
 			cell = &CEL(cellindex);
@@ -149,8 +149,8 @@ void MarkDragArea(PPC_APPINFO *cinfo, RECT *area, int markmode)
 			cellbox.top = cell->pos.y;
 			cellbox.right = cell->pos.x + cinfo->cel.Size.cx;
 			cellbox.bottom = cell->pos.y + cinfo->cel.Size.cy;
-			if ( IntersectRect(&tmpbox,&bbox,&cellbox) ){
-				CellMark(cinfo,cellindex,markmode);
+			if ( IntersectRect(&tmpbox, &bbox, &cellbox) ){
+				CellMark(cinfo, cellindex, markmode);
 			}
 		}
 	}
@@ -176,7 +176,7 @@ void MarkDragArea(PPC_APPINFO *cinfo, RECT *area, int markmode)
 #else
 			if ( (index >= 0) && (index < cinfo->e.cellIMax) ){
 #endif
-				CellMark(cinfo,index,markmode);
+				CellMark(cinfo, index, markmode);
 			}
 		}
 	}
@@ -191,7 +191,7 @@ void MarkDragArea(PPC_APPINFO *cinfo, RECT *area, int markmode)
 #else
 			if ( (index >= 0) && (index < cinfo->e.cellIMax) ){
 #endif
-				CellMark(cinfo,index,markmode);
+				CellMark(cinfo, index, markmode);
 			}
 		}
 	}
@@ -202,23 +202,23 @@ void MoreDrag(PPC_APPINFO *cinfo)
 {
 	POINT pos;
 	HWND hTargetWnd;
-	TCHAR classname[MAX_PATH],setdata[CMDLINESIZE];
+	TCHAR classname[MAX_PATH], setdata[CMDLINESIZE];
 	FN_REGEXP fn;
 
 	DWORD XC_mdd = 1;
 
-	GetCustData(T("XC_mdd"),&XC_mdd,sizeof(XC_mdd));
+	GetCustData(T("XC_mdd"), &XC_mdd, sizeof(XC_mdd));
 	if ( !XC_mdd ) return;
 
 	::GetCursorPos(&pos);
 	hTargetWnd = ::WindowFromPoint(pos);
-	::GetClassName(hTargetWnd,classname,MAX_PATH);
+	::GetClassName(hTargetWnd, classname, MAX_PATH);
 
-	if ( tstrcmp(classname,T("SysTreeView32")) == 0 ){
+	if ( tstrcmp(classname, T("SysTreeView32")) == 0 ){
 		hTargetWnd = GetParent(hTargetWnd);
-		::GetClassName(hTargetWnd,classname,MAX_PATH);
+		::GetClassName(hTargetWnd, classname, MAX_PATH);
 		// SHELLDLL_DefView なら、ファイルを開くダイアログ
-		if ( tstrcmp(classname,T("SHBrowseForFolder ShellNameSpace Control")) == 0 ){
+		if ( tstrcmp(classname, T("SHBrowseForFolder ShellNameSpace Control")) == 0 ){
 			HMENU hMenu;
 			hMenu = ::CreatePopupMenu();
 			int id;
@@ -227,23 +227,23 @@ void MoreDrag(PPC_APPINFO *cinfo)
 				#define DVirtualAllocEx VirtualAllocEx
 				#define DVirtualFreeEx VirtualFreeEx
 			#else
-				DefineWinAPI(LPVOID,VirtualAllocEx,(HANDLE,LPVOID,ULONG_PTR,DWORD,DWORD));
-				DefineWinAPI(BOOL,VirtualFreeEx,(HANDLE,LPVOID,ULONG_PTR,DWORD));
+				DefineWinAPI(LPVOID, VirtualAllocEx, (HANDLE, LPVOID, ULONG_PTR, DWORD, DWORD));
+				DefineWinAPI(BOOL, VirtualFreeEx, (HANDLE, LPVOID, ULONG_PTR, DWORD));
 				HMODULE hKernel32 = GetModuleHandle(StrKernel32DLL);
 
-				GETDLLPROC(hKernel32,VirtualAllocEx);
+				GETDLLPROC(hKernel32, VirtualAllocEx);
 				if ( DVirtualAllocEx == NULL ) return;
-				GETDLLPROC(hKernel32,VirtualFreeEx);
+				GETDLLPROC(hKernel32, VirtualFreeEx);
 			#endif
 			if ( CEL(cinfo->e.cellN).f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ){
-				VFSFullPath(setdata,CEL(cinfo->e.cellN).f.cFileName,cinfo->path);
+				VFSFullPath(setdata, CEL(cinfo->e.cellN).f.cFileName, cinfo->path);
 			}else{
-				tstrcpy(setdata,cinfo->RealPath);
+				tstrcpy(setdata, cinfo->RealPath);
 			}
-			::AppendMenuString(hMenu,1,setdata);
-			AppendMenuString(hMenu,0,MES_CCAN);
-			id = ::TrackPopupMenu(hMenu,TPM_TDEFAULT,
-					pos.x,pos.y,0,cinfo->info.hWnd,NULL);
+			::AppendMenuString(hMenu, 1, setdata);
+			AppendMenuString(hMenu, 0, MES_CCAN);
+			id = ::TrackPopupMenu(hMenu, TPM_TDEFAULT,
+					pos.x, pos.y, 0, cinfo->info.hWnd, NULL);
 			::DestroyMenu(hMenu);
 			if ( id ){
 				HANDLE hTargetProcess;
@@ -251,16 +251,16 @@ void MoreDrag(PPC_APPINFO *cinfo)
 				LPVOID TargetMem;
 				size_t strsize;
 
-				GetWindowThreadProcessId(hTargetWnd,&TargetProcessID);
-				hTargetProcess = OpenProcess(PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE,0,TargetProcessID);
+				GetWindowThreadProcessId(hTargetWnd, &TargetProcessID);
+				hTargetProcess = OpenProcess(PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE, 0, TargetProcessID);
 				if ( hTargetProcess != NULL ){
 					strsize = TSTRSIZE(setdata);
-					TargetMem = DVirtualAllocEx(hTargetProcess,NULL,strsize,MEM_RESERVE | MEM_COMMIT,PAGE_READWRITE);
+					TargetMem = DVirtualAllocEx(hTargetProcess, NULL, strsize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 					if ( TargetMem != NULL ){
-						if ( FALSE != WriteProcessMemory(hTargetProcess,TargetMem,setdata,strsize,NULL) ){
-							SendMessage(GetParent(hTargetWnd),BFFM_SETSELECTION,(WPARAM)TRUE,(LPARAM)TargetMem);
+						if ( FALSE != WriteProcessMemory(hTargetProcess, TargetMem, setdata, strsize, NULL) ){
+							SendMessage(GetParent(hTargetWnd), BFFM_SETSELECTION, (WPARAM)TRUE, (LPARAM)TargetMem);
 						}
-						DVirtualFreeEx(hTargetProcess,TargetMem,0,MEM_RELEASE);
+						DVirtualFreeEx(hTargetProcess, TargetMem, 0, MEM_RELEASE);
 					}
 					CloseHandle(hTargetProcess);
 				}
@@ -269,8 +269,8 @@ void MoreDrag(PPC_APPINFO *cinfo)
 		return;
 	}
 
-	MakeFN_REGEXP(&fn,targetnames);
-	if ( !FilenameRegularExpression(classname,&fn) ){
+	MakeFN_REGEXP(&fn, targetnames);
+	if ( !FilenameRegularExpression(classname, &fn) ){
 		FreeFN_REGEXP(&fn);
 		return;
 	}
@@ -281,7 +281,7 @@ void MoreDrag(PPC_APPINFO *cinfo)
 	setdata[0] = '\0';
 	if ( IsExistCustData(&menustr[1]) ){
 		if ( PP_ExtractMacro(cinfo->info.hWnd,
-				&cinfo->info,&pos,menustr,setdata,0) != NO_ERROR ){
+				&cinfo->info, &pos, menustr, setdata, 0) != NO_ERROR ){
 			return;
 		}
 	}else{ // メニューがない場合の代用メニュー
@@ -289,17 +289,17 @@ void MoreDrag(PPC_APPINFO *cinfo)
 		hMenu = ::CreatePopupMenu();
 		int id;
 
-		::AppendMenuString(hMenu,1,T("Insert &Entry"));
-		AppendMenuString(hMenu,0,MES_CCAN);
-		id = ::TrackPopupMenu(hMenu,TPM_TDEFAULT,
-				pos.x,pos.y,0,cinfo->info.hWnd,NULL);
+		::AppendMenuString(hMenu, 1, T("Insert &Entry"));
+		AppendMenuString(hMenu, 0, MES_CCAN);
+		id = ::TrackPopupMenu(hMenu, TPM_TDEFAULT,
+				pos.x, pos.y, 0, cinfo->info.hWnd, NULL);
 		::DestroyMenu(hMenu);
 		if ( id != 0 ){
-			VFSFullPath(setdata,CEL(cinfo->e.cellN).f.cFileName,cinfo->path);
+			VFSFullPath(setdata, CEL(cinfo->e.cellN).f.cFileName, cinfo->path);
 		}
 	}
 	if ( setdata[0] != '\0' ){
-		::SendMessage(hTargetWnd,WM_SETTEXT,0,(LPARAM)setdata);
+		::SendMessage(hTargetWnd, WM_SETTEXT, 0, (LPARAM)setdata);
 		ForceSetForegroundWindow(hTargetWnd);
 	}
 }
@@ -322,9 +322,9 @@ void DestroyPPcDataObject(PPcDataObject &pdo)
 		}
 	}
 	if ( pdo.pSF != NULL ){
-		FreePIDLS(pdo.pidls,pdo.count);
+		FreePIDLS(pdo.pidls, pdo.count);
 		pdo.pSF->Release();
-		HeapFree( hProcessHeap,0,pdo.pidls);
+		HeapFree( hProcessHeap, 0, pdo.pidls);
 	}
 }
 
@@ -337,7 +337,7 @@ BOOL CreatePPcDataObject(PPC_APPINFO *cinfo, PPcDataObject &pdo, const TCHAR *sr
 	if ( src != NULL ){ // 直接指定
 		LPITEMIDLIST idl;
 
-		if ( FALSE == VFSMakeIDL(cinfo->path, &pdo.pSF, &idl,src) ){
+		if ( FALSE == VFSMakeIDL(cinfo->path, &pdo.pSF, &idl, src) ){
 			return FALSE;
 		}
 		if ((pdo.pidls = (LPITEMIDLIST *)HeapAlloc(hProcessHeap, 0, 2 * sizeof(LPITEMIDLIST *))) == NULL) {
@@ -404,15 +404,15 @@ void PPcDragFile(PPC_APPINFO *cinfo)
 
 	if ( !cinfo->e.markC && (CEL(cinfo->e.cellN).type <= 3) ) return;
 
-	if ( IsTrue(CreatePPcDataObject(cinfo,pdo,NULL)) ){ // D&D 本体を実行
+	if ( IsTrue(CreatePPcDataObject(cinfo, pdo, NULL)) ){ // D&D 本体を実行
 		CImpIDropSource *CDropSource;
 
 		CDropSource = new CImpIDropSource;
 		::SelfDD_hWnd = cinfo->info.hWnd;
 		::SelfDD_Dtype = cinfo->e.Dtype.mode;
-		result = ::DoDragDrop(pdo.DataObject,CDropSource,
+		result = ::DoDragDrop(pdo.DataObject, CDropSource,
 				DROPEFFECT_COPY | DROPEFFECT_MOVE | DROPEFFECT_LINK |
-				DROPEFFECT_SCROLL,&dwEffect);
+				DROPEFFECT_SCROLL, &dwEffect);
 		::SelfDD_hWnd = NULL;
 		CDropSource->Release();
 		DestroyPPcDataObject(pdo);
@@ -424,15 +424,15 @@ void PPcDragFile(PPC_APPINFO *cinfo)
 	}
 }
 #if !NODLL
-void * GetPathInterface(HWND hWnd,const TCHAR *name,REFIID riid,const TCHAR *path)
+void * GetPathInterface(HWND hWnd, const TCHAR *name, REFIID riid, const TCHAR *path)
 {
 	LPITEMIDLIST pidl;
 	LPSHELLFOLDER pSF;
 	void *ifptr;
 
-	if ( VFSMakeIDL(path,&pSF,&pidl,name) == FALSE ) return NULL;
-	if ( FAILED(pSF->GetUIObjectOf(hWnd,1,(LPCITEMIDLIST *)&pidl,
-			riid,NULL,&ifptr)) ){
+	if ( VFSMakeIDL(path, &pSF, &pidl, name) == FALSE ) return NULL;
+	if ( FAILED(pSF->GetUIObjectOf(hWnd, 1, (LPCITEMIDLIST *)&pidl,
+			riid, NULL, &ifptr)) ){
 		ifptr = NULL;
 	}
 	FreePIDL(pidl);
@@ -440,9 +440,9 @@ void * GetPathInterface(HWND hWnd,const TCHAR *name,REFIID riid,const TCHAR *pat
 	return ifptr;
 }
 #endif
-HRESULT PPcCopyToDropTarget(IDataObject *DataObject,IDropTarget *DropTarget,BOOL droptype,HWND hTargetWnd,DWORD alloweffect)
+HRESULT PPcCopyToDropTarget(IDataObject *DataObject, IDropTarget *DropTarget, BOOL droptype, HWND hTargetWnd, DWORD alloweffect)
 {
-	POINT pos = { 0,0 };
+	POINT pos = { 0, 0 };
 	POINTL posl;
 	DWORD dropeffect;
 	DWORD keystate;
@@ -455,12 +455,12 @@ HRESULT PPcCopyToDropTarget(IDataObject *DataObject,IDropTarget *DropTarget,BOOL
 		keystate = MK_LBUTTON;
 	}
 
-	if ( hTargetWnd != NULL ) ClientToScreen(hTargetWnd,&pos);
+	if ( hTargetWnd != NULL ) ClientToScreen(hTargetWnd, &pos);
 	posl.x = pos.x;
 	posl.y = pos.y;
 
 	dropeffect = alloweffect;
-	result = DropTarget->DragEnter(DataObject,keystate,posl,&dropeffect);
+	result = DropTarget->DragEnter(DataObject, keystate, posl, &dropeffect);
 	if ( FAILED(result) ) goto fin;
 
 	if ( (dropeffect & alloweffect) == 0 ){
@@ -469,38 +469,38 @@ HRESULT PPcCopyToDropTarget(IDataObject *DataObject,IDropTarget *DropTarget,BOOL
 		if ( hTargetWnd == NULL ){
 			hTargetWnd = GetForegroundWindow();
 			if ( hTargetWnd != NULL ){
-				ClientToScreen(hTargetWnd,&pos);
+				ClientToScreen(hTargetWnd, &pos);
 				posl.x = pos.x;
 				posl.y = pos.y;
 			}
 		}
-		result = DropTarget->DragEnter(DataObject,keystate,posl,&dropeffect);
+		result = DropTarget->DragEnter(DataObject, keystate, posl, &dropeffect);
 		if ( FAILED(result) ) goto fin;
 	}
 	dropeffect = alloweffect;
-	result = DropTarget->DragOver(keystate,posl,&dropeffect);
+	result = DropTarget->DragOver(keystate, posl, &dropeffect);
 	if ( FAILED(result) ) goto fin;
 
 	if ( (dropeffect & alloweffect) == 0 ){
 		result = E_FAIL;
 	}else{
 		dropeffect = alloweffect;
-		result = DropTarget->Drop(DataObject,keystate,posl,&dropeffect);
+		result = DropTarget->Drop(DataObject, keystate, posl, &dropeffect);
 	}
 fin:
-	if ( FAILED(result) ) PPErrorBox(hTargetWnd,NULL,result);
+	if ( FAILED(result) ) PPErrorBox(hTargetWnd, NULL, result);
 	return result;
 }
 
-BOOL CopyToShnPathFiles(PPC_APPINFO *cinfo,const TCHAR *destpath,DWORD alloweffect)
+BOOL CopyToShnPathFiles(PPC_APPINFO *cinfo, const TCHAR *destpath, DWORD alloweffect)
 {
 	PPcDataObject pdo;
 	IDropTarget *DropTarget;
 
-	if ( CreatePPcDataObject(cinfo,pdo,NULL) == FALSE ) return FALSE;
-	DropTarget = (IDropTarget *)GetPathInterface(cinfo->info.hWnd,destpath,IID_IDropTarget,cinfo->path);
+	if ( CreatePPcDataObject(cinfo, pdo, NULL) == FALSE ) return FALSE;
+	DropTarget = (IDropTarget *)GetPathInterface(cinfo->info.hWnd, destpath, IID_IDropTarget, cinfo->path);
 	if ( DropTarget == NULL ) goto finl;
-	PPcCopyToDropTarget(pdo.DataObject,DropTarget,FALSE,NULL,alloweffect);
+	PPcCopyToDropTarget(pdo.DataObject, DropTarget, FALSE, NULL, alloweffect);
 	DropTarget->Release();
 finl:
 	DestroyPPcDataObject(pdo);
@@ -508,7 +508,7 @@ finl:
 }
 
 // DLL hook を利用した Auto D&D を行う
-BOOL AutoDD_UseDLL(PPC_APPINFO *cinfo,HWND hTargetWnd,const TCHAR *src,BOOL droptype)
+BOOL AutoDD_UseDLL(PPC_APPINFO *cinfo, HWND hTargetWnd, const TCHAR *src, BOOL droptype)
 {
 	PPcDataObject pdo;
 	IUnknown *UnknownCOM = NULL;
@@ -516,19 +516,19 @@ BOOL AutoDD_UseDLL(PPC_APPINFO *cinfo,HWND hTargetWnd,const TCHAR *src,BOOL drop
 	int trycount = 3;
 	BOOL result = FALSE;
 
-	if ( CreatePPcDataObject(cinfo,pdo,src) == FALSE ) return FALSE;
+	if ( CreatePPcDataObject(cinfo, pdo, src) == FALSE ) return FALSE;
 	if ( hOleaut32 == NULL ){
-		hOleaut32 = LoadWinAPI("OLEAUT32.DLL",NULL,OLEAUT32APIS,LOADWINAPI_LOAD);
+		hOleaut32 = LoadWinAPI("OLEAUT32.DLL", NULL, OLEAUT32APIS, LOADWINAPI_LOAD);
 		if ( hOleaut32 == NULL ) return FALSE;
 	}
 	// 相手にPPXLIB.DLL を注入する
-	if ( PPxCommonExtCommand(KC_HOOKADDPROC,(WPARAM)hTargetWnd) != NO_ERROR ){
+	if ( PPxCommonExtCommand(KC_HOOKADDPROC, (WPARAM)hTargetWnd) != NO_ERROR ){
 		goto finl;
 	}
-	SendMessage(hTargetWnd,WM_PPXCOMMAND,KC_REGISTADDPROC,0);
+	SendMessage(hTargetWnd, WM_PPXCOMMAND, KC_REGISTADDPROC, 0);
 	// GetActiveObject はシステムフックコールバック内では正常に機能しないので、こちら側で DropTarget を取得する
 	for ( ; ; ){
-		if ( SUCCEEDED(::DGetActiveObject(XCLSID_IDATAOBJECT_AUTODD,NULL,&UnknownCOM)) ){
+		if ( SUCCEEDED(::DGetActiveObject(XCLSID_IDATAOBJECT_AUTODD, NULL, &UnknownCOM)) ){
 			break;
 		}else{
 			Sleep(100);
@@ -537,11 +537,11 @@ BOOL AutoDD_UseDLL(PPC_APPINFO *cinfo,HWND hTargetWnd,const TCHAR *src,BOOL drop
 		}
 	}
 	UnknownCOM->AddRef();
-	if ( FAILED(UnknownCOM->QueryInterface(IID_IDropTarget,(void **)&DropTarget)) ){
+	if ( FAILED(UnknownCOM->QueryInterface(IID_IDropTarget, (void **)&DropTarget)) ){
 		goto errorfin;
 	}
 
-	PPcCopyToDropTarget(pdo.DataObject,DropTarget,droptype,hTargetWnd,
+	PPcCopyToDropTarget(pdo.DataObject, DropTarget, droptype, hTargetWnd,
 			DROPEFFECT_COPY | DROPEFFECT_MOVE | DROPEFFECT_LINK);
 	result = TRUE;
 errorfin:
@@ -550,43 +550,43 @@ errorfin:
 		UnknownCOM->Release(); // AddRef 分
 		UnknownCOM->Release(); // GetActiveObject 分
 	}
-	SendMessage(hTargetWnd,WM_PPXCOMMAND,KC_REVOKEADDPROC,0);
-	PPxCommonExtCommand(KC_UNHOOKADDPROC,(WPARAM)hTargetWnd);
+	SendMessage(hTargetWnd, WM_PPXCOMMAND, KC_REVOKEADDPROC, 0);
+	PPxCommonExtCommand(KC_UNHOOKADDPROC, (WPARAM)hTargetWnd);
 finl:
 	DestroyPPcDataObject(pdo);
 	return result;
 }
 
-void ExecSendTo(PPC_APPINFO *cinfo,const TCHAR *cmd)
+void ExecSendTo(PPC_APPINFO *cinfo, const TCHAR *cmd)
 {
 	const TCHAR *cmdext;
-	TCHAR buf[CMDLINESIZE],buf2[VFPS];
+	TCHAR buf[CMDLINESIZE], buf2[VFPS];
 	HRESULT result = E_FAIL;
 
 	cmdext = cmd + FindExtSeparator(cmd);
 	if ( tstrlen(cmdext) > 5 ){
-		if ( GetRegString(HKEY_CLASSES_ROOT,cmdext,NilStr,buf,TSIZEOF(buf)) ){
-			tstrcat(buf,T("\\shellex\\DropHandler"));
-			if ( GetRegString(HKEY_CLASSES_ROOT,buf,NilStr,buf2,TSIZEOF(buf2)) ){
+		if ( GetRegString(HKEY_CLASSES_ROOT, cmdext, NilStr, buf, TSIZEOF(buf)) ){
+			tstrcat(buf, T("\\shellex\\DropHandler"));
+			if ( GetRegString(HKEY_CLASSES_ROOT, buf, NilStr, buf2, TSIZEOF(buf2)) ){
 				CLSID hid;
 				#undef tidname
 				#ifndef UNICODE
 					WCHAR idnameW[MAX_PATH];
 					#define tidname idnameW
 
-					AnsiToUnicode(buf2,idnameW,MAX_PATH);
+					AnsiToUnicode(buf2, idnameW, MAX_PATH);
 				#else
 					#define tidname buf2
 				#endif
 
-				if ( SUCCEEDED(::CLSIDFromString(tidname,&hid)) ){
+				if ( SUCCEEDED(::CLSIDFromString(tidname, &hid)) ){
 					IDropTarget *pDropTarget;
-					if ( SUCCEEDED(::CoCreateInstance(hid,NULL,
-							CLSCTX_INPROC_SERVER,IID_IDropTarget,
+					if ( SUCCEEDED(::CoCreateInstance(hid, NULL,
+							CLSCTX_INPROC_SERVER, IID_IDropTarget,
 							(LPVOID *)&pDropTarget)) ){
 						PPcDataObject pdo;
-						if ( IsTrue(CreatePPcDataObject(cinfo,pdo,NULL)) ){
-							result = PPcCopyToDropTarget(pdo.DataObject,pDropTarget,FALSE,NULL,DROPEFFECT_COPY);
+						if ( IsTrue(CreatePPcDataObject(cinfo, pdo, NULL)) ){
+							result = PPcCopyToDropTarget(pdo.DataObject, pDropTarget, FALSE, NULL, DROPEFFECT_COPY);
 							DestroyPPcDataObject(pdo);
 						}
 						pDropTarget->Release();
@@ -596,23 +596,23 @@ void ExecSendTo(PPC_APPINFO *cinfo,const TCHAR *cmd)
 		}
 	}
 	if ( FAILED(result) ){
-		VFSFixPath(buf2,(TCHAR *)cmd,T("-#9:\\"),VFSFIX_FULLPATH | VFSFIX_REALPATH);
-		if ( tstricmp(cmdext,StrShortcutExt) == 0 ){
+		VFSFixPath(buf2, (TCHAR *)cmd, T("-#9:\\"), VFSFIX_FULLPATH | VFSFIX_REALPATH);
+		if ( tstricmp(cmdext, StrShortcutExt) == 0 ){
 			TCHAR pbuf[VFPS];
 
-			if ( SUCCEEDED(GetLink(cinfo->info.hWnd,buf2,pbuf)) ){
+			if ( SUCCEEDED(GetLink(cinfo->info.hWnd, buf2, pbuf)) ){
 				DWORD attr;
 
 				buf2[0] = '\0';
-				ExpandEnvironmentStrings(pbuf,buf2,TSIZEOF(buf2));
+				ExpandEnvironmentStrings(pbuf, buf2, TSIZEOF(buf2));
 				attr = GetFileAttributesL(buf2);
 				if ( (attr & FILE_ATTRIBUTE_DIRECTORY) && (attr != BADATTR) ){
-					PPcFileOperation(cinfo,FileOperationMode_Copy,buf2,NULL);
+					PPcFileOperation(cinfo, FileOperationMode_Copy, buf2, NULL);
 					return;
 				}
 			}
 		}
-		wsprintf(buf,T("\"%s\" %%FDC"),buf2);
-		PP_ExtractMacro(cinfo->info.hWnd,&cinfo->info,NULL,buf,NULL,0);
+		wsprintf(buf, T("\"%s\" %%FDC"), buf2);
+		PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, buf, NULL, 0);
 	}
 }

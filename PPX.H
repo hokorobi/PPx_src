@@ -77,9 +77,9 @@
 #define LOGLINES_DELETE 1000	// 削除するときに残す行数
 // ============================================================================
 #if 0
-#define DEBUGLOGF(message,param) XMessage(NULL,NULL,XM_DbgLOG,T(message),param)
+#define DEBUGLOGF(message, param) XMessage(NULL, NULL, XM_DbgLOG, T(message), param)
 #else
-#define DEBUGLOGF(message,param)
+#define DEBUGLOGF(message, param)
 #endif
 
 #if defined(_MSC_VER) && !defined(RELEASE)
@@ -122,7 +122,7 @@ typedef struct {
 #define HiddenMenu_bg(base) *(COLORREF *)(base + TSTROFF(5) + sizeof(COLORREF))
 #define HiddenMenu_cmd(base) (TCHAR *)(base + TSTROFF(5) + sizeof(COLORREF) * 2)
 
-#pragma pack(push,1)
+#pragma pack(push, 1)
 typedef struct {
 	WORD offset;
 	TCHAR name[5];
@@ -133,11 +133,6 @@ typedef struct {
 
 // タイトルバー無しにするときに制御する必要があるスタイル
 #define WS_NOTITLEOVERLAPPED (WS_POPUP | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX)
-
-// CompareString 時に利用する独自解釈用フラグ
-#define XNORM_NUMBER	B24		// 数値考慮 compare
-#define XNORM_LASTENTRY	B25		// ディレクトリ無視
-#define XNORM_MASK (XNORM_NUMBER | XNORM_LASTENTRY)
 
 // %F / %*name のオプション
 //(出力形式)
@@ -154,7 +149,7 @@ typedef struct {
 #define FMOPT_REALPATH	B8	// R パスを実体にする(%*nameのみ)
 #define FMOPT_USESFN	B9	// S SFNを使用する	(%*nameのみ)
 #define FMOPT_UNIQUE	B10	// U 既存と重複しないように加工する (%*nameのみ)
-#define FMOPT_MARK		B11	// M マークファイルのみ (%F,PPcのみ)
+#define FMOPT_MARK		B11	// M マークファイルのみ (%F, PPcのみ)
 #define FMOPT_LASTSEPARATOR	B12	// P 末尾に \ を付加する (%*nameのみ)
 //#define FMOPT_CURSOR	B12	// O カーソルファイルのみ まだ用意していない
 //#define FMOPT_IDL		B14	// I IDL表記( ::{...}::{...} ) まだ用意していない
@@ -169,8 +164,8 @@ typedef struct {
 #define TOUCH_ACTIONWITHACTIVE	B6	// T   アクティブ化時は、タッチ操作を無効に
 #define TOUCH_EDIT_COMMAND_BAR	B7	// TMP 一行編集にコマンドバーを表示
 
-#define X_pmc_defvalue -8,0,(B0|B1|B2|B3|B4|B5|B6|B10|B11),0 // 負論理注意
-// ※ mouse の B10,B11 は将来マウスでは使わない機能向けに確保
+#define X_pmc_defvalue -8, 0, (B0|B1|B2|B3|B4|B5|B6|B10|B11), 0 // 負論理注意
+// ※ mouse の B10, B11 は将来マウスでは使わない機能向けに確保
 #define X_pmc_touch 1
 #define X_pmc_mouse 2
 #define X_pmc_pen 3
@@ -180,45 +175,46 @@ typedef struct {
 #define PMF_WAITKEY		B1	// キー入力中(PPc)
 #define PMF_PROGRESS	B2	// 進捗状況表示中(PPc)
 #define PMF_FLASH		B3	// フラッシュ表示有り(PPc)
-#define PMF_BUSY		B4	// busy(操作ができない状態,PPc)
+#define PMF_BUSY		B4	// busy(操作ができない状態, PPc)
 #define PMF_ALL -1
 #define PMF_DISPLAYMASK (PMF_WAITTIMER | PMF_WAITKEY | PMF_PROGRESS | PMF_BUSY)
 
-#pragma pack(push,4)
+#pragma pack(push, 4)
 typedef struct {
-	int x,y,width,height;
+	int x, y, width, height;
 } AREA;
 #pragma pack(pop)
 
 #define BADHWND ((HWND)(DWORD_PTR)0xfefffffe)
-//#define BADHWND ((HWND)(DWORD_PTR)-1)
+#define FILEATTRMASK_FILES 0xf
+#define FILEATTRMASK_DIR_FILES 0x1f
 
 #define EXCEPTION_PPX_DUMPSTACK 0x6106106f // デバッグ用にスタックダンプをする
-#define PpxDumpstack() RaiseException(EXCEPTION_PPX_DUMPSTACK,0,0,NULL)
+#define PpxDumpstack() RaiseException(EXCEPTION_PPX_DUMPSTACK, 0, 0, NULL)
 
 #define X_tray_Combo (B0 | B1 | B4)
 #define X_tray_SinglePPc (B0 | B1 | B5)
 #define X_tray_PPv (B0 | B1 | B6)
 
-// F_mes,F_dlg,F_fix に使用するフォント
+// F_mes, F_dlg, F_fix に使用するフォント
 #define Default_F_mes { \
-/*Width,Height*/					0,0, \
-/*Escapement,Orientation,Weight*/	0,0,FW_NORMAL, \
-/*Italic,Underline,StrikeOut*/		FALSE,FALSE,FALSE, \
+/*Width, Height*/					0, 0, \
+/*Escapement, Orientation, Weight*/	0, 0, FW_NORMAL, \
+/*Italic, Underline, StrikeOut*/	FALSE, FALSE, FALSE, \
 /*CharSet*/							SHIFTJIS_CHARSET, \
 /*OutPrecision*/					OUT_DEFAULT_PRECIS, \
 /*ClipPrecision*/					CLIP_DEFAULT_PRECIS, \
 /*Quality*/							DEFAULT_QUALITY, \
-/*PitchAndFamily*/					FIXED_PITCH | FF_DONTCARE,\
+/*PitchAndFamily*/					FIXED_PITCH | FF_DONTCARE, \
 /*FaceName*/						T("Courier New")}
 
 #define Default_F_mes_JA T("ＭＳ ゴシック")
 
 // F_unfix に使用するフォント
 #define Default_F_unfix { \
-/*Width,Height*/					0,0, \
-/*Escapement,Orientation,Weight*/	0,0,FW_NORMAL, \
-/*Italic,Underline,StrikeOut*/		FALSE,FALSE,FALSE, \
+/*Width, Height*/					0, 0, \
+/*Escapement, Orientation, Weight*/	0, 0, FW_NORMAL, \
+/*Italic, Underline, StrikeOut*/	FALSE, FALSE, FALSE, \
 /*CharSet*/							SHIFTJIS_CHARSET, \
 /*OutPrecision*/					OUT_DEFAULT_PRECIS, \
 /*ClipPrecision*/					CLIP_DEFAULT_PRECIS, \
@@ -241,7 +237,7 @@ typedef struct {
 //------------------------------------- PPb 関連
 #define PPBBOOTSYNC "PPbS" // PPbの起動時同期に使用するイベント名
 
-//	PPx 本体,PPCOMMON,PPx Module 間の情報交換用構造体
+//	PPx 本体, PPCOMMON, PPx Module 間の情報交換用構造体
 //## 0xff000～0xfffff:	内部用
 #define PPXCMDID_PPBEXEC	0xff000
 #define PPXCMDID_PPBINSERT	0xff001
@@ -255,7 +251,7 @@ typedef struct {
 } PPXCMD_PPBEXEC;
 
 //------------------------------------- PPc 関連
-#define CLSID_IDATAOBJECT_AUTODD {0x95D5EDD3,0x8F9B,0x4825,{0xA5,0x70, 0x81,0x5D,0x74,0xA1,0xEA,0xA0}} // AutoD&Dに使う相手のDropTarget取得用GUID
+#define CLSID_IDATAOBJECT_AUTODD {0x95D5EDD3, 0x8F9B, 0x4825, {0xA5, 0x70, 0x81, 0x5D, 0x74, 0xA1, 0xEA, 0xA0}} // AutoD&Dに使う相手のDropTarget取得用GUID
 
 // カラム拡張、ユーザカラムの内容を記憶する領域で使用する識別ID
 // カラム拡張用 : DFC_COLUMNEX ～DFC_COLUMNEX_MAX
@@ -272,7 +268,7 @@ typedef struct {
 #define DFC_COLUMNEX_MAX (DFC_LONGNAME - 1)
 #define DFC_COLUMNEX 0
 
-#pragma pack(push,1)
+#pragma pack(push, 1)
 typedef struct { // DE_COLUMN
 //	BYTE fmtID = DE_COLUMN
 	BYTE width;
@@ -311,8 +307,8 @@ typedef struct {
 #define DSETI_DEFAULT	MAX16	// 初期値を使用
 
 typedef struct {
-	WORD flags,deflags; // DSET_
-	WORD infoicon,cellicon; // DSETI_	情報行/セルのアイコン
+	WORD flags, deflags; // DSET_
+	WORD infoicon, cellicon; // DSETI_	情報行/セルのアイコン
 	XC_SORT sort; // ソートの設定
 } XC_DSET;
 
@@ -339,7 +335,7 @@ typedef struct {
 #define DSS_FONT	B0 // フォントサイズの変更を有効にする
 #define DSS_MINFONT	B1 // フォントサイズの最小値調整を有効にする
 #define DSS_ICON	B2 // アイコンサイズの変更を有効にする
-#define DSS_COMCTRL	B3 // その他の部品(Tree,ListView,Header,Button,ToolBar,ImageList)のDSを有効にする
+#define DSS_COMCTRL	B3 // その他の部品(Tree, ListView, Header, Button, ToolBar, ImageList)のDSを有効にする
 #define DSS_ACTIVESCALE	B4 // 動的変更を有効にする
 #define DSS_DIALOGREDUCE	B5 // ダイアログの画面はみ出し抑制
 
@@ -353,13 +349,13 @@ typedef struct {
 
 //------------------------------------- PPv 関連
 typedef enum {
-	DISPT_NONE = 0,DISPT_HEX,DISPT_TEXT,DISPT_DOCUMENT,DISPT_IMAGE,DISPT_RAWIMAGE,DISPT_MAX,DISPT_UNDEFINED = -1
+	DISPT_NONE = 0, DISPT_HEX, DISPT_TEXT, DISPT_DOCUMENT, DISPT_IMAGE, DISPT_RAWIMAGE, DISPT_MAX, DISPT_UNDEFINED = -1
 } DISPT;
 
 //------------------------------------- 言語切り替え可能なメッセージ
 #define MESTEXTIDLEN 4
 #define MES_IDD_FOP	T("7020|")
-#define MES_ACET	T("ACET|\n,and %d application")
+#define MES_ACET	T("ACET|\n, and %d application")
 #define MES_ADHD	T("ADHD|This file is using by applications;\n")
 #define MES_ADTE	T("ADTE|Enter a title")
 #define MES_AICP	T("AICP|Add check pattern")
@@ -377,10 +373,11 @@ typedef enum {
 #define MES_CMPD	T("CMPD|&Detail")
 #define MES_CMPE	T("CMPE|&Exist file")
 #define MES_CMPF	T("CMPF|&Filename without ext.")
+#define MES_CMPH	T("CMPH|Compare &Hash from clipboard")
 #define MES_CMPI	T("CMPI|file s&Ize(no name check)")
 #define MES_CMPL	T("CMPL|&Large file")
 #define MES_CMPN	T("CMPN|new &File")
-#define MES_CMPQ	T("CMPQ|same size,any name(&Q)")
+#define MES_CMPQ	T("CMPQ|same size, any name(&Q)")
 #define MES_CMPS	T("CMPS|file &Size")
 #define MES_CMPT	T("CMPT|&Time stamp")
 #define MES_CMPM	T("CMPM|co&mment(1window)")
@@ -448,6 +445,7 @@ typedef enum {
 #define MES_DSTA	T("DSTA|&4:Archive")
 #define MES_DSTD	T("DSTD|&5:Directory mode")
 #define MES_DSTE	T("DSTE|&3:Temporality")
+#define MES_DSTF	T("DSTF|&4:Listfile")
 #define MES_DSTL	T("DSTL|&2:This path and subdir")
 #define MES_DSTP	T("DSTP|&1:This path")
 #define MES_DSTS	T("DSTS|&6:Path separate")
@@ -521,7 +519,7 @@ typedef enum {
 #define MES_FEWE	T("FEWE|Found file seems extracting in the wrong place")
 #define MES_FEXP	T("FEXP|Explorer Folder")
 #define MES_FIXE	T("FIXE|This file seems type is %s and %s.\nThis file extension is not necessary to modify.")
-#define MES_FIXH	T("FIXH|PPffix check extension type,when dropped on this icon.")
+#define MES_FIXH	T("FIXH|PPffix check extension type, when dropped on this icon.")
 #define MES_FIXM	T("FIXM|This file seems type is %s and %s.\nModify file extension ?")
 #define MES_FIXU	T("FIXU|File type is unknown.")
 #define MES_FLAC	T("FLAC|all completed")
@@ -544,8 +542,8 @@ typedef enum {
 #define MES_FOFC	T("FOFC|F&C")
 #define MES_FOOK	T("FOOK|Ok")
 #define MES_FOST	T("FOST|Start")
-#define MES_FUPD	T("FUPD|Directory not found,and move parent directory")
-#define MES_FUPR	T("FUPR|Directory not found,and move root directory")
+#define MES_FUPD	T("FUPD|Directory not found, and move parent directory")
+#define MES_FUPR	T("FUPR|Directory not found, and move root directory")
 #define MES_GDAI	T("GDAI|Auto Fill")
 #define MES_GDAR	T("GDAR|Auto Frame")
 #define MES_GDFI	T("GDFI|Fill")
@@ -561,7 +559,7 @@ typedef enum {
 #define MES_HPDN	T("HPDN|Http Done.")
 #define MES_IANI	T("IANI|Animate : [P]")
 #define MES_IDIR	T("IDIR|&Directory")
-#define MES_IDIV	T("IDIV|Divide page mode([<][>],All read:[/])")
+#define MES_IDIV	T("IDIV|Divide page mode([<][>], All read:[/])")
 
 #define MES_IFCN	T("IFCN|File counting...")
 #define MES_IGAN	T("IGAN|Ani&mate")
@@ -732,10 +730,10 @@ typedef enum {
 #define MES_QDRC	T("QDRC|Yes\tDuplicate reparse point\nNo\tCopy files")
 #define MES_QDRD	T("QDRD|Move to recycle bin?")
 #define MES_QDRP	T("QDRP|Yes\tDelete reparse point\nNo\tDelete reparse point  & files")
-#define MES_QEFD	T("QEFD|%s\nexisted,delete?")
+#define MES_QEFD	T("QEFD|%s\nexisted, delete?")
 #define MES_QEWE	T("QEWE|This file seems extracting in the wrong place.Extract?")
-#define MES_QICU	T("QICU|Initialize customize,ok?")
-#define MES_QIHI	T("QIHI|Initialize history,ok?")
+#define MES_QICU	T("QICU|Initialize customize, ok?")
+#define MES_QIHI	T("QIHI|Initialize history, ok?")
 #define MES_QISD	T("QISD|%s is drive name ?\n")\
 						T("Yes\tdrive name\n")\
 						T("No\tdirectory name\n")
@@ -748,8 +746,8 @@ typedef enum {
 #define MES_QSAO	T("QSAO|Found same name file. Select processing method.")
 #define MES_QSAV	T("QSAV|Save edited data?")
 #define MES_QSDP	T("QSDP|Setting as dest path of pair windows?")
-#define MES_QSIZ	T("QSIZ|Need PPx's shutdown,ok?")
-#define MES_QSP2	T("QSP2|Seems need to divide by 2G,file.Divide file?")
+#define MES_QSIZ	T("QSIZ|Need PPx's shutdown, ok?")
+#define MES_QSP2	T("QSP2|Seems need to divide by 2G, file.Divide file?")
 #define MES_QSPT	T("QSPT|No free space.Divide file?")
 #define MES_QSPW	T("QSPW|Seems no free space.Divide file?")
 #define MES_QSUD	T("QSUD|Start undo?")
@@ -764,7 +762,7 @@ typedef enum {
 #define MES_REGP	T("REGP|Select and Regist program")
 #define MES_RKAL	T("RKAL|Key command reentry error.")
 #define MES_RRPC	T("RRPC|Require restart PPc")
-#define MES_RTPC	T("RTPC|Require restart PPc,soon")
+#define MES_RTPC	T("RTPC|Require restart PPc, soon")
 #define MES_SACO	T("SACO|Size count... [PAUSE]:Break")
 #define MES_SAVE	T("SAVE|Save")
 #define MES_SAVP	T("SAVP|Save position")
@@ -774,6 +772,18 @@ typedef enum {
 #define MES_SIOF	T("SIOF|Sync Information:Off")
 #define MES_SION	T("SION|Sync Information:On")
 #define MES_SLMD	T("SLMD|Enter slow mode")
+#define MES_SNAN	T("SNAN|(add number)")
+#define MES_SNAP	T("SNAP|(append)")
+#define MES_SNBK	T("SNBK|(backup)")
+#define MES_SNCN	T("SNCN|(change name)")
+#define MES_SNCP	T("SNCP|(copy)")
+#define MES_SNDE	T("SNDE|(delete)")
+#define MES_SNKP	T("SNKP|(keep)")
+#define MES_SNLN	T("SNLN|(link)")
+#define MES_SNMV	T("SNMV|(move)")
+#define MES_SNOW	T("SNOW|(overwrite)")
+#define MES_SNRE	T("SNRE|(restore)")
+#define MES_SNSK	T("SNSK|(skip)")
 #define MES_SPOF	T("SPOF|Sync properties : off")
 #define MES_SPON	T("SPON|Sync properties : on")
 #define MES_SSRP	T("SSRP|Input program path(%s)")

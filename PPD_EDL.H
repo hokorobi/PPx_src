@@ -11,7 +11,7 @@ extern "C" {
 #define CMDSEARCHI_FINDBRAKET	B18	// 括弧有り(通知用)
 #define CMDSEARCHI_SELECTPART	B19	// 補完時に不一致部分を選択
 
-#define TREEHEIGHT	200
+#define TREEHEIGHT	240
 #define EDITBUFSIZE	0x1000
 #define CBLISTEIGHT	200
 
@@ -74,7 +74,7 @@ typedef struct tagPPxEDSTRUCT {
 		ThSTRUCT Cmd;
 	} FloatBar;
 	WNDPROC hOldED;		// 元のウィンドウプロージャ
-	int		flag;		// PPxRegistExEdit の PPXEDIT_ と同じ
+	int		flags;		// PPxRegistExEdit の PPXEDIT_ と同じ
 	const TCHAR *AKey;	// 追加キー割当て
 	CALLBACKMODULEENTRY KeyHookEntry;		// キー入力拡張モジュール
 					// GUI情報
@@ -117,7 +117,7 @@ typedef BOOL (APIENTRY *impGetOpenFileName)(LPOPENFILENAME lpofn);
 typedef struct {
 	TCHAR	text[EDITBUFSIZE];	// 作業領域
 	TCHAR	*word;				// 取得した文字列へのポインタ
-	ECURSOR	cursor,cursororg;	// 選択範囲
+	ECURSOR	cursor, cursororg;	// 選択範囲
 } TEXTSEL;
 
 enum { TEXTSEL_ALL = 0, TEXTSEL_CHAR = 1, TEXTSEL_BACK, TEXTSEL_WORD, TEXTSEL_BEFORE, TEXTSEL_AFTER };
@@ -154,15 +154,22 @@ extern void XEditClearModify(PPxEDSTRUCT *PES);
 extern PPXINMENU returnmenu[];
 extern PPXINMENU charmenu[charmenu_items];
 //--------------------------------------------------------------- PPD_EDLC.C
+typedef int EDITDIST;
+#define EDITDIST_BACK ((EDITDIST)-1)
+#define EDITDIST_DIALOG ((EDITDIST)0)
+#define EDITDIST_NEXT ((EDITDIST)1)
+#define EDITDIST_NEXT_FILL ((EDITDIST)2) // FloatListで使用、LIST_FILL有効
+#define EDITDIST_NEXT_WITHNOW ((EDITDIST)3) // SearchStrで使用、現在位置も検索
+
 extern void FreeBackupText(PPxEDSTRUCT *PES);
-extern void FloatList(PPxEDSTRUCT *PES, int direction);
+extern void FloatList(PPxEDSTRUCT *PES, EDITDIST dist);
 extern BOOL ListUpDown(HWND hWnd, PPxEDSTRUCT *PES, int offset, int repeat);
-extern ERRORCODE ListPageUpDown(PPxEDSTRUCT *PES, int offset);
+extern ERRORCODE ListPageUpDown(PPxEDSTRUCT *PES, EDITDIST dist);
 extern void ListSearch(HWND hWnd, PPxEDSTRUCT *PES, int len);
 extern void KeyStepFill(PPxEDSTRUCT *PES, BOOL histmode);
 extern void FixListPosition(PPxEDSTRUCT *PES, HWND hWnd);
 extern void ListSelect(PPxEDSTRUCT *PES, HWND hListWnd);
-extern HWND PPxRegistExEditCombo(HWND hED, int maxlen, const TCHAR *defstr, WORD rHist,WORD wHist);
+extern HWND PPxRegistExEditCombo(HWND hED, int maxlen, const TCHAR *defstr, WORD rHist, WORD wHist);
 
 extern void CreateMainListWindow(PPxEDSTRUCT *PES, int direction);
 extern void CreateSubListWindow(PPxEDSTRUCT *PES);
@@ -202,7 +209,8 @@ extern void USEFASTCALL CaretFixToA(const char *str, DWORD *of);
 extern BOOL InitPPeFindReplace(PPxEDSTRUCT *PES);
 extern BOOL SelectEditStrings(PPxEDSTRUCT *PES, TEXTSEL *ts, int mode);
 extern TCHAR *SearchFileInedMain(ESTRUCT *ED, TCHAR *str, int mode);
-extern BOOL SearchStr(PPxEDSTRUCT *PES, int mode);
+
+extern BOOL SearchStr(PPxEDSTRUCT *PES, EDITDIST dist);
 extern int CheckXPbug(void);
 extern void GetHeight(PPxEDSTRUCT *PES, HFONT hFont);
 extern void LineCursor(PPxEDSTRUCT *PES, DWORD mes);

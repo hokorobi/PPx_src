@@ -49,9 +49,9 @@ extern BOOL tInit(const TCHAR *title);
 extern void tRelease(void);
 
 #ifndef WINEGCC
-#define GetConsoleWindowInfo(conout,scrinfo) GetConsoleScreenBufferInfo(conout,scrinfo)
+#define GetConsoleWindowInfo(conout, scrinfo) GetConsoleScreenBufferInfo(conout, scrinfo)
 #else
-extern void GetConsoleWindowInfo(HANDLE conout,CONSOLE_SCREEN_BUFFER_INFO *scrinfo);
+extern void GetConsoleWindowInfo(HANDLE conout, CONSOLE_SCREEN_BUFFER_INFO *scrinfo);
 #endif
 
 #define KEY_RECV -1
@@ -65,19 +65,19 @@ extern int tgetc(INPUT_RECORD *inf);
 /*--------------------------------------
 	表示属性を変更する
 --------------------------------------*/
-#define tatr(atr)	SetConsoleTextAttribute(hStdout,atr)
+#define tatr(atr)	SetConsoleTextAttribute(hStdout, atr)
 
-extern void tCsrPos(int x,int y);
+extern void tCsrPos(int x, int y);
 extern void tCsrMode(int size);
-extern void tputatrstr(int x,int y,WORD atr,const TCHAR *str);
-extern void tputposstr(int x,int y,const TCHAR *str);
+extern void tputatrstr(int x, int y, WORD atr, const TCHAR *str);
+extern void tputposstr(int x, int y, const TCHAR *str);
 extern void tputstr(const TCHAR *str);
 extern void tputstr_noinit(const TCHAR *str);
-extern void tFillAtr(int x1,int y1,int x2,int y2,WORD atr);
-extern void tFillChr(int x1,int y1,int x2,int y2,TCHAR chr);
-extern void tBox(int x1,int y1,int x2,int y2);
-extern void tStore(int x1,int y1,int x2,int y2,CHAR_INFO **ptr);
-extern void tRestore(int x1,int y1,int x2,int y2,CHAR_INFO **ptr);
+extern void tFillAtr(int x1, int y1, int x2, int y2, WORD atr);
+extern void tFillChr(int x1, int y1, int x2, int y2, TCHAR chr);
+extern void tBox(int x1, int y1, int x2, int y2);
+extern void tStore(int x1, int y1, int x2, int y2, CHAR_INFO **ptr);
+extern void tRestore(int x1, int y1, int x2, int y2, CHAR_INFO **ptr);
 
 extern int CCharWide(WCHAR c);
 extern void ClearFormLine(void);
@@ -90,7 +90,7 @@ typedef struct {
 extern int Select(TMENU *tmenu);
 
 extern CONSOLE_SCREEN_BUFFER_INFO screen;		// 現在の画面状態
-extern HANDLE hStdin,hStdout;
+extern HANDLE hStdin, hStdout;
 extern CALLBACKMODULEENTRY KeyHookEntry;		// キー入力拡張モジュール
 
 #ifndef FROM_LEFT_1ST_BUTTON_PRESSED

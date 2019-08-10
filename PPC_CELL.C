@@ -11,38 +11,38 @@
 #include "PPC_DD.H"
 #pragma hdrstop
 						// 通常の指定に使う設定
-const CURSORMOVER DefCM_page = { 0,0, OUTTYPE_PAGE,0, OUTTYPE_STOP,OUTHOOK_EDGE};
-const CURSORMOVER DefCM_scroll = { 0,0, OUTTYPE_LINESCROLL,0, OUTTYPE_STOP,OUTHOOK_EDGE};
+const CURSORMOVER DefCM_page = { 0, 0, OUTTYPE_PAGE, 0, OUTTYPE_STOP, OUTHOOK_EDGE};
+const CURSORMOVER DefCM_scroll = { 0, 0, OUTTYPE_LINESCROLL, 0, OUTTYPE_STOP, OUTHOOK_EDGE};
 
-DWORD GetFileHeader(const TCHAR *filename,BYTE *header,DWORD headersize)
+DWORD GetFileHeader(const TCHAR *filename, BYTE *header, DWORD headersize)
 {
 	HANDLE hFile;
 	DWORD fsize;
 
-	hFile = CreateFileL(filename,GENERIC_READ,
-			FILE_SHARE_WRITE | FILE_SHARE_READ,NULL,OPEN_EXISTING,
-			FILE_ATTRIBUTE_NORMAL,NULL);
+	hFile = CreateFileL(filename, GENERIC_READ,
+			FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_EXISTING,
+			FILE_ATTRIBUTE_NORMAL, NULL);
 	if ( hFile == INVALID_HANDLE_VALUE ) return 0;
 
-	fsize = ReadFileHeader(hFile,header,headersize);
+	fsize = ReadFileHeader(hFile, header, headersize);
 	CloseHandle(hFile);
 	return fsize;
 }
 
 // ファイルをディレクトリ扱いにするか判定 -------------------------------------
-BOOL IsFileDir(PPC_APPINFO *cinfo,const TCHAR *filename,TCHAR *newpath,TCHAR *newjumpname,HMENU hPopupMenu)
+BOOL IsFileDir(PPC_APPINFO *cinfo, const TCHAR *filename, TCHAR *newpath, TCHAR *newjumpname, HMENU hPopupMenu)
 {
 	BYTE header[VFS_check_size];
 	DWORD fsize;					// 読み込んだ大きさ
 	int i;
 	TCHAR pathbuf[VFPS];
 
-	if ( VFSFullPath(pathbuf,(TCHAR *)filename,cinfo->RealPath) == NULL ){
+	if ( VFSFullPath(pathbuf, (TCHAR *)filename, cinfo->RealPath) == NULL ){
 		if ( cinfo->RealPath[0] != '?' ) return FALSE;
 
 		pathbuf[0] = '\0';
-		if ( VFSFullPath(pathbuf,(TCHAR *)filename,cinfo->path) != NULL ){
-			if( VFSGetRealPath(cinfo->info.hWnd,pathbuf,pathbuf) == FALSE ){
+		if ( VFSFullPath(pathbuf, (TCHAR *)filename, cinfo->path) != NULL ){
+			if( VFSGetRealPath(cinfo->info.hWnd, pathbuf, pathbuf) == FALSE ){
 				return FALSE;
 			}
 		}
@@ -53,18 +53,18 @@ BOOL IsFileDir(PPC_APPINFO *cinfo,const TCHAR *filename,TCHAR *newpath,TCHAR *ne
 	if ( (*(filename + i) == '.') && (*(filename + i + 1) == '{') &&
 			(tstrlen(filename + i) == 39)){
 		if ( newpath != NULL ){
-			CatPath(NULL,newpath,filename);
+			CatPath(NULL, newpath, filename);
 			*newjumpname = '\0';
 		}
 		if ( hPopupMenu == NULL ) return TRUE;
-		AppendMenuString(hPopupMenu,CRID_DIRTYPE_CLSID,MES_JNCL);
-		AppendMenuString(hPopupMenu,CRID_DIRTYPE_CLSID_PAIR,MES_JPCL);
+		AppendMenuString(hPopupMenu, CRID_DIRTYPE_CLSID, MES_JNCL);
+		AppendMenuString(hPopupMenu, CRID_DIRTYPE_CLSID_PAIR, MES_JPCL);
 	}
-	fsize = GetFileHeader(pathbuf,header,sizeof(header));
+	fsize = GetFileHeader(pathbuf, header, sizeof(header));
 	if ( fsize == 0 ){
 		if ( hPopupMenu != NULL ){
-			VFSCheckDir(pathbuf,header,fsize | VFSCHKDIR_GETDIRMENU,(void **)hPopupMenu);
-			AppendMenuString(hPopupMenu,CRID_DIRTYPE_PAIR,MES_JPDI);
+			VFSCheckDir(pathbuf, header, fsize | VFSCHKDIR_GETDIRMENU, (void **)hPopupMenu);
+			AppendMenuString(hPopupMenu, CRID_DIRTYPE_PAIR, MES_JPDI);
 		}
 		return FALSE;
 	}
@@ -75,41 +75,41 @@ BOOL IsFileDir(PPC_APPINFO *cinfo,const TCHAR *filename,TCHAR *newpath,TCHAR *ne
 		 (*(header + 1) == 0) &&
 		 (*(header + 2) == 0) ){
 		if ( newpath != NULL ){
-			TCHAR lname[VFPS],lxname[VFPS];
+			TCHAR lname[VFPS], lxname[VFPS];
 
-			if ( SUCCEEDED(GetLink(cinfo->info.hWnd,pathbuf,lname)) && lname[0] ){
+			if ( SUCCEEDED(GetLink(cinfo->info.hWnd, pathbuf, lname)) && lname[0] ){
 				DWORD attr;
 
 				lxname[0] = '\0';
-				ExpandEnvironmentStrings(lname,lxname,TSIZEOF(lxname));
+				ExpandEnvironmentStrings(lname, lxname, TSIZEOF(lxname));
 				attr = GetFileAttributesL(lxname);
 				if ( (attr & FILE_ATTRIBUTE_DIRECTORY) && (attr != BADATTR) ){
-					tstrcpy(newpath,lxname);
+					tstrcpy(newpath, lxname);
 					*newjumpname = '\0';
 				}else{
 					TCHAR *p;
 
 					p = VFSFindLastEntry(lxname);
-					tstrcpy(newjumpname,(*p == '\\') ? p + 1 : p);
+					tstrcpy(newjumpname, (*p == '\\') ? p + 1 : p);
 					*p = '\0';
-					tstrcpy(newpath,lxname);
+					tstrcpy(newpath, lxname);
 				}
 				return TRUE;
 			}else{
 				if ( hPopupMenu == NULL ){
-					SetPopMsg(cinfo,POPMSG_MSG,MES_ESCT);
+					SetPopMsg(cinfo, POPMSG_MSG, MES_ESCT);
 					return FALSE;
 				}
 			}
 		}
 		if ( hPopupMenu == NULL ) return TRUE;
-		AppendMenuString(hPopupMenu,CRID_DIRTYPE_SHORTCUT,MES_JNSH);
-		AppendMenuString(hPopupMenu,CRID_DIRTYPE_SHORTCUT_PAIR,MES_JPSH);
+		AppendMenuString(hPopupMenu, CRID_DIRTYPE_SHORTCUT, MES_JNSH);
+		AppendMenuString(hPopupMenu, CRID_DIRTYPE_SHORTCUT_PAIR, MES_JPSH);
 	}
 //---------------------------------------------------------- VFS系の判別
-	if ( VFSCheckDir(pathbuf,header,fsize | VFSCHKDIR_GETDIRMENU,(void **)hPopupMenu) ){
+	if ( VFSCheckDir(pathbuf, header, fsize | VFSCHKDIR_GETDIRMENU, (void **)hPopupMenu) ){
 		if ( newpath != NULL ){
-			tstrcpy(newpath,pathbuf);
+			tstrcpy(newpath, pathbuf);
 			*newjumpname = '\0';
 		}
 		if ( hPopupMenu == NULL ) return TRUE;
@@ -120,53 +120,53 @@ BOOL IsFileDir(PPC_APPINFO *cinfo,const TCHAR *filename,TCHAR *newpath,TCHAR *ne
 	{
 		HANDLE hFile;
 		WIN32_STREAM_ID stid;
-		DWORD size,reads;
+		DWORD size, reads;
 		LPVOID context = NULL;
 		WCHAR wname[VFPS];
 
-		hFile = CreateFileL(pathbuf,GENERIC_READ,FILE_SHARE_READ,NULL,
-				OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
+		hFile = CreateFileL(pathbuf, GENERIC_READ, FILE_SHARE_READ, NULL,
+				OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		if ( hFile != INVALID_HANDLE_VALUE ){
 			for ( ; ; ){
 				size = (LPBYTE)&stid.cStreamName - (LPBYTE)&stid;
-				if ( FALSE == BackupRead(hFile,(LPBYTE)&stid,
-						size,&reads,FALSE,FALSE,&context) ){
+				if ( FALSE == BackupRead(hFile, (LPBYTE)&stid,
+						size, &reads, FALSE, FALSE, &context) ){
 					break;
 				}
 				if ( reads < size ) break;
-				if ( FALSE == BackupRead(hFile,(LPBYTE)&wname,
-						stid.dwStreamNameSize,&reads,FALSE,FALSE,&context) ){
+				if ( FALSE == BackupRead(hFile, (LPBYTE)&wname,
+						stid.dwStreamNameSize, &reads, FALSE, FALSE, &context) ){
 					break;
 				}
 				if ( reads < stid.dwStreamNameSize ) break;
 
 				if ( stid.dwStreamNameSize ){
-					AppendMenuString(hPopupMenu,CRID_DIRTYPE_STREAM,MES_JNST);
-					AppendMenuString(hPopupMenu,CRID_DIRTYPE_STREAM_PAIR,MES_JPST);
+					AppendMenuString(hPopupMenu, CRID_DIRTYPE_STREAM, MES_JNST);
+					AppendMenuString(hPopupMenu, CRID_DIRTYPE_STREAM_PAIR, MES_JPST);
 					break;
 //				}else{	// default name ... 登録不要
 //
 				}
-				if ( FALSE == BackupSeek(hFile,*(DWORD *)(&stid.Size),
-						*((DWORD *)(&stid.Size) + 1),&reads,&reads,&context) ){
+				if ( FALSE == BackupSeek(hFile, *(DWORD *)(&stid.Size),
+						*((DWORD *)(&stid.Size) + 1), &reads, &reads, &context) ){
 					break;
 				}
 			}
 			if ( context != NULL ){
-				BackupRead(hFile,(LPBYTE)&stid,0,&reads,TRUE,FALSE,&context);
+				BackupRead(hFile, (LPBYTE)&stid, 0, &reads, TRUE, FALSE, &context);
 			}
 			CloseHandle(hFile);
 		}
 	}
-	AppendMenuString(hPopupMenu,CRID_DIRTYPE_PAIR,MES_JPDI);
+	AppendMenuString(hPopupMenu, CRID_DIRTYPE_PAIR, MES_JPDI);
 	return TRUE;
 }
 
 //-----------------------------------------------------------------------------
 // ディレクトリかどうかを判別し、ファイルならフルパス名を生成する
-ERRORCODE DirChk(const TCHAR *name,TCHAR *dest)
+ERRORCODE DirChk(const TCHAR *name, TCHAR *dest)
 {
-	TCHAR buf[VFPS],*wp;
+	TCHAR buf[VFPS], *wp;
 
 	if ( GetFileAttributesL(name) == BADATTR ){
 		ERRORCODE ec;
@@ -176,26 +176,26 @@ ERRORCODE DirChk(const TCHAR *name,TCHAR *dest)
 			 (ec == ERROR_PATH_NOT_FOUND) ||
 			 (ec == ERROR_BAD_NETPATH) ||
 			 (ec == ERROR_DIRECTORY) ){		// path not found
-			tstrcpy(buf,name);
+			tstrcpy(buf, name);
 			wp = VFSFindLastEntry(buf);
 			if ( *wp != '\0' ){
 				*wp = '\0';
-				if ( ec == ERROR_PATH_NOT_FOUND ) VFSChangeDirectory(NULL,buf);
-				ec = DirChk(buf,dest);
+				if ( ec == ERROR_PATH_NOT_FOUND ) VFSChangeDirectory(NULL, buf);
+				ec = DirChk(buf, dest);
 			}
 		}
 		return ec;
 	}else{
-		VFSFullPath(dest,(TCHAR *)name,dest);
+		VFSFullPath(dest, (TCHAR *)name, dest);
 		return NO_ERROR;
 	}
 }
 
 //-----------------------------------------------------------------------------
 // ディレクトリ移動処理
-BOOL CellLook(PPC_APPINFO *cinfo,int IsFileRead)
+BOOL CellLook(PPC_APPINFO *cinfo, int IsFileRead)
 {
-	TCHAR temp[VFPS],*p;
+	TCHAR temp[VFPS], *p;
 	BOOL arcmode = FALSE;
 	ENTRYCELL *cell;
 
@@ -216,38 +216,38 @@ BOOL CellLook(PPC_APPINFO *cinfo,int IsFileRead)
 	if ( cell->f.dwFileAttributes &
 			(FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTEX_FOLDER) ){
 		if ( IsTrue(cinfo->ChdirLock) ){
-			if ( VFSFullPath(temp,CellFileName(cell),cinfo->path) == NULL ){
-				SetPopMsg(cinfo,POPMSG_GETLASTERROR,NULL);
+			if ( VFSFullPath(temp, CellFileName(cell), cinfo->path) == NULL ){
+				SetPopMsg(cinfo, POPMSG_GETLASTERROR, NULL);
 				return TRUE;
 			}
-			PPCuiWithPathForLock(cinfo,temp);
+			PPCuiWithPathForLock(cinfo, temp);
 			return TRUE;
 		}
 
 		if ( cinfo->UseArcPathMask != ARCPATHMASK_OFF ){
-			SavePPcDir(cinfo,TRUE);
-			DxSetMotion(cinfo->DxDraw,DXMOTION_DownDir);
+			SavePPcDir(cinfo, TRUE);
+			DxSetMotion(cinfo->DxDraw, DXMOTION_DownDir);
 
-			tstrcpy(cinfo->ArcPathMask,CellFileName(cell));
-			cinfo->ArcPathMaskDepth = GetEntryDepth(cinfo->ArcPathMask,NULL) + 1;
+			tstrcpy(cinfo->ArcPathMask, CellFileName(cell));
+			cinfo->ArcPathMaskDepth = GetEntryDepth(cinfo->ArcPathMask, NULL) + 1;
 			cinfo->e.cellN = 0;
-			MaskEntryMain(cinfo,&cinfo->mask,NilStr);
+			MaskEntryMain(cinfo, &cinfo->mask, NilStr);
 
 			if ( X_acr[1] ){ // カーソル位置を再現
 				const TCHAR *vp;
 
-				VFSFullPath(temp,cinfo->ArcPathMask,cinfo->OrgPath[0] ? cinfo->OrgPath : cinfo->path);
+				VFSFullPath(temp, cinfo->ArcPathMask, cinfo->OrgPath[0] ? cinfo->OrgPath : cinfo->path);
 				UsePPx();
-				vp = SearchHistory(PPXH_PPCPATH,temp);
+				vp = SearchHistory(PPXH_PPCPATH, temp);
 				if ( vp != NULL ){
 					const int *histp;
 
 					histp = (const int *)GetHistoryData(vp);
 					if ( (histp[1] >= 0) && (histp[1] < cinfo->e.cellIMax) ){
 						cinfo->cellWMin = histp[1];
-						InvalidateRect(cinfo->info.hWnd,NULL,FALSE);
+						InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
 						if ( (histp[0] >= 0) && (histp[1] < cinfo->e.cellIMax) ){
-							MoveCellCsr(cinfo,histp[0] - cinfo->e.cellN,NULL);
+							MoveCellCsr(cinfo, histp[0] - cinfo->e.cellN, NULL);
 						}
 					}
 				}
@@ -259,17 +259,17 @@ BOOL CellLook(PPC_APPINFO *cinfo,int IsFileRead)
 		SetPPcDirPos(cinfo);
 
 #ifndef UNICODE
-		if ( (strchr(CellFileName(cell),'?') != NULL) &&
+		if ( (strchr(CellFileName(cell), '?') != NULL) &&
 			cell->f.cAlternateFileName[0] ){
 			if ( VFSFullPath(cinfo->path,
-					cell->f.cAlternateFileName,cinfo->path) == NULL ){
-				SetPopMsg(cinfo,POPMSG_GETLASTERROR,NULL);
+					cell->f.cAlternateFileName, cinfo->path) == NULL ){
+				SetPopMsg(cinfo, POPMSG_GETLASTERROR, NULL);
 				return TRUE;
 			}
 		}else
 #endif
-		if ( VFSFullPath(cinfo->path,CellFileName(cell),cinfo->path) == NULL ){
-			SetPopMsg(cinfo,POPMSG_GETLASTERROR,NULL);
+		if ( VFSFullPath(cinfo->path, CellFileName(cell), cinfo->path) == NULL ){
+			SetPopMsg(cinfo, POPMSG_GETLASTERROR, NULL);
 			return TRUE;
 		}
 										// PIDL UNC → FS UNC
@@ -280,36 +280,36 @@ BOOL CellLook(PPC_APPINFO *cinfo,int IsFileRead)
 
 			buf[0] = '\0';
 			VFSGetRealPath(cinfo->info.hWnd, buf, cinfo->path);
-			if( (buf[0] == '\\') && !tstrstr(buf,T("::")) ){
-				tstrcpy(cinfo->path,buf);
+			if( (buf[0] == '\\') && !tstrstr(buf, T("::")) ){
+				tstrcpy(cinfo->path, buf);
 			}
 		}
-		DxSetMotion(cinfo->DxDraw,DXMOTION_DownDir);
+		DxSetMotion(cinfo->DxDraw, DXMOTION_DownDir);
 
-		read_entry(cinfo,RENTRY_READ | RENTRY_ENTERSUB);
+		read_entry(cinfo, RENTRY_READ | RENTRY_ENTERSUB);
 		return TRUE;
 	}
-	tstrcpy(temp,cinfo->path);
+	tstrcpy(temp, cinfo->path);
 	p = CellFileName(cell);
 	if ( IsTrue(cinfo->UnpackFix) ) p = FindLastEntryPoint(p);
-	if ( IsFileRead && IsFileDir(cinfo,p,temp,cinfo->Jfname,NULL)){
+	if ( IsFileRead && IsFileDir(cinfo, p, temp, cinfo->Jfname, NULL)){
 		if ( IsTrue(cinfo->ChdirLock) ){
-			PPCuiWithPathForLock(cinfo,temp);
+			PPCuiWithPathForLock(cinfo, temp);
 			return TRUE;
 		}
-		DxSetMotion(cinfo->DxDraw,DXMOTION_DownDir);
+		DxSetMotion(cinfo->DxDraw, DXMOTION_DownDir);
 
-		SavePPcDir(cinfo,FALSE);
+		SavePPcDir(cinfo, FALSE);
 		if ( arcmode && (cinfo->OrgPath[0] == '\0') ){ // 書庫内書庫から出たときの場所を記憶する
-			VFSFullPath(cinfo->OrgPath,CellFileName(cell),
+			VFSFullPath(cinfo->OrgPath, CellFileName(cell),
 					cinfo->UnpackFixOldPath);
 			OffArcPathMode(cinfo);
 		}
-		tstrcpy(cinfo->path,temp);
+		tstrcpy(cinfo->path, temp);
 		if ( *cinfo->Jfname ){
-			read_entry(cinfo,RENTRY_JUMPNAME);
+			read_entry(cinfo, RENTRY_JUMPNAME);
 		}else{
-			read_entry(cinfo,RENTRY_READ);
+			read_entry(cinfo, RENTRY_READ);
 		}
 	}else{
 		if ( IsTrue(arcmode) ) OffArcPathMode(cinfo);
@@ -320,18 +320,18 @@ BOOL CellLook(PPC_APPINFO *cinfo,int IsFileRead)
 
 //-----------------------------------------------------------------------------
 // セル移動した時に行う処理
-BOOL NewCellN(PPC_APPINFO *cinfo,int OcellN,BOOL fulldraw)
+BOOL NewCellN(PPC_APPINFO *cinfo, int OcellN, BOOL fulldraw)
 {
 	TCHAR viewname[VFPS];
 
-	if ( VFSFullPath(viewname,(TCHAR *)GetCellFileName(cinfo,&CEL(cinfo->e.cellN),viewname),cinfo->path) == NULL ){
+	if ( VFSFullPath(viewname, (TCHAR *)GetCellFileName(cinfo, &CEL(cinfo->e.cellN), viewname), cinfo->path) == NULL ){
 		cinfo->OldIconsPath[0] = '\0';
 		if ( fulldraw == FALSE ){
 			if ( !cinfo->FullDraw ){
 				UpdateWindow_Part(cinfo->info.hWnd);	// 入れたほうが早い？
 			}
-			setflag(cinfo->DrawTargetFlags,DRAWT_1ENTRY);
-			RefleshCell(cinfo,OcellN);
+			setflag(cinfo->DrawTargetFlags, DRAWT_1ENTRY);
+			RefleshCell(cinfo, OcellN);
 			if ( !cinfo->FullDraw ){
 				UpdateWindow_Part(cinfo->info.hWnd);	// 入れたほうが早い？
 			}
@@ -339,20 +339,24 @@ BOOL NewCellN(PPC_APPINFO *cinfo,int OcellN,BOOL fulldraw)
 		return TRUE;	// 表示できない
 	}
 															// 変化無し
-	if ( (cinfo->e.cellN == OcellN) && !tstrcmp(viewname,cinfo->OldIconsPath) ){
+	if ( (cinfo->e.cellN == OcellN) && !tstrcmp(viewname, cinfo->OldIconsPath) ){
 		return FALSE;
 	}
 									// ドライブ一覧→タイトルバー修正
 	if ( cinfo->path[0] == ':' ) SetCaption(cinfo);
 
+	HideEntryTip(cinfo);
+	if ( X_stip[TIP_LONG_TIME] != 0 ){
+		setflag(cinfo->Tip.states, STIP_REQ_DELAY);
+	}
 									// カーソル位置のセルを描画
-	tstrcpy(cinfo->OldIconsPath,viewname);
+	tstrcpy(cinfo->OldIconsPath, viewname);
 	if ( fulldraw == FALSE ){
 		if ( !cinfo->FullDraw ){
 			UpdateWindow_Part(cinfo->info.hWnd);	// 入れたほうが早い？
 		}
-		setflag(cinfo->DrawTargetFlags,DRAWT_1ENTRY);
-		RefleshCell(cinfo,OcellN);
+		setflag(cinfo->DrawTargetFlags, DRAWT_1ENTRY);
+		RefleshCell(cinfo, OcellN);
 		if ( !cinfo->FullDraw ){
 			UpdateWindow_Part(cinfo->info.hWnd);	// 入れたほうが早い？
 		}
@@ -363,27 +367,26 @@ BOOL NewCellN(PPC_APPINFO *cinfo,int OcellN,BOOL fulldraw)
 		cinfo->InfoIcon_DirtyCache = FALSE;
 	#endif
 	if ( cinfo->dset.infoicon >= DSETI_EXTONLY ){
-		cinfo->hInfoIcon = LoadIcon(hInst,MAKEINTRESOURCE(Ic_LOADING));
-		setflag(cinfo->SubTCmdFlags,SUBT_GETINFOICON);
+		cinfo->hInfoIcon = LoadIcon(hInst, MAKEINTRESOURCE(Ic_LOADING));
+		setflag(cinfo->SubTCmdFlags, SUBT_GETINFOICON);
 		SetEvent(cinfo->SubT_cmd);
 	}else{					 // その他
 		cinfo->hInfoIcon = NULL;
 	}
 	if ( IsTrue(cinfo->UseSelectEvent) ){
-		SendMessage(cinfo->info.hWnd,WM_PPXCOMMAND,K_E_SELECT,0);
+		SendMessage(cinfo->info.hWnd, WM_PPXCOMMAND, K_E_SELECT, 0);
 	}
-	HideFileNameTip(cinfo);
 
 	if ( cinfo->SlowMode == FALSE ){		// 連動関係の処理
 		if ( cinfo->hSyncInfoWnd ){	// ^\[I] 処理
 			HWND hEdit;
 
-			hEdit = (HWND)SendMessage(cinfo->hSyncInfoWnd,WM_PPXCOMMAND,KE_getHWND,0);
+			hEdit = (HWND)SendMessage(cinfo->hSyncInfoWnd, WM_PPXCOMMAND, KE_getHWND, 0);
 			if ( hEdit && IsWindow(hEdit) ){
 				ThSTRUCT text;
 
-				MakeFileInformation(cinfo,&text,&CEL(cinfo->e.cellN));
-				SetWindowText(hEdit,(TCHAR *)text.bottom);
+				MakeFileInformation(cinfo, &text, &CEL(cinfo->e.cellN));
+				SetWindowText(hEdit, (TCHAR *)text.bottom);
 				ThFree(&text);
 			}else{
 				cinfo->hSyncInfoWnd = NULL;
@@ -405,14 +408,14 @@ BOOL NewCellN(PPC_APPINFO *cinfo,int OcellN,BOOL fulldraw)
 							(cinfo->e.Dtype.mode != VFSDT_CDDISK) ){
 						return TRUE;
 					}
-					setflag(flags,PPV_HEADVIEW);
+					setflag(flags, PPV_HEADVIEW);
 				}
 				// 書庫内のディレクトリと思われるエントリは表示しない
 				if ( ((cinfo->e.Dtype.mode != VFSDT_UN) &&
 					  (cinfo->e.Dtype.mode != VFSDT_SUSIE)) ||
 					 ((CEL(cinfo->e.cellN).f.nFileSizeHigh == 0) &&
 					  (CEL(cinfo->e.cellN).f.nFileSizeLow != 0)) ){
-					PPxView(cinfo->info.hWnd,viewname,flags | (cinfo->SyncViewFlag & ~1) );
+					PPxView(cinfo->info.hWnd, viewname, flags | (cinfo->SyncViewFlag & ~1) );
 				}
 			}
 		}
@@ -420,18 +423,18 @@ BOOL NewCellN(PPC_APPINFO *cinfo,int OcellN,BOOL fulldraw)
 			SYNCPROPINFO si;
 
 			si.ff = CEL(cinfo->e.cellN).f;
-			tstrcpy(si.filename,viewname);
-			SyncProperties(cinfo->info.hWnd,&si);
+			tstrcpy(si.filename, viewname);
+			SyncProperties(cinfo->info.hWnd, &si);
 		}
 	}
-	DNotifyWinEvent(EVENT_OBJECT_FOCUS,cinfo->info.hWnd,OBJID_CLIENT,cinfo->e.cellN + 1);
+	DNotifyWinEvent(EVENT_OBJECT_FOCUS, cinfo->info.hWnd, OBJID_CLIENT, cinfo->e.cellN + 1);
 	return TRUE;
 }
 									// 現在ドライブの次のドライブに移動
-void JumpNextDrive(PPC_APPINFO *cinfo,int offset)
+void JumpNextDrive(PPC_APPINFO *cinfo, int offset)
 {
 	DWORD drv;
-	int nowdrive,i;
+	int nowdrive, i;
 	TCHAR buf[VFPS];
 
 	drv = GetLogicalDrives();
@@ -442,15 +445,15 @@ void JumpNextDrive(PPC_APPINFO *cinfo,int offset)
 		if ( nowdrive > ('Z' - 'A') ) nowdrive = 0;
 		if ( drv & (LSBIT << nowdrive) ) break;
 	}
-	wsprintf(buf,T("%c:"),nowdrive + 'A');
+	wsprintf(buf, T("%c:"), nowdrive + 'A');
 	SetPPcDirPos(cinfo);
-	VFSFullPath(cinfo->path,buf,cinfo->path);
-	read_entry(cinfo,RENTRY_READ);
+	VFSFullPath(cinfo->path, buf, cinfo->path);
+	read_entry(cinfo, RENTRY_READ);
 }
 										// 別の移動設定でカーソル移動する
-void USEFASTCALL UseMoveKey(PPC_APPINFO *cinfo,int offset,CURSORMOVER *cm)
+void USEFASTCALL UseMoveKey(PPC_APPINFO *cinfo, int offset, CURSORMOVER *cm)
 {
-	int type1,type2;
+	int type1, type2;
 
 	type1 = cm->outw_type;
 	type2 = cm->outr_type;
@@ -458,27 +461,27 @@ void USEFASTCALL UseMoveKey(PPC_APPINFO *cinfo,int offset,CURSORMOVER *cm)
 			(type2 == OUTTYPE_LRKEY) ||
 			(type1 == OUTTYPE_PAGEKEY) ||
 			(type2 == OUTTYPE_PAGEKEY) ){
-		SetPopMsg(cinfo,POPMSG_MSG,T("nested error"));
+		SetPopMsg(cinfo, POPMSG_MSG, T("nested error"));
 		return;
 	}
 	if ( offset > 0 ){
-		MoveCellCursor(cinfo,cm);
+		MoveCellCursor(cinfo, cm);
 	}else{
-		MoveCellCursorR(cinfo,cm);
+		MoveCellCursorR(cinfo, cm);
 	}
 }
 										// カーソルがはみ出したときの処理
-void USEFASTCALL DoOutOfRange(PPC_APPINFO *cinfo,int type,int offset)
+void USEFASTCALL DoOutOfRange(PPC_APPINFO *cinfo, int type, int offset)
 {
 	switch (type){
 		case OUTTYPE_PAIR:			// 反対窓
-			PPcChangeWindow(cinfo,PPCHGWIN_PAIR);
+			PPcChangeWindow(cinfo, PPCHGWIN_PAIR);
 			break;
 		case OUTTYPE_FPPC:			// 前
-			PPcChangeWindow(cinfo,offset > 0 ? PPCHGWIN_BACK : PPCHGWIN_NEXT);
+			PPcChangeWindow(cinfo, offset > 0 ? PPCHGWIN_BACK : PPCHGWIN_NEXT);
 			break;
 		case OUTTYPE_NPPC:			// 次
-			PPcChangeWindow(cinfo,offset > 0 ? PPCHGWIN_NEXT : PPCHGWIN_BACK);
+			PPcChangeWindow(cinfo, offset > 0 ? PPCHGWIN_NEXT : PPCHGWIN_BACK);
 			break;
 		case OUTTYPE_PARENT:		// 親に移動
 			PPC_UpDir(cinfo);
@@ -487,37 +490,37 @@ void USEFASTCALL DoOutOfRange(PPC_APPINFO *cinfo,int type,int offset)
 			PPC_DriveJump(cinfo);
 			break;
 		case OUTTYPE_FDRIVE:		// ドライブ移動
-			JumpNextDrive(cinfo,offset > 0 ? -1 : 1);
+			JumpNextDrive(cinfo, offset > 0 ? -1 : 1);
 			break;
 		case OUTTYPE_NDRIVE:		// ドライブ移動
-			JumpNextDrive(cinfo,offset > 0 ? 1 : -1);
+			JumpNextDrive(cinfo, offset > 0 ? 1 : -1);
 			break;
 		case OUTTYPE_LRKEY:			// ←→
-			UseMoveKey(cinfo,offset,&XC_mvLR);
+			UseMoveKey(cinfo, offset, &XC_mvLR);
 			break;
 		case OUTTYPE_PAGEKEY:		// PgUp/dw
-			UseMoveKey(cinfo,offset,&XC_mvPG);
+			UseMoveKey(cinfo, offset, &XC_mvPG);
 			break;
 		case OUTTYPE_RANGEEVENT12: // RANGEEVENT1～8
 		case OUTTYPE_RANGEEVENT34:
 		case OUTTYPE_RANGEEVENT56:
 		case OUTTYPE_RANGEEVENT78:
-			PPcCommand(cinfo,(WORD)( K_E_RANGE1 +
+			PPcCommand(cinfo, (WORD)( K_E_RANGE1 +
 				(type - OUTTYPE_RANGEEVENT12) * 2 + ((offset > 0) ? 1 : 0)) );
 			break;
 		default:
-			SetPopMsg(cinfo,POPMSG_MSG,T("XC_mv param error"));
+			SetPopMsg(cinfo, POPMSG_MSG, T("XC_mv param error"));
 	}
 }
 
 // 窓間移動優先処理
-BOOL USEFASTCALL CheckPairJump(PPC_APPINFO *cinfo,int offset)
+BOOL USEFASTCALL CheckPairJump(PPC_APPINFO *cinfo, int offset)
 {
 	int site;
 
 	if ( cinfo->combo ){
-		if ( NULL == (HWND)SendMessage(cinfo->hComboWnd,WM_PPXCOMMAND,
-				KCW_getpairwnd,(LPARAM)cinfo->info.hWnd) ){
+		if ( NULL == (HWND)SendMessage(cinfo->hComboWnd, WM_PPXCOMMAND,
+				KCW_getpairwnd, (LPARAM)cinfo->info.hWnd) ){
 			return FALSE;
 		}
 		site = PPcGetSite(cinfo);
@@ -525,8 +528,8 @@ BOOL USEFASTCALL CheckPairJump(PPC_APPINFO *cinfo,int offset)
 		if ( (offset >= 0) ? (site == PPCSITE_RIGHT) : (site == PPCSITE_LEFT) ){
 			return FALSE;
 		}
-		PostMessage(cinfo->hComboWnd,WM_PPXCOMMAND,
-				TMAKELPARAM(KCW_nextppc,0),(LPARAM)cinfo->info.hWnd);
+		PostMessage(cinfo->hComboWnd, WM_PPXCOMMAND,
+				TMAKELPARAM(KCW_nextppc, 0), (LPARAM)cinfo->info.hWnd);
 		return TRUE;
 	}
 
@@ -537,12 +540,12 @@ BOOL USEFASTCALL CheckPairJump(PPC_APPINFO *cinfo,int offset)
 	}
 	if ( offset < 0 ) site ^= PAIRBIT;
 	if ( site == PPCSITE_SINGLE ) return FALSE;
-	PPcChangeWindow(cinfo,(offset > 0) ? PPCHGWIN_NEXT : PPCHGWIN_BACK);
+	PPcChangeWindow(cinfo, (offset > 0) ? PPCHGWIN_NEXT : PPCHGWIN_BACK);
 	return TRUE;
 }
 
 // カーソル位置を範囲内に補正する
-void FixCellRange(PPC_APPINFO *cinfo,int mode,int *NcellWMin,int cellN)
+void FixCellRange(PPC_APPINFO *cinfo, int mode, int *NcellWMin, int cellN)
 {
 	int PageEntries;			// １ページ分のエントリ数
 	int MaxWMin;				// NcellWMinの最大値
@@ -554,7 +557,8 @@ void FixCellRange(PPC_APPINFO *cinfo,int mode,int *NcellWMin,int cellN)
 	if ( mode == 0 ){			// 隙間無し
 		MaxWMin = cinfo->e.cellIMax - PageEntries;
 	}else if ( XC_mvUD.outw_type == OUTTYPE_LINESCROLL ){
-		MaxWMin = cinfo->e.cellIMax - (XC_smar + 1);
+		MaxWMin = cinfo->e.cellIMax - 1;
+		if ( cinfo->cel.Area.cy > (XC_smar * 3) ) MaxWMin -= XC_smar;
 	}else if ( mode == 1 ){		// 桁単位
 		*NcellWMin = *NcellWMin - (*NcellWMin % cinfo->cel.Area.cy);
 		MaxWMin = (cinfo->e.cellIMax - PageEntries + cinfo->cel.Area.cy - 1) /
@@ -573,27 +577,27 @@ void FixCellRange(PPC_APPINFO *cinfo,int mode,int *NcellWMin,int cellN)
 
 //-----------------------------------------------------------------------------
 // 位置が変わったら真になる
-BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
+BOOL MoveCellCsr(PPC_APPINFO *cinfo, int offset, const CURSORMOVER *cm)
 {
 	int PageEntries;			// １ページ分のエントリ数
-	int NcellN,NcellWMin;		// 新しいカーソル位置と表示開始位置
-	int limit,flag = 0;
-	int scroll,OcellN;
+	int NcellN, NcellWMin;		// 新しいカーソル位置と表示開始位置
+	int limit, flag = 0;
+	int scroll, OcellN;
 	BOOL CellFix = TRUE;
 
-	DEBUGLOGC("MoveCellCsr start (Focus:%x)",GetFocus());
+	DEBUGLOGC("MoveCellCsr start (Focus:%x)", GetFocus());
 
 	// ● cellN の範囲調整(1.29+n バグがどこかにある？)
 	if ( cinfo->e.cellIMax <= 0 ){
 		cinfo->e.cellIMax = 1;
-		PPxCommonExtCommand(K_SENDREPORT,(WPARAM)T("under cellDMax"));
+		PPxCommonExtCommand(K_SENDREPORT, (WPARAM)T("under cellDMax"));
 	}
 	if ( cinfo->e.cellN >= cinfo->e.cellIMax ){
 		cinfo->e.cellN = cinfo->e.cellIMax - 1;
 	}
 	if ( cinfo->e.cellN < 0 ){
 		cinfo->e.cellN = 0;
-		PPxCommonExtCommand(K_SENDREPORT,(WPARAM)T("under cellN"));
+		PPxCommonExtCommand(K_SENDREPORT, (WPARAM)T("under cellN"));
 	}
 										// カスタマイズ関係の情報を用意 -------
 	if ( cm == NULL ){
@@ -602,7 +606,8 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 	PageEntries = cinfo->cel.Area.cx * cinfo->cel.Area.cy;
 	if ( PageEntries > cinfo->e.cellIMax ) PageEntries = cinfo->e.cellIMax;
 	if ( cm->outw_type == OUTTYPE_LINESCROLL ){
-		limit = XC_smar + 1;
+		limit = 1;
+		if ( cinfo->cel.Area.cy > (XC_smar * 3) ) limit += XC_smar;
 		scroll = 1;
 	}else{
 		limit = 0;
@@ -619,7 +624,7 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 			NcellN = cinfo->e.cellN;
 			NcellWMin = cinfo->cellWMin + offset;
 											// 表示開始位置の範囲外補正
-			FixCellRange(cinfo,scroll,&NcellWMin,-1);
+			FixCellRange(cinfo, scroll, &NcellWMin, -1);
 			if ( !XC_nsbf ){
 				CellFix = FALSE;
 			}else{
@@ -638,7 +643,7 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 			NcellWMin = cinfo->cellWMin;
 			if ( offset > 0 ){
 				while ( offset ){
-					NcellN = DownSearchMarkCell(cinfo,NcellN);
+					NcellN = DownSearchMarkCell(cinfo, NcellN);
 					if ( NcellN < 0 ){
 						NcellN = cinfo->e.cellN;
 						break;
@@ -647,7 +652,7 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 				}
 			}else{
 				while ( offset ){
-					NcellN = UpSearchMarkCell(cinfo,NcellN);
+					NcellN = UpSearchMarkCell(cinfo, NcellN);
 					if ( NcellN < 0 ){
 						NcellN = cinfo->e.cellN;
 						break;
@@ -664,7 +669,7 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 			if ( !IsCEL_Marked(NcellN) ){
 				if ( cinfo->e.markC == 0 ) break;
 				NcellN = offset > 0 ? cinfo->e.markLast : cinfo->e.markTop;
-				NcellN = GetCellIndexFromCellData(cinfo,NcellN);
+				NcellN = GetCellIndexFromCellData(cinfo, NcellN);
 				if ( NcellN < 0 ){
 					NcellN = cinfo->e.cellN;
 				}
@@ -672,7 +677,7 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 			}
 			if ( offset > 0 ){
 				while ( offset ){
-					NcellN = GetNextMarkCell(cinfo,NcellN);
+					NcellN = GetNextMarkCell(cinfo, NcellN);
 					if ( NcellN < 0 ){
 						NcellN = cinfo->e.cellN;
 						break;
@@ -686,7 +691,7 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 						NcellN = cinfo->e.cellN;
 						break;
 					}
-					NcellN = GetCellIndexFromCellData(cinfo,NcellN);
+					NcellN = GetCellIndexFromCellData(cinfo, NcellN);
 					if ( NcellN < 0 ){
 						NcellN = cinfo->e.cellN;
 						break;
@@ -719,7 +724,7 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 			}
 		}
 		if ( cm->outr_hook & OUTHOOK_WINDOWJUMP ){	//窓間移動優先
-			if ( CheckPairJump(cinfo,offset) ){
+			if ( CheckPairJump(cinfo, offset) ){
 				NcellN = cinfo->e.cellN;
 				NcellWMin = cinfo->cellWMin;
 				break;
@@ -749,8 +754,8 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 				NcellN = cinfo->e.cellIMax - 1;
 				break;
 			default:
-				DoOutOfRange(cinfo,cm->outr_type,offset);
-				DEBUGLOGC("MoveCellCsr nomove end %d",offset);
+				DoOutOfRange(cinfo, cm->outr_type, offset);
+				DEBUGLOGC("MoveCellCsr nomove end %d", offset);
 				return FALSE;
 		}
 		break;
@@ -771,7 +776,7 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 		}
 
 		if ( cm->outr_hook & OUTHOOK_WINDOWJUMP ){				// 窓間移動優先
-			if ( CheckPairJump(cinfo,offset) ){
+			if ( CheckPairJump(cinfo, offset) ){
 				NcellN = cinfo->e.cellN;
 				NcellWMin = cinfo->cellWMin;
 				break;
@@ -798,16 +803,16 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 				NcellN = 0;
 				break;
 			default:
-				DoOutOfRange(cinfo,cm->outr_type,offset);
-				DEBUGLOGC("MoveCellCsr nomove end %d",offset);
+				DoOutOfRange(cinfo, cm->outr_type, offset);
+				DEBUGLOGC("MoveCellCsr nomove end %d", offset);
 				return FALSE;
 		}
 		break;
 	}
 	if ( IsTrue(CellFix) ){
-		DEBUGLOGC("MoveCellCsr CellFix %d",offset);
+		DEBUGLOGC("MoveCellCsr CellFix %d", offset);
 										// 表示領域の調節 ---
-		FixCellRange(cinfo,scroll,&NcellWMin,-1);
+		FixCellRange(cinfo, scroll, &NcellWMin, -1);
 										// 窓より左 ---------------------------
 		while ( NcellN < (NcellWMin + limit ) ){
 			int delta;
@@ -832,7 +837,7 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 			}
 
 			if ( cm->outw_hook & OUTHOOK_WINDOWJUMP ){		//窓間移動優先
-				if ( CheckPairJump(cinfo,offset) ){
+				if ( CheckPairJump(cinfo, offset) ){
 					NcellN = cinfo->e.cellN;
 					NcellWMin = cinfo->cellWMin;
 					break;
@@ -870,8 +875,8 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 					scroll = 1;
 					break;
 				default:
-					DoOutOfRange(cinfo,cm->outw_type,offset);
-					DEBUGLOGC("MoveCellCsr nomove end %d",offset);
+					DoOutOfRange(cinfo, cm->outw_type, offset);
+					DEBUGLOGC("MoveCellCsr nomove end %d", offset);
 					return FALSE;
 			}
 			break;
@@ -894,7 +899,7 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 				}
 			}
 			if ( cm->outw_hook & OUTHOOK_WINDOWJUMP ){		//窓間移動優先
-				if ( CheckPairJump(cinfo,offset) ){
+				if ( CheckPairJump(cinfo, offset) ){
 					NcellN = cinfo->e.cellN;
 					NcellWMin = cinfo->cellWMin;
 					break;
@@ -929,22 +934,22 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 					scroll = 1;
 					break;
 				default:
-					DoOutOfRange(cinfo,cm->outw_type,offset);
-					DEBUGLOGC("MoveCellCsr nomove end %d",offset);
+					DoOutOfRange(cinfo, cm->outw_type, offset);
+					DEBUGLOGC("MoveCellCsr nomove end %d", offset);
 					return FALSE;
 			}
 			if ( NcellN < NcellWMin ) NcellWMin = NcellN;
 			break;
 		}
 										// 表示領域の調節 ---
-		FixCellRange(cinfo,scroll,&NcellWMin,NcellN);
+		FixCellRange(cinfo, scroll, &NcellWMin, NcellN);
 	}
 	OcellN = cinfo->e.cellN;
 	if ( SelfDD_hWnd == NULL ) cinfo->e.cellN = NcellN;
 										// Explorer風選択処理
 	if ( cm->outw_hook & OUTHOOK_MARK ){
-		int markstart = -1,markend C4701CHECK;
-		int unmarkstart = -1,unmarkend C4701CHECK;
+		int markstart = -1, markend C4701CHECK;
+		int unmarkstart = -1, unmarkend C4701CHECK;
 
 		if ( cinfo->e.cellNref == -1 ) cinfo->e.cellNref = OcellN;
 		if ( cinfo->e.cellNref > OcellN ){	// 基準点より前が前回位置
@@ -974,25 +979,25 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 				}
 			}
 		}
-		cinfo->MarkMask = 0x1f;
+		cinfo->MarkMask = MARKMASK_DIRFILE;
 		if ( unmarkstart != -1 ){
-			setflag(cinfo->DrawTargetFlags,DRAWT_ENTRY);
+			setflag(cinfo->DrawTargetFlags, DRAWT_ENTRY);
 			while ( unmarkstart <= unmarkend ){ // C4701ok
 				if ( IsCEL_Marked(unmarkstart) ){
-					CellMark(cinfo,unmarkstart,MARK_REMOVE);
-					RefleshCell(cinfo,unmarkstart);
-					RefleshInfoBox(cinfo,DE_ATTR_MARK);
+					CellMark(cinfo, unmarkstart, MARK_REMOVE);
+					RefleshCell(cinfo, unmarkstart);
+					RefleshInfoBox(cinfo, DE_ATTR_MARK);
 				}
 				unmarkstart++;
 			}
 		}
 		if ( markstart != -1 ){
-			setflag(cinfo->DrawTargetFlags,DRAWT_ENTRY);
+			setflag(cinfo->DrawTargetFlags, DRAWT_ENTRY);
 			while ( markstart <= markend ){ // C4701ok
 				if ( !IsCEL_Marked(markstart) ){
-					CellMark(cinfo,markstart,MARK_CHECK);
-					RefleshCell(cinfo,markstart);
-					RefleshInfoBox(cinfo,DE_ATTR_MARK);
+					CellMark(cinfo, markstart, MARK_CHECK);
+					RefleshCell(cinfo, markstart);
+					RefleshInfoBox(cinfo, DE_ATTR_MARK);
 				}
 				markstart++;
 			}
@@ -1007,18 +1012,18 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 		POINT DragSelectPos;
 		RECT DragSelectArea;
 
-		DEBUGLOGC("MoveCellCsr scroll %d",offset);
+		DEBUGLOGC("MoveCellCsr scroll %d", offset);
 		if ( (cinfo->MouseStat.PushButton > MOUSEBUTTON_CANCEL) &&
 			 (cinfo->MousePush == MOUSE_MARK) ){
 			RECT DragSelectArea;
 
 			GetCursorPos(&DragSelectPos);
-			ScreenToClient(cinfo->info.hWnd,&DragSelectPos);
+			ScreenToClient(cinfo->info.hWnd, &DragSelectPos);
 
-			XMessage(NULL,NULL,XM_DbgLOG,T("scroll 1 %d %d"),NcellWMin,cinfo->cellWMin);
-			CalcDragTarget(cinfo,&DragSelectPos,&DragSelectArea);
-			DrawDragFrame(cinfo->info.hWnd,&DragSelectArea);
-			MarkDragArea(cinfo,&DragSelectArea,MARK_REVERSE);
+			XMessage(NULL, NULL, XM_DbgLOG, T("scroll 1 %d %d"), NcellWMin, cinfo->cellWMin);
+			CalcDragTarget(cinfo, &DragSelectPos, &DragSelectArea);
+			DrawDragFrame(cinfo->info.hWnd, &DragSelectArea);
+			MarkDragArea(cinfo, &DragSelectArea, MARK_REVERSE);
 		}
 		#ifndef USEDIRECTX
 		if ( (cinfo->bg.X_WallpaperType != 0) ||
@@ -1026,13 +1031,13 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 		#endif
 										// 壁紙表示時は全画面更新
 			cinfo->e.cellPoint = -1;
-			NewCellN(cinfo,OcellN,TRUE);
+			NewCellN(cinfo, OcellN, TRUE);
 			cinfo->cellWMin = NcellWMin;
 			cinfo->DrawTargetFlags = DRAWT_ALL;
-			InvalidateRect(cinfo->info.hWnd,NULL,FALSE);
+			InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
 		#ifndef USEDIRECTX
 		}else{
-			int xoffset,yoffset;
+			int xoffset, yoffset;
 
 			xoffset = (cinfo->cellWMin - NcellWMin) / cinfo->cel.Area.cy;
 			yoffset = (cinfo->cellWMin - NcellWMin) % cinfo->cel.Area.cy;
@@ -1040,16 +1045,16 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 			if ( (xoffset <= -cinfo->cel.Area.cx) ||
 				 (xoffset >= cinfo->cel.Area.cx) ){
 				cinfo->e.cellPoint = -1;
-				NewCellN(cinfo,OcellN,TRUE);
+				NewCellN(cinfo, OcellN, TRUE);
 				cinfo->cellWMin = NcellWMin;
 				cinfo->DrawTargetFlags = DRAWT_ALL;
-				InvalidateRect(cinfo->info.hWnd,NULL,FALSE);
+				InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
 			}else{
 										// 再利用可能な表示があるのでスクロール
-										// ※ xoffset,yoffset が共に !0 なら
+										// ※ xoffset, yoffset が共に !0 なら
 										//    全画面更新が好ましいが、現状では
 										//    おきにくいため、対策せず
-				RECT box,newbox;
+				RECT box, newbox;
 				HDC hDC;
 				int OcellWMin;
 
@@ -1059,11 +1064,11 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 					cinfo->e.cellPoint = -1;
 					if ( (cellPoint >= NcellWMin) &&
 						 (cellPoint < (NcellWMin + PageEntries)) ){
-						RefleshCell(cinfo,cellPoint);
+						RefleshCell(cinfo, cellPoint);
 						if ( !cinfo->FullDraw ) UpdateWindow_Part(cinfo->info.hWnd);
 					}
 				}
-				NewCellN(cinfo,OcellN,FALSE);
+				NewCellN(cinfo, OcellN, FALSE);
 
 				box.left	= cinfo->BoxEntries.left;
 				box.right	= box.left + cinfo->cel.VArea.cx * cinfo->cel.Size.cx;
@@ -1071,75 +1076,75 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 				box.bottom	= box.top + cinfo->cel.Area.cy * cinfo->cel.Size.cy;
 
 				hDC = GetDC(cinfo->info.hWnd);
-				ScrollDC(hDC,xoffset * cinfo->cel.Size.cx,
+				ScrollDC(hDC, xoffset * cinfo->cel.Size.cx,
 							 yoffset * cinfo->cel.Size.cy,
-							&box,&box,NULL,&newbox);
-				ReleaseDC(cinfo->info.hWnd,hDC);
+							&box, &box, NULL, &newbox);
+				ReleaseDC(cinfo->info.hWnd, hDC);
 
 				OcellWMin = cinfo->cellWMin;
 				cinfo->cellWMin = NcellWMin;
 										// 旧カーソルを消去
-				RefleshCell(cinfo,OcellN - OcellWMin + NcellWMin +
+				RefleshCell(cinfo, OcellN - OcellWMin + NcellWMin +
 										xoffset * cinfo->cel.Area.cy + yoffset);
 				if ( !cinfo->FullDraw ) UpdateWindow_Part(cinfo->info.hWnd);
 										// 新規部分を表示
-				setflag(cinfo->DrawTargetFlags,DRAWT_1ENTRY);
-				UnionRect(&box,&newbox,&cinfo->DrawTargetCell);
+				setflag(cinfo->DrawTargetFlags, DRAWT_1ENTRY);
+				UnionRect(&box, &newbox, &cinfo->DrawTargetCell);
 				cinfo->DrawTargetCell = box;
 
-				InvalidateRect(cinfo->info.hWnd,&newbox,FALSE);
+				InvalidateRect(cinfo->info.hWnd, &newbox, FALSE);
 				if ( !cinfo->FullDraw ) UpdateWindow_Part(cinfo->info.hWnd);
 
-				RefleshCell(cinfo,cinfo->e.cellN);
+				RefleshCell(cinfo, cinfo->e.cellN);
 //				if ( !cinfo->FullDraw ) UpdateWindow_Part(cinfo->info.hWnd);
 
-				RefleshInfoBox(cinfo,DE_ATTR_ENTRY | DE_ATTR_PAGE);
+				RefleshInfoBox(cinfo, DE_ATTR_ENTRY | DE_ATTR_PAGE);
 			}
 			if ( cinfo->combo && (X_combos[0] & CMBS_COMMONINFO) ){
-				PostMessage(cinfo->hComboWnd,WM_PPXCOMMAND,KCW_drawinfo,0);
+				PostMessage(cinfo->hComboWnd, WM_PPXCOMMAND, KCW_drawinfo, 0);
 			}
 		}
 		#endif // USEDIRECTX
 		if ( (cinfo->MouseStat.PushButton > MOUSEBUTTON_CANCEL) &&
 			 (cinfo->MousePush == MOUSE_MARK) ){
-			XMessage(NULL,NULL,XM_DbgLOG,T("scroll 2 %d %d"),NcellWMin,cinfo->cellWMin);
-			CalcDragTarget(cinfo,&DragSelectPos,&DragSelectArea);
-			MarkDragArea(cinfo,&DragSelectArea,MARK_REVERSE);
+			XMessage(NULL, NULL, XM_DbgLOG, T("scroll 2 %d %d"), NcellWMin, cinfo->cellWMin);
+			CalcDragTarget(cinfo, &DragSelectPos, &DragSelectArea);
+			MarkDragArea(cinfo, &DragSelectArea, MARK_REVERSE);
 			cinfo->DrawTargetFlags = DRAWT_ALL;
-			InvalidateRect(cinfo->info.hWnd,NULL,FALSE);
+			InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
 			UpdateWindow_Part(cinfo->info.hWnd);
-			DrawDragFrame(cinfo->info.hWnd,&DragSelectArea);
+			DrawDragFrame(cinfo->info.hWnd, &DragSelectArea);
 		}
-		DEBUGLOGC("MoveCellCsr SetScrollBar %d",offset);
-		SetScrollBar(cinfo,scroll);
+		DEBUGLOGC("MoveCellCsr SetScrollBar %d", offset);
+		SetScrollBar(cinfo, scroll);
 		if ( cinfo->EntryIcons.hImage != NULL ){
-			setflag(cinfo->SubTCmdFlags,SUBT_GETCELLICON);
+			setflag(cinfo->SubTCmdFlags, SUBT_GETCELLICON);
 			SetEvent(cinfo->SubT_cmd);
 		}
 		if ( XC_szcm == 2 ){ // ディレクトリサイズキャッシュの読み出し開始
-			setflag(cinfo->SubTCmdFlags,SUBT_GETDIRSIZECACHE);
+			setflag(cinfo->SubTCmdFlags, SUBT_GETDIRSIZECACHE);
 			SetEvent(cinfo->SubT_cmd);
 		}
-		DEBUGLOGC("MoveCellCsr end %d",offset);
+		DEBUGLOGC("MoveCellCsr end %d", offset);
 		return TRUE;
 	}else{ // 画面内位置変更
-		DEBUGLOGC("MoveCellCsr newpos %d",offset);
-		if ( !NewCellN(cinfo,OcellN,FALSE) ){ // 古いカーソルを消去/アイコン更新
-			DEBUGLOGC("MoveCellCsr nomove end %d",offset);
+		DEBUGLOGC("MoveCellCsr newpos %d", offset);
+		if ( !NewCellN(cinfo, OcellN, FALSE) ){ // 古いカーソルを消去/アイコン更新
+			DEBUGLOGC("MoveCellCsr nomove end %d", offset);
 							// 移動したが更新済み : カーソルは移動しなかった
 			return (cinfo->e.cellN != OcellN) ? TRUE : FALSE;
 		}
 												// 新しいカーソルを表示
-		SetScrollBar(cinfo,scroll);
-		DEBUGLOGC("MoveCellCsr RefleshCell %d",offset);
-		setflag(cinfo->DrawTargetFlags,DRAWT_1ENTRY);
-		RefleshCell(cinfo,cinfo->e.cellN);
+		SetScrollBar(cinfo, scroll);
+		DEBUGLOGC("MoveCellCsr RefleshCell %d", offset);
+		setflag(cinfo->DrawTargetFlags, DRAWT_1ENTRY);
+		RefleshCell(cinfo, cinfo->e.cellN);
 		if ( !cinfo->FullDraw ) UpdateWindow_Part(cinfo->info.hWnd);
 												// 情報窓の更新
-		RefleshInfoBox(cinfo,DE_ATTR_ENTRY);
-		DEBUGLOGC("MoveCellCsr UpdateWindow %d",offset);
+		RefleshInfoBox(cinfo, DE_ATTR_ENTRY);
+		DEBUGLOGC("MoveCellCsr UpdateWindow %d", offset);
 		UpdateWindow_Part(cinfo->info.hWnd);
-		DEBUGLOGC("MoveCellCsr end %d",offset);
+		DEBUGLOGC("MoveCellCsr end %d", offset);
 		return TRUE;
 	}
 }
@@ -1149,7 +1154,7 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo,int offset,const CURSORMOVER *cm)
 
 	flag = -1:反転 1:付ける 0:はずす -10:INDEX経由せずにはずす
 -----------------------------------------------------------------------------*/
-void CellMark(PPC_APPINFO *cinfo,ENTRYINDEX cellNo,int markmode)
+void CellMark(PPC_APPINFO *cinfo, ENTRYINDEX cellNo, int markmode)
 {
 	ENTRYINDEX fwdNo;
 	ENTRYDATAOFFSET cellTNo;
@@ -1163,7 +1168,7 @@ void CellMark(PPC_APPINFO *cinfo,ENTRYINDEX cellNo,int markmode)
 
 	if ( (markmode != MARK_REMOVE) && (cell->state >= ECS_NORMAL) &&
 		 !(cell->attr & (ECA_THIS | ECA_PARENT | ECA_ETC)) &&
-		 !(cell->f.dwFileAttributes & (0x1f ^ cinfo->MarkMask)) ){
+		 !(cell->f.dwFileAttributes & (MARKMASK_DIRFILE ^ cinfo->MarkMask)) ){
 																// マークする
 		if ( fwdNo == NO_MARK_ID ){
 			cinfo->e.markC++;
@@ -1176,17 +1181,17 @@ void CellMark(PPC_APPINFO *cinfo,ENTRYINDEX cellNo,int markmode)
 			}
 			cinfo->e.markLast = cellTNo;
 			cell->mark_fw = ENDMARK_ID;
-			AddDD(cinfo->e.MarkSize.l,cinfo->e.MarkSize.h,
-					cell->f.nFileSizeLow,cell->f.nFileSizeHigh);
+			AddDD(cinfo->e.MarkSize.l, cinfo->e.MarkSize.h,
+					cell->f.nFileSizeLow, cell->f.nFileSizeHigh);
 		}
 	}else{
-		ResetMark(cinfo,cell);
+		ResetMark(cinfo, cell);
 	}
 }
 
-void USEFASTCALL ResetMark(PPC_APPINFO *cinfo,ENTRYCELL *cell)
+void USEFASTCALL ResetMark(PPC_APPINFO *cinfo, ENTRYCELL *cell)
 {
-	ENTRYDATAOFFSET backNo,nextNo;
+	ENTRYDATAOFFSET backNo, nextNo;
 
 	nextNo = cell->mark_fw;
 	if ( nextNo == NO_MARK_ID ) return;
@@ -1203,33 +1208,48 @@ void USEFASTCALL ResetMark(PPC_APPINFO *cinfo,ENTRYCELL *cell)
 		cinfo->e.markLast = backNo;
 	}
 	cell->mark_fw = NO_MARK_ID;
-	SubDD(cinfo->e.MarkSize.l,cinfo->e.MarkSize.h,
-			cell->f.nFileSizeLow,cell->f.nFileSizeHigh);
+	SubDD(cinfo->e.MarkSize.l, cinfo->e.MarkSize.h,
+			cell->f.nFileSizeLow, cell->f.nFileSizeHigh);
 }
 
 //-----------------------------------------------------------------------------
-BOOL MoveCellCursorR(PPC_APPINFO *cinfo,CURSORMOVER *cm)
+BOOL MoveCellCursorR(PPC_APPINFO *cinfo, CURSORMOVER *cm)
 {
 	CURSORMOVER tmpcm;
 
 	tmpcm = *cm;
 	tmpcm.offset = -tmpcm.offset;
-	return MoveCellCursor(cinfo,&tmpcm);
+	return MoveCellCursor(cinfo, &tmpcm);
 }
 
-BOOL MoveCellCursor(PPC_APPINFO *cinfo,CURSORMOVER *cm)
+BOOL MoveCellCursor(PPC_APPINFO *cinfo, CURSORMOVER *cm)
 {
 	switch( cm->unit / CMOVEUNIT_RATEDIV ){
 		case CMOVEUNIT_RATECOLUMN:
-			return MoveCellCsr(cinfo,cm->offset * cinfo->cel.Area.cy,cm);
+			return MoveCellCsr(cinfo, cm->offset * cinfo->cel.Area.cy, cm);
 		case CMOVEUNIT_RATEPAGE:
 			return MoveCellCsr(cinfo,
-				cm->offset * cinfo->cel.Area.cx * cinfo->cel.Area.cy,cm);
+				cm->offset * cinfo->cel.Area.cx * cinfo->cel.Area.cy, cm);
 		case CMOVEUNIT_RATEDECIPAGE:
 			return MoveCellCsr(cinfo,
-				cm->offset * cinfo->cel.Area.cx * cinfo->cel.Area.cy / 10,cm);
+				cm->offset * cinfo->cel.Area.cx * cinfo->cel.Area.cy / 10, cm);
 //		case CMOVEUNIT_RATEUPDOWN: , CMOVEUNIT_MARKUPDOWN等
 		default:
-			return MoveCellCsr(cinfo,cm->offset,cm);
+			return MoveCellCsr(cinfo, cm->offset, cm);
 	}
+}
+
+void GetCellRealFullName(PPC_APPINFO *cinfo, ENTRYCELL *cell, TCHAR *dest)
+{
+	TCHAR namebuf[VFPS], *cellfilename;
+
+	cellfilename = (TCHAR *)GetCellFileName(cinfo, cell, namebuf);
+	if ( cinfo->e.Dtype.mode != VFSDT_SHN ){
+		VFSFullPath(dest, cellfilename, cinfo->path);
+		return;
+	}
+
+	VFSFixPath(dest, cellfilename, cinfo->path, VFSFIX_FULLPATH | VFSFIX_REALPATH);
+	if ( dest[0] != '?' ) return;
+	VFSFullPath(dest, cellfilename, cinfo->RealPath);
 }

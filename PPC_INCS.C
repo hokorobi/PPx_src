@@ -141,7 +141,7 @@ void EndSearchMode(PPC_APPINFO *cinfo)
 
 void MarkSearchEntry(PPC_APPINFO *cinfo)
 {
-	cinfo->MarkMask = 0x1f;
+	cinfo->MarkMask = MARKMASK_DIRFILE;
 	CellMark(cinfo,cinfo->e.cellN,MARK_REVERSE);
 	RefleshCell(cinfo,cinfo->e.cellN);
 	RefleshInfoBox(cinfo,DE_ATTR_MARK);
@@ -152,7 +152,7 @@ void MarkAllSearchEntry(PPC_APPINFO *cinfo,const TCHAR *FindStr)
 	if ( (XC_isea[0] & ISEA_ROMA) && (SearchRomaString(NULL,NULL,0,NULL) == FALSE) ){
 		return;
 	}
-	cinfo->MarkMask = 0x1f;
+	cinfo->MarkMask = MARKMASK_DIRFILE;
 	IncSearchMain(cinfo,FindStr,0,INCOFF_MARKS);
 	Repaint(cinfo);
 }

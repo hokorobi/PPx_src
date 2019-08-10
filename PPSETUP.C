@@ -18,45 +18,45 @@ HWND hResultWnd;		// 結果を書きこむボックス
 
 #ifndef _WIN64	// 32bit
 const TCHAR *UNARCS[] = {
-	T("7-zip32.DLL"),T("UNLHA32.DLL"),T("UNRAR32.DLL"),T("CAB32.DLL"),T("TAR32.DLL"),NULL};
+	T("7-zip32.DLL"), T("UNLHA32.DLL"), T("UNRAR32.DLL"), T("CAB32.DLL"), T("TAR32.DLL"),NULL};
 #else
 const TCHAR *UNARCS[] = {
-	T("7-zip64.DLL"),T("UNLHA32.DLL"),T("UNRAR64.DLL"),T("CAB32.DLL"),T("TAR32_64.DLL"),NULL};
+	T("7-zip64.DLL"), T("UNLHA32.DLL"), T("UNRAR64.DLL"), T("CAB32.DLL"), T("TAR32_64.DLL"),NULL};
 #endif
 //-------------------------------------
 PAGEINFO PageInfoJpn[PROPPAGE] = {
-	{IDD_GUIDE,GuideDialog},
-	{IDD_SETTYPE,SetTypeDialog},
-	{IDD_UN_EXEC,UnExecDialog},
-	{IDD_DEST,DestDialog},
+	{IDD_GUIDE, GuideDialog},
+	{IDD_SETTYPE, SetTypeDialog},
+	{IDD_UN_EXEC, UnExecDialog},
+	{IDD_DEST, DestDialog},
 	{IDD_REG,RegDialog},
-	{IDD_PPCW,PPcwDialog},
-	{IDD_KEY,KeyDialog},
-	{IDD_APP,AppDialog},
-	{IDD_LINK,LinkDialog},
+	{IDD_PPCW, PPcwDialog},
+	{IDD_KEY, KeyDialog},
+	{IDD_APP, AppDialog},
+	{IDD_LINK, LinkDialog},
 	{IDD_READY,ReadyDialog},
-	{IDD_COPY,CopyDialog},
-	{IDD_UP,UpDialog}
+	{IDD_COPY, CopyDialog},
+	{IDD_UP, UpDialog}
 };
 
 PAGEINFO PageInfoEng[PROPPAGE] = {
-	{IDD_GUIDEE,GuideDialog},
-	{IDD_SETTYPEE,SetTypeDialog},
-	{IDD_UN_EXECE,UnExecDialog},
-	{IDD_DESTE,DestDialog},
+	{IDD_GUIDEE, GuideDialog},
+	{IDD_SETTYPEE, SetTypeDialog},
+	{IDD_UN_EXECE, UnExecDialog},
+	{IDD_DESTE, DestDialog},
 	{IDD_REGE,RegDialog},
-	{IDD_PPCWE,PPcwDialog},
-	{IDD_KEYE,KeyDialog},
-	{IDD_APPE,AppDialog},
-	{IDD_LINKE,LinkDialog},
+	{IDD_PPCWE, PPcwDialog},
+	{IDD_KEYE, KeyDialog},
+	{IDD_APPE, AppDialog},
+	{IDD_LINKE, LinkDialog},
 	{IDD_READYE,ReadyDialog},
-	{IDD_COPYE,CopyDialog},
-	{IDD_UPE,UpDialog}
+	{IDD_COPYE, CopyDialog},
+	{IDD_UPE, UpDialog}
 };
 
 const TCHAR *MessageJpn[] = {
-	T("\r\n"),T(":作成失敗\r\n"),T(":完了\r\n"),T("コピー終了"),
-	T("アンインストール情報"),T("\r\nインストール"),
+	T("\r\n"), T(":作成失敗\r\n"), T(":完了\r\n"), T("コピー終了"),
+	T("アンインストール情報"), T("\r\nインストール"),
 	T("UNICODE版です。Windows9xでは動作しません。"),
 	T("PPx があるディレクトリを指定してください"),
 	T("既にインストール済みですが、上書きしますか？"),
@@ -82,8 +82,8 @@ const TCHAR *MessageJpn[] = {
 };
 
 const TCHAR *MessageEng[] = {
-	T("\r\n"),T(":fault\r\n"),T(":ok\r\n"),T("complete."),
-	T("Uninstall data"),T("\r\nInstall"),
+	T("\r\n"), T(":fault\r\n"), T(":ok\r\n"), T("complete."),
+	T("Uninstall data"), T("\r\nInstall"),
 	T("WindowsNT or later only"),
 	T("Select PPx directory"),
 	T("Overwrite ?"),
@@ -193,6 +193,9 @@ int		XX_link_boot	= 0;			// スタートアップに登録
 int		XX_link_desk	= 0;			// デスクトップに登録
 int		XX_link_app		= 1;			// 追加と削除に登録
 
+DefineWinAPI(BOOL, SetDllDirectory, (LPCTSTR lpPathName));
+const TCHAR StrKernel32[] = T("KERNEL32.DLL");
+const TCHAR StrShell32[] = T("SHELL32.DLL");
 /*=============================================================================
 	WinMain
 =============================================================================*/
@@ -202,15 +205,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	PROPSHEETHEADER head;
 	PROPSHEETPAGE page[PROPPAGE];
 	PAGEINFO *pinfo;
-	int i,startpage;
-	TCHAR *p,buf[MAX_PATH];
+	int i, startpage;
+	TCHAR *p, buf[MAX_PATH];
 	LCID UseLcid; // 表示言語
 	UnUsedParam(hPrevInstance);UnUsedParam(nShowCmd);
 
 	OSver.dwOSVersionInfoSize = sizeof(OSver);
 	GetVersionEx(&OSver);
 
-	GETDLLPROCT(GetModuleHandleA("SHELL32.DLL"),SHGetFolderPath);
+	GETDLLPROCT(GetModuleHandle(StrKernel32),SetDllDirectory);
+	if ( DSetDllDirectory != NULL ){
+		DSetDllDirectory(NilStr); // DLLの検索パスからカレントを除去する
+	}
+	GETDLLPROCT(GetModuleHandle(StrShell32), SHGetFolderPath);
 
 	UseLcid = LOWORD(GetUserDefaultLCID());
 	if ( UseLcid == LCID_JAPANESE ){
@@ -226,13 +233,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 #endif
 												// 初期設定
 	hInst = hInstance;
-	GetModuleFileName(hInstance,MyPath,sizeof(MyPath));
-	*(tstrrchr(MyPath,'\\')) = '\0';
+	GetModuleFileName(hInstance, MyPath, TSIZEOF(MyPath));
+	*(tstrrchr(MyPath, '\\')) = '\0';
 												// コマンドライン解析
 #ifdef UNICODE
-	p = tstrchr(GetCommandLine(),'/');
+	p = tstrchr(GetCommandLine(), '/');
 #else
-	p = tstrchr(lpCmdLine,'/');
+	p = tstrchr(lpCmdLine, '/');
 #endif
 	if ( p != NULL ){
 		startpage = UsePageInfo[PAGE_COPY].rID;
@@ -252,7 +259,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}else{						// 再設定／アンインストール
 			startpage = UsePageInfo[PAGE_SETTYPE].rID;
 			if ( XX_setupedPPx[0] != '?' ){
-				XX_setupmode = tstricmp(MyPath,XX_setupedPPx) ?
+				XX_setupmode = tstricmp(MyPath, XX_setupedPPx) ?
 						IDR_UPDATE : IDR_CHECKUPDATE;
 			}else{
 				XX_setupmode = IDR_AUTOINST;
@@ -261,12 +268,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			// 初期インストール先を作成 ---------------------------------------
 		GetRegStrLocal(HKEY_LOCAL_MACHINE, Str_ProgDirPath,
 				Str_ProgDirName, XX_instdestP);
-		tstrcat(XX_instdestP,T("\\") T(PPxProgramDataPath));
+		tstrcat(XX_instdestP, T("\\") T(PPxProgramDataPath));
 
-		if ( IsTrue(GetWinAppDir(CSIDL_LOCAL_APPDATA,XX_instdestS)) ){
-			tstrcat(XX_instdestS,T("\\") T(PPxSettingsAppdataPath));
+		if ( IsTrue(GetWinAppDir(CSIDL_LOCAL_APPDATA, XX_instdestS)) ){
+			tstrcat(XX_instdestS, T("\\") T(PPxSettingsAppdataPath));
 		}else{
-			tstrcpy(XX_instdestS,XX_instdestP);
+			tstrcpy(XX_instdestS, XX_instdestP);
 		}
 			// NT 系なら共用にする --------------------------------------------
 		if ( OSver.dwPlatformId == VER_PLATFORM_WIN32_NT ){
@@ -278,28 +285,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 			// Text Editor ----------------------------------------------------
 		XX_editor[0] = '\0';
-		if ( GetRegStrLocal(HKEY_CLASSES_ROOT,T(".txt"),NilStr,buf) ){
-			tstrcat(buf,T("\\shell\\open\\command"));
+		if ( GetRegStrLocal(HKEY_CLASSES_ROOT, T(".txt"),NilStr, buf) ){
+			tstrcat(buf, T("\\shell\\open\\command"));
 										// アプリケーションのシェル -----------
-			GetRegStrLocal(HKEY_CLASSES_ROOT,buf,NilStr,XX_editor);
+			GetRegStrLocal(HKEY_CLASSES_ROOT, buf,NilStr, XX_editor);
 			if ( XX_editor[0] == '\"' ){	// 括りあり
-				tstrcpy(buf,XX_editor + 1);
-				*tstrchr(buf,'\"') = '\0';
-				tstrcpy(XX_editor,buf);
+				tstrcpy(buf, XX_editor + 1);
+				*tstrchr(buf, '\"') = '\0';
+				tstrcpy(XX_editor, buf);
 			}else{						// 括り無し
-				p = tstrchr(XX_editor,' ');
+				p = tstrchr(XX_editor, ' ');
 				if ( p != NULL ) *p = '\0';
 			}
 		}
-		if ( XX_editor[0] == '\0' ) tstrcpy(XX_editor,T("notepad.exe"));
+		if ( XX_editor[0] == '\0' ) tstrcpy(XX_editor, T("notepad.exe"));
 			// Viewer ---------------------------------------------------------
 		if ( !GetRegStrLocal(HKEY_CLASSES_ROOT,
-				T("QuickView\\shell\\open\\command"),NilStr,XX_viewer) ){
-			tstrcpy(XX_viewer,T("notepad.exe"));
+				T("QuickView\\shell\\open\\command"),NilStr, XX_viewer) ){
+			tstrcpy(XX_viewer, T("notepad.exe"));
 		};
 			// Susie ----------------------------------------------------------
 		GetRegStrLocal(HKEY_CURRENT_USER,
-				T("Software\\Takechin\\Susie\\Plug-in"),T("Path"),XX_susie);
+				T("Software\\Takechin\\Susie\\Plug-in"), T("Path"), XX_susie);
 
 	}
 			// ウィザードを開始する -------------------------------------------
@@ -307,18 +314,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	head.dwFlags	= PROPSTYLE | PSH_PROPSHEETPAGE | PSH_USEICONID;
 	head.hwndParent	= NULL;
 	head.hInstance	= hInstance;
-	UNIONNAME(head,pszIcon) = MAKEINTRESOURCE(IC_SETUP);
+	UNIONNAME(head, pszIcon) = MAKEINTRESOURCE(IC_SETUP);
 	head.pszCaption	= PROPTITLE;
 	head.nPages		= PROPPAGE;
 	UNIONNAME2(head,nStartPage) = startpage - UsePageInfo[PAGE_GUIDE].rID;
-	UNIONNAME3(head,ppsp)	= page;
+	UNIONNAME3(head, ppsp)	= page;
 
 	pinfo = UsePageInfo;
-	for ( i = 0 ; i < PROPPAGE ; i++,pinfo++ ){
+	for ( i = 0 ; i < PROPPAGE ; i++, pinfo++ ){
 		page[i].dwSize		= sizeof(PROPSHEETPAGE);
 		page[i].dwFlags		= 0;
 		page[i].hInstance	= hInstance;
-		UNIONNAME(page[i],pszTemplate) = MAKEINTRESOURCE(pinfo->rID);
+		UNIONNAME(page[i], pszTemplate) = MAKEINTRESOURCE(pinfo->rID);
 		page[i].pfnDlgProc	= pinfo->proc;
 		page[i].lParam		= (LPARAM)i;
 	}

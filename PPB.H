@@ -24,8 +24,8 @@ extern DWORD ExitCode;
 
 //------------------------------------- PPB_SUB.C
 extern void PPbExecuteRecv(TCHAR *param);
-extern void PPbExecuteInput(TCHAR *param,DWORD size);
-extern DWORD_PTR USECDECL PPbInfoFunc(PPXAPPINFO *ppb,DWORD cmdID,PPXAPPINFOUNION *uptr);
+extern void PPbExecuteInput(TCHAR *param, DWORD size);
+extern DWORD_PTR USECDECL PPbInfoFunc(PPXAPPINFO *ppb, DWORD cmdID, PPXAPPINFOUNION *uptr);
 extern void ReleasePPB(void);
 extern void TitleDisp(const TCHAR *addmes);
 
@@ -33,6 +33,6 @@ extern void TitleDisp(const TCHAR *addmes);
 #define TCI_RECV	-3	// コマンド受信
 #define TCI_EXECUTE	-2	// 実行
 #define TCI_QUIT	-1	// 終了
-extern int tCInput(TCHAR *buf,size_t bsize,WORD htype);
-extern void Replace(const TCHAR *istr,BOOL all);
+extern int tCInput(TCHAR *buf, size_t bsize, WORD htype);
+extern void Replace(const TCHAR *istr, BOOL all);
 extern void CommonCommand(int key);

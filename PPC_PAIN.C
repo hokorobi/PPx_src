@@ -17,16 +17,16 @@ const TCHAR StrTotal[] = T("Total:");
 const TCHAR StrCache[] = T("(cache:%d%%)");
 const TCHAR StrPPc[] = T("Paper Plane cUI (c)TORO");
 
-void PaintPathBar(PPC_APPINFO *cinfo,PAINTSTRUCT *ps)
+void PaintPathBar(PPC_APPINFO *cinfo, PAINTSTRUCT *ps)
 {
 	COLORREF bg;
 	RECT box;
 	POINT LP;
 	int oldBKmode;
 
-	oldBKmode = DxSetBkMode(cinfo->DxDraw,ps->hdc,OPAQUE);
+	oldBKmode = DxSetBkMode(cinfo->DxDraw, ps->hdc, OPAQUE);
 	if ( hComboFocus == cinfo->info.hWnd ){
-		DxSetTextColor(cinfo->DxDraw,ps->hdc,C_ActiveCText);
+		DxSetTextColor(cinfo->DxDraw, ps->hdc, C_ActiveCText);
 		bg = C_ActiveCBack;
 	}else{
 		HWND hPairWnd;
@@ -39,28 +39,28 @@ void PaintPathBar(PPC_APPINFO *cinfo,PAINTSTRUCT *ps)
 			hPairWnd = Combo.base[base].hWnd;
 		}
 		if ( cinfo->info.hWnd == hPairWnd ){
-			DxSetTextColor(cinfo->DxDraw,ps->hdc,C_PairCText);
+			DxSetTextColor(cinfo->DxDraw, ps->hdc, C_PairCText);
 			bg = C_PairCBack;
 		}else{
-			DxSetTextColor(cinfo->DxDraw,ps->hdc,C_InActiveCText);
+			DxSetTextColor(cinfo->DxDraw, ps->hdc, C_InActiveCText);
 			bg = C_InActiveCBack;
 		}
 	}
-	DxSetBkColor(cinfo->DxDraw,ps->hdc,bg);
+	DxSetBkColor(cinfo->DxDraw, ps->hdc, bg);
 #ifdef USEDIRECTX
 	IfDXmode(ps->hdc) {
 		box.left   = ps->rcPaint.left;
 		box.top    = ps->rcPaint.top;
 		box.right  = ps->rcPaint.right;
 		box.bottom = cinfo->BoxStatus.top;
-		DxDrawBack(cinfo->DxDraw,ps->hdc,&box,bg | 0xff000000);
+		DxDrawBack(cinfo->DxDraw, ps->hdc, &box, bg | 0xff000000);
 	}
 #endif
-	DxMoveToEx(cinfo->DxDraw,ps->hdc,0,cinfo->X_lspc);
+	DxMoveToEx(cinfo->DxDraw, ps->hdc, 0, cinfo->X_lspc);
 
-	DxTextOutRel(cinfo->DxDraw,ps->hdc,cinfo->Caption + 3,tstrlen32(cinfo->Caption + 3));
+	DxTextOutRel(cinfo->DxDraw, ps->hdc, cinfo->Caption + 3, tstrlen32(cinfo->Caption + 3));
 
-	DxGetCurrentPositionEx(cinfo->DxDraw,ps->hdc,&LP);
+	DxGetCurrentPositionEx(cinfo->DxDraw, ps->hdc, &LP);
 	if ( cinfo->X_lspc ){
 		HBRUSH hB;
 
@@ -69,7 +69,7 @@ void PaintPathBar(PPC_APPINFO *cinfo,PAINTSTRUCT *ps)
 		box.top    = 0;
 		box.right  = LP.x;
 		box.bottom = cinfo->X_lspc;
-		DxFillBack(cinfo->DxDraw,ps->hdc,&box,hB);
+		DxFillBack(cinfo->DxDraw, ps->hdc, &box, hB);
 		DeleteObject(hB);
 	}
 	if ( LP.x < ps->rcPaint.right ){
@@ -80,7 +80,7 @@ void PaintPathBar(PPC_APPINFO *cinfo,PAINTSTRUCT *ps)
 		box.top    = ps->rcPaint.top;
 		box.right  = ps->rcPaint.right;
 		box.bottom = cinfo->BoxStatus.top;
-		DxFillBack(cinfo->DxDraw,ps->hdc,&box,hB);
+		DxFillBack(cinfo->DxDraw, ps->hdc, &box, hB);
 		DeleteObject(hB);
 	}
 #if 0	// 最小化&閉じる ボタン表示
@@ -92,40 +92,40 @@ void PaintPathBar(PPC_APPINFO *cinfo,PAINTSTRUCT *ps)
 		len = (box.bottom - box.top);
 		box.right  = cinfo->wnd.Area.cx - len;
 		box.left   = box.right - len;
-		SetTextAlign(ps->hdc,TA_LEFT | TA_TOP);
-		DrawFrameControl(ps->hdc,&box,DFC_CAPTION,DFCS_CAPTIONMIN);
+		SetTextAlign(ps->hdc, TA_LEFT | TA_TOP);
+		DrawFrameControl(ps->hdc, &box, DFC_CAPTION, DFCS_CAPTIONMIN);
 		box.left += len;
 		box.right += len;
-		DrawFrameControl(ps->hdc,&box,DFC_CAPTION,DFCS_CAPTIONCLOSE);
+		DrawFrameControl(ps->hdc, &box, DFC_CAPTION, DFCS_CAPTIONCLOSE);
 
-		SetTextAlign(ps->hdc,TA_LEFT | TA_TOP | TA_UPDATECP);
+		SetTextAlign(ps->hdc, TA_LEFT | TA_TOP | TA_UPDATECP);
 	}
 #endif
-	DxSetBkMode(cinfo->DxDraw,ps->hdc,oldBKmode);
+	DxSetBkMode(cinfo->DxDraw, ps->hdc, oldBKmode);
 }
 
-void DispLimFormatNumber( DIRECTXARG(DXDRAWSTRUCT *DxDraw) HDC hDC,TCHAR *buf,PULARGE_INTEGER num)
+void DispLimFormatNumber( DIRECTXARG(DXDRAWSTRUCT *DxDraw) HDC hDC, TCHAR *buf, PULARGE_INTEGER num)
 {
 	DWORD high = num->u.HighPart;
 	#define DispLen 8
 
 	if ( high != MAX32 ){
-		FormatNumber(buf,CXFN_SUM,DispLen,num->u.LowPart,num->u.HighPart);
+		FormatNumber(buf, CXFN_SUM, DispLen, num->u.LowPart, num->u.HighPart);
 		buf[DispLen] = ' ';
 		buf[DispLen + 1] = '\0';
 	}else{
-		tstrcpy(buf,T("-------- "));
+		tstrcpy(buf, T("-------- "));
 	}
-	DxSetTextColor(DxDraw,hDC,C_info);
-	DxTextOutRel(DxDraw,hDC,buf,DispLen + 1);
+	DxSetTextColor(DxDraw, hDC, C_info);
+	DxTextOutRel(DxDraw, hDC, buf, DispLen + 1);
 	#undef DispLen
 }
 
-#define VLine(hdc,x) {linebox.left = x; linebox.right = linebox.left + 1; DxFillRectColor(cinfo->DxDraw,hdc,&linebox,cinfo->linebrush,LINE_NORMAL);}
+#define VLine(hdc, x) {linebox.left = x; linebox.right = linebox.left + 1; DxFillRectColor(cinfo->DxDraw, hdc, &linebox, cinfo->linebrush, LINE_NORMAL);}
 #define STATUS_UNDERLINE 1
 void PaintStatusLine(PPC_APPINFO *cinfo, PAINTSTRUCT *ps, RECT *BoxStatus, ENTRYINDEX EI_No)
 {
-	TCHAR buf[VFPS],buf1[VFPS];
+	TCHAR buf[VFPS], buf1[VFPS];
 	int fontY;
 	RECT box;
 	POINT LP;
@@ -134,12 +134,12 @@ void PaintStatusLine(PPC_APPINFO *cinfo, PAINTSTRUCT *ps, RECT *BoxStatus, ENTRY
 	LP.x = BoxStatus->left;
 	LP.y = box.top + (cinfo->X_lspc >> 1);
 	box.bottom = BoxStatus->bottom - STATUS_UNDERLINE;
-	DxMoveToEx(cinfo->DxDraw,ps->hdc,LP.x, LP.y);
+	DxMoveToEx(cinfo->DxDraw, ps->hdc, LP.x, LP.y);
 	fontY = cinfo->fontY;
 	if ( EI_No == DISPENTRY_NO_OUTPANE ){
 		TEXTMETRIC tm;
 
-		GetTextMetrics(ps->hdc,&tm);
+		GetTextMetrics(ps->hdc, &tm);
 		fontY = tm.tmHeight + cinfo->X_lspc;
 		if ( fontY <= 0 ) fontY = 1;
 	}
@@ -148,105 +148,105 @@ void PaintStatusLine(PPC_APPINFO *cinfo, PAINTSTRUCT *ps, RECT *BoxStatus, ENTRY
 		box.left = LP.x;
 		box.right = BoxStatus->right;
 
-		DxSetBkColor(cinfo->DxDraw,ps->hdc,cinfo->BackColor);
+		DxSetBkColor(cinfo->DxDraw, ps->hdc, cinfo->BackColor);
 		DispEntry(cinfo, ps->hdc, &cinfo->stat, EI_No, ps->rcPaint.right, &box);
-		DxMoveToEx(cinfo->DxDraw,ps->hdc,LP.x, LP.y);
+		DxMoveToEx(cinfo->DxDraw, ps->hdc, LP.x, LP.y);
 
 		if ( cinfo->bg.X_WallpaperType ){
-			DxSetBkMode(cinfo->DxDraw,ps->hdc,OPAQUE);
+			DxSetBkMode(cinfo->DxDraw, ps->hdc, OPAQUE);
 		}
 	}
 									// 報告文字列表示 *************************
 	if ( cinfo->PopMsgFlag & PMF_DISPLAYMASK ){
-		DxSetTextColor(cinfo->DxDraw,ps->hdc,C_res[0]);		// 文字色
-		DxSetBkColor(cinfo->DxDraw,ps->hdc,C_res[1]);
-		DxTextOutBack(cinfo->DxDraw,ps->hdc,cinfo->PopMsgStr,tstrlen32(cinfo->PopMsgStr));
-		DxGetCurrentPositionEx(cinfo->DxDraw,ps->hdc,&LP);
+		DxSetTextColor(cinfo->DxDraw, ps->hdc, C_res[0]);		// 文字色
+		DxSetBkColor(cinfo->DxDraw, ps->hdc, C_res[1]);
+		DxTextOutBack(cinfo->DxDraw, ps->hdc, cinfo->PopMsgStr, tstrlen32(cinfo->PopMsgStr));
+		DxGetCurrentPositionEx(cinfo->DxDraw, ps->hdc, &LP);
 		box.left  = LP.x;
 		LP.x += 3;
 		box.right = LP.x;
 
 		if ( cinfo->bg.X_WallpaperType == 0 ){
-			DxFillBack(cinfo->DxDraw,ps->hdc,&box,cinfo->C_BackBrush);
+			DxFillBack(cinfo->DxDraw, ps->hdc, &box, cinfo->C_BackBrush);
 		}
 	}
 									// 作業中表示 *********
 	if ( TinyCheckCellEdit(cinfo) ){
-		DxSetTextColor(cinfo->DxDraw,ps->hdc,C_info);
-		DxSetBkColor(cinfo->DxDraw,ps->hdc,cinfo->BackColor);
-		DxTextOutBack(cinfo->DxDraw,ps->hdc,StrBusy,StrBusyLength);
-		DxGetCurrentPositionEx(cinfo->DxDraw,ps->hdc,&LP);
+		DxSetTextColor(cinfo->DxDraw, ps->hdc, C_info);
+		DxSetBkColor(cinfo->DxDraw, ps->hdc, cinfo->BackColor);
+		DxTextOutBack(cinfo->DxDraw, ps->hdc, StrBusy, StrBusyLength);
+		DxGetCurrentPositionEx(cinfo->DxDraw, ps->hdc, &LP);
 	}
 									// 非同期読み込み状況表示 *********
 	if ( cinfo->AloadCount ){
 		int len;
 
-		len = wsprintf(buf,StrCache,(cinfo->AloadCount * 100) / ((cinfo->e.cellDataMax > 0) ? cinfo->e.cellDataMax : 1) );
-		DxSetTextColor(cinfo->DxDraw,ps->hdc,C_info);
-		DxSetBkColor(cinfo->DxDraw,ps->hdc,cinfo->BackColor);
-		DxTextOutRel(cinfo->DxDraw,ps->hdc,buf,len);
-		DxGetCurrentPositionEx(cinfo->DxDraw,ps->hdc,&LP);
+		len = wsprintf(buf, StrCache, (cinfo->AloadCount * 100) / ((cinfo->e.cellDataMax > 0) ? cinfo->e.cellDataMax : 1) );
+		DxSetTextColor(cinfo->DxDraw, ps->hdc, C_info);
+		DxSetBkColor(cinfo->DxDraw, ps->hdc, cinfo->BackColor);
+		DxTextOutRel(cinfo->DxDraw, ps->hdc, buf, len);
+		DxGetCurrentPositionEx(cinfo->DxDraw, ps->hdc, &LP);
 	}
 #if SHOWFRAMERATE
 	{
 		int len;
 
-		len = wsprintf(buf,T("%03dfps"),cinfo->FrameRate);
-		DxSetTextColor(cinfo->DxDraw,ps->hdc,C_info);
-		DxSetBkColor(cinfo->DxDraw,ps->hdc,cinfo->BackColor);
-		DxTextOutRel(cinfo->DxDraw,ps->hdc,buf,len);
-		DxGetCurrentPositionEx(cinfo->DxDraw,ps->hdc,&LP);
+		len = wsprintf(buf, T("%03dfps"), cinfo->FrameRate);
+		DxSetTextColor(cinfo->DxDraw, ps->hdc, C_info);
+		DxSetBkColor(cinfo->DxDraw, ps->hdc, cinfo->BackColor);
+		DxTextOutRel(cinfo->DxDraw, ps->hdc, buf, len);
+		DxGetCurrentPositionEx(cinfo->DxDraw, ps->hdc, &LP);
 	}
 #endif
 	if ( (cinfo->stat.height > 1) && cinfo->bg.X_WallpaperType ){
-		DxSetBkMode(cinfo->DxDraw,ps->hdc,TRANSPARENT);
+		DxSetBkMode(cinfo->DxDraw, ps->hdc, TRANSPARENT);
 	}
 									// スタック表示 ***********************
 	if ( (cinfo->e.cellStack != 0) && (LP.x < ps->rcPaint.right) ){
 		int i, x, xm, sx, s;
 		ENTRYCELL *cell;
 
-		if ( cinfo->bg.X_WallpaperType ) DxSetBkMode(cinfo->DxDraw,ps->hdc,OPAQUE);
+		if ( cinfo->bg.X_WallpaperType ) DxSetBkMode(cinfo->DxDraw, ps->hdc, OPAQUE);
 		x = LP.x;
 		xm = BoxStatus->right - x;
 		sx = ((cinfo->e.cellStack * 14) <= (xm / cinfo->fontX + 1)) ?
 				(14 * cinfo->fontX) :					// 余裕あるとき
 				( (xm - 14 * cinfo->fontX) / cinfo->e.cellStack ); // 余裕ないとき
-		s = min(sx,3);
-		DxSetTextColor(cinfo->DxDraw,ps->hdc,cinfo->BackColor);	// 文字色
+		s = min(sx, 3);
+		DxSetTextColor(cinfo->DxDraw, ps->hdc, cinfo->BackColor);	// 文字色
 		for ( i = 0 ; i < (cinfo->e.cellStack - 1) ; i++ ){
 			cell = &CEL(cinfo->e.cellIMax + i);
 
-			DxSetBkColor(cinfo->DxDraw,ps->hdc,C_entry[cell->type]);
-			DxMoveToEx(cinfo->DxDraw,ps->hdc,x + i * sx, LP.y);
-			DxTextOutRel(cinfo->DxDraw,ps->hdc,cell->f.cFileName,
-					max( 1,min(
+			DxSetBkColor(cinfo->DxDraw, ps->hdc, C_entry[cell->type]);
+			DxMoveToEx(cinfo->DxDraw, ps->hdc, x + i * sx, LP.y);
+			DxTextOutRel(cinfo->DxDraw, ps->hdc, cell->f.cFileName,
+					max( 1, min(
 							(size_t)(sx-1) / cinfo->fontX + 1,
 							tstrlen32(cell->f.cFileName) ) ));
-			DxGetCurrentPositionEx(cinfo->DxDraw,ps->hdc,&LP);
+			DxGetCurrentPositionEx(cinfo->DxDraw, ps->hdc, &LP);
 			if ( cinfo->bg.X_WallpaperType == 0 ){
 				box.left   = min( x + (i + 1) * sx - s , LP.x );
 				box.right  = x + (i + 1) * sx - 1;
-				DxFillBack(cinfo->DxDraw,ps->hdc,&box,cinfo->C_BackBrush);
+				DxFillBack(cinfo->DxDraw, ps->hdc, &box, cinfo->C_BackBrush);
 			}
 		}
 		cell = &CEL(cinfo->e.cellIMax + i);
-		DxSetBkColor(cinfo->DxDraw,ps->hdc,C_entry[cell->type]);
-		DxMoveToEx(cinfo->DxDraw,ps->hdc,x + i * sx, LP.y);
-		DxTextOutRel(cinfo->DxDraw,ps->hdc,cell->f.cFileName,
+		DxSetBkColor(cinfo->DxDraw, ps->hdc, C_entry[cell->type]);
+		DxMoveToEx(cinfo->DxDraw, ps->hdc, x + i * sx, LP.y);
+		DxTextOutRel(cinfo->DxDraw, ps->hdc, cell->f.cFileName,
 				tstrlen32(cell->f.cFileName));
 
-		DxGetCurrentPositionEx(cinfo->DxDraw,ps->hdc,&LP);
+		DxGetCurrentPositionEx(cinfo->DxDraw, ps->hdc, &LP);
 		if ( cinfo->bg.X_WallpaperType ){
-			DxSetBkMode(cinfo->DxDraw,ps->hdc,TRANSPARENT);
+			DxSetBkMode(cinfo->DxDraw, ps->hdc, TRANSPARENT);
 		}else{
 			box.left  = LP.x;
 			box.right = LP.x += 3;
-			DxFillBack(cinfo->DxDraw,ps->hdc,&box,cinfo->C_BackBrush);
+			DxFillBack(cinfo->DxDraw, ps->hdc, &box, cinfo->C_BackBrush);
 		}
 	}
 									// XC_stat情報表示 ************************
-	DxSetBkColor(cinfo->DxDraw,ps->hdc,
+	DxSetBkColor(cinfo->DxDraw, ps->hdc,
 			(cinfo->stat.bc == C_AUTO) ? cinfo->BackColor : cinfo->stat.bc );
 	if ( cinfo->stat.fmt[0] != 0 ){
 		if ( cinfo->stat.height <= 1 ){ // XC_stat は、１行表示時のみここで表示
@@ -266,11 +266,11 @@ void PaintStatusLine(PPC_APPINFO *cinfo, PAINTSTRUCT *ps, RECT *BoxStatus, ENTRY
 				box.left  = ps->rcPaint.left;
 				box.right = ps->rcPaint.right;
 				box.bottom =  LP.y;
-				DxFillBack(cinfo->DxDraw,ps->hdc,&box,cinfo->C_BackBrush);
+				DxFillBack(cinfo->DxDraw, ps->hdc, &box, cinfo->C_BackBrush);
 
 				box.bottom = BoxStatus->bottom - STATUS_UNDERLINE;
 				box.top  = box.bottom - (cinfo->X_lspc - (cinfo->X_lspc >> 1));
-				DxFillBack(cinfo->DxDraw,ps->hdc,&box,cinfo->C_BackBrush);
+				DxFillBack(cinfo->DxDraw, ps->hdc, &box, cinfo->C_BackBrush);
 
 				box.top = BoxStatus->top;
 				linebox.bottom = box.bottom;
@@ -279,13 +279,13 @@ void PaintStatusLine(PPC_APPINFO *cinfo, PAINTSTRUCT *ps, RECT *BoxStatus, ENTRY
 		#ifndef USEDIRECTX
 		{
 			SIZE spcsize;
-			GetTextExtentPoint32(ps->hdc,StrSpace,1,&spcsize);
+			GetTextExtentPoint32(ps->hdc, StrSpace, 1, &spcsize);
 			sepx = spcsize.cx >> 1;
 		}
 		#else
 		IfGDImode(ps->hdc) {
 			SIZE spcsize;
-			GetTextExtentPoint32(ps->hdc,StrSpace,1,&spcsize);
+			GetTextExtentPoint32(ps->hdc, StrSpace, 1, &spcsize);
 			sepx = spcsize.cx >> 1;
 		}else{
 			sepx = cinfo->fontX >> 1;
@@ -294,97 +294,97 @@ void PaintStatusLine(PPC_APPINFO *cinfo, PAINTSTRUCT *ps, RECT *BoxStatus, ENTRY
 		if ( LP.x < ps->rcPaint.right ){			// マーク数・サイズ +++++++
 			int len;
 
-			DxMoveToEx(cinfo->DxDraw,ps->hdc,LP.x, LP.y);
-			DxSetTextColor(cinfo->DxDraw,ps->hdc,C_mes);
-			DxTextOutRel(cinfo->DxDraw,ps->hdc,StrMark,TSIZEOFSTR(StrMark));
+			DxMoveToEx(cinfo->DxDraw, ps->hdc, LP.x, LP.y);
+			DxSetTextColor(cinfo->DxDraw, ps->hdc, C_mes);
+			DxTextOutRel(cinfo->DxDraw, ps->hdc, StrMark, TSIZEOFSTR(StrMark));
 
-			DxSetTextColor(cinfo->DxDraw,ps->hdc,C_info);
-			FormatNumber(buf1,CXFN_SUM,8,cinfo->e.MarkSize.l,cinfo->e.MarkSize.h);
-			len = wsprintf(buf,T("%3u/%s "),cinfo->e.markC,buf1);
-			DxTextOutRel(cinfo->DxDraw,ps->hdc,buf,len);
+			DxSetTextColor(cinfo->DxDraw, ps->hdc, C_info);
+			FormatNumber(buf1, CXFN_SUM, 8, cinfo->e.MarkSize.l, cinfo->e.MarkSize.h);
+			len = wsprintf(buf, T("%3u/%s "), cinfo->e.markC, buf1);
+			DxTextOutRel(cinfo->DxDraw, ps->hdc, buf, len);
 
-			DxGetCurrentPositionEx(cinfo->DxDraw,ps->hdc,&LP);
-			VLine(ps->hdc,LP.x - sepx);
+			DxGetCurrentPositionEx(cinfo->DxDraw, ps->hdc, &LP);
+			VLine(ps->hdc, LP.x - sepx);
 		}
 		if ( LP.x < ps->rcPaint.right ){			// エントリ数 +++++++++++++
-			DxMoveToEx(cinfo->DxDraw,ps->hdc,LP.x, LP.y);
-			DxSetTextColor(cinfo->DxDraw,ps->hdc,C_mes);
-			DxTextOutRel(cinfo->DxDraw,ps->hdc,StrEntry,TSIZEOFSTR(StrEntry));
+			DxMoveToEx(cinfo->DxDraw, ps->hdc, LP.x, LP.y);
+			DxSetTextColor(cinfo->DxDraw, ps->hdc, C_mes);
+			DxTextOutRel(cinfo->DxDraw, ps->hdc, StrEntry, TSIZEOFSTR(StrEntry));
 
-			wsprintf(buf,T("%3u/%3u "),cinfo->e.cellIMax,cinfo->e.cellDataMax);
-			DxSetTextColor(cinfo->DxDraw,ps->hdc,C_info);
-			DxTextOutRel(cinfo->DxDraw,ps->hdc,buf,tstrlen32(buf));
+			wsprintf(buf, T("%3u/%3u "), cinfo->e.cellIMax, cinfo->e.cellDataMax);
+			DxSetTextColor(cinfo->DxDraw, ps->hdc, C_info);
+			DxTextOutRel(cinfo->DxDraw, ps->hdc, buf, tstrlen32(buf));
 
-			DxGetCurrentPositionEx(cinfo->DxDraw,ps->hdc,&LP);
-			VLine(ps->hdc,LP.x - sepx);
+			DxGetCurrentPositionEx(cinfo->DxDraw, ps->hdc, &LP);
+			VLine(ps->hdc, LP.x - sepx);
 		}
 		if ( LP.x < ps->rcPaint.right ){			// 空き容量 +++++++++++++++
-			DxMoveToEx(cinfo->DxDraw,ps->hdc,LP.x, LP.y);
-			DxSetTextColor(cinfo->DxDraw,ps->hdc,C_mes);
-			DxTextOutRel(cinfo->DxDraw,ps->hdc,StrFree,TSIZEOFSTR(StrFree));
+			DxMoveToEx(cinfo->DxDraw, ps->hdc, LP.x, LP.y);
+			DxSetTextColor(cinfo->DxDraw, ps->hdc, C_mes);
+			DxTextOutRel(cinfo->DxDraw, ps->hdc, StrFree, TSIZEOFSTR(StrFree));
 
-			DispLimFormatNumber( DIRECTXARG(cinfo->DxDraw) ps->hdc,buf,&cinfo->DiskSizes.free);
+			DispLimFormatNumber( DIRECTXARG(cinfo->DxDraw) ps->hdc, buf, &cinfo->DiskSizes.free);
 
-			DxGetCurrentPositionEx(cinfo->DxDraw,ps->hdc,&LP);
-			VLine(ps->hdc,LP.x - sepx);
+			DxGetCurrentPositionEx(cinfo->DxDraw, ps->hdc, &LP);
+			VLine(ps->hdc, LP.x - sepx);
 		}
 		if ( LP.x < ps->rcPaint.right ){			// 使用容量 +++++++++++++++
-			int y,xm;
+			int y, xm;
 
 			xm = LP.x;
 			if ( (cinfo->wnd.Area.cx - LP.x) > (27 * cinfo->fontX) ){
 				y = 1;
-				DxMoveToEx(cinfo->DxDraw,ps->hdc,LP.x, LP.y);
-				DxSetTextColor(cinfo->DxDraw,ps->hdc,C_mes);
-				DxTextOutRel(cinfo->DxDraw,ps->hdc,StrUsed,TSIZEOFSTR(StrUsed));
+				DxMoveToEx(cinfo->DxDraw, ps->hdc, LP.x, LP.y);
+				DxSetTextColor(cinfo->DxDraw, ps->hdc, C_mes);
+				DxTextOutRel(cinfo->DxDraw, ps->hdc, StrUsed, TSIZEOFSTR(StrUsed));
 
-				DispLimFormatNumber( DIRECTXARG(cinfo->DxDraw) ps->hdc,buf,&cinfo->DiskSizes.used);
+				DispLimFormatNumber( DIRECTXARG(cinfo->DxDraw) ps->hdc, buf, &cinfo->DiskSizes.used);
 
-				DxGetCurrentPositionEx(cinfo->DxDraw,ps->hdc,&LP);
-				VLine(ps->hdc,LP.x - sepx);
+				DxGetCurrentPositionEx(cinfo->DxDraw, ps->hdc, &LP);
+				VLine(ps->hdc, LP.x - sepx);
 			}else{
 				y = 0;
 			}
 			if ( y != cinfo->oldU ){
 				box.left	= xm;
 				box.right	= cinfo->wnd.Area.cx;
-				InvalidateRect(cinfo->info.hWnd,&box,FALSE);	// 更新指定
+				InvalidateRect(cinfo->info.hWnd, &box, FALSE);	// 更新指定
 			}
 			cinfo->oldU = y;
 		}
 		if ( LP.x < ps->rcPaint.right ){			// 総容量 +++++++++++++++++
-			DxMoveToEx(cinfo->DxDraw,ps->hdc,LP.x, LP.y);
-			DxSetTextColor(cinfo->DxDraw,ps->hdc,C_mes);
-			DxTextOutRel(cinfo->DxDraw,ps->hdc,StrTotal,TSIZEOFSTR(StrTotal));
+			DxMoveToEx(cinfo->DxDraw, ps->hdc, LP.x, LP.y);
+			DxSetTextColor(cinfo->DxDraw, ps->hdc, C_mes);
+			DxTextOutRel(cinfo->DxDraw, ps->hdc, StrTotal, TSIZEOFSTR(StrTotal));
 
-			DispLimFormatNumber( DIRECTXARG(cinfo->DxDraw) ps->hdc,buf,&cinfo->DiskSizes.total);
+			DispLimFormatNumber( DIRECTXARG(cinfo->DxDraw) ps->hdc, buf, &cinfo->DiskSizes.total);
 
-			DxGetCurrentPositionEx(cinfo->DxDraw,ps->hdc,&LP);
-			VLine(ps->hdc,LP.x - sepx);
+			DxGetCurrentPositionEx(cinfo->DxDraw, ps->hdc, &LP);
+			VLine(ps->hdc, LP.x - sepx);
 		}
 		if ( LP.x < ps->rcPaint.right ){			// パスの種類 +++++++++++++
 			if ( cinfo->e.Dtype.Name[0] ){
-				DxMoveToEx(cinfo->DxDraw,ps->hdc,LP.x, LP.y);
-				DxSetTextColor(cinfo->DxDraw,ps->hdc,C_info);
-				DxTextOutRel(cinfo->DxDraw,ps->hdc,cinfo->e.Dtype.Name,tstrlen32(cinfo->e.Dtype.Name));
+				DxMoveToEx(cinfo->DxDraw, ps->hdc, LP.x, LP.y);
+				DxSetTextColor(cinfo->DxDraw, ps->hdc, C_info);
+				DxTextOutRel(cinfo->DxDraw, ps->hdc, cinfo->e.Dtype.Name, tstrlen32(cinfo->e.Dtype.Name));
 
-				DxGetCurrentPositionEx(cinfo->DxDraw,ps->hdc,&LP);
-				VLine(ps->hdc,LP.x - sepx);
+				DxGetCurrentPositionEx(cinfo->DxDraw, ps->hdc, &LP);
+				VLine(ps->hdc, LP.x - sepx);
 			}
 		}
 		if ( LP.x < ps->rcPaint.right ){			// Title ++++++++++++++++++
-			DxMoveToEx(cinfo->DxDraw,ps->hdc,LP.x, LP.y);
-			DxSetTextColor(cinfo->DxDraw,ps->hdc,C_DBLACK);
-			DxTextOutRel(cinfo->DxDraw,ps->hdc,StrPPc,TSIZEOFSTR(StrPPc));
+			DxMoveToEx(cinfo->DxDraw, ps->hdc, LP.x, LP.y);
+			DxSetTextColor(cinfo->DxDraw, ps->hdc, C_DBLACK);
+			DxTextOutRel(cinfo->DxDraw, ps->hdc, StrPPc, TSIZEOFSTR(StrPPc));
 
-			DxGetCurrentPositionEx(cinfo->DxDraw,ps->hdc,&LP);
+			DxGetCurrentPositionEx(cinfo->DxDraw, ps->hdc, &LP);
 		}
 												// 右側の空白 +++++++++++++
 		if ( LP.x < ps->rcPaint.right ){
 			if ( !cinfo->bg.X_WallpaperType ){
 				box.left   = LP.x;
 				box.right  = ps->rcPaint.right;
-				DxFillBack(cinfo->DxDraw,ps->hdc,&box,cinfo->C_BackBrush);
+				DxFillBack(cinfo->DxDraw, ps->hdc, &box, cinfo->C_BackBrush);
 			}
 		}
 	}
@@ -400,7 +400,7 @@ void PaintInfoLine(PPC_APPINFO *cinfo, PAINTSTRUCT *ps, RECT *BoxInfo, ENTRYINDE
 	if ( EI_No == DISPENTRY_NO_OUTPANE ){
 		TEXTMETRIC tm;
 
-		GetTextMetrics(ps->hdc,&tm);
+		GetTextMetrics(ps->hdc, &tm);
 		fontY = tm.tmHeight + cinfo->X_lspc;
 		if ( fontY <= 0 ) fontY = 1;
 	}
@@ -425,7 +425,7 @@ void PaintInfoLine(PPC_APPINFO *cinfo, PAINTSTRUCT *ps, RECT *BoxInfo, ENTRYINDE
 				box.right  = cinfo->iconR - 1;
 				box.bottom = BoxInfo->bottom;
 				if ( cinfo->bg.X_WallpaperType == 0 ){
-					DxFillBack(cinfo->DxDraw,ps->hdc,&box,cinfo->C_BackBrush);
+					DxFillBack(cinfo->DxDraw, ps->hdc, &box, cinfo->C_BackBrush);
 				}
 				box.left = box.right;
 				box.right++;
@@ -495,7 +495,7 @@ void PaintInfoLine(PPC_APPINFO *cinfo, PAINTSTRUCT *ps, RECT *BoxInfo, ENTRYINDE
 									// MENU 表示 **************************
 	if ( cinfo->Mpos >= 0 ){
 		int i;
-		int x,xm,y;
+		int x, xm, y;
 
 		i = 0;
 		xm = (cinfo->HiddenMenu.item + 1) >> 1;
@@ -513,7 +513,7 @@ void PaintInfoLine(PPC_APPINFO *cinfo, PAINTSTRUCT *ps, RECT *BoxInfo, ENTRYINDE
 		}
 
 		box.right = cinfo->iconR;
-		for ( y = 0 ; y < 2 ; y++,box.top += fontY ){
+		for ( y = 0 ; y < 2 ; y++, box.top += fontY ){
 			box.bottom = box.top + fontY;
 			box.left = cinfo->iconR;
 			for ( x = 0 ; x < xm ; x++, box.left = box.right ){
@@ -527,7 +527,7 @@ void PaintInfoLine(PPC_APPINFO *cinfo, PAINTSTRUCT *ps, RECT *BoxInfo, ENTRYINDE
 				if ( i < cinfo->HiddenMenu.item ){
 					if ( i == cinfo->Mpos ){
 						if ( cinfo->bg.X_WallpaperType ){
-							DxSetBkMode(cinfo->DxDraw,ps->hdc,OPAQUE);
+							DxSetBkMode(cinfo->DxDraw, ps->hdc, OPAQUE);
 						}
 						DxSetTextColor(cinfo->DxDraw, ps->hdc,
 								HiddenMenu_bg(cinfo->HiddenMenu.data[i]));
@@ -572,14 +572,14 @@ void PaintInfoLine(PPC_APPINFO *cinfo, PAINTSTRUCT *ps, RECT *BoxInfo, ENTRYINDE
 
 			wsprintf(buf,
 					T("VArea(%d,%d),Area(%d,%d),cellWMin:%d,cellN:%d"),
-					cinfo->cel.VArea.cx,cinfo->cel.VArea.cy,
-					cinfo->cel.Area.cx,cinfo->cel.Area.cy,
-					cinfo->cellWMin,cinfo->e.cellN);
-			DxSetTextColor(cinfo->DxDraw,ps->hdc,GetSysColor(COLOR_WINDOW));
-			DxSetBkColor(cinfo->DxDraw,ps->hdc,GetSysColor(COLOR_WINDOWTEXT));
-			DxMoveToEx(cinfo->DxDraw,ps->hdc,cinfo->iconR,BoxInfo->top);
+					cinfo->cel.VArea.cx, cinfo->cel.VArea.cy,
+					cinfo->cel.Area.cx, cinfo->cel.Area.cy,
+					cinfo->cellWMin, cinfo->e.cellN);
+			DxSetTextColor(cinfo->DxDraw, ps->hdc, GetSysColor(COLOR_WINDOW));
+			DxSetBkColor(cinfo->DxDraw, ps->hdc, GetSysColor(COLOR_WINDOWTEXT));
+			DxMoveToEx(cinfo->DxDraw, ps->hdc, cinfo->iconR, BoxInfo->top);
 
-			DxTextOutRel(cinfo->DxDraw,ps->hdc,buf,tstrlen(buf));
+			DxTextOutRel(cinfo->DxDraw, ps->hdc, buf, tstrlen(buf));
 #else
 			box.top = box.bottom - fontY * cinfo->inf1.height;
 			DispEntry(cinfo, ps->hdc, &cinfo->inf1, EI_No, ps->rcPaint.right, &box);
@@ -604,10 +604,10 @@ void Paint(PPC_APPINFO *cinfo)
 
 // 表示環境の設定 -------------------------------------------------------------
   #ifndef USEDIRECTX
-	BeginPaint(cinfo->info.hWnd,&ps);
+	BeginPaint(cinfo->info.hWnd, &ps);
   #else
-	if ( cinfo->DxDraw == NULL ) BeginPaint(cinfo->info.hWnd,&ps);
-	if ( BeginDrawDxDraw(cinfo->DxDraw,&ps) == DXSTART_NODRAW ) return;
+	if ( cinfo->DxDraw == NULL ) BeginPaint(cinfo->info.hWnd, &ps);
+	if ( BeginDrawDxDraw(cinfo->DxDraw, &ps) == DXSTART_NODRAW ) return;
   #endif
 	if ( cinfo->e.cellDataMax <= 0 ) goto PaintLast;
 
@@ -621,7 +621,7 @@ void Paint(PPC_APPINFO *cinfo)
 
 	IfGDImode(ps.hdc) {
 		if ( X_fles != 0 ){
-			InitOffScreen(&cinfo->bg,ps.hdc,&cinfo->wnd.NCArea);
+			InitOffScreen(&cinfo->bg, ps.hdc, &cinfo->wnd.NCArea);
 			hOldDC = ps.hdc;
 			ps.hdc = cinfo->bg.hOffScreenDC;
 
@@ -633,25 +633,25 @@ void Paint(PPC_APPINFO *cinfo)
 				ps.fErase = TRUE;
 			}
 		}
-		hOldFont = SelectObject(ps.hdc,cinfo->hBoxFont);
-		SetTextAlign(ps.hdc,TA_LEFT | TA_TOP | TA_UPDATECP); // CP を有効に
+		hOldFont = SelectObject(ps.hdc, cinfo->hBoxFont);
+		SetTextAlign(ps.hdc, TA_LEFT | TA_TOP | TA_UPDATECP); // CP を有効に
 	}
 
 	if ( cinfo->bg.X_WallpaperType ){
-		DrawWallPaper(DIRECTXARG(cinfo->DxDraw) &cinfo->bg,cinfo->info.hWnd,&ps,cinfo->wnd.Area.cx);
-		oldBKmode = DxSetBkMode(cinfo->DxDraw,ps.hdc,TRANSPARENT);
+		DrawWallPaper(DIRECTXARG(cinfo->DxDraw) &cinfo->bg, cinfo->info.hWnd, &ps, cinfo->wnd.Area.cx);
+		oldBKmode = DxSetBkMode(cinfo->DxDraw, ps.hdc, TRANSPARENT);
 		DrawTargetFlags = DRAWT_ALL;
 	}
 #if USEDELAYCURSOR
 	else if ( IsTrue(cinfo->freeCell) ){
-		DxFillBack(cinfo->DxDraw,ps.hdc,&ps.rcPaint,cinfo->C_BackBrush);
-		oldBKmode = DxSetBkMode(cinfo->DxDraw,ps.hdc,TRANSPARENT);
+		DxFillBack(cinfo->DxDraw, ps.hdc, &ps.rcPaint, cinfo->C_BackBrush);
+		oldBKmode = DxSetBkMode(cinfo->DxDraw, ps.hdc, TRANSPARENT);
 		DrawTargetFlags = DRAWT_ALL;
 	}
 	if ( IsTrue(cinfo->freeCell) ){ // 遅延移動カーソルを表示
 		#ifndef USEDIRECTX
 			DrawGradientBox(ps.hdc,
-					cinfo->cellNpos.x,cinfo->cellNpos.y,
+					cinfo->cellNpos.x, cinfo->cellNpos.y,
 					cinfo->cellNpos.x + cinfo->cel.Size.cx,
 					cinfo->cellNpos.y + cinfo->cel.Size.cy,
 					cinfo->cellNbc,
@@ -661,7 +661,7 @@ void Paint(PPC_APPINFO *cinfo)
 			box.top  = cinfo->cellNpos.y;
 			box.right = cinfo->cellNpos.x + cinfo->cel.Size.cx;
 			box.bottom = cinfo->cellNpos.y + cinfo->cel.Size.cy;
-			DxDrawCursor(cinfo->DxDraw,ps.hdc,&box,
+			DxDrawCursor(cinfo->DxDraw, ps.hdc, &box,
 					C_eInfo[(GetFocus() != cinfo->info.hWnd) ? ECS_NOFOCUS : ECS_SELECT]);
 		#endif
 		DrawTargetFlags = DRAWT_ALL;
@@ -670,7 +670,7 @@ void Paint(PPC_APPINFO *cinfo)
 // ０行目：パス表示 -----------------------------------------------------------
 	if ( (ps.rcPaint.top < cinfo->BoxStatus.top) &&
 		 (DrawTargetFlags & DRAWT_PATHLINE) ){
-		PaintPathBar(cinfo,&ps);
+		PaintPathBar(cinfo, &ps);
 	}
 // １行目：各種情報 -----------------------------------------------------------
 	if ( DrawTargetFlags & DRAWT_STATUSLINE ){
@@ -687,11 +687,11 @@ void Paint(PPC_APPINFO *cinfo)
 			box.left = ps.rcPaint.left;
 			box.right = ps.rcPaint.right;
 			if ( cinfo->fontY >= 48 ) box.top -= cinfo->fontY / 48;
-			DxFillRectColor(cinfo->DxDraw,ps.hdc,&box,cinfo->linebrush,LINE_NORMAL);
+			DxFillRectColor(cinfo->DxDraw, ps.hdc, &box, cinfo->linebrush, LINE_NORMAL);
 		}
 #ifdef USRDIRECTX
 		if ( ps.rcPaint.top < cinfo->BoxStatus.bottom ){
-			PaintStatusLine(cinfo,&ps,&cinfo->BoxStatus, DISPENTRY_NO_INPANE);
+			PaintStatusLine(cinfo, &ps, &cinfo->BoxStatus, DISPENTRY_NO_INPANE);
 		}
 #endif
 	}
@@ -701,7 +701,7 @@ void Paint(PPC_APPINFO *cinfo)
 		if ( (cinfo->BoxInfo.bottom != cinfo->BoxInfo.top) &&
 			 (ps.rcPaint.top < cinfo->BoxInfo.bottom) &&
 			 (ps.rcPaint.bottom >= cinfo->BoxInfo.top) ){
-			PaintInfoLine(cinfo,&ps,&cinfo->BoxInfo, DISPENTRY_NO_INPANE);
+			PaintInfoLine(cinfo, &ps, &cinfo->BoxInfo, DISPENTRY_NO_INPANE);
 		}
 #endif
 // ３行目下端：区切り線 -------------------------------------------------------
@@ -712,20 +712,20 @@ void Paint(PPC_APPINFO *cinfo)
 			box.left = ps.rcPaint.left;
 			box.right = ps.rcPaint.right;
 			if ( cinfo->fontY >= 48 ) box.top -= cinfo->fontY / 48;
-			DxFillRectColor(cinfo->DxDraw,ps.hdc,&box,cinfo->linebrush,LINE_NORMAL);
+			DxFillRectColor(cinfo->DxDraw, ps.hdc, &box, cinfo->linebrush, LINE_NORMAL);
 		}
 #ifdef USRDIRECTX
 		if ( (cinfo->BoxInfo.bottom != cinfo->BoxInfo.top) &&
 			 (ps.rcPaint.top < cinfo->BoxInfo.bottom) &&
 			 (ps.rcPaint.bottom >= cinfo->BoxInfo.top) ){
-			PaintInfoLine(cinfo,&ps,&cinfo->BoxInfo, DISPENTRY_NO_INPANE);
+			PaintInfoLine(cinfo, &ps, &cinfo->BoxInfo, DISPENTRY_NO_INPANE);
 		}
 #endif
 	}
 // ４行以降：ファイル表示 -----------------------------------------------------
 	if ( cinfo->cel.Size.cx && cinfo->cel.Size.cy &&
 		 (DrawTargetFlags & (DRAWT_ENTRY | DRAWT_1ENTRY)) ){
-		int x,xm,y,py1,py2;
+		int x, xm, y, py1, py2;
 		RECT *ebox;
 
 		if ( DrawTargetFlags & DRAWT_ENTRY ){
@@ -750,7 +750,7 @@ void Paint(PPC_APPINFO *cinfo)
 		box.right = x * cinfo->cel.Size.cx + cinfo->BoxEntries.left;
 
 		if ( cinfo->EntriesOffset.x | cinfo->EntriesOffset.y ){
-			int dx,dy;
+			int dx, dy;
 			if ( cinfo->EntriesOffset.x ){
 				int dd = cinfo->EntriesOffset.x % cinfo->cel.Size.cx;
 				dx = cinfo->EntriesOffset.x / cinfo->cel.Size.cx;
@@ -788,23 +788,23 @@ void Paint(PPC_APPINFO *cinfo)
 					tmpno = cinfo->cellWMin + x + y;
 					if ( (tmpno >= cinfo->e.cellM) || (CEL(tmpno).pos.x != NOFREEPOS) ){
 						if ( !cinfo->bg.X_WallpaperType && !cinfo->freeCell ){
-							DxFillBack(cinfo->DxDraw,ps.hdc,&box,cinfo->C_BackBrush);
+							DxFillBack(cinfo->DxDraw, ps.hdc, &box, cinfo->C_BackBrush);
 						}
 					}else{
-						DispEntry(cinfo,ps.hdc,&cinfo->celF,
-								tmpno,ps.rcPaint.right,&box);
+						DispEntry(cinfo, ps.hdc, &cinfo->celF,
+								tmpno, ps.rcPaint.right, &box);
 					}
 				}
 #else
-				DispEntry(cinfo,ps.hdc,&cinfo->celF,
-						cinfo->cellWMin + x + y,ps.rcPaint.right,&box);
+				DispEntry(cinfo, ps.hdc, &cinfo->celF,
+						cinfo->cellWMin + x + y, ps.rcPaint.right, &box);
 #endif
 			}
 
 		}
 #if FREEPOSMODE
 		{ // 浮動エントリを全て表示
-			int i,index;
+			int i, index;
 
 			for ( i = 0 ; i < cinfo->FreePosEntries ; i++ ){
 				index = cinfo->FreePosList[i].index;
@@ -814,45 +814,45 @@ void Paint(PPC_APPINFO *cinfo)
 				box.right  = box.left + cinfo->cel.Size.cx;
 				box.bottom = box.top + cinfo->cel.Size.cy;
 
-				DispEntry(cinfo,ps.hdc,&cinfo->celF,
-						cinfo->FreePosList[i].index,ps.rcPaint.right,&box);
+				DispEntry(cinfo, ps.hdc, &cinfo->celF,
+						cinfo->FreePosList[i].index, ps.rcPaint.right, &box);
 			}
 		}
 #endif
-		memset(&cinfo->DrawTargetCell,0,sizeof(cinfo->DrawTargetCell));
+		memset(&cinfo->DrawTargetCell, 0, sizeof(cinfo->DrawTargetCell));
 	}
 // 最下部分：余白 -----------------------------------------------------
 	IfGDImode(ps.hdc) {
 		if ( cinfo->bg.X_WallpaperType == 0 ){
 			box.top = cinfo->BoxEntries.bottom;
 			if ( ps.rcPaint.bottom > box.top ){
-				box.left	= max(ps.rcPaint.left,cinfo->BoxEntries.left);
+				box.left	= max(ps.rcPaint.left, cinfo->BoxEntries.left);
 				box.right	= ps.rcPaint.right;
 				box.bottom	= ps.rcPaint.bottom;
-				DxFillBack(cinfo->DxDraw,ps.hdc,&box,cinfo->C_BackBrush);
+				DxFillBack(cinfo->DxDraw, ps.hdc, &box, cinfo->C_BackBrush);
 			}
 		}else{
 // 終了処理
-			DxSetBkMode(cinfo->DxDraw,ps.hdc,oldBKmode); // C4701ok
+			DxSetBkMode(cinfo->DxDraw, ps.hdc, oldBKmode); // C4701ok
 		}
-		SetTextAlign(ps.hdc,TA_LEFT | TA_TOP | TA_NOUPDATECP); // CP を無効
-		SelectObject(ps.hdc,hOldFont);	// フォント
+		SetTextAlign(ps.hdc, TA_LEFT | TA_TOP | TA_NOUPDATECP); // CP を無効
+		SelectObject(ps.hdc, hOldFont);	// フォント
 
 		if ( X_fles ){
 			ps.hdc = hOldDC; // C4701ok
-			OffScreenToScreen(&cinfo->bg,cinfo->info.hWnd,hOldDC,
-					cinfo->combo ? NULL : &cinfo->wnd.NCRect,&cinfo->wnd.Area);
+			OffScreenToScreen(&cinfo->bg, cinfo->info.hWnd, hOldDC,
+					cinfo->combo ? NULL : &cinfo->wnd.NCRect, &cinfo->wnd.Area);
 		}
 	}
 
 PaintLast:
 #ifndef USEDIRECTX
-	EndPaint(cinfo->info.hWnd,&ps);
+	EndPaint(cinfo->info.hWnd, &ps);
 #else
 	IfDXmode(ps.hdc) {
 		EndDrawDxDraw(cinfo->DxDraw);
 	}else{
-		EndPaint(cinfo->info.hWnd,&ps);
+		EndPaint(cinfo->info.hWnd, &ps);
 	}
 #endif
 
@@ -868,10 +868,10 @@ PaintLast:
 		}
 		if ( (GetAsyncKeyState(VK_CONTROL) & KEYSTATE_PUSH) &&
 			 (GetAsyncKeyState('L') & KEYSTATE_PUSH) ){
-			InvalidateRect(cinfo->info.hWnd,NULL,FALSE);
-			DxSetBenchmarkMode(cinfo->DxDraw,TRUE);
+			InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
+			DxSetBenchmarkMode(cinfo->DxDraw, TRUE);
 		}else{
-			DxSetBenchmarkMode(cinfo->DxDraw,FALSE);
+			DxSetBenchmarkMode(cinfo->DxDraw, FALSE);
 		}
 	}
 #endif
@@ -881,26 +881,26 @@ PaintLast:
 void Repaint(PPC_APPINFO *cinfo)
 {
 	cinfo->DrawTargetFlags = DRAWT_ALL;
-	InvalidateRect(cinfo->info.hWnd,NULL,FALSE);
+	InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
 	if ( cinfo->combo ){
-		PostMessage(cinfo->hComboWnd,WM_PPXCOMMAND,KCW_drawinfo,0);
-		PostMessage(cinfo->hComboWnd,WM_PPXCOMMAND,KCW_drawstatus,0);
+		PostMessage(cinfo->hComboWnd, WM_PPXCOMMAND, KCW_drawinfo, 0);
+		PostMessage(cinfo->hComboWnd, WM_PPXCOMMAND, KCW_drawstatus, 0);
 	}
 	if ( cinfo->docks.t.hWnd != NULL ){
-		InvalidateRect(cinfo->docks.t.hWnd,NULL,FALSE);
+		InvalidateRect(cinfo->docks.t.hWnd, NULL, FALSE);
 	}
 	if ( cinfo->docks.b.hWnd != NULL ){
-		InvalidateRect(cinfo->docks.b.hWnd,NULL,FALSE);
+		InvalidateRect(cinfo->docks.b.hWnd, NULL, FALSE);
 	}
 	if ( cinfo->hHeaderWnd != NULL ){
-		InvalidateRect(cinfo->hHeaderWnd,NULL,FALSE);
+		InvalidateRect(cinfo->hHeaderWnd, NULL, FALSE);
 	}
 	if ( cinfo->hScrollBarWnd != NULL ){
-		InvalidateRect(cinfo->hScrollBarWnd,NULL,FALSE);
+		InvalidateRect(cinfo->hScrollBarWnd, NULL, FALSE);
 	}
 }
 
-void RefleshInfoBox(PPC_APPINFO *cinfo,int flags)
+void RefleshInfoBox(PPC_APPINFO *cinfo, int flags)
 {
 	RECT rect;
 
@@ -909,24 +909,24 @@ void RefleshInfoBox(PPC_APPINFO *cinfo,int flags)
 		rect = cinfo->BoxStatus;
 		rect.bottom = rect.top;
 		rect.top = 0;
-		InvalidateRect(cinfo->info.hWnd,&rect,FALSE);
+		InvalidateRect(cinfo->info.hWnd, &rect, FALSE);
 	}
 	// ステータス行
 	if ( cinfo->stat.attr & flags ){
 		RefleshStatusLine(cinfo);
 	}
 	if ( cinfo->DrawTargetFlags != 0 ){
-		setflag(cinfo->DrawTargetFlags,DRAWT_INFOLINE);
+		setflag(cinfo->DrawTargetFlags, DRAWT_INFOLINE);
 	}
 	// 情報行
 	if ( (cinfo->inf1.attr | cinfo->inf2.attr ) & flags ){
 		DocksInfoRepaint(&cinfo->docks);
-		PostMessage(cinfo->hComboWnd,WM_PPXCOMMAND,KCW_drawinfo,0);
+		PostMessage(cinfo->hComboWnd, WM_PPXCOMMAND, KCW_drawinfo, 0);
 		if ( cinfo->combo && (X_combos[0] & CMBS_COMMONINFO) ){
 		}else{
 			rect = cinfo->BoxInfo;
 			rect.bottom--;
-			InvalidateRect(cinfo->info.hWnd,&rect,FALSE);
+			InvalidateRect(cinfo->info.hWnd, &rect, FALSE);
 		}
 	}
 }
@@ -936,22 +936,22 @@ void RefleshStatusLine(PPC_APPINFO *cinfo)
 	RECT rect;
 
 	if ( cinfo->DrawTargetFlags != 0 ){
-		setflag(cinfo->DrawTargetFlags,DRAWT_STATUSLINE);
+		setflag(cinfo->DrawTargetFlags, DRAWT_STATUSLINE);
 	}
 	rect = cinfo->BoxStatus;
 	rect.bottom--;
-	InvalidateRect(cinfo->info.hWnd,&rect,FALSE);	// 更新指定
+	InvalidateRect(cinfo->info.hWnd, &rect, FALSE);	// 更新指定
 
 	DocksStatusRepaint(&cinfo->docks);
 	if ( cinfo->combo ){
-		SendMessage(cinfo->hComboWnd,WM_PPXCOMMAND,KCW_drawstatus,0);
+		SendMessage(cinfo->hComboWnd, WM_PPXCOMMAND, KCW_drawstatus, 0);
 	}
 }
 
 // Cell 位置を画面更新指定する
-void RefleshCell(PPC_APPINFO *cinfo,int cell)
+void RefleshCell(PPC_APPINFO *cinfo, int cell)
 {
-	RECT rect,rect2;
+	RECT rect, rect2;
 
 #if FREEPOSMODE
 	if ( CEL(cell).pos.x != NOFREEPOS ){
@@ -962,18 +962,18 @@ void RefleshCell(PPC_APPINFO *cinfo,int cell)
 		int deltaNo;
 
 		deltaNo = cell - cinfo->cellWMin;
-		rect.left = CalcCellX(cinfo,deltaNo);
-		rect.top  = CalcCellY(cinfo,deltaNo);
+		rect.left = CalcCellX(cinfo, deltaNo);
+		rect.top  = CalcCellY(cinfo, deltaNo);
 #if FREEPOSMODE
 	}
 #endif
 	rect.right	= rect.left + cinfo->cel.Size.cx;
 	rect.bottom	= rect.top	+ cinfo->cel.Size.cy;
-	InvalidateRect(cinfo->info.hWnd,&rect,FALSE);	// 更新指定
-	UnionRect(&rect2,&rect,&cinfo->DrawTargetCell);
+	InvalidateRect(cinfo->info.hWnd, &rect, FALSE);	// 更新指定
+	UnionRect(&rect2, &rect, &cinfo->DrawTargetCell);
 	cinfo->DrawTargetCell = rect2;
 	if ( (cell == cinfo->e.cellN) && (GetFocus() == cinfo->info.hWnd) ){
-		SetCaretPos(rect.left,rect.top + (cinfo->fontY >> 1));
+		SetCaretPos(rect.left, rect.top + (cinfo->fontY >> 1));
 	}
 
 	if ( cinfo->Mpos != -1 ){
@@ -981,9 +981,9 @@ void RefleshCell(PPC_APPINFO *cinfo,int cell)
 		cinfo->Mpos = -1;
 		rect = cinfo->BoxInfo;
 		rect.bottom--;
-		InvalidateRect(cinfo->info.hWnd,&rect,FALSE);	// 更新指定
+		InvalidateRect(cinfo->info.hWnd, &rect, FALSE);	// 更新指定
 		if ( cinfo->DrawTargetFlags != 0 ){
-			setflag(cinfo->DrawTargetFlags,DRAWT_INFOLINE);
+			setflag(cinfo->DrawTargetFlags, DRAWT_INFOLINE);
 		}
 	}
 }

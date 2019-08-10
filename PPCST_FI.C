@@ -37,36 +37,36 @@ BOOL TextCustModify;
 
 void SetButtonState(HWND hDlg)
 {
-	BOOL usereg = FALSE,useopen;
+	BOOL usereg = FALSE, useopen;
 	HKEY HK;
 
-	if ( RegOpenKeyEx(HKEY_CURRENT_USER,RegPath,0,KEY_READ,&HK) ==
+	if ( RegOpenKeyEx(HKEY_CURRENT_USER, RegPath, 0, KEY_READ, &HK) ==
 			ERROR_SUCCESS ){
 		usereg = TRUE;
 		RegCloseKey(HK);
-	}else if ( RegOpenKeyEx(HKEY_LOCAL_MACHINE,RegPath,0,KEY_READ,&HK) ==
+	}else if ( RegOpenKeyEx(HKEY_LOCAL_MACHINE, RegPath, 0, KEY_READ, &HK) ==
 			ERROR_SUCCESS ){
 		usereg = TRUE;
 		RegCloseKey(HK);
 	}
 	useopen = CheckOpen();
-	EnableDlgWindow(hDlg,IDB_REGPPC,!usereg && !useopen);
-	EnableDlgWindow(hDlg,IDB_REGOPEN,!useopen);
-	EnableDlgWindow(hDlg,IDB_UNREGPPC,usereg);
+	EnableDlgWindow(hDlg, IDB_REGPPC, !usereg && !useopen);
+	EnableDlgWindow(hDlg, IDB_REGOPEN, !useopen);
+	EnableDlgWindow(hDlg, IDB_UNREGPPC, usereg);
 }
 
 void USEFASTCALL InitFileDialog(HWND hDlg)
 {
 	TCHAR buf[VFPS + 0x100];
 
-	SendDlgItemMessage(hDlg,IDS_INFO,
-			WM_GETTEXT,(WPARAM)TSIZEOF(buf),(LPARAM)buf);
+	SendDlgItemMessage(hDlg, IDS_INFO,
+			WM_GETTEXT, (WPARAM)TSIZEOF(buf), (LPARAM)buf);
 	InfoDb(buf + tstrlen(buf));
-	SendDlgItemMessage(hDlg,IDS_INFO,WM_SETTEXT,0,(LPARAM)buf);
+	SendDlgItemMessage(hDlg, IDS_INFO, WM_SETTEXT, 0, (LPARAM)buf);
 	SetButtonState(hDlg);
-	CheckDlgButton(hDlg,IDX_CONSOLE,X_chidc);
+	CheckDlgButton(hDlg, IDX_CONSOLE, X_chidc);
 	if ( hConsoleWnd == NULL ){
-		ShowDlgWindow(hDlg,IDX_CONSOLE,FALSE);
+		ShowDlgWindow(hDlg, IDX_CONSOLE, FALSE);
 	}
 }
 
@@ -90,7 +90,7 @@ BOOL TextCust(HWND hDlg)
 }
 
 #pragma argsused
-INT_PTR CALLBACK TextCustomizeDlgBox(HWND hDlg,UINT iMsg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK TextCustomizeDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 	UnUsedParam(lParam);
 
@@ -98,15 +98,15 @@ INT_PTR CALLBACK TextCustomizeDlgBox(HWND hDlg,UINT iMsg,WPARAM wParam,LPARAM lP
 		case WM_INITDIALOG: {
 			HWND hEdwnd;
 
-			PPxSendMessage(WM_PPXCOMMAND,K_Scust,0);
-			MakeTempEntry(VFPS,TextCustBackup,FILE_ATTRIBUTE_NORMAL);
+			PPxSendMessage(WM_PPXCOMMAND, K_Scust, 0);
+			MakeTempEntry(VFPS, TextCustBackup, FILE_ATTRIBUTE_NORMAL);
 			CustDump(TextCustBackup);
 			TextCustModify = FALSE;
-			CheckDlgButton(hDlg,IDX_APPEND,TRUE);
+			CheckDlgButton(hDlg, IDX_APPEND, TRUE);
 
-			hEdwnd = GetDlgItem(hDlg,IDE_CUSTEDIT);
-			PPxRegistExEdit(NULL,hEdwnd,TEXTCUSTSIZE - 10,NULL,PPXH_GENERAL,0,
-					PPXEDIT_USEALT | PPXEDIT_NOWORDBREAK);
+			hEdwnd = GetDlgItem(hDlg, IDE_CUSTEDIT);
+			PPxRegistExEdit(NULL, hEdwnd, TEXTCUSTSIZE - 10, NULL,
+					PPXH_GENERAL,0, PPXEDIT_USEALT | PPXEDIT_NOWORDBREAK);
 
 			if ( IsTrue(OpenClipboard(hDlg)) ){
 				HGLOBAL hG;
@@ -116,8 +116,8 @@ INT_PTR CALLBACK TextCustomizeDlgBox(HWND hDlg,UINT iMsg,WPARAM wParam,LPARAM lP
 					TCHAR *src;
 
 					src = GlobalLock(hG);
-					if ( tstrchr(src,'=') != NULL ){
-						SetWindowText(hEdwnd,src);
+					if ( tstrchr(src, '=') != NULL ){
+						SetWindowText(hEdwnd, src);
 					}
 					GlobalUnlock(hG);
 				}
@@ -136,16 +136,16 @@ INT_PTR CALLBACK TextCustomizeDlgBox(HWND hDlg,UINT iMsg,WPARAM wParam,LPARAM lP
 					TextCustModify = TRUE;
 					if ( TextCust(hDlg) == FALSE ) break;
 					DeleteFile(TextCustBackup);
-					EndDialog(hDlg,1);
+					EndDialog(hDlg, 1);
 					break;
 
 				case IDCANCEL:
 					if ( IsTrue(TextCustModify) ){
 						InitCust();
-						CustStore(TextCustBackup,PPXCUSTMODE_temp_RESTORE,NULL);
+						CustStore(TextCustBackup, PPXCUSTMODE_temp_RESTORE, NULL);
 					}
 					DeleteFile(TextCustBackup);
-					EndDialog(hDlg,0);
+					EndDialog(hDlg, 0);
 					break;
 			}
 			break;
@@ -156,13 +156,13 @@ INT_PTR CALLBACK TextCustomizeDlgBox(HWND hDlg,UINT iMsg,WPARAM wParam,LPARAM lP
 	return TRUE;
 }
 
-void CustMain(HWND hDlg,int mode)
+void CustMain(HWND hDlg, int mode)
 {
 	int result = 0;
-	OPENFILENAME ofile = { sizeof(ofile),NULL,NULL,GetFileExtsStr,NULL,0,0,
-		CustName,TSIZEOF(CustName),NULL,0,NULL,NULL,
+	OPENFILENAME ofile = { sizeof(ofile), NULL, NULL, GetFileExtsStr, NULL,
+		0, 0, CustName, TSIZEOF(CustName), NULL, 0, NULL, NULL,
 		OFN_HIDEREADONLY | OFN_SHAREAWARE,
-		0,0,NilStr,0,NULL,NULL OPENFILEEXTDEFINE };
+		0, 0, NilStr, 0, NULL, NULL OPENFILEEXTDEFINE };
 	ofile.hwndOwner = hDlg;
 	if ( mode == DumpMode ){
 		ofile.lpstrTitle = MessageText(MES_SDPF);
@@ -170,12 +170,12 @@ void CustMain(HWND hDlg,int mode)
 	}else if ( mode == HistMode ){
 		ofile.lpstrFile = HistName;
 		ofile.lpstrTitle = MessageText(MES_SDPF);
-		if ( GetSaveFileName(&ofile) ) result = HistDump(NilStr,HistName);
+		if ( GetSaveFileName(&ofile) ) result = HistDump(NilStr, HistName);
 	}else{
-		if ( GetOpenFileName(&ofile) ) result = CustStore(CustName,mode,hDlg);
+		if ( GetOpenFileName(&ofile) ) result = CustStore(CustName, mode, hDlg);
 	}
 	if ( result ){
-		XMessage(hDlg,NULL,XM_GrERRld,GetCText(T("失敗しました。\nコンソールに詳細が出力されています。\0Check report log.")));
+		XMessage(hDlg, NULL, XM_GrERRld, GetCText(T("失敗しました。\nコンソールに詳細が出力されています。\0Check report log.")));
 	}
 	return;
 }
@@ -186,12 +186,12 @@ void RegisterOpenContext(BOOL reg)
 	HKEY HK;
 
 	if ( RegOpenKeyEx((OSver.dwMajorVersion >= 5) ?
-				HKEY_CURRENT_USER : HKEY_LOCAL_MACHINE,RegOpen,0,
-				KEY_SET_VALUE,&HK) == ERROR_SUCCESS ){
+				HKEY_CURRENT_USER : HKEY_LOCAL_MACHINE, RegOpen, 0,
+				KEY_SET_VALUE, &HK) == ERROR_SUCCESS ){
 		if ( reg ){
-			RegSetValueEx(HK,NilStr,0,REG_SZ,(LPBYTE)RegPPc,sizeof(RegPPc));
+			RegSetValueEx(HK, NilStr, 0, REG_SZ, (LPBYTE)RegPPc, sizeof(RegPPc));
 		}else{
-			RegSetValueEx(HK,NilStr,0,REG_SZ,(LPBYTE)NilStr,sizeof(NilStr));
+			RegSetValueEx(HK, NilStr, 0, REG_SZ, (LPBYTE)NilStr, sizeof(NilStr));
 		}
 		RegCloseKey(HK);
 	}
@@ -203,39 +203,39 @@ void DeleteRegisterContext(_In_ HKEY hk)
 	TCHAR buf[VFPS];
 	int depth;
 
-	tstrcpy(buf,RegPath);
+	tstrcpy(buf, RegPath);
 	depth = RegisterContextDepth;
 	// HKEY_LOCAL_MACHINE で Folderは削除禁止
 	if ( hk == HKEY_LOCAL_MACHINE ) depth--;
 	for ( ; depth > 0 ; depth-- ){
-		RegDeleteKey(hk,buf);
-		*tstrrchr(buf,'\\') = '\0';
+		RegDeleteKey(hk, buf);
+		*tstrrchr(buf, '\\') = '\0';
 	}
 }
 
-void RegCreatePath(HKEY hk,int maxdepth)
+void RegCreatePath(HKEY hk, int maxdepth)
 {
 	TCHAR buf[VFPS];
 	int depth;
 	HKEY newhk;
 	DWORD tmp;
 
-	tstrcpy(buf,RegPath);
+	tstrcpy(buf, RegPath);
 	for ( depth = 0 ; depth < maxdepth ; depth++ ){
 		*VFSFindLastEntry(buf) = '\0';
 	}
-	if ( RegCreateKeyEx(hk,buf,0,NilStrNC,REG_OPTION_NON_VOLATILE,
-						KEY_ALL_ACCESS,NULL,&newhk,&tmp) == ERROR_SUCCESS ){
+	if ( RegCreateKeyEx(hk, buf, 0, NilStrNC, REG_OPTION_NON_VOLATILE,
+				KEY_ALL_ACCESS, NULL, &newhk, &tmp) == ERROR_SUCCESS ){
 		if ( maxdepth ){
-			RegCreatePath(hk,maxdepth - 1);
+			RegCreatePath(hk, maxdepth - 1);
 		}else{
-			GetModuleFileName(NULL,buf,VFPS);
-			tstrcpy(VFSFindLastEntry(buf)+1,T(PPCEXE));
+			GetModuleFileName(NULL, buf, VFPS);
+			tstrcpy(VFSFindLastEntry(buf) + 1, T(PPCEXE));
 			tstrcat(buf,
 				((OSver.dwMajorVersion > 5) ||
 				 ((OSver.dwMajorVersion == 5) && (OSver.dwMinorVersion > 0))) ?
 				T(" /idl:%I %L") : T(" \"%1\""));
-			RegSetValueEx(newhk,NilStr,0,REG_SZ,(LPBYTE)buf,TSTRSIZE32(buf));
+			RegSetValueEx(newhk, NilStr, 0, REG_SZ, (LPBYTE)buf, TSTRSIZE32(buf));
 		}
 		RegCloseKey(newhk);
 	}
@@ -244,12 +244,12 @@ void RegCreatePath(HKEY hk,int maxdepth)
 // PPcを「開く」選択肢に追加する
 BOOL RegisterContext(HWND hDlg)
 {
-	if ( PMessageBox(hDlg,GetCText(RegQ),StrCustTitle,
+	if ( PMessageBox(hDlg, GetCText(RegQ), StrCustTitle,
 				MB_YESNO | MB_DEFBUTTON2 | MB_ICONQUESTION) != IDYES ){
 		return FALSE;
 	}
 	RegCreatePath((OSver.dwMajorVersion >= 5) ?
-				HKEY_CURRENT_USER : HKEY_LOCAL_MACHINE,RegisterContextDepth);
+			HKEY_CURRENT_USER : HKEY_LOCAL_MACHINE, RegisterContextDepth);
 	return TRUE;
 }
 
@@ -258,8 +258,8 @@ void DeleteOpenRegisterContext(void)
 	if ( CheckOpen() == FALSE ) return;
 	RegisterOpenContext(FALSE);	// フォルダの初期アクションを消去
 						// (RegDeleteValue(HKEY_LOCAL_MACHINE)で消えない時用)
-	RegDeleteValue(HKEY_CURRENT_USER,RegOpen);
-	RegDeleteValue(HKEY_LOCAL_MACHINE,RegOpen);
+	RegDeleteValue(HKEY_CURRENT_USER, RegOpen);
+	RegDeleteValue(HKEY_LOCAL_MACHINE, RegOpen);
 }
 
 BOOL CheckOpen(void)
@@ -267,61 +267,61 @@ BOOL CheckOpen(void)
 	TCHAR data[VFPS];
 
 	data[0] = '\0';
-	GetRegString(HKEY_CURRENT_USER,RegOpen,NilStr,data,TSIZEOF(data));
+	GetRegString(HKEY_CURRENT_USER, RegOpen, NilStr, data, TSIZEOF(data));
 	if ( data[0] == '\0' ){
-		GetRegString(HKEY_LOCAL_MACHINE,RegOpen,NilStr,data,TSIZEOF(data));
+		GetRegString(HKEY_LOCAL_MACHINE, RegOpen, NilStr, data, TSIZEOF(data));
 	}
-	return !tstrcmp(data,T("PPc"));
+	return !tstrcmp(data, T("PPc"));
 }
 
 void USEFASTCALL KeyInputTest(HWND hDlg)
 {
 	TCHAR temp[0x80];
 
-	tstrcpy(temp,ClipTextStr);
-	if ( KeyInput(GetParent(hDlg),temp + TSIZEOF(ClipTextStr) - 1) <= 0 ){
+	tstrcpy(temp, ClipTextStr);
+	if ( KeyInput(GetParent(hDlg), temp + TSIZEOF(ClipTextStr) - 1) <= 0 ){
 		return;
 	}
-	PP_ExtractMacro(hDlg,NULL,NULL,temp,NULL,0);
+	PP_ExtractMacro(hDlg, NULL, NULL, temp, NULL, 0);
 }
 
 #pragma argsused
-INT_PTR CALLBACK FilePage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK FilePage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg){
 		case WM_COMMAND:
 			switch ( LOWORD(wParam) ){
 				case IDB_CS:
-					CustMain(hDlg,PPXCUSTMODE_STORE);
+					CustMain(hDlg, PPXCUSTMODE_STORE);
 					break;
 				case IDB_CA:
-					CustMain(hDlg,PPXCUSTMODE_APPEND);
+					CustMain(hDlg, PPXCUSTMODE_APPEND);
 					break;
 				case IDB_CU:
-					CustMain(hDlg,PPXCUSTMODE_UPDATE);
+					CustMain(hDlg, PPXCUSTMODE_UPDATE);
 					break;
 				case IDB_TEXTCUST:
 					PPxDialogBoxParam(hInst,
 							MAKEINTRESOURCE((UseLcid == LCID_PPXDEF) ?
 								IDD_TEXTCUST : IDD_TEXTCUSTE),
-							hDlg,TextCustomizeDlgBox,0);
+							hDlg, TextCustomizeDlgBox, 0);
 					break;
 
 				case IDB_CD:
-					CustMain(hDlg,DumpMode);
+					CustMain(hDlg, DumpMode);
 					break;
 				case IDB_CINIT:
-					if ( PMessageBox(hDlg,MES_QICU,StrCustTitle,
+					if ( PMessageBox(hDlg, MES_QICU, StrCustTitle,
 							MB_YESNO | MB_DEFBUTTON2 | MB_ICONQUESTION)
 																 == IDYES ){
 						CustInit();
 					}
 					break;
 				case IDB_HD:
-					CustMain(hDlg,HistMode);
+					CustMain(hDlg, HistMode);
 					break;
 				case IDB_HINIT:
-					if ( PMessageBox(hDlg,MES_QIHI,StrCustTitle,
+					if ( PMessageBox(hDlg, MES_QIHI, StrCustTitle,
 							MB_YESNO | MB_DEFBUTTON2 | MB_ICONQUESTION)
 																 == IDYES ){
 						HistInit();
@@ -354,14 +354,14 @@ INT_PTR CALLBACK FilePage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 
 				case IDX_CONSOLE:
 					if ( hConsoleWnd == NULL ) break;
-					if ( SendMessage((HWND)lParam,BM_GETCHECK,0,0) ){
+					if ( SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) ){
 						X_chidc = TRUE;
-						ShowWindow(hConsoleWnd,SW_HIDE);
+						ShowWindow(hConsoleWnd, SW_HIDE);
 					}else{
 						X_chidc = FALSE;
-						ShowWindow(hConsoleWnd,SW_SHOW);
+						ShowWindow(hConsoleWnd, SW_SHOW);
 					}
-					SetCustData(T("X_chidc"),&X_chidc,sizeof(X_chidc));
+					SetCustData(T("X_chidc"), &X_chidc, sizeof(X_chidc));
 					break;
 			}
 			break;
@@ -372,11 +372,11 @@ INT_PTR CALLBACK FilePage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 
 		case WM_NOTIFY:
 			if ( ((NMHDR *)lParam)->code == PSN_SETACTIVE ){
-				InitWndIcon(hDlg,IDS_INFO);
+				InitWndIcon(hDlg, IDS_INFO);
 			}
 		// default へ
 		default:
-			return StyleDlgProc(hDlg,msg,IDD_INFO,lParam);
+			return StyleDlgProc(hDlg, msg, IDD_INFO, lParam);
 	}
 	return TRUE;
 }

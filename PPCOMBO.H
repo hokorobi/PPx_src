@@ -34,7 +34,7 @@ typedef struct {
 	#define CAPTURE_WINDOWEX	2 // PPx対応のcaptured window
 	int capture;
 	DWORD ActiveID; // アクティブ順を表す数値
-	COLORREF tabtextcolor,tabbackcolor;
+	COLORREF tabtextcolor, tabbackcolor;
 } COMBOITEMSTRUCT;
 
 typedef struct {
@@ -54,7 +54,7 @@ typedef struct {
 	HWND hWnd;	// Combo 親ウィンドウ(INVALID_HANDLE_VALUE:終了中)
 	HWND hAddressWnd;
 	HWND hTreeWnd;
-	int BaseCount,ShowCount;
+	int BaseCount, ShowCount;
 	int Tabs;
 
 	COMBOITEMSTRUCT *base;
@@ -70,7 +70,7 @@ typedef struct {
 
 	struct {	// ActiveID の最小値、最大値
 	// over flow は 0.1sにつき2カウントで1200日なので、考慮しない
-		int low,high;
+		int low, high;
 	} Active;
 
 	struct {
@@ -78,15 +78,15 @@ typedef struct {
 		int Height;
 	} ToolBar;
 
-	int TopAreaHeight; //上部ドック、ツールバー、アドレスバーを含めた領域の下端
-	int LeftAreaWidth; //ツリーの右端
-	int BottomAreaHeight; //レポート・ジョブの上端
+	int TopAreaHeight; //上部ドック、ツールバー、アドレスバーを含めた領域の高さ 兼 下端
+	int LeftAreaWidth; //ツリーの右端 兼 幅
+	int BottomAreaHeight; //株式会社ドック、レポート・ジョブを含めた領域の高さ
 	DWORD FontDPI;
 	ControlFontStruct cfs; // タブ用フォント(InitComboでNULL化済み)
 
 	struct tagPanes {
 		HWND hWnd; // カラム表示用ウィンドウ
-		RECT box,clientbox; // 表示領域
+		RECT box, clientbox; // 表示領域
 		POINT delta; // 表示開始位置
 		int resizewidth; // リサイズ時に使用するサイズ比率
 	} Panes;
@@ -104,9 +104,21 @@ typedef struct {
 } COMBOSTRUCT;
 
 extern COMBOSTRUCT Combo;
-
+/*
+	上部ツールバー		TopDockHeight+
+	標準ツールバー		Combo.ToolBar|
+	標準情報行			InfoHeight   |
+	標準アドレスバー	AddrHeight   +-- Combo.TopAreaHeight
+	ペイン表示
+		タブ(上)
+		ペイン
+		タブ(下)
+		ログとの境界線
+	ログ・ジョブ一覧	Combo.Report.box.y
+	下部ツールバー		BottomDockHeight
+*/
 #define InfoTop (Combo.ToolBar.Height + TopDockHeight)
-#define InfoBottom (InfoHeight + Combo.ToolBar.Height+ TopDockHeight)
+#define InfoBottom (InfoHeight + Combo.ToolBar.Height + TopDockHeight)
 #define AddrTop (Combo.TopAreaHeight - AddrHeight)
 #define AddrBottom Combo.TopAreaHeight
 
@@ -123,18 +135,18 @@ extern COMBOSTRUCT Combo;
 
 GVAR WINPOS ComboWinPos
 #ifdef CGLOBALDEFINE
- = {{CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT},SW_SHOWDEFAULT,0}
+ = {{CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT}, SW_SHOWDEFAULT, 0}
 #endif
 ;
 GVAR SIZE ComboSize;				// Combo window の大きさ
 GVAR PPXDOCKS comboDocks;
 GVAR int splitwide GPARAM(4);		// ウィンドウの仕切の幅
 
-GVAR struct {		// 最大,起動時表示ペイン数
-	int max,min;
+GVAR struct {		// 最大, 起動時表示ペイン数
+	int limit, first;
 } X_mpane
 #ifdef CGLOBALDEFINE
-= {Combo_Max_Base,1};
+= {Combo_Max_Base, 1};
 #endif
 ;
 
@@ -145,7 +157,7 @@ GVAR TCHAR *TabCaptionText GPARAM(NULL);
 GVAR BOOL Reportcolor GPARAM(FALSE);
 GVAR COLORREF CC_log[2]
 #ifdef CGLOBALDEFINE
-= {C_AUTO,C_AUTO}
+= {C_AUTO, C_AUTO}
 #endif
 ;
 
@@ -173,9 +185,9 @@ extern int InfoHeight;		// 情報行の高さ
 extern int AddrHeight;		// Address window の高さ
 //=============================================================================
 // PPCOMBO.C
-extern LRESULT CALLBACK ComboProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam);
+extern LRESULT CALLBACK ComboProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 extern LRESULT ComboLMouseUp(LPARAM lParam);
-extern LRESULT ComboMouseMove(HWND hWnd,LPARAM lParam);
+extern LRESULT ComboMouseMove(HWND hWnd, LPARAM lParam);
 
 typedef struct {
 	PAINTSTRUCT ps;
@@ -190,54 +202,54 @@ extern void DrawPaneArea(DRAWCOMBOSTRUCT *dcs);
 #define SORTWIN_FIX_NORESIZE (Combo_Max_Base * 4)
 extern void SortComboWindows(int fixshowindex);
 
-extern void KCW_FocusFix(HWND hWnd,HWND hTargetWnd);
+extern void KCW_FocusFix(HWND hWnd, HWND hTargetWnd);
 
 // PPCOMBOS.C
 extern void ResetR(TCHAR *buf);
 extern void CheckComboTable(const TCHAR *p1);
 extern void WmComboDestroy(BOOL EndSession);
-extern ERRORCODE PaneCommand(const TCHAR *param,int targetbaseindex);
+extern ERRORCODE PaneCommand(const TCHAR *param, int targetbaseindex);
 extern void SetComboAddresBar(const TCHAR *path);
 extern void EnterAddressBar(void);
 extern void SetComboReportText(const TCHAR *text);
 extern void ComboCust(void);
 extern void CloseLeftArea(void);
-extern void CreateLeftArea(DWORD mode,const TCHAR *initpath);
+extern void CreateLeftArea(DWORD mode, const TCHAR *initpath);
 extern void CreateJobArea(void);
 extern void InitComboGUI(void);
 
 // PPCOMBOB.C	ツールバー
 extern void ComboCreateToolBar(HWND hWnd);
-extern void ComboToolbarCommand(int id,int orcode);
+extern void ComboToolbarCommand(int id, int orcode);
 
 // PPCOMBOP.C	タブバー & ペイン等管理
 // タブ関連
 #define CREATETAB_FIRST 0 // 起動時
 #define CREATETAB_APPEND 1 // 実行時
 extern void CreateTabBar(int mode);
-extern void SetTabInfoData(int setinfo,int showindex,HWND hItemWnd);
+extern void SetTabInfoData(int setinfo, int showindex, HWND hItemWnd);
 #define SETTABINFO_SET 0
 #define SETTABINFO_ADD 1
 #define SETTABINFO_ADDENTRY 2
-#define SetTabInfo(showindex,hItemWnd) SetTabInfoData(SETTABINFO_SET,showindex,hItemWnd)
-#define AddTabInfo(showindex,hItemWnd) SetTabInfoData(SETTABINFO_ADD,showindex,hItemWnd)
+#define SetTabInfo(showindex, hItemWnd) SetTabInfoData(SETTABINFO_SET, showindex, hItemWnd)
+#define AddTabInfo(showindex, hItemWnd) SetTabInfoData(SETTABINFO_ADD, showindex, hItemWnd)
 
 extern void SetTabColor(int baseindex);
-extern BOOL TabMenu(HWND hWnd,int baseindex,int targetpane,POINT *pos);
-extern int GetTabItemIndex(HWND hWnd,int tabwndindex);
+extern BOOL TabMenu(HWND hWnd, int baseindex, int targetpane, POINT *pos);
+extern int GetTabItemIndex(HWND hWnd, int tabwndindex);
 
 extern void SelectChangeTab(NMHDR *nmh);
 extern BOOL SetTabTipText(NMHDR *nmh);
-extern void SelectHidePane(int showindex,HWND hWnd);
+extern void SelectHidePane(int showindex, HWND hWnd);
 extern void ComboSwap(void);
 extern void CreatePane(int baseindex);
 extern void CreateAndInitPane(int baseindex);
 extern void EjectPane(int baseindex);
 extern void HidePane(int showindex);
 
-extern void DestroyedPaneWindow(HWND hWnd,HWND hPaneWnd);
-extern void SelectComboWindow(int showindex,HWND hTargetWnd,BOOL focus);
-extern void SelectTabByWindow(HWND hTargetWnd,int selectpane);
+extern void DestroyedPaneWindow(HWND hWnd, HWND hPaneWnd);
+extern void SelectComboWindow(int showindex, HWND hTargetWnd, BOOL focus);
+extern void SelectTabByWindow(HWND hTargetWnd, int selectpane);
 
 extern int GetComboBaseIndex(HWND hWnd);
 extern int GetComboShowIndex(HWND hWnd);
@@ -247,9 +259,9 @@ extern int GetPairPaneComboShowIndex(HWND hTargetWnd);
 extern int GetPairPaneComboBaseIndex(HWND hTargetWnd);
 
 extern void SwapPane(int targetpane);
-extern void NewPane(int baseindex,const TCHAR *param);
-extern void ClosePanes(HWND hTabWnd,int baseindex,int mode);
-extern void CreateNewTabParam(int showindex,int newbaseindex,const TCHAR *param);
+extern void NewPane(int baseindex, const TCHAR *param);
+extern void ClosePanes(HWND hTabWnd, int baseindex, int mode);
+extern void CreateNewTabParam(int showindex, int newbaseindex, const TCHAR *param);
 extern HWND GetHwndFromIDCombo(const TCHAR *regid);
 
 

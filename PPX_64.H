@@ -11,6 +11,6 @@
 #define DWORDTEN	1000000000	// DWORD Ç≈åÖÇÃìríÜÇ≈àÏÇÍÇÈÇ±Ç∆Ç»Ç≠àµÇ¶ÇÈ
 									// 10 êîíl + 1
 
-extern void DDwordToDten(DWORD srcl,DWORD srch,DWORD *destl,DWORD *desth);
-extern void DDmul(DWORD src1,DWORD src2,DWORD *destl,DWORD *desth);
+extern void DDwordToDten(DWORD srcl, DWORD srch, DWORD *destl, DWORD *desth);
+extern void DDmul(DWORD src1, DWORD src2, DWORD *destl, DWORD *desth);
 extern BOOL InitFloat(void);

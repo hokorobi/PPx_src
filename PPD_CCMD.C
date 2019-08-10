@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------------------
 	Paper Plane xUI	 commom library		PPxCommonCommand
 -----------------------------------------------------------------------------*/
-#define ONPPXDLL		// PPCOMMON.H の DLL 定義指定
+#define ONPPXDLL // PPCOMMON.H の DLL 定義指定
 #include "WINAPI.H"
 #include "PPXVER.H"
 #include "PPX.H"
@@ -15,15 +15,15 @@ HHOOK hAutoDDDLL = NULL;
 struct cmdstrstruct {
 	TCHAR precode;
 	TCHAR str[22];
-} NewPackCmd = {0x9f,T("*pack \"%2%\\|%X|\" %Or-")};
+} NewPackCmd = {0x9f, T("*pack \"%2%\\|%X|\" %Or-")};
 
-DefineWinAPI(BOOL,EnableNonClientDpiScaling,(HWND)) = INVALID_VALUE(impEnableNonClientDpiScaling);
-DefineWinAPI(BOOL,GetLayeredWindowAttributes,(HWND hwnd,COLORREF *crKey,BYTE *bAlpha,DWORD *dwFlags)) = NULL;
-DefineWinAPI(BOOL,SetLayeredWindowAttributes,(HWND hwnd,COLORREF crKey,BYTE bAlpha,DWORD dwFlags)) = NULL;
+DefineWinAPI(BOOL, EnableNonClientDpiScaling, (HWND)) = INVALID_VALUE(impEnableNonClientDpiScaling);
+DefineWinAPI(BOOL, GetLayeredWindowAttributes, (HWND hwnd, COLORREF *crKey, BYTE *bAlpha, DWORD *dwFlags)) = NULL;
+DefineWinAPI(BOOL, SetLayeredWindowAttributes, (HWND hwnd, COLORREF crKey, BYTE bAlpha, DWORD dwFlags)) = NULL;
 
-void ChangeOpaqueWindow(HWND hWnd,int opaque)
+void ChangeOpaqueWindow(HWND hWnd, int opaque)
 {
-	HWND hTargetWnd = GetParentCaptionWindow(hWnd);
+	HWND hTargetWnd = GetCaptionWindow(hWnd);
 	COLORREF crKey;
 	BYTE bAlpha;
 	DWORD dwFlags;
@@ -33,16 +33,16 @@ void ChangeOpaqueWindow(HWND hWnd,int opaque)
 		HMODULE hUser32;
 
 		hUser32 = GetModuleHandleA(User32DLL);
-		GETDLLPROC(hUser32,GetLayeredWindowAttributes);
-		GETDLLPROC(hUser32,SetLayeredWindowAttributes);
+		GETDLLPROC(hUser32, GetLayeredWindowAttributes);
+		GETDLLPROC(hUser32, SetLayeredWindowAttributes);
 		if ( DSetLayeredWindowAttributes == NULL ) return;
 	}
-	exstyle = GetWindowLong(hTargetWnd,GWL_EXSTYLE);
+	exstyle = GetWindowLong(hTargetWnd, GWL_EXSTYLE);
 
 	if ( !(exstyle & WS_EX_LAYERED) ){
 		bAlpha = 0xff;
 	}else{
-		if ( DGetLayeredWindowAttributes(hTargetWnd,&crKey,&bAlpha,&dwFlags) == FALSE ){
+		if ( DGetLayeredWindowAttributes(hTargetWnd, &crKey, &bAlpha, &dwFlags) == FALSE ){
 			return;
 		}
 	}
@@ -52,12 +52,12 @@ void ChangeOpaqueWindow(HWND hWnd,int opaque)
 		if ( opaque < 15 ) opaque = 15;
 		if ( opaque == (int)(DWORD)bAlpha ) return;
 		if ( !(exstyle & WS_EX_LAYERED) ){
-			SetWindowLong(hTargetWnd,GWL_EXSTYLE,exstyle | WS_EX_LAYERED);
+			SetWindowLong(hTargetWnd, GWL_EXSTYLE, exstyle | WS_EX_LAYERED);
 		}
-		DSetLayeredWindowAttributes(hTargetWnd,0,(BYTE)opaque,LWA_ALPHA);
+		DSetLayeredWindowAttributes(hTargetWnd, 0, (BYTE)opaque, LWA_ALPHA);
 	}else{
 		if ( !(exstyle & WS_EX_LAYERED) ) return;
-		SetWindowLong(hTargetWnd,GWL_EXSTYLE,exstyle & ~WS_EX_LAYERED);
+		SetWindowLong(hTargetWnd, GWL_EXSTYLE, exstyle & ~WS_EX_LAYERED);
 	}
 }
 
@@ -65,7 +65,7 @@ void EnableNcScale(HWND hWnd)
 {
 	if ( DEnableNonClientDpiScaling == NULL ) return;
 	if ( DEnableNonClientDpiScaling == INVALID_VALUE(impEnableNonClientDpiScaling) ){
-		GETDLLPROC(GetModuleHandleA(User32DLL),EnableNonClientDpiScaling);
+		GETDLLPROC(GetModuleHandleA(User32DLL), EnableNonClientDpiScaling);
 		if ( DEnableNonClientDpiScaling == NULL ) return;
 	}
 
@@ -77,14 +77,14 @@ void Get_X_save_widthUI(TCHAR *path)
 	BOOL mkdir = FALSE;
 
 	path[0] = '\0';
-	if ( NO_ERROR != GetCustData(T("X_save"),path,TSTROFF(VFPS) ) ){
-		tstrcpy(path,DLLpath);
-		tInput(NULL,MES_QBAK,path,VFPS,PPXH_DIR_R,PPXH_DIR);
-		SetCustData(T("X_save"),path,TSTRSIZE(path));
+	if ( NO_ERROR != GetCustData(T("X_save"), path, TSTROFF(VFPS) ) ){
+		tstrcpy(path, DLLpath);
+		tInput(NULL, MES_QBAK, path, VFPS, PPXH_DIR_R, PPXH_DIR);
+		SetCustData(T("X_save"), path, TSTRSIZE(path));
 		mkdir = TRUE;
 	}
-	VFSFixPath(NULL,path,DLLpath,VFSFIX_FULLPATH | VFSFIX_REALPATH);
-	if ( IsTrue(mkdir) ) MakeDirectories(path,NULL);
+	VFSFixPath(NULL, path, DLLpath, VFSFIX_FULLPATH | VFSFIX_REALPATH);
+	if ( IsTrue(mkdir) ) MakeDirectories(path, NULL);
 }
 
 // バージョンアップ処理。GUIが登録されるタイミングで行う。
@@ -101,19 +101,19 @@ void AutoCustomizeUpdate(void)
 	#endif
 	{
 		DRemoveVectoredExceptionHandler(UEFvec);
-		UEFvec = DAddVectoredExceptionHandler(0,PPxUnhandledExceptionFilter);
+		UEFvec = DAddVectoredExceptionHandler(0, PPxUnhandledExceptionFilter);
 	}
 										// カスタマイズ領域のバージョンチェック
-	tstrcpy(oldver,T("0.00"));
-	GetCustData(T("PPxCFG"),&oldver,sizeof(oldver));
+	tstrcpy(oldver, T("0.00"));
+	GetCustData(T("PPxCFG"), &oldver, sizeof(oldver));
 
 	// ●↓ver1.02で 102 にしてしまった対策
-	if ( (oldver[1] == '.') && (tstrcmp(T(FileCfg_Version),oldver) <= 0) ) return; // 最新だった
+	if ( (oldver[1] == '.') && (tstrcmp(T(FileCfg_Version), oldver) <= 0) ) return; // 最新だった
 
-	GetCustData(T("X_upm"),&X_upm,sizeof(X_upm));
+	GetCustData(T("X_upm"), &X_upm, sizeof(X_upm));
 	if ( X_upm == 0 ){
-		X_upm = PMessageBox(NULL,MES_QUPD,
-			T("PPx Update"),MB_YESNOCANCEL | MB_ICONEXCLAMATION);
+		X_upm = PMessageBox(NULL, MES_QUPD,
+			T("PPx Update"), MB_YESNOCANCEL | MB_ICONEXCLAMATION);
 		switch (X_upm){
 			case IDNO:
 				X_upm = 3;
@@ -130,53 +130,53 @@ void AutoCustomizeUpdate(void)
 	}
 	if ( X_upm == 1 ) return;	// 何もしない
 	if ( X_upm == 2 ){
-		XMessage(NULL,NULL,XM_RESULTld,MES_UPED,T(FileCfg_Version));
+		XMessage(NULL, NULL, XM_RESULTld, MES_UPED, T(FileCfg_Version));
 	}else{
 		if ( (X_upm == 4) || (X_upm == 6) ){	// バックアップ
 			HANDLE hFile;
 			TCHAR *ptr;
-			TCHAR fpath[MAX_PATH],fname[VFPS];
+			TCHAR fpath[MAX_PATH], fname[VFPS];
 			BOOL error = FALSE;
 
 			ptr = PPcustCDump();
-			if ( NO_ERROR != GetCustTable(T("_Setup"),StrPath,&fpath,sizeof(fpath)) ){
-				SetCustTable(T("_Setup"),StrPath,&DLLpath,TSTRSIZE(DLLpath));
+			if ( NO_ERROR != GetCustTable(T("_Setup"), StrPath, &fpath, sizeof(fpath)) ){
+				SetCustStringTable(T("_Setup"), StrPath, DLLpath, 0);
 			}
 			Get_X_save_widthUI(fpath);
-			wsprintf(fname,T("PPX%c%c%c_O.TXT"),oldver[0],oldver[2],oldver[3]);
-			CatPath(NULL,fpath,fname);
+			wsprintf(fname, T("PPX%c%c%c_O.TXT"), oldver[0], oldver[2], oldver[3]);
+			CatPath(NULL, fpath, fname);
 
-			hFile = CreateFileL(fpath,GENERIC_WRITE,0,NULL,CREATE_ALWAYS,
-					FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+			hFile = CreateFileL(fpath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
+					FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 			if ( hFile == INVALID_HANDLE_VALUE ){
 				error = TRUE;
 			}else{
 				DWORD size;
 
-				if ( WriteFile(hFile,ptr,TSTRLENGTH32(ptr),&size,NULL) == FALSE ){
+				if ( WriteFile(hFile, ptr, TSTRLENGTH32(ptr), &size, NULL) == FALSE ){
 					error = TRUE;
 				}
 				CloseHandle(hFile);
 			}
 			if ( IsTrue(error) ){
-				xmessage(XM_GrERRld,MES_FBAK);
-				PPEui(NULL,fpath,ptr);
+				xmessage(XM_GrERRld, MES_FBAK);
+				PPEui(NULL, fpath, ptr);
 			}
-			HeapFree(ProcHeap,0,ptr);
+			HeapFree(ProcHeap, 0, ptr);
 		}
 
 		if ( GetCustDataSize(T("P_arc")) <= 0 ){ // ●1.27から当分の間用意
 			oldver[1] = '\0';
-			GetCustTable(T("KC_main"),T("P"),&oldver,sizeof(oldver));
-			if ( memcmp(oldver + 1,T("%\"Pack File\" %M_xpack,!"),TSTROFF(23)) == 0){
-				SetCustTable(T("KC_main"),T("P"),&NewPackCmd,sizeof(NewPackCmd));
+			GetCustTable(T("KC_main"), T("P"), &oldver, sizeof(oldver));
+			if ( memcmp(oldver + 1, T("%\"Pack File\" %M_xpack,!"), TSTROFF(23)) == 0){
+				SetCustTable(T("KC_main"), T("P"), &NewPackCmd, sizeof(NewPackCmd));
 			}
 		}
 					// カスタマイズアップデート
 		DefCust( (X_upm < 5) ? -PPXCUSTMODE_UPDATE : PPXCUSTMODE_UPDATE );
 		PPxCommonCommand(NULL, 0, K_Lcust);
 	}
-	SetCustData(T("PPxCFG"),T(FileCfg_Version),sizeof(T(FileCfg_Version)));
+	SetCustData(T("PPxCFG"), T(FileCfg_Version), sizeof(T(FileCfg_Version)));
 
 	return;
 }
@@ -191,13 +191,13 @@ void UnHideAllPPx(void)
 			HWND hShowWnd;
 
 			hShowWnd = Sm->P[i].hWnd;
-			style = GetWindowLongPtr(hShowWnd,GWL_STYLE);
+			style = GetWindowLongPtr(hShowWnd, GWL_STYLE);
 			if ( !(style & WS_VISIBLE) ){
 				HWND hHWnd;
 
 				hHWnd = GetParent(hShowWnd);
 				if ( (hHWnd == NULL) || !IsWindow(hHWnd) ){
-					ShowWindow(hShowWnd,SW_RESTORE);
+					ShowWindow(hShowWnd, SW_RESTORE);
 				}
 			}
 		}
@@ -206,10 +206,10 @@ void UnHideAllPPx(void)
 
 // メニューの表示項目に、キー割当てを付記する(デフォルトカスタマイズ&ppcust)---
 // param がキー指定かどうかを調べる
-int GetKeyCust(const TCHAR *Cname,const TCHAR *param,int keynested)
+int GetKeyCust(const TCHAR *Cname, const TCHAR *param, int keynested)
 {
 	int key;
-	TCHAR keyword[CMDLINESIZE],buf[CMDLINESIZE];
+	TCHAR keyword[CMDLINESIZE], buf[CMDLINESIZE];
 	int count;
 
 	keynested++;
@@ -226,13 +226,13 @@ int GetKeyCust(const TCHAR *Cname,const TCHAR *param,int keynested)
 	if ( keynested >= 2 ) return key;
 	count = 0;
 											// 別の割当てがあるか検索
-	while( EnumCustTable(count,Cname,keyword,buf,sizeof(buf)) > 0 ){
+	while( EnumCustTable(count, Cname, keyword, buf, sizeof(buf)) > 0 ){
 		WORD nkey;
 		const TCHAR *pp;
 
 		count++;
 		if ( (UTCHAR)buf[0] == EXTCMD_CMD ){
-			nkey = (WORD)GetKeyCust(Cname,buf + 1,keynested);
+			nkey = (WORD)GetKeyCust(Cname, buf + 1, keynested);
 			if ( nkey == key ){
 				pp = keyword;
 				return GetKeyCode(&pp);
@@ -246,34 +246,34 @@ int GetKeyCust(const TCHAR *Cname,const TCHAR *param,int keynested)
 		}
 	}
 											// キー割当てがかぶせられているか
-	PutKeyCode(buf,key & ~K_raw);
-	if ( IsExistCustTable(Cname,buf) ){
+	PutKeyCode(buf, key & ~K_raw);
+	if ( IsExistCustTable(Cname, buf) ){
 		if ( key & K_raw ) return -1; // かぶっている
 	}
 	return key;
 }
 
-void KeymapMenuMain(const TCHAR *MenuName,const TCHAR *KeyName,int menunested)
+void KeymapMenuMain(const TCHAR *MenuName, const TCHAR *KeyName, int menunested)
 {
 	int count = 0;
 	BOOL notabfix;
-	TCHAR keyword[CMDLINESIZE],param[CMDLINESIZE],buf[CMDLINESIZE],*p;
+	TCHAR keyword[CMDLINESIZE], param[CMDLINESIZE], buf[CMDLINESIZE], *p;
 	int key;
 
 										// 列挙の開始 -------------------------
-	while( EnumCustTable(count,MenuName,keyword,param,sizeof(param)) > 0 ){
+	while( EnumCustTable(count, MenuName, keyword, param, sizeof(param)) > 0 ){
 		count++;
-		if ( !tstrcmp(keyword,T("||")) ){		// 改桁 ======================
+		if ( !tstrcmp(keyword, T("||")) ){		// 改桁 ======================
 			continue;
 		}
-		if ( !tstrcmp(keyword,T("--")) ){		// セパレータ ================
+		if ( !tstrcmp(keyword, T("--")) ){		// セパレータ ================
 			continue;
 		}
 		p = param;							// 階層メニュー ==============
-		if (	(GetLineParam((const TCHAR **)&p,buf) == '%') &&
+		if (	(GetLineParam((const TCHAR **)&p, buf) == '%') &&
 				(buf[1] == 'M') &&
 				(buf[2] != 'E') ){
-			KeymapMenuMain(buf + 1,KeyName,menunested + 1);
+			KeymapMenuMain(buf + 1, KeyName, menunested + 1);
 			continue;
 		}								// 通常の項目 ================
 		if ( !keyword[0] || !menunested ) continue;
@@ -300,30 +300,30 @@ void KeymapMenuMain(const TCHAR *MenuName,const TCHAR *KeyName,int menunested)
 				break;
 			}
 		}
-		key = GetKeyCust(KeyName,param,0);
+		key = GetKeyCust(KeyName, param, 0);
 		if ( key == 0 ) continue;
 		if ( key > 0 ){
 			if ( notabfix == FALSE ) *p++ = '\t';
 			*p = '\0';
-			if ( key & K_s ) tstrcat(p,T("Shift+"));
-			if ( key & K_c ) tstrcat(p,T("Ctrl+"));
-			if ( key & K_a ) tstrcat(p,T("Alt+"));
-			if ( key & K_e ) tstrcat(p,T("Ext+"));
+			if ( key & K_s ) tstrcat(p, T("Shift+"));
+			if ( key & K_c ) tstrcat(p, T("Ctrl+"));
+			if ( key & K_a ) tstrcat(p, T("Alt+"));
+			if ( key & K_e ) tstrcat(p, T("Ext+"));
 			if ( key & K_v ){
 				BYTE tmpkey = (BYTE)key;
 
 				if ( ((tmpkey >= 'A') && (tmpkey <= 'Z')) ||
 					 ((tmpkey >= '0') && (tmpkey <= '9')) ){
-					resetflag(key,K_v);
+					resetflag(key, K_v);
 				}
 			}
-			PutKeyCode(p + tstrlen(p),key & 0x1ff);
+			PutKeyCode(p + tstrlen(p), key & 0x1ff);
 		}else{
 			if ( *p == '\0' ) continue;
 			*p = '\0';
 		}
-		DeleteCustTable(MenuName,NULL,count-1);
-		InsertCustTable(MenuName,keyword,count - 1,param,TSTRSIZE(param));
+		DeleteCustTable(MenuName, NULL, count - 1);
+		InsertCustTable(MenuName, keyword, count - 1, param, TSTRSIZE(param));
 	}
 	return;
 }
@@ -352,72 +352,72 @@ void LockPC(void)
 }
 
 // セッション終了 -------------------------------------------------------------
-void ExitSession(HWND hWnd,UINT options)
+void ExitSession(HWND hWnd, UINT options)
 {
 	HANDLE hToken;
 	TOKEN_PRIVILEGES tkp;
 
 	if ( OpenProcessToken(GetCurrentProcess(),
-			TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,&hToken) == FALSE ){
-		xmessage(XM_NsERRd,T("OpenProcessToken"));
+			TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken) == FALSE ){
+		xmessage(XM_NsERRd, T("OpenProcessToken"));
 	}
-	LookupPrivilegeValue(NULL,SE_SHUTDOWN_NAME,&tkp.Privileges[0].Luid);
+	LookupPrivilegeValue(NULL, SE_SHUTDOWN_NAME, &tkp.Privileges[0].Luid);
 
 	tkp.PrivilegeCount = 1;
 	tkp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
 
-	AdjustTokenPrivileges(hToken,FALSE,&tkp,0,NULL,0);
+	AdjustTokenPrivileges(hToken, FALSE, &tkp, 0, NULL, 0);
 
 	if ( GetLastError() != NO_ERROR ){
-		xmessage(XM_NsERRd,T("AdjustTokenPrivileges"));
+		xmessage(XM_NsERRd, T("AdjustTokenPrivileges"));
 	}
 
 	if ( options & EWX_EXFLAG ){
-		if ( SetSystemPowerState((options & B0) ? TRUE : FALSE,FALSE) ==FALSE){
-			 xmessage(XM_NsERRd,T("Suspend"));
+		if ( SetSystemPowerState((options & B0) ? TRUE : FALSE, FALSE) ==FALSE){
+			 xmessage(XM_NsERRd, T("Suspend"));
 		}
 	}else{
-		if ( !ExitWindowsEx(options,0) ) xmessage(XM_NsERRd,T("ExitWindows"));
-		if ( GetParent(hWnd) == NULL ) PostMessage(hWnd,WM_CLOSE,0,0);
+		if ( !ExitWindowsEx(options, 0) ) xmessage(XM_NsERRd, T("ExitWindows"));
+		if ( GetParent(hWnd) == NULL ) PostMessage(hWnd, WM_CLOSE, 0, 0);
 	}
 	CloseHandle(hToken);
 }
 
-void SendWmSysyemMessage(WPARAM command,LPARAM lParam)
+void SendWmSysyemMessage(WPARAM command, LPARAM lParam)
 {
 	DWORD_PTR sendresult;
 
 	Sleep(400);
-	SendMessageTimeout(HWND_BROADCAST,WM_SYSCOMMAND,command,lParam,SMTO_ABORTIFHUNG,2000,&sendresult);
+	SendMessageTimeout(HWND_BROADCAST, WM_SYSCOMMAND, command, lParam, SMTO_ABORTIFHUNG, 2000, &sendresult);
 }
 
 // 表示Z座標を変更 ------------------------------------------------------------
-void WindowZPosition(HWND hWnd,HWND mode)
+void WindowZPosition(HWND hWnd, HWND mode)
 {
-	DWORD inactiveTID,activeTID;
+	DWORD inactiveTID, activeTID;
 
-	inactiveTID	= GetWindowThreadProcessId(hWnd,NULL);
-	activeTID	= GetWindowThreadProcessId(GetForegroundWindow(),NULL);
-	AttachThreadInput(inactiveTID,activeTID, TRUE);
-	SetWindowPos(hWnd,mode,0,0,0,0,SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
-	AttachThreadInput(inactiveTID,activeTID, FALSE);
+	inactiveTID	= GetWindowThreadProcessId(hWnd, NULL);
+	activeTID	= GetWindowThreadProcessId(GetForegroundWindow(), NULL);
+	AttachThreadInput(inactiveTID, activeTID, TRUE);
+	SetWindowPos(hWnd, mode, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+	AttachThreadInput(inactiveTID, activeTID, FALSE);
 }
 /*
 const TCHAR ImmersiveShellPatg[] = T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\ImmersiveShell");
 const TCHAR TabletMode[] = T("TabletMode");
 
-void WmSettingChange(HWND hWnd,LPARAM lParam)
+void WmSettingChange(HWND hWnd, LPARAM lParam)
 {
 	if ( lParam == 0 ) break;
-	if ( tstrcmp((TCHAR *)lParam,T("UserInteractionMode")) == 0 ){
+	if ( tstrcmp((TCHAR *)lParam, T("UserInteractionMode")) == 0 ){
 		DWORD value;
 
-		PostMessage(hWnd,WM_PPXCOMMAND,LOAD_UserInteractionMode);
+		PostMessage(hWnd, WM_PPXCOMMAND, LOAD_UserInteractionMode);
 
-		if ( IsTrue(GetRegString(HKEY_CURRENT_USER,ImmersiveShellPatg,TabletMode,(TCHAR *)&value,sizeof(value))) ){
-			GetCustData(T("X_pmc"),&X_pmc,sizeof(X_pmc));
+		if ( IsTrue(GetRegString(HKEY_CURRENT_USER, ImmersiveShellPatg, TabletMode, (TCHAR *)&value, sizeof(value))) ){
+			GetCustData(T("X_pmc"), &X_pmc, sizeof(X_pmc));
 			TouchMode = value ? ~X_pmc[1] : 0;
-			PostMessage(hWnd,WM_PPXCOMMAND,value ? K_E_TABLET : K_E_PC,0);
+			PostMessage(hWnd, WM_PPXCOMMAND, value ? K_E_TABLET : K_E_PC, 0);
 		}
 	}
 }
@@ -427,20 +427,20 @@ void WmSettingChange(HWND hWnd,LPARAM lParam)
 
 return ERROR_INVALID_FUNCTION :未処理
 -----------------------------------------------------------------------------*/
-PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd,WPARAM wParam,WORD key)
+PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd, WPARAM wParam, WORD key)
 {
 	key &= ~K_raw;
 	switch ( key ){
 		case K_s | K_F1:
 		case K_F1:
-			PPxHelp(hWnd,HELP_FINDER,0);
+			PPxHelp(hWnd, HELP_FINDER, 0);
 			break;
 
 		case K_GETJOBWINDOW:
 			if ( wParam == 0 ) return (Sm->JobList.hWnd != NULL);
 			if ( wParam == 1 ){
 				if ( Sm->JobList.hWnd != NULL ){
-					PostMessage(Sm->JobList.hWnd,WM_CLOSE,0,0);
+					PostMessage(Sm->JobList.hWnd, WM_CLOSE, 0, 0);
 				}
 				break;
 			}
@@ -455,11 +455,11 @@ PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd,WPARAM wParam,WORD key)
 			break;
 
 		case K_ADDJOBTASK:
-			SetJobTask(hWnd,(wParam & JOBFLAG_STATEMASK) ? wParam : wParam | JOBSTATE_REGIST);
+			SetJobTask(hWnd, (wParam & JOBFLAG_STATEMASK) ? wParam : wParam | JOBSTATE_REGIST);
 			break;
 
 		case K_DELETEJOBTASK:
-			SetJobTask(hWnd,JOBSTATE_UNREGIST);
+			SetJobTask(hWnd, JOBSTATE_UNREGIST);
 			break;
 
 		case K_CLEANUP:					// Clean up -------------------------
@@ -485,21 +485,21 @@ PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd,WPARAM wParam,WORD key)
 				hComctl32 = NULL;
 			}
 			if ( TempPath[0] != '\0' ){
-				DeleteDirectories(TempPath,FALSE);
+				DeleteDirectories(TempPath, FALSE);
 				TempPath[0] = '\0';
 			}
 			FreePPx();
 			break;
 /*
 		case K_SETTINGCHANGE:
-			WmSettingChange(hWnd,wParam);
+			WmSettingChange(hWnd, wParam);
 			break;
 		case K_E_PC:
 			TouchMode = 0;
 			break;
 */
 		case K_E_TABLET:
-			GetCustData(T("X_pmc"),&X_pmc,sizeof(X_pmc));
+			GetCustData(T("X_pmc"), &X_pmc, sizeof(X_pmc));
 			TouchMode = ~X_pmc[1];
 			break;
 
@@ -512,11 +512,11 @@ PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd,WPARAM wParam,WORD key)
 			}
 			CleanUpEdit();
 			if ( (usertypes != INVALID_HANDLE_VALUE) && (usertypes != NULL) ){
-				HeapFree(DLLheap,0,usertypes);
+				HeapFree(DLLheap, 0, usertypes);
 				usertypes = INVALID_HANDLE_VALUE;
 			}
 			ReloadMessageText();
-			GetCustData(T("X_log"),&X_log,sizeof(X_log));
+			GetCustData(T("X_log"), &X_log, sizeof(X_log));
 			X_execs = -1;
 			X_Keyra = 1;
 			X_dss = DSS_NOLOAD;
@@ -526,13 +526,13 @@ PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd,WPARAM wParam,WORD key)
 			break;
 
 		case K_HIDE:					// Hide window
-			if ( !(GetWindowLongPtr(hWnd,GWL_STYLE) & WS_VISIBLE) ){
+			if ( !(GetWindowLongPtr(hWnd, GWL_STYLE) & WS_VISIBLE) ){
 				break; // 既に hide の状態
 			}
 			if ( PPxGetHWND(T(PPTRAY_REGID) T("A")) == NULL ){
-				ComExecSelf(hWnd,T(PPTRAYEXE),DLLpath,0,NULL);
+				ComExecSelf(hWnd, T(PPTRAYEXE), DLLpath, 0, NULL);
 			}
-			ShowWindow(hWnd,SW_HIDE);
+			ShowWindow(hWnd, SW_HIDE);
 			break;
 
 		case K_UNHIDEALL:				// Un Hide All PPx
@@ -540,16 +540,16 @@ PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd,WPARAM wParam,WORD key)
 			break;
 
 		case K_WTOP:					// Top window
-			WindowZPosition(hWnd,HWND_TOP);
+			WindowZPosition(hWnd, HWND_TOP);
 			break;
 
 		case K_WBOT:					// Bottom window
-			WindowZPosition(hWnd,HWND_BOTTOM);
+			WindowZPosition(hWnd, HWND_BOTTOM);
 			break;
 
 		case K_c | 'L':					// Redraw -----------------------------
 		case K_s | K_F5:
-			InvalidateRect(hWnd,NULL,TRUE);
+			InvalidateRect(hWnd, NULL, TRUE);
 			break;
 #if 0
 		case K_a | K_space: {			// System Memu ------------------------
@@ -557,76 +557,77 @@ PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd,WPARAM wParam,WORD key)
 
 			if ( pos == NULL ){
 				GetMessagePosPoint(temppos);
-				ClientToScreen(hWnd,&temppos);
+				ClientToScreen(hWnd, &temppos);
 				pos = &temppos;
 			}
-			SendMessage(hWnd,WM_ENTERMENULOOP,FALSE,0);
-			TrackPopupMenu(GetSystemMenu(hWnd,FALSE),
-					TPM_LEFTALIGN | TPM_LEFTBUTTON,pos->x,pos->y,0,hWnd,NULL);
-			SendMessage(hWnd,WM_EXITMENULOOP,FALSE,0);
+			SendMessage(hWnd, WM_ENTERMENULOOP, FALSE, 0);
+			TrackPopupMenu(GetSystemMenu(hWnd, FALSE),
+					TPM_LEFTALIGN | TPM_LEFTBUTTON,
+					pos->x, pos->y, 0, hWnd, NULL);
+			SendMessage(hWnd, WM_EXITMENULOOP, FALSE, 0);
 			break;
 		}
 #endif
 		case K_cust:					// Customizer -------------------------
-			ComExecSelf(hWnd,T(PPCUSTEXE),DLLpath,0,NULL);
+			ComExecSelf(hWnd, T(PPCUSTEXE), DLLpath, 0, NULL);
 			break;
 
 		case K_ANDV:					// Allocate Network drive -------------
-			ExecWNetDialog("WNetConnectionDialog",hWnd);
+			ExecWNetDialog("WNetConnectionDialog", hWnd);
 			break;
 
 		case K_FNDV:					// Free Network drive -----------------
-			ExecWNetDialog("WNetDisconnectDialog",hWnd);
+			ExecWNetDialog("WNetDisconnectDialog", hWnd);
 			break;
 
 		case K_Loff:					// Logoff -----------------------------
-			ExitSession(hWnd,EWX_LOGOFF);
+			ExitSession(hWnd, EWX_LOGOFF);
 			break;
 
 		case K_Poff:					// Poweroff ---------------------------
-			ExitSession(hWnd,EWX_POWEROFF);
+			ExitSession(hWnd, EWX_POWEROFF);
 			break;
 
 		case K_Rbt:						// Reboot -----------------------------
-			ExitSession(hWnd,EWX_REBOOT);
+			ExitSession(hWnd, EWX_REBOOT);
 			break;
 
 		case K_Sdw:						// Shutdown ---------------------------
-			ExitSession(hWnd,EWX_SHUTDOWN);
+			ExitSession(hWnd, EWX_SHUTDOWN);
 			break;
 
 		case K_Fsdw:					// Force Shutdown ---------------------
-			ExitSession(hWnd,EWX_FORCE);
+			ExitSession(hWnd, EWX_FORCE);
 			break;
 
 		case K_Suspend:					// Suspend ---------------------
-			ExitSession(hWnd,EWX_EX_SUSPEND);
+			ExitSession(hWnd, EWX_EX_SUSPEND);
 			break;
 
 		case K_Hibernate:				// Hibernate ---------------------
-			ExitSession(hWnd,EWX_EX_HIBERNATE);
+			ExitSession(hWnd, EWX_EX_HIBERNATE);
 			break;
 
 		case K_SSav:					// Screen saver -----------------------
-			SendWmSysyemMessage(SC_SCREENSAVE,0);
+			SendWmSysyemMessage(SC_SCREENSAVE, 0);
 			break;
 
 		case K_supot:					// Support ----------------------------
-			if ( PMessageBox(hWnd,MES_QTWP,MES_TTWP,
+			if ( PMessageBox(hWnd, MES_QTWP, MES_TTWP,
 					MB_YESNO | MB_DEFBUTTON2 | MB_ICONQUESTION) == IDYES){
-				ComExecSelf(hWnd,T(TOROsWEBPAGE),DLLpath,0,NULL);
+				ComExecSelf(hWnd, T(TOROsWEBPAGE), DLLpath, 0, NULL);
 			}
 			break;
 
 		case K_s | K_esc:				// Iconic/Minimize --------------------
-			SendMessage(hWnd,WM_SYSCOMMAND,SC_MINIMIZE,MAX32);
+			SendMessage(hWnd, WM_SYSCOMMAND, SC_MINIMIZE, MAX32);
 			break;
 
 		case K_c | K_tab:				// [TAB] next ppx ---------------------
 		case K_c | K_s | K_tab:{		// \[TAB] pre ppx ---------------------
 			HWND hNextWnd;
 
-			hNextWnd = PPxGetWindow(NULL,(key == (K_c | K_tab)) ? 1 : -1);
+			hNextWnd = PPxGetWindow(NULL, (key == (K_c | K_tab)) ? 1 : -1);
 			if ( hNextWnd != NULL ){
 				ForceSetForegroundWindow(hNextWnd);
 				SetFocus(hNextWnd);
@@ -635,28 +636,28 @@ PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd,WPARAM wParam,WORD key)
 		}
 
 		case K_a | K_up:				// &[↑] move -------------------------
-			MoveWindowByKey(hWnd,0,-1);
+			MoveWindowByKey(hWnd, 0, -1);
 			break;
 
 		case K_a | K_dw:				// &[↓] move -------------------------
-			MoveWindowByKey(hWnd,0,1);
+			MoveWindowByKey(hWnd, 0, 1);
 			break;
 
 		case K_a | K_lf:				// &[←] move -------------------------
-			MoveWindowByKey(hWnd,-1,0);
+			MoveWindowByKey(hWnd, -1, 0);
 			break;
 
 		case K_a | K_ri:				// &[→] move -------------------------
-			MoveWindowByKey(hWnd,1,0);
+			MoveWindowByKey(hWnd, 1, 0);
 			break;
 
 		case K_c | K_s | K_v | VK_ADD:
 		case K_c | K_s | K_v | VK_OEM_PLUS: // US[=/+] JIS[;/+]
-			ChangeOpaqueWindow(hWnd,1);
+			ChangeOpaqueWindow(hWnd, 1);
 			break;
 		case K_c | K_s | K_v | VK_SUBTRACT:
 		case K_c | K_s | K_v | VK_OEM_MINUS: // US[-/_] JIS[-/=]
-			ChangeOpaqueWindow(hWnd,-1);
+			ChangeOpaqueWindow(hWnd, -1);
 			break;
 
 		case K_SETIME:
@@ -668,9 +669,9 @@ PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd,WPARAM wParam,WORD key)
 			break;
 
 		case K_IMEOFF:
-			SetIMEStatus(hWnd,0);
+			SetIMEStatus(hWnd, 0);
 			if ( GetShiftKey() & K_e ){
-				keybd_event((BYTE)X_es,0,KEYEVENTF_KEYUP,0);
+				keybd_event((BYTE)X_es, 0, KEYEVENTF_KEYUP, 0);
 			}
 			break;
 
@@ -680,12 +681,12 @@ PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd,WPARAM wParam,WORD key)
 	return NO_ERROR;
 }
 
-PPXDLL LRESULT PPXAPI PPxCommonExtCommand(WORD key,WPARAM wParam)
+PPXDLL LRESULT PPXAPI PPxCommonExtCommand(WORD key, WPARAM wParam)
 {
 	switch( key ){
 		case K_menukeycust:				// Menu key comment customize ---------
-			KeymapMenuMain(T("MC_menu"),T("KC_main"),0);
-			KeymapMenuMain(T("MV_menu"),T("KV_main"),0);
+			KeymapMenuMain(T("MC_menu"), T("KC_main"), 0);
+			KeymapMenuMain(T("MV_menu"), T("KV_main"), 0);
 			break;
 
 		case K_REPORTSHUTDOWN:
@@ -702,15 +703,15 @@ PPXDLL LRESULT PPXAPI PPxCommonExtCommand(WORD key,WPARAM wParam)
 		case KC_HOOKADDPROC: {
 			DWORD ThreadID;
 
-			ThreadID = GetWindowThreadProcessId((HWND)wParam,NULL);
+			ThreadID = GetWindowThreadProcessId((HWND)wParam, NULL);
 			if ( ThreadID == 0 ) return ERROR_INVALID_DATA;
-			hAutoDDDLL = SetWindowsHookEx(WH_CALLWNDPROC,(HOOKPROC)AutoDDDLLProc,DLLhInst,ThreadID);
+			hAutoDDDLL = SetWindowsHookEx(WH_CALLWNDPROC, (HOOKPROC)AutoDDDLLProc, DLLhInst, ThreadID);
 			break;
 		}
 
 		case KC_UNHOOKADDPROC:
 			UnhookWindowsHookEx(hAutoDDDLL);
-			PostMessage((HWND)wParam,WM_NULL,0,0); // DLL切り離しを指示する
+			PostMessage((HWND)wParam, WM_NULL, 0, 0); // DLL切り離しを指示する
 			break;
 
 		case K_SETAPPID:
@@ -718,25 +719,28 @@ PPXDLL LRESULT PPXAPI PPxCommonExtCommand(WORD key,WPARAM wParam)
 			break;
 
 		case K_CPOPMENU:
-			return TTrackPopupMenu(NULL,(HMENU)wParam,NULL);
+			return TTrackPopupMenu(NULL, (HMENU)wParam, NULL);
 
 		case K_TBB_INIT:
 			InitTaskBarButtonIF(wParam);
 			break;
 
 		case K_TBB_PROGRESS:
-			SetTaskBarButtonProgress(((TASKBARBUTTONPROGRESSINFO *)wParam)->hWnd,((TASKBARBUTTONPROGRESSINFO *)wParam)->nowcount,((TASKBARBUTTONPROGRESSINFO *)wParam)->maxcount);
+			SetTaskBarButtonProgress(
+					((TASKBARBUTTONPROGRESSINFO *)wParam)->hWnd,
+					((TASKBARBUTTONPROGRESSINFO *)wParam)->nowcount,
+					((TASKBARBUTTONPROGRESSINFO *)wParam)->maxcount);
 			break;
 
 		case K_TBB_STOPPROGRESS:
-			SetTaskBarButtonProgress((HWND)wParam,TBPF_NOPROGRESS,0);
+			SetTaskBarButtonProgress((HWND)wParam, TBPF_NOPROGRESS, 0);
 			break;
 
 		case K_FLASHWINDOW:
-			return PPxFlashWindow((HWND)wParam,PPXFLASH_FLASH);
+			return PPxFlashWindow((HWND)wParam, PPXFLASH_FLASH);
 
 		case K_STOPFLASHWINDOW:
-			return PPxFlashWindow((HWND)wParam,PPXFLASH_STOP);
+			return PPxFlashWindow((HWND)wParam, PPXFLASH_STOP);
 
 		case K_SETFAULTOPTIONINFO:
 			FaultOptionInfo = (void **)wParam;

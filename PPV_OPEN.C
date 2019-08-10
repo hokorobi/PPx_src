@@ -174,10 +174,10 @@ void InitRawImageRectSize(void)
 	vo_.bitmap.rawsize.cy = 1;
 	if ( vo_.bitmap.ShowInfo->biBitCount ){
 		DWORD linesize = DwordBitSize(vo_.bitmap.rawsize.cx * vo_.bitmap.ShowInfo->biBitCount);
-		if ( vo_.file.size.l < linesize ){ // 1行満たない
+		if ( vo_.file.UseSize < linesize ){ // 1行満たない
 			vo_.bitmap.rawsize.cx = (vo_.bitmap.rawsize.cx * 8) / (vo_.bitmap.ShowInfo->biBitCount);
 		}else{
-			vo_.bitmap.rawsize.cy = vo_.file.size.l / linesize;
+			vo_.bitmap.rawsize.cy = vo_.file.UseSize / linesize;
 		}
 		vo_.bitmap.ShowInfo->biWidth = vo_.bitmap.rawsize.cx;
 		vo_.bitmap.ShowInfo->biHeight = vo_.bitmap.rawsize.cy;
@@ -246,8 +246,9 @@ void InitPNG(GETPAGESTRUCT *gpage)
 	BOOL findfcTL = FALSE;
 	DWORD timer = 1000;
 
-	if ( vo_.file.size.h ) return;
-
+#ifdef _WIN64
+	if ( vo_.file.UseSize > ((DWORD)3 * GB) ) return;
+#endif
 	if ( gpage != NULL ){
 		gpage->headersize = offset;
 		gpage->timer = 1000;
@@ -259,7 +260,7 @@ void InitPNG(GETPAGESTRUCT *gpage)
 		page = gpage->page;
 	}
 
-	while( vo_.file.size.l > offset ){
+	while( vo_.file.UseSize > offset ){
 		PNGchunk *pc;
 
 		pc = (PNGchunk *)(vo_.file.image + offset);
@@ -363,7 +364,9 @@ void InitGIF(GETPAGESTRUCT *gpage)
 	int imagecount = 0,firsttimer = 0;
 	GIFHEADER *gh;
 
-	if ( vo_.file.size.h ) return;
+#ifdef _WIN64
+	if ( vo_.file.UseSize > ((DWORD)3 * GB) ) return;
+#endif
 	gh = (GIFHEADER *)vo_.file.image;
 	if ( gh->flag & GIFHEADER_FLAG_USEPALETTE ){
 		offset += GIFHEADERGETPALETTE(gh->flag);
@@ -376,12 +379,12 @@ void InitGIF(GETPAGESTRUCT *gpage)
 		gpage->dispoffset.y = 0;
 		gpage->trans = -1;
 	}
-	while( vo_.file.size.l > offset ){
+	while( vo_.file.UseSize > offset ){
 		switch ( *(vo_.file.image + offset) ){
 			case GIFHEADER_IMAGEBLOCKID: {	// Image
 				GIFIMAGEHEADER *gih;
 
-				if ( vo_.file.size.l <= (offset + sizeof(GIFIMAGEHEADER) + 1) ){
+				if ( vo_.file.UseSize <= (offset + sizeof(GIFIMAGEHEADER) + 1) ){
 					break;
 				}
 				if ( gpage != NULL ) gpage->offset = offset;
@@ -391,7 +394,7 @@ void InitGIF(GETPAGESTRUCT *gpage)
 					offset += GIFHEADERGETPALETTE(gih->flag);
 				}
 				offset += sizeof(GIFIMAGEHEADER) + 1;
-				while( vo_.file.size.l >= (offset + 1) ){ // data block
+				while( vo_.file.UseSize >= (offset + 1) ){ // data block
 					BYTE size;
 
 					size = *(vo_.file.image + offset++);
@@ -403,7 +406,7 @@ void InitGIF(GETPAGESTRUCT *gpage)
 						gpage->dispoffset.x = gih->left;
 						gpage->dispoffset.y = gih->top;
 						gpage->size = offset - gpage->offset;
-						offset = vo_.file.size.l; // 走査終了
+						offset = vo_.file.UseSize; // 走査終了
 					}
 				}else if ( (imagecount == 0) && (PreFrameInfo.page == PreFramePage_NoCheck) ){
 					PreFrameInfo.offset.x = gih->left;
@@ -416,12 +419,12 @@ void InitGIF(GETPAGESTRUCT *gpage)
 			case GIFHEADER_EXTENSIONID: {	// Extension
 				BYTE id;
 
-				if ( vo_.file.size.l <= (offset + 3) ) break;
+				if ( vo_.file.UseSize <= (offset + 3) ) break;
 				id = *(vo_.file.image + offset + 1);
 				offset += 2;
 
 				if ( (id == GIFHEADER_EXTENSION_CONTROL) &&
-						(vo_.file.size.l >= (offset + 5)) ){
+						(vo_.file.UseSize >= (offset + 5)) ){
 					GIFCONTROLHEADER *gt;
 
 					gt = (GIFCONTROLHEADER *)(vo_.file.image + offset);
@@ -459,7 +462,7 @@ void InitGIF(GETPAGESTRUCT *gpage)
 					}
 				}
 
-				while( vo_.file.size.l >= (offset + 1) ){ // data block
+				while( vo_.file.UseSize >= (offset + 1) ){ // data block
 					BYTE size;
 
 					size = *(vo_.file.image + offset++);
@@ -471,7 +474,7 @@ void InitGIF(GETPAGESTRUCT *gpage)
 
 			case GIFHEADER_ENDID:	// end
 			default:	// 不明
-				offset = vo_.file.size.l;
+				offset = vo_.file.UseSize;
 				break;
 		}
 	}
@@ -495,8 +498,9 @@ GetDWORDfunc InitTIFF(GETPAGESTRUCT *gpage)
 	GetWORDfunc GetWord;
 	GetDWORDfunc GetDword;
 
-	if ( vo_.file.size.h ) return NULL;
-
+#ifdef _WIN64
+	if ( vo_.file.UseSize > ((DWORD)3 * GB) ) return NULL;
+#endif
 	if ( *vo_.file.image == 'M' ){
 		GetDword = GetBigEndDWORD;
 		GetWord = GetBigEndWORD;
@@ -513,11 +517,11 @@ GetDWORDfunc InitTIFF(GETPAGESTRUCT *gpage)
 		gpage->trans = -1;
 	}
 	if ( gpage != NULL ) gpage->offset = 8;	// 仮のオフセットを用意
-	while( vo_.file.size.l > (offset + sizeof(DWORD)) ){
+	while( vo_.file.UseSize > (offset + sizeof(DWORD)) ){
 		int IFDdata;
 
 		offset = GetDword(vo_.file.image + offset); // IFD の場所を取得
-		if ( !offset || (vo_.file.size.l <= (offset + sizeof(WORD))) ) break;
+		if ( !offset || (vo_.file.UseSize <= (offset + sizeof(WORD))) ) break;
 		if ( (gpage != NULL) && (IFDcount == gpage->page) ){
 			gpage->offset = offset;
 			break;
@@ -714,7 +718,7 @@ void SetHighlight(PPV_APPINFO *vinfo)
 	if ( PP_ExtractMacro(vinfo->info.hWnd, &vinfo->info, NULL, T("%\"") MES_THIL T("\"*string i,Highlight=%{%s\"Highlight\"%}"), NULL, 0) != NO_ERROR ) return;
 
 	vft.flags = VFSFT_TYPE;
-	if ( VFSGetFileType(vo_.file.name, (char *)vo_.file.image, vo_.file.size.l, &vft) != NO_ERROR ){
+	if ( VFSGetFileType(vo_.file.name, (char *)vo_.file.image, vo_.file.UseSize, &vft) != NO_ERROR ){
 		vft.type[0] = '\0';
 	}
 	LoadHighlight(&vft);
@@ -747,11 +751,11 @@ void ImageRealloc(void)
 	oldH = vo_.file.mapH;
 	GlobalUnlock(oldH);
 
-	newH = GlobalReAlloc(oldH, vo_.file.sizeLmax * 2, GMEM_MOVEABLE);
+	newH = GlobalReAlloc(oldH, vo_.file.ImageSize * 2 + FILEBUFMARGIN, GMEM_MOVEABLE);
 	if ( newH == NULL ){ // 確保失敗
 		newH = oldH;
 	}else{ // ２倍に拡張
-		vo_.file.sizeLmax *= 2;
+		vo_.file.ImageSize *= 2;
 	}
 	newImage = GlobalLock(newH);
 	if ( newImage != oldImage ){ // アドレスがずれるので、補正をする
@@ -764,7 +768,7 @@ void ImageRealloc(void)
 			// mtinfo.MemSize
 			MakeIndexTable(MIT_FIRST,MIT_PARAM_DOCUMENT);
 		}else{
-			mtinfo.MemSize = vo_.file.size.l;
+			mtinfo.MemSize = vo_.file.UseSize;
 			MakeIndexTable(MIT_FIRST,MIT_PARAM_TEXT);
 		}
 	}
@@ -778,14 +782,14 @@ BOOL ReadData(DWORD starttime)
 	BOOL readend = FALSE;
 
 	if ( ReadingStream != READ_STDIN ){	// ファイル
-		if ( (vo_.file.sizeLmax - vo_.file.size.l) < ReadStep ){
-			ReadStep = vo_.file.sizeLmax - vo_.file.size.l;
+		if ( (vo_.file.ImageSize - vo_.file.UseSize) < ReadStep ){
+			ReadStep = vo_.file.ImageSize - vo_.file.UseSize;
 		}
 		if ( vo_.file.name[0] == '#' ){
 			if ( ReadStep > 0x10000 ) ReadStep = 0x10000;
 		}
 	}else{	// READ_STDIN 標準入力
-		if ( vo_.file.size.l == 0 ){
+		if ( vo_.file.UseSize == 0 ){
 			ReadStep = 100;
 		}else{
 			if ( PeekNamedPipe(hReadStream,NULL,0,NULL,&ReadStep,NULL) == FALSE ){
@@ -794,19 +798,19 @@ BOOL ReadData(DWORD starttime)
 				if ( ReadStep == 0 ) return FALSE;
 			}
 			// メモリ再確保
-			if ( (ReadStep + vo_.file.size.l) > (vo_.file.sizeLmax - FILEBUFMARGIN) ){
+			if ( (ReadStep + vo_.file.UseSize) > vo_.file.ImageSize ){
 				ImageRealloc();
 
 				// メモリ不足のため読めるだけ読んでから終了
-				if ( (ReadStep + vo_.file.size.l) > (vo_.file.sizeLmax - FILEBUFMARGIN) ){
-					ReadStep = vo_.file.sizeLmax - FILEBUFMARGIN - vo_.file.size.l;
+				if ( (ReadStep + vo_.file.UseSize) > vo_.file.ImageSize ){
+					ReadStep = vo_.file.ImageSize - vo_.file.UseSize;
 					readend = TRUE;
 				}
 			}
 		}
 	}
 	loadsize = ReadStep;
-	rp = vo_.file.image + vo_.file.size.l;
+	rp = vo_.file.image + vo_.file.UseSize;
 	while( loadsize ){
 		if ( ReadFile(hReadStream,rp,
 				(loadsize > 0x10000 ? (loadsize / 16) : loadsize),
@@ -815,7 +819,7 @@ BOOL ReadData(DWORD starttime)
 			rp = NULL;
 		}else{
 			rp += load;
-			vo_.file.size.l += load;
+			vo_.file.UseSize += load;
 			if ( ReadFileBreakCheck() != FALSE ){
 				load = 0;
 				SetPopMsg(POPMSG_NOLOGMSG,MES_BRAK);
@@ -827,8 +831,8 @@ BOOL ReadData(DWORD starttime)
 		if ( (endtime - starttime) >= READINTERVAL_FILEREAD ) break;
 	}
 	if ( (readend != FALSE) || (load == 0) ){ // ファイルのread完了
-		if ( (rp != NULL) && (vo_.file.sizeLmax > vo_.file.size.l) ){
-			memset(rp,0xaa,vo_.file.sizeLmax - vo_.file.size.l);
+		if ( vo_.file.ImageSize > vo_.file.UseSize ){
+			memset(vo_.file.image + vo_.file.UseSize, 0xaa, vo_.file.ImageSize - vo_.file.UseSize);
 		}
 		CloseHandle(hReadStream);
 		hReadStream = NULL;
@@ -876,7 +880,7 @@ void CALLBACK BackReaderProc(HWND hWnd,UINT uMsg,UINT_PTR idEvent,DWORD dwTime)
 	starttime = GetTickCount();
 	if ( ReadingStream != READ_NONE ){ // ファイルの読み込み
 		if ( ReadData(starttime) == FALSE ){	// 読み込み中
-			mtinfo.MemSize = vo_.file.size.l;
+			mtinfo.MemSize = vo_.file.UseSize;
 		}else{						// 読み込み完了
 			DWORD olddt;
 
@@ -893,7 +897,7 @@ void CALLBACK BackReaderProc(HWND hWnd,UINT uMsg,UINT_PTR idEvent,DWORD dwTime)
 			InvalidateRect(hWnd,NULL,FALSE);
 		}
 		if ( vo_.DModeBit == DOCMODE_HEX ){
-			VOi->line = ((vo_.file.size.l + 15) >> 4);
+			VOi->line = ((vo_.file.UseSize + 15) >> 4);
 		}
 	}
 
@@ -983,7 +987,7 @@ int VD_emf(void)
 {
 	SetAllTextCode(VTYPE_SYSTEMCP);
 	if ( vo_.eMetafile.handle != NULL ) return 0;
-	vo_.eMetafile.handle = SetEnhMetaFileBits(vo_.file.size.l,vo_.file.image);
+	vo_.eMetafile.handle = SetEnhMetaFileBits(vo_.file.UseSize, vo_.file.image);
 	if ( vo_.eMetafile.handle != NULL ){
 		ENHMETAHEADER metah;
 
@@ -1101,19 +1105,19 @@ int VD_word7(void)
 	DWORD off;
 
 	off = 0x200 + *(DWORD *)(vo_.file.image + 0x218);
-	if ( off >= vo_.file.size.l ) off = 0;
+	if ( off >= vo_.file.UseSize ) off = 0;
 
 	vo_.SupportTypeFlags = VO_type_ALLDOCUMENT;
 	SetAllTextCode(VTYPE_SJISB);
 	VOi->img = vo_.file.image + off;
 
-	if ( (off + 8) < vo_.file.size.l ){
+	if ( (off + 8) < vo_.file.UseSize ){
 		if( !memcmp(VOi->img,"\x79\x81\x91\x8f\xde\x97\xbc\x96",8) ){
 			VOi->width = 72;
 		}
 	}
 
-	mtinfo.MemSize = vo_.file.size.l - off;
+	mtinfo.MemSize = vo_.file.UseSize - off;
 	MakeIndexTable(MIT_FIRST,MIT_PARAM_DOCUMENT);
 	return 0;
 }
@@ -1125,7 +1129,7 @@ int VD_word8(void)
 	BYTE *p;
 
 	off = 0x200 + *(DWORD *)(vo_.file.image + 0x218);
-	if ( off >= vo_.file.size.l ) off = 0;
+	if ( off >= vo_.file.UseSize ) off = 0;
 	if ( !*(DWORD *)(vo_.file.image + off) ) off += 0x200;
 
 	p = vo_.file.image + off;
@@ -1141,7 +1145,7 @@ int VD_word8(void)
 	SetAllTextCode(type);
 	VOi->img = vo_.file.image + off;
 
-	mtinfo.MemSize = vo_.file.size.l - off;
+	mtinfo.MemSize = vo_.file.UseSize - off;
 	MakeIndexTable(MIT_FIRST,MIT_PARAM_DOCUMENT);
 	return 0;
 }
@@ -1160,7 +1164,7 @@ int VD_oasys(void)
 	}
 	VOi->MakeText = VD_oasys_mdt;
 
-	if ( vo_.file.size.l > 0x7d0 ){
+	if ( vo_.file.UseSize > 0x7d0 ){
 		p = (BYTE *)vo_.file.image + 0x7d0;
 	}else{
 		p = (BYTE *)vo_.file.image;
@@ -1172,7 +1176,7 @@ int VD_oasys(void)
 	}
 	VOi->img = p + 2;
 
-	mtinfo.MemSize = vo_.file.size.l - (VOi->img - vo_.file.image);
+	mtinfo.MemSize = vo_.file.UseSize - (VOi->img - vo_.file.image);
 	MakeIndexTable(MIT_FIRST,MIT_PARAM_DOCUMENT);
 	return 0;
 }
@@ -1183,7 +1187,7 @@ int VD_unitext(void)
 	SetAllTextCode(VTYPE_UNICODE);
 	VOi->img = vo_.file.image + 2;
 
-	mtinfo.MemSize = vo_.file.size.l - 2;
+	mtinfo.MemSize = vo_.file.UseSize - 2;
 	MakeIndexTable(MIT_FIRST,MIT_PARAM_DOCUMENT);
 	return 0;
 }
@@ -1194,7 +1198,7 @@ int VD_unitextB(void)
 	SetAllTextCode(VTYPE_UNICODEB);
 	VOi->img = vo_.file.image + 2;
 
-	mtinfo.MemSize = vo_.file.size.l - 2;
+	mtinfo.MemSize = vo_.file.UseSize - 2;
 	MakeIndexTable(MIT_FIRST,MIT_PARAM_DOCUMENT);
 	return 0;
 }
@@ -1205,7 +1209,7 @@ int VD_utf8(void)
 	SetAllTextCode(VTYPE_UTF8);
 	VOi->img = vo_.file.image + 3;
 
-	mtinfo.MemSize = vo_.file.size.l - 3;
+	mtinfo.MemSize = vo_.file.UseSize - 3;
 	MakeIndexTable(MIT_FIRST,MIT_PARAM_DOCUMENT);
 	return 0;
 }
@@ -1334,10 +1338,12 @@ HANDLE vOpenFile(const TCHAR *filename, const TCHAR **wp, const TCHAR **dllp)
 						}else{
 							memcpy(vo_.file.image, textimage, memsize);
 							memset(vo_.file.image + memsize, 0, FILEBUFMARGIN);
-							vo_.file.size.h = 0;
-							vo_.file.size.l = memsize;
 							tstrcpy(vo_.file.source, filename);
 							FileDivideMode = FDM_FORCENODIV;
+
+							vo_.file.ImageSize = memsize;
+							FileRealSize.LowPart = vo_.file.UseSize = memsize;
+							FileRealSize.HighPart = 0;
 							return INVALID_HANDLE_VALUE;
 						}
 					}
@@ -1365,25 +1371,27 @@ HANDLE vOpenFile(const TCHAR *filename, const TCHAR **wp, const TCHAR **dllp)
 			tracksize = diskinfo.TracksPerCylinder *
 				diskinfo.SectorsPerTrack * diskinfo.BytesPerSector;
 
-			DDmul(tracksize,diskinfo.Cylinders.u.LowPart,&vo_.file.size.l,&vo_.file.size.h);
-			DDmul(tracksize,diskinfo.Cylinders.u.HighPart,&tmpL,&tmpH);
-			vo_.file.size.h += tmpL;
+			DDmul(tracksize, diskinfo.Cylinders.u.LowPart,
+					&FileRealSize.LowPart, &FileRealSize.HighPart);
+			DDmul(tracksize, diskinfo.Cylinders.u.HighPart, &tmpL, &tmpH);
+			FileRealSize.HighPart += tmpL;
 		}else{
-			vo_.file.size.l = 200 * MB;
-			vo_.file.size.h = 0;
+			FileRealSize.LowPart = 200 * MB;
+			FileRealSize.HighPart = 0;
 		}
 	}else{
 		ERRORCODE result;
 
 		*wp = filename + (fp - buf);
-		vo_.file.size.l = GetFileSize(hFile,&vo_.file.size.h);
-		if ( (vo_.file.size.l == MAX32) && ((result = GetLastError()) != NO_ERROR) ){
+		FileRealSize.LowPart = GetFileSize(hFile, &FileRealSize.HighPart);
+		if ( (FileRealSize.LowPart == MAX32) && ((result = GetLastError()) != NO_ERROR) ){
 			CloseHandle(hFile);
 			VO_error(result);
 			return NULL;
 		}
 		vo_.file.IsFile = 1;
 	}
+	vo_.file.UseSize = FileRealSize.LowPart;
 	return hFile;
 patherror:
 	VO_error(ERROR_BAD_PATHNAME);
@@ -1419,13 +1427,13 @@ DWORD ReadAll(void)
 	BYTE *rp;
 
 	if ( FileDivideMode >= FDM_DIV ) return 1; // 分割時は、全て読めない
-	if ( ReadingStream == READ_NONE ) return vo_.file.size.l;
-	rp = vo_.file.image + vo_.file.size.l;
+	if ( ReadingStream == READ_NONE ) return vo_.file.UseSize;
+	rp = vo_.file.image + vo_.file.UseSize;
 
-	SetFilePointer(hReadStream,vo_.file.size.l,NULL,FILE_BEGIN);
+	SetFilePointer(hReadStream,vo_.file.UseSize, NULL, FILE_BEGIN);
 	for ( ;; ){
-		if ( (vo_.file.sizeLmax - vo_.file.size.l) < step ){
-			step = vo_.file.sizeLmax - vo_.file.size.l;
+		if ( (vo_.file.ImageSize - vo_.file.UseSize) < step ){
+			step = vo_.file.ImageSize - vo_.file.UseSize;
 		}
 		if ( ReadFile(hReadStream,rp,step,&load,NULL) == FALSE ){
 			if ( ReadingStream == READ_STDIN ) break;
@@ -1434,39 +1442,38 @@ DWORD ReadAll(void)
 		}
 		if ( load == 0 ) break;
 		rp += load;
-		vo_.file.size.l += load;
+		vo_.file.UseSize += load;
 		if ( ReadFileBreakCheck() != FALSE ){
 			SetPopMsg(POPMSG_NOLOGMSG,MES_BRAK);
 			break;
 		}
 	}
 	CloseHandle(hReadStream);
-	if ( vo_.file.sizeLmax > vo_.file.size.l ){
-		memset(rp,0xaa,vo_.file.sizeLmax - vo_.file.size.l);
+	if ( vo_.file.ImageSize > vo_.file.UseSize ){
+		memset(rp,0xaa,vo_.file.ImageSize - vo_.file.UseSize);
 	}
 	memset(rp, 0, FILEBUFMARGIN);
 	hReadStream = NULL;
 	ReadingStream = READ_NONE;
-	return vo_.file.size.l;
+	return vo_.file.UseSize;
 }
 
 BOOL OpenViewHttp(const TCHAR *filename)
 {
 	ThSTRUCT th;
 	char *bottom, *ptr;
-	DWORD tsize;
+	DWORD datasize;
 
 	if ( GetImageByHttp(filename, &th) == FALSE ) return FALSE;
 	bottom = th.bottom;
-	tsize = th.top - 1;
+	datasize = th.top - 1;
 
 	ptr = strstr(bottom, "\r\n\r\n");
 	if ( (ptr != NULL) && (*(ptr + 4) != '\0') ){
-		tsize -= ptr - bottom + 4;
+		datasize -= ptr - bottom + 4;
 		bottom = ptr + 4;
 	}
-	if ( (vo_.file.mapH = GlobalAlloc(GMEM_MOVEABLE,
-			tsize + FILEBUFMARGIN)) == NULL ){
+	if ( (vo_.file.mapH = GlobalAlloc(GMEM_MOVEABLE, datasize + FILEBUFMARGIN)) == NULL ){
 		VO_error(PPERROR_GETLASTERROR);
 		return FALSE;
 	}
@@ -1475,13 +1482,15 @@ BOOL OpenViewHttp(const TCHAR *filename)
 		VO_error(PPERROR_GETLASTERROR);
 		return FALSE;
 	}
-	memcpy(vo_.file.image, bottom, tsize);
-	*bottom = 0;
-	ThCatStringA(&vo_.memo,th.bottom);
+	memcpy(vo_.file.image, bottom, datasize);
+	*bottom = '\0';
+	ThCatStringA(&vo_.memo, th.bottom);
 	ThFree(&th);
-	memset(vo_.file.image + tsize, 0, FILEBUFMARGIN);
-	vo_.file.size.h = 0;
-	vo_.file.size.l = tsize;
+	memset(vo_.file.image + datasize, 0, FILEBUFMARGIN);
+
+	vo_.file.ImageSize = datasize;
+	FileRealSize.LowPart = vo_.file.UseSize = datasize;
+	FileRealSize.HighPart = 0;
 	tstrcpy(vo_.file.source, filename);
 	return TRUE;
 }
@@ -1511,12 +1520,12 @@ BOOL OpenViewFile(const TCHAR *filename,int flags)
 		return OpenViewHttp(filename);
 	}
 										// ファイルを開く
-	hFile = vOpenFile(filename,&wp,&dllp);
+	hFile = vOpenFile(filename, &wp, &dllp);
 	if ( hFile == NULL ) return FALSE;
 	if ( hFile == INVALID_HANDLE_VALUE ) return TRUE; // shell: のときは内部で
-	GetCustData(T("X_wsiz"),&X_wsiz,sizeof X_wsiz);
+	GetCustData(T("X_wsiz"),&X_wsiz, sizeof X_wsiz);
 	if ( !(flags & PPV__reload) ){ // 新規なら分割モードを初期化
-		if ( (vo_.file.size.h != 0) || (vo_.file.size.l >= X_wsiz) ){
+		if ( (FileRealSize.HighPart != 0) || (FileRealSize.LowPart >= X_wsiz) ){
 			const TCHAR *vp;
 
 			UsePPx();
@@ -1534,9 +1543,9 @@ BOOL OpenViewFile(const TCHAR *filename,int flags)
 							   (datasize >= HISTOPTSIZE_OLDTAIL_L) ){
 						FileDividePointer = *(DDWORDST *)(bp + 6);
 					}
-					if ( (FileDividePointer.HighPart > vo_.file.size.h) ||
-						((FileDividePointer.HighPart == vo_.file.size.h) &&
-						 (FileDividePointer.LowPart >= vo_.file.size.l) ) ){
+					if ( (FileDividePointer.HighPart > FileRealSize.HighPart) ||
+						((FileDividePointer.HighPart == FileRealSize.HighPart) &&
+						 (FileDividePointer.LowPart >= FileRealSize.LowPart) ) ){
 						FileDividePointer.LowPart = FileDividePointer.HighPart = 0;
 					}
 				}
@@ -1554,7 +1563,7 @@ BOOL OpenViewFile(const TCHAR *filename,int flags)
 															// ファイルだった
 		tstrcpy(arcfile,filename);
 		arcfile[wp - filename] = '\0';
-		GetCustData(T("X_llsiz"),&X_llsiz,sizeof(X_llsiz));
+		GetCustData(T("X_llsiz"), &X_llsiz, sizeof(X_llsiz));
 		hDWnd = vinfo.info.hWnd;
 		if ( (X_llsiz == 1) || (FileDivideMode == FDM_FORCENODIV) ){
 			X_llsiz = 1;
@@ -1562,26 +1571,26 @@ BOOL OpenViewFile(const TCHAR *filename,int flags)
 		}else if ( X_llsiz == 2 ){
 			hDWnd = (HWND)LFI_ALWAYSLIMIT;
 		}
-		result = VFSGetArchivefileImage(hDWnd,hFile,arcfile,wp,&vo_.file.size.l,
-				&vo_.file.size.h,&vo_.file.mapH,&vo_.file.image);
+		result = VFSGetArchivefileImage(hDWnd, hFile, arcfile, wp,
+				&FileRealSize.LowPart, &FileRealSize.HighPart,
+				&vo_.file.mapH,&vo_.file.image);
 //		CloseHandle(hFile); // VFSGetArchivefileImage 内で閉じている
 		if ( result != NO_ERROR ){
 			VO_error(result);
 			return FALSE;
 		}else{
-			if ( (X_llsiz == 2) && (vo_.file.size.l == X_wsiz) ){
+			if ( (X_llsiz == 2) && (FileRealSize.LowPart == X_wsiz) ){
 				FileDivideMode = FDM_DIV;
 			}
+			vo_.file.UseSize = FileRealSize.LowPart;
 			return TRUE;
 		}
 	}
 //------------------------------------- ファイルの大きさを制限する
-	FileRealSize.LowPart = vo_.file.size.l;
-	FileRealSize.HighPart = vo_.file.size.h;
-	if ( vo_.file.size.h ){
+	vo_.file.UseSize = FileRealSize.LowPart;
+	if ( FileRealSize.HighPart > 0 ){
 		if ( FileDivideMode < FDM_NODIVMAX ) FileDivideMode = FDM_DIV;
-		vo_.file.size.l = MAX32;	// 丸め込み1
-		vo_.file.size.h = 0;
+		vo_.file.UseSize = MAX32;	// 丸め込み1
 		if ( FileDividePointer.LowPart | FileDividePointer.HighPart ){
 			FileDivideMode = FDM_DIV2ND;
 		}
@@ -1591,13 +1600,13 @@ BOOL OpenViewFile(const TCHAR *filename,int flags)
 		DWORD X_svsz = 2097152;
 
 		GetCustData(T("X_svsz"),&X_svsz,sizeof(X_svsz));
-		if ( vo_.file.size.l > X_svsz ){
-			vo_.file.size.l = X_svsz;
+		if ( vo_.file.UseSize > X_svsz ){
+			vo_.file.UseSize = X_svsz;
 			FileDivideMode = FDM_DIV;
 		}
 	}
 
-	if ( vo_.file.size.l > X_wsiz ){	// 丸め込み2
+	if ( vo_.file.UseSize > X_wsiz ){	// 丸め込み2
 		int result;
 
 		if ( FileDivideMode == FDM_NODIV ){
@@ -1636,12 +1645,12 @@ BOOL OpenViewFile(const TCHAR *filename,int flags)
 		if ( result == IDYES ){
 			DDWORDST temp;
 
-			vo_.file.size.l = X_wsiz; // 分割
+			vo_.file.UseSize = X_wsiz; // 分割
 
 			temp = FileRealSize;
 			SubDD(temp.LowPart,temp.HighPart,FileDividePointer.LowPart,FileDividePointer.HighPart);
 			if ( (temp.HighPart == 0) && (temp.LowPart < X_wsiz) ){
-				vo_.file.size.l = temp.LowPart;
+				vo_.file.UseSize = temp.LowPart;
 			}
 		}else if ( result != IDNO ){ // 中止
 			VO_error(PPERROR_GETLASTERROR);
@@ -1656,13 +1665,13 @@ BOOL OpenViewFile(const TCHAR *filename,int flags)
 	if ( FileDivideMode >= FDM_DIV ){
 		SetFilePointer(hFile,FileDividePointer.LowPart,(LONG *)&FileDividePointer.HighPart,FILE_BEGIN);
 	}
-	while ( (vo_.file.mapH = GlobalAlloc(GMEM_MOVEABLE,vo_.file.size.l + FILEBUFMARGIN)) == NULL){
-		if ( vo_.file.size.l > 200 * MB ){
-			vo_.file.size.l = 200 * MB;
+	while ( (vo_.file.mapH = GlobalAlloc(GMEM_MOVEABLE,vo_.file.UseSize + FILEBUFMARGIN)) == NULL){
+		if ( vo_.file.UseSize > 200 * MB ){
+			vo_.file.UseSize = 200 * MB;
 			continue;
 		}
-		if ( vo_.file.size.l > 10 * MB ){
-			vo_.file.size.l = 10 * MB;
+		if ( vo_.file.UseSize > 10 * MB ){
+			vo_.file.UseSize = 10 * MB;
 			continue;
 		}
 		VO_error(PPERROR_GETLASTERROR);
@@ -1675,16 +1684,17 @@ BOOL OpenViewFile(const TCHAR *filename,int flags)
 		return FALSE;
 	}
 	// ヘッダ取得
-	vo_.file.sizeLmax = vo_.file.size.l;
-	size = min(vo_.file.size.l,0x1000);
+	memset( vo_.file.image + vo_.file.UseSize, 0, FILEBUFMARGIN);
+	vo_.file.ImageSize = vo_.file.UseSize;
+	size = min(vo_.file.UseSize, 0x1000);
 
 	starttime = GetTickCount();
-	if ( ReadFile(hFile,vo_.file.image,size,&vo_.file.size.l,NULL) == FALSE ){
+	if ( ReadFile(hFile,vo_.file.image,size,&vo_.file.UseSize,NULL) == FALSE ){
 		VO_error(PPERROR_GETLASTERROR);
 		CloseHandle(hFile);
 		return FALSE;
 	}
-	if ( vo_.file.sizeLmax > vo_.file.size.l ){	// 最初は多めにファイルを読み込む
+	if ( vo_.file.ImageSize > vo_.file.UseSize ){	// 最初は多めにファイルを読み込む
 		tick = GetTickCount();
 		ReadStep = 0x20000;
 		ReadingStream = READ_FILE;
@@ -1695,7 +1705,7 @@ BOOL OpenViewFile(const TCHAR *filename,int flags)
 	}else{
 		CloseHandle(hFile);
 	}
-	memset(vo_.file.image + vo_.file.size.l, 0, FILEBUFMARGIN);
+	memset(vo_.file.image + vo_.file.UseSize, 0, FILEBUFMARGIN);
 	return TRUE;
 }
 // ヒストリからカーソル位置などを取得 -----------------------------------------
@@ -1860,7 +1870,7 @@ void InitViewObject(VIEWOPTIONS *viewopts, TCHAR *type)
 
 			if ( VOi->img == NULL ){
 				VOi->width = HEXWIDTH;
-				VOi->line = ((vo_.file.size.l + 15) >> 4);
+				VOi->line = ((vo_.file.UseSize + 15) >> 4);
 				VOi->tab = 1;
 				VOi->img = vo_.file.image;
 			}
@@ -1875,7 +1885,7 @@ void InitViewObject(VIEWOPTIONS *viewopts, TCHAR *type)
 			if ( VOi->img == NULL ){
 															// 文字コード 判別
 				if ( (VOi->textC < 0) || (VOi->textC >= VTYPE_MAX) ){
-					VOi->textC = GetTextCodeType(vo_.file.image,vo_.file.size.l);
+					VOi->textC = GetTextCodeType(vo_.file.image,vo_.file.UseSize);
 					if ( VOi->textC >= VTYPE_MAX ){
 						if ( VOi->textC == CP__UTF16L ){
 							VOi->textC = VTYPE_UNICODE;
@@ -1891,7 +1901,7 @@ void InitViewObject(VIEWOPTIONS *viewopts, TCHAR *type)
 					}
 				}
 				VOi->img = vo_.file.image;
-				mtinfo.MemSize = vo_.file.size.l;
+				mtinfo.MemSize = vo_.file.UseSize;
 				MakeIndexTable(MIT_FIRST,MIT_PARAM_TEXT);
 			}
 			break;
@@ -2144,10 +2154,10 @@ BOOL OpenCursorIconObject(const TCHAR *filename,VIEWOPTIONS *viewopt)
 		VO_error(PPERROR_GETLASTERROR);
 		return FALSE;
 	}
-	if ( vo_.file.size.l < (0x16 /* ICONDIR + ICONDIRENTRY */ + sizeof(BITMAPINFOHEADER)) ) return FALSE;
+	if ( vo_.file.UseSize < (0x16 /* ICONDIR + ICONDIRENTRY */ + sizeof(BITMAPINFOHEADER)) ) return FALSE;
 										// ICONDIR.idEntries[0].dwImageOffset;
 	tempbih = (BITMAPINFOHEADER *)((BYTE *)vo_.file.image + *(DWORD *)(vo_.file.image + 0x12));
-	if ( (DWORD_PTR)(((BYTE *)tempbih - (BYTE *)vo_.file.image) + 0x10) > vo_.file.size.l ) return FALSE;
+	if ( (DWORD_PTR)(((BYTE *)tempbih - (BYTE *)vo_.file.image) + 0x10) > vo_.file.UseSize ) return FALSE;
 	if ( tempbih->biSize != sizeof(BITMAPINFOHEADER) ) return FALSE;
 	if ( *(vo_.file.image + 02) == '\1' ){
 		imagetypename = T("ico");
@@ -2175,7 +2185,7 @@ BOOL OpenCursorIconObject(const TCHAR *filename,VIEWOPTIONS *viewopt)
 	bih->biHeight /= 2;
 
 	vo_.bitmap.bits.ptr = (BYTE *)vo_.bitmap.info + offset;
-	return FixOpenBmp(bih,viewopt, vo_.file.size.l - offset );
+	return FixOpenBmp(bih,viewopt, vo_.file.UseSize - offset );
 }
 
 BOOL OpenBmpObject(const TCHAR *filename,VIEWOPTIONS *viewopt)
@@ -2266,7 +2276,7 @@ BOOL OpenBmpObject(const TCHAR *filename,VIEWOPTIONS *viewopt)
 		vo_.bitmap.bits.ptr = (BYTE *)vo_.bitmap.info + offset;
 	}
 	return FixOpenBmp(bih,viewopt,
-			vo_.file.size.l - (vo_.bitmap.bits.ptr - vo_.file.image) );
+			vo_.file.UseSize - (vo_.bitmap.bits.ptr - vo_.file.image) );
 }
 
 HGLOBAL OpenViewStdin(void)
@@ -2275,8 +2285,8 @@ HGLOBAL OpenViewStdin(void)
 	HGLOBAL memblock;
 
 	vo_.file.memdata = TRUE;
-	vo_.file.sizeLmax = 0x8000;
-	memblock = GlobalAlloc(GMEM_MOVEABLE,vo_.file.sizeLmax);
+	vo_.file.ImageSize = 0x8000;
+	memblock = GlobalAlloc(GMEM_MOVEABLE, vo_.file.ImageSize + FILEBUFMARGIN);
 	if ( memblock == NULL ){
 		VO_error(PPERROR_GETLASTERROR);
 		return NULL;
@@ -2287,8 +2297,7 @@ HGLOBAL OpenViewStdin(void)
 		return NULL;
 	}
 	vo_.file.mapH = memblock;
-	vo_.file.size.h = 0;
-	vo_.file.size.l = 0;
+	vo_.file.UseSize = 0;
 	ReadingStream = READ_STDIN;
 	hReadStream = GetStdHandle(STD_INPUT_HANDLE);
 	ReadEnter++;
@@ -2342,15 +2351,14 @@ BOOL OpenViewObject(const TCHAR *filename,HGLOBAL memblock,VIEWOPTIONS *viewopt,
 		}
 	}else{	// GlobalAlloc
 		vo_.file.memdata = TRUE;
-		vo_.file.size.h = 0;
-		vo_.file.size.l = GlobalSize(memblock);
-		if ( vo_.file.size.l == 0 ){
+		vo_.file.UseSize = GlobalSize(memblock);
+		if ( vo_.file.UseSize == 0 ){
 			VO_error(PPERROR_GETLASTERROR);
 			GlobalFree(memblock);
 			goto error;
 		}
 		vo_.file.mapH = memblock;
-		memblock = GlobalReAlloc(memblock,vo_.file.size.l + FILEBUFMARGIN,0);
+		memblock = GlobalReAlloc(memblock,vo_.file.UseSize + FILEBUFMARGIN,0);
 		if ( memblock != NULL ) vo_.file.mapH = memblock;
 		if ( (vo_.file.image = GlobalLock(vo_.file.mapH)) == NULL ){
 			VO_error(PPERROR_GETLASTERROR);
@@ -2369,7 +2377,7 @@ BOOL OpenViewObject(const TCHAR *filename,HGLOBAL memblock,VIEWOPTIONS *viewopt,
 		BYTE *p, *maxptr;
 
 		p = vo_.file.image + 7;
-		maxptr = vo_.file.image + vo_.file.size.l;
+		maxptr = vo_.file.image + vo_.file.UseSize;
 		for ( ; p < maxptr ; p++ ){
 			if ( !memcmp( p,"\r\n\r\n",4) ){
 				if ( IDOK != PMessageBox(vinfo.info.hWnd,T("HTTP decode?"),T("open"),
@@ -2432,7 +2440,8 @@ BOOL OpenViewObject(const TCHAR *filename,HGLOBAL memblock,VIEWOPTIONS *viewopt,
 										// 判別 -------------------------------
 	if ( !(flags & PPV_HEADVIEW) ){
 										// susie plug-in 判別
-		int rr = VFSGetDibDelay(vo_.file.name,vo_.file.image,vo_.file.size.l,
+		int rr = VFSGetDibDelay(vo_.file.name,
+				vo_.file.image, vo_.file.UseSize,
 				vo_.file.typeinfo,
 				&vo_.bitmap.info_hlocal,&vo_.bitmap.bits.mapH,ReadAll);
 		if ( rr < 0 ){ // 分割しているので解除
@@ -2468,7 +2477,7 @@ BOOL OpenViewObject(const TCHAR *filename,HGLOBAL memblock,VIEWOPTIONS *viewopt,
 			if ( OpenCursorIconObject(filename,viewopt) != FALSE ){
 				goto success;
 			}
-		}else if ( (vo_.file.size.l >= 0x16) && (*(DWORD *)(vo_.file.image + 10) < vo_.file.size.l) &&
+		}else if ( (vo_.file.UseSize >= 0x16) && (*(DWORD *)(vo_.file.image + 10) < vo_.file.UseSize) &&
 				(*(vo_.file.image +  0) == 'B')	&& // BMP 判別
 				(*(vo_.file.image +  1) == 'M')	&&
 				(*(vo_.file.image +  6) == 0)	&&
@@ -2540,7 +2549,7 @@ void GetMemo(void)
 	if ( (X_swmt == 0) || (vo_.memo.bottom != NULL) ) return;
 	vft.flags = VFSFT_INFO;
 
-	if ( VFSGetFileType(vo_.file.name,(char *)vo_.file.image,vo_.file.size.l,&vft) != NO_ERROR ){
+	if ( VFSGetFileType(vo_.file.name,(char *)vo_.file.image,vo_.file.UseSize,&vft) != NO_ERROR ){
 		return;
 	}
 
@@ -2556,7 +2565,7 @@ void CheckType(void)
 										// ファイル種別の判定とそれによる初期化
 	vft.flags = VFSFT_TYPE | VFSFT_TYPETEXT | VFSFT_EXT;
 	if ( X_swmt && (vo_.memo.bottom == NULL) ) setflag(vft.flags,VFSFT_INFO);
-	if ( VFSGetFileType(vo_.file.name,(char *)vo_.file.image,vo_.file.size.l,&vft) == NO_ERROR ){
+	if ( VFSGetFileType(vo_.file.name,(char *)vo_.file.image,vo_.file.UseSize,&vft) == NO_ERROR ){
 		int codefunc;
 
 		wsprintf(vo_.file.typeinfo,T("%s(%s)"),vft.typetext,vft.type);
@@ -2612,8 +2621,7 @@ void CheckType(void)
 				vft.dtype = DISPT_DOCUMENT;
 				MakeIndexTable(MIT_FIRST,MIT_PARAM_DOCUMENT);
 /*
-				vo_.file.size.l = sizeL;
-				vo_.file.size.h = sizeH;
+				vo_.file.UseSize = sizeL;
 				vo_.file.mapH = mapH;
 				vo_.file.image = image;
 */
@@ -2704,26 +2712,28 @@ void OpenAndFollowViewObject(PPV_APPINFO *vinfo,const TCHAR *filename,HGLOBAL me
 }
 
 #if NODLL
-extern DWORD crc32(const BYTE *bin,DWORD size,DWORD r);
+extern DWORD crc32(const BYTE *bin ,DWORD size, DWORD r);
 #else
-#define CRCPOLY 0x0EDB88320
-DWORD crc32(const BYTE *bin,DWORD size,DWORD r)
-{
-	DWORD i;
+const LONG crc32_half[16] = {
+	0x00000000, 0x1DB71064, 0x3B6E20C8, 0x26D930AC,
+	0x76DC4190, 0x6B6B51F4, 0x4DB26158, 0x5005713C,
+	0xEDB88320, 0xF00F9344, 0xD6D6A3E8, 0xCB61B38C,
+	0x9B64C2B0, 0x86D3D2D4, 0xA00AE278, 0xBDBDF21C
+};
 
-	if ( size == MAX32 ) size = TSTRLENGTH32((const TCHAR *)bin);
-	r = ~r;
-	for ( ; size ; size-- ){
-		r ^= (DWORD)(*bin++);
-		for ( i = 0 ; i < 8 ; i++){
-			if (r & LSBIT){
-				r = (r >> 1) ^ CRCPOLY;
-			}else{
-				r >>= 1;
-			}
-		}
+DWORD crc32(const BYTE *bin, DWORD size, DWORD r)
+{
+	DWORD crc = ~r;
+	const BYTE *ptr = bin;
+	BYTE chr;
+
+	if ( size == MAX32 ) size = TSTRLENGTH32((TCHAR *)bin);
+	while ( size-- ){
+		chr = *ptr++;
+		crc = crc32_half[(crc ^  chr      ) & 0x0F] ^ (crc >> 4);
+		crc = crc32_half[(crc ^ (chr >> 4)) & 0x0F] ^ (crc >> 4);
 	}
-	return ~r;
+	return ~crc;
 }
 #endif
 
@@ -2842,18 +2852,18 @@ void ChangePage(int delta)
 		GetDWORDfunc GetDWORD = InitTIFF(&gpage);
 		if ( GetDWORD == NULL ) return;
 
-		tempsize = vo_.file.size.l;
+		tempsize = vo_.file.UseSize;
 		tempimg = HeapAlloc(PPvHeap,0,tempsize + FILEBUFMARGIN);
 		if ( tempimg == NULL ) return;
 
-		memcpy(tempimg,vo_.file.image,vo_.file.size.l);
+		memcpy(tempimg,vo_.file.image,vo_.file.UseSize);
 		*(DWORD *)(tempimg + 4) = GetDWORD(&gpage.offset);
 
 	}else if ( !memcmp(vo_.file.image,"\x89PNG",4) ){
 		InitPNG(&gpage);
 
 		filename = T(":\\:.png");
-		tempsize = vo_.file.size.l;
+		tempsize = vo_.file.UseSize;
 		tempimg = HeapAlloc(PPvHeap,0,tempsize + FILEBUFMARGIN);
 		if ( tempimg == NULL ) return;
 
@@ -2923,7 +2933,7 @@ void ChangePage(int delta)
 			}
 
 			// フレーム内容をコピー
-			while ( srcoffset < vo_.file.size.l ){
+			while ( srcoffset < vo_.file.UseSize ){
 				DWORD csize;
 
 				pc = (PNGchunk *)(vo_.file.image + srcoffset);
@@ -2952,8 +2962,8 @@ void ChangePage(int delta)
 			}
 			// 残りをコピー
 			memcpy(tempimg + destoffset,vo_.file.image + srcoffset,
-					vo_.file.size.l - srcoffset);
-			tempsize = destoffset + (vo_.file.size.l - srcoffset);
+					vo_.file.UseSize - srcoffset);
+			tempsize = destoffset + (vo_.file.UseSize - srcoffset);
 		}
 	}else{
 		return;

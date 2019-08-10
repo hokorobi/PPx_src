@@ -15,5 +15,5 @@ enum {					// CalcString ‚Ì–ß‚è’l
 	CALC_DIVERROR	// 0Š„ƒGƒ‰[
 };
 
-extern int Calc_String(const TCHAR **param,int *result,int lv0,int para0);
-#define CalcString(param,result) Calc_String(param,result,0,0)
+extern int Calc_String(const TCHAR **param, int *result, int lv0, int para0);
+#define CalcString(param, result) Calc_String(param, result, 0, 0)

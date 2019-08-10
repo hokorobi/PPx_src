@@ -1358,7 +1358,7 @@ PPXDLL BOOL PPXAPI CheckExebin(const TCHAR *path,int type)
 			inf = info;
 		}
 		wsprintf(buf,is2,path,inf);
-		if ( PMessageBox(GetFocus(),buf,is1,
+		if ( PMessageBox(NULL, buf, is1,
 				MB_ICONQUESTION | MB_DEFBUTTON2 | MB_OKCANCEL) == IDOK ){
 			if ( crcs[0] == MAXSTORE ){
 				memmove(&crcs[1],&crcs[2],(MAXSTORE - 1) * sizeof(DWORD));

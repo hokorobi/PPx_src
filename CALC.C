@@ -8,7 +8,7 @@
 #define ONPPXDLL		// PPCOMMON.H ÇÃ DLL íËã`éwíË
 #include "PPCOMMON.H"
 
-/* Calc_String(BYTE **param,int *result,int lv0,int para0) ÇÃ lv0 ê›íËíl
+/* Calc_String(BYTE **param, int *result, int lv0, int para0) ÇÃ lv0 ê›íËíl
 
 	lv	óDêÊèáà ï€ë∂
 			LOWORD	ÇQçÄä‘ÇÃóDêÊèáà ÅAëÂÇ´Ç¢ÇŸÇ«í·èáà 
@@ -33,9 +33,9 @@
 #define CALC_USEPARAM0	B29		// para0 Ç™óLå¯
 //-----------------------------------------------------------------------------
 typedef enum {
-	OPENONE,OPEMUL,OPEDIV,OPEPAR,OPEPLUS,OPEMINUS,
-	OPESHL,OPESHR,OPELT,OPELE,OPEGT,OPEGE,OPEEQ,OPENE,
-	OPEAND,OPEXOR,OPEOR,OPELAND,OPELOR
+	OPENONE, OPEMUL, OPEDIV, OPEPAR, OPEPLUS, OPEMINUS,
+	OPESHL, OPESHR, OPELT, OPELE, OPEGT, OPEGE, OPEEQ, OPENE,
+	OPEAND, OPEXOR, OPEOR, OPELAND, OPELOR
 } OPTYPES;
 
 struct opelevel {
@@ -43,26 +43,26 @@ struct opelevel {
 	int		level;	// óDêÊèáà 
 	OPTYPES type;	// ââéZï˚ñ@
 } levels[] = {			// ÇQçÄââéZéqÇÃàÍóó
-	{ {'<','<'},	6,	OPESHL},
-	{ {'<','='},	7,	OPELE},
-	{ {'>','>'},	6,	OPESHR},
-	{ {'>','='},	7,	OPEGE},
-	{ {'=','='},	8,	OPEEQ},
-	{ {'!','='},	8,	OPENE},
-	{ {'&','&'},	12,	OPELAND},
-	{ {'|','|'},	13,	OPELOR},
-	{ {'*','\0'},	4,	OPEMUL},
-	{ {'/','\0'},	4,	OPEDIV},
-	{ {'%','\0'},	4,	OPEPAR},
-	{ {'+','\0'},	5,	OPEPLUS},
-	{ {'-','\0'},	5,	OPEMINUS},
-	{ {'<','\0'},	7,	OPELT},
-	{ {'>','\0'},	7,	OPEGT},
-	{ {'=','\0'},	8,	OPEEQ},
-	{ {'&','\0'},	9,	OPEAND},
-	{ {'^','\0'},	10,	OPEXOR},
-	{ {'|','\0'},	11,	OPEOR},
-	{ {'\0','\0'},	0,	OPENONE}
+	{ {'<', '<'},	6,	OPESHL},
+	{ {'<', '='},	7,	OPELE},
+	{ {'>', '>'},	6,	OPESHR},
+	{ {'>', '='},	7,	OPEGE},
+	{ {'=', '='},	8,	OPEEQ},
+	{ {'!', '='},	8,	OPENE},
+	{ {'&', '&'},	12,	OPELAND},
+	{ {'|', '|'},	13,	OPELOR},
+	{ {'*', '\0'},	4,	OPEMUL},
+	{ {'/', '\0'},	4,	OPEDIV},
+	{ {'%', '\0'},	4,	OPEPAR},
+	{ {'+', '\0'},	5,	OPEPLUS},
+	{ {'-', '\0'},	5,	OPEMINUS},
+	{ {'<', '\0'},	7,	OPELT},
+	{ {'>', '\0'},	7,	OPEGT},
+	{ {'=', '\0'},	8,	OPEEQ},
+	{ {'&', '\0'},	9,	OPEAND},
+	{ {'^', '\0'},	10,	OPEXOR},
+	{ {'|', '\0'},	11,	OPEOR},
+	{ {'\0', '\0'},	0,	OPENONE}
 };
 /*-----------------------------------------------------------------------------
 	ÇQçÄââéZéqÇÃóDêÊèáà Çí≤Ç◊ÇÈ
@@ -70,7 +70,7 @@ struct opelevel {
 struct opelevel *GetCalcLevel(const TCHAR **ptr)
 {
 	struct opelevel *level;
-	UTCHAR c0,c1;
+	UTCHAR c0, c1;
 
 	c0 = *(*ptr);
 	c1 = *(*ptr + 1);
@@ -89,7 +89,7 @@ struct opelevel *GetCalcLevel(const TCHAR **ptr)
 /*-----------------------------------------------------------------------------
 	ÇPçÄÇìæÇÈ
 -----------------------------------------------------------------------------*/
-int GetCalcItem(const TCHAR **param,int *result)
+int GetCalcItem(const TCHAR **param, int *result)
 {
 	const TCHAR *para;
 	int status = CALC_NOERROR;
@@ -99,25 +99,25 @@ int GetCalcItem(const TCHAR **param,int *result)
 	switch ( *para ){
 		case '(':
 			para++;
-			status = Calc_String(&para,result,CALC_BRACKET,0);
+			status = Calc_String(&para, result, CALC_BRACKET, 0);
 			break;
 		case '!':
 			para++;
-			status = GetCalcItem(&para,result);
+			status = GetCalcItem(&para, result);
 			*result = !(*result);
 			break;
 		case '~':
 			para++;
-			status = GetCalcItem(&para,result);
+			status = GetCalcItem(&para, result);
 			*result = ~(*result);
 			break;
 		case '+':
 			para++;
-			status = GetCalcItem(&para,result);
+			status = GetCalcItem(&para, result);
 			break;
 		case '-':
 			para++;
-			status = GetCalcItem(&para,result);
+			status = GetCalcItem(&para, result);
 			*result = -(*result);
 			break;
 
@@ -134,22 +134,22 @@ int GetCalcItem(const TCHAR **param,int *result)
 /*-----------------------------------------------------------------------------
 	ìdëÏã@î\
 -----------------------------------------------------------------------------*/
-int Calc_String(const TCHAR **param,int *result,int lv0,int para0)
+int Calc_String(const TCHAR **param, int *result, int lv0, int para0)
 {
-	struct opelevel *lv1,*lv2;
+	struct opelevel *lv1, *lv2;
 	int n; // ëÊÇPçÄ
 	int m; // ëÊÇQçÄ
 	int status = CALC_NOERROR;
-	const TCHAR *para,*p;
+	const TCHAR *para, *p;
 
 	para = *param;
 	SkipSPC(para);
 										// ëÊÇPçÄÇÃéÊìæ -----------------------
 	if ( lv0 & CALC_USEPARAM0 ){	// ä˘Ç…éÊìæçœÇ›
 		n = para0;
-		resetflag(lv0,CALC_USEPARAM0);
+		resetflag(lv0, CALC_USEPARAM0);
 	}else{
-		status = GetCalcItem(&para,&n);
+		status = GetCalcItem(&para, &n);
 	}
 										// ÇQçÄà»ç~ ---------------------------
 	while ( status == CALC_NOERROR ){
@@ -172,14 +172,14 @@ int Calc_String(const TCHAR **param,int *result,int lv0,int para0)
 			break;
 		}
 										// ëÊÇQçÄÇÃéÊìæ -----------------------
-		status = GetCalcItem(&para,&m);
+		status = GetCalcItem(&para, &m);
 		if ( status != 0 ) break;
 										// óDêÊèáà ÇÃîªï  ---------------------
 		p = para;
 		lv2 = GetCalcLevel(&p);
 		if ( lv2->level && (lv1->level > lv2->level) ){	// âEÇÃï˚Ç™óDêÊÇæÇ¡ÇΩ
-			status = Calc_String(&para,&m,
-					(lv0 & CALC_BRACKET) | lv1->level | CALC_USEPARAM0,m);
+			status = Calc_String(&para, &m,
+					(lv0 & CALC_BRACKET) | lv1->level | CALC_USEPARAM0, m);
 			if ( status != 0 ) break;
 		}
 										// ââéZ -------------------------------

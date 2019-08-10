@@ -1,5 +1,5 @@
  ------------------------------------------------------------------------------
-	Paper Plane xUI  Source archive		Copyright (c)1997-2018 TORO
+	Paper Plane xUI  Source archive		Copyright (c)1997-2019 TORO
  ------------------------------------------------------------------------------
 
 	Paper Plane xUI を構築するために必要なファイル一式です。

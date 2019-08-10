@@ -31,25 +31,37 @@ TIME2HEADERSTRUCT Time2Header[] = {
 
 // マウス操作の解析・実行 -----------------------------------------------------
 
-BOOL PPcMouseCommand(PPC_APPINFO *cinfo,const TCHAR *click,const TCHAR *type)
+BOOL PPcMouseCommand(PPC_APPINFO *cinfo, const TCHAR *click, const TCHAR *type)
 {
-	TCHAR buf[CMDLINESIZE],*p;
-	int i;
+	TCHAR buf[CMDLINESIZE], *butptr;
 									// クライアント領域の判別
 	if ( (DWORD_PTR)type < 0x100 ){
-		i = PtrToValue(type);
-		if ( (i >= PPCR_PATH) && (i <= PPCR_INFOICON) ){
-			type = typestr1[i - PPCR_PATH];
-		}else if ( (i >= PPCR_CELLBLANK) && (i <= PPCR_CELLTAIL) ){
-			type = typestr2[i - PPCR_CELLBLANK];
+		int inttype;
+
+		inttype = PtrToValue(type);
+		if ( (inttype >= PPCR_PATH) && (inttype <= PPCR_INFOICON) ){
+			type = typestr1[inttype - PPCR_PATH];
+		}else if ( (inttype >= PPCR_CELLBLANK) && (inttype <= PPCR_CELLTAIL) ){
+			type = typestr2[inttype - PPCR_CELLBLANK];
 		}
 	}
 									// 操作の確定
-	p = PutShiftCode(buf, GetShiftKey());
-	wsprintf(p, T("%s_%s"), click, type);
+	butptr = PutShiftCode(buf, GetShiftKey());
+	wsprintf(butptr, T("%s_%s"), click, type);
 									// 実行
 	if ( NO_ERROR == GetCustTable(T("MC_click"), buf, buf, sizeof(buf)) ){
-		ExecDualParam(cinfo, buf);
+		if ( type != typestr2[PPCR_CELLTAIL - PPCR_CELLBLANK] ){
+			ExecDualParam(cinfo, buf); // 通常
+		}else{ // PPCR_CELLTAIL の場合
+			if ( (cinfo->e.cellPoint >= 0) && (cinfo->e.cellPoint < cinfo->e.cellIMax) ){
+				ENTRYINDEX oldcelln;
+
+				oldcelln = cinfo->e.cellN;
+				cinfo->e.cellN = cinfo->e.cellPoint; // 一時的に変更
+				ExecDualParam(cinfo, buf); // 通常
+				cinfo->e.cellN = oldcelln;
+			}
+		}
 		if ( IsTrue(cinfo->UnpackFix) ) OffArcPathMode(cinfo);
 		return TRUE;
 	}else{

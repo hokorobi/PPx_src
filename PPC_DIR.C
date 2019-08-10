@@ -21,15 +21,35 @@
 
 const TCHAR SortingStr[] = MES_SSRT;
 
-void SetDummyRelativeDir(PPC_APPINFO *cinfo,const TCHAR *name,BYTE attr,BYTE type);
-void LoadSettingGeneral(PPC_APPINFO *cinfo,int *flags,TCHAR *mask);
-void LoadSettingSecond(PPC_APPINFO *cinfo,const TCHAR *path,int *flags,TCHAR *mask);
-void PreExecuteSort(PPC_APPINFO *cinfo,BYTE sortid);
+struct tagcomparestruct;
+typedef int (USEFASTCALL *CMPFUNC)(struct tagcomparestruct *cs);
 
-ENTRYCELL *AddMaskPathDirectory(PPC_APPINFO *cinfo,ENTRYDATAOFFSET cellindex,size_t len,ENTRYDATAOFFSET arcMax,int depth,ENTRYDATAOFFSET *zeroIndex)
+typedef struct tagcomparestruct {
+	ENTRYCELL *SrcCell;
+	ENTRYCELL *DstCell;
+	PPC_APPINFO *cinfo;
+	CMPFUNC SortF; // 1つのみ
+	CMPFUNC SortF1; // 3つ使用/1つ目
+	CMPFUNC SortF2; // 3つ使用/2つ目
+	CMPFUNC SortF3; // 3つ使用/3つ目
+	ENTRYINDEX *worktbl; // merge sort 用 index table
+	DWORD MaskAtr; // 属性ソート用ファイル属性
+	DWORD option; // CmpNameのオプション
+	DWORD exoption; // CmpName_Exのオプション
+	DWORD columnID; // カラム拡張・拡張コメントソート時に使用するID
+} COMPARESTRUCT;
+
+void SetDummyRelativeDir(PPC_APPINFO *cinfo, const TCHAR *name, BYTE attr, BYTE type);
+void LoadSettingGeneral(PPC_APPINFO *cinfo, int *flags, TCHAR *mask);
+void LoadSettingSecond(PPC_APPINFO *cinfo, const TCHAR *path, int *flags, TCHAR *mask);
+void PreExecuteSort(PPC_APPINFO *cinfo, BYTE sortid);
+BOOL InitSort(COMPARESTRUCT *cs, XC_SORT *xs);
+int SortCmp(ENTRYINDEX cellno, ENTRYINDEX cellmax, COMPARESTRUCT *cs);
+
+ENTRYCELL *AddMaskPathDirectory(PPC_APPINFO *cinfo, ENTRYDATAOFFSET cellindex, size_t len, ENTRYDATAOFFSET arcMax, int depth, ENTRYDATAOFFSET *zeroIndex)
 {
 	ENTRYCELL *cell;
-	ENTRYDATAOFFSET i,zi;
+	ENTRYDATAOFFSET i, zi;
 	const TCHAR *filename;
 
 	zi = *zeroIndex;
@@ -52,37 +72,37 @@ ENTRYCELL *AddMaskPathDirectory(PPC_APPINFO *cinfo,ENTRYDATAOFFSET cellindex,siz
 
 	// 登録済みか確認
 	for ( i = zi ; i < cinfo->e.cellDataMax ; i++ ){
-		if ( !memcmp(filename,CELdata(i).f.cFileName,TSTROFF(len)) &&
+		if ( !memcmp(filename, CELdata(i).f.cFileName, TSTROFF(len)) &&
 			 (CELdata(i).f.cFileName[len] == '\0') ){
 
 			if ( i < arcMax ){
 				if ( CELdata(i).f.dwFileAttributes & FILE_ATTRIBUTEX_FOLDER ){
 					return NULL;
 				}
-				setflag(CELdata(i).f.dwFileAttributes,FILE_ATTRIBUTEX_FOLDER);
+				setflag(CELdata(i).f.dwFileAttributes, FILE_ATTRIBUTEX_FOLDER);
 				continue;
 			}
 
 			return NULL; // 既にある
 		}
 	}
-
+	if ( cinfo->e.cellDataMax > ENTRYCELL_LIMIT ) return NULL;
 	// ディレクトリを追加
-	if ( TM_check(&cinfo->e.CELLDATA,sizeof(ENTRYCELL) * (cinfo->e.cellDataMax + 2)) == FALSE){
+	if ( TM_check(&cinfo->e.CELLDATA, sizeof(ENTRYCELL) * (cinfo->e.cellDataMax + 2)) == FALSE){
 		return NULL;
 	}
-	if ( TM_check(&cinfo->e.INDEXDATA,sizeof(ENTRYINDEX) * (cinfo->e.cellDataMax + 2)) == FALSE ){
+	if ( TM_check(&cinfo->e.INDEXDATA, sizeof(ENTRYINDEX) * (cinfo->e.cellDataMax + 2)) == FALSE ){
 		return NULL;
 	}
 
 	cell = &CELdata(cinfo->e.cellDataMax);
-	SetDummyCell(cell,CELdata(cellindex).f.cFileName);
+	SetDummyCell(cell, CELdata(cellindex).f.cFileName);
 	cell->f.cFileName[len] = '\0';
 	cell->f.dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY;
 	cell->state = ECS_NORMAL;
 	cell->attr = 0;
 	CELt(cinfo->e.cellIMax) = cinfo->e.cellDataMax;
-	SetCellInfo(cinfo,cell,NULL);
+	SetCellInfo(cinfo, cell, NULL);
 
 	cinfo->e.cellDataMax++;
 	cinfo->e.cellIMax++;
@@ -91,7 +111,7 @@ ENTRYCELL *AddMaskPathDirectory(PPC_APPINFO *cinfo,ENTRYDATAOFFSET cellindex,siz
 	if ( (cinfo->MinArcPathMaskDepth < 0) ||
 		 (cinfo->MinArcPathMaskDepth > depth ) ){
 			cinfo->MinArcPathMaskDepth = depth;
-			tstrcpy(cinfo->ArcPathMask,cell->f.cFileName);
+			tstrcpy(cinfo->ArcPathMask, cell->f.cFileName);
 		// 同じ階層が複数ある→一つ親へ戻る
 	}else if ( cinfo->MinArcPathMaskDepth == depth ){
 		cinfo->MinArcPathMaskDepth--;
@@ -100,9 +120,9 @@ ENTRYCELL *AddMaskPathDirectory(PPC_APPINFO *cinfo,ENTRYDATAOFFSET cellindex,siz
 	return cell;
 }
 
-void MaskPathMain(PPC_APPINFO *cinfo,int defaultdepth,const TCHAR *defaultpath)
+void MaskPathMain(PPC_APPINFO *cinfo, int defaultdepth, const TCHAR *defaultpath)
 {
-	ENTRYDATAOFFSET arcMax,offset,zeroIndex = 0;
+	ENTRYDATAOFFSET arcMax, offset, zeroIndex = 0;
 	int depthMax = 0;
 
 	arcMax = cinfo->e.cellDataMax;
@@ -115,31 +135,31 @@ void MaskPathMain(PPC_APPINFO *cinfo,int defaultdepth,const TCHAR *defaultpath)
 	for ( offset = 0 ; offset < arcMax ; offset++ ){
 		size_t len;
 		int depth;
-		const TCHAR *lp,*filename;
+		const TCHAR *lp, *filename;
 		ENTRYCELL *cell;
 
 		filename = CELdata(offset).f.cFileName;
 
 		if ( (CELdata(offset).f.nFileSizeHigh | CELdata(offset).f.nFileSizeLow) == 0 ){ // ディレクトリの可能性
-			TCHAR *tmpname,*p;
+			TCHAR *tmpname, *namep;
 
 			tmpname = CELdata(offset).f.cFileName;
 
-			p = FindPathSeparator(tmpname);
-			if ( p != NULL ){
+			namep = FindPathSeparator(tmpname);
+			if ( namep != NULL ){
 				TCHAR *np;
 				ENTRYDATAOFFSET j;
 
 				for (;;){
-					np = FindPathSeparator(p);
+					np = FindPathSeparator(namep);
 					if ( np == NULL ) break;
-					p = np + 1;
+					namep = np + 1;
 				}
-				if ( *(p + 1) == '\0' ){
+				if ( *(namep + 1) == '\0' ){
 					zeroIndex = offset + 1;
 					for ( j = arcMax ; j < cinfo->e.cellDataMax ; j++ ){
-						if ( !tstrcmp(tmpname,CELdata(j).f.cFileName) ){
-							setflag(CELdata(offset).f.dwFileAttributes,FILE_ATTRIBUTEX_FOLDER);
+						if ( !tstrcmp(tmpname, CELdata(j).f.cFileName) ){
+							setflag(CELdata(offset).f.dwFileAttributes, FILE_ATTRIBUTEX_FOLDER);
 							break;
 						}
 					}
@@ -147,7 +167,7 @@ void MaskPathMain(PPC_APPINFO *cinfo,int defaultdepth,const TCHAR *defaultpath)
 			}
 		}
 
-		depth = GetEntryDepth(filename,&lp);
+		depth = GetEntryDepth(filename, &lp);
 		if ( depth > depthMax ) depthMax = depth;
 		if ( lp == NULL ){ // パス区切り無し：ルート相当
 			if ( !(CELdata(offset).attr & (ECA_PARENT | ECA_THIS)) ){
@@ -158,13 +178,13 @@ void MaskPathMain(PPC_APPINFO *cinfo,int defaultdepth,const TCHAR *defaultpath)
 		}
 		// 仮想ディレクトリの生成
 		len = lp - filename;	// <path>\filename の長さ
-		cell = AddMaskPathDirectory(cinfo,offset,len,arcMax,depth,&zeroIndex);
+		cell = AddMaskPathDirectory(cinfo, offset, len, arcMax, depth, &zeroIndex);
 		if ( cell == NULL ) continue; // 既にある
 		while ( --depth ){ // 上位階層が無ければ作成する
 			filename = cell->f.cFileName;
 			lp = FindBothLastEntry(filename);
-			cell = AddMaskPathDirectory(cinfo,cinfo->e.cellDataMax - 1,
-					lp - filename,arcMax,depth,&zeroIndex);
+			cell = AddMaskPathDirectory(cinfo, cinfo->e.cellDataMax - 1,
+					lp - filename, arcMax, depth, &zeroIndex);
 			if ( cell == NULL ) break;
 		}
 	}
@@ -175,13 +195,13 @@ void MaskPathMain(PPC_APPINFO *cinfo,int defaultdepth,const TCHAR *defaultpath)
 		}
 
 		if ( (depthMax >= defaultdepth) && (*defaultpath != '\0') ){
-			tstrcpy(cinfo->ArcPathMask,defaultpath);
+			tstrcpy(cinfo->ArcPathMask, defaultpath);
 			cinfo->ArcPathMaskDepth = defaultdepth;
-			MaskEntryMain(cinfo,&cinfo->mask,cinfo->ArcPathMask);
+			MaskEntryMain(cinfo, &cinfo->mask, cinfo->ArcPathMask);
 		}else{
 			cinfo->ArcPathMaskDepth = cinfo->MinArcPathMaskDepth;
 			if ( cinfo->ArcPathMaskDepth == 0 ) cinfo->ArcPathMask[0] = '\0';
-			MaskEntryMain(cinfo,&cinfo->mask,NilStr);
+			MaskEntryMain(cinfo, &cinfo->mask, NilStr);
 		}
 	}
 	cinfo->MinArcPathMaskDepth = 0;
@@ -191,13 +211,13 @@ BOOL CheckWarningName(const TCHAR *filename)
 {
 	TCHAR buf[VFPS];
 
-	if ( tstrchr(filename,'%') ){				// 環境変数
-		if ( TSIZEOF(buf) <= ExpandEnvironmentStrings(filename,buf,TSIZEOF(buf)) ){
+	if ( tstrchr(filename, '%') ){				// 環境変数
+		if ( TSIZEOF(buf) <= ExpandEnvironmentStrings(filename, buf, TSIZEOF(buf)) ){
 			return TRUE;
 		}
 		filename = buf;
 	}
-	if ( tstrchr(filename,':') ) return TRUE;	// ドライブ名又はストリーム
+	if ( tstrchr(filename, ':') ) return TRUE;	// ドライブ名又はストリーム
 	if ( filename[0] == '\\' ) return TRUE; // 絶対パス指定
 
 	while (*filename){
@@ -223,7 +243,7 @@ BOOL ReadDirBreakCheck(PPC_APPINFO *cinfo)
 {
 	MSG msg;
 
-	while ( PeekMessage(&msg,NULL,0,0,PM_REMOVE) ){
+	while ( PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) ){
 		if ( msg.message == WM_QUIT ) break;
 		if ( (msg.message == WM_KEYDOWN) && ((int)msg.wParam == VK_PAUSE) ){
 			return TRUE;
@@ -231,7 +251,7 @@ BOOL ReadDirBreakCheck(PPC_APPINFO *cinfo)
 
 		if ( (msg.message == WM_RBUTTONUP) ||
 			 ((msg.message == WM_KEYDOWN) && ((int)msg.wParam == VK_ESCAPE)) ){
-			if ( PMessageBox(cinfo->info.hWnd,NULL,NULL,MB_QYES) == IDOK ){
+			if ( PMessageBox(cinfo->info.hWnd, NULL, NULL, MB_QYES) == IDOK ){
 				return TRUE;
 			}
 		}
@@ -247,15 +267,15 @@ BOOL ReadDirBreakCheck(PPC_APPINFO *cinfo)
 }
 
 struct masks {
-	FN_REGEXP	FileMask;
-	DWORD		Attr,Dir;
-	BYTE		*extcolor;
+	FN_REGEXP FileMask;
+	DWORD Attr, Dir;
+	BYTE *extcolor;
 };
 
 struct readprogress {
-	int		dispN;		// 表示試行ファイル数
-	int		enablecnt;	// ブレイク有効化カウンタ
-	DWORD	OldTime;
+	int dispN;		// 表示試行ファイル数
+	int enablecnt;	// ブレイク有効化カウンタ
+	DWORD OldTime;
 };
 
 DWORD MiniHash(TCHAR *name)
@@ -275,11 +295,11 @@ DWORD MiniHash(TCHAR *name)
 }
 
 // コメントをファイルから取得する ---------------------------------------------
-void GetCommentText(ThSTRUCT *comments,const TCHAR *commentfile)
+void GetCommentText(ThSTRUCT *comments, const TCHAR *commentfile)
 {
-	TCHAR *src,*dst,*top,*textimage;
+	TCHAR *src, *dst, *top, *textimage;
 
-	if ( LoadTextImage(commentfile,&textimage,&src,NULL) != NO_ERROR ) return;
+	if ( LoadTextImage(commentfile, &textimage, &src, NULL) != NO_ERROR ) return;
 
 	while( *src ){
 		TCHAR *p;
@@ -328,14 +348,14 @@ void GetCommentText(ThSTRUCT *comments,const TCHAR *commentfile)
 										// 区切りをスキップ
 		while ( (*src == ' ') || (*src == '\t') ) src++;
 										// 行末検索
-		p = tstrchr(src,'\r');
+		p = tstrchr(src, '\r');
 		if ( p == NULL ){
-			p = tstrchr(src,'\n');
+			p = tstrchr(src, '\n');
 			if ( p == NULL ) p = src + tstrlen(src);
 		}
 		if ( (dst != top) && (p != src) ){	// コメント有り→行末まで探す
 			*dst = 0;
-			ThAddString(comments,top);
+			ThAddString(comments, top);
 			top = dst = src;
 			while ( src < p ) *dst++ = *src++;
 			for ( ; ; ){
@@ -350,7 +370,7 @@ void GetCommentText(ThSTRUCT *comments,const TCHAR *commentfile)
 				while ( (UTCHAR)*src >= (UTCHAR)' ' ) *dst++ = *src++;
 			}
 			*dst = 0;
-			ThAddString(comments,top);
+			ThAddString(comments, top);
 		}else{
 			src = p;
 		}
@@ -361,9 +381,9 @@ void GetCommentText(ThSTRUCT *comments,const TCHAR *commentfile)
 		}else if ( *src == '\n' ) src++;
 	}
 	if ( comments->bottom != NULL ){
-		ThAddString(comments,NilStr);
+		ThAddString(comments, NilStr);
 	}
-	HeapFree( hProcessHeap,0,textimage);
+	HeapFree( hProcessHeap, 0, textimage);
 }
 
 // ディレクトリの読み込みエラーの時の処理
@@ -371,7 +391,7 @@ void GetCommentText(ThSTRUCT *comments,const TCHAR *commentfile)
 #define ERROR_SYMLINK_CLASS_DISABLED 1463
 #endif
 
-HANDLE FixReadDirectoryError(PPC_APPINFO *cinfo,struct readprogress *rps,int *flag)
+HANDLE FixReadDirectoryError(PPC_APPINFO *cinfo, struct readprogress *rps, int *flag)
 {
 	ERRORCODE errcode;
 	HANDLE hFF;
@@ -384,27 +404,27 @@ HANDLE FixReadDirectoryError(PPC_APPINFO *cinfo,struct readprogress *rps,int *fl
 
 		dirname = FindLastEntryPoint(cinfo->path);
 		buf[0] = '\0';
-		if ( !tstrcmp(dirname,T("Documents and Settings")) ){
-			VFSFullPath(buf,T("..\\Users"),cinfo->path);
-		}else if ( !tstrcmp(dirname,T("All Users")) ){
-			VFSFullPath(buf,T("...\\ProgramData"),cinfo->path);
-		}else if ( !tstrcmp(dirname,T("Default User")) ){
-			VFSFullPath(buf,T("...\\Default"),cinfo->path);
-		}else if ( !tstrcmp(dirname,T("Application Data")) ){
-			VFSFullPath(buf,T("..\\AppData\\Roaming"),cinfo->path);
-		}else if ( !tstrcmp(dirname,T("Local Settings")) ){
-			VFSFullPath(buf,T("..\\AppData\\Local"),cinfo->path);
-		}else if ( !tstrcmp(dirname,T("Start Menu")) ){
-			VFSFullPath(buf,T("..\\Roaming\\Microsoft\\Windows\\Start Menu"),cinfo->path);
+		if ( !tstrcmp(dirname, T("Documents and Settings")) ){
+			VFSFullPath(buf, T("..\\Users"), cinfo->path);
+		}else if ( !tstrcmp(dirname, T("All Users")) ){
+			VFSFullPath(buf, T("...\\ProgramData"), cinfo->path);
+		}else if ( !tstrcmp(dirname, T("Default User")) ){
+			VFSFullPath(buf, T("...\\Default"), cinfo->path);
+		}else if ( !tstrcmp(dirname, T("Application Data")) ){
+			VFSFullPath(buf, T("..\\AppData\\Roaming"), cinfo->path);
+		}else if ( !tstrcmp(dirname, T("Local Settings")) ){
+			VFSFullPath(buf, T("..\\AppData\\Local"), cinfo->path);
+		}else if ( !tstrcmp(dirname, T("Start Menu")) ){
+			VFSFullPath(buf, T("..\\Roaming\\Microsoft\\Windows\\Start Menu"), cinfo->path);
 		}
 		if ( *buf != '\0' ){
 			hFF = FindFirstAsync(cinfo->info.hWnd,
-					cinfo->LoadCounter,buf,&CELdata(0).f,
-					&cinfo->e.Dtype,flag);
+					cinfo->LoadCounter, buf, &CELdata(0).f,
+					&cinfo->e.Dtype, flag);
 			if ( hFF != INVALID_HANDLE_VALUE ){
-				tstrcpy(cinfo->path,buf);
-				tstrcpy(cinfo->RealPath,cinfo->path);
-				SetPopMsg(cinfo,POPMSG_MSG,MES_JPLN);
+				tstrcpy(cinfo->path, buf);
+				tstrcpy(cinfo->RealPath, cinfo->path);
+				SetPopMsg(cinfo, POPMSG_MSG, MES_JPLN);
 				return hFF;
 			}
 		}
@@ -418,15 +438,15 @@ HANDLE FixReadDirectoryError(PPC_APPINFO *cinfo,struct readprogress *rps,int *fl
 		if ( (atr != BADATTR) && (atr & FILE_ATTRIBUTE_REPARSE_POINT) ){
 			TCHAR ReparsePath[VFPS];
 
-			GetReparsePath(cinfo->path,ReparsePath);
+			GetReparsePath(cinfo->path, ReparsePath);
 			if ( *ReparsePath != '\0' ){
 				if ( (cinfo->path[0] == '\\') && (ReparsePath[1] == ':') ){
-					VFSFullPath(ReparsePath,ReparsePath + 2,cinfo->path);
+					VFSFullPath(ReparsePath, ReparsePath + 2, cinfo->path);
 				}
 
 				hFF = FindFirstAsync(cinfo->info.hWnd,
-						cinfo->LoadCounter,ReparsePath,&CELdata(0).f,
-						&cinfo->e.Dtype,flag);
+						cinfo->LoadCounter, ReparsePath, &CELdata(0).f,
+						&cinfo->e.Dtype, flag);
 				if ( hFF != INVALID_HANDLE_VALUE ){
 					tstrcpy(cinfo->path, ReparsePath);
 					tstrcpy(cinfo->RealPath, ReparsePath);
@@ -450,8 +470,8 @@ HANDLE FixReadDirectoryError(PPC_APPINFO *cinfo,struct readprogress *rps,int *fl
 		TCHAR *root;
 		TCHAR *p;
 
-		tstrcpy(buf,cinfo->path);
-		p = VFSGetDriveType(buf,&mode,NULL);
+		tstrcpy(buf, cinfo->path);
+		p = VFSGetDriveType(buf, &mode, NULL);
 
 		if ( (p != NULL) && !(*flag & RENTRY_NOFIXDIR) ){
 			if ( *p == '\\' ) p++;
@@ -476,28 +496,28 @@ HANDLE FixReadDirectoryError(PPC_APPINFO *cinfo,struct readprogress *rps,int *fl
 					}else{
 						lastsep = FindLastEntryPoint(root);
 					}
-					tstrcpy(cinfo->Jfname,lastsep);
+					tstrcpy(cinfo->Jfname, lastsep);
 					if ( lastsep > root ) lastsep--;
 					*lastsep = '\0';
 					hFF = FindFirstAsync(cinfo->info.hWnd,
-							cinfo->LoadCounter,buf,&CELdata(0).f,
-							&cinfo->e.Dtype,flag);
+							cinfo->LoadCounter, buf, &CELdata(0).f,
+							&cinfo->e.Dtype, flag);
 					if ( hFF != INVALID_HANDLE_VALUE ){
 						TCHAR *sep;
 
 						if ( (mode == VFSPT_UNC) && (*(root + 1) == '\0') ){
 							*root = '\0';
 						}
-						tstrcpy(cinfo->path,buf);
-						tstrcpy(cinfo->RealPath,buf);
+						tstrcpy(cinfo->path, buf);
+						tstrcpy(cinfo->RealPath, buf);
 						if ( *flag & RENTRY_ENTERSUB ){
-							SetPopMsg(cinfo,errcode,NULL);
+							SetPopMsg(cinfo, errcode, NULL);
 						}else{
-							SetPopMsg(cinfo,POPMSG_MSG,*root ? MES_FUPD : MES_FUPR );
+							SetPopMsg(cinfo, POPMSG_MSG, *root ? MES_FUPD : MES_FUPR );
 						}
 						sep = FindPathSeparator(cinfo->Jfname);
 						if ( sep != NULL ) *sep = '\0';
-						setflag(*flag,RENTRY_JUMPNAME);
+						setflag(*flag, RENTRY_JUMPNAME);
 						return hFF;
 					}
 				}
@@ -507,23 +527,24 @@ HANDLE FixReadDirectoryError(PPC_APPINFO *cinfo,struct readprogress *rps,int *fl
 	// 失敗
 	// ERROR_NO_MORE_FILES も含む？
 	if ( errcode == ERROR_FILE_NOT_FOUND ){
-		setflag(*flag,RENTRYI_GETFREESIZE);
+		setflag(*flag, RENTRYI_GETFREESIZE);
 	}
-	if ( PPErrorMsg(buf,errcode) == NO_ERROR ){
+	if ( PPErrorMsg(buf, errcode) == NO_ERROR ){
 		errcode = ERROR_FILE_NOT_FOUND;
-		tstrcpy(buf,MessageText(StrNoEntries));
+		tstrcpy(buf, MessageText(StrNoEntries));
 	}
-	SetDummyCell(&CELdata(0),buf);
-	setflag(CELdata(0).attr,ECA_PARENT);
+	SetDummyCell(&CELdata(0), buf);
+	CELdata(0).f.dwFileAttributes = FILE_ATTRIBUTEX_MESSAGE;
+	setflag(CELdata(0).attr, ECA_PARENT);
 	CELdata(0).f.nFileSizeLow = errcode;
 	if ( rdirmask & ECAX_FORCER ){
 		cinfo->e.cellIMax = 0;
 		cinfo->e.cellDataMax = 0;
 		if ( !(rdirmask & ECA_THIS) ){
-			SetDummyRelativeDir(cinfo, T("."), ECA_DIR | ECA_THIS,ECT_THISDIR);
+			SetDummyRelativeDir(cinfo, T("."), ECA_DIR | ECA_THIS, ECT_THISDIR);
 		}
 		if ( !(rdirmask & ECA_PARENT) ){
-			SetDummyRelativeDir(cinfo, T(".."), ECA_DIR | ECA_PARENT,ECT_UPDIR);
+			SetDummyRelativeDir(cinfo, T(".."), ECA_DIR | ECA_PARENT, ECT_UPDIR);
 		}
 		cinfo->e.cellDataMax++;
 		cinfo->e.cellIMax++;
@@ -565,79 +586,137 @@ int USEFASTCALL CmpColumnExt(COMPARESTRUCT *cs)
 	return tstricmp(GetColumnExtString(cs, cs->SrcCell),
 			GetColumnExtString(cs, cs->DstCell));
 }
-
-int USEFASTCALL NumberCompareString(COMPARESTRUCT *cs,int srcdelta,int dstdelta)
+#define STRMAP_IGNORECASE NORM_IGNORECASE
+#define STRMAP_MASK_KANA_FLAGS (LCMAP_KATAKANA | LCMAP_HALFWIDTH)
+#define STRMAP_MASK_ALPHA ~(STRMAP_MASK_KANA_FLAGS | STRMAP_IGNORECASE)
+void StrMap(int option, const TCHAR *src, int srclen, TCHAR *dst)
 {
-	UTCHAR *src,*dst;
-	UTCHAR *srcbase,*dstbase;
-	UTCHAR *srclast,*dstlast;
+	TCHAR buf[MAX_PATH * 2];
+	int len;
 
-	src = srcbase = (UTCHAR *)(cs->SrcCell->f.cFileName + srcdelta);
-	srclast = (UTCHAR *)(cs->SrcCell->f.cFileName + cs->SrcCell->ext);
-	dst = dstbase = (UTCHAR *)(cs->DstCell->f.cFileName + dstdelta);
-	dstlast = (UTCHAR *)(cs->DstCell->f.cFileName + cs->DstCell->ext);
+	if ( option & STRMAP_MASK_KANA_FLAGS ){
+		len = LCMapString(LOCALE_USER_DEFAULT,
+				option & STRMAP_MASK_KANA_FLAGS,
+				src, srclen, buf, TSIZEOF(buf) - 1);
+		if ( len != 0 ){
+			src = buf;
+			srclen = len;
+		}
+	}
+	len = LCMapString(LOCALE_USER_DEFAULT, option & STRMAP_MASK_ALPHA,
+			src, srclen, dst, MAX_PATH * 2 - 1);
+	if ( len == 0 ){
+		memcpy(dst, src, TSTROFF(srclen));
+		dst[srclen] = '\0';
+	}else{
+		dst[len] = '\0';
+	}
+	return;
+}
+
+int USEFASTCALL CompareName(int exoption, const TCHAR *src, int srclen, const TCHAR *dst, int dstlen)
+{
+	TCHAR srcname[MAX_PATH * 2];
+	TCHAR dstname[MAX_PATH * 2];
+
+	StrMap(exoption, src, srclen, srcname);
+	StrMap(exoption, dst, dstlen, dstname);
+
+	// LCMAP_UPPERCASE と NORM_IGNORENONSPACE | NORM_IGNORESYMBOLS は共存できない→tstricmp で処理
+	if ( exoption & STRMAP_IGNORECASE ){
+		return tstricmp(srcname, dstname);
+	}else{
+		return tstrcmp(srcname, dstname);
+	}
+}
+
+int USEFASTCALL NumberCompareString(COMPARESTRUCT *cs, int L_delta, int R_delta)
+{
+	UTCHAR *L_ptr,  *R_ptr;
+	UTCHAR *L_base, *R_base;
+	UTCHAR *L_last, *R_last;
+
+	L_ptr = L_base = (UTCHAR *)(cs->SrcCell->f.cFileName + L_delta);
+	L_last = (UTCHAR *)(cs->SrcCell->f.cFileName + cs->SrcCell->ext);
+	R_ptr = R_base = (UTCHAR *)(cs->DstCell->f.cFileName + R_delta);
+	R_last = (UTCHAR *)(cs->DstCell->f.cFileName + cs->DstCell->ext);
 
 	for ( ; ; ){
 		int result;
 
-		DWORD c1,c2;
-		DWORD n1,n2;
+		DWORD L_c, R_c;
+		DWORD L_n, R_n;
 
 		// 非数字部分(片方だけ数字も含む)の比較
-		while ( (src < srclast) && (dst < dstlast) &&
-				!(Isdigit(*src) && Isdigit(*dst)) ){
-			src++;
-			dst++;
+		while ( (L_ptr < L_last) && (R_ptr < R_last) &&
+				!(Isdigit(*L_ptr) && Isdigit(*R_ptr)) ){
+			L_ptr++;
+			R_ptr++;
 		}
 
-		result = CompareString(LOCALE_USER_DEFAULT,cs->option & ~XNORM_MASK,
-				(TCHAR *)srcbase,src - srcbase,
-				(TCHAR *)dstbase,dst - dstbase) - 2;
+		if ( (cs->option & SORTE_DEFAULT_MASK) == SORTE_DEFAULT_VALUE ){
+			result = CompareString(LOCALE_USER_DEFAULT,
+					cs->option & ~SORTE_EXMASK,
+					(TCHAR *)L_base, L_ptr - L_base,
+					(TCHAR *)R_base, R_ptr - R_base) - 2;
+		}else{
+			result = CompareName(cs->exoption,
+					(TCHAR *)L_base, L_ptr - L_base,
+					(TCHAR *)R_base, R_ptr - R_base);
+		}
 		if ( result != 0 ) return result;
 
 		// 末尾に到達しているかを確認
-		if ( src >= srclast ){
-			return (dst >= dstlast) ? 0 : -1; // 両方末尾 : src のみ末尾
-		}else if ( dst >= dstlast ){
-			return 1; // dst のみ末尾
+		if ( L_ptr >= L_last ){
+			return (R_ptr >= R_last) ? 0 : -1; // 両方末尾 : 左 のみ末尾
+		}else if ( R_ptr >= R_last ){
+			return 1; // 右 のみ末尾
 		}
 
 		// 数字の比較
-		n1 = n2 = 0;
-		c1 = *src;
+		L_n = R_n = 0;
+		L_c = *L_ptr;
 		do {
-			n1 = n1 * 10 + (c1 - (UTCHAR)'0');
-			c1 = *(++src);
-		}while( Isdigit(c1) );
+			L_n = L_n * 10 + (L_c - (UTCHAR)'0');
+			L_c = *(++L_ptr);
+		}while( Isdigit(L_c) && (L_ptr < L_last) );
 
-		c2 = *dst;
+		R_c = *R_ptr;
 		do {
-			n2 = n2 * 10 + (c2 - (UTCHAR)'0');
-			c2 = *(++dst);
-		}while( Isdigit(c2) );
-		if ( n1 != n2 ) return n1 - n2;
+			R_n = R_n * 10 + (R_c - (UTCHAR)'0');
+			R_c = *(++R_ptr);
+		}while( Isdigit(R_c) && (R_ptr < R_last) );
 
-		srcbase = src;
-		dstbase = dst;
+		if ( L_n != R_n ) return L_n - R_n;
+
+		L_base = L_ptr;
+		R_base = R_ptr;
 	}
 }
 
 int USEFASTCALL LastEntryCompareString(COMPARESTRUCT *cs)
 {
-	TCHAR *src,*dst;
+	TCHAR *src, *dst;
 
 	src = FindLastEntryPoint(cs->SrcCell->f.cFileName);
 	dst = FindLastEntryPoint(cs->DstCell->f.cFileName);
 
-	if ( cs->option & XNORM_NUMBER ){
+	if ( cs->option & SORTE_NUMBER ){
 		return NumberCompareString(cs,
 				src - cs->SrcCell->f.cFileName,
 				dst - cs->DstCell->f.cFileName);
 	}
 
-	return CompareString(LOCALE_USER_DEFAULT,cs->option & ~XNORM_MASK,
-			src,cs->SrcCell->ext - (src - cs->SrcCell->f.cFileName),
-			dst,cs->DstCell->ext - (dst - cs->DstCell->f.cFileName)) - 2;
+	if ( (cs->option & SORTE_DEFAULT_MASK) == SORTE_DEFAULT_VALUE ){
+		return CompareString(LOCALE_USER_DEFAULT,
+				cs->option & ~SORTE_EXMASK,
+				src, cs->SrcCell->ext - (src - cs->SrcCell->f.cFileName),
+				dst, cs->DstCell->ext - (dst - cs->DstCell->f.cFileName)) - 2;
+	}else{
+		return CompareName(cs->exoption,
+				src, cs->SrcCell->ext - (src - cs->SrcCell->f.cFileName),
+				dst, cs->DstCell->ext - (dst - cs->DstCell->f.cFileName));
+	}
 }
 
 //-------------------------------------------------------------------- ":" 専用
@@ -653,7 +732,7 @@ int USEFASTCALL CmpRootNameExt(COMPARESTRUCT *cs)
 	if ( i != 0 ) return i;
 	if ( (cs->SrcCell->f.cFileName[1] == ':') &&
 		 (cs->DstCell->f.cFileName[1] == ':')){
-		TCHAR schar,dchar;
+		TCHAR schar, dchar;
 
 		schar = cs->SrcCell->f.cFileName[2];
 		dchar = cs->DstCell->f.cFileName[2];
@@ -673,11 +752,18 @@ int USEFASTCALL CmpRootNameExt(COMPARESTRUCT *cs)
 			if ( i ) return i;
 		}
 	}
-	if ( cs->option & XNORM_NUMBER ) return NumberCompareString(cs, 0, 0);
+	if ( cs->option & SORTE_NUMBER ) return NumberCompareString(cs, 0, 0);
 
-	return CompareString(LOCALE_USER_DEFAULT, cs->option & ~XNORM_MASK,
-		cs->SrcCell->f.cFileName,-1,
-		cs->DstCell->f.cFileName,-1) - 2;
+	if ( (cs->option & SORTE_DEFAULT_MASK) == SORTE_DEFAULT_VALUE ){
+		return CompareString(LOCALE_USER_DEFAULT,
+				cs->option & ~SORTE_EXMASK,
+				cs->SrcCell->f.cFileName, -1,
+				cs->DstCell->f.cFileName, -1) - 2;
+	}else{
+		return CompareName(cs->exoption,
+				cs->SrcCell->f.cFileName, -1,
+				cs->DstCell->f.cFileName, -1);
+	}
 }
 
 //-------------------------------------------------------------------- 拡張子順
@@ -689,21 +775,41 @@ int USEFASTCALL CmpExt(COMPARESTRUCT *cs)
 //---------------------------------------------------------------------- 名前順
 int USEFASTCALL CmpName(COMPARESTRUCT *cs)
 {
-	if ( cs->option & XNORM_MASK ){
-		if ( cs->option & XNORM_LASTENTRY ) return LastEntryCompareString(cs);
-		return NumberCompareString(cs,0,0);
-	}
-	return CompareString(LOCALE_USER_DEFAULT,cs->option,
-				cs->SrcCell->f.cFileName,cs->SrcCell->ext,
-				cs->DstCell->f.cFileName,cs->DstCell->ext) - 2;
+	return CompareString(LOCALE_USER_DEFAULT, cs->option,
+				cs->SrcCell->f.cFileName, cs->SrcCell->ext,
+				cs->DstCell->f.cFileName, cs->DstCell->ext) - 2;
 }
+
+int USEFASTCALL CmpName_Ex(COMPARESTRUCT *cs)
+{
+	TCHAR srcname[MAX_PATH * 2];
+	TCHAR dstname[MAX_PATH * 2];
+
+	StrMap(cs->exoption, cs->SrcCell->f.cFileName, cs->SrcCell->ext, srcname);
+	StrMap(cs->exoption, cs->DstCell->f.cFileName, cs->DstCell->ext, dstname);
+
+	// LCMAP_UPPERCASE と NORM_IGNORENONSPACE | NORM_IGNORESYMBOLS は共存できない
+	if ( (cs->exoption & LCMAP_UPPERCASE) &&
+		 (cs->exoption & (NORM_IGNORENONSPACE | NORM_IGNORESYMBOLS) ) ){
+		return tstricmp(srcname, dstname);
+	}else{
+		return tstrcmp(srcname, dstname);
+	}
+}
+
+int USEFASTCALL CmpName_NormEx(COMPARESTRUCT *cs)
+{
+	if ( cs->option & SORTE_LASTENTRY ) return LastEntryCompareString(cs);
+	return NumberCompareString(cs, 0, 0);
+}
+
 //-------------------------------------------------------------------- 大きい順
 int USEFASTCALL CmpSize(COMPARESTRUCT *cs)
 {
 	if ( cs->SrcCell->f.nFileSizeHigh == cs->DstCell->f.nFileSizeHigh ){
 		if (cs->SrcCell->f.nFileSizeLow <
 			cs->DstCell->f.nFileSizeLow) return -1;
-		if(cs->SrcCell->f.nFileSizeLow >
+		if (cs->SrcCell->f.nFileSizeLow >
 			cs->DstCell->f.nFileSizeLow) return 1;
 		return 0;
 	}
@@ -714,24 +820,24 @@ int USEFASTCALL CmpSize(COMPARESTRUCT *cs)
 int USEFASTCALL CmpTime(COMPARESTRUCT *cs)
 {
 	return FuzzyCompareFileTime0(&cs->SrcCell->f.ftLastWriteTime,
-							&cs->DstCell->f.ftLastWriteTime);
+			&cs->DstCell->f.ftLastWriteTime);
 }
 //------------------------------------------------------------------ 最新作成順
 int USEFASTCALL CmpCTime(COMPARESTRUCT *cs)
 {
 	return FuzzyCompareFileTime0(&cs->SrcCell->f.ftCreationTime,
-							&cs->DstCell->f.ftCreationTime);
+			&cs->DstCell->f.ftCreationTime);
 }
 //------------------------------------------------------------------ 最新参照順
 int USEFASTCALL CmpATime(COMPARESTRUCT *cs)
 {
 	return FuzzyCompareFileTime0(&cs->SrcCell->f.ftLastAccessTime,
-							&cs->DstCell->f.ftLastAccessTime);
+			&cs->DstCell->f.ftLastAccessTime);
 }
 //-------------------------------------------------------------------- マーク順
 int USEFASTCALL CmpMark(COMPARESTRUCT *cs)
 {
-	int s,d;
+	int s, d;
 	s = !IsCellPtrMarked(cs->SrcCell);
 	d = !IsCellPtrMarked(cs->DstCell);
 	return s - d;
@@ -739,7 +845,7 @@ int USEFASTCALL CmpMark(COMPARESTRUCT *cs)
 //---------------------------------------------------------------------- 変更順
 int USEFASTCALL CmpChanged(COMPARESTRUCT *cs)
 {
-	int s,d;
+	int s, d;
 
 	s = cs->SrcCell->state;
 	if ( cs->SrcCell->attr & ECA_GRAY ) s = ECS_GRAY;
@@ -753,9 +859,17 @@ int USEFASTCALL CmpComment(COMPARESTRUCT *cs)
 	if ( cs->SrcCell->comment == cs->DstCell->comment ) return 0;
 	if ( cs->SrcCell->comment == EC_NOCOMMENT ) return 1;
 	if ( cs->DstCell->comment == EC_NOCOMMENT ) return -1;
-	return CompareString(LOCALE_USER_DEFAULT,cs->option & ~XNORM_MASK,
-		ThPointerT(&cs->cinfo->EntryComments,cs->SrcCell->comment),-1,
-		ThPointerT(&cs->cinfo->EntryComments,cs->DstCell->comment),-1) - 2;
+
+	if ( (cs->option & SORTE_DEFAULT_MASK) == SORTE_DEFAULT_VALUE ){
+		return CompareString(LOCALE_USER_DEFAULT,
+				cs->option & ~SORTE_EXMASK,
+				ThPointerT(&cs->cinfo->EntryComments, cs->SrcCell->comment), -1,
+				ThPointerT(&cs->cinfo->EntryComments, cs->DstCell->comment), -1) - 2;
+	}else{
+		return CompareName(cs->exoption,
+				ThPointerT(&cs->cinfo->EntryComments, cs->SrcCell->comment), -1,
+				ThPointerT(&cs->cinfo->EntryComments, cs->DstCell->comment), -1);
+	}
 }
 //------------------------------------------------------------------ 読み込み順
 int USEFASTCALL CmpOriginal(COMPARESTRUCT *cs)
@@ -778,6 +892,15 @@ int USEFASTCALL CmpRName(COMPARESTRUCT *cs)
 {
 	return -CmpName(cs);
 }
+int USEFASTCALL CmpRName_Ex(COMPARESTRUCT *cs)
+{
+	return -CmpName_Ex(cs);
+}
+int USEFASTCALL CmpRName_NormEx(COMPARESTRUCT *cs)
+{
+	return -CmpName_NormEx(cs);
+}
+
 int USEFASTCALL CmpRExt(COMPARESTRUCT *cs)
 {
 	return -CmpExt(cs);
@@ -831,34 +954,34 @@ int USEFASTCALL CmpAttributes(COMPARESTRUCT *cs)
 	return 0;
 }
 // ----------------------------------------------------------------------------
-CMPFUNCSTRUCT CmpFuncs[SORTFUNCTYPES] = {
-	{CmpName},			//  0
-	{CmpExt},			//  1
-	{CmpSize},			//  2
-	{CmpTime},			//  3
-	{CmpCTime},			//  4
-	{CmpATime},			//  5
-	{CmpMark},			//  6
-	{CmpChanged},		//  7
-	{CmpRName},			//  8
-	{CmpRExt},			//  9
-	{CmpRSize},			// 10
-	{CmpRTime},			// 11
-	{CmpRCTime},		// 12
-	{CmpRATime},		// 13
-	{CmpRMark},			// 14
-	{CmpRChanged},		// 15
-	{CmpAttributes},	// 16
-	{CmpComment},		// 17
-	{CmpRComment},		// 18
-	{CmpOriginal},		// 19
-	{CmpExtcolor},		// 20
-	{CmpRExtcolor},		// 21
-	{CmpDirectory},		// 22
-	{CmpRDirectory},	// 23
+CMPFUNC CmpFuncs[SORTFUNCTYPES] = {
+	CmpName,		//  0
+	CmpExt,			//  1
+	CmpSize,		//  2
+	CmpTime,		//  3
+	CmpCTime,		//  4
+	CmpATime,		//  5
+	CmpMark,		//  6
+	CmpChanged,		//  7
+	CmpRName,		//  8
+	CmpRExt,		//  9
+	CmpRSize,		// 10
+	CmpRTime,		// 11
+	CmpRCTime,		// 12
+	CmpRATime,		// 13
+	CmpRMark,		// 14
+	CmpRChanged,	// 15
+	CmpAttributes,	// 16
+	CmpComment,		// 17
+	CmpRComment,	// 18
+	CmpOriginal,	// 19
+	CmpExtcolor,	// 20
+	CmpRExtcolor,	// 21
+	CmpDirectory,	// 22
+	CmpRDirectory,	// 23
 
-	{CmpColumnExt},		// 24～42,44 column拡張
-	{CmpRColumnExt},	// 25～43,45 column拡張
+	CmpColumnExt,	// 24～42, 44 column拡張
+	CmpRColumnExt,	// 25～43, 45 column拡張
 };
 // 複数段ソート ---------------------------------------------------------------
 int USEFASTCALL CmpMulti(COMPARESTRUCT *cs)
@@ -882,7 +1005,7 @@ int USEFASTCALL CmpMulti(COMPARESTRUCT *cs)
 								FILE_ATTRIBUTE_HIDDEN(B1)
 								FILE_ATTRIBUTE_READONLY(B0)
 -----------------------------------------------------------------------------*/
-int USEFASTCALL CmpFunc(int di,COMPARESTRUCT *cs)
+int USEFASTCALL CmpFunc(int di, COMPARESTRUCT *cs)
 {
 	ENTRYCELL *celld;
 	DWORD dt;
@@ -914,18 +1037,18 @@ int SortCmp(ENTRYDATAOFFSET cellno, ENTRYINDEX cellmax, COMPARESTRUCT *cs)
 	}
 											// 末尾との比較 -------------------
 	dh = cellmax - 1;
-	if ( CmpFunc(dh,cs) >= 0 ) return cellmax;
+	if ( CmpFunc(dh, cs) >= 0 ) return cellmax;
 											// 二分検索 -----------------------
 	dl = 0;
 	while ( (dh - dl) > 1 ){
 		c = (dh + dl) >> 1;
-		if ( CmpFunc(c,cs) < 0 ){
+		if ( CmpFunc(c, cs) < 0 ){
 			dh = c;
 		}else{
 			dl = c;
 		}
 	}
-	if ( ((dh - dl) == 1) && ( CmpFunc(dl,cs) >= 0) ) dl++;
+	if ( ((dh - dl) == 1) && ( CmpFunc(dl, cs) >= 0) ) dl++;
 insert:										// 挿入 ---------------------------
 	if ( dl < cellmax ){
 		memmove(&CsCELt(dl + 1), &CsCELt(dl), sizeof(ENTRYINDEX) * (cellmax - dl));
@@ -934,18 +1057,58 @@ insert:										// 挿入 ---------------------------
 	return dl;
 }
 
-CMPFUNCSTRUCT * USEFASTCALL GetColumnSort(COMPARESTRUCT *cs,char sortmode)
+CMPFUNC USEFASTCALL GetColumnSort(COMPARESTRUCT *cs, char sortmode)
 {
-	if ( sortmode < SORT_COLUMNTYPE ) return &CmpFuncs[sortmode];
+	// CmpColumnExt / CmpRColumnExt 以外
+	if ( sortmode < SORT_COLUMNTYPE ){
+		DWORD option;
+
+		option = cs->option;
+		if ( (option & SORTE_DEFAULT_MASK) != SORTE_DEFAULT_VALUE ){
+			// 自前(LCMapString + tstrcmp/tstricmp)用の設定を準備
+			cs->exoption = (option ^ (NORM_IGNORENONSPACE | NORM_IGNORESYMBOLS)) & ~(SORTE_IGNORECASE | SORTE_KANATYPE | SORTE_WIDE | SORTE_EXMASK);
+			if ( !(option & SORTE_KANATYPE) ) setflag(cs->exoption, LCMAP_KATAKANA);
+			if ( !(option & SORTE_WIDE) ) setflag(cs->exoption, LCMAP_HALFWIDTH);
+			if ( option & SORTE_IGNORECASE ){
+			// LCMAP_UPPERCASE と NORM_IGNORENONSPACE | NORM_IGNORESYMBOLS は共存できない→tstricmp で処理(SORT_STRINGSORTも、らしい)
+				if ( cs->exoption & (NORM_IGNORENONSPACE | NORM_IGNORESYMBOLS | SORT_STRINGSORT) ){
+					setflag(cs->exoption, STRMAP_IGNORECASE);
+				}else{ // LCMap で処理
+					setflag(cs->exoption, LCMAP_UPPERCASE);
+				}
+			}
+		}
+		/* 使用すると、昇降の順番が交互に代わるため、適用していない
+		if ( (option & SORTE_NUMBER) &&
+			 ((OSver.dwMajorVersion > 6) || ((OSver.dwMajorVersion == 6) && (OSver.dwMinorVersion >= 1))) ){ // Win7
+			option = (option | SORT_DIGITSASNUMBERS) & ~SORTE_NUMBER;
+		}
+		*/
+
+		if ( (sortmode != 0) && (sortmode != 8) ){
+			return CmpFuncs[sortmode];
+		}
+		// CmpName / CmpRName
+		if ( option & SORTE_EXMASK ){ // 特殊指定
+			return (sortmode == 0) ? CmpName_NormEx : CmpRName_NormEx;
+		}
+		if ( (option & SORTE_DEFAULT_MASK) == SORTE_DEFAULT_VALUE ){
+			// CompareString を使用する
+			return CmpFuncs[sortmode];
+		}else{ // 自前(LCMapString + tstrcmp/tstricmp)
+			return (sortmode == 0) ? CmpName_Ex : CmpRName_Ex;
+		}
+	}
+	// CmpColumnExt / CmpRColumnExt
 	if ( sortmode < SORTTYPES ){ // 拡張コメント
 		cs->columnID = DFC_COMMENTEX_MAX - (((sortmode - (SORTFUNCTYPES - 2)) >> 1));
-	}else{
+	}else{ // SORTFUNC_COLUMN_UP / SORTFUNC_COLUMN_DOWN
 		cs->columnID = cs->option;
 	}
-	return &CmpFuncs[SORTFUNC_COLUMN_UP + ((sortmode - (SORTFUNCTYPES - 2)) & 1) ];
+	return CmpFuncs[SORTFUNC_COLUMN_UP + ((sortmode - (SORTFUNCTYPES - 2)) & 1) ];
 }
 
-BOOL InitSort(COMPARESTRUCT *cs,XC_SORT *xs)
+BOOL InitSort(COMPARESTRUCT *cs, XC_SORT *xs)
 {
 	char sortmode;
 
@@ -960,25 +1123,25 @@ BOOL InitSort(COMPARESTRUCT *cs,XC_SORT *xs)
 		cs->SortF = NULL;
 		return FALSE;
 	}
-	cs->SortF = GetColumnSort(cs,sortmode)->f;
+	cs->SortF = GetColumnSort(cs, sortmode);
 
 	if ( (xs->mode.dat[1] < 0) || (xs->mode.dat[1] > SORTFULLTYPES) ) return TRUE;
 	if ( xs->mode.dat[0] == xs->mode.dat[1] ) return TRUE;
 	cs->SortF1 = cs->SortF;
-	cs->SortF2 = GetColumnSort(cs,xs->mode.dat[1])->f;
+	cs->SortF2 = GetColumnSort(cs, xs->mode.dat[1]);
 	cs->SortF  = CmpMulti;
 	if ( (xs->mode.dat[2] < 0) || (xs->mode.dat[2] > SORTFULLTYPES) ){
 		cs->SortF3 = NULL;
 	}else{
-		cs->SortF3 = GetColumnSort(cs,xs->mode.dat[2])->f;
+		cs->SortF3 = GetColumnSort(cs, xs->mode.dat[2]);
 	}
 	return TRUE;
 }
 
-void MergeCellSort(COMPARESTRUCT *cs,const ENTRYINDEX mini,const ENTRYINDEX maxi)
+void MergeCellSort(COMPARESTRUCT *cs, const ENTRYINDEX mini, const ENTRYINDEX maxi)
 {
-	ENTRYINDEX center,range,orgi,worki;
-	ENTRYINDEX *table,*destp;
+	ENTRYINDEX center, range, orgi, worki;
+	ENTRYINDEX *table, *destp;
 	ENTRYDATAOFFSET *worktbl;
 										// 細切れ処理
 	center = (mini + maxi) / 2;
@@ -989,7 +1152,7 @@ void MergeCellSort(COMPARESTRUCT *cs,const ENTRYINDEX mini,const ENTRYINDEX maxi
 	range = center - mini;
 	if ( range ){	// 前半をワークへ
 		ENTRYINDEX i;
-		ENTRYINDEX *dp,*sp;
+		ENTRYINDEX *dp, *sp;
 
 		sp = table + mini;
 		dp = cs->worktbl;
@@ -1004,7 +1167,7 @@ void MergeCellSort(COMPARESTRUCT *cs,const ENTRYINDEX mini,const ENTRYINDEX maxi
 	destp = table + mini;
 	while ( orgi < maxi ){
 		cs->SrcCell = &CsCELdata(worktbl[worki]);
-		if ( CmpFunc(orgi,cs) <= 0 ){
+		if ( CmpFunc(orgi, cs) <= 0 ){
 			*destp++ = worktbl[worki++];
 			if ( worki >= range ) return;
 		}else{
@@ -1027,19 +1190,19 @@ void MergeCellSort(COMPARESTRUCT *cs,const ENTRYINDEX mini,const ENTRYINDEX maxi
 void CellSort(PPC_APPINFO *cinfo, XC_SORT *xs)
 {
 	COMPARESTRUCT cs;
-	ENTRYINDEX min,i;
+	ENTRYINDEX min, i;
 
 	cs.cinfo = cinfo;
 	if ( FALSE == InitSort(&cs, xs) ) return;
 	cinfo->sort_nowmode.block = xs->mode.block;
 
 	if ( cinfo->e.cellIMax > SORTINFOSIZE ){
-		SetPopMsg(cinfo,POPMSG_NOLOGMSG,SortingStr);
+		SetPopMsg(cinfo, POPMSG_NOLOGMSG, SortingStr);
 		UpdateWindow_Part(cinfo->info.hWnd);
 	}
 
 	if ( xs->mode.dat[0] >= SORT_COLUMNTYPE ){
-		PreExecuteSort(cinfo,xs->mode.dat[0]);
+		PreExecuteSort(cinfo, xs->mode.dat[0]);
 	}
 
 	min = 0;
@@ -1066,11 +1229,11 @@ void CellSort(PPC_APPINFO *cinfo, XC_SORT *xs)
 
 	if ( cinfo->e.cellIMax > 4000 ){
 		cs.worktbl = PPcHeapAlloc( ( cinfo->e.cellIMax / 2 + 1 ) * sizeof(ENTRYINDEX));
-		MergeCellSort(&cs,min,cinfo->e.cellIMax);
+		MergeCellSort(&cs, min, cinfo->e.cellIMax);
 		PPcHeapFree(cs.worktbl);
 
 		if ( cinfo->e.cellIMax > SORTINFOSIZE ){
-			StopPopMsg(cinfo,PMF_DISPLAYMASK);
+			StopPopMsg(cinfo, PMF_DISPLAYMASK);
 		}
 	}else{
 		for ( i = min + 1 ; i < cinfo->e.cellIMax ; i++ ){
@@ -1085,7 +1248,7 @@ typedef struct {
 	PPC_APPINFO *parent;
 } ALLEXECUTESTRUCT;
 
-DWORD_PTR USECDECL AllExecuteFunc(ALLEXECUTESTRUCT *aes,DWORD cmdID,PPXAPPINFOUNION *uptr)
+DWORD_PTR USECDECL AllExecuteFunc(ALLEXECUTESTRUCT *aes, DWORD cmdID, PPXAPPINFOUNION *uptr)
 {
 	switch(cmdID){
 		case PPXCMDID_STARTENUM:	// 検索開始(マーク無しもあり)
@@ -1106,22 +1269,22 @@ DWORD_PTR USECDECL AllExecuteFunc(ALLEXECUTESTRUCT *aes,DWORD cmdID,PPXAPPINFOUN
 
 		// その他は親に任せる
 		default:
-			return aes->parent->info.Function(&aes->parent->info,cmdID,uptr);
+			return aes->parent->info.Function(&aes->parent->info, cmdID, uptr);
 	}
 	return 1;
 }
 #endif
 
-void ExtCommentExecute(PPC_APPINFO *cinfo,DWORD id)
+void ExtCommentExecute(PPC_APPINFO *cinfo, DWORD id)
 {
-	TCHAR key[64],param[CMDLINESIZE];
+	TCHAR key[64], param[CMDLINESIZE];
 
-	wsprintf(key,T("COMMENTEVENT%d"),id);
+	wsprintf(key, T("COMMENTEVENT%d"), id);
 	param[0] = '\0';
 
-	GetCustTable(StrKC_main,key,&param,sizeof(param));
+	GetCustTable(StrKC_main, key, &param, sizeof(param));
 	if ( param[0] != '\0' ){
-		ExecDualParam(cinfo,param);
+		ExecDualParam(cinfo, param);
 #if 0
 		if ( (UTCHAR)param[0] == EXTCMD_CMD ){
 			ALLEXECUTESTRUCT info;
@@ -1129,25 +1292,25 @@ void ExtCommentExecute(PPC_APPINFO *cinfo,DWORD id)
 			info.info = cinfo->info;
 			info.info.Function = (PPXAPPINFOFUNCTION)AllExecuteFunc;
 			info.parent = cinfo;
-			PP_ExtractMacro(cinfo->info.hWnd,&info.info,NULL,param + 1,NULL,0);
+			PP_ExtractMacro(cinfo->info.hWnd, &info.info, NULL, param + 1, NULL, 0);
 		}else{
-			ExecDualParam(cinfo,param);
+			ExecDualParam(cinfo, param);
 		}
 #endif
 	}
 }
 
-void PreExecuteSort(PPC_APPINFO *cinfo,BYTE sortid)
+void PreExecuteSort(PPC_APPINFO *cinfo, BYTE sortid)
 {
 	sortid = (BYTE)((sortid - SORT_COLUMNTYPE + 2) / 2); // 1～の値にする
 	if ( cinfo->UseCommentsFlag & (1 << sortid) ) return; // 読み込み済み
-	setflag(cinfo->UseCommentsFlag,1 << sortid);
+	setflag(cinfo->UseCommentsFlag, 1 << sortid);
 	if ( cinfo->edit.ref > 0 ){
 		EndCellEdit(cinfo);
-		ExtCommentExecute(cinfo,sortid);
+		ExtCommentExecute(cinfo, sortid);
 		StartCellEdit(cinfo);
 	}else{
-		ExtCommentExecute(cinfo,sortid);
+		ExtCommentExecute(cinfo, sortid);
 	}
 }
 
@@ -1163,7 +1326,7 @@ void SetSlowMode(PPC_APPINFO *cinfo)
 }
 
 // Cell 情報を作成し、保存 ----------------------------------------------------
-void SetCellInfo(PPC_APPINFO *cinfo,ENTRYCELL *cell,BYTE *extcolor)
+void SetCellInfo(PPC_APPINFO *cinfo, ENTRYCELL *cell, BYTE *extcolor)
 {
 	TCHAR *extsp;
 
@@ -1177,34 +1340,36 @@ void SetCellInfo(PPC_APPINFO *cinfo,ENTRYCELL *cell,BYTE *extcolor)
 			cell->attr = ECA_ETC;
 			return;
 		}
+		if ( cell->f.dwFileAttributes & (FILE_ATTRIBUTEX_LF_COMMENT | FILE_ATTRIBUTEX_LF_MARK) ){
+			if ( cell->f.dwFileAttributes & FILE_ATTRIBUTEX_LF_COMMENT ){
+				const TCHAR *p;
 
-		if ( cell->f.dwFileAttributes & FILE_ATTRIBUTEX_LF_COMMENT ){
-			const TCHAR *p;
-
-			cell->comment = cinfo->EntryComments.top;
-			ThSize(&cinfo->EntryComments,CMDLINESIZE);
-			p = (const TCHAR *)cell->f.dwReserved0; // dwReserved0/1 を使用
-			GetCommandParameter(&p,(TCHAR *)ThLast(&cinfo->EntryComments),CMDLINESIZE);
-			cinfo->EntryComments.top += TSTRSIZE((TCHAR *)ThLast(&cinfo->EntryComments));
-		}
-
-		if ( cell->f.dwFileAttributes & FILE_ATTRIBUTEX_LF_MARK ){
-			if ( !IsCellPtrMarked(cell) ){
-				ENTRYINDEX cellTNo = cell - &CELdata(0);
-
-				cinfo->e.markC++;
-				if ( cinfo->e.markTop == ENDMARK_ID ){		// 初めてのマーク
-					cell->mark_bk = ENDMARK_ID;
-					cinfo->e.markTop = cellTNo;
-				}else{					// 既にある
-					cell->mark_bk = cinfo->e.markLast;
-					CELdata(cinfo->e.markLast).mark_fw = cellTNo;
-				}
-				cinfo->e.markLast = cellTNo;
-				cell->mark_fw = ENDMARK_ID;
-				AddDD(cinfo->e.MarkSize.l,cinfo->e.MarkSize.h,
-						cell->f.nFileSizeLow,cell->f.nFileSizeHigh);
+				cell->comment = cinfo->EntryComments.top;
+				ThSize(&cinfo->EntryComments, CMDLINESIZE);
+				p = (const TCHAR *)cell->f.dwReserved0; // dwReserved0/1 を使用
+				GetCommandParameter(&p, (TCHAR *)ThLast(&cinfo->EntryComments), CMDLINESIZE);
+				cinfo->EntryComments.top += TSTRSIZE((TCHAR *)ThLast(&cinfo->EntryComments));
 			}
+
+			if ( cell->f.dwFileAttributes & FILE_ATTRIBUTEX_LF_MARK ){
+				if ( !IsCellPtrMarked(cell) ){
+					ENTRYINDEX cellTNo = cell - &CELdata(0);
+
+					cinfo->e.markC++;
+					if ( cinfo->e.markTop == ENDMARK_ID ){		// 初めてのマーク
+						cell->mark_bk = ENDMARK_ID;
+						cinfo->e.markTop = cellTNo;
+					}else{					// 既にある
+						cell->mark_bk = cinfo->e.markLast;
+						CELdata(cinfo->e.markLast).mark_fw = cellTNo;
+					}
+					cinfo->e.markLast = cellTNo;
+					cell->mark_fw = ENDMARK_ID;
+					AddDD(cinfo->e.MarkSize.l, cinfo->e.MarkSize.h,
+							cell->f.nFileSizeLow, cell->f.nFileSizeHigh);
+				}
+			}
+			resetflag(cell->f.dwFileAttributes, FILE_ATTRIBUTEX_LF_COMMENT | FILE_ATTRIBUTEX_LF_MARK);
 		}
 	}
 											// コメント -----------------------
@@ -1217,8 +1382,8 @@ void SetCellInfo(PPC_APPINFO *cinfo,ENTRYCELL *cell,BYTE *extcolor)
 
 			cp = p + tstrlen(p) + 1;
 			if ( (cell->f.cAlternateFileName[0] &&
-						!tstricmp(p,cell->f.cAlternateFileName)) ||
-				 !tstricmp(p,cell->f.cFileName) ){
+						!tstricmp(p, cell->f.cAlternateFileName)) ||
+				 !tstricmp(p, cell->f.cFileName) ){
 				cell->comment =
 						TSTROFF32(cp - (TCHAR *)cinfo->EntryComments.bottom);
 				break;
@@ -1233,12 +1398,12 @@ void SetCellInfo(PPC_APPINFO *cinfo,ENTRYCELL *cell,BYTE *extcolor)
 	if ( cell->f.cFileName[0] == '.' ){		// 親／自ディレクトリ
 		if ( !cell->f.cFileName[1] ){		// This dir
 			cell->type = ECT_THISDIR;
-			setflag(cell->attr,ECA_DIR | ECA_THIS);
+			setflag(cell->attr, ECA_DIR | ECA_THIS);
 			return;
 		}
 		if ( (cell->f.cFileName[1] == '.') && !cell->f.cFileName[2] ){
 			cell->type = ECT_UPDIR;
-			setflag(cell->attr,ECA_DIR | ECA_PARENT);
+			setflag(cell->attr, ECA_DIR | ECA_PARENT);
 			return;
 		}
 											// 拡張子位置 ---------------------
@@ -1265,15 +1430,15 @@ void SetCellInfo(PPC_APPINFO *cinfo,ENTRYCELL *cell,BYTE *extcolor)
 			cell->type = ECT_NORMAL;
 		}
 		if ( atr & FILE_ATTRIBUTE_DIRECTORY ){
-			setflag(cell->attr,ECA_DIR);
+			setflag(cell->attr, ECA_DIR);
 			if ( cell->f.nFileSizeLow | cell->f.nFileSizeHigh ){
-				setflag(cell->attr,ECA_DIRC);
+				setflag(cell->attr, ECA_DIRC);
 			}
 			if ( !XC_sdir ) return;
 		}
 	}
 	{ // 拡張子を求める
-		TCHAR type,*src;
+		TCHAR type, *src;
 
 		src = extsp;
 		extsp = NULL;
@@ -1307,22 +1472,22 @@ void SetCellInfo(PPC_APPINFO *cinfo,ENTRYCELL *cell,BYTE *extcolor)
 		FN_REGEXP fn;
 
 		ssize = TSTRSIZE32(extsp);
-		memcpy(ext,extsp,ssize);
+		memcpy(ext, extsp, ssize);
 		tstrupr(ext);
 		q = extcolor;
 		for ( ; ; ){
 			w = *(WORD *)q;
 			if ( w == 0 ) break;
 			if ( *(TCHAR *)(BYTE *)(q + sizeof(WORD)) != '/' ){
-				if ( !memcmp( q + sizeof(WORD),ext,ssize) ){
+				if ( !memcmp( q + sizeof(WORD), ext, ssize) ){
 					cell->extC = *(DWORD *)(q + sizeof(WORD) + ssize);
 					break;
 				}
 			}else{
 				int fnresult;
 
-				MakeFN_REGEXP(&fn,(TCHAR *)(BYTE *)(q + sizeof(WORD)) + 1);
-				fnresult = FinddataRegularExpression(&cell->f,&fn);
+				MakeFN_REGEXP(&fn, (TCHAR *)(BYTE *)(q + sizeof(WORD)) + 1);
+				fnresult = FinddataRegularExpression(&cell->f, &fn);
 				FreeFN_REGEXP(&fn);
 				if ( fnresult ){
 					cell->extC = *(DWORD *)(q + sizeof(WORD) + TSTROFF(tstrlen((TCHAR *)(BYTE *)(q + sizeof(WORD))) + 1) );
@@ -1334,7 +1499,7 @@ void SetCellInfo(PPC_APPINFO *cinfo,ENTRYCELL *cell,BYTE *extcolor)
 	}
 }
 											// find 初期化 --------------------
-void InitMasks(struct masks *m,XC_MASK *mask,TCHAR *maskstr)
+void InitMasks(struct masks *m, XC_MASK *mask, TCHAR *maskstr)
 {
 	int size;
 
@@ -1348,15 +1513,15 @@ void InitMasks(struct masks *m,XC_MASK *mask,TCHAR *maskstr)
 	}
 
 	m->extcolor = NULL;
-	if ( MakeFN_REGEXP(&m->FileMask,maskstr) & REGEXPF_PATHMASK ) m->Dir = 0;
+	if ( MakeFN_REGEXP(&m->FileMask, maskstr) & REGEXPF_PATHMASK ) m->Dir = 0;
 	size = GetCustDataSize(T("C_ext"));
 	if ( size > 0 ){
 		m->extcolor = PPcHeapAlloc(size);
-		if ( m->extcolor != NULL ) GetCustData(T("C_ext"),m->extcolor,size);
+		if ( m->extcolor != NULL ) GetCustData(T("C_ext"), m->extcolor, size);
 	}
 }
 
-BOOL ReadDirProgress(PPC_APPINFO *cinfo,struct readprogress *r)
+BOOL ReadDirProgress(PPC_APPINFO *cinfo, struct readprogress *r)
 {
 	DWORD NewTime;
 
@@ -1366,14 +1531,14 @@ BOOL ReadDirProgress(PPC_APPINFO *cinfo,struct readprogress *r)
 			r->enablecnt--;
 		}else{
 			if ( IsTrue(ReadDirBreakCheck(cinfo)) ){
-				SetPopMsg(cinfo,POPMSG_MSG,MES_BRAK);
+				SetPopMsg(cinfo, POPMSG_MSG, MES_BRAK);
 				SetLastError(ERROR_MORE_DATA);
 				return FALSE;
 			}
 		}
 		r->OldTime = NewTime;
 		InitCli(cinfo);
-		InvalidateRect(cinfo->info.hWnd,NULL,TRUE);
+		InvalidateRect(cinfo->info.hWnd, NULL, TRUE);
 		UpdateWindow_Part(cinfo->info.hWnd);
 	}
 	r->dispN += dispNtimes;
@@ -1404,17 +1569,17 @@ void InitDirectoryCheck(PPC_APPINFO *cinfo)
 	if ( (cinfo->e.Dtype.ExtData == INVALID_HANDLE_VALUE) ||
 		 (XC_rrt[0] == -1) ||
 		 (cinfo->dset.flags & DSET_NODIRCHECK) ){
-		setflag(cinfo->SubTCmdFlags,SUBT_STOPDIRCHECK);	// 監視しない
+		setflag(cinfo->SubTCmdFlags, SUBT_STOPDIRCHECK);	// 監視しない
 	}else{
 		//SetShellChangeNotification(cinfo);
-		setflag(cinfo->SubTCmdFlags,SUBT_INITDIRCHECK);	// 監視開始
+		setflag(cinfo->SubTCmdFlags, SUBT_INITDIRCHECK);	// 監視開始
 	}
 	SetEvent(cinfo->SubT_cmd);
 }
 
-void USEFASTCALL UpdateEntry_Deleted(PPC_APPINFO *cinfo,ENTRYCELL *cell,struct masks *m)
+void USEFASTCALL UpdateEntry_Deleted(PPC_APPINFO *cinfo, ENTRYCELL *cell, struct masks *m)
 {
-	ENTRYINDEX ci,cc;
+	ENTRYINDEX ci, cc;
 	cell->state = ECS_ADDED;	// 削除されていたのが追加
 
 	cc = cell - &CELdata(0);
@@ -1428,14 +1593,14 @@ void USEFASTCALL UpdateEntry_Deleted(PPC_APPINFO *cinfo,ENTRYCELL *cell,struct m
 		if ( (cell->attr & (ECA_PARENT | ECA_THIS)) ||
 			 ( !(cell->f.dwFileAttributes & m->Attr) &&
 				((cell->f.dwFileAttributes & m->Dir) ||
-				FinddataRegularExpression(&cell->f,&m->FileMask)))){
+				FinddataRegularExpression(&cell->f, &m->FileMask)))){
 			if ( (cell->f.dwFileAttributes &
 					FILE_ATTRIBUTE_DIRECTORY) &&
 					 !(cell->attr & (ECA_PARENT | ECA_THIS)) ){
 				cinfo->e.Directories++;
 			}
 			if ( cinfo->e.cellStack ){	// スタックがあれば移動
-				memmove(&CELt(cinfo->e.cellIMax + 1),&CELt(cinfo->e.cellIMax),
+				memmove(&CELt(cinfo->e.cellIMax + 1), &CELt(cinfo->e.cellIMax),
 						sizeof(ENTRYINDEX) * (cinfo->e.cellStack) );
 			}
 			CELt(cinfo->e.cellIMax) = cell - &CELdata(0);
@@ -1445,13 +1610,13 @@ void USEFASTCALL UpdateEntry_Deleted(PPC_APPINFO *cinfo,ENTRYCELL *cell,struct m
 	cell->attr = 0;
 }
 
-#define CellsIsNotSameAttributes(cell1,cell2) \
+#define CellsIsNotSameAttributes(cell1, cell2) \
 	(cell1->f.dwFileAttributes != cell2->f.dwFileAttributes)
-#define CellsIsNotSameFileSize(cell1,cell2) \
+#define CellsIsNotSameFileSize(cell1, cell2) \
 	(!(cell1->f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) &&	\
 	 ((cell1->f.nFileSizeLow  != cell2->f.nFileSizeLow ) ||		\
 	  (cell1->f.nFileSizeHigh != cell2->f.nFileSizeHigh) ))
-#define CellsIsNotSameFileTime(cell1,cell2) \
+#define CellsIsNotSameFileTime(cell1, cell2) \
 	((cell1->f.ftLastWriteTime.dwLowDateTime				\
 			!= cell2->f.ftLastWriteTime.dwLowDateTime) ||	\
 	 (cell1->f.ftLastWriteTime.dwHighDateTime				\
@@ -1461,12 +1626,12 @@ void USEFASTCALL UpdateEntry_Deleted(PPC_APPINFO *cinfo,ENTRYCELL *cell,struct m
 	(cell->f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 
 									// ファイルの検索開始 -----(再読込み)
-void UpdateEntry(PPC_APPINFO *cinfo,TCHAR *readpath,int *flag,TCHAR *mask)
+void UpdateEntry(PPC_APPINFO *cinfo, TCHAR *readpath, int *flag, TCHAR *mask)
 {
 	HANDLE hFF;
 	struct masks namemask;
 	struct readprogress rps;
-	ENTRYDATAOFFSET searchNo = 0,searchStartNo = 0;
+	ENTRYDATAOFFSET searchNo = 0, searchStartNo = 0;
 	ENTRYDATAOFFSET oldcellMax;		// 元のエントリ数（調査範囲を元の範囲に限定する）
 	int flagdata;
 
@@ -1481,8 +1646,8 @@ void UpdateEntry(PPC_APPINFO *cinfo,TCHAR *readpath,int *flag,TCHAR *mask)
 		int i;
 
 		cell = &CELdata(0);
-		for ( i = cinfo->e.cellDataMax ; i ; i--,cell++ ){
-			setflag(cell->attr,ECA_GRAY);
+		for ( i = cinfo->e.cellDataMax ; i ; i--, cell++ ){
+			setflag(cell->attr, ECA_GRAY);
 		}
 	}
 	if ( cinfo->CellHashType != CELLHASH_NAME ){
@@ -1490,7 +1655,7 @@ void UpdateEntry(PPC_APPINFO *cinfo,TCHAR *readpath,int *flag,TCHAR *mask)
 		int i;
 
 		cell = &CELdata(0);
-		for ( i = cinfo->e.cellDataMax ; i ; i--,cell++ ){
+		for ( i = cinfo->e.cellDataMax ; i ; i--, cell++ ){
 			cell->cellhash = MiniHash(cell->f.cFileName);
 		}
 		cinfo->CellHashType = CELLHASH_NAME;
@@ -1499,29 +1664,29 @@ void UpdateEntry(PPC_APPINFO *cinfo,TCHAR *readpath,int *flag,TCHAR *mask)
 	cinfo->e.Dtype.mode = VFSDT_UNKNOWN;
 	cinfo->e.Dtype.Name[0] = '\0';
 
-	hFF = FindFirstAsync(cinfo->info.hWnd,cinfo->LoadCounter,readpath,
-			&CELdata(cinfo->e.cellDataMax).f,&cinfo->e.Dtype,flag);
+	hFF = FindFirstAsync(cinfo->info.hWnd, cinfo->LoadCounter, readpath,
+			&CELdata(cinfo->e.cellDataMax).f, &cinfo->e.Dtype, flag);
 	cinfo->StateInfo.state = StateID_NoState;
-//	if ( cinfo->StateInfo.hStateWnd != NULL ) SendMessage(cinfo->StateInfo.hStateWnd,WM_CLOSE,0,0);
+//	if ( cinfo->StateInfo.hStateWnd != NULL ) SendMessage(cinfo->StateInfo.hStateWnd, WM_CLOSE, 0, 0);
 	if ( hFF == INVALID_HANDLE_VALUE ){	// 失敗
 		ERRORCODE errorcode;
 
 		errorcode = GetLastError();
 		if ( errorcode == ERROR_FILE_NOT_FOUND ){
-			setflag(*flag,RENTRYI_GETFREESIZE);
+			setflag(*flag, RENTRYI_GETFREESIZE);
 		}
 		if ( errorcode != ERROR_BUSY ){
 			if ( CEL(0).type == ECT_SYSMSG ){
-				PPErrorMsg(CEL(0).f.cFileName,errorcode);
+				PPErrorMsg(CEL(0).f.cFileName, errorcode);
 				CEL(0).f.nFileSizeLow = errorcode;
 			}
-			SetPopMsg(cinfo,POPMSG_MSG,NULL);
+			SetPopMsg(cinfo, POPMSG_MSG, NULL);
 			return;
 		}
 		// ERROR_BUSY : 読み込み中のため、とりあえず戻る
 		cinfo->AcceptReload = *flag;
 		cinfo->FDirWrite = FDW_REQUESTED;
-		setflag(cinfo->SubTCmdFlags,SUBT_REQUESTRELOAD); // 時間経ってから更新
+		setflag(cinfo->SubTCmdFlags, SUBT_REQUESTRELOAD); // 時間経ってから更新
 		InitDirectoryCheck(cinfo);	// ディレクトリ書き込みの監視を起動
 		return;
 	}
@@ -1539,10 +1704,10 @@ void UpdateEntry(PPC_APPINFO *cinfo,TCHAR *readpath,int *flag,TCHAR *mask)
 		CELdata(cinfo->e.cellDataMax).f = CELdata(cinfo->e.cellDataMax + 1).f;	// 情報の移動
 	}
 	oldcellMax = cinfo->e.cellDataMax;
-	InitMasks(&namemask,&cinfo->mask,mask);
+	InitMasks(&namemask, &cinfo->mask, mask);
 	flagdata = *flag;
 	do{
-		ENTRYCELL *cell,*chkcell,*chkcellmax;
+		ENTRYCELL *cell, *chkcell, *chkcellmax;
 		DWORD hash;
 		int remains;
 
@@ -1554,7 +1719,7 @@ void UpdateEntry(PPC_APPINFO *cinfo,TCHAR *readpath,int *flag,TCHAR *mask)
 										// 同一かを検索
 		for ( remains = (oldcellMax - searchNo) ; remains ; remains-- ){
 										// 大文字・小文字を区別して同一か判別
-			if ( (cell->cellhash == hash) && !(tstrcmp(chkcell->f.cFileName,cell->f.cFileName)) ){
+			if ( (cell->cellhash == hash) && !(tstrcmp(chkcell->f.cFileName, cell->f.cFileName)) ){
 				ENTRYDATAOFFSET nowNo;
 
 				nowNo = cell - &CELdata(0);
@@ -1567,10 +1732,10 @@ void UpdateEntry(PPC_APPINFO *cinfo,TCHAR *readpath,int *flag,TCHAR *mask)
 				}
 
 				if ( cell->state == ECS_DELETED ){
-					UpdateEntry_Deleted(cinfo,cell,&namemask);
-				}else if ( CellsIsNotSameAttributes(chkcell,cell) ||
-							CellsIsNotSameFileSize(chkcell,cell) ||
-							CellsIsNotSameFileTime(chkcell,cell) ){
+					UpdateEntry_Deleted(cinfo, cell, &namemask);
+				}else if ( CellsIsNotSameAttributes(chkcell, cell) ||
+							CellsIsNotSameFileSize(chkcell, cell) ||
+							CellsIsNotSameFileTime(chkcell, cell) ){
 					cell->state = ECS_CHANGED;	// 変更あり
 					if ( CellIsDirectory(chkcell) && (CellIsDirectory(cell)) ){
 						chkcell->f.nFileSizeLow = cell->f.nFileSizeLow;
@@ -1592,10 +1757,10 @@ void UpdateEntry(PPC_APPINFO *cinfo,TCHAR *readpath,int *flag,TCHAR *mask)
 					goto next;
 				}
 				if ( IsCellPtrMarked(cell) ){ //マーク有りの時は総計を修正
-					SubDD(cinfo->e.MarkSize.l,cinfo->e.MarkSize.h,
-							cell->f.nFileSizeLow,cell->f.nFileSizeHigh);
-					AddDD(cinfo->e.MarkSize.l,cinfo->e.MarkSize.h,
-							chkcell->f.nFileSizeLow,chkcell->f.nFileSizeHigh);
+					SubDD(cinfo->e.MarkSize.l, cinfo->e.MarkSize.h,
+							cell->f.nFileSizeLow, cell->f.nFileSizeHigh);
+					AddDD(cinfo->e.MarkSize.l, cinfo->e.MarkSize.h,
+							chkcell->f.nFileSizeLow, chkcell->f.nFileSizeHigh);
 				}
 				cell->f = chkcell->f;	// 情報の更新
 				chkcell = cell;
@@ -1606,7 +1771,7 @@ void UpdateEntry(PPC_APPINFO *cinfo,TCHAR *readpath,int *flag,TCHAR *mask)
 				cell = &CELdata(searchNo);
 			}
 		}
-		SetCellInfo(cinfo,chkcell,namemask.extcolor);
+		SetCellInfo(cinfo, chkcell, namemask.extcolor);
 		if ( remains == 0 ){					// なかった→追加
 			chkcell->state = ECS_ADDED;
 			chkcell->mark_fw = NO_MARK_ID;
@@ -1620,7 +1785,7 @@ void UpdateEntry(PPC_APPINFO *cinfo,TCHAR *readpath,int *flag,TCHAR *mask)
 				if ( (chkcell->attr & (ECA_PARENT | ECA_THIS)) ||
 					 (!(chkcell->f.dwFileAttributes & namemask.Attr) &&
 						((chkcell->f.dwFileAttributes & namemask.Dir) ||
-						 FinddataRegularExpression(&chkcell->f,&namemask.FileMask)))
+						 FinddataRegularExpression(&chkcell->f, &namemask.FileMask)))
 				){
 					if ( cell->f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ){
 						if ( cell->attr & (ECA_PARENT | ECA_THIS) ){
@@ -1631,7 +1796,7 @@ void UpdateEntry(PPC_APPINFO *cinfo,TCHAR *readpath,int *flag,TCHAR *mask)
 					}
 
 					if ( cinfo->e.cellStack ){	// スタックがあれば移動
-						memmove(&CELt(cinfo->e.cellIMax+1),&CELt(cinfo->e.cellIMax),
+						memmove(&CELt(cinfo->e.cellIMax+1), &CELt(cinfo->e.cellIMax),
 								sizeof(ENTRYINDEX) * (cinfo->e.cellStack) );
 					}
 					CELt(cinfo->e.cellIMax) = cinfo->e.cellDataMax;
@@ -1639,29 +1804,30 @@ void UpdateEntry(PPC_APPINFO *cinfo,TCHAR *readpath,int *flag,TCHAR *mask)
 				}
 			}
 			cinfo->e.cellDataMax++;
+			if ( cinfo->e.cellDataMax > ENTRYCELL_LIMIT ) break;
 			// ※TM_checkでcellアドレスが変わる場合有
-			if ( TM_check(&cinfo->e.CELLDATA,sizeof(ENTRYCELL) * (cinfo->e.cellDataMax + 1) ) == FALSE ){
+			if ( TM_check(&cinfo->e.CELLDATA, sizeof(ENTRYCELL) * (cinfo->e.cellDataMax + 1) ) == FALSE ){
 				break;
 			}
-			if ( TM_check(&cinfo->e.INDEXDATA,sizeof(ENTRYINDEX) * (cinfo->e.cellDataMax + 1) ) == FALSE ){
+			if ( TM_check(&cinfo->e.INDEXDATA, sizeof(ENTRYINDEX) * (cinfo->e.cellDataMax + 1) ) == FALSE ){
 				break;
 			}
 			if ( cinfo->e.cellDataMax >= rps.dispN ){
-				if ( ReadDirProgress(cinfo,&rps) == FALSE ) break;
+				if ( ReadDirProgress(cinfo, &rps) == FALSE ) break;
 			}
 		}
 next: ;
-	}while( IsTrue(FindNextAsync(hFF,&CELdata(cinfo->e.cellDataMax).f,flagdata)) );
+	}while( IsTrue(FindNextAsync(hFF, &CELdata(cinfo->e.cellDataMax).f, flagdata)) );
 	FreeFN_REGEXP(&namemask.FileMask);
-	FindCloseAsync(hFF,flagdata);
+	FindCloseAsync(hFF, flagdata);
 
 	if ( namemask.extcolor != NULL ){
-		HeapFree( hProcessHeap,0,namemask.extcolor);
+		HeapFree( hProcessHeap, 0, namemask.extcolor);
 	}
 
 	if ( cinfo->UseArcPathMask != ARCPATHMASK_OFF ){
-		tstrcpy(readpath,cinfo->ArcPathMask);
-		MaskPathMain(cinfo,cinfo->ArcPathMaskDepth,readpath);
+		tstrcpy(readpath, cinfo->ArcPathMask);
+		MaskPathMain(cinfo, cinfo->ArcPathMaskDepth, readpath);
 	}
 
 	{								// 未操作のファイル=削除ファイルを処理
@@ -1669,18 +1835,18 @@ next: ;
 		int i;
 
 		cell = &CELdata(searchNo);
-		for ( i = (oldcellMax - searchNo) ; i ; i--,cell++ ){	// 同一かを検索
+		for ( i = (oldcellMax - searchNo) ; i ; i--, cell++ ){	// 同一かを検索
 			if ( !(cell->attr & ECA_GRAY) ) continue;
 			cell->attr &= (BYTE)(~ECA_GRAY);
 			if ( cell->attr & (ECA_PARENT | ECA_THIS) ) continue; // ./.. は残す
 
 			cell->state = ECS_DELETED;
-			ResetMark(cinfo,cell);
+			ResetMark(cinfo, cell);
 		}
 	}
 }
 							// ファイルの検索開始 -----------（新規）
-void ReadEntryMain(PPC_APPINFO *cinfo,TCHAR *readpath,int *flags,TCHAR *mask)
+void ReadEntryMain(PPC_APPINFO *cinfo, TCHAR *readpath, int *flags, TCHAR *mask)
 {
 	COMPARESTRUCT cs;
 	HANDLE hFF;
@@ -1689,10 +1855,10 @@ void ReadEntryMain(PPC_APPINFO *cinfo,TCHAR *readpath,int *flags,TCHAR *mask)
 	struct masks namemask;
 	struct readprogress rps;
 	DWORD sorttime = 0;
-	BYTE attr = 0,sortid = 0;
+	BYTE attr = 0, sortid = 0;
 	int flagdata;
 
-	DEBUGLOGC("ReadEntryMain start",0);
+	DEBUGLOGC("ReadEntryMain start", 0);
 	cinfo->CellModified = CELLMODIFY_NONE;
 	cinfo->UseCommentsFlag = 0;
 							// ディレクトリ情報の初期化
@@ -1715,9 +1881,9 @@ void ReadEntryMain(PPC_APPINFO *cinfo,TCHAR *readpath,int *flags,TCHAR *mask)
 #if FREEPOSMODE
 	cinfo->FreePosEntries = 0;
 #endif
-	TM_check(&cinfo->e.CELLDATA,sizeof(ENTRYCELL) * 2);
-	TM_check(&cinfo->e.INDEXDATA,sizeof(ENTRYINDEX) * 2);
-	SetDummyCell(&CELdata(0),MessageText(MES_LOAD));
+	TM_check(&cinfo->e.CELLDATA, sizeof(ENTRYCELL) * 2);
+	TM_check(&cinfo->e.INDEXDATA, sizeof(ENTRYINDEX) * 2);
+	SetDummyCell(&CELdata(0), MessageText(MES_LOAD));
 	CELt(0) = 0;
 	{
 		TCHAR *sep = FindPathSeparator(cinfo->path);
@@ -1736,12 +1902,12 @@ void ReadEntryMain(PPC_APPINFO *cinfo,TCHAR *readpath,int *flags,TCHAR *mask)
 		ResetDxDrawAtlas(cinfo->DxDraw);
 	}
 
-	DEBUGLOGC("ReadEntryMain 2",0);
-	tstrcpy(cinfo->RealPath,cinfo->path);
+	DEBUGLOGC("ReadEntryMain 2", 0);
+	tstrcpy(cinfo->RealPath, cinfo->path);
 	{
 		TCHAR *sep;
 
-		sep = tstrrchr(cinfo->RealPath,':');
+		sep = tstrrchr(cinfo->RealPath, ':');
 		if ( (sep != NULL) &&
 			 (sep > (cinfo->RealPath + 1)) &&
 			 (*(sep - 1) == ':') ){
@@ -1752,26 +1918,26 @@ void ReadEntryMain(PPC_APPINFO *cinfo,TCHAR *readpath,int *flags,TCHAR *mask)
 	rps.OldTime = GetTickCount();
 	rps.enablecnt = ENABLECNTTIME;
 
-	DEBUGLOGC("ReadEntryMain FindFirstAsync",0);
-	hFF = FindFirstAsync(cinfo->info.hWnd,cinfo->LoadCounter,readpath,
-			&CELdata(0).f,&cinfo->e.Dtype,flags);
-	DEBUGLOGC("ReadEntryMain FindFirstAsync end",0);
+	DEBUGLOGC("ReadEntryMain FindFirstAsync", 0);
+	hFF = FindFirstAsync(cinfo->info.hWnd, cinfo->LoadCounter, readpath,
+			&CELdata(0).f, &cinfo->e.Dtype, flags);
+	DEBUGLOGC("ReadEntryMain FindFirstAsync end", 0);
 	if ( hFF == INVALID_HANDLE_VALUE ){	// 失敗
 		cinfo->StateInfo.state = StateID_ReadError;
-		hFF = FixReadDirectoryError(cinfo,&rps,flags);
+		hFF = FixReadDirectoryError(cinfo, &rps, flags);
 		cinfo->StateInfo.state = StateID_NoState;
-//		if ( cinfo->StateInfo.hStateWnd != NULL ) SendMessage(cinfo->StateInfo.hStateWnd,WM_CLOSE,0,0);
+//		if ( cinfo->StateInfo.hStateWnd != NULL ) SendMessage(cinfo->StateInfo.hStateWnd, WM_CLOSE, 0, 0);
 		if ( hFF == INVALID_HANDLE_VALUE ) return;
 	}
 	cinfo->StateInfo.state = StateID_NoState;
-//	if ( cinfo->StateInfo.hStateWnd != NULL ) SendMessage(cinfo->StateInfo.hStateWnd,WM_CLOSE,0,0);
-	setflag(*flags,RENTRYI_GETFREESIZE);
+//	if ( cinfo->StateInfo.hStateWnd != NULL ) SendMessage(cinfo->StateInfo.hStateWnd, WM_CLOSE, 0, 0);
+	setflag(*flags, RENTRYI_GETFREESIZE);
 	if ( cinfo->e.Dtype.mode == VFSDT_SHN ){
-		if ( VFSGetRealPath(cinfo->info.hWnd,cinfo->RealPath,cinfo->path)
+		if ( VFSGetRealPath(cinfo->info.hWnd, cinfo->RealPath, cinfo->path)
 				== FALSE ){
-			tstrcpy(cinfo->RealPath,T("?"));
+			tstrcpy(cinfo->RealPath, T("?"));
 		}
-		if ( tstrcmp(cinfo->e.Dtype.Name,VFSFFTYPENAME_storageSHN) == 0 ){
+		if ( tstrcmp(cinfo->e.Dtype.Name, VFSFFTYPENAME_storageSHN) == 0 ){
 			if ( cinfo->dset.infoicon > DSETI_EXTONLY ){
 				cinfo->dset.infoicon = DSETI_EXTONLY;
 			}
@@ -1786,7 +1952,10 @@ void ReadEntryMain(PPC_APPINFO *cinfo,TCHAR *readpath,int *flags,TCHAR *mask)
 		 (cinfo->e.Dtype.mode == VFSDT_CABFOLDER) ||
 		 (cinfo->e.Dtype.mode == VFSDT_LZHFOLDER) ||
 		 (cinfo->e.Dtype.mode == VFSDT_ZIPFOLDER) ){
-		LoadSettingSecond(cinfo,StrArchiveMode,flags,mask);
+		LoadSettingSecond(cinfo, StrArchiveMode, flags, mask);
+	}
+	if ( cinfo->e.Dtype.mode == VFSDT_LFILE ){
+		LoadSettingSecond(cinfo, StrListfileMode, flags, mask);
 	}
 	{									// sort 初期化 --------------------
 		XC_SORT *usexs;
@@ -1794,7 +1963,7 @@ void ReadEntryMain(PPC_APPINFO *cinfo,TCHAR *readpath,int *flags,TCHAR *mask)
 		usexs = (cinfo->XC_sort.mode.dat[0] >= 0) ? &cinfo->XC_sort : &cinfo->dset.sort;
 		cinfo->sort_nowmode.block = usexs->mode.block;
 		cs.cinfo = cinfo;
-		InitSort(&cs,usexs);
+		InitSort(&cs, usexs);
 		if ( cinfo->path[0] == ':' ) cs.SortF = CmpRootNameExt;
 		if ( usexs->mode.dat[0] >= SORT_COLUMNTYPE ){
 			sorttime = MAX32;
@@ -1826,17 +1995,17 @@ void ReadEntryMain(PPC_APPINFO *cinfo,TCHAR *readpath,int *flags,TCHAR *mask)
 		cinfo->ModifyComment = FALSE;
 		ThFree(&cinfo->EntryComments);
 		ThFree(&cinfo->ColumnData);
-		CatPath(cinfo->CommentFile,cinfo->RealPath,T("00_INDEX.TXT"));
+		CatPath(cinfo->CommentFile, cinfo->RealPath, T("00_INDEX.TXT"));
 		if ( cinfo->e.Dtype.ExtData != INVALID_HANDLE_VALUE ){
 			if ( readcomment ){
-				GetCommentText(&cinfo->EntryComments,cinfo->CommentFile);
+				GetCommentText(&cinfo->EntryComments, cinfo->CommentFile);
 				if ( cinfo->EntryComments.bottom != NULL ){
-					setflag(cinfo->UseCommentsFlag,B0);
+					setflag(cinfo->UseCommentsFlag, B0);
 				}
 			}
 		}
 	}
-	InitMasks(&namemask,&cinfo->mask,mask);
+	InitMasks(&namemask, &cinfo->mask, mask);
 
 	cinfo->e.cellIMax = 0;
 	cinfo->e.cellDataMax = 0;
@@ -1853,14 +2022,14 @@ void ReadEntryMain(PPC_APPINFO *cinfo,TCHAR *readpath,int *flags,TCHAR *mask)
 		 !IsRelativeDir(CELdata(0).f.cFileName) &&
 		 (cinfo->e.Dtype.mode != VFSDT_DLIST) ){
 		if ( !(rdirmask & ECA_THIS) ){
-			SetDummyRelativeDir(cinfo,T("."),ECA_DIR | ECA_THIS,ECT_THISDIR);
+			SetDummyRelativeDir(cinfo, T("."), ECA_DIR | ECA_THIS, ECT_THISDIR);
 		}
 		if ( !(rdirmask & ECA_PARENT) ){
-			SetDummyRelativeDir(cinfo,T(".."),ECA_DIR | ECA_PARENT,ECT_UPDIR);
+			SetDummyRelativeDir(cinfo, T(".."), ECA_DIR | ECA_PARENT, ECT_UPDIR);
 		}
 	}
 
-	DEBUGLOGC("ReadEntryMain loop start",0);
+	DEBUGLOGC("ReadEntryMain loop start", 0);
 	for ( ; ; ){
 		ENTRYCELL *cell;
 
@@ -1874,17 +2043,22 @@ void ReadEntryMain(PPC_APPINFO *cinfo,TCHAR *readpath,int *flags,TCHAR *mask)
 #if FREEPOSMODE
 		cell->pos.x = NOFREEPOS;
 #endif
-		SetCellInfo(cinfo,cell,namemask.extcolor);
+		SetCellInfo(cinfo, cell, namemask.extcolor);
 		if ( cell->f.cFileName[0] == '>' ){
-			if ( IsTrue(FindOptionDataAsync(hFF,FINDOPTIONDATA_LONGNAME,buf,flagdata)) ){
-				EntryExtData_SetString(cinfo,DFC_LONGNAME,cell,buf);
+			if ( IsTrue(FindOptionDataAsync(hFF, FINDOPTIONDATA_LONGNAME, buf, flagdata)) ){
+				EntryExtData_SetString(cinfo, DFC_LONGNAME, cell, buf);
 			}
+/*
+			if ( IsTrue(FindOptionDataAsync(hFF, FINDOPTIONDATA_COMMENT, buf, flagdata)) ){
+				EntryExtData_SetString(cinfo, DFC_LONGNAME, cell, buf);
+			}
+*/
 		}
 		if ( !(cell->attr & rdirmask) ){
 			if ( (cell->attr & (ECA_PARENT | ECA_THIS)) ||		// ..
 				 (!(cell->f.dwFileAttributes & namemask.Attr) &&
 				  ((cell->f.dwFileAttributes & namemask.Dir) ||
-					FinddataRegularExpression(&cell->f,&namemask.FileMask)) ) ){
+					FinddataRegularExpression(&cell->f, &namemask.FileMask)) ) ){
 
 				if ( cell->f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ){
 					if ( cell->attr & (ECA_PARENT | ECA_THIS) ){
@@ -1919,6 +2093,10 @@ void ReadEntryMain(PPC_APPINFO *cinfo,TCHAR *readpath,int *flags,TCHAR *mask)
 		}
 
 		cinfo->e.cellDataMax++;
+		if ( cinfo->e.cellDataMax > ENTRYCELL_LIMIT ){
+			errorcode = ERROR_OUTOFMEMORY;
+			break;
+		}
 			// ※TM_checkでcellアドレスが変わる場合有
 		if ( TM_check(&cinfo->e.CELLDATA,
 				sizeof(ENTRYCELL) * (cinfo->e.cellDataMax + 2)) == FALSE ){
@@ -1940,12 +2118,12 @@ void ReadEntryMain(PPC_APPINFO *cinfo,TCHAR *readpath,int *flags,TCHAR *mask)
 				 (((DWORD)cinfo->e.cellDataMax << 6) < sorttime ) ){
 				sorttime = MAX32;
 			}
-			if ( ReadDirProgress(cinfo,&rps) == FALSE ){
+			if ( ReadDirProgress(cinfo, &rps) == FALSE ){
 				errorcode = ERROR_MORE_DATA;
 				break;
 			}
 		}
-		if ( IsTrue(FindNextAsync(hFF,&CELdata(cinfo->e.cellDataMax).f,flagdata)) ){
+		if ( IsTrue(FindNextAsync(hFF, &CELdata(cinfo->e.cellDataMax).f, flagdata)) ){
 			continue;
 		}
 		errorcode = GetLastError();
@@ -1957,7 +2135,7 @@ void ReadEntryMain(PPC_APPINFO *cinfo,TCHAR *readpath,int *flags,TCHAR *mask)
 			chance = 10;
 			for ( ; ; ){
 				Sleep(100);
-				if ( IsTrue(FindNextAsync(hFF,&CELdata(cinfo->e.cellDataMax).f,flagdata)) ){
+				if ( IsTrue(FindNextAsync(hFF, &CELdata(cinfo->e.cellDataMax).f, flagdata)) ){
 					errorcode = NO_ERROR;
 					break;
 				}
@@ -1974,20 +2152,20 @@ void ReadEntryMain(PPC_APPINFO *cinfo,TCHAR *readpath,int *flags,TCHAR *mask)
 		if ( errorcode != NO_ERROR ) break;
 	}
 
-	DEBUGLOGC("ReadEntryMain loop end",0);
+	DEBUGLOGC("ReadEntryMain loop end", 0);
 	FreeFN_REGEXP(&namemask.FileMask);
-	FindCloseAsync(hFF,flagdata);
+	FindCloseAsync(hFF, flagdata);
 
 											// 後回しにしたソートを実行する
 	if ( (cs.SortF != NULL) && (sorttime == MAX32) ){
 		int minc;
 
 		if ( cinfo->e.cellIMax > SORTINFOSIZE ){
-			SetPopMsg(cinfo,POPMSG_NOLOGMSG,SortingStr);
+			SetPopMsg(cinfo, POPMSG_NOLOGMSG, SortingStr);
 			UpdateWindow_Part(cinfo->info.hWnd);
 		}
 		if ( sortid >= SORT_COLUMNTYPE ){
-			PreExecuteSort(cinfo,sortid);
+			PreExecuteSort(cinfo, sortid);
 		}
 
 		// . と .. をスキップ
@@ -1995,13 +2173,14 @@ void ReadEntryMain(PPC_APPINFO *cinfo,TCHAR *readpath,int *flags,TCHAR *mask)
 		cs.worktbl = PPcHeapAlloc( ( cinfo->e.cellIMax / 2 + 1 ) * sizeof(ENTRYINDEX));
 		MergeCellSort(&cs, minc, cinfo->e.cellIMax);
 		PPcHeapFree(cs.worktbl);
-		if ( cinfo->e.cellIMax > SORTINFOSIZE ) StopPopMsg(cinfo,PMF_DISPLAYMASK);
+		if ( cinfo->e.cellIMax > SORTINFOSIZE ) StopPopMsg(cinfo, PMF_DISPLAYMASK);
 	}
 
 	if ( errorcode != ERROR_NO_MORE_FILES ){
-		PPErrorMsg(buf,errorcode);
-		SetDummyCell(&CELdata(cinfo->e.cellDataMax),buf);
-		setflag(CELdata(cinfo->e.cellDataMax).attr,ECA_PARENT);
+		PPErrorMsg(buf, errorcode);
+		SetDummyCell(&CELdata(cinfo->e.cellDataMax), buf);
+		setflag(CELdata(cinfo->e.cellDataMax).attr, ECA_PARENT);
+		CELdata(cinfo->e.cellDataMax).f.dwFileAttributes = FILE_ATTRIBUTEX_MESSAGE;
 		CELdata(cinfo->e.cellDataMax).f.nFileSizeLow = errorcode;
 		CELt(cinfo->e.cellIMax) = cinfo->e.cellDataMax;
 
@@ -2015,28 +2194,28 @@ void ReadEntryMain(PPC_APPINFO *cinfo,TCHAR *readpath,int *flags,TCHAR *mask)
 
 			oldx = cinfo->cel.Area.cx;
 			InitCli(cinfo);
-			FixWindowSize(cinfo,oldx - cinfo->cel.Area.cx,0);
+			FixWindowSize(cinfo, oldx - cinfo->cel.Area.cx, 0);
 		}
 		if ( cinfo->hHeaderWnd != NULL ) FixHeader(cinfo);
 	}
 	if ( (cinfo->e.Dtype.mode == VFSDT_LFILE) &&
-		 (memcmp(cinfo->path,T("aux:"),TSIZEOF(4)) != 0) ){
+		 (memcmp(cinfo->path, T("aux:"), TSIZEOF(4)) != 0) ){
 		if ( cinfo->e.Dtype.BasePath[0] != '\0' ){
-			if ( VFSGetRealPath(cinfo->info.hWnd,cinfo->RealPath,cinfo->e.Dtype.BasePath) == FALSE ){
-				tstrcpy(cinfo->RealPath,cinfo->path);
+			if ( VFSGetRealPath(cinfo->info.hWnd, cinfo->RealPath, cinfo->e.Dtype.BasePath) == FALSE ){
+				tstrcpy(cinfo->RealPath, cinfo->path);
 			}
 		}else{
 			*VFSFindLastEntry(cinfo->RealPath) = '\0';
 		}
 	}
 	if ( namemask.extcolor != NULL ){
-		HeapFree( hProcessHeap,0,namemask.extcolor);
+		HeapFree( hProcessHeap, 0, namemask.extcolor);
 	}
 	// 「.」「..」の算出
 	for ( cinfo->e.AllRelativeDirs = 0 ;
 			CELdata(cinfo->e.AllRelativeDirs).attr & (ECA_PARENT | ECA_THIS) ;
 			cinfo->e.AllRelativeDirs++ );
-	DEBUGLOGC("ReadEntryMain end",0);
+	DEBUGLOGC("ReadEntryMain end", 0);
 }
 
 int StartCellEdit(PPC_APPINFO *cinfo)
@@ -2051,13 +2230,13 @@ int StartCellEdit(PPC_APPINFO *cinfo)
 /*-----------------------------------------------------------------------------
 	エントリ一覧を取得する
 -----------------------------------------------------------------------------*/
-void read_entry(PPC_APPINFO *cinfo,int flags)
+void read_entry(PPC_APPINFO *cinfo, int flags)
 {
-	TCHAR buf[VFPS],mask[VFPS];
+	TCHAR buf[VFPS], mask[VFPS];
 	DWORD StartTime;
-	int WillCellN = 0,WillWinO = 0;
+	int WillCellN = 0, WillWinO = 0;
 
-	DEBUGLOGC("read_entry start",0);
+	DEBUGLOGC("read_entry start", 0);
 	if ( StartCellEdit(cinfo) ) return;
 
 	cinfo->StateInfo.state = StateID_Init;
@@ -2067,39 +2246,39 @@ void read_entry(PPC_APPINFO *cinfo,int flags)
 	cinfo->FDirWrite = FDW_NORMAL;	// 更新開始待ちを解除
 
 	if ( !(flags & RENTRY_UPDATE) && IsTrue(cinfo->ModifyComment) ){
-		WriteComment(cinfo,cinfo->CommentFile);
+		WriteComment(cinfo, cinfo->CommentFile);
 	}
-	HideFileNameTip(cinfo);
-	VFSGetDriveType(cinfo->path,&cinfo->e.Dtype.pathtype,NULL);
-	LoadSettingGeneral(cinfo,&flags,mask);
+	HideEntryTip(cinfo);
+	VFSGetDriveType(cinfo->path, &cinfo->e.Dtype.pathtype, NULL);
+	LoadSettingGeneral(cinfo, &flags, mask);
 	if ( cinfo->dset.flags & DSET_ASYNCREAD ){ // 非同期読み込み+保存を有効
-		setflag(flags,RENTRYI_ASYNCREAD | RENTRYI_SAVECACHE);
+		setflag(flags, RENTRYI_ASYNCREAD | RENTRYI_SAVECACHE);
 		if ( cinfo->dset.flags & DSET_REFRESH_ACACHE ){
-			setflag(flags,RENTRYI_REFRESHCACHE);
+			setflag(flags, RENTRYI_REFRESHCACHE);
 		}
 		if ( cinfo->dset.flags & DSET_NOSAVE_ACACHE ){
-			resetflag(flags,RENTRYI_SAVECACHE);
+			resetflag(flags, RENTRYI_SAVECACHE);
 		}
 	}
-	if ( flags & RENTRY_NOASYNC ) resetflag(flags,RENTRYI_ASYNCREAD);
+	if ( flags & RENTRY_NOASYNC ) resetflag(flags, RENTRYI_ASYNCREAD);
 	if ( !(flags & RENTRYI_ASYNCREAD) ){
 		// 非同期読み込みしないときはここでカレントディレクトリを変更
-		if ( VFSArchiveSection(VFSAS_CHECK,NULL) == 0 ){
-			VFSTryDirectory(cinfo->info.hWnd,cinfo->path,TRUE);
+		if ( VFSArchiveSection(VFSAS_CHECK, NULL) == 0 ){
+			VFSTryDirectory(cinfo->info.hWnd, cinfo->path, TRUE);
 		}
 	}
 											// 希望 cell 位置を準備する
 	if ( flags & RENTRY_SAVEOFF ){
 		WillCellN = cinfo->e.cellN;
 		WillWinO  = cinfo->cellWMin;
-		setflag(flags,RENTRYI_NOSETHISTORY);
+		setflag(flags, RENTRYI_NOSETHISTORY);
 	}else{
 									//	↓１つ前のifで判断済み
 		if ( !(flags & (RENTRY_NOHIST /*| RENTRY_SAVEOFF*/)) && X_acr[1] ){
 			const TCHAR *vp;
 
 			UsePPx();
-			vp = SearchHistory(PPXH_PPCPATH,cinfo->OrgPath[0] ? cinfo->OrgPath : cinfo->path);
+			vp = SearchHistory(PPXH_PPCPATH, cinfo->OrgPath[0] ? cinfo->OrgPath : cinfo->path);
 			if ( vp != NULL ){
 				const int *histp;
 
@@ -2107,7 +2286,7 @@ void read_entry(PPC_APPINFO *cinfo,int flags)
 				if ( histp[1] >= 0 ){
 					WillCellN = histp[0];
 					WillWinO  = histp[1];
-					setflag(flags,RENTRY_SAVEOFF);
+					setflag(flags, RENTRY_SAVEOFF);
 				}
 			}
 			FreePPx();
@@ -2118,43 +2297,43 @@ void read_entry(PPC_APPINFO *cinfo,int flags)
 	cinfo->cellWMin = 0;
 	cinfo->AcceptReload = RENTRY_READ;
 
-	tstrcpy(buf,cinfo->path);
+	tstrcpy(buf, cinfo->path);
 /*
 	if ( cinfo->AuxiliaryOperation ){
-		const TCHAR *auxcmd = ThGetString(&cinfo->StringVariable,T("AUXlist"),NULL,0);
+		const TCHAR *auxcmd = ThGetString(&cinfo->StringVariable, T("AUXlist"), NULL, 0);
 		if ( auxcmd != NULL ){
-			PP_ExtractMacro(cinfo->info.hWnd,&cinfo->info,NULL,auxcmd,buf,XEO_EXTRACTEXEC);
+			PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, auxcmd, buf, XEO_EXTRACTEXEC);
 		}
 	}
 */
-	SetLinebrush(cinfo,LINE_NORMAL);
+	SetLinebrush(cinfo, LINE_NORMAL);
 	// 始めからキャッシュを使用する場合
 	if ( (flags & RENTRY_USECACHE) ||
 		 (!(flags & RENTRY_CACHEREFRESH) &&
 		 	(cinfo->dset.flags & DSET_CACHEONLY)) ){
-		setflag(flags,RENTRYI_NOREADCOMMENT);
+		setflag(flags, RENTRYI_NOREADCOMMENT);
 		cinfo->SlowMode = TRUE;
-		if ( GetCache_Path(buf,cinfo->path,NULL) == FALSE ){
+		if ( GetCache_Path(buf, cinfo->path, NULL) == FALSE ){
 			// 既存のcacheが無い
-			tstrcpy(buf,cinfo->path);
-			setflag(flags,RENTRY_CACHEREFRESH);
+			tstrcpy(buf, cinfo->path);
+			setflag(flags, RENTRY_CACHEREFRESH);
 		}else{
-			setflag(flags,RENTRYI_CACHE);
+			setflag(flags, RENTRYI_CACHE);
 		}
 	}
 	if ( flags & RENTRY_UPDATE ){
-		DEBUGLOGC("read_entry update start",0);
+		DEBUGLOGC("read_entry update start", 0);
 		cinfo->StateInfo.state = StateID_UpdateStart;
-		UpdateEntry(cinfo,buf,&flags,mask);
+		UpdateEntry(cinfo, buf, &flags, mask);
 	}else{
-		DEBUGLOGC("read_entry read start",0);
+		DEBUGLOGC("read_entry read start", 0);
 
 		cinfo->StateInfo.state = StateID_ReadStart;
 		cinfo->DiskSizes.free.u.HighPart =
 			cinfo->DiskSizes.total.u.HighPart =
 			cinfo->DiskSizes.used.u.HighPart = MAX32;
 
-		ReadEntryMain(cinfo,buf,&flags,mask);
+		ReadEntryMain(cinfo, buf, &flags, mask);
 		cinfo->UseArcPathMask = ARCPATHMASK_OFF;
 		cinfo->UseSplitPathName = FALSE;
 
@@ -2163,8 +2342,9 @@ void read_entry(PPC_APPINFO *cinfo,int flags)
 				 (!(flags & RENTRY_NOUSEPATHMASK) &&
 				 	((XC_pmsk[1] > 0) ||
 				 	 (CELdata(0).f.dwFileAttributes & FILE_ATTRIBUTEX_FOLDER))) ){
-				MaskPathMain(cinfo,0,NilStr);
-				if ( CELdata(0).f.dwFileAttributes == (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTEX_FOLDER) ){
+				// ;Option=directory / ;Option=archive
+				MaskPathMain(cinfo, 0, NilStr);
+				if ( CELdata(0).f.dwFileAttributes == (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTEX_FOLDER) ){ // ;Option=archive
 					cinfo->UseArcPathMask = ARCPATHMASK_DIRECTORY;
 				}
 			}else if ( XC_pmsk[1] < 0 ){
@@ -2174,21 +2354,22 @@ void read_entry(PPC_APPINFO *cinfo,int flags)
 			 (cinfo->e.Dtype.mode == VFSDT_SUSIE) ){
 			if ( (flags & RENTRY_USEPATHMASK) ||
 				 (!(flags & RENTRY_NOUSEPATHMASK) && (XC_pmsk[0] > 0)) ){
-				MaskPathMain(cinfo,0,NilStr);
+				MaskPathMain(cinfo, 0, NilStr);
 			}else if ( XC_pmsk[0] < 0 ){
 				cinfo->UseSplitPathName = TRUE;
 			}
 		}
 	}
-	DEBUGLOGC("read_entry u/r end",0);
+	DEBUGLOGC("read_entry u/r end", 0);
 	if ( flags & RENTRYI_CACHE ) cinfo->e.Dtype.ExtData = INVALID_HANDLE_VALUE;
 
 	if ( cinfo->e.cellIMax <= 0 ){
-		TM_check(&cinfo->e.CELLDATA,sizeof(ENTRYCELL) * (cinfo->e.cellDataMax + 2));
-		TM_check(&cinfo->e.INDEXDATA,sizeof(ENTRYINDEX) * (cinfo->e.cellDataMax + 2));
-		SetDummyCell(&CELdata(cinfo->e.cellDataMax),MessageText(StrNoEntries));
+		TM_check(&cinfo->e.CELLDATA, sizeof(ENTRYCELL) * (cinfo->e.cellDataMax + 2));
+		TM_check(&cinfo->e.INDEXDATA, sizeof(ENTRYINDEX) * (cinfo->e.cellDataMax + 2));
+		SetDummyCell(&CELdata(cinfo->e.cellDataMax), MessageText(StrNoEntries));
+		CELdata(cinfo->e.cellDataMax).f.dwFileAttributes = FILE_ATTRIBUTEX_MESSAGE;
 		CELdata(cinfo->e.cellDataMax).f.nFileSizeLow = ERROR_FILE_NOT_FOUND;
-		setflag(CELdata(cinfo->e.cellDataMax).attr,ECA_PARENT);
+		setflag(CELdata(cinfo->e.cellDataMax).attr, ECA_PARENT);
 		CELt(0) = cinfo->e.cellDataMax;
 		cinfo->e.cellIMax = 1;
 	}else{
@@ -2197,17 +2378,17 @@ void read_entry(PPC_APPINFO *cinfo,int flags)
 		EndTime = GetTickCount() - StartTime;
 		if ( EndTime & B31 ) EndTime = 0 - EndTime;
 		if ( (EndTime / cinfo->e.cellIMax) >= X_Slow ){
-			SetPopMsg(cinfo,POPMSG_MSG,MES_SLMD);
+			SetPopMsg(cinfo, POPMSG_MSG, MES_SLMD);
 			SetSlowMode(cinfo);
 		}
-		if ( !tstrcmp(cinfo->e.Dtype.Name,T("Xlong ")) ){
-			SetPopMsg(cinfo,POPMSG_MSG,MES_WLLP);
+		if ( !tstrcmp(cinfo->e.Dtype.Name, T("Xlong ")) ){
+			SetPopMsg(cinfo, POPMSG_MSG, MES_WLLP);
 			SetSlowMode(cinfo);
 		}
 		if ( WillWinO >= cinfo->e.cellIMax ) WillWinO = cinfo->e.cellIMax - 1;
 
 		if ( flags & RENTRY_JUMPNAME ){
-			ENTRYINDEX jumpN,casei = -1;
+			ENTRYINDEX jumpN, casei = -1;
 			DWORD cmplen;
 
 			// cinfo->Jfname と一致するファイル名を検索
@@ -2215,9 +2396,9 @@ void read_entry(PPC_APPINFO *cinfo,int flags)
 			if ( !(flags & RENTRY_JUMPNAME_INC) ) cmplen++;
 
 			for ( jumpN = 0 ; jumpN < cinfo->e.cellIMax ; jumpN++ ){
-				if ( !tstrnicmp(CEL(jumpN).f.cFileName,cinfo->Jfname,cmplen) ){
+				if ( !tstrnicmp(CEL(jumpN).f.cFileName, cinfo->Jfname, cmplen) ){
 					if ( !(flags & (RENTRY_NEWFILE | RENTRY_NEWDIR)) ) break;
-					if ( !tstrcmp(CEL(jumpN).f.cFileName,cinfo->Jfname) ){
+					if ( !tstrcmp(CEL(jumpN).f.cFileName, cinfo->Jfname) ){
 						break;
 					}else{
 						casei = jumpN;
@@ -2232,17 +2413,17 @@ void read_entry(PPC_APPINFO *cinfo,int flags)
 				if ( jumpN >= cinfo->e.cellIMax ) jumpN = casei;
 				if ( jumpN < 0 ){
 					jumpN = cinfo->e.cellIMax;
-					if ( (FALSE != TM_check(&cinfo->e.CELLDATA,sizeof(ENTRYCELL) * (cinfo->e.cellDataMax + 2))) &&
-						 (FALSE != TM_check(&cinfo->e.INDEXDATA,sizeof(ENTRYINDEX) * (cinfo->e.cellDataMax + 2)))  ){
+					if ( (FALSE != TM_check(&cinfo->e.CELLDATA, sizeof(ENTRYCELL) * (cinfo->e.cellDataMax + 2))) &&
+						 (FALSE != TM_check(&cinfo->e.INDEXDATA, sizeof(ENTRYINDEX) * (cinfo->e.cellDataMax + 2)))  ){
 						cell = &CELdata(cinfo->e.cellDataMax);
 
-						SetDummyCell(cell,cinfo->Jfname);
+						SetDummyCell(cell, cinfo->Jfname);
 						cell->f.dwFileAttributes = flags & RENTRY_NEWFILE ?
 								0 : FILE_ATTRIBUTE_DIRECTORY;
 						cell->state = ECS_ADDED;
 						cell->attr = 0;
 						CELt(jumpN) = cinfo->e.cellDataMax;
-						SetCellInfo(cinfo,cell,NULL);
+						SetCellInfo(cinfo, cell, NULL);
 						if ( cinfo->CellHashType == CELLHASH_NAME ){
 							cell->cellhash = MiniHash(cell->f.cFileName);
 						}
@@ -2265,25 +2446,25 @@ void read_entry(PPC_APPINFO *cinfo,int flags)
 
 					backup = CELt(jumpN);
 					//他のエントリを１下げ(+2以降)、旧カーソル直下(+1)を空ける
-					memmove(&CELt(WillCellN + 2),&CELt(WillCellN + 1),
+					memmove(&CELt(WillCellN + 2), &CELt(WillCellN + 1),
 							sizeof(ENTRYINDEX) * (jumpN - WillCellN - 1));
 					jumpN = WillCellN + 1;
 					CELt(jumpN) = backup;
 				}
-				resetflag(flags,RENTRY_NOHIST | RENTRY_SAVEOFF);
+				resetflag(flags, RENTRY_NOHIST | RENTRY_SAVEOFF);
 				cinfo->e.cellN = jumpN;
 			}
 		}
 	}
-	DEBUGLOGC("read_entry free count",0);
+	DEBUGLOGC("read_entry free count", 0);
 											// 空き容量計算 -------------------
 	if ( (cinfo->e.Dtype.ExtData != INVALID_HANDLE_VALUE) || (flags & RENTRYI_GETFREESIZE) ){
 		if ( (flags & (RENTRYI_ASYNCREAD | RENTRY_USECACHE)) ||
 			 (cinfo->RealPath[0] == '\\') ){
-			setflag(cinfo->SubTCmdFlags,SUBT_GETFREESPACE);
+			setflag(cinfo->SubTCmdFlags, SUBT_GETFREESPACE);
 			SetEvent(cinfo->SubT_cmd);
 		}else{
-			GetDirectoryFreeSpace(cinfo,FALSE);
+			GetDirectoryFreeSpace(cinfo, FALSE);
 		}
 	}
 									// セキュリティホールになりそうなパスの調査
@@ -2303,23 +2484,23 @@ void read_entry(PPC_APPINFO *cinfo,int flags)
 					CELdata(offset).state = ECS_CHANGED;
 				}
 			}
-			if ( IsTrue(warn) ) SetPopMsg(cinfo,POPMSG_MSG,MES_FEWE);
+			if ( IsTrue(warn) ) SetPopMsg(cinfo, POPMSG_MSG, MES_FEWE);
 		}
 	}
 	// 更新した *cache のキャッシュを保存する
 	if ( (flags & RENTRY_CACHEREFRESH) && (cinfo->dset.flags & DSET_CACHEONLY) ){
-		GetCache_Path(buf,cinfo->path,NULL);
-		if ( FALSE == WriteListFileForRaw(cinfo,buf) ){
-			SetPopMsg(cinfo,POPMSG_MSG,CacheErrorTitle);
+		GetCache_Path(buf, cinfo->path, NULL);
+		if ( FALSE == WriteListFileForRaw(cinfo, buf) ){
+			SetPopMsg(cinfo, POPMSG_MSG, CacheErrorTitle);
 		}
 	}
-	DEBUGLOGC("read_entry fix view",0);
+	DEBUGLOGC("read_entry fix view", 0);
 
 	// WM_SETREDRAW で SW_HIDE が解除されるので対策(タブ使用時に問題がでる)
 //	if ( !(X_combos & CMBS_TABALWAYS) ) // 後でタブが増えるときは←では早すぎ
 #define IsUseChildWnds(cinfo) (cinfo->combo || cinfo->docks.b.hWnd || cinfo->docks.t.hWnd || cinfo->hToolBarWnd || cinfo->hTreeWnd || cinfo->hHeaderWnd)
 	if ( !IsUseChildWnds(cinfo) ){
-		SendMessage(cinfo->info.hWnd,WM_SETREDRAW,FALSE,0);
+		SendMessage(cinfo->info.hWnd, WM_SETREDRAW, FALSE, 0);
 	}
 	if ( flags & (RENTRY_NOHIST | RENTRY_SAVEOFF) ){
 		InitCli(cinfo);
@@ -2332,16 +2513,16 @@ void read_entry(PPC_APPINFO *cinfo,int flags)
 		 (CEL(cinfo->e.cellN).attr & ECA_THIS) ){
 		cinfo->e.cellN++;
 	}
-	PPxSetPath(cinfo->RegNo,(cinfo->e.Dtype.mode != VFSDT_LFILE) ?
+	PPxSetPath(cinfo->RegNo, (cinfo->e.Dtype.mode != VFSDT_LFILE) ?
 			cinfo->RealPath : cinfo->path);
 
-	DEBUGLOGC("read_entry fix d-h list",0);
+	DEBUGLOGC("read_entry fix d-h list", 0);
 	while ( cinfo->path[0] ){	// ディレクトリリストの更新
 		if ( cinfo->PathTrackingList.top ){
 			DWORD top;
 
-			top = BackPathTrackingList(cinfo,cinfo->PathTrackingList.top);
-			if ( !tstrcmp((TCHAR *)(cinfo->PathTrackingList.bottom + top),cinfo->path) ){
+			top = BackPathTrackingList(cinfo, cinfo->PathTrackingList.top);
+			if ( !tstrcmp((TCHAR *)(cinfo->PathTrackingList.bottom + top), cinfo->path) ){
 				break;
 			}
 			if ( top > TSTROFF(MAXPATHTRACKINGLIST) ){
@@ -2357,10 +2538,10 @@ void read_entry(PPC_APPINFO *cinfo,int flags)
 				cinfo->PathTrackingList.top -= off;
 			}
 		}
-		ThAddString(&cinfo->PathTrackingList,cinfo->path);
+		ThAddString(&cinfo->PathTrackingList, cinfo->path);
 		break;
 	}
-	if ( VFSArchiveSection(VFSAS_CHECK,NULL) == 0 ){
+	if ( VFSArchiveSection(VFSAS_CHECK, NULL) == 0 ){
 		SetCurrentDirectory(PPcPath);
 	}
 										// 更新後の画面に更新する -----
@@ -2371,41 +2552,41 @@ void read_entry(PPC_APPINFO *cinfo,int flags)
 		 ((flags & (RENTRY_NEWFILE | RENTRY_NEWDIR | RENTRY_UPDATE | RENTRY_SAVEOFF)) != (RENTRY_UPDATE | RENTRY_SAVEOFF)) ||
 		 (cinfo->e.cellN >= cinfo->e.cellIMax) ||
 		 (cinfo->cellWMin >= cinfo->e.cellIMax) ){
-		MoveCellCsr(cinfo,0,NULL);
+		MoveCellCsr(cinfo, 0, NULL);
 	}
 	SetCaption(cinfo);
 
 	if ( !(flags & (RENTRY_UPDATE | RENTRYI_NOSETHISTORY)) &&
 		 !( (cinfo->e.cellIMax <= 1) && (CEL(0).type == ECT_SYSMSG) ) ){
-		SavePPcDir(cinfo,TRUE);
+		SavePPcDir(cinfo, TRUE);
 	}
 
 	if ( !IsUseChildWnds(cinfo) ){
-		SendMessage(cinfo->info.hWnd,WM_SETREDRAW,TRUE,0);
+		SendMessage(cinfo->info.hWnd, WM_SETREDRAW, TRUE, 0);
 	}
 	Repaint(cinfo);
 /*
 	// 壁紙表示時は、WS_CLIPCHILDREN のため描画されないのを描画させる
 	if ( X_fles | cinfo->bg.X_WallpaperType ){
-		if ( cinfo->hTreeWnd ) InvalidateRect(cinfo->hTreeWnd,NULL,FALSE);
+		if ( cinfo->hTreeWnd ) InvalidateRect(cinfo->hTreeWnd, NULL, FALSE);
 	}
 */
 	if ( cinfo->combo ){
-		PostMessage(cinfo->hComboWnd,WM_PPXCOMMAND,
-				KCW_setpath,(LPARAM)cinfo->info.hWnd);
+		PostMessage(cinfo->hComboWnd, WM_PPXCOMMAND,
+				KCW_setpath, (LPARAM)cinfo->info.hWnd);
 	}
 	if ( !(flags & RENTRY_UPDATE) ){
 		if ( flags & RENTRYI_EXECLOADCMD ){
-			PP_ExtractMacro(cinfo->info.hWnd,&cinfo->info,NULL,T("*execute ,%si\"LoadCommand\""),NULL,0);
+			PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, T("*execute ,%si\"LoadCommand\""), NULL, 0);
 		}
 		if ( IsTrue(cinfo->UseLoadEvent) ){
-			SendMessage(cinfo->info.hWnd,WM_PPXCOMMAND,K_E_LOAD,0);
+			SendMessage(cinfo->info.hWnd, WM_PPXCOMMAND, K_E_LOAD, 0);
 		}
 	}
 //	EndCellEdit(cinfo); // ここだとアイコンが砂時計に
 
 	if ( XC_szcm == 2 ){ // ディレクトリサイズキャッシュの読み出し開始
-		setflag(cinfo->SubTCmdFlags,SUBT_GETDIRSIZECACHE);
+		setflag(cinfo->SubTCmdFlags, SUBT_GETDIRSIZECACHE);
 		SetEvent(cinfo->SubT_cmd);
 	}
 
@@ -2416,11 +2597,11 @@ void read_entry(PPC_APPINFO *cinfo,int flags)
 		mstate.dwLength = sizeof(MEMORYSTATUS);
 		GlobalMemoryStatus(&mstate);
 		if ( mstate.dwAvailVirtual < (500 * MB) ){
-			SetPopMsg(cinfo,POPMSG_MSG,MemWarnStr);
+			SetPopMsg(cinfo, POPMSG_MSG, MemWarnStr);
 		}
 	}
 #endif
-	DEBUGLOGC("read_entry end",0);
+	DEBUGLOGC("read_entry end", 0);
 }
 //------------------------------------- キャプション用文字列を生成
 void SetCaption(PPC_APPINFO *cinfo)
@@ -2445,7 +2626,7 @@ void SetCaption(PPC_APPINFO *cinfo)
 			}
 			if ( (Combo.hTreeWnd != NULL) && !firstinit &&
 				 (hComboFocus == cinfo->info.hWnd) ){
-				SendMessage(Combo.hTreeWnd, VTM_SETPATH, 0,( LPARAM)cinfo->path);
+				SendMessage(Combo.hTreeWnd, VTM_SETPATH, 0, ( LPARAM)cinfo->path);
 			}
 		}
 	}
@@ -2472,11 +2653,11 @@ void SetCaption(PPC_APPINFO *cinfo)
 	SetWindowText(cinfo->info.hWnd, buf);
 }
 
-void GetDirectoryFreeSpace(PPC_APPINFO *cinfo,BOOL subthread)
+void GetDirectoryFreeSpace(PPC_APPINFO *cinfo, BOOL subthread)
 {
-	DWORD tmp,SpC,BpS,FC;
-	ULARGE_INTEGER UserFree,Total,TotalFree;
-	TCHAR buf[VFPS],RealPath[VFPS];
+	DWORD tmp, SpC, BpS, FC;
+	ULARGE_INTEGER UserFree, Total, TotalFree;
+	TCHAR buf[VFPS], RealPath[VFPS];
 
 	if ( cinfo->RealPath[0] == '?' ) return;
 
@@ -2493,27 +2674,27 @@ void GetDirectoryFreeSpace(PPC_APPINFO *cinfo,BOOL subthread)
 
 		Total.u.LowPart = Total.u.HighPart = 0;
 		for ( offset = 0 ; offset < cinfo->e.cellDataMax ; offset++ ){
-			AddDD(Total.u.LowPart,Total.u.HighPart,
-				CELdata(offset).f.nFileSizeLow,CELdata(offset).f.nFileSizeHigh);
+			AddDD(Total.u.LowPart, Total.u.HighPart,
+				CELdata(offset).f.nFileSizeLow, CELdata(offset).f.nFileSizeHigh);
 		}
 		UserFree.u.HighPart = MAX32;
 	}else{
-		tstrcpy(RealPath,cinfo->RealPath);
+		tstrcpy(RealPath, cinfo->RealPath);
 		if ( IsTrue(subthread) ) LeaveCellEdit(cinfo);
-		if ( tstrcmp(cinfo->e.Dtype.Name,VFSFFTYPENAME_Network) == 0 ) return;
+		if ( tstrcmp(cinfo->e.Dtype.Name, VFSFFTYPENAME_Network) == 0 ) return;
 
 		Total.u.HighPart = MAX32;
-		GetDriveName(buf,RealPath);
+		GetDriveName(buf, RealPath);
 #ifndef UNICODE
 		if ( DGetDiskFreeSpaceEx )
 #endif
 		{
-			DGetDiskFreeSpaceEx(GetNT_9xValue(RealPath,buf),
-					&UserFree,&Total,&TotalFree);
+			DGetDiskFreeSpaceEx(GetNT_9xValue(RealPath, buf),
+					&UserFree, &Total, &TotalFree);
 		}
 		if ( Total.u.HighPart == MAX32 ){
 			if ( ((OSver.dwMajorVersion < 6) || (GetLastError() == ERROR_INVALID_FUNCTION)) &&
-					GetDiskFreeSpace(buf,&SpC,&BpS,&FC,&tmp) ){
+					GetDiskFreeSpace(buf, &SpC, &BpS, &FC, &tmp) ){
 				Total.u.HighPart = UserFree.u.HighPart = 0;
 				SpC *= BpS;
 				UserFree.u.LowPart = SpC * FC;
@@ -2525,7 +2706,7 @@ void GetDirectoryFreeSpace(PPC_APPINFO *cinfo,BOOL subthread)
 
 		if ( IsTrue(subthread) ){
 			EnterCellEdit(cinfo);
-			if ( tstrcmp(RealPath,cinfo->RealPath) != 0 ){
+			if ( tstrcmp(RealPath, cinfo->RealPath) != 0 ){
 				LeaveCellEdit(cinfo);
 				return;
 			}
@@ -2536,23 +2717,23 @@ void GetDirectoryFreeSpace(PPC_APPINFO *cinfo,BOOL subthread)
 	if ( UserFree.u.HighPart & B31 ){
 		Total.u.HighPart = MAX32;
 	}else{ // C4701 ok
-		SubDD(Total.u.LowPart,Total.u.HighPart,UserFree.u.LowPart,UserFree.u.HighPart);
+		SubDD(Total.u.LowPart, Total.u.HighPart, UserFree.u.LowPart, UserFree.u.HighPart);
 	}
 	if ( Total.u.HighPart & B31 ) Total.u.HighPart = MAX32; // 空きが正常に得られなかった恐れがある
 	cinfo->DiskSizes.used = Total;
 	if ( IsTrue(subthread) ){
 		LeaveCellEdit(cinfo);
-		RefleshInfoBox(cinfo,DE_ATTR_DIR);
+		RefleshInfoBox(cinfo, DE_ATTR_DIR);
 	}
 }
 
-void SetDummyRelativeDir(PPC_APPINFO *cinfo,const TCHAR *name,BYTE attr,BYTE type)
+void SetDummyRelativeDir(PPC_APPINFO *cinfo, const TCHAR *name, BYTE attr, BYTE type)
 {
 	ENTRYCELL *cell;
 
 	cell = &CELdata(cinfo->e.cellDataMax);
 	CELdata(cinfo->e.cellDataMax + 1) = *cell;
-	SetDummyCell(cell,name);
+	SetDummyCell(cell, name);
 	cell->f.dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY;
 	cell->state = ECS_NORMAL;
 	cell->attr = attr;
@@ -2564,13 +2745,13 @@ void SetDummyRelativeDir(PPC_APPINFO *cinfo,const TCHAR *name,BYTE attr,BYTE typ
 
 // 指定パスに関する設定を取得する
 //マスク、低速、キャッシュも？
-void LoadSettingMain(LOADSETTINGS *ls,const TCHAR *path)
+void LoadSettingMain(LOADSETTINGS *ls, const TCHAR *path)
 {
 	LOADSETTINGS tmpls;
 	const TCHAR *p;
 
 	tmpls.disp[0] = '\0';
-	if ( NO_ERROR != GetCustTable(T("XC_dset"),path,&tmpls,sizeof(tmpls)) ){
+	if ( NO_ERROR != GetCustTable(T("XC_dset"), path, &tmpls, sizeof(tmpls)) ){
 		return;
 	}
 
@@ -2585,37 +2766,37 @@ void LoadSettingMain(LOADSETTINGS *ls,const TCHAR *path)
 
 	p = tmpls.disp;
 	while ( SkipSpace(&p) ){
-		if ( !memcmp(p,LOADDISPSTR,SIZEOFTSTR(LOADDISPSTR)) ){
+		if ( !memcmp(p, LOADDISPSTR, SIZEOFTSTR(LOADDISPSTR)) ){
 			p += TSIZEOFSTR(LOADDISPSTR);
-			GetLineParam(&p,ls->disp);
+			GetLineParam(&p, ls->disp);
 			continue;
 		}
-		if ( !memcmp(p,LOADMASKSTR,SIZEOFTSTR(LOADMASKSTR)) ){
+		if ( !memcmp(p, LOADMASKSTR, SIZEOFTSTR(LOADMASKSTR)) ){
 			p += TSIZEOFSTR(LOADMASKSTR);
-			GetLineParam(&p,ls->mask);
+			GetLineParam(&p, ls->mask);
 			continue;
 		}
-		if ( !memcmp(p,LOADCMDSTR,SIZEOFTSTR(LOADCMDSTR)) ){
+		if ( !memcmp(p, LOADCMDSTR, SIZEOFTSTR(LOADCMDSTR)) ){
 			p += TSIZEOFSTR(LOADCMDSTR);
-			GetLineParam(&p,ls->cmd);
+			GetLineParam(&p, ls->cmd);
 			continue;
 		}
-		XMessage(GetFocus(),NULL,XM_NiERRld,T("XC_dset:%s load error:%s"),path,p);
+		XMessage(NULL, NULL, XM_NiERRld, T("XC_dset:%s load error:%s"), path, p);
 		return;
 	}
 }
 
-void USEFASTCALL ReloadCellDispFormat(PPC_APPINFO *cinfo,const TCHAR *name)
+void USEFASTCALL ReloadCellDispFormat(PPC_APPINFO *cinfo, const TCHAR *name)
 {
 	FreeCFMT(&cinfo->celF);
-	LoadCFMT(&cinfo->celF,T("MC_celS"),name,&CFMT_celF);
+	LoadCFMT(&cinfo->celF, T("MC_celS"), name, &CFMT_celF);
 	if ( cinfo->celF.fmt[0] == DE_WIDEV ) FixCellWideV(cinfo);
 	if ( cinfo->hHeaderWnd != NULL ) FixHeader(cinfo);
 	cinfo->FixcelF = TRUE;
 }
 
 // 現在パスの設定を取得する(書庫用)
-void LoadSettingSecond(PPC_APPINFO *cinfo,const TCHAR *path,int *flags,TCHAR *mask)
+void LoadSettingSecond(PPC_APPINFO *cinfo, const TCHAR *path, int *flags, TCHAR *mask)
 {
 	LOADSETTINGS ls;
 
@@ -2624,13 +2805,13 @@ void LoadSettingSecond(PPC_APPINFO *cinfo,const TCHAR *path,int *flags,TCHAR *ma
 	ls.mask[0] = '\1';
 	ls.mask[1] = '\0';
 	ls.cmd[0] = '\0';
-	LoadSettingMain(&ls,path);
+	LoadSettingMain(&ls, path);
 
-	if ( ls.disp[0] ) ReloadCellDispFormat(cinfo,ls.disp);
-	if ( ls.mask[0] != '\1' ) tstrcpy(mask,ls.mask);
+	if ( ls.disp[0] ) ReloadCellDispFormat(cinfo, ls.disp);
+	if ( ls.mask[0] != '\1' ) tstrcpy(mask, ls.mask);
 	if ( ls.cmd[0] != '\0' ){
-		setflag(*flags,RENTRYI_EXECLOADCMD);
-		ThSetString(&cinfo->StringVariable,T("LoadCommand"),ls.cmd);
+		setflag(*flags, RENTRYI_EXECLOADCMD);
+		ThSetString(&cinfo->StringVariable, T("LoadCommand"), ls.cmd);
 	}
 
 	cinfo->dset = ls.dset;
@@ -2638,9 +2819,9 @@ void LoadSettingSecond(PPC_APPINFO *cinfo,const TCHAR *path,int *flags,TCHAR *ma
 }
 
 // 現在パスの設定を取得する(一般)
-void LoadSettingGeneral(PPC_APPINFO *cinfo,int *flags,TCHAR *mask)
+void LoadSettingGeneral(PPC_APPINFO *cinfo, int *flags, TCHAR *mask)
 {
-	TCHAR path[VFPS],*p;
+	TCHAR path[VFPS], *p;
 	LOADSETTINGS ls;
 	int drive;
 
@@ -2648,34 +2829,34 @@ void LoadSettingGeneral(PPC_APPINFO *cinfo,int *flags,TCHAR *mask)
 	ls.dset.infoicon = DSETI_OVL;
 	ls.dset.cellicon = DSETI_OVL;
 	ls.dset.sort.mode.block = 0xffffff00;
-	ls.dset.sort.atr = 0x1f;
-	ls.dset.sort.option = NORM_IGNORECASE;
+	ls.dset.sort.atr = FILEATTRMASK_DIR_FILES;
+	ls.dset.sort.option = SORTE_DEFAULT_VALUE;
 	ls.disp[0] = '\0';
 	ls.mask[0] = '\1';
 	ls.mask[1] = '\0';
 	ls.cmd[0] = '\0';
 
 	// 全指定
-	LoadSettingMain(&ls,T("*"));
+	LoadSettingMain(&ls, T("*"));
 
 	// ドライブ限定
-	tstrcpy(path,cinfo->path);
-	p = VFSGetDriveType(path,&drive,NULL);
+	tstrcpy(path, cinfo->path);
+	p = VFSGetDriveType(path, &drive, NULL);
 	if ( p != NULL ){
 		TCHAR backup;
 
 		if ( *p == '\\' ) p++;
 		backup = *p;
 		*p = '\0';
-		if ( drive >= VFSPT_FILESCHEME ){ // VFSPT_FTP,VFSPT_SHELLSCHEME,VFSPT_HTTP
-			TCHAR *rootp = tstrchr(path,'/');
+		if ( drive >= VFSPT_FILESCHEME ){ // VFSPT_FTP, VFSPT_SHELLSCHEME, VFSPT_HTTP
+			TCHAR *rootp = tstrchr(path, '/');
 			if ( rootp != NULL ){
 				*rootp = '\0';
-				LoadSettingMain(&ls,path);
+				LoadSettingMain(&ls, path);
 				*rootp = '/';
 			}
 		}
-		LoadSettingMain(&ls,path);
+		LoadSettingMain(&ls, path);
 		*p = backup;
 	}else{
 		p = path;
@@ -2683,37 +2864,37 @@ void LoadSettingGeneral(PPC_APPINFO *cinfo,int *flags,TCHAR *mask)
 	// 下層パス
 	if ( *p != '\0' ){
 		for ( ; ; ){	// 途中
-			TCHAR backup,*q;
+			TCHAR backup, *q;
 
 			q = FindPathSeparator(p);
 			if ( q == NULL ) break;
 			p = q + 1;
 			backup = *p;
 			*p = '\0';
-			LoadSettingMain(&ls,path);
+			LoadSettingMain(&ls, path);
 			*p = backup;
 		}
 		// 最終層の更に下層指定
 		p += tstrlen(p);
 		*p = '\\';
 		*(p + 1) = '\0';
-		LoadSettingMain(&ls,path);
+		LoadSettingMain(&ls, path);
 		// 最終層
 		*p = '\0';
-		LoadSettingMain(&ls,path);
+		LoadSettingMain(&ls, path);
 	}else if ( path[0] == '\\' ){ // \\ のとき
-		LoadSettingMain(&ls,T("\\"));
+		LoadSettingMain(&ls, T("\\"));
 	}
 
 	if ( !(*flags & RENTRY_UPDATE) ){ // 表示書式の反映(新規読み込み時のみ)
 		if ( ls.disp[0] ){
-			ReloadCellDispFormat(cinfo,ls.disp);
+			ReloadCellDispFormat(cinfo, ls.disp);
 		}else{
 			if ( IsTrue(cinfo->FixcelF) ){
 				cinfo->FixcelF = FALSE;
 
 				FreeCFMT(&cinfo->celF);
-				LoadCFMT(&cinfo->celF,T("XC_celF"),cinfo->RegCID + 1,&CFMT_celF);
+				LoadCFMT(&cinfo->celF, T("XC_celF"), cinfo->RegCID + 1, &CFMT_celF);
 				if ( cinfo->celF.fmt[0] == DE_WIDEV ) FixCellWideV(cinfo);
 				if ( cinfo->hHeaderWnd != NULL ) FixHeader(cinfo);
 			}
@@ -2721,9 +2902,9 @@ void LoadSettingGeneral(PPC_APPINFO *cinfo,int *flags,TCHAR *mask)
 	}
 	cinfo->dset = ls.dset;
 	cinfo->iconR = (ls.dset.infoicon != DSETI_NOSPACE) ? cinfo->XC_ifix_size.cx : 0;
-	tstrcpy(mask,ls.mask);
+	tstrcpy(mask, ls.mask);
 	if ( ls.cmd[0] != '\0' ){
-		setflag(*flags,RENTRYI_EXECLOADCMD);
-		ThSetString(&cinfo->StringVariable,T("LoadCommand"),ls.cmd);
+		setflag(*flags, RENTRYI_EXECLOADCMD);
+		ThSetString(&cinfo->StringVariable, T("LoadCommand"), ls.cmd);
 	}
 }

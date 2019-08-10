@@ -12,11 +12,11 @@
 
 #define PPV_GetDisplayTypeMenu() ( hDispTypeMenu = CreatePopupMenu() )
 
-const TCHAR *imgDmes[] = {MES_GDAR,MES_GDFR,MES_GDAI,MES_GDFI,T("100%")};
-const TCHAR *disptypestr[] = {MES_VTHE,MES_VTTX,MES_VTDC,MES_VTIM,MES_VTRI,MES_VTAI};
+const TCHAR *imgDmes[] = {MES_GDAR, MES_GDFR, MES_GDAI, MES_GDFI, T("100%")};
+const TCHAR *disptypestr[] = {MES_VTHE, MES_VTTX, MES_VTDC, MES_VTIM, MES_VTRI, MES_VTAI};
 TCHAR ReceivedParam[CMDLINESIZE];
 
-void SetimgD(HWND hWnd,int newD);
+void SetimgD(HWND hWnd, int newD);
 int SetFindString(char *strbin);
 
 #define PPCLC_XWIN 4 // ～ +32
@@ -29,8 +29,8 @@ const TCHAR lstr_scroll[] = MES_LYSC;
 //const TCHAR lstr_docktop[] = MES_LYDT;
 //const TCHAR lstr_dockbottom[] = MES_LYDB;
 
-const TCHAR *dtype[] = {T("?D"),T("XD"),T("YD"),T("ZD")};
-const TCHAR *utype[] = {T("?"),T("X"),T("Y"),T("Z")};
+const TCHAR *dtype[] = {T("?D"), T("XD"), T("YD"), T("ZD")};
+const TCHAR *utype[] = {T("?"), T("X"), T("Y"), T("Z")};
 
 const TCHAR StrTcodeESC[] = T("ESC");
 const TCHAR StrTcodeQuoted[] = T("quoted");
@@ -57,17 +57,17 @@ struct RAWCOLORLISTSTRUCT {
 	{ T("1bit"),	1 },
 	{ T("4bit"),	4 },
 	{ T("8bit"),	8 },
-	{ T("16bit B5G5R5"),16 },
-	{ T("16bit R5G5B5"),16 + B7 },
-	{ T("16bit B5G6R5"),16 + B6},
-	{ T("16bit R5G6B5"),16 + B6 + B7 },
+	{ T("16bit B5G5R5"), 16 },
+	{ T("16bit R5G5B5"), 16 + B7 },
+	{ T("16bit B5G6R5"), 16 + B6},
+	{ T("16bit R5G6B5"), 16 + B6 + B7 },
 	{ T("24bit BGR"),	24 },
 //	{ T("24bit RGB"),	24 + B7 },
 	{ T("32bit BGR"),	32 },
 	{ T("32bit RGB"),	32 + B7 },
 	{ T("32bit B10G10R10"),	32 + B6 },
 	{ T("32bit R10G10B10"),	32 + B6 + B7 },
-	{ NULL,0 }
+	{ NULL, 0 }
 };
 
 /*
@@ -83,88 +83,88 @@ struct RAWCOLORLISTSTRUCT {
 
 void MoveCursor(int *param)
 {
-	int deltaX = 0,deltaY = 0;
+	int deltaX = 0, deltaY = 0;
 
 	switch(param[0]){ // 選択無し
 		// Y
 		case 1:
-			MoveCsr(0,param[1] * VO_stepY,FALSE);
+			MoveCsr(0, param[1] * VO_stepY, FALSE);
 			// break なし
 		case 0:
 		case 3:
 			deltaY = param[1] * VO_stepY;
 			break;
 		case 2:
-			MoveCsr(0,param[1],FALSE);
+			MoveCsr(0, param[1], FALSE);
 			return;
 		// X
 		case 5:
-			MoveCsr(param[1] * VO_stepX,0,FALSE);
+			MoveCsr(param[1] * VO_stepX, 0, FALSE);
 			// break なし
 		case 4:
 		case 7:
 			deltaX = param[1] * VO_stepX;
 			break;
 		case 6:
-			MoveCsr(param[1],0,FALSE);
+			MoveCsr(param[1], 0, FALSE);
 			return;
 		// Y page
 		case 9:
-			MoveCsr(0,param[1] * (VO_sizeY-1),FALSE);
+			MoveCsr(0, param[1] * (VO_sizeY-1), FALSE);
 			// break なし
 		case 8:
 		case 11:
 			deltaY = param[1] * (VO_sizeY-1);
 			break;
 		case 10:
-			MoveCsr(0,param[1] * (VO_sizeY-1),FALSE);
+			MoveCsr(0, param[1] * (VO_sizeY-1), FALSE);
 			return;
 		// Y deci page
 		case 13:
-			MoveCsr(0,param[1] * (VO_sizeY-1) / 10,FALSE);
+			MoveCsr(0, param[1] * (VO_sizeY-1) / 10, FALSE);
 			// break なし
 		case 12:
 		case 15:
 			deltaY = param[1] * (VO_sizeY-1) / 10;
 			break;
 		case 14:
-			MoveCsr(0,param[1] * (VO_sizeY-1) / 10,FALSE);
+			MoveCsr(0, param[1] * (VO_sizeY-1) / 10, FALSE);
 			return;
 
 		// X page
 		case 17:
-			MoveCsr(param[1] * (VO_sizeX-1),0,FALSE);
+			MoveCsr(param[1] * (VO_sizeX-1), 0, FALSE);
 			// break なし
 		case 16:
 		case 19:
 			deltaX = param[1] * (VO_sizeX-1);
 			break;
 		case 18:
-			MoveCsr(param[1] * (VO_sizeX-1),0,FALSE);
+			MoveCsr(param[1] * (VO_sizeX-1), 0, FALSE);
 			return;
 		// X deci page
 		case 21:
-			MoveCsr(param[1] * (VO_sizeX-1) / 10,0,FALSE);
+			MoveCsr(param[1] * (VO_sizeX-1) / 10, 0, FALSE);
 			// break なし
 		case 20:
 		case 23:
 			deltaX = param[1] * (VO_sizeX-1) / 10;
 			break;
 		case 22:
-			MoveCsr(param[1] * (VO_sizeX-1) / 10,0,FALSE);
+			MoveCsr(param[1] * (VO_sizeX-1) / 10, 0, FALSE);
 			return;
 
 		default:
-			XMessage(vinfo.info.hWnd,StrPPvTitle,XM_GrERRld,T("*cursor param error"));
+			XMessage(vinfo.info.hWnd, StrPPvTitle, XM_GrERRld, T("*cursor param error"));
 			return;
 	}
-	MoveCsrkey(deltaX,deltaY,param[2]);
+	MoveCsrkey(deltaX, deltaY, param[2]);
 }
 
 /*-----------------------------------------------------------------------------
 	パラメータ入手関数（PPLIBxxx.DLLから呼ばれる）
 -----------------------------------------------------------------------------*/
-DWORD_PTR USECDECL PPxGetIInfo(PPV_APPINFO *vinfo,DWORD cmdID,PPXAPPINFOUNION *uptr)
+DWORD_PTR USECDECL PPxGetIInfo(PPV_APPINFO *vinfo, DWORD cmdID, PPXAPPINFOUNION *uptr)
 {
 	switch(cmdID){
 		case PPXCMDID_STARTENUM:	// 検索開始(マーク無しもあり)
@@ -180,8 +180,8 @@ DWORD_PTR USECDECL PPxGetIInfo(PPV_APPINFO *vinfo,DWORD cmdID,PPXAPPINFOUNION *u
 		case '1': { // %1
 			int mode = VFSPT_UNKNOWN;
 
-			tstrcpy(uptr->enums.buffer,vo_.file.name);
-			VFSGetDriveType(uptr->enums.buffer,&mode,NULL);
+			tstrcpy(uptr->enums.buffer, vo_.file.name);
+			VFSGetDriveType(uptr->enums.buffer, &mode, NULL);
 			if ( (mode == VFSPT_DRIVE) || (mode == VFSPT_UNC) ){
 				TCHAR *p;
 
@@ -201,7 +201,7 @@ DWORD_PTR USECDECL PPxGetIInfo(PPV_APPINFO *vinfo,DWORD cmdID,PPXAPPINFOUNION *u
 			const TCHAR *p;
 
 			p = VFSFindLastEntry(vo_.file.name);
-			tstrcpy(uptr->enums.buffer,(*p == '\\') ? p + 1 : p);
+			tstrcpy(uptr->enums.buffer, (*p == '\\') ? p + 1 : p);
 			break;
 		}
 		case PPXCMDID_ENUMATTR:
@@ -219,14 +219,14 @@ DWORD_PTR USECDECL PPxGetIInfo(PPV_APPINFO *vinfo,DWORD cmdID,PPXAPPINFOUNION *u
 			if ( vo_.DModeBit == DOCMODE_TEXT ){
 				line = VOi->ti[line].line;
 			}
-			wsprintf(uptr->enums.buffer,T("%u"),line);
+			wsprintf(uptr->enums.buffer, T("%u"), line);
 			break;
 		}
 		case 'l': { // %l
 			int line;
 
 			line = ( VOsel.cursor != FALSE ) ? VOsel.now.y.line : VOi->offY;
-			wsprintf(uptr->enums.buffer,T("%u"),line + 1);
+			wsprintf(uptr->enums.buffer, T("%u"), line + 1);
 			break;
 		}
 
@@ -234,12 +234,12 @@ DWORD_PTR USECDECL PPxGetIInfo(PPV_APPINFO *vinfo,DWORD cmdID,PPXAPPINFOUNION *u
 			int line;
 
 			line = ( VOsel.cursor != FALSE ) ? VOsel.now.x.offset : VOi->offX;
-			wsprintf(uptr->enums.buffer,T("%u"),line + 1);
+			wsprintf(uptr->enums.buffer, T("%u"), line + 1);
 			break;
 		}
 
 		case PPXCMDID_PPXCOMMAD:
-			return PPvCommand(vinfo,uptr->key);
+			return PPvCommand(vinfo, uptr->key);
 
 		case PPXCMDID_GETREQHWND:
 			if ( hViewParentWnd != NULL ){
@@ -281,14 +281,14 @@ DWORD_PTR USECDECL PPxGetIInfo(PPV_APPINFO *vinfo,DWORD cmdID,PPXAPPINFOUNION *u
 		case PPXCMDID_PATHJUMP: {
 			TCHAR buf[VFPS];
 
-			VFSFixPath(buf,uptr->str,NULL,VFSFIX_PATH | VFSFIX_NOFIXEDGE);
+			VFSFixPath(buf, uptr->str, NULL, VFSFIX_PATH | VFSFIX_NOFIXEDGE);
 			OpenAndFollowViewObject(vinfo, buf, NULL, NULL, 0);
 			break;
 		}
 
 		case PPXCMDID_SETPOPLINE:
 			if ( *uptr->str != '\0' ){
-				SetPopMsg(0,uptr->str);
+				SetPopMsg(0, uptr->str);
 			}else{
 				StopPopMsg(PMF_ALL);
 			}
@@ -310,11 +310,11 @@ DWORD_PTR USECDECL PPxGetIInfo(PPV_APPINFO *vinfo,DWORD cmdID,PPXAPPINFOUNION *u
 			break;
 
 		case PPXCMDID_ADDEXMENU:
-			if ( !tstrcmp(((ADDEXMENUINFO *)uptr)->exname,T("displaytype")) ){
+			if ( !tstrcmp(((ADDEXMENUINFO *)uptr)->exname, T("displaytype")) ){
 				if ( ((ADDEXMENUINFO *)uptr)->hMenu == NULL ){
 					((ADDEXMENUINFO *)uptr)->hMenu = CreatePopupMenu();
 				}
-				PPvAddDisplayTypeMenu(((ADDEXMENUINFO *)uptr)->hMenu,FALSE);
+				PPvAddDisplayTypeMenu(((ADDEXMENUINFO *)uptr)->hMenu, FALSE);
 				return PPXCMDID_ADDEXMENU;
 			}
 			return 0;
@@ -323,49 +323,49 @@ DWORD_PTR USECDECL PPxGetIInfo(PPV_APPINFO *vinfo,DWORD cmdID,PPXAPPINFOUNION *u
 			const TCHAR *param;
 
 			param = uptr->str + tstrlen(uptr->str) + 1;
-			if ( !tstrcmp(uptr->str,T("ZOOM")) ){ // *zoom
+			if ( !tstrcmp(uptr->str, T("ZOOM")) ){ // *zoom
 				if ( vo_.DModeBit & VO_dmode_IMAGE ){
-					SetimgD(vinfo->info.hWnd,GetIntNumber(&param));
+					SetimgD(vinfo->info.hWnd, GetIntNumber(&param));
 				}
 				break;
 			}
 
-			if ( !tstrcmp(uptr->str,T("REDUCEMODE")) ){
+			if ( !tstrcmp(uptr->str, T("REDUCEMODE")) ){
 				XV.img.imgD[1] = GetNumber(&param);
-				InvalidateRect(vinfo->info.hWnd,NULL,TRUE);
+				InvalidateRect(vinfo->info.hWnd, NULL, TRUE);
 				break;
 			}
 
-			if ( !tstrcmp(uptr->str,T("JUMPLINE")) ){
+			if ( !tstrcmp(uptr->str, T("JUMPLINE")) ){
 				JumpLine(param);
 				break;
 			}
 
-			if ( !tstrcmp(uptr->str,T("LAYOUT")) ){
+			if ( !tstrcmp(uptr->str, T("LAYOUT")) ){
 				PPvLayoutCommand();
 				break;
 			}
 
-			if ( !tstrcmp(uptr->str,T("PREVIEW")) ){
+			if ( !tstrcmp(uptr->str, T("PREVIEW")) ){
 				TCHAR buf[VFPS];
 				PPXAPPINFOUNION tmpuptr;
 
 				tmpuptr.enums.buffer = buf;
-				PPxGetIInfo(vinfo,'1',&tmpuptr);
+				PPxGetIInfo(vinfo, '1', &tmpuptr);
 
-				if ( PreviewCommand(&BackScreen,param,buf) ){
+				if ( PreviewCommand(&BackScreen, param, buf) ){
 					FullDraw = X_fles | 1;
 				}else{
 					FullDraw = X_fles;
 				}
-				InvalidateRect(vinfo->info.hWnd,NULL,TRUE);
+				InvalidateRect(vinfo->info.hWnd, NULL, TRUE);
 				break;
 			}
 
-			if ( !tstrcmp(uptr->str,T("VIEWOPTION")) ){
+			if ( !tstrcmp(uptr->str, T("VIEWOPTION")) ){
 				VIEWOPTIONS viewopt;
 
-				CheckParam(&viewopt,param,NULL);
+				CheckParam(&viewopt, param, NULL);
 				SetOpts(&viewopt);
 				VOi->img = NULL;
 				FixChangeMode(vinfo->info.hWnd);
@@ -375,7 +375,7 @@ DWORD_PTR USECDECL PPxGetIInfo(PPV_APPINFO *vinfo,DWORD cmdID,PPXAPPINFOUNION *u
 		}
 
 		case PPXCMDID_REQUIREKEYHOOK:
-			KeyHookEntry = FUNCCAST(CALLBACKMODULEENTRY,uptr);
+			KeyHookEntry = FUNCCAST(CALLBACKMODULEENTRY, uptr);
 			break;
 
 		default:
@@ -390,7 +390,7 @@ int LogicalLineToDisplayLine(DWORD line)
 	if ( line < 1 ){
 		line = 1;
 	}else if ( line > 1 ){	// 検索
-		DWORD dh,dl,c;
+		DWORD dh, dl, c;
 
 		c = dl = 0;
 		dh = VOi->line;
@@ -429,11 +429,11 @@ void JumpLine(const TCHAR *linestr)
 	if ( logical != FALSE ) line = LogicalLineToDisplayLine(line);
 	mtinfo.PresetY = line - 1; // 読み込み完了後の表示位置を指定
 	line = line - 1 - ((VOsel.cursor != FALSE) ? VOsel.now.y.line : VOi->offY);
-	MoveCsrkey(0,line,FALSE);
+	MoveCsrkey(0, line, FALSE);
 
 	if ( IsTrue(BackReader) ){
 		mtinfo.PresetY = VOi->offY;
-		setflag(mtinfo.OpenFlags,PPV__NoGetPosFromHist);
+		setflag(mtinfo.OpenFlags, PPV__NoGetPosFromHist);
 	}
 }
 
@@ -443,24 +443,24 @@ void PPvLayoutCommand(void)
 	int i;
 
 	hMenu = CreatePopupMenu();
-	AppendMenuCheckString(hMenu,PPCLC_XWIN + 8,lstr_title
-			,!(X_win & XWIN_NOTITLE));
-	AppendMenuCheckString(hMenu,PPCLC_XWIN + 0,lstr_menu
-			,X_win & XWIN_MENUBAR);
-	AppendMenuCheckString(hMenu,PPCLC_XWIN + 5,lstr_status
-			,!(X_win & XWIN_NOSTATUS));
-	AppendMenuCheckString(hMenu,PPCLC_XWIN + 4,lstr_toolbar
-			,X_win & XWIN_TOOLBAR);
-	AppendMenuCheckString(hMenu,PPCLC_XWIN + 2,lstr_scroll
-			,!(X_win & XWIN_HIDESCROLL));
+	AppendMenuCheckString(hMenu, PPCLC_XWIN + 8, lstr_title,
+			!(X_win & XWIN_NOTITLE));
+	AppendMenuCheckString(hMenu, PPCLC_XWIN + 0, lstr_menu,
+			X_win & XWIN_MENUBAR);
+	AppendMenuCheckString(hMenu, PPCLC_XWIN + 5, lstr_status,
+			!(X_win & XWIN_NOSTATUS));
+	AppendMenuCheckString(hMenu, PPCLC_XWIN + 4, lstr_toolbar,
+			X_win & XWIN_TOOLBAR);
+	AppendMenuCheckString(hMenu, PPCLC_XWIN + 2, lstr_scroll,
+			!(X_win & XWIN_HIDESCROLL));
 
 	i = PPvTrackPopupMenu(hMenu);
 	DestroyMenu(hMenu);
 	if ( i >= PPCLC_XWIN ){
 		X_win ^= 1 << (i - PPCLC_XWIN);
-		SetCustTable(T("X_win"),T("V"),&X_win,sizeof(X_win));
+		SetCustTable(T("X_win"), T("V"), &X_win, sizeof(X_win));
 		if ( i == PPCLC_XWIN + 0){	// メニュー
-			SetMenu(vinfo.info.hWnd,(X_win & XWIN_MENUBAR) ? DynamicMenu.hMenuBarMenu : NULL);
+			SetMenu(vinfo.info.hWnd, (X_win & XWIN_MENUBAR) ? DynamicMenu.hMenuBarMenu : NULL);
 		}
 		if ((i == PPCLC_XWIN + 2) || (i == PPCLC_XWIN + 3)){	// scrollbar
 			SCROLLINFO sinfo;
@@ -471,37 +471,37 @@ void PPvLayoutCommand(void)
 			sinfo.nMax = 0;
 			sinfo.nPage = 1;
 			sinfo.nPos = 0;
-			SetScrollInfo(vinfo.info.hWnd,SB_HORZ,&sinfo,TRUE);
-			SetScrollInfo(vinfo.info.hWnd,SB_VERT,&sinfo,TRUE);
+			SetScrollInfo(vinfo.info.hWnd, SB_HORZ, &sinfo, TRUE);
+			SetScrollInfo(vinfo.info.hWnd, SB_VERT, &sinfo, TRUE);
 		}
 		if ( i == PPCLC_XWIN + 4 ){	// toolbar
 			InitGui();
 		}
 		if ( i == PPCLC_XWIN + 8 ){
 			SetWindowLong(vinfo.info.hWnd, GWL_STYLE,
-					GetWindowLong(vinfo.info.hWnd,GWL_STYLE) ^
+					GetWindowLong(vinfo.info.hWnd, GWL_STYLE) ^
 							(WS_OVERLAPPEDWINDOW ^ WS_NOTITLEOVERLAPPED));
-			SetWindowPos(vinfo.info.hWnd, NULL, 0,0, 0,0,
+			SetWindowPos(vinfo.info.hWnd, NULL, 0, 0, 0, 0,
 					SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
 		}
 		WmWindowPosChanged(vinfo.info.hWnd);
-		InvalidateRect(vinfo.info.hWnd,NULL,TRUE);
+		InvalidateRect(vinfo.info.hWnd, NULL, TRUE);
 	}
 }
 
 
 void FixChangeMode(HWND hWnd)
 {
-	InitViewObject(NULL,NULL);
+	InitViewObject(NULL, NULL);
 	if ( VOsel.select != FALSE ) ResetSelect(TRUE); // 選択を解除
-	InvalidateRect(hWnd,NULL,TRUE);
+	InvalidateRect(hWnd, NULL, TRUE);
 	if ( XV_tmod ){
 		if ( vo_.DModeBit & VO_dmode_SELECTABLE ){
 			if ( vo_.DModeBit == DOCMODE_HEX ) XV_lleft = 0;
 			if ( VOsel.now.y.line >= VO_minY ){
-				CalcTextXPoint(0,VOsel.now.y.line,SELPOSCHANGE_OFFSET);
+				CalcTextXPoint(0, VOsel.now.y.line, SELPOSCHANGE_OFFSET);
 			}
-			MoveCsrkey(0,0,FALSE);
+			MoveCsrkey(0, 0, FALSE);
 			ShowCaret(hWnd);
 		}else{
 			HideCaret(hWnd);
@@ -512,14 +512,14 @@ void FixChangeMode(HWND hWnd)
 /*-----------------------------------------------------------------------------
 	メッセージ表示の設定
 -----------------------------------------------------------------------------*/
-void SetPopMsg(ERRORCODE err,const TCHAR *msg)
+void SetPopMsg(ERRORCODE err, const TCHAR *msg)
 {
 	RECT FAR rect;
 
 	if ( msg != NULL ){
-		tstrcpy(PopMsgStr,MessageText(msg));
+		tstrcpy(PopMsgStr, MessageText(msg));
 	}else{
-		PPErrorMsg(PopMsgStr,err);
+		PPErrorMsg(PopMsgStr, err);
 	}
 	PopMsgFlag = PMF_WAITKEY | PMF_PROGRESS;
 
@@ -527,14 +527,14 @@ void SetPopMsg(ERRORCODE err,const TCHAR *msg)
 	rect.top	= 0;
 	rect.right	= WndSize.cx;
 	rect.bottom	= fontY - 1;
-	InvalidateRect(vinfo.info.hWnd,&rect,FALSE);	// 更新指定
+	InvalidateRect(vinfo.info.hWnd, &rect, FALSE);	// 更新指定
 
 	if ( !(err & POPMSG_NOLOGFLAG) ){
 		if ( X_evoc == 1 ){
-			PPxCommonExtCommand(K_FLASHWINDOW,(WPARAM)vinfo.info.hWnd);
-			setflag(PopMsgFlag,PMF_FLASH);
+			PPxCommonExtCommand(K_FLASHWINDOW, (WPARAM)vinfo.info.hWnd);
+			setflag(PopMsgFlag, PMF_FLASH);
 		}
-		XMessage(NULL,NULL,XM_ETCl,PopMsgStr);
+		XMessage(NULL, NULL, XM_ETCl, PopMsgStr);
 	}
 }
 /*-----------------------------------------------------------------------------
@@ -543,27 +543,27 @@ void SetPopMsg(ERRORCODE err,const TCHAR *msg)
 void StopPopMsg(int mask)
 {
 	if ( PopMsgFlag & mask & PMF_FLASH ){
-		PPxCommonExtCommand(K_STOPFLASHWINDOW,(WPARAM)vinfo.info.hWnd);
-		resetflag(PopMsgFlag,PMF_FLASH);
+		PPxCommonExtCommand(K_STOPFLASHWINDOW, (WPARAM)vinfo.info.hWnd);
+		resetflag(PopMsgFlag, PMF_FLASH);
 	}
 	if ( PopMsgFlag & PMF_DISPLAYMASK ){
-		resetflag(PopMsgFlag,mask);
+		resetflag(PopMsgFlag, mask);
 		// 表示が無くなるので描画する
 		if ( !(PopMsgFlag & PMF_DISPLAYMASK) ){
-			InvalidateRect(vinfo.info.hWnd,&BoxStatus,TRUE);
+			InvalidateRect(vinfo.info.hWnd, &BoxStatus, TRUE);
 		}
 	}
 }
 
-BOOL PPvMouseCommand(PPV_APPINFO *vinfo, POINT *pos,const TCHAR *click,const TCHAR *type)
+BOOL PPvMouseCommand(PPV_APPINFO *vinfo, POINT *pos, const TCHAR *click, const TCHAR *type)
 {
-	TCHAR buf[VFPS],*p;
+	TCHAR buf[VFPS], *p;
 
 	pos->x++;
-	p = PutShiftCode(buf,GetShiftKey());
-	wsprintf(p,T("%s_%s"),click,type);
+	p = PutShiftCode(buf, GetShiftKey());
+	wsprintf(p, T("%s_%s"), click, type);
 
-	if ( NO_ERROR == GetCustTable(T("MV_click"),buf,buf,sizeof(buf)) ){
+	if ( NO_ERROR == GetCustTable(T("MV_click"), buf, buf, sizeof(buf)) ){
 		ExecDualParam(vinfo, buf);
 		return TRUE;
 	}else{
@@ -571,16 +571,16 @@ BOOL PPvMouseCommand(PPV_APPINFO *vinfo, POINT *pos,const TCHAR *click,const TCH
 	}
 }
 
-BOOL PPvMouseCommandPos(PPV_APPINFO *vinfo,POINT *pos,const TCHAR *click,int Y)
+BOOL PPvMouseCommandPos(PPV_APPINFO *vinfo, POINT *pos, const TCHAR *click, int Y)
 {
-	return PPvMouseCommand(vinfo,pos,click,
+	return PPvMouseCommand(vinfo, pos, click,
 			(Y >= BoxView.top) ? T("SPC") : T("LINE"));
 }
 
-LRESULT PPvNCMouseCommand(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
+LRESULT PPvNCMouseCommand(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	POINT pos;
-	const TCHAR *click,*type;
+	const TCHAR *click, *type;
 
 	switch(wParam){
 		case HTBOTTOM:
@@ -616,7 +616,7 @@ LRESULT PPvNCMouseCommand(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 			break;
 
 		default:
-			return DefWindowProc(hWnd,message,wParam,lParam);
+			return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 
 	switch(message){
@@ -652,19 +652,19 @@ LRESULT PPvNCMouseCommand(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 			break;
 
 		default:
-			return DefWindowProc(hWnd,message,wParam,lParam);
+			return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 
-	LPARAMtoPOINT(pos,lParam);
-	if ( PPvMouseCommand(&vinfo,&pos,click,type) == FALSE ){
-		return DefWindowProc(hWnd,message,wParam,lParam);
+	LPARAMtoPOINT(pos, lParam);
+	if ( PPvMouseCommand(&vinfo, &pos, click, type) == FALSE ){
+		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 	return 0;
 }
 // 窓の大きさを調整 -----------------------------------------------------------
-void FixWindowSize(HWND hWnd,int offx,int offy)
+void FixWindowSize(HWND hWnd, int offx, int offy)
 {
-	int width,height;
+	int width, height;
 	DWORD tick;
 
 	tick = GetTickCount();	// オーバーフローは無視
@@ -698,7 +698,7 @@ void FixWindowSize(HWND hWnd,int offx,int offy)
 				width = fontX * 6;
 				height = BoxView.top;
 		}
-		GetDesktopRect(hWnd,&desktop);
+		GetDesktopRect(hWnd, &desktop);
 
 		width += winS.right - winS.left - WndSize.cx;
 		if ( (winS.left + width) > desktop.right ){
@@ -713,35 +713,35 @@ void FixWindowSize(HWND hWnd,int offx,int offy)
 		height = (winS.bottom - winS.top) + fontY * offy;
 	}
 	WindowFixTick = tick;
-	SetWindowPos(hWnd,NULL,0,0,width,height,
+	SetWindowPos(hWnd, NULL, 0, 0, width, height,
 			SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER);
 }
 
 // 表示形式の切り換えメニュー -------------------------------------------------
-void ChangeSusie(PPV_APPINFO *vinfo, HMENU hPopupMenu,int index)
+void ChangeSusie(PPV_APPINFO *vinfo, HMENU hPopupMenu, int index)
 {
-	TCHAR tmppath[VFPS + 0x40],*p,*popt;
+	TCHAR tmppath[VFPS + 0x40], *p, *popt;
 
-	tstrcpy(tmppath,vo_.file.name);
+	tstrcpy(tmppath, vo_.file.name);
 	p = VFSFindLastEntry(tmppath);
-	popt = tstrstr(p,T("::"));
+	popt = tstrstr(p, T("::"));
 	if ( popt == NULL ){
 		popt = p + tstrlen(p);
 	}
 	if ( index == 0 ){ // 登録
 		*popt = '\0';
-		AppendMenu(hPopupMenu,MF_SEPARATOR,0,NULL);
-		VFSCheckImage(tmppath,vo_.file.image,vo_.file.size.l,hPopupMenu);
+		AppendMenu(hPopupMenu, MF_SEPARATOR, 0, NULL);
+		VFSCheckImage(tmppath, vo_.file.image, vo_.file.UseSize, hPopupMenu);
 	}else{ // 選択
 		*popt++ = ':';
 		*popt++ = ':';
-		if ( GetMenuString(hPopupMenu,index,popt,0x40,MF_BYCOMMAND) > 0 ){
+		if ( GetMenuString(hPopupMenu, index, popt, 0x40, MF_BYCOMMAND) > 0 ){
 			OpenAndFollowViewObject(vinfo, tmppath, NULL, NULL, 0);
 		}
 	}
 }
 
-void PPvAddDisplayTypeMenu(HMENU hPopupMenu,BOOL extend)
+void PPvAddDisplayTypeMenu(HMENU hPopupMenu, BOOL extend)
 {
 	DWORD i;
 
@@ -750,17 +750,17 @@ void PPvAddDisplayTypeMenu(HMENU hPopupMenu,BOOL extend)
 			MFT_STRING |
 			 ( ((vo_.SupportTypeFlags >> i) & 1) ? MF_ENABLED : MFS_GRAYED) |
 			 ( ((i + 1) == vo_.DModeType) ? MF_CHECKED : 0 ),
-			MENUID_TYPE_FIRST + i,MessageText(disptypestr[i]) );
+			MENUID_TYPE_FIRST + i, MessageText(disptypestr[i]) );
 	}
 	if ( (vo_.DModeType == DISPT_RAWIMAGE) || extend ){
-		AppendMenu(hPopupMenu,(vo_.DModeType == DISPT_RAWIMAGE) ?
+		AppendMenu(hPopupMenu, (vo_.DModeType == DISPT_RAWIMAGE) ?
 				MFT_STRING | MF_CHECKED : MFT_STRING,
-				MENUID_TYPE_RAWIMAGE,MessageText(disptypestr[4]));
+				MENUID_TYPE_RAWIMAGE, MessageText(disptypestr[4]));
 	}
 	if ( (vo_.DModeType == DISPT_TEXT) || (vo_.DModeType == DISPT_DOCUMENT) ){
 		AppendMenu(hPopupMenu,
 			MFT_STRING | (TailModeFlags ? MF_CHECKED : 0 ),
-			MENUID_TYPE_TAIL,MessageText(disptypestr[5]) );
+			MENUID_TYPE_TAIL, MessageText(disptypestr[5]) );
 	}
 	ChangeSusie(&vinfo, hPopupMenu, 0);
 }
@@ -771,7 +771,7 @@ void GetDivMax(DDWORDST *divptr)
 
 	for (;;){
 		temp = *divptr;
-		AddDD(temp.LowPart,temp.HighPart,X_wsiz,0);
+		AddDD(temp.LowPart, temp.HighPart, X_wsiz, 0);
 		if ( (temp.HighPart > FileRealSize.HighPart) ||
 			 ((temp.HighPart == FileRealSize.HighPart) && (temp.LowPart > FileRealSize.LowPart)) ){
 			break;
@@ -785,26 +785,26 @@ void ToggleTailMode(PPV_APPINFO *vinfo)
 	TailModeFlags = TailModeFlags ? 0 : 1;
 	if ( TailModeFlags ){
 		OldTailLine = VO_maxY - 1;
-		setflag(ShowTextLineFlags,SHOWTEXTLINE_OLDTEXT);
+		setflag(ShowTextLineFlags, SHOWTEXTLINE_OLDTEXT);
 
 		if ( FileDivideMode > FDM_NODIVMAX ){
 			GetDivMax(&FileDividePointer);
 			PPvReload(vinfo);
 		}
 	}
-	InvalidateRect(vinfo->info.hWnd,NULL,TRUE);
+	InvalidateRect(vinfo->info.hWnd, NULL, TRUE);
 }
 
-ERRORCODE PPV_DisplayType(HWND hWnd,BOOL extend)
+ERRORCODE PPV_DisplayType(HWND hWnd, BOOL extend)
 {
 	HMENU hPopupMenu;
 	int index;
 
 	hPopupMenu = CreatePopupMenu();
-	PPvAddDisplayTypeMenu(hPopupMenu,extend);
+	PPvAddDisplayTypeMenu(hPopupMenu, extend);
 	index = PPvTrackPopupMenu(hPopupMenu);
 	if ( index >= VFSCHK_MENUID ){ // SPI直接指定
-		ChangeSusie(&vinfo,hPopupMenu,index);
+		ChangeSusie(&vinfo, hPopupMenu, index);
 		DestroyMenu(hPopupMenu);
 		return NO_ERROR;
 	}
@@ -828,7 +828,7 @@ ERRORCODE PPV_DisplayType(HWND hWnd,BOOL extend)
 
 HMENU TextCodeMenu(BOOL SelectMode)
 {
-	int i,nowcode;
+	int i, nowcode;
 	HMENU hPopupMenu;
 	TCHAR buf[32];
 
@@ -846,52 +846,52 @@ HMENU TextCodeMenu(BOOL SelectMode)
 
 	if ( vo_.DModeBit & VO_dmode_TEXTLIKE ){
 		for ( i = 0 ; i < (VTYPE_MAX - 1) ; i++ ){
-			AppendMenuCheckString(hPopupMenu,MENUID_TEXTCODE + i,VO_textS[i],i == nowcode);
+			AppendMenuCheckString(hPopupMenu, MENUID_TEXTCODE + i, VO_textS[i], i == nowcode);
 		}
 		if ( SelectMode == FALSE ){
 			if ( VO_textS[VTYPE_SYSTEMCP] != textcp_sjis ){
-				AppendMenuCheckString(hPopupMenu,MENUID_TEXTCODE + VTYPE_MENU_EXSJIS,textcp_sjis,VO_CodePage == CP__SJIS);
+				AppendMenuCheckString(hPopupMenu, MENUID_TEXTCODE + VTYPE_MENU_EXSJIS, textcp_sjis, VO_CodePage == CP__SJIS);
 			}
 
-			wsprintf(buf,VO_CodePage ?
-				T("&other CP %d...") : T("&other CP..."),VO_CodePage);
-			AppendMenuCheckString(hPopupMenu,MENUID_TEXTCODE + VTYPE_OTHER,buf,nowcode == VTYPE_OTHER);
+			wsprintf(buf, VO_CodePage ?
+				T("&other CP %d...") : T("&other CP..."), VO_CodePage);
+			AppendMenuCheckString(hPopupMenu, MENUID_TEXTCODE + VTYPE_OTHER, buf, nowcode == VTYPE_OTHER);
 		}
 	}
 	if ( vo_.DModeBit & DOCMODE_TEXT ){
 		if ( SelectMode == FALSE ){
-			AppendMenu(hPopupMenu,MF_SEPARATOR,0,NULL);
+			AppendMenu(hPopupMenu, MF_SEPARATOR, 0, NULL);
 			for ( i = 0 ; i <= 2 ; i++ ){
-				AppendMenuCheckString(hPopupMenu,MENUID_KANAMODE + i,VO_textM[i],i == VO_Tmode);
+				AppendMenuCheckString(hPopupMenu, MENUID_KANAMODE + i, VO_textM[i], i == VO_Tmode);
 			}
-			AppendMenu(hPopupMenu,MF_SEPARATOR,0,NULL);
-			AppendMenuCheckString(hPopupMenu,MENUID_ESCSWITCH,StrTcodeESC,VO_Tesc);
-			AppendMenuCheckString(hPopupMenu,MENUID_QUOTEDSWITCH,StrTcodeQuoted,VO_Tquoted);
-			AppendMenuCheckString(hPopupMenu,MENUID_TAGSWITCH,StrTcodeTag,VO_Ttag == 1);
+			AppendMenu(hPopupMenu, MF_SEPARATOR, 0, NULL);
+			AppendMenuCheckString(hPopupMenu, MENUID_ESCSWITCH, StrTcodeESC, VO_Tesc);
+			AppendMenuCheckString(hPopupMenu, MENUID_QUOTEDSWITCH, StrTcodeQuoted, VO_Tquoted);
+			AppendMenuCheckString(hPopupMenu, MENUID_TAGSWITCH, StrTcodeTag, VO_Ttag == 1);
 		}
 	}
-	AppendMenu(hPopupMenu,MF_SEPARATOR,0,NULL);
+	AppendMenu(hPopupMenu, MF_SEPARATOR, 0, NULL);
 	if ( IsTrue(VOsel.select) && (vo_.DModeBit & DOCMODE_TEXT) ){
-		AppendMenuString(hPopupMenu,MENUID_SELECTEDCODE,StrTcodeSelLines);
+		AppendMenuString(hPopupMenu, MENUID_SELECTEDCODE, StrTcodeSelLines);
 	}
 
 	if ( vo_.DModeType == DISPT_RAWIMAGE ){
 		struct RAWCOLORLISTSTRUCT *rcl;
 
 		for ( rcl = RawColorList ; rcl->type != 0 ; rcl++ ){
-			AppendMenuCheckString(hPopupMenu,MENUID_TEXTCODE + rcl->type,
-					rcl->name,nowcode == rcl->type);
+			AppendMenuCheckString(hPopupMenu, MENUID_TEXTCODE + rcl->type,
+					rcl->name, nowcode == rcl->type);
 		}
 	}else{
-		AppendMenuString(hPopupMenu,MENUID_ALLCODE,StrTcodeAllText);
-		CheckMenuRadioItem(hPopupMenu,MENUID_SELECTEDCODE,MENUID_ALLCODE,
-			(SelectMode ? MENUID_SELECTEDCODE : MENUID_ALLCODE),MF_BYCOMMAND);
+		AppendMenuString(hPopupMenu, MENUID_ALLCODE, StrTcodeAllText);
+		CheckMenuRadioItem(hPopupMenu, MENUID_SELECTEDCODE, MENUID_ALLCODE,
+			(SelectMode ? MENUID_SELECTEDCODE : MENUID_ALLCODE), MF_BYCOMMAND);
 	}
 	return hPopupMenu;
 }
 
 // テキストコード体系の切り換えメニュー ---------------------------------------
-ERRORCODE PPV_TextCode(HWND hWnd,int defaultindex)
+ERRORCODE PPV_TextCode(HWND hWnd, int defaultindex)
 {
 	HMENU hMenu;
 	int index;
@@ -934,13 +934,13 @@ ERRORCODE PPV_TextCode(HWND hWnd,int defaultindex)
 				if ( index < MENUID_TEXTCODE ) return ERROR_CANCELLED;
 				if ( index < MENUID_TEXTCODEMAX ){ // 文字コード
 					if ( SelectMode ){
-						int top,line;
+						int top, line;
 
 						top = VOsel.top.y.line;
 						for ( line = VOsel.bottom.y.line ; line <= top ; line++ ){
 							VOi->ti[line].type = (BYTE)(index - MENUID_TEXTCODE);
 						}
-						InvalidateRect(hWnd,NULL,TRUE);
+						InvalidateRect(hWnd, NULL, TRUE);
 						return NO_ERROR;
 					}else{
 						if ( index == (VTYPE_MENU_EXSJIS + MENUID_TEXTCODE) ){
@@ -1056,16 +1056,16 @@ void SetScrollBar(void)
 	sinfo.nMin	= VO_minX;
 	sinfo.nPos	= VOi->offX;
 	sinfo.nMax	= VO_maxX;
-	SetScrollInfo(vinfo.info.hWnd,SB_HORZ,&sinfo,TRUE);
+	SetScrollInfo(vinfo.info.hWnd, SB_HORZ, &sinfo, TRUE);
 
 	sinfo.nPage	= VO_sizeY;
 	sinfo.nMin	= VO_minY;
 	sinfo.nPos	= VOi->offY;
 	sinfo.nMax	= VO_maxY;
-	SetScrollInfo(vinfo.info.hWnd,SB_VERT,&sinfo,TRUE);
+	SetScrollInfo(vinfo.info.hWnd, SB_VERT, &sinfo, TRUE);
 }
 //----------------------------------------------------------------------------
-void USEFASTCALL MoveCsr(int x,int y,BOOL detailmode)
+void USEFASTCALL MoveCsr(int x, int y, BOOL detailmode)
 {
 	RECT box;
 
@@ -1093,16 +1093,16 @@ void USEFASTCALL MoveCsr(int x,int y,BOOL detailmode)
 		 ((vo_.memo.bottom != NULL) && (vo_.memo.top > 1)) ){ // 仮？
 		VOi->offX = x;
 		VOi->offY = y;
-		InvalidateRect(vinfo.info.hWnd,&box,TRUE);
+		InvalidateRect(vinfo.info.hWnd, &box, TRUE);
 	}else if ( vo_.DModeBit & (DOCMODE_BMP | DOCMODE_RAWIMAGE) ){
 		switch ( X_scrm ){
 			case 0:				// 全画面書換
 				VOi->offX = x;
 				VOi->offY = y;
-				InvalidateRect(vinfo.info.hWnd,&box,FALSE);
+				InvalidateRect(vinfo.info.hWnd, &box, FALSE);
 				break;
 			case 1:				// 全ウィンドウスクロール
-				ScrollWindow(vinfo.info.hWnd,VOi->offX - x,VOi->offY - y,NULL,&box);
+				ScrollWindow(vinfo.info.hWnd, VOi->offX - x, VOi->offY - y, NULL, &box);
 				VOi->offX = x;
 				VOi->offY = y;
 				break;
@@ -1111,11 +1111,11 @@ void USEFASTCALL MoveCsr(int x,int y,BOOL detailmode)
 				RECT rp;
 
 				hDC = GetDC(vinfo.info.hWnd);
-				ScrollDC(hDC,VOi->offX - x,VOi->offY - y,&box,&box,NULL,&rp);
-				ReleaseDC(vinfo.info.hWnd,hDC);
+				ScrollDC(hDC, VOi->offX - x, VOi->offY - y, &box, &box, NULL, &rp);
+				ReleaseDC(vinfo.info.hWnd, hDC);
 				VOi->offX = x;
 				VOi->offY = y;
-				InvalidateRect(vinfo.info.hWnd,&rp,TRUE);
+				InvalidateRect(vinfo.info.hWnd, &rp, TRUE);
 			}
 		}
 	}else{
@@ -1124,18 +1124,18 @@ void USEFASTCALL MoveCsr(int x,int y,BOOL detailmode)
 				box.top = 0;
 				VOi->offX = x;
 				VOi->offY = y;
-				InvalidateRect(vinfo.info.hWnd,&box,FALSE);
+				InvalidateRect(vinfo.info.hWnd, &box, FALSE);
 				break;
 			case 1:				// 全ウィンドウスクロール
 				if ( VOsel.cursor != FALSE ) HideCaret(vinfo.info.hWnd);
-				ScrollWindow(vinfo.info.hWnd,(VOi->offX - x) * fontX,
-							(VOi->offY - y) * LineY,NULL,&box);
+				ScrollWindow(vinfo.info.hWnd, (VOi->offX - x) * fontX,
+							(VOi->offY - y) * LineY, NULL, &box);
 				VOi->offX = x;
 				VOi->offY = y;
 				UpdateWindow(vinfo.info.hWnd);
 				box.bottom = box.top - 1;
 				box.top = 0;
-				InvalidateRect(vinfo.info.hWnd,&box,TRUE);
+				InvalidateRect(vinfo.info.hWnd, &box, TRUE);
 				UpdateWindow(vinfo.info.hWnd);
 				if ( VOsel.cursor != FALSE ) ShowCaret(vinfo.info.hWnd);
 				break;
@@ -1145,16 +1145,16 @@ void USEFASTCALL MoveCsr(int x,int y,BOOL detailmode)
 
 				if ( VOsel.cursor != FALSE ) HideCaret(vinfo.info.hWnd);
 				hDC = GetDC(vinfo.info.hWnd);
-				ScrollDC(hDC, (VOi->offX - x) * fontX,(VOi->offY - y) * LineY,
-						&box,&box,NULL,&rp);
-				ReleaseDC(vinfo.info.hWnd,hDC);
+				ScrollDC(hDC, (VOi->offX - x) * fontX, (VOi->offY - y) * LineY,
+						&box, &box, NULL, &rp);
+				ReleaseDC(vinfo.info.hWnd, hDC);
 				VOi->offX = x;
 				VOi->offY = y;
-				InvalidateRect(vinfo.info.hWnd,&rp,TRUE);
+				InvalidateRect(vinfo.info.hWnd, &rp, TRUE);
 				UpdateWindow(vinfo.info.hWnd);
 				box.bottom = box.top - 1;
 				box.top = 0;
-				InvalidateRect(vinfo.info.hWnd,&box,FALSE);
+				InvalidateRect(vinfo.info.hWnd, &box, FALSE);
 				UpdateWindow(vinfo.info.hWnd);
 				if ( VOsel.cursor != FALSE ) ShowCaret(vinfo.info.hWnd);
 			}
@@ -1168,7 +1168,7 @@ void CloseViewObject(void)
 {
 	VO_INFO *tmpVOi;
 
-	if ( BackReader != FALSE ) KillTimer(vinfo.info.hWnd,TIMERID_READLINE);
+	if ( BackReader != FALSE ) KillTimer(vinfo.info.hWnd, TIMERID_READLINE);
 	if ( hReadStream != NULL ){
 		CloseHandle(hReadStream);
 		hReadStream = NULL;
@@ -1180,7 +1180,7 @@ void CloseViewObject(void)
 		const TCHAR *vp;
 
 		UsePPx();
-		vp = SearchHistory(PPXH_PPVNAME,vo_.file.name);
+		vp = SearchHistory(PPXH_PPVNAME, vo_.file.name);
 		FreePPx();
 		if ( VOi->offX || VOi->offY ||
 			 (vo_.DModeType != (DWORD)viewopt_opentime.dtype ) ||
@@ -1194,9 +1194,9 @@ void CloseViewObject(void)
 			DWORD optsize = 0;
 			int i;
 
-			#pragma pack(push,4)
+			#pragma pack(push, 4)
 			struct {
-				int info,x,y;
+				int info, x, y;
 				char opt[MAX_HISTOPT_SIZE];
 			} addbin;
 			#pragma pack(pop)
@@ -1206,9 +1206,9 @@ void CloseViewObject(void)
 				addbin.info |= (vo_.bitmap.rotate & 3) << HISTOPT_IMAGEOPT_FLAGSHIFT;
 			}else{
 				addbin.info |= VOi->textC << HISTOPT_TEXTOPT_CODESHIFT;
-				if ( VO_Tquoted ) setflag(addbin.info,HISTOPT_TEXTOPT_QUOTED << HISTOPT_TEXTOPT_FLAGSHIFT);
-				if ( !VO_Tesc ) setflag(addbin.info,HISTOPT_TEXTOPT_ESC << HISTOPT_TEXTOPT_FLAGSHIFT);
-				setflag(addbin.info,(((VO_Ttag & 3) + 1) << (HISTOPT_TEXTOPT_TAGSHIFT + HISTOPT_TEXTOPT_FLAGSHIFT)));
+				if ( VO_Tquoted ) setflag(addbin.info, HISTOPT_TEXTOPT_QUOTED << HISTOPT_TEXTOPT_FLAGSHIFT);
+				if ( !VO_Tesc ) setflag(addbin.info, HISTOPT_TEXTOPT_ESC << HISTOPT_TEXTOPT_FLAGSHIFT);
+				setflag(addbin.info, (((VO_Ttag & 3) + 1) << (HISTOPT_TEXTOPT_TAGSHIFT + HISTOPT_TEXTOPT_FLAGSHIFT)));
 			}
 			addbin.x = VOi->offX;
 			addbin.y = VOi->offY;
@@ -1333,7 +1333,7 @@ void CloseViewObject(void)
 	if ( vo_.file.mapH != NULL ){
 		GlobalUnlock(vo_.file.mapH);
 		if ( GlobalFree(vo_.file.mapH) != NULL ){
-			XMessage(NULL,NULL,XM_FaERRld,T("vo.file:free error"));
+			XMessage(NULL, NULL, XM_FaERRld, T("vo.file:free error"));
 		}
 	}
 
@@ -1364,7 +1364,7 @@ void CloseViewObject(void)
 	DIRECTXDEFINE(DxDrawFreeBMPCache(&vo_.bitmap.DxCache));
 
 	if ( vo_.bitmap.AllocShowInfo != FALSE ){
-		HeapFree(PPvHeap,0,vo_.bitmap.ShowInfo);
+		HeapFree(PPvHeap, 0, vo_.bitmap.ShowInfo);
 		vo_.bitmap.AllocShowInfo = FALSE;
 	}
 	vo_.bitmap.ShowInfo = NULL;
@@ -1372,7 +1372,7 @@ void CloseViewObject(void)
 	if ( vo_.text.text.mapH != NULL ){
 		GlobalUnlock(vo_.text.text.mapH);
 		if ( GlobalFree(vo_.text.text.mapH) != NULL ){
-			XMessage(NULL,NULL,XM_FaERRld,T("vo.text:free error"));
+			XMessage(NULL, NULL, XM_FaERRld, T("vo.text:free error"));
 		}
 	}
 	vo_.text.text.mapH = NULL;
@@ -1381,7 +1381,7 @@ void CloseViewObject(void)
 	if ( vo_.text.document.mapH != NULL ){
 		GlobalUnlock(vo_.text.document.mapH);
 		if ( GlobalFree(vo_.text.document.mapH) != NULL ){
-			XMessage(NULL,NULL,XM_FaERRld,T("vo.document:free error"));
+			XMessage(NULL, NULL, XM_FaERRld, T("vo.document:free error"));
 		}
 	}
 	vo_.text.document.mapH = NULL;
@@ -1389,7 +1389,7 @@ void CloseViewObject(void)
 
 	if ( PreFrameInfo.bitmapsize != 0 ){
 		PreFrameInfo.bitmapsize = 0;
-		HeapFree(PPvHeap,0,PreFrameInfo.bitmap);
+		HeapFree(PPvHeap, 0, PreFrameInfo.bitmap);
 	}
 
 	{
@@ -1410,7 +1410,7 @@ void CloseViewObject(void)
 		}
 	}
 	ResetSelect(TRUE);
-	vo_.file.size.l = vo_.file.size.h = 0;
+	vo_.file.ImageSize = vo_.file.UseSize = FileRealSize.LowPart = FileRealSize.HighPart = 0;
 
 //-------------------------------------------------------- Object:Text
 //-------------------------------------------------------- Object:Document
@@ -1423,40 +1423,40 @@ void CloseViewObject(void)
 	if ( vo_.bitmap.hPal != NULL ) DeleteObject(vo_.bitmap.hPal);
 	vo_.bitmap.hPal = NULL;
 	XV.img.AspectRate = 0;
-	HeapCompact(PPvHeap,0);
+	HeapCompact(PPvHeap, 0);
 }
 
 // 拡大縮小モードの保存 -------------------------------------------------------
-void SetimgD(HWND hWnd,int newD)
+void SetimgD(HWND hWnd, int newD)
 {
-	int oldVO_maxX,oldVO_maxY;
-	int centerX,centerY;
+	int oldVO_maxX, oldVO_maxY;
+	int centerX, centerY;
 
 	if ( newD == 100 ) newD = IMGD_NORMAL;
 	XV.img.imgD[0] = newD;
-	SetCustTable(T("XV_imgD"),RegCID,&XV.img.imgD,sizeof(XV.img.imgD));
+	SetCustTable(T("XV_imgD"), RegCID, &XV.img.imgD, sizeof(XV.img.imgD));
 
-	oldVO_maxX = max(VO_maxX,1);
-	oldVO_maxY = max(VO_maxY,1);
+	oldVO_maxX = max(VO_maxX, 1);
+	oldVO_maxY = max(VO_maxY, 1);
 
-	SendMessage(hWnd,WM_SETREDRAW,FALSE,0);
+	SendMessage(hWnd, WM_SETREDRAW, FALSE, 0);
 	SetScrollBar();
 
 	if ( XV.img.imgD[0] <= IMGD_NORMAL ){
-		SetPopMsg(POPMSG_NOLOGMSG,imgDmes[XV.img.imgD[0] - IMGD_AUTOFIXWINDOWSIZE]);
+		SetPopMsg(POPMSG_NOLOGMSG, imgDmes[XV.img.imgD[0] - IMGD_AUTOFIXWINDOWSIZE]);
 	}else{
 		TCHAR buf[20];
 
-		wsprintf(buf,T("%d%%"),XV.img.imgD[0]);
-		SetPopMsg(POPMSG_NOLOGMSG,buf);
+		wsprintf(buf, T("%d%%"), XV.img.imgD[0]);
+		SetPopMsg(POPMSG_NOLOGMSG, buf);
 	}
 
 	centerX = VOi->offX + (VO_sizeX / 2);
 	centerY = VOi->offY + (VO_sizeY / 2);
-	MoveCsr(CalcMulDiv(centerX,VO_maxX,oldVO_maxX) - centerX,
-			CalcMulDiv(centerY,VO_maxY,oldVO_maxY) - centerY,FALSE);
-	SendMessage(hWnd,WM_SETREDRAW,TRUE,0);
-	InvalidateRect(hWnd,NULL,TRUE);
+	MoveCsr(CalcMulDiv(centerX, VO_maxX, oldVO_maxX) - centerX,
+			CalcMulDiv(centerY, VO_maxY, oldVO_maxY) - centerY, FALSE);
+	SendMessage(hWnd, WM_SETREDRAW, TRUE, 0);
+	InvalidateRect(hWnd, NULL, TRUE);
 }
 #if !NODLL
 void SkipSepA(char **p)
@@ -1483,12 +1483,12 @@ void SetMag(int offset)
 				newD -= 1;
 				if ( newD < IMGD_AUTOFIXWINDOWSIZE ) newD = 0;
 			}
-			SetimgD(vinfo.info.hWnd,newD);
+			SetimgD(vinfo.info.hWnd, newD);
 			return;
 		}
 		if ( offset == IMGD_AUTOWINDOWSIZE_2 ){
 			newD = (newD != 0) ? IMGD_NORMAL : IMGD_AUTOWINDOWSIZE;
-			SetimgD(vinfo.info.hWnd,newD);
+			SetimgD(vinfo.info.hWnd, newD);
 			return;
 		}
 		if ( newD < IMGD_NORMAL ){	// 非% → 等倍
@@ -1517,7 +1517,7 @@ void SetMag(int offset)
 				return;
 			}
 		}
-		SetimgD(vinfo.info.hWnd,newD);
+		SetimgD(vinfo.info.hWnd, newD);
 		return;
 	}else{ // テキスト
 		HDC hDC;
@@ -1536,20 +1536,20 @@ void SetMag(int offset)
 
 		DeleteFonts();
 		hDC = GetDC(vinfo.info.hWnd);
-		MakeFonts(hDC,X_textmag);
-		ReleaseDC(vinfo.info.hWnd,hDC);
+		MakeFonts(hDC, X_textmag);
+		ReleaseDC(vinfo.info.hWnd, hDC);
 		WmWindowPosChanged(vinfo.info.hWnd);
-		InvalidateRect(vinfo.info.hWnd,NULL,FALSE);
+		InvalidateRect(vinfo.info.hWnd, NULL, FALSE);
 	}
 };
 
-void FindFound(HWND hWnd,int y)
+void FindFound(HWND hWnd, int y)
 {
 	VOsel.foundY = VOsel.lastY = y;
 
 	// 表示位置を調整
 	if ( VOsel.cursor != FALSE ){
-		MoveCsrkey(0,y - VOsel.now.y.line,FALSE);
+		MoveCsrkey(0, y - VOsel.now.y.line, FALSE);
 	}
 
 	if ( ((VOi->offY + 2) > y) || ((VOi->offY + VO_sizeY - 4) < y) ){
@@ -1565,19 +1565,19 @@ void FindFound(HWND hWnd,int y)
 
 	if ( IsTrue(BackReader) ){
 		mtinfo.PresetY = VOi->offY;
-		setflag(mtinfo.OpenFlags,PPV__NoGetPosFromHist);
+		setflag(mtinfo.OpenFlags, PPV__NoGetPosFromHist);
 	}
 
-	InvalidateRect(hWnd,NULL,TRUE);
+	InvalidateRect(hWnd, NULL, TRUE);
 	SetScrollBar();
 	UpdateWindow_Part(hWnd);
 }
 
-void FindBackText(HWND hWnd,int mode)
+void FindBackText(HWND hWnd, int mode)
 {
 	char strbin[VFPS * 2];
-	char *of,*nf,*tf;
-	int y,len;
+	char *of, *nf, *tf;
+	int y, len;
 	MSG msgs;
 
 	len = SetFindString(strbin);
@@ -1600,15 +1600,15 @@ void FindBackText(HWND hWnd,int mode)
 		}
 		while ( of < nf ){
 			tf = of;
-			of = memchr(of,strbin[0],nf - tf);
+			of = memchr(of, strbin[0], nf - tf);
 			if ( of == NULL ) break;
 			if ( len > 1 ){
-				if ( memicmp(of,strbin,len) != 0 ){
+				if ( memicmp(of, strbin, len) != 0 ){
 					of++;
 					continue;
 				}
 			}
-			FindFound(hWnd,y);
+			FindFound(hWnd, y);
 			y = -1;	// for skip
 			break;
 		}
@@ -1620,31 +1620,31 @@ void FindBackText(HWND hWnd,int mode)
 			}
 			while(of < nf){
 				tf = of;
-				of = memchr(of,strbin[0] ^ 0x20,nf - tf);
+				of = memchr(of, strbin[0] ^ 0x20, nf - tf);
 				if ( of == NULL ) break;
 				if ( len > 1 ){
-					if ( memicmp(of,strbin,len) != 0 ){
+					if ( memicmp(of, strbin, len) != 0 ){
 						of++;
 						continue;
 					}
 				}
-				FindFound(hWnd,y);
+				FindFound(hWnd, y);
 				y = -1;	// for skip
 				break;
 			}
 		}
 		if ( mode == -1 ) continue;
-		if ( PeekMessage(&msgs,NULL,WM_KEYDOWN,WM_KEYDOWN,PM_NOREMOVE) ){
+		if ( PeekMessage(&msgs, NULL, WM_KEYDOWN, WM_KEYDOWN, PM_NOREMOVE) ){
 			break;
 		}
 	}
 }
 
-void FindFowardText(HWND hWnd,int mode)
+void FindFowardText(HWND hWnd, int mode)
 {
 	char strbin[VFPS * 2];
-	char *of,*nf,*tf;
-	int y,len;
+	char *of, *nf, *tf;
+	int y, len;
 	MSG msgs;
 
 	len = SetFindString(strbin);
@@ -1653,7 +1653,7 @@ void FindFowardText(HWND hWnd,int mode)
 	}else{						// 以前の発見位置が画面内→以前の発見位置の次
 		// (TT : 一回ローカル変数に入れないと (VOsel.lastY >= VOi->offY) が
 		//		正しく評価してくれない…
-		int lastY,offY;
+		int lastY, offY;
 
 		lastY = VOsel.lastY;
 		offY = VOi->offY;
@@ -1670,15 +1670,15 @@ void FindFowardText(HWND hWnd,int mode)
 		}
 		while (of < nf){
 			tf = of;
-			of = memchr(of,strbin[0],nf - tf);
+			of = memchr(of, strbin[0], nf - tf);
 			if ( of == NULL ) break;
 			if ( len > 1 ){
-				if ( memicmp(of,strbin,len) != 0 ){
+				if ( memicmp(of, strbin, len) != 0 ){
 					of++;
 					continue;
 				}
 			}
-			FindFound(hWnd,y);
+			FindFound(hWnd, y);
 			y = VOi->line;	// for skip
 			break;
 		}
@@ -1690,22 +1690,22 @@ void FindFowardText(HWND hWnd,int mode)
 			}
 			while (of < nf){
 				tf = of;
-				of = memchr(of,strbin[0] ^ 0x20,nf - tf);
+				of = memchr(of, strbin[0] ^ 0x20, nf - tf);
 				if ( of == NULL ) break;
 				if ( len > 1 ){
-					if ( memicmp(of,strbin,len) != 0 ){
+					if ( memicmp(of, strbin, len) != 0 ){
 						of++;
 						continue;
 					}
 				}
-				FindFound(hWnd,y);
+				FindFound(hWnd, y);
 				y = VOi->line;	// for skip
 				break;
 			}
 		}
 		y++;
 		if ( mode == 1 ) continue;
-		if ( PeekMessage(&msgs,NULL,WM_KEYDOWN,WM_KEYDOWN,PM_NOREMOVE) ){
+		if ( PeekMessage(&msgs, NULL, WM_KEYDOWN, WM_KEYDOWN, PM_NOREMOVE) ){
 			break;
 		}
 	}
@@ -1715,7 +1715,7 @@ void PPvReload(PPV_APPINFO *vinfo)
 {
 	TCHAR buf[VFPS];
 
-	tstrcpy(buf,vo_.file.name);
+	tstrcpy(buf, vo_.file.name);
 	OpenAndFollowViewObject(vinfo, buf, NULL, NULL, PPV__reload);
 }
 
@@ -1726,26 +1726,26 @@ void PPvReceiveRequest(HWND hWnd)
 	flags = PPvViewName(ReceivedParam);
 	if ( flags < 0 ) return;
 	if ( flags & PPV_NOENSURE ){
-		VFSFixPath(NULL,ReceivedParam,NULL,VFSFIX_PATH | VFSFIX_NOFIXEDGE | VFSFIX_VREALPATH);
-		if ( !tstrcmp(ReceivedParam,vo_.file.name) ) return;
-		OpenViewObject(ReceivedParam,NULL,NULL,flags);
+		VFSFixPath(NULL, ReceivedParam, NULL, VFSFIX_PATH | VFSFIX_NOFIXEDGE | VFSFIX_VREALPATH);
+		if ( !tstrcmp(ReceivedParam, vo_.file.name) ) return;
+		OpenViewObject(ReceivedParam, NULL, NULL, flags);
 	}else if ( flags & PPV_PARAM ){
 		TCHAR name[VFPS];
 
 		FirstCommand = NULL;
 		WinPos.show = SW_SHOWDEFAULT;
-		CheckParam(&viewopt_def,ReceivedParam,name);
-		if ( name[0] != '\0' ) OpenViewObject(name,NULL,&viewopt_def,flags);
+		CheckParam(&viewopt_def, ReceivedParam, name);
+		if ( name[0] != '\0' ) OpenViewObject(name, NULL, &viewopt_def, flags);
 		if ( FirstCommand != NULL ){
-			PostMessage(hWnd,WM_PPXCOMMAND,K_FIRSTCMD,0);
+			PostMessage(hWnd, WM_PPXCOMMAND, K_FIRSTCMD, 0);
 		}
 	}else{
-		VFSFixPath(NULL,ReceivedParam,NULL,VFSFIX_PATH | VFSFIX_NOFIXEDGE | VFSFIX_VREALPATH);
-		OpenViewObject(ReceivedParam,NULL,NULL,flags);
+		VFSFixPath(NULL, ReceivedParam, NULL, VFSFIX_PATH | VFSFIX_NOFIXEDGE | VFSFIX_VREALPATH);
+		OpenViewObject(ReceivedParam, NULL, NULL, flags);
 	}
 	FollowOpenView(&vinfo);
 
-	if ( WinPos.show != SW_SHOWDEFAULT ) ShowWindow(hWnd,WinPos.show);
+	if ( WinPos.show != SW_SHOWDEFAULT ) ShowWindow(hWnd, WinPos.show);
 	if ( flags & PPV_NOFOREGROUND ){
 		if ( hViewReqWnd != NULL ) SetForegroundWindow(hViewReqWnd);
 	}else{
@@ -1757,17 +1757,17 @@ void PPvReceiveRequest(HWND hWnd)
 
 ERRORCODE PPvExecute(HWND hWnd)
 {
-	TCHAR buf[VFPS],path[VFPS],*p;
+	TCHAR buf[VFPS], path[VFPS], *p;
 
-	tstrcpy(path,vo_.file.name);
-	p = tstrrchr(path,'\\');
+	tstrcpy(path, vo_.file.name);
+	p = tstrrchr(path, '\\');
 	if ( p != NULL) *p = '\0';
-	wsprintf(buf,T(" %s "),vo_.file.name);
-	if ( tInput(hWnd,MES_TEXE,buf,TSIZEOF(buf),
-			PPXH_COMMAND,PPXH_COMMAND) <= 0 ){
+	wsprintf(buf, T(" %s "), vo_.file.name);
+	if ( tInput(hWnd, MES_TEXE, buf, TSIZEOF(buf),
+			PPXH_COMMAND, PPXH_COMMAND) <= 0 ){
 		return ERROR_CANCELLED;
 	}
-	PP_ExtractMacro(hWnd,&vinfo.info,NULL,buf,NULL,0);
+	PP_ExtractMacro(hWnd, &vinfo.info, NULL, buf, NULL, 0);
 	return NO_ERROR;
 }
 
@@ -1776,36 +1776,36 @@ ERRORCODE PPvShell(HWND hWnd)
 	TCHAR buf[CMDLINESIZE];
 
 	buf[0] = '\0';
-	if ( tInput(hWnd,MES_TSHL,buf,TSIZEOF(buf),
-			PPXH_COMMAND,PPXH_COMMAND) <= 0 ){
+	if ( tInput(hWnd, MES_TSHL, buf, TSIZEOF(buf),
+			PPXH_COMMAND, PPXH_COMMAND) <= 0 ){
 		return ERROR_CANCELLED;
 	}
-	PP_ExtractMacro(hWnd,&vinfo.info,NULL,buf,NULL,0);
+	PP_ExtractMacro(hWnd, &vinfo.info, NULL, buf, NULL, 0);
 	return NO_ERROR;
 }
 
-void OpenBrowser(HWND hWnd,TCHAR *url)
+void OpenBrowser(HWND hWnd, TCHAR *url)
 {
 	TCHAR browser[VFPS];
 	HANDLE result;
 
 	browser[0] = '\0';
-	GetCustTable(T("A_exec"),T("browser"),browser,sizeof(browser));
+	GetCustTable(T("A_exec"), T("browser"), browser, sizeof(browser));
 	if ( browser[0] == '\0' ){
-		result = PPxShellExecute(hWnd,NULL,url,NilStr,NilStr,0,url);
+		result = PPxShellExecute(hWnd, NULL, url, NilStr, NilStr, 0, url);
 	}else{
-		result = PPxShellExecute(hWnd,NULL,browser,url,NilStr,0,url);
+		result = PPxShellExecute(hWnd, NULL, browser, url, NilStr, 0, url);
 	}
-	if ( result == NULL ) SetPopMsg(POPMSG_NOLOGMSG,url);
+	if ( result == NULL ) SetPopMsg(POPMSG_NOLOGMSG, url);
 }
 
 void JumpToSelectedAddress(HWND hWnd)
 {
-	TMS_struct text = {{NULL,0,NULL},0};
+	TMS_struct text = {{NULL, 0, NULL}, 0};
 	const TCHAR *src;
-	TCHAR buf[0x1000],*dest,*destmax,*hdr;
+	TCHAR buf[0x1000], *dest, *destmax, *hdr;
 
-	if ( ClipMem(&text,-1,-1) == FALSE ) return;
+	if ( ClipMem(&text, -1, -1) == FALSE ) return;
 
 	src = text.tm.p;
 	dest = buf;
@@ -1819,15 +1819,15 @@ void JumpToSelectedAddress(HWND hWnd)
 		if ( c == '\0' ) break;
 		src++;
 	}
-	hdr = tstrchr(src,':');
+	hdr = tstrchr(src, ':');
 	if ( hdr != NULL ){
-		if ( memcmp(src,httpstr + 1,6 * sizeof(TCHAR)) == 0 ){
+		if ( memcmp(src, httpstr + 1, 6 * sizeof(TCHAR)) == 0 ){
 			src += 6;
 			hdr = NULL;
 		}
 	}
 	if ( hdr == NULL ){
-		tstrcpy(dest,httpstr);
+		tstrcpy(dest, httpstr);
 		dest += 7;
 	}
 
@@ -1841,13 +1841,13 @@ void JumpToSelectedAddress(HWND hWnd)
 	}
 	*dest = '\0';
 	TM_kill(&text.tm);
-	OpenBrowser(hWnd,buf);
+	OpenBrowser(hWnd, buf);
 }
 
 void PPvEditFile(HWND hWnd)
 {
-	TCHAR buf[VFPS],exe[VFPS];
-	TCHAR curdir[VFPS],q[100];
+	TCHAR buf[VFPS], exe[VFPS];
+	TCHAR curdir[VFPS], q[100];
 	int line;
 
 	if ( vo_.DModeBit & DOCMODE_TEXT ){
@@ -1858,63 +1858,63 @@ void PPvEditFile(HWND hWnd)
 		line = VOi->offY;
 	}
 
-	GetCustTable(T("A_exec"),T("editor"),exe,sizeof(exe));
-	if ( NO_ERROR != GetCustTable(T("A_exec"),T("editorL"),q,sizeof(q)) ){
-		tstrcpy(q,T("/J"));
-		if ( tInput(hWnd,MES_TEDJ,q,TSIZEOF(q),
-				PPXH_GENERAL,PPXH_GENERAL) <= 0 ){
+	GetCustTable(T("A_exec"), T("editor"), exe, sizeof(exe));
+	if ( NO_ERROR != GetCustTable(T("A_exec"), T("editorL"), q, sizeof(q)) ){
+		tstrcpy(q, T("/J"));
+		if ( tInput(hWnd, MES_TEDJ, q, TSIZEOF(q),
+				PPXH_GENERAL, PPXH_GENERAL) <= 0 ){
 			return;
 		}
-		SetCustTable(T("A_exec"),T("editorL"),q,TSTRSIZE(q));
+		SetCustStringTable(T("A_exec"), T("editorL"), q, 0);
 	}
 	if (*q){
-		wsprintf(buf,T("%s \x22%s\x22 %s%d"),exe,vo_.file.name,q,line);
+		wsprintf(buf, T("%s \x22%s\x22 %s%d"), exe, vo_.file.name, q, line);
 	}else{
-		wsprintf(buf,T("%s \x22%s\x22"),exe,vo_.file.name);
+		wsprintf(buf, T("%s \x22%s\x22"), exe, vo_.file.name);
 	}
-	GetCurrentDirectory(TSIZEOF(curdir),curdir);
-	ComExec(hWnd,buf,curdir);
+	GetCurrentDirectory(TSIZEOF(curdir), curdir);
+	ComExec(hWnd, buf, curdir);
 }
 
-DWORD USEFASTCALL PPvContextMenuAddSub(PPV_APPINFO *vinfo,HMENU hMenu,ThSTRUCT *TH,const TCHAR *ext)
+DWORD USEFASTCALL PPvContextMenuAddSub(PPV_APPINFO *vinfo, HMENU hMenu, ThSTRUCT *TH, const TCHAR *ext)
 {
 	DWORD ID;
 	TCHAR ccrname[VFPS];
 
-	AppendMenuString(hMenu,K_Mc | K_s | K_F10,StrSHCM);
-	AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
+	AppendMenuString(hMenu, K_Mc | K_s | K_F10, StrSHCM);
+	AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
 
 	ID = MENUID_USER;
-	wsprintf(ccrname,T("M_Ccr%s"),(*ext != '\0') ? ext : T("NoExt") );
-	PP_AddMenu(&vinfo->info,vinfo->info.hWnd,hMenu,&ID,ccrname,TH);
-	if ( ID != MENUID_USER ) AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
+	wsprintf(ccrname, T("M_Ccr%s"), (*ext != '\0') ? ext : T("NoExt") );
+	PP_AddMenu(&vinfo->info, vinfo->info.hWnd, hMenu, &ID, ccrname, TH);
+	if ( ID != MENUID_USER ) AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
 
 	if ( vo_.DModeBit == DOCMODE_BMP ){
 		int menucount;
 
 		menucount = GetMenuItemCount(hMenu);
 		if ( vo_.bitmap.transcolor >= 0 ){
-			AppendMenuString(hMenu,K_M | 'M',StrAICP);
+			AppendMenuString(hMenu, K_M | 'M', StrAICP);
 		}
 		if ( vo_.bitmap.page.max != 0 ){
-			if ( !memcmp(vo_.file.image,"GIF8",4) || !memcmp(vo_.file.image,"\x89PNG",4) ){
-				AppendMenuCheckString(hMenu,K_M | 'P',StrIGAN,vo_.bitmap.page.animate);
+			if ( !memcmp(vo_.file.image, "GIF8", 4) || !memcmp(vo_.file.image, "\x89PNG", 4) ){
+				AppendMenuCheckString(hMenu, K_M | 'P', StrIGAN, vo_.bitmap.page.animate);
 			}
 			if ( vo_.bitmap.page.current > 0 ){
-				AppendMenuString(hMenu,K_Mc | K_Pup,StrIGPP);
+				AppendMenuString(hMenu, K_Mc | K_Pup, StrIGPP);
 			}
 			if ( (vo_.bitmap.page.current + 1) < vo_.bitmap.page.max ){
-				AppendMenuString(hMenu,K_Mc | K_Pdw,StrIGNP);
+				AppendMenuString(hMenu, K_Mc | K_Pdw, StrIGNP);
 			}
 		}
 		if ( vo_.bitmap.UseICC >= 0 ){
-			AppendMenuCheckString(hMenu,KV_ICC,StrIGIC,vo_.bitmap.UseICC == ICM_ON);
+			AppendMenuCheckString(hMenu, KV_ICC, StrIGIC, vo_.bitmap.UseICC == ICM_ON);
 		}
 		if ( menucount < GetMenuItemCount(hMenu) ){
-			AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
+			AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
 		}
 	}
-	PP_AddMenu(&vinfo->info,vinfo->info.hWnd,hMenu,&ID,T("M_ppvc"),TH);
+	PP_AddMenu(&vinfo->info, vinfo->info.hWnd, hMenu, &ID, T("M_ppvc"), TH);
 	return ID;
 }
 
@@ -1933,35 +1933,35 @@ void PPvContextMenu(PPV_APPINFO *vinfo)
 
 	ext = VFSFindLastEntry(vo_.file.name);
 	ext += FindExtSeparator(ext);
-	GetExtentionMenu(hMenu,ext,&pmdi);
+	GetExtentionMenu(hMenu, ext, &pmdi);
 	if ( vo_.DModeBit & VO_dmode_SELECTABLE ){
-		AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
+		AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
 		if ( VOsel.select != FALSE ){
-			AppendMenuString(hMenu,K_Mc | 'C',StrClip);
+			AppendMenuString(hMenu, K_Mc | 'C', StrClip);
 		}
-		AppendMenu(hMenu,MF_EPOP,(UINT_PTR)PPV_GetDisplayTypeMenu(),MessageText(StrEDET));
+		AppendMenu(hMenu, MF_EPOP, (UINT_PTR)PPV_GetDisplayTypeMenu(), MessageText(StrEDET));
 
 		if ( vo_.DModeBit & DOCMODE_TEXT ){
-			AppendMenu(hMenu,MF_EPOP,(UINT_PTR)TextCodeMenu(VOsel.select),MessageText(StrEDEC));
-			PPvContextMenuAddSub(vinfo,hMenu,&TH,ext);
-			AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
+			AppendMenu(hMenu, MF_EPOP, (UINT_PTR)TextCodeMenu(VOsel.select), MessageText(StrEDEC));
+			PPvContextMenuAddSub(vinfo, hMenu, &TH, ext);
+			AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
 			if ( VOsel.select != FALSE ){
-				AppendMenuString(hMenu,MENUID_SELECTURI,StrOPSA);
+				AppendMenuString(hMenu, MENUID_SELECTURI, StrOPSA);
 			}
-			MakeURIs(hMenu,MENUID_URI);
+			MakeURIs(hMenu, MENUID_URI);
 		}else if ( vo_.DModeBit & (DOCMODE_HEX | DOCMODE_RAWIMAGE) ){
-			AppendMenu(hMenu,MF_EPOP,(UINT_PTR)TextCodeMenu(FALSE),MessageText(StrEDEC));
+			AppendMenu(hMenu, MF_EPOP, (UINT_PTR)TextCodeMenu(FALSE), MessageText(StrEDEC));
 		}else{
-			PPvContextMenuAddSub(vinfo,hMenu,&TH,ext);
+			PPvContextMenuAddSub(vinfo, hMenu, &TH, ext);
 		}
 	}else{
 		if ( vo_.DModeBit & (DOCMODE_HEX | DOCMODE_RAWIMAGE) ){
-			AppendMenu(hMenu,MF_EPOP,(UINT_PTR)TextCodeMenu(FALSE),MessageText(StrEDEC));
+			AppendMenu(hMenu, MF_EPOP, (UINT_PTR)TextCodeMenu(FALSE), MessageText(StrEDEC));
 		}
-		AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
-		AppendMenu(hMenu,MF_EPOP,(UINT_PTR)PPV_GetDisplayTypeMenu(),MessageText(StrEDET));
-		AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
-		PPvContextMenuAddSub(vinfo,hMenu,&TH,ext);
+		AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
+		AppendMenu(hMenu, MF_EPOP, (UINT_PTR)PPV_GetDisplayTypeMenu(), MessageText(StrEDET));
+		AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
+		PPvContextMenuAddSub(vinfo, hMenu, &TH, ext);
 	}
 	menuid = PPvTrackPopupMenu(hMenu);
 
@@ -1971,8 +1971,8 @@ void PPvContextMenu(PPV_APPINFO *vinfo)
 		if ( menuid < K_M ){
 			if ( menuid == KV_ICC ){
 				vo_.bitmap.UseICC = (vo_.bitmap.UseICC == ICM_ON) ? ICM_OFF : ICM_ON;
-				SetPopMsg(POPMSG_NOLOGMSG,(vo_.bitmap.UseICC == ICM_ON) ? T("ICM on") : T("ICM off"));
-				InvalidateRect(vinfo->info.hWnd,NULL,TRUE);
+				SetPopMsg(POPMSG_NOLOGMSG, (vo_.bitmap.UseICC == ICM_ON) ? T("ICM on") : T("ICM off"));
+				InvalidateRect(vinfo->info.hWnd, NULL, TRUE);
 			}
 			break;
 		}else if ( menuid <= MENUID_KEYLAST ){
@@ -1988,7 +1988,7 @@ void PPvContextMenu(PPV_APPINFO *vinfo)
 			ToggleTailMode(vinfo);
 			break;
 		}else if ( (menuid >= MENUID_TEXTCODE) && (menuid <= MENUID_ALLCODE) ){
-			PPV_TextCode(vinfo->info.hWnd,menuid);
+			PPV_TextCode(vinfo->info.hWnd, menuid);
 			break;
 		}else if ( menuid >= MENUID_USER ){
 			const TCHAR *p;
@@ -1996,7 +1996,7 @@ void PPvContextMenu(PPV_APPINFO *vinfo)
 			if ( menuid >= VFSCHK_MENUID ){ // SPI直接指定
 				ChangeSusie(vinfo, hMenu, menuid);
 			}else{
-				GetMenuDataMacro2(p,&TH,menuid - MENUID_USER);
+				GetMenuDataMacro2(p, &TH, menuid - MENUID_USER);
 				if ( p != NULL ) PP_ExtractMacro(vinfo->info.hWnd, &vinfo->info, NULL, p, NULL, 0);
 			}
 			break;
@@ -2005,21 +2005,21 @@ void PPvContextMenu(PPV_APPINFO *vinfo)
 			break;
 		}
 
-		GetMenuString(hMenu,menuid,buf,TSIZEOF(buf),MF_BYCOMMAND);
+		GetMenuString(hMenu, menuid, buf, TSIZEOF(buf), MF_BYCOMMAND);
 		if ( (menuid >= MENUID_URI) && (menuid < MENUID_USER) ){
 			if ( GetShiftKey() & K_s ){
 				HGLOBAL hm;
 
-				hm = GlobalAlloc(GMEM_MOVEABLE,TSTRSIZE(buf));
+				hm = GlobalAlloc(GMEM_MOVEABLE, TSTRSIZE(buf));
 				if ( hm == NULL ) break;
-				tstrcpy(GlobalLock(hm),buf);
+				tstrcpy(GlobalLock(hm), buf);
 				GlobalUnlock(hm);
-				OpenClipboard(vinfo->info.hWnd);
+				OpenClipboardV(vinfo->info.hWnd);
 				EmptyClipboard();
-				SetClipboardData(CF_TTEXT,hm);
+				SetClipboardData(CF_TTEXT, hm);
 				CloseClipboard();
 			}else{
-				OpenBrowser(vinfo->info.hWnd,buf);
+				OpenBrowser(vinfo->info.hWnd, buf);
 			}
 			break;
 		}
@@ -2032,8 +2032,8 @@ void PPvContextMenu(PPV_APPINFO *vinfo)
 				while ( menuid-- ) action += tstrlen(action) + 1;
 			}
 //			verb = (buf[0] == '*') ? NULL : buf;
-			if ( NULL == PPxShellExecute(vinfo->info.hWnd,action,vo_.file.name,NilStr,NilStr,0,buf) ){
-				SetPopMsg(POPMSG_NOLOGMSG,buf);
+			if ( NULL == PPxShellExecute(vinfo->info.hWnd, action, vo_.file.name, NilStr, NilStr, 0, buf) ){
+				SetPopMsg(POPMSG_NOLOGMSG, buf);
 			}
 		}
 		break;
@@ -2046,13 +2046,13 @@ void PPvContextMenu(PPV_APPINFO *vinfo)
 
 int SetFindString(char *strbin)
 {
-	BYTE *src,*dst;
+	BYTE *src, *dst;
 	int len;
 
 	switch ( VOi->textC ){
 		case VTYPE_JIS:
-			for ( src = (BYTE *)VOsel.VSstringA,dst = (BYTE *)strbin ; *src ; ){
-				BYTE low,high;
+			for ( src = (BYTE *)VOsel.VSstringA, dst = (BYTE *)strbin ; *src ; ){
+				BYTE low, high;
 
 				low = (BYTE)(*src++ << 1);
 				high = *src++;
@@ -2074,8 +2074,8 @@ int SetFindString(char *strbin)
 			break;
 
 		case VTYPE_EUCJP:
-			for ( src = (BYTE *)VOsel.VSstringA,dst = (BYTE *)strbin ; *src ; ){
-				BYTE low,high;
+			for ( src = (BYTE *)VOsel.VSstringA, dst = (BYTE *)strbin ; *src ; ){
+				BYTE low, high;
 
 				low = *src++;
 				if ( low < 0x80 ){
@@ -2153,20 +2153,20 @@ int SetFindString(char *strbin)
 			break;
 		}
 		case VTYPE_UNICODE:
-			strcpyW((WCHAR *)strbin,VOsel.VSstringW);
+			strcpyW((WCHAR *)strbin, VOsel.VSstringW);
 			len = strlenW32(VOsel.VSstringW);
 			len *= 2;
 			break;
 
 		default:
-			strcpy(strbin,VOsel.VSstringA);
+			strcpy(strbin, VOsel.VSstringA);
 			len = strlen32(strbin);
 			break;
 	}
 	return len;
 }
 
-BOOL FindInputBox(HWND hWnd,const TCHAR *title)
+BOOL FindInputBox(HWND hWnd, const TCHAR *title)
 {
 	TINPUT tinput;
 
@@ -2190,9 +2190,9 @@ BOOL FindInputBox(HWND hWnd,const TCHAR *title)
 
 		if ( BackupOffY >= 0 ){
 			if ( VOsel.cursor != FALSE ){
-				MoveCsrkey(0,BackupSelY - VOsel.now.y.line,FALSE);
+				MoveCsrkey(0, BackupSelY - VOsel.now.y.line, FALSE);
 			}else{
-				MoveCsrkey(0,BackupOffY - VOi->offY,FALSE);
+				MoveCsrkey(0, BackupOffY - VOi->offY, FALSE);
 			}
 		}
 		return FALSE;
@@ -2200,14 +2200,14 @@ BOOL FindInputBox(HWND hWnd,const TCHAR *title)
 	if ( VOsel.foundY != -1 ) return FALSE; // 検索済み
 
 	#ifdef UNICODE
-		UnicodeToAnsi(VOsel.VSstringW,VOsel.VSstringA,VFPS);
+		UnicodeToAnsi(VOsel.VSstringW, VOsel.VSstringA, VFPS);
 	#else
-		AnsiToUnicode(VOsel.VSstringA,VOsel.VSstringW,VFPS);
+		AnsiToUnicode(VOsel.VSstringA, VOsel.VSstringW, VFPS);
 	#endif
 	return TRUE;
 }
 
-void DoFind(HWND hWnd,int mode)
+void DoFind(HWND hWnd, int mode)
 {
 	int OldfoundY = VOsel.foundY;
 	VOsel.foundY = -1;
@@ -2218,18 +2218,18 @@ void DoFind(HWND hWnd,int mode)
 	VOsel.highlight = TRUE;
 	if ( vo_.DModeBit & VO_dmode_TEXTLIKE ){
 		if ( mode > 0 ){
-			FindFowardText(hWnd,mode);
+			FindFowardText(hWnd, mode);
 			if ( (mode == 2) && (VOsel.foundY == -1) ){
-				FindBackText(hWnd,-2);
+				FindBackText(hWnd, -2);
 			}
 		}else{
-			FindBackText(hWnd,mode);
+			FindBackText(hWnd, mode);
 		}
 	}
 	if ( VOsel.foundY == -1 ){
 		VOsel.foundY = OldfoundY;
-		InvalidateRect(hWnd,NULL,TRUE);
-		SetPopMsg(POPMSG_NOLOGMSG,MES_NOTX);
+		InvalidateRect(hWnd, NULL, TRUE);
+		SetPopMsg(POPMSG_NOLOGMSG, MES_NOTX);
 	}
 	if ( (XV_tmod == 0) && (VOsel.cursor != FALSE) ){
 		HideCaret(vinfo.info.hWnd);
@@ -2245,38 +2245,38 @@ BOOL PPvSave(HWND hWnd)
 
 	if ( vo_.file.name[0] == '\0' ) return FALSE;
 	if ( FindPathSeparator(vo_.file.name) != NULL ){
-		tstrcpy(name,vo_.file.name);
+		tstrcpy(name, vo_.file.name);
 	}else{
-		VFSFullPath(name,vo_.file.name,NULL);
+		VFSFullPath(name, vo_.file.name, NULL);
 	}
 	for ( ;; ){
 		int i;
-		if ( tInput(hWnd,T("Save"),name,VFPS,PPXH_NAME_R,PPXH_PATH) <= 0 ){
+		if ( tInput(hWnd, T("Save"), name, VFPS, PPXH_NAME_R, PPXH_PATH) <= 0 ){
 			return FALSE;
 		}
-		VFSFixPath(NULL,name,NULL,VFSFIX_PATH);
+		VFSFixPath(NULL, name, NULL, VFSFIX_PATH);
 
-		hFile = CreateFileL(name,GENERIC_READ,
+		hFile = CreateFileL(name, GENERIC_READ,
 				FILE_SHARE_WRITE | FILE_SHARE_READ,
-				NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
+				NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		if ( hFile == INVALID_HANDLE_VALUE ) break;
 						// 同名ファイルあり
 		CloseHandle(hFile);
-		i = PMessageBox(hWnd,MES_QSAM,T("File exist"),
+		i = PMessageBox(hWnd, MES_QSAM, T("File exist"),
 				MB_APPLMODAL | MB_YESNOCANCEL |
 						MB_DEFBUTTON1 | MB_ICONQUESTION);
 		if ( i == IDYES ) break;
 		if ( i == IDNO ) continue;
 		return FALSE;
 	}
-	hFile = CreateFileL(name,GENERIC_WRITE,0,NULL,CREATE_ALWAYS,
-					FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+	hFile = CreateFileL(name, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
+					FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if ( hFile == INVALID_HANDLE_VALUE ){
-		PPErrorBox(hWnd,T("File open error"),PPERROR_GETLASTERROR);
+		PPErrorBox(hWnd, T("File open error"), PPERROR_GETLASTERROR);
 		return FALSE;
 	}
-	if ( FALSE == WriteFile(hFile,vo_.file.image,vo_.file.size.l,&size,NULL)){
-		PPErrorBox(hWnd,T("File write error"),PPERROR_GETLASTERROR);
+	if ( FALSE == WriteFile(hFile, vo_.file.image, vo_.file.UseSize, &size, NULL)){
+		PPErrorBox(hWnd, T("File write error"), PPERROR_GETLASTERROR);
 	}
 	CloseHandle(hFile);
 	return TRUE;
@@ -2284,13 +2284,13 @@ BOOL PPvSave(HWND hWnd)
 //-----------------------------------------------------------------------------
 // テキスト変換
 
-void EucWrite(HANDLE hF,char *str)
+void EucWrite(HANDLE hF, char *str)
 {
 	DWORD size;
-	BYTE buf[0x1000],*p,code1;
+	BYTE buf[0x1000], *p, code1;
 
 	if ( convert == 1){
-		WriteFile(hF,str,strlen32(str),&size,NULL);
+		WriteFile(hF, str, strlen32(str), &size, NULL);
 		return;
 	}
 	p = buf;
@@ -2318,22 +2318,22 @@ void EucWrite(HANDLE hF,char *str)
 			}
 		}
 	} while(code1);
-	WriteFile(hF,buf,strlen32((char *)buf),&size,NULL);
+	WriteFile(hF, buf, strlen32((char *)buf), &size, NULL);
 }
 
 void ConvertMain(void)
 {
 	HANDLE hF;
 
-	hF = CreateFileL(convertname,GENERIC_WRITE,0,NULL,CREATE_ALWAYS,
-			FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+	hF = CreateFileL(convertname, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
+			FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if ( hF == INVALID_HANDLE_VALUE ){
-//		PPErrorBox(NULL,T("File open error"),PPERROR_GETLASTERROR);
+//		PPErrorBox(NULL, T("File open error"), PPERROR_GETLASTERROR);
 		return;
 	}
 	if ( vo_.DModeBit == DOCMODE_TEXT ){
-		char buf[TEXTBUFSIZE],*p;
-		DWORD size,off;
+		char buf[TEXTBUFSIZE], *p;
+		DWORD size, off;
 		int XV_bctl3bk;
 		MAKETEXTINFO mti;
 
@@ -2341,18 +2341,18 @@ void ConvertMain(void)
 		XV_bctl[2] = 0;
 
 		mti.destbuf = (BYTE *)buf;
-		mti.srcmax = vo_.file.image + vo_.file.size.l;
+		mti.srcmax = vo_.file.image + vo_.file.UseSize;
 		mti.writetbl = FALSE;
 		mti.paintmode = FALSE;
 
 		for ( off = 0 ; off < (DWORD)VOi->line ; off++ ){
-			VOi->MakeText(&mti,&VOi->ti[off]);
+			VOi->MakeText(&mti, &VOi->ti[off]);
 			p = buf;
 
 			while ( *p != VCODE_END ) switch(*p){ // VCODE_SWITCH
 				case VCODE_CONTROL:
 				case VCODE_ASCII:	// Text 表示 ---------------------
-					EucWrite(hF,p + 1);
+					EucWrite(hF, p + 1);
 					p += strlen(p + 1) + 2;
 					break;
 
@@ -2362,9 +2362,9 @@ void ConvertMain(void)
 					char buf2[0x1000];
 
 					p++;
-					WideCharToMultiByte(CP_ACP,0,
-							(LPCWSTR)p,-1,(LPSTR)buf2,sizeof buf2,"・",NULL);
-					EucWrite(hF,buf2);
+					WideCharToMultiByte(CP_ACP, 0,
+							(LPCWSTR)p, -1, (LPSTR)buf2, sizeof buf2, "・", NULL);
+					EucWrite(hF, buf2);
 					while ( *(WORD *)p ) p += 2;
 					p += 2;
 					break;
@@ -2384,7 +2384,7 @@ void ConvertMain(void)
 					break;
 
 				case VCODE_TAB:				// Tab -------------------
-					WriteFile(hF,"\t",1,&size,NULL);
+					WriteFile(hF, "\t", 1, &size, NULL);
 					p++;
 					break;
 
@@ -2392,7 +2392,7 @@ void ConvertMain(void)
 					p++;
 				case VCODE_PAGE:
 				case VCODE_PARA:
-					WriteFile(hF,"\r\n",2,&size,NULL);
+					WriteFile(hF, "\r\n", 2, &size, NULL);
 					p++;
 					break;
 
@@ -2554,7 +2554,7 @@ void DumpBMPinEmf(ENHMETARECORD *MFR, DUMPEMFSTRUCT *des, DWORD bmihoffset)
 	HANDLE hFile;
 
 	wsprintf(filename, T("%s_%04d.bmp"), des->basename, des->count);
-	hFile = CreateFileL(filename, GENERIC_WRITE, 0, NULL,CREATE_NEW,
+	hFile = CreateFileL(filename, GENERIC_WRITE, 0, NULL, CREATE_NEW,
 				FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if ( hFile != INVALID_HANDLE_VALUE ){
 		BITMAPFILEHEADER bmfileh;
@@ -2642,11 +2642,11 @@ void ReverseBackground(HWND hWnd)
 {
 	COLORREF tmpc;
 
-	AutoColor(T("C_back"),&tmpc,COLOR_WINDOW);
+	AutoColor(T("C_back"), &tmpc, COLOR_WINDOW);
 
 	C_back ^= C_WHITE;
 	if ( C_back == tmpc ){
-		GetCustData (T("CV_char"),CV_char,sizeof(CV_char));
+		GetCustData (T("CV_char"), CV_char, sizeof(CV_char));
 		if ( CV_char[CV__defback] == C_AUTO ) CV_char[CV__defback] = C_back;
 		if ( CV_char[CV__deftext] == C_AUTO ){
 			CV_char[CV__deftext] = GetSysColor(COLOR_WINDOWTEXT);
@@ -2658,7 +2658,7 @@ void ReverseBackground(HWND hWnd)
 
 	DeleteObject(C_BackBrush);
 	C_BackBrush = CreateSolidBrush(C_back);
-	InvalidateRect(hWnd,NULL,TRUE);
+	InvalidateRect(hWnd, NULL, TRUE);
 }
 
 void ViewfileContextMenu(HWND hWnd)
@@ -2666,7 +2666,7 @@ void ViewfileContextMenu(HWND hWnd)
 	POINT pos;
 
 	GetPopupPosition(&pos);
-	VFSSHContextMenu(hWnd,&pos,NULL,vo_.file.name,NULL);
+	VFSSHContextMenu(hWnd, &pos, NULL, vo_.file.name, NULL);
 }
 
 void DivChange(int offset)
@@ -2678,7 +2678,7 @@ void DivChange(int offset)
 		DDWORDST temp;
 
 		temp = FileDividePointer;
-		AddDD(temp.LowPart,temp.HighPart,X_wsiz,0);
+		AddDD(temp.LowPart, temp.HighPart, X_wsiz, 0);
 		if ( (temp.HighPart > FileRealSize.HighPart) ||
 			 ((temp.HighPart == FileRealSize.HighPart) && (temp.LowPart > FileRealSize.LowPart)) ){
 			return;
@@ -2688,7 +2688,7 @@ void DivChange(int offset)
 		if ( !(FileDividePointer.LowPart | FileDividePointer.HighPart) ){
 			return;
 		}
-		SubDD(FileDividePointer.LowPart,FileDividePointer.HighPart,X_wsiz,0);
+		SubDD(FileDividePointer.LowPart, FileDividePointer.HighPart, X_wsiz, 0);
 	}
 	PPvReload(&vinfo);
 }
@@ -2716,8 +2716,8 @@ ERRORCODE ChangeWidth(HWND hWnd)
 	TCHAR buf[32];
 	const TCHAR *p;
 
-	wsprintf(buf,T("%d"),VOi->defwidth);
-	if ( tInput(hWnd,T("Width(0:No warp, -1:Auto)"),buf,TSIZEOF(buf),PPXH_NUMBER,PPXH_NUMBER) <= 0 ){
+	wsprintf(buf, T("%d"), VOi->defwidth);
+	if ( tInput(hWnd, T("Width(0:No warp, -1:Auto)"), buf, TSIZEOF(buf), PPXH_NUMBER, PPXH_NUMBER) <= 0 ){
 		return ERROR_CANCELLED;
 	}
 
@@ -2734,11 +2734,11 @@ void LoadWinpos(HWND hWnd)
 	WINPOS WPos;
 	TCHAR buf[8];
 
-	wsprintf(buf,T("%s_"),RegCID);
-	if ( NO_ERROR == GetCustTable(T("_WinPos"),buf,&WPos,sizeof(WPos)) ){
-		MoveWindow(hWnd,WPos.pos.left,WPos.pos.top,
+	wsprintf(buf, T("%s_"), RegCID);
+	if ( NO_ERROR == GetCustTable(T("_WinPos"), buf, &WPos, sizeof(WPos)) ){
+		MoveWindow(hWnd, WPos.pos.left, WPos.pos.top,
 			WinPos.pos.right - WinPos.pos.left,
-			WinPos.pos.bottom - WinPos.pos.top,TRUE);
+			WinPos.pos.bottom - WinPos.pos.top, TRUE);
 	}else{
 		CenterWindow(hWnd);
 	}
@@ -2751,8 +2751,8 @@ void ReadSizeChange(PPV_APPINFO *vinfo)
 	if ( !(vo_.DModeBit & VO_dmode_ENABLEBACKREAD) ) return;
 
 	if ( FileDivideMode < FDM_NODIVMAX ){
-		GetCustData(T("X_wsiz"),&X_wsiz,sizeof X_wsiz);
-		if ( vo_.file.size.l <= X_wsiz ) return; // 分割不要
+		GetCustData(T("X_wsiz"), &X_wsiz, sizeof X_wsiz);
+		if ( vo_.file.UseSize <= X_wsiz ) return; // 分割不要
 
 		FileDivideMode = FDM_DIV;
 	}else{
@@ -2777,10 +2777,10 @@ void SaveBookmark(int index)
 		Bookmark[index].pos.y = VOi->offY;
 	}
 	Bookmark[index].div = FileDividePointer;
-	setflag(ShowTextLineFlags,SHOWTEXTLINE_BOOKMARK);
+	setflag(ShowTextLineFlags, SHOWTEXTLINE_BOOKMARK);
 }
 
-void GotoBookmarkPos(PPV_APPINFO *vinfo,int index,int posY)
+void GotoBookmarkPos(PPV_APPINFO *vinfo, int index, int posY)
 {
 	if ( (FileDivideMode > FDM_NODIVMAX) &&
 		 ((Bookmark[index].div.LowPart != FileDividePointer.LowPart) ||
@@ -2790,13 +2790,13 @@ void GotoBookmarkPos(PPV_APPINFO *vinfo,int index,int posY)
 	}
 	if ( IsTrue(BackReader) ){
 		mtinfo.PresetY = posY;
-		setflag(mtinfo.OpenFlags,PPV__NoGetPosFromHist);
+		setflag(mtinfo.OpenFlags, PPV__NoGetPosFromHist);
 	}
 	MoveCsrkey(	Bookmark[index].pos.x - VOi->offX,
 				posY - VOi->offY,	FALSE);
 }
 
-BOOL GotoBookmark(PPV_APPINFO *vinfo,int index)
+BOOL GotoBookmark(PPV_APPINFO *vinfo, int index)
 {
 	if ( Bookmark[index].pos.x < 0 ) return FALSE; // 記憶していない
 
@@ -2811,7 +2811,7 @@ BOOL GotoBookmark(PPV_APPINFO *vinfo,int index)
 			Bookmark[BookmarkID_undo].pos.y = VOi->offY;
 			Bookmark[BookmarkID_undo].div = FileDividePointer;
 		}
-		GotoBookmarkPos(vinfo,index,Bookmark[index].pos.y);
+		GotoBookmarkPos(vinfo, index, Bookmark[index].pos.y);
 	}else{ // キャレット位置で記憶
 		if ( !(vo_.DModeBit & VO_dmode_SELECTABLE) ) return FALSE;
 
@@ -2828,10 +2828,10 @@ BOOL GotoBookmark(PPV_APPINFO *vinfo,int index)
 
 		if ( XV_tmod == 0 ){
 			XV_tmod = 1;
-			SetCustData(T("XV_tmod"),&XV_tmod,sizeof(XV_tmod));
+			SetCustData(T("XV_tmod"), &XV_tmod, sizeof(XV_tmod));
 			InitCursorMode(vinfo->info.hWnd, FALSE);
 		}
-		GotoBookmarkPos(vinfo,index,-Bookmark[index].pos.y);
+		GotoBookmarkPos(vinfo, index, -Bookmark[index].pos.y);
 	}
 	return TRUE;
 }
@@ -2859,33 +2859,33 @@ ERRORCODE GotoBookmarkMenu(PPV_APPINFO *vinfo)
 {
 	HMENU hPopupMenu = CreatePopupMenu();
 	TCHAR buf[MAX_PATH];
-	int i,index;
+	int i, index;
 
 	#define TailID 1
 	#define BookMarkID 2
 
 	for ( i = 0 ; i <= MaxBookmark ; i++ ){
 		if ( Bookmark[i].pos.x >= 0 ){
-			wsprintf(buf,T("&%d: <-- [%d,%d]"),i,Bookmark[i].pos.x,Bookmark[i].pos.y);
-			AppendMenuString(hPopupMenu,i + BookMarkID,buf);
+			wsprintf(buf, T("&%d: <-- [%d,%d]"), i, Bookmark[i].pos.x, Bookmark[i].pos.y);
+			AppendMenuString(hPopupMenu, i + BookMarkID, buf);
 		}
 	}
 	if ( TailModeFlags ){
-		AppendMenuString(hPopupMenu,TailID,disptypestr[5]);
+		AppendMenuString(hPopupMenu, TailID, disptypestr[5]);
 	}
 	index = PPvTrackPopupMenu(hPopupMenu);
 	DestroyMenu(hPopupMenu);
 	if ( index <= 0 ) return ERROR_CANCELLED;
 	if ( index == TailID ){
-		MoveCsr(0,(OldTailLine - 2) - VOi->offY,FALSE);
+		MoveCsr(0, (OldTailLine - 2) - VOi->offY, FALSE);
 	}else{
-		GotoBookmark(vinfo,index - BookMarkID);
+		GotoBookmark(vinfo, index - BookMarkID);
 	}
 	return NO_ERROR;
 }
 
 #pragma argsused
-void WINAPI DummyNotifyWinEvent(DWORD event,HWND hwnd,LONG idObject,LONG idChild)
+void WINAPI DummyNotifyWinEvent(DWORD event, HWND hwnd, LONG idObject, LONG idChild)
 {
 	UnUsedParam(event);UnUsedParam(hwnd);UnUsedParam(idObject);UnUsedParam(idChild);
 }
@@ -2895,8 +2895,8 @@ void InputAspectRate(HWND hWnd)
 	TCHAR buf[64];
 	const TCHAR *p;
 
-	wsprintf(buf,T("%dx%d"),XV.img.AspectW,XV.img.AspectH);
-	if ( tInput(hWnd,T("Aspect rate(X ppi x Y ppi)"),buf,TSIZEOF(buf),PPXH_NUMBER,PPXH_NUMBER) <= 0 ){
+	wsprintf(buf, T("%dx%d"), XV.img.AspectW, XV.img.AspectH);
+	if ( tInput(hWnd, T("Aspect rate(X ppi x Y ppi)"), buf, TSIZEOF(buf), PPXH_NUMBER, PPXH_NUMBER) <= 0 ){
 		return;
 	}
 
@@ -2915,7 +2915,7 @@ void InputAspectRate(HWND hWnd)
 		}
 		FixBitmapShowSize(&vo_);
 	}
-	InvalidateRect(hWnd,NULL,TRUE);
+	InvalidateRect(hWnd, NULL, TRUE);
 	SetScrollBar();
 }
 
@@ -2938,23 +2938,23 @@ void FixBitmapShowSize(PPvViewObject *vo)
 void PPvEnterTabletMode(HWND hWnd)
 {
 	TouchMode = ~X_pmc[1];
-	PPxCommonCommand(hWnd,0,K_E_TABLET);
+	PPxCommonCommand(hWnd, 0, K_E_TABLET);
 }
 
 // , 区切りのパラメータを１つ取得する ※PPD_CMDL.Cにも
 #if !NODLL
-UTCHAR GetCommandParameter(LPCTSTR *commandline,TCHAR *param,size_t paramlen)
+UTCHAR GetCommandParameter(LPCTSTR *commandline, TCHAR *param, size_t paramlen)
 {
 	const TCHAR *src;
 	TCHAR *dest, *maxptr;
-	UTCHAR firstcode,code;
+	UTCHAR firstcode, code;
 
 	firstcode = SkipSpace(commandline);
 	if ( (firstcode == '\0') || (firstcode == ',') ){ // パラメータ無し
 		*param = '\0';
 		return firstcode;
 	}
-	if ( firstcode == '\"' ) return GetLineParam(commandline,param);
+	if ( firstcode == '\"' ) return GetLineParam(commandline, param);
 	src = *commandline + 1;
 	dest = param;
 	maxptr = dest + paramlen - 1;

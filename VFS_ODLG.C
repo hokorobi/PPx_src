@@ -799,7 +799,7 @@ BOOL LoadOption(FOPSTRUCT *FS,const TCHAR *action,const TCHAR *option)
 	FOP->delspc		= 0;
 	FOP->filter		= 0;
 
-	FOP->AtrMask	= 0x1f;		// And 指定用
+	FOP->AtrMask	= FILEATTRMASK_DIR_FILES;		// And 指定用
 	FOP->AtrFlag	= 0x20;		// Or 指定用
 
 	FOP->mode		= FOPMODE_COPY;

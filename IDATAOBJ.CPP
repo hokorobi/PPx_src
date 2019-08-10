@@ -23,13 +23,13 @@ CImpIDataObject::CImpIDataObject()
 //------------------------------------- デコンストラクタ
 CImpIDataObject::~CImpIDataObject()
 {
-	if(m_cRefCount != 0) xmessage(XM_FaERRd,T("~CImpIDataObject"));
+	if(m_cRefCount != 0) xmessage(XM_FaERRd, T("~CImpIDataObject"));
 }
 
 //------------------------------------- 定型部分 ------------------------------
-STDMETHODIMP CImpIDataObject::QueryInterface(REFIID refiid,void ** ppv)
+STDMETHODIMP CImpIDataObject::QueryInterface(REFIID refiid, void ** ppv)
 {
-	// Explorer では、IMarshal,ICallFactory,不明{0000001B-0000-0000-C000-000000000046}が実装されている
+	// Explorer では、IMarshal, ICallFactory, 不明{0000001B-0000-0000-C000-000000000046}が実装されている
 
 	if ( (IID_IUnknown == refiid) || (IID_IDataObject == refiid) ){
 		*ppv = this;

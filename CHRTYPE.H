@@ -71,7 +71,7 @@ extern char T_CHRTYPE[256];
 										/* 追加された関数 */
 /* 漢字の１バイト目か？(ANSI専用) */
 #define IskanjiA(c)	(T_CHRTYPE[(unsigned char)(c)] & T_IS_KNJ)
-/* 文字のバイト数を得る(NULL=0,ANSI専用) */
+/* 文字のバイト数を得る(NULL=0, ANSI専用) */
 #define ChrlenA(c)	(T_CHRTYPE[(unsigned char)(c)] & 3)
 
 #define IsmultiA IskanjiA

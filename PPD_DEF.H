@@ -27,7 +27,7 @@ extern "C" {
 #define TIMERRATE_MSGBOX_AUTORETRY 300 // (0.3秒)
 
 //==================================================== 共有メモリ(PPCOMMON.MEM)
-//#pragma pack(push,4)
+//#pragma pack(push, 4)
 
 #define UsePPxSpinMaxTime 2000 // 専有可能な最大時間
 #define UsePPxMaxTime 5000 // 専有可能な最大時間
@@ -43,7 +43,7 @@ typedef struct  {	// PPx Main Window 管理構造体
 	HWND	UsehWnd;				// 占有している HWND
 	DWORD	ProcessID;				// プロセスID
 	DWORD	ActiveID;				// アクティブ順を表す数値
-	TCHAR	ID[REGIDSIZE];			// +0,1:Name,+2:R-ID,+3:\0
+	TCHAR	ID[REGIDSIZE];			// +0, 1:Name, +2:R-ID, +3:\0
 									// ここが "" なら使用していない
 									//		ex) C_A / V_B / V_C
 	TCHAR	path[VFPS];
@@ -80,7 +80,7 @@ typedef struct  {	// PPx Main Window 管理構造体
 typedef union {
 	DWORD dw;
 	struct {
-		BYTE type,flags,rate,count;
+		BYTE type, flags, rate, count;
 	} b;
 } JobXstate;
 
@@ -120,7 +120,7 @@ typedef struct {
 
 	ShareX P[X_Mtask];				// xUI 管理テーブル
 	struct {	// ActiveID の最小値、最大値
-		int /*low,*/high;
+		int /*low, */high;
 	} Active;
 
 #define RUNAS_NOCHECK	 0	// 未判定
@@ -151,11 +151,11 @@ typedef struct {
 #define JOBLIST_HIDE 1
 	struct {
 		HWND hWnd; // Job一覧を表示するウィンドウ
-		DWORD showmode,hidemode;
+		DWORD showmode, hidemode;
 	} JobList;
 
 #if PPXSYNCDEBUG
-	char UsePPxFirst[96],UsePPxLast[96];
+	char UsePPxFirst[96], UsePPxLast[96];
 #endif
 } ShareM;
 
@@ -189,6 +189,7 @@ typedef struct tagOLDSRCSTRUCT {	// 入れ子解析時に使用する
 
 #define TINPUT_EDIT_OPTIONS_use_refline B0
 #define TINPUT_EDIT_OPTIONS_use_optionbutton B1
+#define TINPUT_EDIT_OPTIONS_use_refext B2
 typedef struct {
 	WORD hist_readflags;
 	BYTE hist_writetype;
@@ -223,7 +224,7 @@ typedef struct {
 	struct EXECSTRUCT_Edit {	// 編集関連
 		TCHAR *ed;					// 編集開始位置(%!用)
 		TCHAR *EdBottom;			// 編集開始位置(%{用)
-		int   CsrBottom,CsrTop;		// カーソル／選択開始／終了位置(%|)
+		int   CsrBottom, CsrTop;		// カーソル／選択開始／終了位置(%|)
 
 		struct EXECSTRUCT_Cache {
 			const TCHAR *srcptr; // キャッシュ対象テキストのsrcの位置
@@ -240,7 +241,7 @@ typedef struct {
 	const TCHAR *title;
 	const TCHAR *text;
 	HFONT hDlgFont;
-	HWND hOldFocusWnd,hOldForegroundWnd;
+	HWND hOldFocusWnd, hOldForegroundWnd;
 	TIMERPROC autoretryfunc;
 	DWORD style;
 } MESSAGEDATA;
@@ -258,10 +259,10 @@ typedef struct {
 	);
 #endif
 
-TypedefWinAPI(HRESULT,SHGetFolderPath,(HWND hwnd,int csidl,HANDLE hToken,DWORD dwFlags,LPTSTR pszPath));
-TypedefWinAPI(HANDLE,OpenThread,(DWORD dwDesiredAccess,BOOL bInheritHandle,DWORD dwThreadId));
-TypedefWinAPI(PVOID,AddVectoredExceptionHandler,(ULONG First,PVECTORED_EXCEPTION_HANDLER Handler));
-TypedefWinAPI(ULONG,RemoveVectoredExceptionHandler,(PVOID Handle));
+TypedefWinAPI(HRESULT, SHGetFolderPath, (HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlags, LPTSTR pszPath));
+TypedefWinAPI(HANDLE, OpenThread, (DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwThreadId));
+TypedefWinAPI(PVOID, AddVectoredExceptionHandler, (ULONG First, PVECTORED_EXCEPTION_HANDLER Handler));
+TypedefWinAPI(ULONG, RemoveVectoredExceptionHandler, (PVOID Handle));
 //================================================== グローバル変数(PPD_GVAR.C)
 #define GLOBALEXTERN
 #include "PPD_GVAR.C"
@@ -272,34 +273,36 @@ TypedefWinAPI(ULONG,RemoveVectoredExceptionHandler,(PVOID Handle));
 #define EWX_EXFLAG B31
 #define EWX_EX_SUSPEND (EWX_EXFLAG | B0)
 #define EWX_EX_HIBERNATE EWX_EXFLAG
-extern void ExitSession(HWND hWnd,UINT options);
+extern void ExitSession(HWND hWnd, UINT options);
 extern void LockPC(void);
-extern void SendWmSysyemMessage(WPARAM command,LPARAM lParam);
+extern void SendWmSysyemMessage(WPARAM command, LPARAM lParam);
 extern void Get_X_save_widthUI(TCHAR *path);
-extern void WindowZPosition(HWND hWnd,HWND mode);
-extern void ChangeOpaqueWindow(HWND hWnd,int opaque);
+extern void WindowZPosition(HWND hWnd, HWND mode);
+extern void ChangeOpaqueWindow(HWND hWnd, int opaque);
 
 //------------------------------------------------------------------ ppd_cmd.c
-extern DWORD_PTR USECDECL PPxDefInfoDummyFunc(PPXAPPINFO *ppxa,DWORD cmdID,PPXAPPINFOUNION *uptr);
+extern DWORD_PTR USECDECL PPxDefInfoDummyFunc(PPXAPPINFO *ppxa, DWORD cmdID, PPXAPPINFOUNION *uptr);
 
-extern void ExtractPPxCall(HWND hTargetWnd,EXECSTRUCT *Z,const TCHAR *macroparam);
-extern void BackupSrc(EXECSTRUCT *Z,const TCHAR *newsrc);
-extern void GetPopupPoint(EXECSTRUCT *Z,POINT *pos);
+extern void ExtractPPxCall(HWND hTargetWnd, EXECSTRUCT *Z, const TCHAR *macroparam);
+extern void BackupSrc(EXECSTRUCT *Z, const TCHAR *newsrc);
+extern void GetPopupPoint(EXECSTRUCT *Z, POINT *pos);
 extern DWORD GetFmacroOption(const TCHAR **string);
-extern void GetFmacroString(DWORD flag,TCHAR *src,TCHAR *dest);
-extern DWORD GetModuleNameHash(const TCHAR *src,TCHAR *dest);
+extern void GetFmacroString(DWORD flag, TCHAR *src, TCHAR *dest);
+extern DWORD GetModuleNameHash(const TCHAR *src, TCHAR *dest);
 extern TCHAR * USEFASTCALL GetZCurDir(EXECSTRUCT *Z);
-extern void Get_F_MacroData(PPXAPPINFO *info,PPXCMD_F *fbuf,PPXCMDENUMSTRUCT *work);
-extern BOOL GetEditMode(const TCHAR **param,TINPUT_EDIT_OPTIONS *options);
+extern void Get_F_MacroData(PPXAPPINFO *info, PPXCMD_F *fbuf, PPXCMDENUMSTRUCT *work);
+extern BOOL GetEditMode(const TCHAR **param, TINPUT_EDIT_OPTIONS *options);
+extern void SetTInputOptionFlags(TINPUT *tinput, TINPUT_EDIT_OPTIONS *options);
 extern UTCHAR USEFASTCALL IsEOL(const TCHAR **str);
 extern const TCHAR *ZGetTitleName(EXECSTRUCT *Z);
-extern BOOL ZTinput(EXECSTRUCT *Z,TINPUT *tinput);
-extern void GetValue(EXECSTRUCT *Z,DWORD cmdID,TCHAR *dest);
-extern void ZStringVariable(EXECSTRUCT *Z,const TCHAR **src,int mode);
+extern BOOL ZTinput(EXECSTRUCT *Z, TINPUT *tinput);
+extern void GetValue(EXECSTRUCT *Z, DWORD cmdID, TCHAR *dest);
+extern void ZStringVariable(EXECSTRUCT *Z, const TCHAR **src, int mode);
 
 extern const TCHAR HistType[];
 extern const TCHAR Title_ValueName[];
-extern void USEFASTCALL UserCommand(EXECSTRUCT *Z,const TCHAR *args, const TCHAR *cmdline, TCHAR *dest);
+extern void USEFASTCALL UserCommand(EXECSTRUCT *Z, const TCHAR *args, const TCHAR *cmdline, TCHAR *dest);
+extern DWORD GetCacheHash(EXECSTRUCT *Z);
 
 #define StringVariable_command	0
 #define StringVariable_function	1
@@ -307,12 +310,12 @@ extern void USEFASTCALL UserCommand(EXECSTRUCT *Z,const TCHAR *args, const TCHAR
 
 //------------------------------------------------------------------ ppd_cmdc.c
 extern void ZExec(EXECSTRUCT *Z);
-extern void ZGetName(EXECSTRUCT *Z,TCHAR *dest,TCHAR cmd);
-extern void GetWindowHashList(HMENU hMenuDest,DWORD *PopupID);
+extern void ZGetName(EXECSTRUCT *Z, TCHAR *dest, TCHAR cmd);
+extern void GetWindowHashList(HMENU hMenuDest, DWORD *PopupID);
 
 //------------------------------------------------------------------ ppd_cmdl.c
-extern void GetQuotedParameter(LPCTSTR *commandline,TCHAR *param,const TCHAR *parammax);
-extern UTCHAR GetCommandParameter(LPCTSTR *commandline,TCHAR *param,size_t paramlen);
+extern void GetQuotedParameter(LPCTSTR *commandline, TCHAR *param, const TCHAR *parammax);
+extern UTCHAR GetCommandParameter(LPCTSTR *commandline, TCHAR *param, size_t paramlen);
 
 //------------------------------------------------------------------ ppd_code.c
 extern INT_PTR GetDigitNumber(const TCHAR **ptr);
@@ -337,60 +340,60 @@ extern COLORLABEL guicolor[];
 #define color_s 21
 
 #ifdef _WIN64
-#define MultiByteToWideCharU8(CodePage,dwFlags,lpMultiByteStr,cchMultiByte,lpWideCharStr,cchWideChar) MultiByteToWideChar(CodePage,dwFlags,lpMultiByteStr,cchMultiByte,lpWideCharStr,cchWideChar)
-#define WideCharToMultiByteU8(CodePage,dwFlags,lpWideCharStr,cchWideChar,lpMultiByteStr,cchMultiByte,lpDefaultChar,lpfUsedDefaultChar) WideCharToMultiByte(CodePage,dwFlags,lpWideCharStr,cchWideChar,lpMultiByteStr,cchMultiByte,lpDefaultChar,lpfUsedDefaultChar)
+#define MultiByteToWideCharU8(CodePage, dwFlags, lpMultiByteStr, cchMultiByte, lpWideCharStr, cchWideChar) MultiByteToWideChar(CodePage, dwFlags, lpMultiByteStr, cchMultiByte, lpWideCharStr, cchWideChar)
+#define WideCharToMultiByteU8(CodePage, dwFlags, lpWideCharStr, cchWideChar, lpMultiByteStr, cchMultiByte, lpDefaultChar, lpfUsedDefaultChar) WideCharToMultiByte(CodePage, dwFlags, lpWideCharStr, cchWideChar, lpMultiByteStr, cchMultiByte, lpDefaultChar, lpfUsedDefaultChar)
 #else
-ExternWinAPI (int,MultiByteToWideCharU8,(UINT CodePage,DWORD dwFlags,const char *lpMultiByteStr,int cchMultiByte,WCHAR *lpWideCharStr,int cchWideChar));
-ExternWinAPI (int,WideCharToMultiByteU8,(UINT CodePage,DWORD dwFlags,const WCHAR *lpWideCharStr,int cchWideChar,char *lpMultiByteStr,int cchMultiByte,const char *lpDefaultChar,BOOL *lpfUsedDefaultChar));
-#define MultiByteToWideCharU8(CodePage,dwFlags,lpMultiByteStr,cchMultiByte,lpWideCharStr,cchWideChar) DMultiByteToWideCharU8(CodePage,dwFlags,lpMultiByteStr,cchMultiByte,lpWideCharStr,cchWideChar)
-#define WideCharToMultiByteU8(CodePage,dwFlags,lpWideCharStr,cchWideChar,lpMultiByteStr,cchMultiByte,lpDefaultChar,lpfUsedDefaultChar) DWideCharToMultiByteU8(CodePage,dwFlags,lpWideCharStr,cchWideChar,lpMultiByteStr,cchMultiByte,lpDefaultChar,lpfUsedDefaultChar)
+ExternWinAPI (int, MultiByteToWideCharU8, (UINT CodePage, DWORD dwFlags, const char *lpMultiByteStr, int cchMultiByte, WCHAR *lpWideCharStr, int cchWideChar));
+ExternWinAPI (int, WideCharToMultiByteU8, (UINT CodePage, DWORD dwFlags, const WCHAR *lpWideCharStr, int cchWideChar, char *lpMultiByteStr, int cchMultiByte, const char *lpDefaultChar, BOOL *lpfUsedDefaultChar));
+#define MultiByteToWideCharU8(CodePage, dwFlags, lpMultiByteStr, cchMultiByte, lpWideCharStr, cchWideChar) DMultiByteToWideCharU8(CodePage, dwFlags, lpMultiByteStr, cchMultiByte, lpWideCharStr, cchWideChar)
+#define WideCharToMultiByteU8(CodePage, dwFlags, lpWideCharStr, cchWideChar, lpMultiByteStr, cchMultiByte, lpDefaultChar, lpfUsedDefaultChar) DWideCharToMultiByteU8(CodePage, dwFlags, lpWideCharStr, cchWideChar, lpMultiByteStr, cchMultiByte, lpDefaultChar, lpfUsedDefaultChar)
 #endif
 
 //------------------------------------------------------------------ ppd_cust.c
-extern TCHAR PPcustCDumpText(const TCHAR *str,const TCHAR *sub,TCHAR *result);
+extern TCHAR PPcustCDumpText(const TCHAR *str, const TCHAR *sub, TCHAR *result);
 
 //------------------------------------------------------------------ ppd_dlg.c
 // PPXSTATIC で使用可能な制御文字
 // ※キャプションを利用するため、\x0 はパラメータに使えない
-#define PXSC_PAR		0x1b // 独自プログレスバー parsent(1-100),count(1-10)
+#define PXSC_PAR		0x1b // 独自プログレスバー parsent(1-100), count(1-10)
 #define PXSC_LEFT		0x1c // 左寄せ
 #define PXSC_RIGHT		0x1d // 右寄せ
 #define PXSC_NORMAL		0x1e // ハイライト解除
 #define PXSC_HILIGHT	0x1f // ハイライト
 
-extern LRESULT CALLBACK PPxStaticProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam);
-extern HWND *CreateDialogWindow(HANDLE hinst,LPCTSTR lpszTemplate,HWND hParentWnd);
-extern void EnableDlgWindow(HWND hDlg,int id,BOOL state);
-extern void ShowDlgWindow(const HWND hDlg,const UINT id,BOOL show);
-extern LPDLGTEMPLATE GetDialogTemplate(HWND hParentWnd,HANDLE hinst,LPCTSTR lpszTemplate);
+extern LRESULT CALLBACK PPxStaticProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+extern HWND *CreateDialogWindow(HANDLE hinst, LPCTSTR lpszTemplate, HWND hParentWnd);
+extern void EnableDlgWindow(HWND hDlg, int id, BOOL state);
+extern void ShowDlgWindow(const HWND hDlg, const UINT id, BOOL show);
+extern LPDLGTEMPLATE GetDialogTemplate(HWND hParentWnd, HANDLE hinst, LPCTSTR lpszTemplate);
 
 //------------------------------------------------------------------ ppd_edl.c
 extern void CleanUpEdit(void);
-extern BOOL SetWindowTextWithSelect(HWND hED,const TCHAR *defstr);
+extern BOOL SetWindowTextWithSelect(HWND hED, const TCHAR *defstr);
 
 //------------------------------------------------------------------ ppd_exec.c
-extern BOOL ComExecEx(HWND hOwner,const TCHAR *line,const TCHAR *path,int *useppb,int flag,DWORD *ExitCode);
-extern BOOL ComExecSelf(HWND hOwner,const TCHAR *line,const TCHAR *path,int flag,DWORD *ExitCode);
-extern BOOL WaitJobDialog(HWND hWnd,HANDLE handle,const TCHAR *title,DWORD flags);
+extern BOOL ComExecEx(HWND hOwner, const TCHAR *line, const TCHAR *path, int *useppb, int flag, DWORD *ExitCode);
+extern BOOL ComExecSelf(HWND hOwner, const TCHAR *line, const TCHAR *path, int flag, DWORD *ExitCode);
+extern BOOL WaitJobDialog(HWND hWnd, HANDLE handle, const TCHAR *title, DWORD flags);
 
 typedef struct {
 	int user;
 	MESSAGEDATA md;
 } WAITDLGSTRUCT;
 
-extern INT_PTR CALLBACK WaitDlgBox(HWND hDlg,UINT iMsg,WPARAM wParam,LPARAM lParam);
+extern INT_PTR CALLBACK WaitDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
 
 //------------------------------------------------------------------ ppd_falt.c
 extern LONG WINAPI PPxUnhandledExceptionFilter(EXCEPTION_POINTERS *ExceptionInfo);
 extern THREADSTRUCT *GetCurrentThreadInfo(void);
-extern THREADSTRUCT *GetThreadInfoFromID(THREADSTRUCT **prev,DWORD ThreadID);
+extern THREADSTRUCT *GetThreadInfoFromID(THREADSTRUCT **prev, DWORD ThreadID);
 extern void UnRegisterThread(DWORD ThreadID);
 extern void PPxSendReport(const TCHAR *text);
 extern const TCHAR *GetThreadName(DWORD id);
 extern void CPUinfo(void);
 
 //------------------------------------------------------------------ ppd_hist.c
-#pragma pack(push,1)
+#pragma pack(push, 1)
 typedef struct {
 	char HeaderID[4]; // HistoryID / CustID が格納
 	DWORD FileSize; // ファイルの大きさ
@@ -415,14 +418,14 @@ typedef struct {
 extern void DefCust(int mode);
 extern int CountHistory(WORD type);
 extern void LimitHistory(WORD type);
-extern DWORD USEFASTCALL GetCustDword(const TCHAR *name,DWORD defaultvalue);
+extern DWORD USEFASTCALL GetCustDword(const TCHAR *name, DWORD defaultvalue);
 extern void LoadMessageTextTable(void);
-extern void USEFASTCALL MakeCustMemSharename(TCHAR *custsharename,int id);
+extern void USEFASTCALL MakeCustMemSharename(TCHAR *custsharename, int id);
 extern const TCHAR * USEFASTCALL SearchMessageText(const TCHAR *idstr);
 extern void ReloadMessageText(void);
 
 //------------------------------------------------------------------ ppd_mdl.c
-extern int CommandModule(EXECSTRUCT *Z,const TCHAR *ptr);
+extern int CommandModule(EXECSTRUCT *Z, const TCHAR *ptr);
 extern void FunctionModule(EXECSTRUCT *Z);
 extern void FreePPxModule(void);
 extern void NestedFunction(EXECSTRUCT *Z);
@@ -431,13 +434,13 @@ extern void NestedFunction(EXECSTRUCT *Z);
 #define MENUFLAG_SELECT		B0
 #define MENUFLAG_NOEXTACT	B1
 #define MENUFLAG_SETINDEX	B2
-extern BOOL MenuCommand(EXECSTRUCT *Z,TCHAR *menuname,const TCHAR *def,int menuflag);
-extern void USEFASTCALL AppendMenuString(HMENU hMenu,UINT id,const TCHAR *string);
-extern void USEFASTCALL AppendMenuCheckString(HMENU hMenu,UINT id,const TCHAR *string,BOOL check);
+extern BOOL MenuCommand(EXECSTRUCT *Z, TCHAR *menuname, const TCHAR *def, int menuflag);
+extern void USEFASTCALL AppendMenuString(HMENU hMenu, UINT id, const TCHAR *string);
+extern void USEFASTCALL AppendMenuCheckString(HMENU hMenu, UINT id, const TCHAR *string, BOOL check);
 
-extern int TTrackPopupMenu(EXECSTRUCT *Z,HMENU hMenu,PPXMENUINFO *xminfo);
-extern void MakeRootMenu(ThSTRUCT *thMenuData,HMENU hRootMenu,const TCHAR *CustName,const PPXINMENUBAR *inmenu);
-extern const TCHAR * USEFASTCALL GetMenuDataString(ThSTRUCT *thMenuData,int index);
+extern int TTrackPopupMenu(EXECSTRUCT *Z, HMENU hMenu, PPXMENUINFO *xminfo);
+extern void MakeRootMenu(ThSTRUCT *thMenuData, HMENU hRootMenu, const TCHAR *CustName, const PPXINMENUBAR *inmenu);
+extern const TCHAR * USEFASTCALL GetMenuDataString(ThSTRUCT *thMenuData, int index);
 
 //------------------------------------------------------------------ ppd_ppe.c
 #define PPE_TEXT_OPENNEW ((const TCHAR *)1)
@@ -450,37 +453,37 @@ typedef struct {
 
 //------------------------------------------------------------------ ppd_str.c
 #ifdef UNICODE
-  #define bchrlen(str,off) 1
-  #define SearchPipe(str) tstrchr(str,'|')
+  #define bchrlen(str, off) 1
+  #define SearchPipe(str) tstrchr(str, '|')
 #else
-  extern int bchrlen(TCHAR *str,int off);
+  extern int bchrlen(TCHAR *str, int off);
   extern char *SearchPipe(const char *str);
 #endif
 extern TCHAR *SkipSpaceAndFix(TCHAR *p);
-extern TCHAR *tstristr(const TCHAR *target,const TCHAR *findstr);
+extern TCHAR *tstristr(const TCHAR *target, const TCHAR *findstr);
 
-extern char *strlimcpy(char *deststr,const char *srcstr,size_t maxlength);
+extern char *strlimcpy(char *deststr, const char *srcstr, size_t maxlength);
 #ifndef UNICODE
 #define tstrlimcpy strlimcpy
 #else
 #define tstrlimcpy wcslimcpy
-extern WCHAR *wcslimcpy(WCHAR *deststr,const WCHAR *srcstr,size_t maxlength);
+extern WCHAR *wcslimcpy(WCHAR *deststr, const WCHAR *srcstr, size_t maxlength);
 #endif
-extern void tstrreplace(TCHAR *text,const TCHAR *targetword,const TCHAR *replaceword);
-extern const TCHAR *EscapeMacrochar(const TCHAR *string,TCHAR *buf);
+extern void tstrreplace(TCHAR *text, const TCHAR *targetword, const TCHAR *replaceword);
+extern const TCHAR *EscapeMacrochar(const TCHAR *string, TCHAR *buf);
 
 //------------------------------------------------------------------ ppd_sub.c
-extern void MakeUserfilename(TCHAR *dst,const TCHAR *src,const TCHAR *idname);
+extern void MakeUserfilename(TCHAR *dst, const TCHAR *src, const TCHAR *idname);
 extern HWND GetCaptionWindow(HWND hWnd);
 extern HWND GetParentCaptionWindow(HWND hWnd);
-extern BOOL DeleteDirectories(const TCHAR *path,BOOL notify);
-extern int FixTextImage(const char *src,DWORD memsize,TCHAR **dest,int usecp);
-extern BOOL CheckLoadSize(HWND hWnd,DWORD *sizeL);
-extern void USEFASTCALL SetDlgFocus(HWND hDlg,int id);
-extern DWORD ReadEString(TCHAR **string,void *ptr,DWORD maxsize);
-extern void WriteEString(TCHAR *string,BYTE *ptr,DWORD size);
+extern BOOL DeleteDirectories(const TCHAR *path, BOOL notify);
+extern int FixTextImage(const char *src, DWORD memsize, TCHAR **dest, int usecp);
+extern BOOL CheckLoadSize(HWND hWnd, DWORD *sizeL);
+extern void USEFASTCALL SetDlgFocus(HWND hDlg, int id);
+extern DWORD ReadEString(TCHAR **string, void *ptr, DWORD maxsize);
+extern void WriteEString(TCHAR *string, BYTE *ptr, DWORD size);
 extern WORD FixCharKeycode(WORD key);
-extern DWORD crc32(const BYTE *bin,DWORD size,DWORD r);
+extern DWORD crc32(const BYTE *bin, DWORD size, DWORD r);
 extern UINT VTypeToCPlist[VTypeToCPlist_max];
 
 #ifdef UNICODE
@@ -488,26 +491,26 @@ extern UINT VTypeToCPlist[VTypeToCPlist_max];
 	extern BOOL WriteFileZT(HANDLE fileh, const WCHAR *str, DWORD *wrote);
 	extern LRESULT SendUTextMessage_U(HWND hWnd, UINT uMsg, WPARAM wParam, const TCHAR *text);
 #else
-	#define WriteFileZT(fileh,str,wrote) WriteFile(fileh,str,strlen(str),wrote,NULL)
+	#define WriteFileZT(fileh, str, wrote) WriteFile(fileh, str, strlen(str), wrote, NULL)
 #endif
 #define K_mouse K_internal // マウスによる操作(メニュー位置判定用)
-extern void GetPopMenuPos(HWND hWnd,POINT *pos,WORD key);
+extern void GetPopMenuPos(HWND hWnd, POINT *pos, WORD key);
 extern HMODULE LoadSystemWinAPI(DWORD dllID, LOADWINAPISTRUCT *apis);
 
 //------------------------------------------------------------------ ppd_task.c
 extern void FixTask(void);
 extern int SearchPPx(TCHAR *ID);
-extern HWND PPxGetWindow(const TCHAR *refid,int d);
+extern HWND PPxGetWindow(const TCHAR *refid, int d);
 extern int CountPPc(void);
 extern BOOL USEFASTCALL CheckPPcID(int no);
-extern BOOL BootPPB(const TCHAR *path,const TCHAR *line,int flags);
+extern BOOL BootPPB(const TCHAR *path, const TCHAR *line, int flags);
 extern int UsePPb(HWND hOwner);
-extern int SendPPB(HWND hOwner,const TCHAR *param,int useID);
-extern DWORD RecvPPBExitCode(HWND hOwner,int useID);
-extern void FreePPb(HWND hOwner,int useID);
+extern int SendPPB(HWND hOwner, const TCHAR *param, int useID);
+extern DWORD RecvPPBExitCode(HWND hOwner, int useID);
+extern void FreePPb(HWND hOwner, int useID);
 extern void DeleteJobTask(void);
-extern BOOL SetJobTask(HWND hWnd,DWORD state);
-extern BOOL JobListMenu(EXECSTRUCT *Z,TCHAR param);
+extern BOOL SetJobTask(HWND hWnd, DWORD state);
+extern BOOL JobListMenu(EXECSTRUCT *Z, TCHAR param);
 extern void CheckJobList(void);
 extern BOOL CheckJobWait(HANDLE hHandle);
 extern void SetAppID(void);
@@ -519,13 +522,13 @@ extern void USEFASTCALL ClosePPxOne(HWND hWnd);
 #define GetPPxList_Select 2	// *focusコマンドをthMenuDataから取得
 #define GetPPxList_Id 3		// idをthMenuDataから取得
 extern int GetPPxList(HMENU hPopupMenu, int mode, ThSTRUCT *th, DWORD *menuid);
-ExternWinAPI(BOOL,SetDllDirectory,(LPCTSTR lpPathName));
+ExternWinAPI(BOOL, SetDllDirectory, (LPCTSTR lpPathName));
 
 //------------------------------------------------------------------ ppd_ui.c
 #define PPXFLASH_STOP -1
 #define PPXFLASH_FLASH 0
 #define PPXFLASH_NOFOCUS 1
-extern BOOL PPxFlashWindow(HWND hWnd,int mode);
+extern BOOL PPxFlashWindow(HWND hWnd, int mode);
 extern UINT GetMonitorDPI(HWND hWnd);
 extern UINT USEFASTCALL GetGDIdpi(HWND hWnd);
 #define ID_PPX_CHECKED B7
@@ -540,16 +543,17 @@ extern UINT USEFASTCALL GetGDIdpi(HWND hWnd);
 #define MB_PPX_USEPPXCHECKOKCANCEL 10
 #define MB_PPX_ABORTRETRYRENAMEIGNORE 11
 #define MB_PPX_MAX 12
-extern BOOL MessageBoxInitDialog(HWND hDlg,MESSAGEDATA *md);
-extern INT_PTR CALLBACK MessageBoxDxProc(HWND hDlg,UINT iMsg,WPARAM wParam,LPARAM lParam);
-extern void PopupErrorMessage(HWND hWnd,const TCHAR *title,const TCHAR *msg);
+extern BOOL MessageBoxInitDialog(HWND hDlg, MESSAGEDATA *md);
+extern INT_PTR CALLBACK MessageBoxDxProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
+extern void PopupErrorMessage(HWND hWnd, const TCHAR *title, const TCHAR *msg);
 
-extern void ClipTextData(HWND hWnd,const TCHAR *text);
+extern void ClipTextData(HWND hWnd, const TCHAR *text);
 extern int CriticalMessageBox(const TCHAR *text);
 extern BOOL PPxDialogHelp(HWND hDlg);
 // FillRect 置き換え
-extern void FillBox(HDC hDC,const RECT *box,HBRUSH hbr);
+extern void FillBox(HDC hDC, const RECT *box, HBRUSH hbr);
 extern void PlayWave(const TCHAR *name);
+extern BOOL OpenClipboard2(HWND hWnd);
 
 //------------------------------------------------------------------ ppd_wild.c
 extern void FreeRMatch(void);
@@ -557,7 +561,7 @@ extern void FreeRMatch(void);
 typedef struct {int dummy;} RXPREPLACESTRING;
 
 extern BOOL InitRegularExpressionReplace(RXPREPLACESTRING **rxps, TCHAR *rxstring, BOOL slash);
-extern BOOL RegularExpressionReplace(RXPREPLACESTRING *rxps,TCHAR *target);
+extern BOOL RegularExpressionReplace(RXPREPLACESTRING *rxps, TCHAR *target);
 extern void FreeRegularExpressionReplace(RXPREPLACESTRING *rxps);
 extern void GetRegularExpressionName(TCHAR *str);
 #endif
@@ -567,26 +571,26 @@ extern BOOL LoadRegExp(void);
 
 
 extern LOADWINAPISTRUCT OLEAUT32_SysStr[];
-extern HRESULT (STDAPICALLTYPE *DGetActiveObject)(REFCLSID rclsid, void * pvReserved,IUnknown ** ppunk);
-extern HRESULT (STDAPICALLTYPE *DRegisterActiveObject)(IUnknown * punk,REFCLSID rclsid,DWORD dwFlags, DWORD *pdwRegister);
-extern HRESULT (STDAPICALLTYPE *DRevokeActiveObject)(DWORD dwRegister,void *pvReserved);
+extern HRESULT (STDAPICALLTYPE *DGetActiveObject)(REFCLSID rclsid, void * pvReserved, IUnknown ** ppunk);
+extern HRESULT (STDAPICALLTYPE *DRegisterActiveObject)(IUnknown * punk, REFCLSID rclsid, DWORD dwFlags, DWORD *pdwRegister);
+extern HRESULT (STDAPICALLTYPE *DRevokeActiveObject)(DWORD dwRegister, void *pvReserved);
 
 extern LOADWINAPISTRUCT OLEAUT32_Variant[];
 extern void (STDAPICALLTYPE *DVariantInit)(VARIANTARG * pvarg);
 extern HRESULT (STDAPICALLTYPE *DVariantClear)(VARIANTARG * pvarg);
-extern HRESULT (STDAPICALLTYPE *DVariantChangeType)(VARIANTARG * pvargDest,VARIANTARG *pvarSrc,USHORT wFlags,VARTYPE vt);
+extern HRESULT (STDAPICALLTYPE *DVariantChangeType)(VARIANTARG * pvargDest, VARIANTARG *pvarSrc, USHORT wFlags, VARTYPE vt);
 
 typedef struct {
-	DWORD value,mask;
+	DWORD value, mask;
 } GETPARAMFLAGSSTRUCT;
 
-extern void GetParamFlags(GETPARAMFLAGSSTRUCT *gpfs,const TCHAR **param,const TCHAR *flagnames);
+extern void GetParamFlags(GETPARAMFLAGSSTRUCT *gpfs, const TCHAR **param, const TCHAR *flagnames);
 extern const TCHAR AttrLabelString[];
 
 //---------------------------------------------------------------- ppd_subp.cpp
-extern void DragDropPath(HWND hWnd,const TCHAR *path);
-extern LRESULT CALLBACK AutoDDDLLProc(int nCode,WPARAM wParam,CWPSTRUCT *lParam);
-extern HRESULT GetLink(HWND hWnd,const TCHAR *LinkFile,TCHAR *Original);
+extern void DragDropPath(HWND hWnd, const TCHAR *path);
+extern LRESULT CALLBACK AutoDDDLLProc(int nCode, WPARAM wParam, CWPSTRUCT *lParam);
+extern HRESULT GetLink(HWND hWnd, const TCHAR *LinkFile, TCHAR *Original);
 
 #ifdef __cplusplus
 }
