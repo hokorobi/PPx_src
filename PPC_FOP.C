@@ -572,20 +572,28 @@ void PPcFileOperation(PPC_APPINFO *cinfo, const TCHAR *action, const TCHAR *dest
 
 void ModifyCellFilename(PPC_APPINFO *cinfo, ENTRYCELL *cell, const TCHAR *newname)
 {
-	TCHAR *p;
+	TCHAR *newptr, *oldptr;
+	DWORD newext;
 
-	tstrcpy(cell->f.cFileName, newname);
-	if ( cinfo->CellHashType == CELLHASH_NAME ){
-		cell->cellhash = MiniHash(cell->f.cFileName);
+	oldptr = FindLastEntryPoint(cell->f.cFileName);
+	newptr = FindLastEntryPoint(newname);
+	newext = FindExtSeparator(newptr);
+	if ( tstrcmp(oldptr + FindExtSeparator(oldptr), newptr + newext) != 0 ){
+		cell->icon = ICONLIST_NOINDEX;
+		setflag(cinfo->SubTCmdFlags, SUBT_GETCELLICON);
+		SetEvent(cinfo->SubT_cmd);
 	}
-
-	p = FindLastEntryPoint(newname);
-	cell->ext = (WORD)((p - newname) + FindExtSeparator(p));
-
+	tstrcpy(cell->f.cFileName, newname);
+	cell->ext = (WORD)((newptr - newname) + newext);
 	if ( (tstrlen(newname + cell->ext) > X_extl) ||
 		(!XC_sdir && (cell->f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) ){
 		cell->ext = (WORD)tstrlen(newname);
 	}
+
+	if ( cinfo->CellHashType == CELLHASH_NAME ){
+		cell->cellhash = MiniHash(cell->f.cFileName);
+	}
+
 	// œŠÈˆÕŠg’£ŽqF•ÏX
 	GetCustTable(T("C_ext"), newname + cell->ext + 1, &cell->extC, sizeof(COLORREF));
 }

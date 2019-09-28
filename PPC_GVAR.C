@@ -50,6 +50,7 @@ extern "C" {
 #define TIMERID_DELAYLOGSHOW	111 // 遅延ログ更新
 #define TIMERID_INFODOCK_MMOVE	112 // dock上情報行の隠しメニュー表示制御用
 #define TIMERID_HOVERTIP		113 // チップ表示のホバー検出
+// TIMERID_USER : 0xc000-0xdfff
 
 #define TIMER_DRAGSCROLL	400		// TIMERID_DRAGSCROLLの間隔(ms)
 #define TIMER_COMBOHIDEMENU	200		// TIMERID_COMBOHIDEMENUの間隔(ms)

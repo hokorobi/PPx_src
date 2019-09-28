@@ -641,6 +641,7 @@ extern VFSDLL void PPXAPI UnArc_Exec(PPXAPPINFO *info, const void *dt_opt, TCHAR
 
 typedef ULONG_PTR susie_time_t;
 #define SUSIE_PATH_MAX 200
+#define SUSIE_CHECK_SIZE 2048 // IsSupported ‚ª•K—v‚Æ‚·‚é‘å‚«‚³
 
 //-------------------------------------- DLL \‘¢‘Ì
 #pragma pack(push, 1)

@@ -350,58 +350,59 @@ PPXDLL void PPXAPI GetColumnExtMenu(ThSTRUCT *thEcdata, const TCHAR *targetpath,
 				::ThAppend(thEcdata, &newcndi, sizeof(newcndi));
 
 				if ( hMenu != NULL ){
-					pd->GetCanonicalName(&cname);
-					WCHAR *grouplast = strrchrW(cname, '.');
-					if ( grouplast == NULL ){
-						hSubMenu = hMenu;
-					}else{
-						int len = grouplast - cname;
+					if ( SUCCEEDED(pd->GetCanonicalName(&cname)) && (cname != NULL) ){
+						WCHAR *grouplast = strrchrW(cname, '.');
+						if ( grouplast == NULL ){
+							hSubMenu = hMenu;
+						} else{
+							int len = grouplast - cname;
 
-						if ( len != group ){
-							*grouplast = '\0';
-							grouplast = cname;
-							if ( memcmp(cname, SystemName, TSIZEOFW(SystemName) - 1 ) == 0 ){
-								grouplast = cname + TSIZEOFW(SystemName) - 1;
-							}
-							if ( index ){
-								if ( strcmpW(cname, SystemName) == 0 ){
-									hSubMenu = hSystemMenu;
-								}else{
-									#ifdef UNICODE
+							if ( len != group ){
+								*grouplast = '\0';
+								grouplast = cname;
+								if ( memcmp(cname, SystemName, TSIZEOFW(SystemName) - 1) == 0 ){
+									grouplast = cname + TSIZEOFW(SystemName) - 1;
+								}
+								if ( index ){
+									if ( strcmpW(cname, SystemName) == 0 ){
+										hSubMenu = hSystemMenu;
+									} else{
+#ifdef UNICODE
 										hSubMenu = CreatePopupMenu();
 										::AppendMenu(hMenu, MF_EPOP, (UINT_PTR)hSubMenu, grouplast);
-									#else
+#else
 										TCHAR buf[MAX_PATH];
 
 										hSubMenu = CreatePopupMenu();
 										UnicodeToAnsi(grouplast, buf, 200);
 										::AppendMenu(hMenu, MF_EPOP, (UINT_PTR)hSubMenu, buf);
+#endif
+									}
+								/* 1.46+3 ”pŽ~
+								}else{
+									#ifdef UNICODE
+										wsprintf(buf, L"----- %s", grouplast);
+									#else
+										tstrcpy(buf, T("----- "));
+										UnicodeToAnsi(grouplast, buf + 6, 200);
 									#endif
+									::SendMessage((HWND)hMenu, CB_ADDSTRING, 0, (LPARAM)buf);
+								*/
 								}
-							/* 1.46+3 ”pŽ~
-							}else{
-								#ifdef UNICODE
-									wsprintf(buf, L"----- %s", grouplast);
-								#else
-									tstrcpy(buf, T("----- "));
-									UnicodeToAnsi(grouplast, buf + 6, 200);
-								#endif
-								::SendMessage((HWND)hMenu, CB_ADDSTRING, 0, (LPARAM)buf);
-							*/
+								group = len;
 							}
-							group = len;
 						}
-					}
 
-					if ( index ){
-						::AppendMenuString(hSubMenu, index++, title);
-					/* 1.46+3 ”pŽ~
-					}else{
-						wsprintf(buf, T("\"%s\""), title);
-						::SendMessage((HWND)hMenu, CB_ADDSTRING, 0, (LPARAM)buf);
-					*/
+						if ( index ){
+							::AppendMenuString(hSubMenu, index++, title);
+						/* 1.46+3 ”pŽ~
+						}else{
+							wsprintf(buf, T("\"%s\""), title);
+							::SendMessage((HWND)hMenu, CB_ADDSTRING, 0, (LPARAM)buf);
+						*/
+						}
+						CoTaskMemFree(cname);
 					}
-					CoTaskMemFree(cname);
 				}else{
 					::ThAppend(thEcdata, title, TSTRSIZE32(title));
 				}
@@ -442,7 +443,7 @@ HRESULT GetLink(HWND hWnd, const TCHAR *LinkFile, TCHAR *Original)
 					if ( FAILED(hres) || (Original[0] == '\0') ){
 						LPITEMIDLIST idl;
 
-						if ( SUCCEEDED(psl->GetIDList(&idl)) ){
+						if ( SUCCEEDED(psl->GetIDList(&idl)) && (idl != NULL) ){
 							LPSHELLFOLDER pSF;
 
 							SHGetDesktopFolder(&pSF);

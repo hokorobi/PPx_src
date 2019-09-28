@@ -916,13 +916,18 @@ void SetTabColorDialog(int baseindex)
 	FreeLibrary(hComdlg32);
 }
 
-void ClosePanes(HWND hTabWnd, int baseindex, int mode)
+void ClosePanes(HWND hTabWnd, int baseindex, int mode, BOOL closelocked)
 {
 	TC_ITEM tie;
 	int tabindex;
 	int tabcount;
 	HWND hSWnd;
 	int first = 0, last = TabCtrl_GetItemCount(hTabWnd) - 1;
+	WPARAM closedata;
+
+	closedata = TMAKEWPARAM(
+			closelocked ? KCW_closealltabs : KCW_closetabs,
+			GetTabShowIndex(hTabWnd));
 
 	hSWnd = Combo.base[baseindex].hWnd;
 	tabcount = last + 1;
@@ -933,7 +938,7 @@ void ClosePanes(HWND hTabWnd, int baseindex, int mode)
 
 		if ( mode < 0 ) last = tabindex - 1;
 		if ( mode > 0 ) first = tabindex + 1;
-		PostMessage(Combo.hWnd, WM_PPXCOMMAND, TMAKEWPARAM(KCW_closetabs, GetTabShowIndex(hTabWnd)), TMAKELPARAM(first, last));
+		PostMessage(Combo.hWnd, WM_PPXCOMMAND, closedata, TMAKELPARAM(first, last));
 		return;
 	}
 }
@@ -1161,7 +1166,9 @@ BOOL TabMenu(HWND hTabWnd, int baseindex, int targetpane, POINT *pos)
 			if ( baseindex < 0 ) baseindex = Combo.show[targetpane].baseNo;
 		case CMENU_CLOSELEFT:
 		case CMENU_CLOSERIGHT:
-			ClosePanes(hTabWnd, baseindex, menuindex - CMENU_CLOSEPANE);
+			ClosePanes(hTabWnd, baseindex,
+					menuindex - CMENU_CLOSEPANE,
+					GetShiftKey() & K_s);
 			break;
 
 		case CMENU_SWAPPANE:

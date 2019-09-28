@@ -72,101 +72,102 @@ const TCHAR *OptionNames[] = {
 	T("PARENT"),
 	T("POPUP"),
 //50
-//	T("FILECASE"), // 50
+	T("SETPARENT"),
+//	T("FILECASE"),
 	NULL
 };
 
-const TCHAR *TagOffOn[] = { T("OFF"),T("ON"),T("TAG"),NULL };
-const TCHAR *OffOn[] = { T("OFF"),T("ON"),NULL };
-const TCHAR *AutoOffOn[] = { T("AUTO"),T("OFF"),T("ON"),NULL };
-const TCHAR *NameFirst = NULL,*NameLast = NULL;
+const TCHAR *TagOffOn[] = { T("OFF"), T("ON"), T("TAG"), NULL };
+const TCHAR *OffOn[] = { T("OFF"), T("ON"), NULL };
+const TCHAR *AutoOffOn[] = { T("AUTO"), T("OFF"), T("ON"), NULL };
+const TCHAR *NameFirst = NULL, *NameLast = NULL;
 const TCHAR DefCID[] = T("VA");
 
 PPXINMENU barFile[] = {
-	{K_c |      'O',T("&Open...\tCtrl+O")},
-	{K_c |      'S',T("&Save...\tCtrl+S")},
-	{'X',T("E&xecute\tX")},
-	{'P'			,T("P&lay\tP")},
-	{K_c |      'P',T("&Print\tCtrl+P")},
-	{K_s | 'E'		,T("PP&e\tShift+E")},
-	{PPXINMENY_SEPARATE,NULL},
-	{K_c | 'U'		,T("print set &Up...")},
-	{PPXINMENY_SEPARATE,NULL},
-	{'Q',T("E&xit\tAlt+F4")},
-	{0,NULL}
+	{K_c |      'O', T("&Open...\tCtrl+O")},
+	{K_c |      'S', T("&Save...\tCtrl+S")},
+	{'X', T("E&xecute\tX")},
+	{'P'			, T("P&lay\tP")},
+	{K_c |      'P', T("&Print\tCtrl+P")},
+	{K_s | 'E'		, T("PP&e\tShift+E")},
+	{PPXINMENY_SEPARATE, NULL},
+	{K_c | 'U'		, T("print set &Up...")},
+	{PPXINMENY_SEPARATE, NULL},
+	{'Q', T("E&xit\tAlt+F4")},
+	{0, NULL}
 };
 // Edit メニュー
 PPXINMENU barEdit[] = {
-	{K_c | 'C'		,T("&Copy\tCtrl+C")},
-	{K_c | 'V'		,T("&Paste\tCtrl+V")},
-	{K_c | K_s | 'V',T("Pa&ste type...\tCtrl+Shift+V")},
-	{PPXINMENY_SEPARATE,NULL},
-	{'F',T("Find &F...\tF")},
-	{'B',T("Find &B...\tB")},
-	{PPXINMENY_SEPARATE,NULL},
-	{']',T("Find Next\t&]")},
-	{'[',T("Find Prev\t&[")},
-	{PPXINMENY_SEPARATE,NULL},
-	{'J'		,T("&Jump to line\tJ")},
-	{K_c | 'D'		,T("&Set bookmark\tCtrl+D")},
-	{K_c | 'G'		,T("&Goto bookmark\tCtrl+G")},
-	{0,NULL}
+	{K_c | 'C'		, T("&Copy\tCtrl+C")},
+	{K_c | 'V'		, T("&Paste\tCtrl+V")},
+	{K_c | K_s | 'V', T("Pa&ste type...\tCtrl+Shift+V")},
+	{PPXINMENY_SEPARATE, NULL},
+	{'F', T("Find &F...\tF")},
+	{'B', T("Find &B...\tB")},
+	{PPXINMENY_SEPARATE, NULL},
+	{']', T("Find Next\t&]")},
+	{'[', T("Find Prev\t&[")},
+	{PPXINMENY_SEPARATE, NULL},
+	{'J'		, T("&Jump to line\tJ")},
+	{K_c | 'D'		, T("&Set bookmark\tCtrl+D")},
+	{K_c | 'G'		, T("&Goto bookmark\tCtrl+G")},
+	{0, NULL}
 };
 // View メニュー
 PPXINMENU barView[] = {
-	{K_layout,T("&Layout")},
-	{'R',T("R&everse back\tR")},
-//	{0x3e81,T("Task display")},		//うまくいかない→PPcの同じ場所にメモあり
-	{K_c | K_Pup,T("Prev page\tCtrl+PageUp")},
-	{K_c | K_Pdw,T("Next page\tCtrl+PageDown")},
-	{'<'		,T("Prev Div page\t&<")},
-	{'>'		,T("Next Div page\t&>")},
-	{K_c | K_s | K_Pup,T("Top Div pa&ge")},
-	{K_c | K_s | K_Pdw,T("Last Div pa&ge")},
-	{'K'		,T("Rotate left\tK")},
-	{'L'		,T("Rotate right\tL")},
-	{PPXINMENY_SEPARATE,NULL},
-	{':'		,T("&View mode...\t:")},
-	{'@'		,T("&Text code...\t@")},
-	{'W'		,T("Font &width\tW")},
-	{'T'		,T("Line number mode\tT")},
-	{'U'		,T("Line number\tU")},
-	{'C'		,T("&Control code\tC")},
-	{';'		,T("C&olumns\t;")},
-	{K_s | 'F'	,T("string &Highlight\tCtrl+Shift+F")},
-	{PPXINMENY_SEPARATE,NULL},
-	{K_c | 'L',T("Re&draw\tCtrl+L")},
-	{'.',T("&Reload\tF5")},
-	{0,NULL}
+	{K_layout, T("&Layout")},
+	{'R', T("R&everse back\tR")},
+//	{0x3e81, T("Task display")},		//うまくいかない→PPcの同じ場所にメモあり
+	{K_c | K_Pup, T("Prev page\tCtrl+PageUp")},
+	{K_c | K_Pdw, T("Next page\tCtrl+PageDown")},
+	{'<'		, T("Prev Div page\t&<")},
+	{'>'		, T("Next Div page\t&>")},
+	{K_c | K_s | K_Pup, T("Top Div pa&ge")},
+	{K_c | K_s | K_Pdw, T("Last Div pa&ge")},
+	{'K'		, T("Rotate left\tK")},
+	{'L'		, T("Rotate right\tL")},
+	{PPXINMENY_SEPARATE, NULL},
+	{':'		, T("&View mode...\t:")},
+	{'@'		, T("&Text code...\t@")},
+	{'W'		, T("Font &width\tW")},
+	{'T'		, T("Line number mode\tT")},
+	{'U'		, T("Line number\tU")},
+	{'C'		, T("&Control code\tC")},
+	{';'		, T("C&olumns\t;")},
+	{K_s | 'F'	, T("string &Highlight\tCtrl+Shift+F")},
+	{PPXINMENY_SEPARATE, NULL},
+	{K_c | 'L', T("Re&draw\tCtrl+L")},
+	{'.', T("&Reload\tF5")},
+	{0, NULL}
 };
 // Tool メニュー
 PPXINMENU barTool[] = {
-	{KC_Tvfs	,T("&VFS switch")},
-	{K_cust,T("&Customizer")},
-	{0,NULL}
+	{KC_Tvfs	, T("&VFS switch")},
+	{K_cust, T("&Customizer")},
+	{0, NULL}
 };
 // Help メニュー
 PPXINMENU barHelp[] = {
-	{K_F1     ,T("&Help\tF1")},
-	{K_s | K_F1	,T("&Topic\tShift+F1")},
-	{PPXINMENY_SEPARATE,NULL},
-	{K_supot   ,T("&Support")},
-	{(DWORD_PTR)T("*checkupdate"),T("Check &Update")},
-	{PPXINMENY_SEPARATE,NULL},
-	{K_about   ,T("&About")},
-	{0,NULL}//T("&File")},
+	{K_F1     , T("&Help\tF1")},
+	{K_s | K_F1	, T("&Topic\tShift+F1")},
+	{PPXINMENY_SEPARATE, NULL},
+	{K_supot   , T("&Support")},
+	{(DWORD_PTR)T("*checkupdate"), T("Check &Update")},
+	{PPXINMENY_SEPARATE, NULL},
+	{K_about   , T("&About")},
+	{0, NULL}//T("&File")},
 };
 
 PPXINMENUBAR ppvbar[] = {
-	{T("&File"),barFile},
-	{T("&Edit"),barEdit},
-	{T("&View"),barView},
-	{T("&Tool"),barTool},
-	{T("&Help"),barHelp},
-	{NULL,NULL}
+	{T("&File"), barFile},
+	{T("&Edit"), barEdit},
+	{T("&View"), barView},
+	{T("&Tool"), barTool},
+	{T("&Help"), barHelp},
+	{NULL, NULL}
 };
 
-int CheckSubParam(TCHAR *param,const TCHAR *list[],int defvalue)
+int CheckSubParam(TCHAR *param, const TCHAR *list[], int defvalue)
 {
 	int i = 0;
 
@@ -176,7 +177,7 @@ int CheckSubParam(TCHAR *param,const TCHAR *list[],int defvalue)
 			i = defvalue;
 			break;
 		}
-		if ( tstrcmp( param,*list) == 0 ) break;
+		if ( tstrcmp( param, *list) == 0 ) break;
 		i++;
 		list++;
 	}
@@ -186,7 +187,7 @@ int CheckSubParam(TCHAR *param,const TCHAR *list[],int defvalue)
 void InitViewOptions(VIEWOPTIONS *viewopts)
 {
 #if 1
-	memset(viewopts,0xff,sizeof(VIEWOPTIONS));
+	memset(viewopts, 0xff, sizeof(VIEWOPTIONS));
 #else
 	viewopts->dtype = -1;
 
@@ -208,7 +209,7 @@ void InitViewOptions(VIEWOPTIONS *viewopts)
 #endif
 }
 
-BOOL CheckParam(VIEWOPTIONS *viewopts,const TCHAR *param,TCHAR *filename)
+BOOL CheckParam(VIEWOPTIONS *viewopts, const TCHAR *param, TCHAR *filename)
 {
 	BOOL reuse = FALSE;
 	TCHAR buf[CMDLINESIZE];
@@ -228,7 +229,7 @@ BOOL CheckParam(VIEWOPTIONS *viewopts,const TCHAR *param,TCHAR *filename)
 			if ( filename != NULL ){
 				NameFirst = oldp;
 				NameLast = param;
-				VFSFixPath(filename,buf,NULL,VFSFIX_PATH | VFSFIX_VREALPATH);
+				VFSFixPath(filename, buf, NULL, VFSFIX_PATH | VFSFIX_VREALPATH);
 			}
 			continue;
 		}
@@ -283,14 +284,14 @@ BOOL CheckParam(VIEWOPTIONS *viewopts,const TCHAR *param,TCHAR *filename)
 			case 20:			//	"RTF"
 				viewopts->T_code = id - 8;
 				break;
-			case 21:			//	"SISO:AUTO","SISO:OFF","SISO:ON",
-				viewopts->T_siso = CheckSubParam(more,AutoOffOn,2);
+			case 21:			//	"SISO:AUTO", "SISO:OFF", "SISO:ON",
+				viewopts->T_siso = CheckSubParam(more, AutoOffOn, 2);
 				break;
-			case 22:			//	"ESC:OFF","ESC:ON",
-				viewopts->T_esc = CheckSubParam(more,OffOn,1);
+			case 22:			//	"ESC:OFF", "ESC:ON",
+				viewopts->T_esc = CheckSubParam(more, OffOn, 1);
 				break;
-			case 23:			//	"TAG:OFF","TAG:ON","TAG:TAG"
-				viewopts->T_tag = CheckSubParam(more,TagOffOn,1);
+			case 23:			//	"TAG:OFF", "TAG:ON", "TAG:TAG"
+				viewopts->T_tag = CheckSubParam(more, TagOffOn, 1);
 				break;
 			case 24:			//	"BOOTID:A-Z"
 				if ( Isalpha(*more) ){
@@ -314,13 +315,13 @@ BOOL CheckParam(VIEWOPTIONS *viewopts,const TCHAR *param,TCHAR *filename)
 				convert = 1;
 				more = *more ? more : T("con");
 				convertname[0] = '\0';
-				GetLineParam((const TCHAR **)&more,convertname);
+				GetLineParam((const TCHAR **)&more, convertname);
 				break;
 			case 28:			//	"CONVERTEUC:filename"
 				convert = 2;
 				more = *more ? more : T("con");
 				convertname[0] = '\0';
-				GetLineParam((const TCHAR **)&more,convertname);
+				GetLineParam((const TCHAR **)&more, convertname);
 				break;
 			case 29:			//	"focus:hwnd"
 				hLastViewReqWnd = hViewReqWnd = (HWND)GetNumber((const TCHAR **)&more);
@@ -347,20 +348,20 @@ BOOL CheckParam(VIEWOPTIONS *viewopts,const TCHAR *param,TCHAR *filename)
 			case 36:			//	tab
 				viewopts->T_tab = GetNumber((const TCHAR **)&more);
 				break;
-			case 37:			//	"animate:OFF","animate:ON",
-				viewopts->I_animate = CheckSubParam(more,OffOn,1);
+			case 37:			//	"animate:OFF", "animate:ON",
+				viewopts->I_animate = CheckSubParam(more, OffOn, 1);
 				break;
-			case 38:			//	"CheckeredPattern:OFF","CheckeredPattern:ON"
-				viewopts->I_CheckeredPattern = CheckSubParam(more,OffOn,1);
+			case 38:			//	"CheckeredPattern:OFF", "CheckeredPattern:ON"
+				viewopts->I_CheckeredPattern = CheckSubParam(more, OffOn, 1);
 				break;
 			case 39:			//	css
-				viewopts->T_show_css = CheckSubParam(more,OffOn,1);
+				viewopts->T_show_css = CheckSubParam(more, OffOn, 1);
 				break;
 			case 40:			//	script
-				viewopts->T_show_script = CheckSubParam(more,OffOn,1);
+				viewopts->T_show_script = CheckSubParam(more, OffOn, 1);
 				break;
 			case 41:			//	tail
-				viewopts->tailflags = CheckSubParam(more,OffOn,1);
+				viewopts->tailflags = CheckSubParam(more, OffOn, 1);
 				break;
 
 			case 42:			//	codepage
@@ -393,11 +394,14 @@ BOOL CheckParam(VIEWOPTIONS *viewopts,const TCHAR *param,TCHAR *filename)
 				ParentPopup = TRUE;
 				hViewParentWnd = (HWND)GetNumber((const TCHAR **)&more);
 				break;
+			case 50:			//	"setparent:hwnd"
+				hLastViewReqWnd = (HWND)GetNumber((const TCHAR **)&more);
+				break;
 //			case 50:			//	filecase
-//				FileCase = CheckSubParam(more,OffOn,1);
+//				FileCase = CheckSubParam(more, OffOn, 1);
 //				break;
 			default:
-				XMessage(NULL,NULL,XM_GrERRld,MES_EUOP,buf);
+				XMessage(NULL, NULL, XM_GrERRld, MES_EUOP, buf);
 		}
 	}
 	return reuse;
@@ -473,9 +477,9 @@ BOOL InitializePPv(int *result)
 			*result = 1;
 			if ( reuse ){
 				if ( MultiBootMode == PPXREGIST_IDASSIGN ){
-					setflag(viewflag,PPV_BOOTID | ((int)RegID[2] << 24));
+					setflag(viewflag, PPV_BOOTID | ((int)RegID[2] << 24));
 				}
-				if ( PPxView(NULL,cmd,viewflag) ) *result = 0;
+				if ( PPxView(NULL, cmd, viewflag) ) *result = 0;
 			}else{
 				SetForegroundWindow(PPxGetHWND(RegID));
 				*result = 0;
@@ -488,17 +492,17 @@ BOOL InitializePPv(int *result)
 										// コマンドライン指定ファイル読み込み
 	if ( name[0] != '\0' ){
 		WmWindowPosChanged(vinfo.info.hWnd); // まだ、情報がないことがある
-		OpenViewObject(name,NULL,&viewopt_def,0);
+		OpenViewObject(name, NULL, &viewopt_def, 0);
 		if ( vo_.DModeBit == DOCMODE_NONE ){
 			*result = 0;
 			if ( convert ) return FALSE;
 		}else{
 			FollowOpenView(&vinfo);
 			if ( VO_PrintMode == PRINTMODE_ONE ){
-				PostMessage(vinfo.info.hWnd,WM_PPXCOMMAND,K_c | 'P',0);
+				PostMessage(vinfo.info.hWnd, WM_PPXCOMMAND, K_c | 'P', 0);
 			}
 			if ( hViewReqWnd != NULL ){
-				PostMessage(vinfo.info.hWnd,WM_PPXCOMMAND,KV_FOCUS,0);
+				PostMessage(vinfo.info.hWnd, WM_PPXCOMMAND, KV_FOCUS, 0);
 			}
 		}
 	}else{
@@ -506,7 +510,7 @@ BOOL InitializePPv(int *result)
 
 		type = GetFileType(GetStdHandle(STD_INPUT_HANDLE));
 		if ( (type == FILE_TYPE_DISK) || (type == FILE_TYPE_PIPE) ){
-			OpenViewObject(T("stdin"),NULL,&viewopt_def,PPV__stdin);
+			OpenViewObject(T("stdin"), NULL, &viewopt_def, PPV__stdin);
 			if ( vo_.DModeBit == DOCMODE_NONE ){
 				*result = 0;
 				return FALSE;
@@ -516,16 +520,16 @@ BOOL InitializePPv(int *result)
 	}
 	if ( convert ){
 		ConvertMain();
-		PostMessage(vinfo.info.hWnd,WM_CLOSE,0,0);
+		PostMessage(vinfo.info.hWnd, WM_CLOSE, 0, 0);
 	}else{								// メインウインドウの表示を更新 -------
 		int show = WinPos.show; // SetMenu で WinPos.show 破損
 		SetMenu(vinfo.info.hWnd,
 				(X_win & XWIN_MENUBAR) ? DynamicMenu.hMenuBarMenu : NULL);
-		ShowWindow(vinfo.info.hWnd,show);
+		ShowWindow(vinfo.info.hWnd, show);
 		UpdateWindow(vinfo.info.hWnd);
-		if ( X_IME == 1 ) PostMessage(vinfo.info.hWnd,WM_PPXCOMMAND,K_IMEOFF,0);
+		if ( X_IME == 1 ) PostMessage(vinfo.info.hWnd, WM_PPXCOMMAND, K_IMEOFF, 0);
 //		SetIMEDefaultStatus(vinfo.info.hWnd);
-		DragAcceptFiles(vinfo.info.hWnd,TRUE);
+		DragAcceptFiles(vinfo.info.hWnd, TRUE);
 
 		SetCurrentDirectory(PPvPath);
 	}
@@ -535,9 +539,9 @@ BOOL InitializePPv(int *result)
 HFONT InitOtherFont(int mode)
 {
 	LOGFONT cursfont = {
-/*Width,Height*/					0,0, \
-/*Escapement,Orientation,Weight*/	0,0,FW_NORMAL, \
-/*Italic,Underline,StrikeOut*/		FALSE,FALSE,FALSE, \
+/*Width, Height*/					0, 0, \
+/*Escapement, Orientation, Weight*/	0, 0, FW_NORMAL, \
+/*Italic, Underline, StrikeOut*/	FALSE, FALSE, FALSE, \
 /*CharSet*/							SHIFTJIS_CHARSET, \
 /*OutPrecision*/					OUT_DEFAULT_PRECIS, \
 /*ClipPrecision*/					CLIP_DEFAULT_PRECIS, \
@@ -560,7 +564,7 @@ HFONT InitOtherFont(int mode)
 		default: // hSYMFont 記号フォント作成
 			cursfont.lfWidth--; // fontX - 1;
 			cursfont.lfCharSet	= SYMBOL_CHARSET;
-			tstrcpy(cursfont.lfFaceName,T("Symbol"));
+			tstrcpy(cursfont.lfFaceName, T("Symbol"));
 	}
 	return CreateFontIndirect(&cursfont);
 }
@@ -572,10 +576,10 @@ void InitSymbolFont(HDC hDC)
 
 	if ( hSYMFont != INVALID_HANDLE_VALUE ) return;
 	hSYMFont = InitOtherFont(2);
-	hOldFont = SelectObject(hDC,hSYMFont);
-	GetTextMetrics(hDC,&tm);
+	hOldFont = SelectObject(hDC, hSYMFont);
+	GetTextMetrics(hDC, &tm);
 	fontSYMY = tm.tmHeight;
-	SelectObject(hDC,hOldFont);
+	SelectObject(hDC, hOldFont);
 }
 
 HFONT GetANSIFont(void)
@@ -589,14 +593,14 @@ HFONT GetIBMFont(void)
 	return (hIBMFont = InitOtherFont(1));
 }
 
-void MakeFonts(HDC hDC,int mag)
+void MakeFonts(HDC hDC, int mag)
 {
 	HGDIOBJ hOldFont;	//一時保存用
 	TEXTMETRIC tm;
 	LCID lcid;
 	LOGFONTWITHDPI cursfont;
 										// 汎用フォント作成
-	GetPPxFont(PPXFONT_F_fix,FontDPI,&cursfont);
+	GetPPxFont(PPXFONT_F_fix, FontDPI, &cursfont);
 	if ( mag ){
 		cursfont.font.lfHeight = (cursfont.font.lfHeight * mag) / 100;
 		cursfont.font.lfWidth  = (cursfont.font.lfWidth  * mag) / 100;
@@ -604,29 +608,29 @@ void MakeFonts(HDC hDC,int mag)
 	hBoxFont = CreateFontIndirect(&cursfont.font);
 
 										// 寸法/解像度情報を入手
-	hOldFont = SelectObject(hDC,hBoxFont);
-	GetAndFixTextMetrics(hDC,&tm);
+	hOldFont = SelectObject(hDC, hBoxFont);
+	GetAndFixTextMetrics(hDC, &tm);
 	fontX = tm.tmAveCharWidth;
 
-	GetCustData(T("X_lspc"),&X_lspc,sizeof(X_lspc));
+	GetCustData(T("X_lspc"), &X_lspc, sizeof(X_lspc));
 	fontY = tm.tmHeight;
 	LineY = fontY + X_lspc;
 
 	lcid = LOWORD(GetUserDefaultLCID());
 	if ( lcid == LCID_JAPANESE ){ // 全角が半角の２倍幅になっているかチェック
-		SIZE ssize,dsize;		// ※WindowsXP より前のVerで起きる場合がある
+		SIZE ssize, dsize;		// ※WindowsXP より前のVerで起きる場合がある
 
-		GetTextExtentPoint32(hDC,T("0"),1,&ssize);
-		GetTextExtentPoint32(hDC,T("あ"),2 / sizeof(TCHAR),&dsize);
+		GetTextExtentPoint32(hDC, T("0"), 1, &ssize);
+		GetTextExtentPoint32(hDC, T("あ"), 2 / sizeof(TCHAR), &dsize);
 		fontWW = ssize.cx * 2 - dsize.cx;
 	}else{
 		fontWW = 0;
 	}
-	SelectObject(hDC,hOldFont);
+	SelectObject(hDC, hOldFont);
 
 	#if DRAWMODE != DRAWMODE_GDI
 	{
-		int w = SetFontDxDraw(DxDraw,hBoxFont,0);
+		int w = SetFontDxDraw(DxDraw, hBoxFont, 0);
 		if ( w > fontX ) fontX = w;
 	}
 	#endif
@@ -659,84 +663,84 @@ void MakeUnfixedFont(void)
 {
 	LOGFONTWITHDPI cursfont;
 
-	GetPPxFont(PPXFONT_F_unfix,0,&cursfont);
+	GetPPxFont(PPXFONT_F_unfix, 0, &cursfont);
 
 	cursfont.font.lfHeight = fontY;
 	cursfont.font.lfWidth = 0;
 	hUnfixedFont = CreateFontIndirect(&cursfont.font);
-	SetFontDxDraw(DxDraw,hUnfixedFont,1);
+	SetFontDxDraw(DxDraw, hUnfixedFont, 1);
 }
 
-int GetCustTableCID(const TCHAR *str,const TCHAR *sub,void *bin,size_t b_size)
+int GetCustTableCID(const TCHAR *str, const TCHAR *sub, void *bin, size_t b_size)
 {
-	if ( NO_ERROR == GetCustTable(str,sub,bin,b_size) ) return NO_ERROR;
-	return GetCustTable(str,(sub[1] == '\0') ? DefCID + 1 : DefCID,bin,b_size);
+	if ( NO_ERROR == GetCustTable(str, sub, bin, b_size) ) return NO_ERROR;
+	return GetCustTable(str, (sub[1] == '\0') ? DefCID + 1 : DefCID, bin, b_size);
 }
 
 // カスタマイズ内容を取得 -----------------------------------------------------
 void PPvLoadCust(void)
 {
-	GetCustTable(T("X_win"),T("V"),&X_win,sizeof(X_win));
-	GetCustData (T("X_alt")		,&X_alt,sizeof(X_alt));
-	GetCustData (T("X_iacc")	,&X_iacc,sizeof(X_iacc));
-	GetCustData (T("X_evoc")	,&X_evoc,sizeof(X_evoc));
-	GetCustData (T("X_scrm")	,&X_scrm,sizeof(X_scrm));
-	GetCustData (T("X_IME")		,&X_IME,sizeof(X_IME));
-	GetCustData (T("X_swmt")	,&X_swmt,sizeof(X_swmt));
-	AutoColor	(T("C_back")	,&C_back,COLOR_WINDOW);
-	GetCustData (T("C_line")	,&C_line,sizeof(C_line));
-	AutoColor	(T("C_mes")		,&C_mes,COLOR_WINDOWTEXT);
-	AutoColor	(T("C_info")	,&C_info,COLOR_WINDOWTEXT);
-	GetCustData (T("CV_boun")	,&CV_boun,sizeof(CV_boun));
-	GetCustData (T("CV_ctrl")	,&CV_ctrl,sizeof(CV_ctrl));
-	GetCustData (T("CV_lf")		,&CV_lf,sizeof(CV_lf));
-	GetCustData (T("CV_tab")	,&CV_tab,sizeof(CV_tab));
-	GetCustData (T("CV_spc")	,&CV_spc,sizeof(CV_spc));
-	GetCustData (T("CV_link")	,&CV_link,sizeof(CV_link));
-	GetCustData (T("CV_syn")	,&CV_syn,sizeof(CV_syn));
-	GetCustData (T("CV_lbak")	,&CV_lbak,sizeof(CV_lbak));
+	GetCustTable(T("X_win"),	T("V"), &X_win, sizeof(X_win));
+	GetCustData (T("X_alt"),	&X_alt, sizeof(X_alt));
+	GetCustData (T("X_iacc"),	&X_iacc, sizeof(X_iacc));
+	GetCustData (T("X_evoc"),	&X_evoc, sizeof(X_evoc));
+	GetCustData (T("X_scrm"),	&X_scrm, sizeof(X_scrm));
+	GetCustData (T("X_IME"),	&X_IME, sizeof(X_IME));
+	GetCustData (T("X_swmt"),	&X_swmt, sizeof(X_swmt));
+	AutoColor	(T("C_back"),	&C_back, COLOR_WINDOW);
+	GetCustData (T("C_line"),	&C_line, sizeof(C_line));
+	AutoColor	(T("C_mes"),	&C_mes, COLOR_WINDOWTEXT);
+	AutoColor	(T("C_info"),	&C_info, COLOR_WINDOWTEXT);
+	GetCustData (T("CV_boun"),	&CV_boun, sizeof(CV_boun));
+	GetCustData (T("CV_ctrl"),	&CV_ctrl, sizeof(CV_ctrl));
+	GetCustData (T("CV_lf"),	&CV_lf, sizeof(CV_lf));
+	GetCustData (T("CV_tab"),	&CV_tab, sizeof(CV_tab));
+	GetCustData (T("CV_spc"),	&CV_spc, sizeof(CV_spc));
+	GetCustData (T("CV_link"),	&CV_link, sizeof(CV_link));
+	GetCustData (T("CV_syn"),	&CV_syn, sizeof(CV_syn));
+	GetCustData (T("CV_lbak"),	&CV_lbak, sizeof(CV_lbak));
 	CV_char[CV__olddefback] = C_BLACK;
 	CV_char[CV__olddeftext] = C_DWHITE;
 	CV_char[CV__olddeftext + 1] = 0xe0e0e0e0; // = CV__defback
-	GetCustData (T("CV_char"),CV_char,sizeof(CV_char));
+	GetCustData (T("CV_char"), CV_char, sizeof(CV_char));
 	if ( CV_char[CV__olddeftext + 1] == 0xe0e0e0e0 ){
 		CV_char[CV__defback] = CV_char[CV__olddefback];
 		CV_char[CV__deftext] = CV_char[CV__olddeftext];
 		CV_char[CV__olddefback] = C_DBLACK;
 		CV_char[CV__olddeftext] = C_WHITE;
 //		CV_char[CV__olddeftext + 1] = C_DBLACK;
-		SetCustData (T("CV_char"),CV_char,sizeof(COLORREF) * 16);
+		SetCustData (T("CV_char"), CV_char, sizeof(COLORREF) * 16);
 	}
-	GetCustData (T("CV_lnum")	,CV_lnum,sizeof(CV_lnum));
-	GetCustData (T("CV_hili")	,&CV_hili,sizeof(CV_hili));
+	GetCustData (T("CV_lnum")	, CV_lnum, sizeof(CV_lnum));
+	GetCustData (T("CV_hili")	, &CV_hili, sizeof(CV_hili));
 	CV_char[CV__highlight] = CV_hili[0];
-	GetCustData (T("CV_lcsr")	,&CV_lcsr,sizeof(CV_lcsr));
+	GetCustData (T("CV_lcsr")	, &CV_lcsr, sizeof(CV_lcsr));
 
 	if ( hViewParentWnd == NULL ){
 		XV.img.MagMode = IMGD_MM_FULLSCALE;
-		GetCustTableCID(T("XV_imgD"),RegCID,&XV.img.imgD,sizeof(XV.img.imgD));
+		GetCustTableCID(T("XV_imgD"), RegCID, &XV.img.imgD, sizeof(XV.img.imgD));
 	}
-	GetCustData (T("XV_dds")	,&X_dds,sizeof(X_dds));
-	GetCustData (T("X_awhel")	,&X_awhel,sizeof(X_awhel));
-	GetCustData (T("XV_bctl")	,&XV_bctl,sizeof(XV_bctl));
+	GetCustData (T("XV_dds")	, &X_dds, sizeof(X_dds));
+	GetCustData (T("X_awhel")	, &X_awhel, sizeof(X_awhel));
+	GetCustData (T("XV_bctl")	, &XV_bctl, sizeof(XV_bctl));
 	if ( OSver.dwMajorVersion < 6 ){
 		if ( XV_bctl[0] > 2 ) XV_bctl[0] = 1;
 		if ( XV_bctl[1] > 2 ) XV_bctl[1] = 1;
 	}
-	GetCustData (T("XV_ctls")	,&XV_ctls,sizeof(XV_ctls));
+	GetCustData (T("XV_ctls")	, &XV_ctls, sizeof(XV_ctls));
 
-	GetCustData (T("XV_pctl")	,&XV_pctl,sizeof(XV_pctl));
-	GetCustData (T("XV_lnum")	,&XV_lnum,sizeof(XV_lnum));
-	GetCustData (T("XV_numt")	,&XV_numt,sizeof(XV_numt));
-	GetCustData (T("C_res")		,&C_res,sizeof(C_res));
-	GetCustData (T("X_tray")	,&X_tray,sizeof(X_tray));
-	GetCustData (T("X_fles")	,&X_fles,sizeof(X_fles));
-	GetCustData (T("XV_tmod")	,&XV_tmod,sizeof(XV_tmod));
-	GetCustData (T("X_vzs")		,&X_vzs,sizeof(X_vzs));
-	GetCustData (T("XV_drag")	,&XV_drag,sizeof(XV_drag));
-	GetCustData (T("XV_left")	,&XV_left,sizeof(XV_left));
-	GetCustData (T("XV_unff")	,&XV_unff,sizeof(XV_unff));
-	GetCustData(T("X_askp"),&X_askp,sizeof(X_askp));
+	GetCustData (T("XV_pctl")	, &XV_pctl, sizeof(XV_pctl));
+	GetCustData (T("XV_lnum")	, &XV_lnum, sizeof(XV_lnum));
+	GetCustData (T("XV_numt")	, &XV_numt, sizeof(XV_numt));
+	GetCustData (T("C_res")		, &C_res, sizeof(C_res));
+	GetCustData (T("X_tray")	, &X_tray, sizeof(X_tray));
+	GetCustData (T("X_fles")	, &X_fles, sizeof(X_fles));
+	GetCustData (T("XV_tmod")	, &XV_tmod, sizeof(XV_tmod));
+	GetCustData (T("X_vzs")		, &X_vzs, sizeof(X_vzs));
+	GetCustData (T("XV_drag")	, &XV_drag, sizeof(XV_drag));
+	GetCustData (T("XV_left")	, &XV_left, sizeof(XV_left));
+	GetCustData (T("XV_unff")	, &XV_unff, sizeof(XV_unff));
+	GetCustData(T("X_askp"), &X_askp, sizeof(X_askp));
 	if ( C_res[0] == C_AUTO) C_res[0] = GetSysColor(COLOR_HIGHLIGHTTEXT);
 	if ( C_res[1] == C_AUTO) C_res[1] = GetSysColor(COLOR_HIGHLIGHT);
 	if ( CV_char[CV__defback] == C_AUTO ) CV_char[CV__defback] = C_back;
@@ -747,21 +751,21 @@ void PPvLoadCust(void)
 	if ( X_win & XWIN_HIDETASK ) X_tray = 1;
 
 	if ( OSver.dwMajorVersion >= 6 ){
-		GetCustData(T("X_dss"),&X_dss,sizeof(X_dss));
+		GetCustData(T("X_dss"), &X_dss, sizeof(X_dss));
 	}
-	GetCustTable(T("_others"),T("pppv"),&X_pppv,sizeof(X_pppv));
+	GetCustTable(T("_others"), T("pppv"), &X_pppv, sizeof(X_pppv));
 
 	StrLoading = MessageText(MES_FLOD);
 	StrLoadingLength = tstrlen32(StrLoading);
 
-	LoadHiddenMenu(&XV.HiddenMenu,T("HM_ppv"),PPvHeap,C_mes);
+	LoadHiddenMenu(&XV.HiddenMenu, T("HM_ppv"), PPvHeap, C_mes);
 
-	UseActiveEvent = IsExistCustTable(T("KV_main"),T("ACTIVEEVENT")) ||
-		IsExistCustTable(T("KV_img"),T("ACTIVEEVENT")) ||
-		IsExistCustTable(T("KV_crt"),T("ACTIVEEVENT")) ||
-		IsExistCustTable(T("KV_page"),T("ACTIVEEVENT"));
+	UseActiveEvent = IsExistCustTable(T("KV_main"), T("ACTIVEEVENT")) ||
+		IsExistCustTable(T("KV_img"), T("ACTIVEEVENT")) ||
+		IsExistCustTable(T("KV_crt"), T("ACTIVEEVENT")) ||
+		IsExistCustTable(T("KV_page"), T("ACTIVEEVENT"));
 
-	GetCustData(T("X_pmc"),&X_pmc,sizeof(X_pmc));
+	GetCustData(T("X_pmc"), &X_pmc, sizeof(X_pmc));
 	if ( X_pmc[0] > 0 ) PPvEnterTabletMode(vinfo.info.hWnd);
 
 #ifdef USEDIRECTX
@@ -771,37 +775,37 @@ void PPvLoadCust(void)
 // カスタマイズ内容を保存 -----------------------------------------------------
 void PPvSaveCust(void)
 {
-	SetCustTable(T("_WinPos"),RegCID,&WinPos,sizeof(WinPos));
+	SetCustTable(T("_WinPos"), RegCID, &WinPos, sizeof(WinPos));
 }
 /*=============================================================================
 	Close - すべてのインスタンスが行う終了処理
 =============================================================================*/
 const EXECKEYCOMMANDSTRUCT PPvExecKeyMain =
-	{(EXECKEYCOMMANDFUNCTION)PPvCommand,T("KV_main"),NULL};
+	{(EXECKEYCOMMANDFUNCTION)PPvCommand, T("KV_main"), NULL};
 
 void ClosePPv(void)
 {
-	KillTimer(vinfo.info.hWnd,TIMERID_DRAGSCROLL);
-	ExecKeyCommand(&PPvExecKeyMain,&vinfo.info,K_E_CLOSE);
-	PPxRegist(vinfo.info.hWnd,RegID,PPXREGIST_FREE);
+	KillTimer(vinfo.info.hWnd, TIMERID_DRAGSCROLL);
+	ExecKeyCommand(&PPvExecKeyMain, &vinfo.info, K_E_CLOSE);
+	PPxRegist(vinfo.info.hWnd, RegID, PPXREGIST_FREE);
 
 	CloseViewObject();
 	vo_.file.name[0] = '\0';
 	UnloadWallpaper(&BackScreen);
 
 	if ( X_hkey != NULL ){
-		HeapFree( PPvHeap,0,X_hkey);
+		HeapFree( PPvHeap, 0, X_hkey);
 		X_hkey = NULL;
 	}
 	if ( convert == 0 ) PPvSaveCust();
 	if ( XV.HiddenMenu.data ){
-		HeapFree( PPvHeap,0,XV.HiddenMenu.data);
+		HeapFree( PPvHeap, 0, XV.HiddenMenu.data);
 		XV.HiddenMenu.data = NULL;
 	}
 
 	if ( X_win & XWIN_HIDETASK ){
 		if ( hCommonWnd != NULL ){
-			PostMessage(hCommonWnd,WM_PPXCOMMAND,KRN_freecwnd,0);
+			PostMessage(hCommonWnd, WM_PPXCOMMAND, KRN_freecwnd, 0);
 		}
 	}
 	if ( !(X_win & XWIN_MENUBAR) ) DestroyMenu(DynamicMenu.hMenuBarMenu);
@@ -834,7 +838,7 @@ void InitPPvWindow(void)
 	OSver.dwOSVersionInfoSize = sizeof(OSver);
 	GetVersionEx(&OSver);
 
-	memset(&vo_,0,sizeof(vo_));
+	memset(&vo_, 0, sizeof(vo_));
 	ThInit(&vo_.memo);
 
 	SetErrorMode(SEM_FAILCRITICALERRORS);	// 致命的エラーを取得可能にする
@@ -847,7 +851,7 @@ void InitPPvWindow(void)
 		BYTE show;
 
 		show = WinPos.show;
-		if ( NO_ERROR != GetCustTable(T("_WinPos"),RegCID,&WinPos,sizeof(WinPos)) ){
+		if ( NO_ERROR != GetCustTable(T("_WinPos"), RegCID, &WinPos, sizeof(WinPos)) ){
 			WinPos.pos.right += WinPos.pos.left;
 			WinPos.pos.bottom += WinPos.pos.top;
 		}
@@ -867,25 +871,25 @@ void InitPPvWindow(void)
 		int testtime = 200;
 
 		hCommonWnd = PPxGetHWND(T(PPTRAY_REGID) T("A"));
-		if ( hCommonWnd == NULL ) ComExec(NULL,T(PPTRAYEXE),PPvPath);
+		if ( hCommonWnd == NULL ) ComExec(NULL, T(PPTRAYEXE), PPvPath);
 		while( (hCommonWnd == NULL) || (hCommonWnd == BADHWND) ){
 			Sleep(50);
 			hCommonWnd = PPxGetHWND(T(PPTRAY_REGID) T("A"));
 			if ( --testtime == 0 ) break;
 		}
-		hCommonWnd = (HWND)SendMessage(hCommonWnd,WM_PPXCOMMAND,KRN_getcwnd,0);
+		hCommonWnd = (HWND)SendMessage(hCommonWnd, WM_PPXCOMMAND, KRN_getcwnd, 0);
 	}
 	C_BackBrush = CreateSolidBrush(C_back);
 	hStatusLine = CreateSolidBrush(C_line);
 										// search 呼び出し
 	UsePPx();
-	p = EnumHistory(PPXH_SEARCH,0);
+	p = EnumHistory(PPXH_SEARCH, 0);
 	if ( p ){
-		tstrcpy(VOsel.VSstring,p);
+		tstrcpy(VOsel.VSstring, p);
 		#ifdef UNICODE
-			UnicodeToAnsi(VOsel.VSstringW,VOsel.VSstringA,VFPS);
+			UnicodeToAnsi(VOsel.VSstringW, VOsel.VSstringA, VFPS);
 		#else
-			AnsiToUnicode(VOsel.VSstringA,VOsel.VSstringW,VFPS);
+			AnsiToUnicode(VOsel.VSstringA, VOsel.VSstringW, VFPS);
 		#endif
 	}
 	FreePPx();
@@ -896,13 +900,13 @@ void InitPPvWindow(void)
 	wcClass.cbWndExtra		= 0;
 	wcClass.hInstance		= hInst;
 	wcClass.hIcon			= LoadIcon(hInst, MAKEINTRESOURCE(Ic_PPV));
-	wcClass.hCursor			= LoadCursor(NULL,IDC_ARROW);
+	wcClass.hCursor			= LoadCursor(NULL, IDC_ARROW);
 	wcClass.hbrBackground	= NULL;
 	wcClass.lpszMenuName	= NULL;
 	wcClass.lpszClassName	= T(PPVWinClass);
 											// クラスを登録する
 	RegisterClass(&wcClass);
-	InitDynamicMenu(&DynamicMenu,T("MV_menu"),ppvbar);
+	InitDynamicMenu(&DynamicMenu, T("MV_menu"), ppvbar);
 										// ウィンドウを作成 -------------------
 	if ( hViewParentWnd == NULL ){
 		style = (X_win & XWIN_NOTITLE) ? WS_NOTITLEOVERLAPPED : WS_OVERLAPPEDWINDOW;
@@ -916,7 +920,7 @@ void InitPPvWindow(void)
 
 			style = WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
 			hUseParentWnd = hViewParentWnd;
-			setflag(X_win,XWIN_HIDESCROLL);
+			setflag(X_win, XWIN_HIDESCROLL);
 			XV.img.MagMode = IMGD_AUTOWINDOWSIZE;
 			viewopt_def.I_animate = 1;
 		}else{ // -popup(埋め込み用途)
@@ -930,20 +934,20 @@ void InitPPvWindow(void)
 		WinPos.pos.right - WinPos.pos.left, WinPos.pos.bottom - WinPos.pos.top,
 		hUseParentWnd, NULL, hInst, NULL);
 	PPxRegist(vinfo.info.hWnd, RegID, PPXREGIST_SETHWND);
-	wsprintf(buf,T("PPV[%c]"),RegID[2]);
-	SetWindowText(vinfo.info.hWnd,buf);
+	wsprintf(buf, T("PPV[%c]"), RegID[2]);
+	SetWindowText(vinfo.info.hWnd, buf);
 
 	hDC = GetDC(vinfo.info.hWnd);
-	CreateDxDraw(&DxDraw,vinfo.info.hWnd);
-	MakeFonts(hDC,X_textmag);
-	VideoBits = GetDeviceCaps(hDC,BITSPIXEL);
-	ReleaseDC(vinfo.info.hWnd,hDC);
-	InitSystemDynamicMenu(&DynamicMenu,vinfo.info.hWnd);
+	CreateDxDraw(&DxDraw, vinfo.info.hWnd);
+	MakeFonts(hDC, X_textmag);
+	VideoBits = GetDeviceCaps(hDC, BITSPIXEL);
+	ReleaseDC(vinfo.info.hWnd, hDC);
+	InitSystemDynamicMenu(&DynamicMenu, vinfo.info.hWnd);
 	VFSOn(VFS_DIRECTORY | VFS_BMP);
 
 	BackScreen.hOffScreenDC = NULL;
 	BackScreen.X_WPbmp.DIB = NULL;
-	LoadWallpaper(&BackScreen,vinfo.info.hWnd,RegCID);
+	LoadWallpaper(&BackScreen, vinfo.info.hWnd, RegCID);
 	FullDraw = X_fles | BackScreen.X_WallpaperType;
 	if ( BackScreen.X_WallpaperType ) X_scrm = 0;
 	InitGui();

@@ -163,7 +163,11 @@ GVAR HWND hUpdateResultWnd GPARAM(NULL); // カスタマイズログ(終了時に閉じる為)
 GVAR int X_es	GPARAM(0x1d);	// 拡張シフトのコード
 GVAR int X_mwid	GPARAM(60);		// メニューの最大桁数(要PPx再起動)
 GVAR int X_dss	GPARAM(DSS_NOLOAD);	// 画面自動スケーリング
-GVAR DWORD X_flst[2] GPARAM2(0, 1);
+GVAR DWORD X_flst[3]
+#ifndef GLOBALEXTERN
+	= { 0, 1, 0 };
+#endif
+;
 #define NOMESSAGETEXT (BYTE *)BADPTR	// 読み込みできない場合の値
 GVAR BYTE *MessageTextTable GPARAM(NULL);	// 表示メッセージ用テーブル
 GVAR DWORD X_jinfo[4]

@@ -176,7 +176,7 @@ VFSDLL int PPXAPI VFSGetDibDelay(const TCHAR *filename, void *image, DWORD sizeL
 #endif
 	if ( susie_items && (sizeL > 4) ){
 		TCHAR *SpiName;
-		BYTE headerbuf[0x800], *hptr;
+		BYTE headerbuf[SUSIE_CHECK_SIZE], *hptr;
 		BOOL usepreview = FALSE;
 
 		EnterCriticalSection(&ArchiveSection[VFSAS_SUSIE]);
@@ -207,10 +207,11 @@ VFSDLL int PPXAPI VFSGetDibDelay(const TCHAR *filename, void *image, DWORD sizeL
 		}
 		#endif
 
-		if ( sizeL >= 0x800 ){
+		if ( sizeL >= SUSIE_CHECK_SIZE ){
 			hptr = image;
 		}else{
 			memcpy(headerbuf, image, sizeL);
+			memset(headerbuf + sizeL, 0, SUSIE_CHECK_SIZE - sizeL);
 			hptr = headerbuf;
 		}
 		if ( (DWORD_PTR)type == 1 ) usepreview = TRUE;

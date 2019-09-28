@@ -856,15 +856,8 @@ BOOL USEFASTCALL WmCopyData(PPC_APPINFO *cinfo, COPYDATASTRUCT *copydata, WPARAM
 		}
 
 		case 0x100 + 'H': // コマンド実行
-		case 'H':{ // コマンド実行(非同期)
-			TCHAR cmd[CMDLINESIZE * 3];
-
-			if ( copydata->cbData >= sizeof(cmd) ) return FALSE;
-			tstrcpy(cmd, (TCHAR *)copydata->lpData);
-			if ( LOWORD(copydata->dwData) == 'H' ) ReplyMessage(TRUE);
-			PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, cmd, NULL, 0);
-			return TRUE;
-		}
+		case 'H': // コマンド実行(非同期)
+			return RecvExecuteByWMCopyData(&cinfo->info, copydata);
 
 		case KC_StDS:
 			SetCountedDirectorySize(cinfo, (struct dirinfo *)copydata->lpData);
@@ -1387,7 +1380,8 @@ void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo, WPARAM wParam)
 		if ( (wParam & MK_SHIFT) &&
 			 ((area == PPCR_CELLMARK) || (area == PPCR_CELLTEXT)) ){
 			ENTRYINDEX cellold;
-			ENTRYINDEX i, f;
+			ENTRYINDEX i;
+			int mode;
 
 			cellold = cinfo->e.cellN;
 			if ( XC_msel[1] && (cinfo->e.markC > 0) ){
@@ -1399,11 +1393,11 @@ void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo, WPARAM wParam)
 			}
 			cinfo->MarkMask = MARKMASK_DIRFILE;
 			if ( XC_msel[0] == 2 ) ClearMark(cinfo);
-			f = !IsCEL_Marked(itemno);
-			if ( itemno < cellold){
-				for ( i = itemno ; i <= cellold ; i++ ) CellMark(cinfo, i, f);
+			mode = !IsCEL_Marked(itemno);
+			if ( itemno < cellold ){
+				for ( i = itemno ; i <= cellold ; i++ ) CellMark(cinfo, i, mode);
 			}else{
-				for ( i = cellold ; i <= itemno ; i++ ) CellMark(cinfo, i, f);
+				for ( i = cellold ; i <= itemno ; i++ ) CellMark(cinfo, i, mode);
 			}
 			Repaint(cinfo);
 			return;
@@ -1791,18 +1785,8 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 
-		case K_EXTRACT:{
-			TCHAR *mptr;
-
-			mptr = MapViewOfFile((HANDLE)lParam,
-						FILE_MAP_ALL_ACCESS, 0, 0, CMDLINESIZE);
-			if ( mptr == NULL ) break;
-
-			PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, mptr, mptr, XEO_EXTRACTEXEC);
-			UnmapViewOfFile(mptr);
-			CloseHandle((HANDLE)lParam);
-			break;
-		}
+		case K_EXTRACT:
+			return ReceiveExtractCall(&cinfo->info, wParam, lParam);
 
 		case KC_RELOAD:
 			// 現在パスと異なる場合は無視

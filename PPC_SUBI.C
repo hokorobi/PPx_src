@@ -31,7 +31,7 @@ const IID XIID_IShellItem =
 {0x43826d1e, 0xe718, 0x42ee, {0xbc, 0x55, 0xa1, 0xe2, 0x61, 0xc3, 0x7b, 0xfe}};
 const CLSID XCLSID_LocalThumbnailCache =
 {0x50EF4544, 0xAC9F, 0x4A8E, {0xB2, 0x1B, 0x8A, 0x26, 0x18, 0x0D, 0xB1, 0x3F}};
-// IID XIID_ISharedBitmap = {0x091162a4,0xbc96,0x411f,{0xaa,0xe8,0xc5,0x12,0x2c,0xd0,0x33,0x63}};
+// IID XIID_ISharedBitmap = {0x091162a4, 0xbc96, 0x411f,{0xaa, 0xe8, 0xc5, 0x12, 0x2c, 0xd0, 0x33, 0x63}};
 
 enum x_SIIGBF
 {
@@ -291,8 +291,9 @@ BOOL SearchCacheIcon(PPC_APPINFO *cinfo, ENTRYCELL *celltmp, int iconmode, Overl
 			CacheIconList.top = 0;
 		}
 	}
-		// 非同期読み込みのキャッシュ使用時は、新たに読み込みしない
-	if ( cinfo->e.Dtype.ExtData == INVALID_HANDLE_VALUE ) return TRUE;
+	// キャッシュヒット無し
+	// 非同期読み込みのキャッシュ使用時は、新たに読み込みしない
+	if ( (cinfo->e.Dtype.ExtData == INVALID_HANDLE_VALUE) && IsTrue(cinfo->SlowMode) ) return TRUE;
 
 	hIcon = LoadIcons(cinfo, celltmp, CacheIconsY, iconmode, LayPtr);
 	if ( hIcon == NULL ){
@@ -438,7 +439,7 @@ HICON LoadIconDx(const TCHAR *IDorDLLname, int index, int iconsize)
 			if ( fiid.resid != 0 ){
 				hIcon = LoadImage(hResFile, fiid.resid, IMAGE_ICON, iconsize, iconsize, LR_DEFAULTCOLOR);
 			}
-//			if ( hIcon == NULL ) XMessage(NULL,NULL,XM_DbgLOG,T("%s %d"),IDorDLLname,index);
+//			if ( hIcon == NULL ) XMessage(NULL, NULL, XM_DbgLOG, T("%s %d"), IDorDLLname, index);
 		}
 		if ( freedll ) FreeLibrary(hResFile);
 		return hIcon;
@@ -661,7 +662,7 @@ void FreeOverlayClass(OverlayClassTable *oc)
 
 // オーバレイアイコンの検出と描画
 // ガイドライン 16x16:10 32x32:16 48x48:24 256x256:128
-// shell32 サイズ一覧:16,20,24,32,40,48,64,256
+// shell32 サイズ一覧:16 20 24 32  40 48 64 256
 void DrawOverlayIcon(OverlayClassTable **LayPtr, HBITMAP targetbmp, const TCHAR *filename, DWORD attr, UINT iconsize, DWORD *DrawX)
 {
 	OverlayClass **UseLayPtr, *TempOC, *ocp;
@@ -792,8 +793,8 @@ HICON LoadFileIcon(const TCHAR *filename, DWORD attr, DWORD flags, UINT iconsize
 		return shfinfo.hIcon;
 	}
 	if ( !(flags & SHGFI_PIDL) ){
-//		isi = GetPathInterface(NULL,filename,&XIID_IShellItem,NULL);
-//		XMessage(NULL,NULL,XM_DbgLOG,T("%d"),isi);
+//		isi = GetPathInterface(NULL, filename, &XIID_IShellItem, NULL);
+//		XMessage(NULL, NULL, XM_DbgLOG, T("%d"), isi);
 		if ( (pidl = PathToPidl(filename)) == NULL ) return NULL;
 	} else{
 		pidl = (ITEMIDLIST *)filename;
@@ -825,8 +826,8 @@ HICON LoadFileIcon(const TCHAR *filename, DWORD attr, DWORD flags, UINT iconsize
 					DWORD DrawX = 0;
 /*
 			BITMAP bmpobj;
-			GetObject(iinfo.hbmColor,sizeof(BITMAP),&bmpobj);
-			XMessage(NULL,NULL,XM_DbgLOG,T("> %s %d"),filename,bmpobj.bmWidth);
+			GetObject(iinfo.hbmColor, sizeof(BITMAP), &bmpobj);
+			XMessage(NULL, NULL, XM_DbgLOG, T("> %s %d"), filename, bmpobj.bmWidth);
 */
 					// オーバレイアイコンの検出と描画
 					if ( flags & SHGFI_ADDOVERLAYS ){
@@ -858,7 +859,7 @@ HICON LoadFileIcon(const TCHAR *filename, DWORD attr, DWORD flags, UINT iconsize
 						bi.h.biCompression = 0;
 						bi.bmiColors[0] = C_BLACK;
 						bi.bmiColors[1] = C_WHITE;
-						iinfo.hbmMask = CreateDIBitmap(NULL,&bi.h,0,(BITMAPINFO *)&bi,NULL,DIB_PAL_COLORS);
+						iinfo.hbmMask = CreateDIBitmap(NULL, &bi.h, 0, (BITMAPINFO *)&bi, NULL, DIB_PAL_COLORS);
 mas
 					}
 */
@@ -1838,7 +1839,7 @@ BOOL GetExplorerThumbnail(const TCHAR *filename, HTBMP *hTBmp, int thumsize)
 		}
 		FreePIDL(pidl);
 		if ( hBmp == NULL ) result = FALSE;
-	} else{ // 2000,XP
+	} else{ // 2000, XP
 		xIExtractImage *iei;
 		DWORD priority, flag = 0;
 		SIZE imgsize;
@@ -1874,7 +1875,6 @@ BOOL GetExplorerThumbnail(const TCHAR *filename, HTBMP *hTBmp, int thumsize)
 		if ( hTBmp->info == NULL ) return FALSE;
 		bmp = (BITMAPINFO *)LocalLock(hTBmp->info);
 		hTBmp->DIB = &bmp->bmiHeader;
-//XMessage(NULL,NULL,XM_DbgLOG,T("/%s %d"),filename,bmp->bmiHeader.biBitCount);
 		bmp->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 		bmp->bmiHeader.biBitCount = 0;
 		GetDIBits(hdc, hBmp, 0, thumsize, NULL, bmp, DIB_RGB_COLORS);

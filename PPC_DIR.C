@@ -533,12 +533,9 @@ HANDLE FixReadDirectoryError(PPC_APPINFO *cinfo, struct readprogress *rps, int *
 		errcode = ERROR_FILE_NOT_FOUND;
 		tstrcpy(buf, MessageText(StrNoEntries));
 	}
-	SetDummyCell(&CELdata(0), buf);
-	CELdata(0).f.dwFileAttributes = FILE_ATTRIBUTEX_MESSAGE;
-	setflag(CELdata(0).attr, ECA_PARENT);
-	CELdata(0).f.nFileSizeLow = errcode;
+
 	if ( rdirmask & ECAX_FORCER ){
-		cinfo->e.cellIMax = 0;
+		cinfo->e.cellIMax = 0; // 1→0 に戻す
 		cinfo->e.cellDataMax = 0;
 		if ( !(rdirmask & ECA_THIS) ){
 			SetDummyRelativeDir(cinfo, T("."), ECA_DIR | ECA_THIS, ECT_THISDIR);
@@ -546,10 +543,19 @@ HANDLE FixReadDirectoryError(PPC_APPINFO *cinfo, struct readprogress *rps, int *
 		if ( !(rdirmask & ECA_PARENT) ){
 			SetDummyRelativeDir(cinfo, T(".."), ECA_DIR | ECA_PARENT, ECT_UPDIR);
 		}
-		cinfo->e.cellDataMax++;
+		cinfo->e.cellDataMax++; // message entry 分を再確保
 		cinfo->e.cellIMax++;
 	}
-	// CELt(0) = 0; 前で処理済み
+	{
+		ENTRYCELL *cell;
+
+		cell = &CELdata(cinfo->e.cellDataMax - 1);
+		SetDummyCell(cell, buf);
+		cell->f.dwFileAttributes = FILE_ATTRIBUTEX_MESSAGE;
+		setflag(cell->attr, ECA_PARENT);
+		cell->f.nFileSizeLow = errcode;
+		CELt(cinfo->e.cellIMax - 1) = cinfo->e.cellDataMax - 1;
+	}
 	//ACCEPTRELOADMODE_NEW;
 	return INVALID_HANDLE_VALUE;
 }
@@ -1796,7 +1802,8 @@ void UpdateEntry(PPC_APPINFO *cinfo, TCHAR *readpath, int *flag, TCHAR *mask)
 					}
 
 					if ( cinfo->e.cellStack ){	// スタックがあれば移動
-						memmove(&CELt(cinfo->e.cellIMax+1), &CELt(cinfo->e.cellIMax),
+						memmove(&CELt(cinfo->e.cellIMax + 1),
+								&CELt(cinfo->e.cellIMax),
 								sizeof(ENTRYINDEX) * (cinfo->e.cellStack) );
 					}
 					CELt(cinfo->e.cellIMax) = cinfo->e.cellDataMax;
@@ -2018,17 +2025,6 @@ void ReadEntryMain(PPC_APPINFO *cinfo, TCHAR *readpath, int *flags, TCHAR *mask)
 		cinfo->LoadCounter++; // 読み込めた。誤って更新が来ても良いようにカウントを変更
 	}
 
-	if ( (rdirmask & ECAX_FORCER) &&
-		 !IsRelativeDir(CELdata(0).f.cFileName) &&
-		 (cinfo->e.Dtype.mode != VFSDT_DLIST) ){
-		if ( !(rdirmask & ECA_THIS) ){
-			SetDummyRelativeDir(cinfo, T("."), ECA_DIR | ECA_THIS, ECT_THISDIR);
-		}
-		if ( !(rdirmask & ECA_PARENT) ){
-			SetDummyRelativeDir(cinfo, T(".."), ECA_DIR | ECA_PARENT, ECT_UPDIR);
-		}
-	}
-
 	DEBUGLOGC("ReadEntryMain loop start", 0);
 	for ( ; ; ){
 		ENTRYCELL *cell;
@@ -2156,6 +2152,38 @@ void ReadEntryMain(PPC_APPINFO *cinfo, TCHAR *readpath, int *flags, TCHAR *mask)
 	FreeFN_REGEXP(&namemask.FileMask);
 	FindCloseAsync(hFF, flagdata);
 
+	// 相対 dir 強制挿入
+	if ( (rdirmask & ECAX_FORCER) && (cinfo->e.Dtype.mode != VFSDT_DLIST) ){
+		ENTRYINDEX insertindex = 0;
+
+		if ( TM_check(&cinfo->e.CELLDATA,
+				sizeof(ENTRYCELL) * (cinfo->e.cellDataMax + 3)) == FALSE ){
+			errorcode = ERROR_OUTOFMEMORY;
+		}
+		if ( TM_check(&cinfo->e.INDEXDATA,
+				sizeof(ENTRYINDEX) * (cinfo->e.cellDataMax + 3)) == FALSE ){
+			errorcode = ERROR_OUTOFMEMORY;
+		}
+		if ( errorcode != ERROR_OUTOFMEMORY ){
+			if ( CEL(0).type == ECT_THISDIR ){
+				insertindex++;
+			}else if ( !(rdirmask & ECA_THIS) ){
+				SetDummyRelativeDir(cinfo, T("."), ECA_DIR | ECA_THIS, ECT_THISDIR);
+				// index先頭に挿入
+				memmove(&CELt(1), &CELt(0),
+						sizeof(ENTRYINDEX) * (cinfo->e.cellIMax - 1) );
+				CELt(0) = cinfo->e.cellDataMax - 1;
+				insertindex++;
+			}
+			if ( !(rdirmask & ECA_PARENT) && (CEL(insertindex).type != ECT_UPDIR) ){
+				SetDummyRelativeDir(cinfo, T(".."), ECA_DIR | ECA_PARENT, ECT_UPDIR);
+				// index前方に挿入
+				memmove(&CELt(insertindex + 1), &CELt(insertindex),
+						sizeof(ENTRYINDEX) * (cinfo->e.cellIMax - insertindex - 1) );
+				CELt(insertindex) = cinfo->e.cellDataMax - 1;
+			}
+		}
+	}
 											// 後回しにしたソートを実行する
 	if ( (cs.SortF != NULL) && (sorttime == MAX32) ){
 		int minc;
@@ -2732,15 +2760,14 @@ void SetDummyRelativeDir(PPC_APPINFO *cinfo, const TCHAR *name, BYTE attr, BYTE 
 	ENTRYCELL *cell;
 
 	cell = &CELdata(cinfo->e.cellDataMax);
-	CELdata(cinfo->e.cellDataMax + 1) = *cell;
 	SetDummyCell(cell, name);
 	cell->f.dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY;
 	cell->state = ECS_NORMAL;
 	cell->attr = attr;
 	cell->type = type;
+	CELt(cinfo->e.cellIMax) = cinfo->e.cellDataMax;
 	cinfo->e.cellDataMax++;
 	cinfo->e.cellIMax++;
-	CELt(cinfo->e.cellIMax) = cinfo->e.cellDataMax;
 }
 
 // 指定パスに関する設定を取得する

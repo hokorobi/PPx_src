@@ -66,35 +66,35 @@ struct ComboList {	// コンボボックス処理用リストボックス
 #define PPXEDIT_LINECSR		B30	// Line cursor
 
 typedef struct tagPPxEDSTRUCT {
-	PPXAPPINFO *info;	// ※必ず構造体の先頭に配置すること！
-	HWND	hWnd;		// 自分自身の hWnd
-	HWND	hTreeWnd;	// ツリー表示用ウィンドウ
+	PPXAPPINFO *info;	// 親のcallback ※必ず構造体の先頭に配置すること！
+	HWND hWnd;		// 自分自身の hWnd
+	HWND hTreeWnd;	// ツリー表示用ウィンドウ
 	struct {
-		HWND	hWnd, hToolBarWnd;	// 浮遊ツールバー用ウィンドウ
+		HWND hWnd, hToolBarWnd;	// 浮遊ツールバー用ウィンドウ
 		ThSTRUCT Cmd;
 	} FloatBar;
 	WNDPROC hOldED;		// 元のウィンドウプロージャ
-	int		flags;		// PPxRegistExEdit の PPXEDIT_ と同じ
 	const TCHAR *AKey;	// 追加キー割当て
 	CALLBACKMODULEENTRY KeyHookEntry;		// キー入力拡張モジュール
+	int flags;		// PPxRegistExEdit の PPXEDIT_ と同じ
 					// GUI情報
-	DWORD	style;		// Window style
-	DWORD	exstyle;	// Window exstyle
-	DWORD	fontY, OrgFontY;	// 文字高さ,初期文字高さ
-	int		caretY;		// カレットのY
-	DWORD	caretLY;	// カレットの行数Y
-	int		tab;		// TAB 幅(ダイアログ単位)
+	DWORD style;		// Window style
+	DWORD exstyle;	// Window exstyle
+	DWORD fontY, OrgFontY;	// 文字高さ,初期文字高さ
+	int caretY;		// カレットのY
+	DWORD caretLY;	// カレットの行数Y
+	int tab;		// TAB 幅(ダイアログ単位)
 					// テキスト情報
-	int		CrCode;		// 保存時に使用する改行コード
-	int		CharCode;	// 保存時に使用する文字コード
+	int CrCode;		// 保存時に使用する改行コード
+	int CharCode;	// 保存時に使用する文字コード
 					// 補完
-	ESTRUCT	ED;			// GUI/CUI 共通構造体
+	ESTRUCT ED;			// GUI/CUI 共通構造体
 					// サーチ中の判断に使用
-	WORD	oldkey;		// 直前の入力キー
-	WORD	oldkey2;	// 直前の入力キー
-	TCHAR	filename[VFPS];
+	WORD oldkey;	// 直前の入力キー
+	WORD oldkey2;	// 直前の入力キー
+	TCHAR filename[VFPS];
 	struct PPeFindReplace *findrep;
-	BOOL	mousepos;	// メニューの表示位置 FALSE:キー操作 TRUE:マウス操作
+	BOOL mousepos;	// メニューの表示位置 FALSE:キー操作 TRUE:マウス操作
 						// 一覧表示関係
 	struct ComboList list;
 
@@ -217,8 +217,8 @@ extern void LineCursor(PPxEDSTRUCT *PES, DWORD mes);
 extern void USEFASTCALL SetMessageForEdit(HWND hWnd, const TCHAR *message);
 
 #ifndef UNICODE
-extern void GetEditSel(HWND hWnd, TCHAR *buf, ECURSOR *cursor);
-extern void SetEditSel(HWND hWnd, TCHAR *buf, DWORD start, DWORD end);
+extern void GetEditSel(HWND hWnd, const TCHAR *buf, ECURSOR *cursor);
+extern void SetEditSel(HWND hWnd, const TCHAR *buf, DWORD start, DWORD end);
 #else
 #define GetEditSel(hWnd, buf, cursor) SendMessage(hWnd, EM_GETSEL, (WPARAM)cursor.start, (LPARAM)cursor.end)
 #define SetEditSel(hWnd, buf, start, end) SendMessage(hWnd, EM_SETSEL, start, end)

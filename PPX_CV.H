@@ -63,6 +63,8 @@ extern HMODULE hDwmapi;
 
 extern BOOL X_awhel;
 
+extern BOOL RecvExecuteByWMCopyData(PPXAPPINFO *info, COPYDATASTRUCT *copydata);
+extern LRESULT ReceiveExtractCall(PPXAPPINFO *info, WPARAM wParam, LPARAM lParam);
 extern void AutoColor(const TCHAR *str, COLORREF *clr, int def);
 // ï∂éöóÒëÄçÏ
 extern TCHAR USEFASTCALL upper(TCHAR c);

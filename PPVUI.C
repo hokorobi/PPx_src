@@ -105,18 +105,8 @@ void GetSelectText(TCHAR *destptr)
 LRESULT PPvPPxCommand(PPV_APPINFO *vinfo, WPARAM wParam, LPARAM lParam)
 {
 	switch ( LOWORD(wParam) ){
-		case K_EXTRACT: {
-			TCHAR *p;
-
-			p = MapViewOfFile((HANDLE)lParam,
-					FILE_MAP_ALL_ACCESS, 0, 0, CMDLINESIZE);
-			if ( p == NULL ) break;
-
-			PP_ExtractMacro(vinfo->info.hWnd, &vinfo->info, NULL, p, p, 0);
-			UnmapViewOfFile(p);
-			CloseHandle((HANDLE)lParam);
-			break;
-		}
+		case K_EXTRACT:
+			return ReceiveExtractCall(&vinfo->info, wParam, lParam);
 
 		case KV_FOCUS:
 			ForceSetForegroundWindow(lParam ? (HWND)lParam : hViewReqWnd);
@@ -160,7 +150,7 @@ LRESULT PPvPPxCommand(PPV_APPINFO *vinfo, WPARAM wParam, LPARAM lParam)
 		default:
 			PPvCommand(vinfo, LOWORD(wParam));
 	}
-	return 0;
+	return NO_ERROR;
 }
 
 int CallKeyHook(WORD key)
@@ -913,18 +903,11 @@ void CALLBACK DragProc(HWND hWnd, UINT msg, UINT_PTR id, DWORD work)
 	}
 }
 
-BOOL USEFASTCALL WmCopyData(HWND hWnd, COPYDATASTRUCT *copydata)
+BOOL USEFASTCALL WmCopyData(COPYDATASTRUCT *copydata)
 {
 	switch(LOWORD(copydata->dwData)){
-		case 'H':{
-			TCHAR cmd[0x1000];
-
-			if ( copydata->cbData >= sizeof(cmd) ) return FALSE;
-			tstrcpy(cmd, (TCHAR *)copydata->lpData);
-			ReplyMessage(TRUE);
-			PP_ExtractMacro(hWnd, &vinfo.info, NULL, cmd, NULL, 0);
-			return TRUE;
-		}
+		case 'H':
+			return RecvExecuteByWMCopyData(&vinfo.info, copydata);
 	}
 	return FALSE;
 }
@@ -1706,7 +1689,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			return 1;
 
 		case WM_COPYDATA:
-			return WmCopyData(hWnd, (COPYDATASTRUCT *)lParam);
+			return WmCopyData((COPYDATASTRUCT *)lParam);
 
 		case WM_DROPFILES:
 			DoDropFiles(hWnd, (HDROP)wParam);

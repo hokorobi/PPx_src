@@ -17,6 +17,8 @@
 
 #define GetIcon2Len(iconsize) ((iconsize + 7) / 8) // アイコンpixを文字列長に変換
 
+#define DE_FN_ALL_WIDTH	0xff // ファイル名部の長さの制限が無い
+#define DE_FN_WITH_EXT	0xff // 拡張子はファイル名に続いて描画
 // static 系
 #define DE_END	0
 #define DE_SKIP	38

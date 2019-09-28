@@ -34,9 +34,9 @@ PPXINMENU barFile[] = {
 	{(DWORD_PTR)T("*pack \"%2%\\|%X|\" %Or-"),	T("&Pack...\tP")},
 	{(DWORD_PTR)T("*pack \"|%2%\\|\",indiv %Or-"),	T("individual Pack...")},
 	{'X',	T("Execute...\tX")},
-	{PPXINMENY_SEPARATE,NULL},
+	{PPXINMENY_SEPARATE, NULL},
 	{K_c | 'D',	T("D&&D...\tCtrl+D")},
-	{PPXINMENY_SEPARATE,NULL},
+	{PPXINMENY_SEPARATE, NULL},
 	{'D',	T("&Delete to recycle bin\tD")},
 	{K_s | 'D',	T("Delete\tShift+D")},
 	{'R',		T("&Rename...\tR")},
@@ -301,23 +301,23 @@ extern void GetIDLSub(TCHAR *path, LPSHELLFOLDER pSF, LPITEMIDLIST pSHidl);
 #else
 void GetIDLSub(TCHAR *path, LPSHELLFOLDER pSF, LPITEMIDLIST pSHidl)
 {
-	TCHAR *p;
-	BYTE *d;
+	TCHAR *destp;
+	BYTE *idlPtr;
 
 	tstrcpy(path, T("#:\\"));
-	p = path + 3;
-	d = (BYTE *)pSHidl;
-	while( *(WORD *)d ){
+	destp = path + 3; // '\0'
+	idlPtr = (BYTE *)pSHidl;
+	while( *(WORD *)idlPtr != 0 ){
 		WORD *nextp, old;
 
-		nextp = (WORD *)(BYTE *)(d + *(WORD *)d);
+		nextp = (WORD *)(BYTE *)(idlPtr + *(WORD *)idlPtr);
 		old = *nextp;
 		*nextp = 0;
-		if ( FALSE == PIDL2DisplayNameOf(p, pSF, pSHidl) ) break;
-		*(p - 1) = '\\';
-		p += tstrlen(p) + 1;
+		if ( FALSE == PIDL2DisplayNameOf(destp, pSF, pSHidl) ) break;
+		*(destp - 1) = '\\'; // '\0'→'\\'
+		destp += tstrlen(destp) + 1;
 		*nextp = old;
-		d = (BYTE *)nextp;
+		idlPtr = (BYTE *)nextp;
 	}
 }
 #endif
@@ -454,7 +454,7 @@ BOOL LoadParam(PPCSTARTPARAM *psp, const TCHAR *param)
 	OneInfoStruct one;
 	TCHAR buf[CMDLINESIZE];
 	BOOL modify = FALSE;
-	const TCHAR *more;
+	TCHAR *more;
 	UTCHAR code;
 
 	one.RegMode = PPXREGIST_NORMAL;
@@ -481,7 +481,7 @@ BOOL LoadParam(PPCSTARTPARAM *psp, const TCHAR *param)
 	ThInit(&psp->th);
 	InitPspo(&one);
 
-	while( '\0' != (code = GetOptionParameter(&param, buf, CONSTCAST(TCHAR **, &more))) ){
+	while( '\0' != (code = GetOptionParameter(&param, buf, &more)) ){
 		if ( (code != '-') || (buf[1] == '#') ||
 			 (tstrcmp(buf, T("-SHELL")) == 0) ){	// ディレクトリ指定
 			if ( (code == '-') && (buf[1] == 'S') ){ // -shell: 形式
@@ -599,7 +599,7 @@ BOOL LoadParam(PPCSTARTPARAM *psp, const TCHAR *param)
 				one.pspo.combo.pane = PSPONE_PANE_RIGHTPANE;
 			}else{
 				if ( *more == 'l' ) more++;
-				one.pspo.combo.pane = GetNumber(&more) + PSPONE_PANE_SETPANE;
+				one.pspo.combo.pane = GetNumber((const TCHAR **)&more) + PSPONE_PANE_SETPANE;
 				if ( one.pspo.combo.pane < PSPONE_PANE_SETPANE ){
 					one.pspo.combo.pane = PSPONE_PANE_DEFAULT;
 				}
@@ -634,8 +634,14 @@ BOOL LoadParam(PPCSTARTPARAM *psp, const TCHAR *param)
 		}
 									//	"CHOOSE:EDIT/D&D/CON"
 		if ( !tstrcmp( buf + 1, T("CHOOSE") )){
+			TCHAR *format;
 			one.pspo.combo.use = 0;
 			X_combo = 0;
+			format = tstrchr(more, ',');
+			if ( format != NULL ){
+				*format = '\0';
+				ThSetString(NULL, T("CHOOSE"), format + 1);
+			}
 			switch ( TinyCharUpper(*more) ){
 				case 'E':
 					hChooseWnd = GetDestChoose();
@@ -672,9 +678,9 @@ BOOL LoadParam(PPCSTARTPARAM *psp, const TCHAR *param)
 			DWORD SHid;
 
 			if ( *more == ':' ) more++;
-			hSHmem = (HANDLE)GetNumber(&more);
+			hSHmem = (HANDLE)GetNumber((const TCHAR **)&more);
 			if ( *more == ':' ) more++;
-			SHid = GetDwordNumber(&more);
+			SHid = GetDwordNumber((const TCHAR **)&more);
 			GetIDLdigit(one.pspo.path, hSHmem, SHid);
 			if ( *param ){
 				tstrcpy(one.pspo.path, param);
@@ -1169,15 +1175,15 @@ void PPcLoadCust(PPC_APPINFO *cinfo)
 	work[0] = work[1] = 1;	// 「.」「..」を表示
 	work[2] = 0;	// 強制表示はしない
 	GetCustData (T("XC_tdir"), &work, sizeof(DWORD) * 3);
-	rdirmask = 0;
+	rdirmask = 0; // 「.」「..」は表示
 
 	if ( X_ChooseMode != CHOOSEMODE_NONE ){
 		setflag(rdirmask, ECAX_FORCER); // choose時は「.」を強制表示
 	}else{
-		if ( !work[0] ) setflag(rdirmask, ECA_THIS); // 「.」は非表示
-		if ( work[2] ) setflag(rdirmask, B31); // 強制表示
+		if ( work[0] == 0 ) setflag(rdirmask, ECA_THIS); // 「.」は非表示
+		if ( work[2] != 0 ) setflag(rdirmask, ECAX_FORCER); // 強制表示
 	}
-	if ( !work[1] ) setflag(rdirmask, ECA_PARENT); // 「..」は非表示
+	if ( work[1] == 0 ) setflag(rdirmask, ECA_PARENT); // 「..」は非表示
 
 	GetCustData(T("XC_dpmk"), &XC_dpmk, sizeof(XC_dpmk));
 	GetCustData(T("XC_sdir"), &XC_sdir, sizeof(XC_sdir));

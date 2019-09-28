@@ -93,6 +93,7 @@ typedef struct tagDISPSTRUCT {
 	int NoBack;	// 背景描画が不要か(X_WallpaperType)
 	BOOL IsCursor;	// カーソル上か
 	int lspc;
+	int Xright;
 
 	TCHAR buf[VFPS];
 } DISPSTRUCT;
@@ -2577,7 +2578,7 @@ void PaintFileAttributes(DISPSTRUCT *disp, int displen)
 void PaintMultiLineFilename(DISPSTRUCT *disp, const BYTE *fmt)
 {
 	const TCHAR *filep;		// 表示開始位置
-	int nwid, ewid, wid;	// ファイル名/拡張子の表示幅
+	int nwid, ewid, fullwid;	// ファイル名/拡張子の表示幅
 	int widthpixel;
 	int length, result;
 	SIZE textsize;
@@ -2592,13 +2593,13 @@ void PaintMultiLineFilename(DISPSTRUCT *disp, const BYTE *fmt)
 	// ●1.2x fmt を変化させないようにすると、描画がおかしくなる…全体検証の必要有り
 	nwid = *fmt++;
 	ewid = *fmt++;
-	wid = (ewid == 0xff) ? nwid : nwid + ewid;
+	fullwid = (ewid == DE_FN_WITH_EXT) ? nwid : nwid + ewid;
 
 	if ( length ){
 		if ( XC_fexc ) SetTextOtherColor(disp); // 拡張子別色を使用する
 
 		// nwid に収まる文字数と、全体のピクセル幅を算出
-		widthpixel = wid * disp->fontX;
+		widthpixel = fullwid * disp->fontX;
 		DxGetTextExtentExPoint(disp->DxDraw, disp->hDC, filep, length,
 			widthpixel, &result, NULL, &textsize);
 		if ( (textsize.cx > widthpixel) &&
@@ -2676,17 +2677,39 @@ void PaintFilename(DISPSTRUCT *disp, const BYTE *fmt, int Xe)
 					extp = tstrrchr(fileptr + 1, '.');
 					if ( extp != NULL ){
 						extlen = tstrlen(extp);
-						if ( extlen > ewid ){
+
+						if ( nwid == DE_FN_ALL_WIDTH ){
+							int xwid = disp->Xright - disp->Xd;
+							nwid = xwid / disp->fontX;
+						}
+
+						if ( ewid == DE_FN_WITH_EXT ){
 							extoffset = extp - fileptr;
-							if ( extlen <= (nwid + ewid) ){
+
+							if ( (extoffset + extlen) > nwid ){ // ファイル名+拡張子全体表示できない
+								if ( extlen <= (nwid / 2) ){ // 拡張子が幅内
+									nwid -= extlen;
+									ewid = extlen;
+								}else{ // 拡張子長すぎ
+									ewid = extoffset < (nwid / 2) ? (nwid - extoffset) : (nwid / 2);
+									nwid -= ewid;
+								}
+							} // else 全体表示できるならそのままで OK
+						}else if ( extlen > ewid ){ // 拡張子欄に入らない
+							extoffset = extp - fileptr;
+
+							if ( (extlen <= ((nwid + ewid) / 2)) ||
+								 ((extoffset + extlen) <= (nwid + ewid)) ){ // ファイル名+拡張子全体表示可能
 								nwid -= extlen - ewid;
 								ewid = extlen;
 							}else{
-								ewid += nwid;
-								nwid = 0;
+								int fullwid = nwid + ewid;
+
+								ewid = extoffset < (fullwid / 2) ? (fullwid - extoffset) : (fullwid / 2);
+								nwid = fullwid - ewid;
 							}
 							break;
-						}
+						} // else 欄内ならそのままで OK
 					}
 				}
 			}
@@ -2716,7 +2739,7 @@ void PaintFilename(DISPSTRUCT *disp, const BYTE *fmt, int Xe)
 	if ( *extptr == '\0' ){
 		if ( nwid ){
 			extoffset += tstrlen32(extptr);
-			if ( ewid != 0xff ) nwid += ewid;
+			if ( ewid != DE_FN_WITH_EXT ) nwid += ewid;
 			ewid = 0;
 		#if 0 // サイズと連結するときに利用する
 			if ( (extoffset > nwid) &&
@@ -2760,7 +2783,7 @@ void PaintFilename(DISPSTRUCT *disp, const BYTE *fmt, int Xe)
 	disp->Xd += nwid * disp->fontX;
 	if ( ewid == 0 ) goto fix;
 									// 拡張子表示 =================
-	if ( ewid == 0xff ){ // 拡張子はファイル名と一体にする
+	if ( ewid == DE_FN_WITH_EXT ){ // 拡張子はファイル名と一体にする
 		if ( disp->LP.x >= Xe ) goto fix;
 		ewid = nwid - drawlen;
 		if ( ewid <= 0 ) goto fix; // プロポーショナルのとき、nwid < drawlen の場合あり
@@ -2898,7 +2921,7 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 {
 	DISPSTRUCT disp;
 	const BYTE *fmt, *nextfmt;
-	int Xe, Xleft, Xright, Ytop, Ybottom;	// 表示位置の基準/先頭/末端
+	int Xe, Xleft, Ytop, Ybottom;	// 表示位置の基準/先頭/末端
 	RECT tempbox;	// 一時的に使用する
 	BOOL bkdraw = FALSE;	// 背景描画が必要なら TRUE
 	int Check[8] = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -2956,7 +2979,7 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 	Ybottom = Ytop + cfmt->height * cinfo->fontY;
 	if ( Ybottom < disp.backbox.bottom ) Ybottom = disp.backbox.bottom;
 	Xleft = disp.LineTopX;
-	Xright = Xe;
+	disp.Xright = Xe;
 	if ( Xe > maxX ) Xe = maxX;
 							// 空欄処理 ---------------------------------------
 	if ( cellno >= cinfo->e.cellIMax ){
@@ -3238,13 +3261,13 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 		fmt = endofformat;
 		// 枠表示のための表示位置調整
 		disp.LineTopX += disp.fontX / 2;
-		Xright -= disp.fontX / 2;
+		disp.Xright -= disp.fontX / 2;
 	} else while ( *fmt ){
 		DxMoveToEx(disp.DxDraw, hDC, disp.Xd, disp.lbox.top); // ●1.61ここに必要？
 		switch ( *fmt++ ){
 			case DE_NEWLINE: // 改行
 				fmt += DE_NEWLINE_SIZE - 1;
-				disp.backbox.right = Xright - disp.fontX * 1;
+				disp.backbox.right = disp.Xright - disp.fontX * 1;
 				if ( !disp.NoBack || (disp.hfbr != NULL) ){
 					if ( disp.LP.x < disp.backbox.right ){
 						disp.backbox.left = disp.LP.x;
@@ -3280,8 +3303,8 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 				len = *fmt++;
 				nextdata = *fmt;
 				if ( (nextdata == 0) || (nextdata == DE_NEWLINE) ){
-					disp.backbox.right = Xright - disp.fontX * len;
-					if ( nextdata == 0 ) Xright = disp.backbox.right;
+					disp.backbox.right = disp.Xright - disp.fontX * len;
+					if ( nextdata == 0 ) disp.Xright = disp.backbox.right;
 					if ( disp.LP.x <= disp.backbox.right ){
 						if ( (disp.LP.x < disp.backbox.right) && !disp.NoBack ){
 							disp.backbox.left = disp.LP.x;
@@ -3812,7 +3835,7 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 	if ( Check_Box || Check_Focusbox ){	// 枠 / 点線枠
 		disp.backbox.top = Ytop;
 		disp.backbox.left = disp.LineTopX;
-		disp.backbox.right = Xright;
+		disp.backbox.right = disp.Xright;
 		disp.backbox.bottom = Ybottom;
 		if ( disp.LineTopX > Xleft ) disp.backbox.left--;
 

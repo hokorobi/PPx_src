@@ -67,7 +67,7 @@ DWORD_PTR USECDECL CommandModuleInfoFunc(COMMANDMODULEINFOSTRUCT *ppxa, DWORD cm
 			ERRORCODE result;
 
 			#ifdef UNICODE
-			result = PP_ExtractMacro(ppxa->info.hWnd, ppxa->parent,NULL, uptr->str,NULL, 0);
+			result = PP_ExtractMacro(ppxa->info.hWnd, ppxa->parent, NULL, uptr->str, NULL, 0);
 			#else
 			char *extbuf = bufA;
 
@@ -75,14 +75,14 @@ DWORD_PTR USECDECL CommandModuleInfoFunc(COMMANDMODULEINFOSTRUCT *ppxa, DWORD cm
 				if ( GetLastError() == ERROR_INSUFFICIENT_BUFFER ){
 					int len;
 
-					len = WideCharToMultiByte(CP_ACP, 0, (WCHAR *)uptr, -1,NULL, 0,NULL,NULL);
+					len = WideCharToMultiByte(CP_ACP, 0, (WCHAR *)uptr, -1, NULL, 0, NULL, NULL);
 					extbuf = HeapAlloc(DLLheap, 0, len);
 					UnicodeToAnsi((WCHAR *)uptr, extbuf, len);
 				}else{
 					return 0;
 				}
 			}
-			result = PP_ExtractMacro(ppxa->info.hWnd, ppxa->parent,NULL, extbuf,NULL, 0);
+			result = PP_ExtractMacro(ppxa->info.hWnd, ppxa->parent, NULL, extbuf, NULL, 0);
 			if ( extbuf != bufA ) HeapFree(DLLheap, 0, extbuf);
 			#endif
 			if ( result == NO_ERROR ) result = 1;
@@ -91,20 +91,41 @@ DWORD_PTR USECDECL CommandModuleInfoFunc(COMMANDMODULEINFOSTRUCT *ppxa, DWORD cm
 
 		case PPXCMDID_EXTRACT:
 			#ifdef UNICODE
-			if ( NO_ERROR == PP_ExtractMacro(ppxa->info.hWnd, ppxa->parent,NULL, uptr->str, buf, XEO_EXTRACTEXEC) ){
+			if ( NO_ERROR == PP_ExtractMacro(ppxa->info.hWnd, ppxa->parent, NULL, uptr->str, buf, XEO_EXTRACTEXEC) ){
 				strcpyW(uptr->str, buf);
 			}else{
 				*uptr->str = '\0';
 			}
 			#else
 			UnicodeToAnsi((WCHAR *)uptr, bufA, sizeof(bufA));
-			if ( NO_ERROR == PP_ExtractMacro(ppxa->info.hWnd, ppxa->parent,NULL, bufA, buf, XEO_EXTRACTEXEC) ){
+			if ( NO_ERROR == PP_ExtractMacro(ppxa->info.hWnd, ppxa->parent, NULL, bufA, buf, XEO_EXTRACTEXEC) ){
 				AnsiToUnicode(buf, (WCHAR *)uptr, CMDLINESIZE);
 			}else{
 				*uptr->str = '\0';
 			}
 			#endif
 			return 1;
+
+		case PPXCMDID_LONG_EXTRACT: {
+			ERRORCODE result;
+			BSTR sysstr;
+
+			hOleaut32DLL = LoadSystemWinAPI(SYSTEMDLL_OLEAUT32, OLEAUT32_SysStr);
+			if ( hOleaut32DLL == NULL ) return 0;
+			PP_InitLongParam(buf);
+
+			#ifdef UNICODE
+			result = PP_ExtractMacro(ppxa->info.hWnd, ppxa->parent, NULL, uptr->str, buf, XEO_EXTRACTEXEC | XEO_EXTRACTLONG );
+			sysstr = CreateBstring(PP_GetLongParam(buf, result));
+			#else
+			UnicodeToAnsi((WCHAR *)uptr, bufA, sizeof(bufA));
+			result = PP_ExtractMacro(ppxa->info.hWnd, ppxa->parent, NULL, bufA, buf, XEO_EXTRACTEXEC | XEO_EXTRACTLONG );
+			sysstr = CreateBstringA(PP_GetLongParam(buf, result));
+			#endif
+
+			PP_FreeLongParam(buf, result);
+			return (DWORD_PTR)sysstr;
+		}
 
 		case PPXCMDID_GETFILEINFO: {
 			VFSFILETYPE vft;
@@ -113,11 +134,11 @@ DWORD_PTR USECDECL CommandModuleInfoFunc(COMMANDMODULEINFOSTRUCT *ppxa, DWORD cm
 			vft.type[0] = '\0';
 
 			#ifdef UNICODE
-			VFSGetFileType((WCHAR *)&uptr->nums[1],NULL, 0, &vft);
+			VFSGetFileType((WCHAR *)&uptr->nums[1], NULL, 0, &vft);
 			strcpyW((TCHAR *)&uptr->nums[1], vft.type);
 			#else
 			UnicodeToAnsi((WCHAR *)&uptr->nums[1], bufA, sizeof(bufA));
-			VFSGetFileType(bufA,NULL, 0, &vft);
+			VFSGetFileType(bufA, NULL, 0, &vft);
 			AnsiToUnicode(vft.type, (WCHAR *)&uptr->nums[1], CMDLINESIZE);
 			#endif
 			return 1;
@@ -262,7 +283,7 @@ DWORD_PTR USECDECL CommandModuleInfoFunc(COMMANDMODULEINFOSTRUCT *ppxa, DWORD cm
 			return 1;
 
 		case PPXCMDID_GETWNDVARIABLEDATA: {
-			ThSTRUCT *TH = (ThSTRUCT *)PPxInfoFunc(ppxa->parent, PPXCMDID_GETWNDVARIABLESTRUCT,NULL);
+			ThSTRUCT *TH = (ThSTRUCT *)PPxInfoFunc(ppxa->parent, PPXCMDID_GETWNDVARIABLESTRUCT, NULL);
 			if ( TH == NULL ) TH = &ProcessStringValue;
 
 #ifdef UNICODE
@@ -278,7 +299,7 @@ DWORD_PTR USECDECL CommandModuleInfoFunc(COMMANDMODULEINFOSTRUCT *ppxa, DWORD cm
 		}
 
 		case PPXCMDID_SETWNDVARIABLEDATA: {
-			ThSTRUCT *TH = (ThSTRUCT *)PPxInfoFunc(ppxa->parent, PPXCMDID_GETWNDVARIABLESTRUCT,NULL);
+			ThSTRUCT *TH = (ThSTRUCT *)PPxInfoFunc(ppxa->parent, PPXCMDID_GETWNDVARIABLESTRUCT, NULL);
 			if ( TH == NULL ) TH = &ProcessStringValue;
 
 #ifdef UNICODE
@@ -290,12 +311,32 @@ DWORD_PTR USECDECL CommandModuleInfoFunc(COMMANDMODULEINFOSTRUCT *ppxa, DWORD cm
 			return 1;
 #endif
 		}
-/*
-		case PPXCMDID_SETPOPUPPOS:
-			if ( ppxa->Z != NULL ){
+		case PPXCMDID_LONG_RESULT:
+			if ( ppxa->Z == NULL ) return 0;
+		{
+#ifdef UNICODE
+			SIZE32_T textsize;
+
+			textsize = (wcslen(uptr->str) + 1) * sizeof(WCHAR);
+			if ( StoreLongParam(ppxa->Z, textsize) == FALSE ) return 0;
+			if ( ThSize(&ppxa->Z->ExtendDst, textsize) == FALSE ){
+				return 0;
 			}
-			// default へ
-*/
+			memcpy(ppxa->Z->ExtendDst.bottom + ppxa->Z->ExtendDst.top, uptr->str, textsize);
+			ppxa->Z->ExtendDst.top += textsize - sizeof(WCHAR);
+#else
+			SIZE32_T textsize;
+
+			textsize = UnicodeToAnsi(uptr->strW, NULL, 0);
+			if ( StoreLongParam(ppxa->Z, textsize) == FALSE ) return 0;
+			if ( ThSize(&ppxa->Z->ExtendDst, textsize) == FALSE ){
+				return 0;
+			}
+			textsize = UnicodeToAnsi(uptr->strW, ppxa->Z->ExtendDst.bottom + ppxa->Z->ExtendDst.top, textsize);
+			if ( textsize > 0 ) ppxa->Z->ExtendDst.top += textsize - sizeof(char);
+#endif
+			return 1;
+		}
 		default:
 			return PPxInfoFunc(ppxa->parent, cmdID, uptr);
 	}
@@ -305,7 +346,7 @@ void FreePPxModule(void)
 {
 	MODULESTRUCT *mdll;
 	int i;
-	PPXAPPINFOW info = {NULL, L"", L"",NULL};
+	PPXAPPINFOW info = {NULL, L"", L"", NULL};
 	PPXMODULEPARAM module;
 
 	mdll = ppxmodule_list;
@@ -413,7 +454,7 @@ loaderror:
 	LeaveCriticalSection(&ThreadSection);
 
 	if ( (result != ERROR_BAD_EXE_FORMAT) && (result != ERROR_GEN_FAILURE) ){
-		XMessage(hWnd,NULL, XM_NsERRd, T("%s load error"),
+		XMessage(hWnd, NULL, XM_NsERRd, T("%s load error"),
 				(TCHAR *)(Thmodule_str.bottom + mdll->DllNameOffset));
 	}
 	return FALSE;
@@ -454,7 +495,9 @@ int CommandModule(EXECSTRUCT *Z, const TCHAR *cmdparam)
 		char tmp[CMDLINESIZE];
 
 		tmp[0] = '\0';
+
 		GetCommandParameter(&cmdparam, tmp, TSIZEOF(tmp));
+	//	GetLfGetParam(&cmdparam, tmp, TSIZEOF(tmp)); // 空白も切れる
 		if ( tmp[0] == '\0' ) break;
 		paramcount++;
 		AnsiToUnicode(tmp, next, CMDLINESIZE);
@@ -464,7 +507,9 @@ int CommandModule(EXECSTRUCT *Z, const TCHAR *cmdparam)
 #else
 	while( *cmdparam ){
 		*next = '\0';
+
 		GetCommandParameter(&cmdparam, next, CMDLINESIZE - VFPS);
+	//	GetLfGetParam(&cmdparam, next, CMDLINESIZE - VFPS); // 空白も切れる
 		if ( *next == '\0' ) break;
 		paramcount++;
 		next = next + strlenW(next) + 1;
@@ -517,7 +562,7 @@ void ToUtf8Function(EXECSTRUCT *Z, const char *param)
 	WCHAR bufW[CMDLINESIZE];
 
 	AnsiToUnicode(param, bufW, CMDLINESIZE);
-	WideCharToMultiByteU8(CP_UTF8, 0, bufW, -1, Z->dst, VFPS,NULL,NULL);
+	WideCharToMultiByteU8(CP_UTF8, 0, bufW, -1, Z->dst, VFPS, NULL, NULL);
 	Z->dst += tstrlen(Z->dst);
 }
 */
@@ -562,7 +607,7 @@ void TreeFunction(EXECSTRUCT *Z, const TCHAR *param) // %*tree
 	ShowWindow(hTreeWnd, SW_SHOWNORMAL);
 
 	for ( ; ; ){
-		if ( (int)GetMessage(&msg,NULL, 0, 0) <= 0 ){
+		if ( (int)GetMessage(&msg, NULL, 0, 0) <= 0 ){
 			DestroyWindow(hTreeWnd);
 			break;
 		}
@@ -591,12 +636,12 @@ void SelectTextFunction(EXECSTRUCT *Z, const TCHAR *param)
 		TCHAR *dest, *maxptr;
 
 #ifdef UNICODE
-		WideCharToMultiByteU8(CP_UTF8, 0, Z->dst, -1, bufA, CMDLINESIZE,NULL,NULL);
+		WideCharToMultiByteU8(CP_UTF8, 0, Z->dst, -1, bufA, CMDLINESIZE, NULL, NULL);
 #else
 		WCHAR bufW[CMDLINESIZE];
 
 		AnsiToUnicode(Z->dst, bufW, CMDLINESIZE);
-		WideCharToMultiByteU8(CP_UTF8, 0, bufW, -1, bufA, CMDLINESIZE,NULL,NULL);
+		WideCharToMultiByteU8(CP_UTF8, 0, bufW, -1, bufA, CMDLINESIZE, NULL, NULL);
 #endif
 		srcA = bufA;
 		dest = Z->dst;
@@ -632,24 +677,31 @@ void CountJobFunction(EXECSTRUCT *Z)
 	return;
 }
 
+// %*maxlength
+void SetMaxLengthFunction(EXECSTRUCT *Z, const TCHAR *param)
+{
+	Z->LongResultLen = GetDigitNumber(&param);
+	setflag(Z->status, ST_LONGRESULT);
+}
+
 // %*linkedpath
 void GetLinkedPathFunction(EXECSTRUCT *Z, const TCHAR *param)
 {
-	TCHAR buf[CMDLINESIZE],name[VFPS];
+	TCHAR buf[CMDLINESIZE], name[VFPS];
 
 	GetCommandParameter(&param, buf, TSIZEOF(buf));
 
-	if ( FAILED(GetLink(NULL, buf,name)) ){
-		if ( GetReparsePath(buf,name) == 0 ) return;
+	if ( FAILED(GetLink(NULL, buf, name)) ){
+		if ( GetReparsePath(buf, name) == 0 ) return;
 	}
-	Z->dst += wsprintf(Z->dst, T("%s"),name);
+	Z->dst += wsprintf(Z->dst, T("%s"), name);
 	return;
 }
 
 // %*name
 void GetNameFunction(EXECSTRUCT *Z, const TCHAR *param)
 {
-	TCHAR buf[CMDLINESIZE],name[VFPS+2], code;
+	TCHAR buf[CMDLINESIZE], name[VFPS+2], code;
 	const TCHAR *p;
 	DWORD flag;
 
@@ -669,8 +721,8 @@ void GetNameFunction(EXECSTRUCT *Z, const TCHAR *param)
 	p = GetZCurDir(Z);
 	if ( SkipSpace(&param) == ',' ){	// 基準ディレクトリ指定
 		param++;
-		GetCommandParameter(&param,name, TSIZEOF(name));
-		VFSFullPath(NULL,name, p);
+		GetCommandParameter(&param, name, TSIZEOF(name));
+		VFSFullPath(NULL, name, p);
 		p = name;
 	}
 
@@ -680,15 +732,21 @@ void GetNameFunction(EXECSTRUCT *Z, const TCHAR *param)
 		VFSFullPath(NULL, buf, p);
 	}
 	if ( flag & FMOPT_UNIQUE ) GetUniqueEntryName(buf);
-	GetFmacroString(flag, buf,name);
+	GetFmacroString(flag, buf, name);
 
-	Z->dst += wsprintf(Z->dst, T("%s"),name);
+	Z->dst += wsprintf(Z->dst, T("%s"), name);
 	return;
 
 error:
-	XMessage(NULL,NULL, XM_GrERRld, T("%*name(options,filename)"));
+	XMessage(NULL, NULL, XM_GrERRld, T("%*name(options,filename)"));
 	Z->result = ERROR_INVALID_PARAMETER;
 	return;
+}
+
+// %*now
+void GetNowFunction(EXECSTRUCT *Z, const TCHAR *param)
+{
+	Z->dst += GetNowTime(Z->dst, (*param == 'd') );
 }
 
 void InputFunctionOption(EXECSTRUCT *Z, TINPUT *tinput, const TCHAR *param, TCHAR *optionbuf)
@@ -770,32 +828,46 @@ void InputFunctionOption(EXECSTRUCT *Z, TINPUT *tinput, const TCHAR *param, TCHA
 	}
 }
 // %*input
-void InputFunction(EXECSTRUCT *Z, const TCHAR *param)
+void InputFunction(EXECSTRUCT *Z, TCHAR *param)
 {
 	TINPUT tinput;
 	TCHAR optionbuf[CMDLINESIZE];
 	DWORD hash C4701CHECK;
 
 	tinput.title = ZGetTitleName(Z);
-	tinput.buff = Z->dst;
-	tinput.size = CMDLINESIZE - ToSIZE32_T(Z->dst - Z->DstBuf) - 1;
 	tinput.flag = TIEX_USEINFO;
+
+	if ( Z->ExtendDst.top == 0 ){
+		tinput.buff = Z->dst;
+		tinput.size = CMDLINESIZE - ToSIZE32_T(Z->dst - Z->DstBuf) - 1;
+	}else{
+		tinput.size = GetLongParamMaxLen(Z) - (Z->ExtendDst.top / sizeof(TCHAR));
+		if ( tinput.size >= 0x8000 ) tinput.size = 0x7fff;
+		if ( ThSize(&Z->ExtendDst, tinput.size * sizeof(TCHAR) ) == FALSE ){
+			return;
+		}
+		tinput.buff = (TCHAR *)(Z->ExtendDst.bottom + Z->ExtendDst.top);
+		param = tinput.buff + tstrlen(tinput.buff) + 1;
+	}
 
 	InputFunctionOption(Z, &tinput, param, optionbuf);
 
 	if ( (Z->status & ST_USECACHE) &&
 		 (Z->edit.cache.hash == (hash = GetCacheHash(Z))) ){
 		// キャッシュが使用できる
-		ThGetString(&Z->StringVariable, EditCache_ValueName, Z->dst, CMDLINESIZE);
-		Z->dst += tstrlen(Z->dst);
+		ThGetString(&Z->StringVariable, EditCache_ValueName, tinput.buff, tinput.size);
 	}else{
 		if ( ZTinput(Z, &tinput) != FALSE ){
 			if ( Z->status & ST_USECACHE ){
 				Z->edit.cache.hash = hash; // C4701ok
-				ThSetString(&Z->StringVariable, EditCache_ValueName, Z->dst);
+				ThSetString(&Z->StringVariable, EditCache_ValueName, tinput.buff);
 			}
-			Z->dst += tstrlen(Z->dst);
 		}
+	}
+	if ( Z->ExtendDst.top != 0 ){
+		Z->ExtendDst.top += tstrlen(tinput.buff) * sizeof(TCHAR);
+	}else{
+		Z->dst = tinput.buff + tstrlen(tinput.buff);
 	}
 	resetflag(Z->status, ST_USECACHE);
 }
@@ -832,7 +904,7 @@ void RegExpFunction(EXECSTRUCT *Z, const TCHAR *param)
 
 error:
 	if ( *Z->dst != '?' ){
-		XMessage(NULL,NULL, XM_GrERRld, T("%*regexp(src,regexp)"));
+		XMessage(NULL, NULL, XM_GrERRld, T("%*regexp(src,regexp)"));
 		Z->result = ERROR_INVALID_PARAMETER;
 		return;
 	}
@@ -840,18 +912,104 @@ error:
 	Z->dst += tstrlen(Z->dst);
 }
 
-void CalculationFunction(EXECSTRUCT *Z, const TCHAR *param)
+
+UTCHAR ZFixParameter(TCHAR **commandline)
+{
+	TCHAR *src;
+	TCHAR *dest, *destfirst;
+	UTCHAR code;
+
+	code = SkipSpace((const TCHAR **)commandline);
+	if ( (code == '\0') || (code == ',') ){ // パラメータ無し
+		**commandline = '\0';
+		return code;
+	}
+	src = dest = *commandline;
+	if ( code == '\"' ){
+		src++;
+		for ( ; ; ){
+			TCHAR code;
+
+			code = *src;
+			if ( (code == '\0') || (code == '\r') || (code == '\n') ){
+				break;
+			}
+			if ( code != '\"' ){
+				*dest++ = code;
+				src++;
+				continue;
+			}
+			// " を見つけた場合の処理
+			if ( *(src + 1) != '\"' ){	// "" エスケープ?
+				src++; // 単独 " … ここで終わり
+				break;
+			}
+			// エスケープ処理
+			*dest++ = code;
+			src += 2;
+			continue;
+		}
+	}else{
+		src++;
+		destfirst = dest;
+		for ( ;; ){
+			*dest++ = code;
+			code = *src;
+			if ( (code == ',') || // (code == ' ') ||
+				 ((code < ' ') && ((code == '\0') || (code == '\t') ||
+								   (code == '\r') || (code == '\n'))) ){
+				break;
+			}
+			src++;
+		}
+		while ( (dest > destfirst) && (*(dest - 1) == ' ') ) dest--;
+	}
+	*dest = '\0';
+	*commandline = src;
+	return code;
+}
+
+void ExtractFunction(EXECSTRUCT *Z, TCHAR *param)
+{
+	HWND hWnd;
+	TCHAR dest[CMDLINESIZE], *src;
+
+	hWnd = GetPPxhWndFromID(Z->Info, (const TCHAR **)&param, NULL);
+	if ( SkipSpace((const TCHAR **)&param) == ',' ) param++;
+	src = param;
+	ZFixParameter(&param);
+	if ( hWnd == NULL ){ // 指定無し
+		ERRORCODE result;
+
+		PP_InitLongParam(dest);
+		result = PP_ExtractMacro(Z->hWnd, Z->Info, NULL, src, dest, XEO_EXTRACTEXEC | XEO_EXTRACTLONG);
+		if ( result == ERROR_PARTIAL_COPY ){
+			if ( IsTrue(StoreLongParam(Z, 0)) ){
+				ThCatString(&Z->ExtendDst, PP_GetLongParamRAW(dest));
+			}
+			PP_FreeLongParamRAW(dest);
+		}else{
+			tstrcpy(Z->dst, dest);
+			Z->dst += tstrlen(Z->dst);
+		}
+		return;
+	}else if ( hWnd == BADHWND ){ // 該当無し…何もしない
+		return;
+	}
+	ExtractPPxCall(hWnd, Z, src);
+}
+
+void CalculationFunction(EXECSTRUCT *Z, TCHAR *param)
 {
 	int result;
-	TCHAR buf[CMDLINESIZE];
-	const TCHAR *p;
+	const TCHAR *src;
 
-	GetCommandParameter(&param, buf, TSIZEOF(buf));
-	p = buf;
-	if ( CalcString(&p, &result) == CALC_NOERROR ){
-		Z->dst += wsprintf(Z->dst, T("%d"),result);
+	src = param;
+	ZFixParameter(&param);
+	if ( CalcString(&src, &result) == CALC_NOERROR ){
+		Z->dst += wsprintf(Z->dst, T("%d"), result);
 	}else{
-		XMessage(NULL,NULL, XM_GrERRld, T("Calculation error"));
+		XMessage(NULL, NULL, XM_GrERRld, T("Calculation error"));
 		Z->result = ERROR_INVALID_PARAMETER;
 	}
 	return;
@@ -889,7 +1047,19 @@ void NestedFunction(EXECSTRUCT *Z)
 	}
 	*dst = '\0';
 
-	Z->result = PP_ExtractMacro(Z->hWnd, Z->Info,NULL, function, Z->dst, 0);
+	PP_InitLongParam(Z->dst);
+	Z->result = PP_ExtractMacro(Z->hWnd, Z->Info, NULL, function, Z->dst, XEO_EXTRACTLONG);
+	if ( Z->result == ERROR_PARTIAL_COPY ){
+		TCHAR *Zdst;
+
+		Zdst = Z->dst; // StoreLongParam で Z->dst が変化するので待避
+		if ( IsTrue(StoreLongParam(Z, 0)) ){
+			ThCatString(&Z->ExtendDst, PP_GetLongParamRAW(Zdst));
+		}
+		PP_FreeLongParamRAW(Zdst);
+		Z->result = NO_ERROR;
+	}
+
 	if ( Z->result == NO_ERROR ){
 		while ( *Z->dst != '\0' ) Z->dst++;
 	}
@@ -924,10 +1094,10 @@ void CallFunction(EXECSTRUCT *Z, TCHAR *cmdname, DWORD namehash, const TCHAR *fu
 		DWORD paramcount = 0;
 		int i;
 #ifndef UNICODE
-		WCHAR regidW[REGIDSIZE],nameW[MAX_PATH], destW[CMDLINESIZE];
+		WCHAR regidW[REGIDSIZE], nameW[MAX_PATH], destW[CMDLINESIZE];
 
-		AnsiToUnicode(Z->Info->Name,nameW, MAX_PATH);
-		AnsiToUnicode(Z->Info->RegID,regidW,REGIDSIZE);
+		AnsiToUnicode(Z->Info->Name, nameW, MAX_PATH);
+		AnsiToUnicode(Z->Info->RegID, regidW, REGIDSIZE);
 		#define PPXAINFONAME nameW
 		#define PPXAINFOREGID regidW
 		#define DESTBUF destW
@@ -951,14 +1121,14 @@ void CallFunction(EXECSTRUCT *Z, TCHAR *cmdname, DWORD namehash, const TCHAR *fu
 			GetCommandParameter(&pptr, tmp, TSIZEOF(tmp));
 			if ( (tmp[0] == '\0') && (SkipSpace(&pptr) != ',') ) break;
 			paramcount++;
-			AnsiToUnicode(tmp,next, CMDLINESIZE);
+			AnsiToUnicode(tmp, next, CMDLINESIZE);
 			next = next + strlenW(next) + 1;
 			if ( NextParameter(&pptr) == FALSE ) break;
 		}
 #else
 		while ( *pptr ){
 			*next = '\0';
-			GetCommandParameter(&pptr,next, CMDLINESIZE - VFPS);
+			GetCommandParameter(&pptr, next, CMDLINESIZE - VFPS);
 			if ( (*next == '\0') && (SkipSpace(&pptr) != ',') ) break;
 			paramcount++;
 			next = next + strlenW(next) + 1;
@@ -1011,7 +1181,7 @@ void CallFunction(EXECSTRUCT *Z, TCHAR *cmdname, DWORD namehash, const TCHAR *fu
 // user関数
 		((TCHAR *)argbuf)[CMDLINESIZE - 1] = '\0';
 		if ( NO_ERROR != GetCustTable(StrUserCommand, cmdname, (TCHAR *)argbuf, sizeof(argbuf)) ){
-			XMessage(NULL,NULL, XM_GrERRld, T("Unknown function:%%*%s"), cmdname);
+			XMessage(NULL, NULL, XM_GrERRld, T("Unknown function: %%*%s"), cmdname);
 			Z->result = ERROR_INVALID_FUNCTION;
 		}else{
 			tstrcpy(cmdname + tstrlen(cmdname) + 1, funcparam);
@@ -1039,17 +1209,30 @@ endfunc:
 	}
 }
 
-// ※ funcparam は、Z->DstBuf 上なので、パラメータを読む前に Z->dst を使うとパラメータが破損する
-void FunctionModule(EXECSTRUCT *Z)
+// ※ funcptr は、Z->DstBuf 上なので、パラメータを読む前に Z->dst を使うとパラメータが破損する
+void ExecuteFunction(EXECSTRUCT *Z)
 {
 	TCHAR cmdname[CMDLINESIZE];
-	const TCHAR *funcparam;
+	TCHAR *funcparam;
 	DWORD namehash;
+	TCHAR *funcptr;
+
+	*Z->dst = '\0';
+	if ( Z->ExtendDst.top == 0 ){
+		funcptr = Z->dst = Z->DstBuf + (Z->func.off - 1) / sizeof(TCHAR);
+	}else{
+		if ( StoreLongParam(Z, 0) == FALSE ){
+			Z->result = RPC_S_STRING_TOO_LONG;
+			return;
+		}
+		Z->ExtendDst.top = Z->func.off - 1;
+		funcptr = (TCHAR *)(Z->ExtendDst.bottom + Z->ExtendDst.top);
+	}
+	Z->func.off = 0;
 
 // 関数名抽出
-	namehash = GetModuleNameHash(Z->dst, cmdname);
-	funcparam = Z->dst + tstrlen(Z->dst) + 1;
-
+	namehash = GetModuleNameHash(funcptr, cmdname);
+	funcparam = funcptr + tstrlen(funcptr) + 1;
 // PPx common 内蔵関数
 	if ( cmdname[0] <= 'I' ){ //------------------------------------------- A-I
 		if ( !tstrcmp(cmdname, T("ADDCHAR")) ){
@@ -1080,7 +1263,7 @@ void FunctionModule(EXECSTRUCT *Z)
 		}
 
 		if ( !tstrcmp(cmdname, T("ERRORMSG")) ){
-			PPErrorMsg(Z->dst, GetNumber(&funcparam));
+			PPErrorMsg(Z->dst, GetNumber((const TCHAR **)&funcparam));
 			Z->dst += tstrlen(Z->dst);
 			return;
 		}
@@ -1091,19 +1274,7 @@ void FunctionModule(EXECSTRUCT *Z)
 		}
 
 		if ( !tstrcmp(cmdname, T("EXTRACT")) ){ // *extract
-			HWND hWnd;
-
-			hWnd = GetPPxhWndFromID(Z->Info, &funcparam,NULL);
-			if ( SkipSpace(&funcparam) == ',' ) funcparam++;
-			GetCommandParameter(&funcparam, Z->dst, CMDLINESIZE);
-			if ( hWnd == NULL ){ // 指定無し
-				PP_ExtractMacro(Z->hWnd, Z->Info, NULL, Z->dst, Z->dst, XEO_EXTRACTEXEC);
-				Z->dst += tstrlen(Z->dst);
-				return;
-			}else if ( hWnd == BADHWND ){ // 該当無し…何もしない
-				return;
-			}
-			ExtractPPxCall(hWnd, Z, Z->dst);
+			ExtractFunction(Z, funcparam);
 			return;
 		}
 
@@ -1117,7 +1288,7 @@ void FunctionModule(EXECSTRUCT *Z)
 			return;
 		}
 
-		if ( !tstrcmp(cmdname,T ("INPUT")) ){
+		if ( !tstrcmp(cmdname, T ("INPUT")) ){
 			InputFunction(Z, funcparam);
 			return;
 		}
@@ -1132,8 +1303,18 @@ void FunctionModule(EXECSTRUCT *Z)
 			return;
 		}
 
+		if ( !tstrcmp(cmdname, T("MAXLENGTH")) ){
+			SetMaxLengthFunction(Z, funcparam);
+			return;
+		}
+
 		if ( !tstrcmp(cmdname, T("NAME")) ){
 			GetNameFunction(Z, funcparam);
+			return;
+		}
+
+		if ( !tstrcmp(cmdname, T("NOW")) ){
+			GetNowFunction(Z, funcparam);
 			return;
 		}
 
@@ -1169,10 +1350,10 @@ PPXDLL int PPXAPI CallModule(PPXAPPINFO *info, DWORD func, PPXMODULEPARAM Module
 	COMMANDMODULEINFOSTRUCT ppxa;
 
 #ifndef UNICODE
-		WCHAR regidW[REGIDSIZE],nameW[MAX_PATH];
+		WCHAR regidW[REGIDSIZE], nameW[MAX_PATH];
 
-		AnsiToUnicode(info->Name,nameW, MAX_PATH);
-		AnsiToUnicode(info->RegID,regidW,REGIDSIZE);
+		AnsiToUnicode(info->Name, nameW, MAX_PATH);
+		AnsiToUnicode(info->RegID, regidW, REGIDSIZE);
 		#define PPXAINFONAME nameW
 		#define PPXAINFOREGID regidW
 #else

@@ -8,12 +8,12 @@
 #include "PPD_DEF.H"
 #pragma hdrstop
 
-int PPxRegistCombo(HWND hWnd,TCHAR *ID,int mode);
-int PPxRegistLiveSearch(TCHAR *ID,int mode);
+int PPxRegistCombo(HWND hWnd, TCHAR *ID, int mode);
+int PPxRegistLiveSearch(TCHAR *ID, int mode);
 COLORREF CJ_log[2];
 
 ValueWinAPI(SetDllDirectory) = INVALID_VALUE(impSetDllDirectory);
-DefineWinAPI(HRESULT,SetCurrentProcessExplicitAppUserModelID,(const WCHAR *AppID)) = NULL;
+DefineWinAPI(HRESULT, SetCurrentProcessExplicitAppUserModelID, (const WCHAR *AppID)) = NULL;
 
 #ifdef _WIN64
 	#define PLATFORMAPPID T("6")
@@ -48,15 +48,15 @@ BOOL AliveCheck(ShareX *P)
 	HANDLE hProcess;
 
 	if ( P->ProcessID == MAX32 ) return TRUE; // まだ設定していない
-	hProcess = OpenProcess(SYNCHRONIZE,FALSE,P->ProcessID);
+	hProcess = OpenProcess(SYNCHRONIZE, FALSE, P->ProcessID);
 	if ( hProcess != NULL ){
-		result = WaitForSingleObject(hProcess,0);
+		result = WaitForSingleObject(hProcess, 0);
 		CloseHandle(hProcess);
 	}else{
 		result = WAIT_ABANDONED;
 	}
 	if ( result != WAIT_TIMEOUT ){
-		XMessage(NULL,NULL,XM_DbgLOG,T("Task broken:%s"),P->ID);
+		XMessage(NULL, NULL, XM_DbgLOG, T("Task broken:%s"), P->ID);
 		return FALSE;
 	}
 	return TRUE;
@@ -68,13 +68,13 @@ void FixTask(void)
 	int i;
 								// 共有メモリの破損チェック
 	if ( Sm->Version != DLL_VersionValue ){
-		XMessage(NULL,NULL,XM_FaERRld,MES_FDLW,Sm->Version);
+		XMessage(NULL, NULL, XM_FaERRld, MES_FDLW, Sm->Version);
 		Sm->Version = DLL_VersionValue;
 	}
 								// 各項目のウィンドウが有効かのチェック
 	P = Sm->P;
 	UsePPx();
-	for ( i = 0 ; i < X_Mtask ; i++,P++ ){
+	for ( i = 0 ; i < X_Mtask ; i++, P++ ){
 		if ( P->ID[0] == '\0' ) continue;			// 未登録
 		if ( P->hWnd == BADHWND ) continue;		// 仮登録
 		if ( P->hWnd == NULL ) continue;		// 仮登録/窓無し
@@ -98,7 +98,7 @@ int SearchPPx(TCHAR *ID)
 
 	FixTask();
 	for ( RegNo = 0 ; RegNo < X_Mtask ; RegNo++ ){
-		if ( tstrcmp(Sm->P[RegNo].ID,ID) == 0 ) break;
+		if ( tstrcmp(Sm->P[RegNo].ID, ID) == 0 ) break;
 	}
 	if ( RegNo == X_Mtask ) RegNo = -1;
 	return RegNo;
@@ -107,7 +107,7 @@ int SearchPPx(TCHAR *ID)
 /*-----------------------------------------------------------------------------
 	指定方向でPPxを検索
 -----------------------------------------------------------------------------*/
-HWND PPxGetWindow(const TCHAR *refid,int d)
+HWND PPxGetWindow(const TCHAR *refid, int d)
 {
 	int i;
 	HWND hWnd;
@@ -126,7 +126,7 @@ HWND PPxGetWindow(const TCHAR *refid,int d)
 	if ( d >= 0 ){
 		int found = -1;
 		for ( i = 0 ; i < X_Mtask ; i++ ){
-			if ( tstrcmp(Sm->P[i].ID,refid) == 0 ){
+			if ( tstrcmp(Sm->P[i].ID, refid) == 0 ){
 				if ( found != -1 ) break;
 			}else if ( Sm->P[i].ID[0] ){
 				found = i;
@@ -134,9 +134,9 @@ HWND PPxGetWindow(const TCHAR *refid,int d)
 		}
 		i = found;
 	}else{
-		int found = -1,center = 0;
+		int found = -1, center = 0;
 		for ( i = 0 ; i < X_Mtask ; i++ ){
-			if ( tstrcmp(Sm->P[i].ID,refid) == 0 ){
+			if ( tstrcmp(Sm->P[i].ID, refid) == 0 ){
 				center = 1;
 			}else if ( Sm->P[i].ID[0] ){
 				if ( found == -1 ) found = i;
@@ -171,13 +171,13 @@ void SetAppID(void)
 {
 	TCHAR appIDname[256];
 
-	if ( GetCustDword(T("X_tskb"),1) == 0 ) return; // まとめないときは、ID設定不要…設定するとタスクバーのピン止めアイコンから分離するため
+	if ( GetCustDword(T("X_tskb"), 1) == 0 ) return; // まとめないときは、ID設定不要…設定するとタスクバーのピン止めアイコンから分離するため
 	// ※ショートカットに AppID を設定すればよいらしい
 
-	GETDLLPROC(hShell32,SetCurrentProcessExplicitAppUserModelID);
+	GETDLLPROC(hShell32, SetCurrentProcessExplicitAppUserModelID);
 	if ( DSetCurrentProcessExplicitAppUserModelID == NULL ) return;
 
-	wsprintf(appIDname,T("PPx ") PLATFORMAPPID T("%s"),SyncTag);
+	wsprintf(appIDname, T("PPx ") PLATFORMAPPID T("%s"), SyncTag);
 
 #ifdef UNICODE
 	DSetCurrentProcessExplicitAppUserModelID(appIDname);
@@ -185,7 +185,7 @@ void SetAppID(void)
 	{
 		WCHAR namebuf[256];
 
-		AnsiToUnicode(appIDname,namebuf,256);
+		AnsiToUnicode(appIDname, namebuf, 256);
 		DSetCurrentProcessExplicitAppUserModelID(namebuf);
 	}
 #endif
@@ -197,9 +197,9 @@ void SetAppID(void)
 	hWND		登録時のウィンドウハンドル
 				(BADHWND:ウィンドウを使用していない/一時指定)
 	ID			3bytes の種別/4bytesの保存場所
-	戻り値:		登録番号(0-),-1:使用済み/指定済み
+	戻り値:		登録番号(0-), -1:使用済み/指定済み
 -----------------------------------------------------------------------------*/
-PPXDLL int PPXAPI PPxRegist(HWND hWnd,TCHAR *ID,int mode)
+PPXDLL int PPXAPI PPxRegist(HWND hWnd, TCHAR *ID, int mode)
 {
 	ShareX *P;
 	int i;
@@ -207,14 +207,14 @@ PPXDLL int PPXAPI PPxRegist(HWND hWnd,TCHAR *ID,int mode)
 	TCHAR limit = 'Z';
 
 	if ( DSetDllDirectory == INVALID_HANDLE_VALUE ){
-		GETDLLPROCT(hKernel32,SetDllDirectory);
+		GETDLLPROCT(hKernel32, SetDllDirectory);
 		if ( DSetDllDirectory != NULL ){
 			DSetDllDirectory(NilStr); // DLLの検索パスからカレントを除去する
 		}
 	}
 
 	if ( mode >= PPXREGIST_COMBO_FIRST ){
-		return PPxRegistCombo(hWnd,ID,mode);
+		return PPxRegistCombo(hWnd, ID, mode);
 	}
 	FixTask();
 
@@ -223,7 +223,7 @@ PPXDLL int PPXAPI PPxRegist(HWND hWnd,TCHAR *ID,int mode)
 			Sm->ppc.hLastFocusWnd = hWnd;
 			return 0;
 		}
-		return PPxRegistLiveSearch(ID,mode);
+		return PPxRegistLiveSearch(ID, mode);
 	}
 	UsePPx();
 									// ID 検索を始める
@@ -237,7 +237,7 @@ PPXDLL int PPXAPI PPxRegist(HWND hWnd,TCHAR *ID,int mode)
 	for ( i = 0 ; i < X_Mtask ; ){
 		if ( P->ID[0] == '\0' ){			// 空きを発見
 			RegNo = i;
-		}else if ( tstrcmp(P->ID,ID) == 0 ){	// 同ID有り
+		}else if ( tstrcmp(P->ID, ID) == 0 ){	// 同ID有り
 			switch ( mode ){
 				case PPXREGIST_FREE:
 					P->ID[0] = '\0';	// 登録を抹消する
@@ -277,7 +277,7 @@ PPXDLL int PPXAPI PPxRegist(HWND hWnd,TCHAR *ID,int mode)
 		RegP->ProcessID = GetCurrentProcessId();
 		RegP->ActiveID = Sm->Active.high++;
 		RegP->path[0] = '\0';
-		tstrcpy(RegP->ID,ID);
+		tstrcpy(RegP->ID, ID);
 
 		Th = GetCurrentThreadInfo();
 		if ( Th != NULL ) Th->PPxNo = RegNo;
@@ -300,25 +300,25 @@ void USEFASTCALL ClosePPxOne(HWND hWnd)
 	HANDLE hProcess;
 	DWORD_PTR sendresult;
 
-	if ( GetWindowThreadProcessId(hWnd,&ProcessID) == 0 ) return; // close済み
+	if ( GetWindowThreadProcessId(hWnd, &ProcessID) == 0 ) return; // close済み
 	if ( ProcessID == GetCurrentProcessId() ){ // 自分自身だった
-		PostMessage(hWnd,WM_CLOSE,0,0);
+		PostMessage(hWnd, WM_CLOSE, 0, 0);
 		return;
 	}else{
-		SendMessageTimeout(hWnd,WM_CLOSE,0,0,SMTO_ABORTIFHUNG,2000,&sendresult);
-		if ( GetWindowThreadProcessId(hWnd,&ProcessID) == 0 ) return; // close済み
+		SendMessageTimeout(hWnd, WM_CLOSE, 0, 0, SMTO_ABORTIFHUNG, 2000, &sendresult);
+		if ( GetWindowThreadProcessId(hWnd, &ProcessID) == 0 ) return; // close済み
 	}
 
-	hProcess = OpenProcess(SYNCHRONIZE,FALSE,ProcessID);
+	hProcess = OpenProcess(SYNCHRONIZE, FALSE, ProcessID);
 	if ( hProcess != NULL ){
-		WaitForSingleObject(hProcess,2000);
+		WaitForSingleObject(hProcess, 2000);
 		CloseHandle(hProcess);
 	}
 	Sleep(100);	// 念のためにいれておく
 }
 
 
-PPXDLL void PPXAPI PPxSendMessage(UINT uMsg,WPARAM wParam,LPARAM lParam)
+PPXDLL void PPXAPI PPxSendMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	int i;
 	DWORD_PTR sendresult;
@@ -335,32 +335,32 @@ PPXDLL void PPXAPI PPxSendMessage(UINT uMsg,WPARAM wParam,LPARAM lParam)
 		if ( uMsg == WM_CLOSE ){
 			ClosePPxOne(hWnd);
 		}else{
-			SendMessageTimeout(hWnd,uMsg,wParam,lParam,SMTO_ABORTIFHUNG,2000,&sendresult);
+			SendMessageTimeout(hWnd, uMsg, wParam, lParam, SMTO_ABORTIFHUNG, 2000, &sendresult);
 		}
 	}
 }
 /*-----------------------------------------------------------------------------
 	タスク管理テーブルに登録された PPx 全てにコマンドを発行
 -----------------------------------------------------------------------------*/
-PPXDLL void PPXAPI PPxPostMessage(UINT uMsg,WPARAM wParam,LPARAM lParam)
+PPXDLL void PPXAPI PPxPostMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	int i;
 
 	FixTask();
 	for ( i = 0 ; i < X_Mtask ; i++ ){
 		if ( Sm->P[i].ID[0] != '\0' ){
-			PostMessage(Sm->P[i].hWnd,uMsg,wParam,lParam);
+			PostMessage(Sm->P[i].hWnd, uMsg, wParam, lParam);
 		}
 	}
 }
 /*-----------------------------------------------------------------------------
 	カレントディレクトリを登録
 -----------------------------------------------------------------------------*/
-PPXDLL void PPXAPI PPxSetPath(int RegNo,TCHAR *path)
+PPXDLL void PPXAPI PPxSetPath(int RegNo, TCHAR *path)
 {
 	if ( (RegNo < 0) || (RegNo >= X_Mtask) ) return;
 	UsePPx();
-	tstrcpy(Sm->P[RegNo].path,path);
+	tstrcpy(Sm->P[RegNo].path, path);
 	FreePPx();
 }
 //====================================================================== to PPB
@@ -370,12 +370,12 @@ PPXDLL void PPXAPI PPxSetPath(int RegNo,TCHAR *path)
 int UsePPb(HWND hOwner)
 {
 	ShareX *P;
-	int id,tmpid = -1;
+	int id, tmpid = -1;
 
 	P = Sm->P;
 	UsePPx();
 								// 空いている PPb を検索する ----
-	for ( id = 0 ; id < X_Mtask ; id++,P++ ){
+	for ( id = 0 ; id < X_Mtask ; id++, P++ ){
 		if ( (P->ID[0] == 'B') && (P->ID[1] == '_') ){
 			if ( P->UsehWnd != BADHWND ){	// 使用中
 				if ( tmpid < 0 ){
@@ -386,11 +386,11 @@ int UsePPb(HWND hOwner)
 				DWORD result;
 				TCHAR buf[32];
 
-				tstrcpy(buf,SyncTag);
-				tstrcat(buf,P->ID);
-				hCommEvent = OpenEvent(EVENT_ALL_ACCESS,FALSE,buf);
+				tstrcpy(buf, SyncTag);
+				tstrcat(buf, P->ID);
+				hCommEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, buf);
 				if ( hCommEvent == NULL ) continue;
-				result = WaitForSingleObject(hCommEvent,0);
+				result = WaitForSingleObject(hCommEvent, 0);
 				CloseHandle(hCommEvent);
 				if ( result == WAIT_OBJECT_0 ){	// 処理中
 					if ( tmpid < 0 ){		// 仮確保
@@ -417,7 +417,7 @@ int UsePPb(HWND hOwner)
 /*-----------------------------------------------------------------------------
 	専有したPPbを解放する
 -----------------------------------------------------------------------------*/
-void FreePPb(HWND hOwner,int useID)
+void FreePPb(HWND hOwner, int useID)
 {
 	ShareX *P;
 
@@ -432,9 +432,9 @@ void FreePPb(HWND hOwner,int useID)
 /*-----------------------------------------------------------------------------
 	新規に PPb を起動する
 -----------------------------------------------------------------------------*/
-BOOL BootPPB(const TCHAR *path,const TCHAR *line,int flags)
+BOOL BootPPB(const TCHAR *path, const TCHAR *line, int flags)
 {
-	TCHAR param[CMDLINESIZE + VFPS * 2 + 32],*p;
+	TCHAR param[CMDLINESIZE + VFPS * 2 + 32], *p;
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 											// 実行条件の指定
@@ -454,10 +454,10 @@ BOOL BootPPB(const TCHAR *path,const TCHAR *line,int flags)
 	//	if ( flags & XEO_HIDE ) si.wShowWindow = SW_HIDE;
 	}
 
-	p = param + wsprintf(param,T("\"%s") T(PPBEXE) T("\" -P\"%s\" "),DLLpath,path);
-	tstrcpy(p,line);
-	if ( IsTrue(CreateProcess(NULL,param,NULL,NULL,FALSE,
-			CREATE_DEFAULT_ERROR_MODE,NULL,DLLpath,&si,&pi)) ){
+	p = param + wsprintf(param, T("\"%s") T(PPBEXE) T("\" -P\"%s\" "), DLLpath, path);
+	tstrcpy(p, line);
+	if ( IsTrue(CreateProcess(NULL, param, NULL, NULL, FALSE,
+			CREATE_DEFAULT_ERROR_MODE, NULL, DLLpath, &si, &pi)) ){
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
 		return FALSE;
@@ -478,9 +478,9 @@ PPb			PPx				hCommSendEvent	hCommIdleEvent	ParamID
 [8]返信						[---]			---				free
 [9]再受付へ
 -----------------------------------------------------------------------------*/
-int SendPPB(HWND hOwner,const TCHAR *param,int useID)
+int SendPPB(HWND hOwner, const TCHAR *param, int useID)
 {
-	HANDLE hCommSendEvent,hCommIdleEvent;
+	HANDLE hCommSendEvent, hCommIdleEvent;
 	ShareX *P;
 	TCHAR buf[32];
 
@@ -488,33 +488,33 @@ int SendPPB(HWND hOwner,const TCHAR *param,int useID)
 	UsePPx();
 	if ( (P->ID[0] != 'B') || (P->ID[1] != '_') || (P->UsehWnd != hOwner) ){
 		FreePPx();
-		XMessage(hOwner,NULL,XM_FaERRd,T("PPB useID Destroy"));
+		XMessage(hOwner, NULL, XM_FaERRd, T("PPB useID Destroy"));
 		return -1;
 	}
 
-	tstrcpy(buf,SyncTag);
-	tstrcat(buf,P->ID);					// PPB との通信手段を確保 ---------
+	tstrcpy(buf, SyncTag);
+	tstrcat(buf, P->ID);					// PPB との通信手段を確保 ---------
 	FreePPx();
-	hCommSendEvent = OpenEvent(EVENT_ALL_ACCESS,FALSE,buf);
-	tstrcat(buf,T("R"));
-	hCommIdleEvent = OpenEvent(EVENT_ALL_ACCESS,FALSE,buf);
+	hCommSendEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, buf);
+	tstrcat(buf, T("R"));
+	hCommIdleEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, buf);
 
 	if ( (hCommSendEvent == NULL) || (hCommIdleEvent == NULL) ){
-		XMessage(hOwner,NULL,XM_FaERRd,T("PPB-Event destroyed/1"));
+		XMessage(hOwner, NULL, XM_FaERRd, T("PPB-Event destroyed/1"));
 		return -1;
 	}
 	for ( ; ; ){
 		DWORD result;			//[1]→[2] PPB が待機状態になるまで待つ ---
 
 		if ( GetAsyncKeyState(VK_PAUSE) & KEYSTATE_PUSH ) break;
-		result = WaitForSingleObject(hCommIdleEvent,100);
+		result = WaitForSingleObject(hCommIdleEvent, 100);
 		if ( result == WAIT_FAILED ) goto error;
 		if ( result != WAIT_OBJECT_0 ) continue;
 		// [2]受付可能
 		ResetEvent(hCommIdleEvent);	// [3]受付停止
 										// Sm->Param に設定
 		if ( TSTRLENGTH(param) >= sizeof(Sm->Param) ){
-			XMessage(hOwner,NULL,XM_FaERRd,T("PPB-trans error"));
+			XMessage(hOwner, NULL, XM_FaERRd, T("PPB-trans error"));
 		}else{		// [4]内容設定
 			if ( Sm->ParamID[0] != '\0' ){
 				int count = 200;
@@ -523,8 +523,8 @@ int SendPPB(HWND hOwner,const TCHAR *param,int useID)
 					if ( (Sm->ParamID[0] == '\0') || (count-- == 0) ) break;
 				}
 			}
-			tstrcpy(Sm->ParamID,P->ID);
-			tstrcpy(Sm->Param,param);
+			tstrcpy(Sm->ParamID, P->ID);
+			tstrcpy(Sm->Param, param);
 			SetEvent(hCommSendEvent); // [5]設定通知
 		}
 		break;
@@ -533,28 +533,28 @@ int SendPPB(HWND hOwner,const TCHAR *param,int useID)
 	CloseHandle(hCommIdleEvent);
 	return 0;
 error:
-	XMessage(hOwner,NULL,XM_FaERRd,T("PPB-Event destroyed"));
+	XMessage(hOwner, NULL, XM_FaERRd, T("PPB-Event destroyed"));
 	CloseHandle(hCommSendEvent);
 	CloseHandle(hCommIdleEvent);
 	return -1;
 }
 
-DWORD RecvPPBExitCode(HWND hOwner,int useID)
+DWORD RecvPPBExitCode(HWND hOwner, int useID)
 {
 	TCHAR buf[32];
 	HANDLE hCommSendEvent;
 	int count = 2000;
 	DWORD result;
 
-	if ( SendPPB(hOwner,T("=E"),useID) != 0 ) return MAX32;
+	if ( SendPPB(hOwner, T("=E"), useID) != 0 ) return MAX32;
 
-	tstrcpy(buf,SyncTag);
-	tstrcat(buf,Sm->P[useID].ID);
-	hCommSendEvent = OpenEvent(EVENT_ALL_ACCESS,FALSE,buf);
+	tstrcpy(buf, SyncTag);
+	tstrcat(buf, Sm->P[useID].ID);
+	hCommSendEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, buf);
 	if ( hCommSendEvent != NULL ){
 		for ( ; ; ){
 			if ( GetAsyncKeyState(VK_PAUSE) & KEYSTATE_PUSH ) break;
-			result = WaitForSingleObject(hCommSendEvent,0);
+			result = WaitForSingleObject(hCommSendEvent, 0);
 			if ( result != WAIT_OBJECT_0 ) break;
 			Sleep(20);
 			if ( count-- == 0 ) break;
@@ -568,12 +568,12 @@ DWORD RecvPPBExitCode(HWND hOwner,int useID)
 /*-----------------------------------------------------------------------------
 	文字列を受信する
 -----------------------------------------------------------------------------*/
-PPXDLL int PPXAPI ReceiveStrings(const TCHAR *ID,TCHAR *str)
+PPXDLL int PPXAPI ReceiveStrings(const TCHAR *ID, TCHAR *str)
 {
 	UsePPx();
-	if ( tstrcmp(Sm->ParamID,ID) == 0 ){
+	if ( tstrcmp(Sm->ParamID, ID) == 0 ){
 		if ( Sm->Param[0] != '=' ){ // 通常
-			tstrcpy(str,Sm->Param);
+			tstrcpy(str, Sm->Param);
 			Sm->ParamID[0] = '\0';
 			FreePPx();
 			return 0;
@@ -585,7 +585,7 @@ PPXDLL int PPXAPI ReceiveStrings(const TCHAR *ID,TCHAR *str)
 		return -1;
 	}
 	// ID 不一致
-	xmessage(XM_FaERRd,T("ReceiveStrings - IDerror"));
+	xmessage(XM_FaERRd, T("ReceiveStrings - IDerror"));
 	FreePPx();
 	return -1;
 }
@@ -603,24 +603,24 @@ BOOL USEFASTCALL CheckPPcID(int no)
 	d:検索方向の指定		>0:次 <0:前 CGETW_PAIR
 out	Number
 -----------------------------------------------------------------------------*/
-int PPcGetNo(int RegNo,int direction)
+int PPcGetNo(int RegNo, int direction)
 {
 	TCHAR ID[REGIDSIZE];
-	int i,j;
+	int i, j;
 
-	tstrcpy(ID,Sm->P[RegNo].ID);
+	tstrcpy(ID, Sm->P[RegNo].ID);
 	FixTask();
 	if ( direction == CGETW_PAIR ){
 		ID[2] = (TCHAR)(((ID[2] - 1) ^ 1) + 1);
 		for ( j = 0 ; j < X_Mtask ; j++ ){
-			if ( !tstrcmp(Sm->P[j].ID,ID) ) break;
+			if ( !tstrcmp(Sm->P[j].ID, ID) ) break;
 		}
 	}else if ( direction >= 0 ){ // 増加方向
 		for ( i = 0 ; i < 26 ; i++ ){
 			ID[2]++;
 			if ( ID[2] > 'Z' ) ID[2] = 'A';
 			for ( j = 0 ; j < X_Mtask ; j++ ){
-				if ( tstrcmp(Sm->P[j].ID,ID) == 0 ){
+				if ( tstrcmp(Sm->P[j].ID, ID) == 0 ){
 					i = 999;
 					break;
 				}
@@ -631,7 +631,7 @@ int PPcGetNo(int RegNo,int direction)
 			ID[2]--;
 			if ( ID[2] < 'A' ) ID[2] = 'Z';
 			for ( j = 0 ; j < X_Mtask ; j++ ){
-				if ( !tstrcmp( Sm->P[j].ID,ID) ){
+				if ( !tstrcmp( Sm->P[j].ID, ID) ){
 					i = 999;
 					break;
 				}
@@ -642,7 +642,7 @@ int PPcGetNo(int RegNo,int direction)
 	return j;
 }
 
-int PPxRegistCombo(HWND hWnd,TCHAR *ID,int mode)
+int PPxRegistCombo(HWND hWnd, TCHAR *ID, int mode)
 {
 	int index;
 
@@ -666,17 +666,17 @@ int PPxRegistCombo(HWND hWnd,TCHAR *ID,int mode)
 }
 
 // 指定された場所から生きているIDを検索する
-int PPxRegistLiveSearch(TCHAR *ID,int mode)
+int PPxRegistLiveSearch(TCHAR *ID, int mode)
 {
 	int index = -1;
 	int delta;
 
 	UsePPx();
 	{
-		int focus,pair;
+		int focus, pair;
 
 		focus = Sm->ppc.LastFocusID;
-		pair = PPcGetNo(focus,CGETW_PAIR);
+		pair = PPcGetNo(focus, CGETW_PAIR);
 
 		if ( mode == PPXREGIST_SEARCH_LIVEID ) index = focus;
 		if ( mode == (PPXREGIST_SEARCH_LIVEID + 1) ) index = pair;
@@ -724,7 +724,7 @@ PPXDLL HWND PPXAPI PPcGetWindow(int RegNo, int direction)
 			if ( IsTrue(CheckPPcID(Sm->ppc.LastFocusID)) ){
 				// SendMessageは、ShowWindow中でデッドロックが生じた
 				PostMessage(Sm->P[Sm->ppc.LastFocusID].hWnd,
-						WM_PPXCOMMAND,KC_UNFOCUS,0);
+						WM_PPXCOMMAND, KC_UNFOCUS, 0);
 			}
 			if ( (RegNo >= 0) && (RegNo < X_Mtask) ){
 				Sm->P[RegNo].ActiveID = Sm->Active.high++;
@@ -741,7 +741,7 @@ PPXDLL HWND PPXAPI PPcGetWindow(int RegNo, int direction)
 		index = Sm->ppc.LastFocusID;
 		if ( IsWindow(Sm->P[index].hWnd) ){
 			if ( direction == CGETW_GETFOCUSPAIR ){
-				index = PPcGetNo(index,CGETW_PAIR);
+				index = PPcGetNo(index, CGETW_PAIR);
 			}
 		}else{
 			index = -1;
@@ -779,7 +779,7 @@ PPXDLL HWND PPXAPI PPcGetWindow(int RegNo, int direction)
 		HWND hWnd;
 
 		UsePPx();
-		i = PPcGetNo(RegNo,direction);
+		i = PPcGetNo(RegNo, direction);
 		if ( i == RegNo ){
 			hWnd = NULL;
 		}else{
@@ -805,9 +805,9 @@ PPXDLL void PPXAPI PPcOldPath(INT_PTR RegNo, DWORD join, TCHAR *str)
 			}
 		}
 	}else if ( (RegNo >= 0) && (RegNo < X_Mtask) ){
-		if ( X_prtg < 0 ) X_prtg = GetCustDword(T("X_prtg"),0);
+		if ( X_prtg < 0 ) X_prtg = GetCustDword(T("X_prtg"), 0);
 		if ( X_prtg == 0 ){
-			index = PPcGetNo((int)RegNo,CGETW_PAIR);
+			index = PPcGetNo((int)RegNo, CGETW_PAIR);
 			if ( (join == 0) && (index == RegNo) ){
 				if ( Sm->P[Sm->ppc.PrevFocusID].ID[0] == 'C' ){
 					index = Sm->ppc.PrevFocusID;
@@ -819,13 +819,13 @@ PPXDLL void PPXAPI PPcOldPath(INT_PTR RegNo, DWORD join, TCHAR *str)
 			}else{
 				index = (int)RegNo;
 			}
-			if ( index == RegNo ) index = PPcGetNo((int)RegNo,CGETW_PAIR);
+			if ( index == RegNo ) index = PPcGetNo((int)RegNo, CGETW_PAIR);
 		}
 	}
 	if ( (index == RegNo) || (index < 0) || (index >= X_Mtask) ){
 		str[0] = '\0';
 	}else{
-		tstrcpy(str,Sm->P[index].path);
+		tstrcpy(str, Sm->P[index].path);
 	}
 	FreePPx();
 }
@@ -833,7 +833,7 @@ PPXDLL void PPXAPI PPcOldPath(INT_PTR RegNo, DWORD join, TCHAR *str)
 /*-----------------------------------------------------------------------------
 	PPV を起動する
 -----------------------------------------------------------------------------*/
-void bootPPV(HWND hWnd,const TCHAR *fname,int flags)
+void bootPPV(HWND hWnd, const TCHAR *fname, int flags)
 {
 	TCHAR buf[VFPS * 3];
 	TCHAR param[64];
@@ -849,38 +849,41 @@ void bootPPV(HWND hWnd,const TCHAR *fname,int flags)
 	si.cbReserved2	= 0;
 	si.lpReserved2	= NULL;
 
-	if ( flags & (PPV_NOFOREGROUND | PPV_BOOTID) ){
+	if ( flags & (PPV_NOFOREGROUND | PPV_BOOTID | PPV_SETPARENTWND) ){
 		option = param;
 
 		param[0] = '\0';
-		if ( flags & PPV_NOFOREGROUND ) wsprintf(param,T(" /focus:%u "),hWnd);
+		if ( flags & PPV_NOFOREGROUND ) wsprintf(param, T(" -focus:%u "), hWnd);
 		if ( flags & PPV_BOOTID ){
-			wsprintf(param + tstrlen(param),T(" /bootid:%c "),(flags >> 24));
+			wsprintf(param + tstrlen(param), T(" -bootid:%c "), (flags >> 24));
+		}
+		if ( flags & PPV_SETPARENTWND ){
+			wsprintf(param + tstrlen(param), T(" -setparent:%u "), hWnd);
 		}
 	}else{
 		option = NilStr;
 	}
 
 	if ( flags & PPV_PARAM ){
-		wsprintf(buf,T("\"%s") T(PPVEXE) T("\" %s%s"),DLLpath,option,fname);
+		wsprintf(buf, T("\"%s") T(PPVEXE) T("\" %s%s"), DLLpath, option, fname);
 	}else{
-		wsprintf(buf,T("\"%s") T(PPVEXE) T("\" %s\"%s\""),DLLpath,option,fname);
+		wsprintf(buf, T("\"%s") T(PPVEXE) T("\" %s\"%s\""), DLLpath, option, fname);
 	}
 
-	if ( IsTrue(CreateProcess(NULL,buf,NULL,NULL,FALSE,
-				CREATE_DEFAULT_ERROR_MODE,NULL,DLLpath,&si,&pi)) ){
+	if ( IsTrue(CreateProcess(NULL, buf, NULL, NULL, FALSE,
+				CREATE_DEFAULT_ERROR_MODE, NULL, DLLpath, &si, &pi)) ){
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
 	}else{
-		PPErrorBox(NULL,buf,PPERROR_GETLASTERROR);
+		PPErrorBox(NULL, buf, PPERROR_GETLASTERROR);
 	}
 }
 /*-----------------------------------------------------------------------------
 	ファイルの内容を表示する
 -----------------------------------------------------------------------------*/
-PPXDLL BOOL PPXAPI PPxView(HWND hWnd,const TCHAR *param,int flags)
+PPXDLL BOOL PPXAPI PPxView(HWND hWnd, const TCHAR *param, int flags)
 {
-	ShareX *FindP = NULL,*ReserveP = NULL;
+	ShareX *FindP = NULL, *ReserveP = NULL;
 	int i;
 
 	FixTask();
@@ -913,7 +916,7 @@ PPXDLL BOOL PPXAPI PPxView(HWND hWnd,const TCHAR *param,int flags)
 
 		Sm->view.flags = flags;
 		hVWnd = FindP->hWnd;
-		tstrcpy((TCHAR *)Sm->view.param,param);
+		tstrcpy((TCHAR *)Sm->view.param, param);
 
 		if ( (flags & (PPV_SYNCVIEW | PPV_BOOTID)) == (PPV_SYNCVIEW | PPV_BOOTID)){
 			FindP->UsehWnd = (HWND)-2;
@@ -923,7 +926,7 @@ PPXDLL BOOL PPXAPI PPxView(HWND hWnd,const TCHAR *param,int flags)
 		if ( !(flags & (PPV_NOFOREGROUND | PPV_NOENSURE)) ){
 			SetForegroundWindow(hVWnd);
 		}
-		PostMessage(hVWnd,WM_PPXCOMMAND,KV_Load,(LPARAM)hWnd);
+		PostMessage(hVWnd, WM_PPXCOMMAND, KV_Load, (LPARAM)hWnd);
 		return TRUE;
 	}
 	FreePPx();
@@ -931,13 +934,13 @@ PPXDLL BOOL PPXAPI PPxView(HWND hWnd,const TCHAR *param,int flags)
 	if ( flags & PPV_DISABLEBOOT ){
 		return FALSE;
 	}else{
-		bootPPV(hWnd,param,flags);
+		bootPPV(hWnd, param, flags | PPV_SETPARENTWND);
 		return TRUE;
 	}
 }
 
 // 指定した hWnd の PPx を占有する
-PPXDLL BOOL PPXAPI BusyPPx(HWND hWnd,HWND hUseWnd)
+PPXDLL BOOL PPXAPI BusyPPx(HWND hWnd, HWND hUseWnd)
 {
 	int i;
 
@@ -966,7 +969,7 @@ PPXDLL int PPXAPI PPvViewName(TCHAR *param)
 		FreePPx();
 		return -1;
 	}
-	tstrcpy(param,(TCHAR *)Sm->view.param);
+	tstrcpy(param, (TCHAR *)Sm->view.param);
 	flags = Sm->view.flags;
 	FreePPx();
 	return flags;
@@ -1030,11 +1033,11 @@ int GetPPxListFromCombo(HMENU hPopupMenu, int mode, ThSTRUCT *th, TCHAR *ppclist
 			setflag(*useppclist, 1 << (listIDptr[2] - 'A'));
 			if ( mode == GetPPcList_Path ){
 				if ( th != NULL ){
-					ThAddString(th,EscapeMacrochar(listPathPtr,minfo->dwTypeData));
+					ThAddString(th, EscapeMacrochar(listPathPtr, minfo->dwTypeData));
 				}
-				wsprintf(minfo->dwTypeData,T("%c&%s: %s"),*listIDptr, listIDptr + 2,listPathPtr);
+				wsprintf(minfo->dwTypeData, T("%c&%s: %s"), *listIDptr, listIDptr + 2, listPathPtr);
 			}else{
-				wsprintf(minfo->dwTypeData,T("PPc %c&%s: %s"),*listIDptr, listIDptr + 2,listPathPtr);
+				wsprintf(minfo->dwTypeData, T("PPc %c&%s: %s"), *listIDptr, listIDptr + 2, listPathPtr);
 			}
 			minfo->fMask = MIIM_STATE | MIIM_TYPE | MIIM_ID | MIIM_DATA;
 			minfo->dwItemData = 0;
@@ -1042,14 +1045,14 @@ int GetPPxListFromCombo(HMENU hPopupMenu, int mode, ThSTRUCT *th, TCHAR *ppclist
 			++minfo->wID;
 
 			if ( th != NULL ){
-				wsprintf(buf2,T("C_%s"),listIDptr + 2);
+				wsprintf(buf2, T("C_%s"), listIDptr + 2);
 				switch ( mode ){
 					case GetPPxList_Id:
-						ThAddString(th,buf2);
+						ThAddString(th, buf2);
 						break;
 					case GetPPxList_Select:
-						wsprintf(minfo->dwTypeData,T("*focus %s"),buf2);
-						ThAddString(th,minfo->dwTypeData);
+						wsprintf(minfo->dwTypeData, T("*focus %s"), buf2);
+						ThAddString(th, minfo->dwTypeData);
 						break;
 				}
 			}
@@ -1058,9 +1061,9 @@ int GetPPxListFromCombo(HMENU hPopupMenu, int mode, ThSTRUCT *th, TCHAR *ppclist
 		}
 		listIDptr = listPathPtr + tstrlen(listPathPtr) + 1;
 	}
-	HeapFree(DLLheap,0,ppclist);
+	HeapFree(DLLheap, 0, ppclist);
 	if ( mode != GetPPcList_Path ){
-		AppendMenu(hPopupMenu,MF_SEPARATOR,0,NULL);
+		AppendMenu(hPopupMenu, MF_SEPARATOR, 0, NULL);
 	}
 	return item;
 }
@@ -1083,7 +1086,7 @@ int GetPPxList(HMENU hPopupMenu, int mode, ThSTRUCT *th, DWORD *menuid)
 	minfo.wID = *menuid;
 
 	if ( hProcessComboWnd != NULL ){
-		item += GetPPxListFromCombo(hPopupMenu, mode, th, (TCHAR *)SendMessage(hProcessComboWnd,WM_PPXCOMMAND,KCW_ppclist,0), &useppclist, &minfo);
+		item += GetPPxListFromCombo(hPopupMenu, mode, th, (TCHAR *)SendMessage(hProcessComboWnd, WM_PPXCOMMAND, KCW_ppclist, 0), &useppclist, &minfo);
 	}
 
 	for ( i = 0 ; i < 26 ; i++ ){
@@ -1098,13 +1101,13 @@ int GetPPxList(HMENU hPopupMenu, int mode, ThSTRUCT *th, DWORD *menuid)
 			continue;
 		}
 
-		lr = SendMessage(hComboWnd,WM_PPXCOMMAND,TMAKEWPARAM(KCW_ppclist,1),0);
+		lr = SendMessage(hComboWnd, WM_PPXCOMMAND, TMAKEWPARAM(KCW_ppclist, 1), 0);
 		if ( lr == 0 ) continue;
 
-		wsprintf(buf1,T("%%temp%%\\ppxl%d"),(int)lr);
+		wsprintf(buf1, T("%%temp%%\\ppxl%d"), (int)lr);
 		ExpandEnvironmentStrings(buf1, buf2, TSIZEOF(buf2));
 
-		ec = LoadFileImage(buf2, 4, (char **)&ppclist,&size,LFI_ALWAYSLIMITLESS);
+		ec = LoadFileImage(buf2, 4, (char **)&ppclist, &size, LFI_ALWAYSLIMITLESS);
 		DeleteFile(buf2);
 		if ( ec != NO_ERROR ) continue;
 
@@ -1115,8 +1118,8 @@ int GetPPxList(HMENU hPopupMenu, int mode, ThSTRUCT *th, DWORD *menuid)
 
 	UsePPx();
 	sx = Sm->P;
-	for ( i = 0 ; i < X_Mtask ; i++,sx++ ){
-		TCHAR *name,ID;
+	for ( i = 0 ; i < X_Mtask ; i++, sx++ ){
+		TCHAR *name, ID;
 
 		ID = sx->ID[0];
 		if ( ID != '\0' ){
@@ -1127,11 +1130,11 @@ int GetPPxList(HMENU hPopupMenu, int mode, ThSTRUCT *th, DWORD *menuid)
 			if ( mode == GetPPcList_Path ){
 				if ( (ID != 'C') || (sx->ID[1] != '_') ) continue;
 				if ( th != NULL ){
-					ThAddString(th,EscapeMacrochar(sx->path,buf1));
+					ThAddString(th, EscapeMacrochar(sx->path, buf1));
 				}
-				wsprintf(buf1,T("%c&%c: %s"),
+				wsprintf(buf1, T("%c&%c: %s"),
 						(sx->hWnd == Sm->ppc.hLastFocusWnd) ? '*' : ' ',
-						sx->ID[2],sx->path);
+						sx->ID[2], sx->path);
 			}else{
 				switch ( ID ){
 					case 'B':
@@ -1150,27 +1153,27 @@ int GetPPxList(HMENU hPopupMenu, int mode, ThSTRUCT *th, DWORD *menuid)
 						continue;
 				}
 				if ( (ID == 'C') && (sx->ID[2] <= 'Z') ){
-					wsprintf(buf1,T("%s %c&%c: %s"),name,
+					wsprintf(buf1, T("%s %c&%c: %s"), name,
 							(sx->hWnd == Sm->ppc.hLastFocusWnd) ? '*' : ' ',
-							sx->ID[2],sx->path);
+							sx->ID[2], sx->path);
 				}else {
-					wsprintf(buf1,T("%s %c: & "),name,sx->ID[2]);
+					wsprintf(buf1, T("%s %c: & "), name, sx->ID[2]);
 				}
 			}
 			for ( pos = minpos ; pos < (minpos + item) ; pos++ ){ // 簡易ソート
-				GetMenuString(hPopupMenu,pos,buf2,TSIZEOF(buf2),MF_BYPOSITION);
-				if ( tstrcmp(buf1,buf2) < 0 ) break;
+				GetMenuString(hPopupMenu, pos, buf2, TSIZEOF(buf2), MF_BYPOSITION);
+				if ( tstrcmp(buf1, buf2) < 0 ) break;
 			}
 			if ( mode == GetPPxList_hWnd ){
 				minfo.dwItemData = (ULONG_PTR)sx->hWnd;
 			}else{
 				if ( th != NULL ) switch ( mode ){
 					case GetPPxList_Id:
-						ThAddString(th,sx->ID);
+						ThAddString(th, sx->ID);
 						break;
 					case GetPPxList_Select:
-						wsprintf(buf2,T("*focus %s"),sx->ID);
-						ThAddString(th,buf2);
+						wsprintf(buf2, T("*focus %s"), sx->ID);
+						ThAddString(th, buf2);
 						break;
 				}
 			}
@@ -1196,7 +1199,7 @@ void JobListItemDraw(DRAWITEMSTRUCT *lpdis)
 	COLORREF backcolor = C_AUTO;
 	HBRUSH hB;
 	DWORD state = 0;
-	int index,rate = 0,height,width;
+	int index, rate = 0, height, width;
 	RECT box;
 
 	if ( (int)lpdis->itemID >= 0 ){
@@ -1218,19 +1221,19 @@ void JobListItemDraw(DRAWITEMSTRUCT *lpdis)
 			}else{
 				c = (state & JOBFLAG_WAITEXEC) ? C_GREEN : C_CYAN;
 			}
-			#define GetPointColor(bc,fc) (BYTE)(int)((int)bc + ((int)fc - (int)bc) / 4)
+			#define GetPointColor(bc, fc) (BYTE)(int)((int)bc + ((int)fc - (int)bc) / 4)
 			backcolor = RGB(
-				GetPointColor(GetRValue(backcolor),GetRValue(c)),
-				GetPointColor(GetRValue(backcolor),GetGValue(c)),
-				GetPointColor(GetBValue(backcolor),GetBValue(c)));
+				GetPointColor(GetRValue(backcolor), GetRValue(c)),
+				GetPointColor(GetRValue(backcolor), GetGValue(c)),
+				GetPointColor(GetBValue(backcolor), GetBValue(c)));
 		}
 		if ( backcolor != C_AUTO ){
 			hB = CreateSolidBrush(backcolor);
-			FillBox(lpdis->hDC,&lpdis->rcItem,hB);
+			FillBox(lpdis->hDC, &lpdis->rcItem, hB);
 			DeleteObject(hB);
-			SetBkMode(lpdis->hDC,TRANSPARENT);
+			SetBkMode(lpdis->hDC, TRANSPARENT);
 		}else{
-			SetBkMode(lpdis->hDC,OPAQUE);
+			SetBkMode(lpdis->hDC, OPAQUE);
 		}
 
 		// 処理グラフの描画
@@ -1243,9 +1246,9 @@ void JobListItemDraw(DRAWITEMSTRUCT *lpdis)
 			box.right = lpdis->rcItem.left + (width * rate) / 100;
 
 			hB = CreateSolidBrush(GetSysColor(COLOR_HIGHLIGHT));
-			FillBox(lpdis->hDC,&box,hB);
+			FillBox(lpdis->hDC, &box, hB);
 			DeleteObject(hB);
-			SetBkMode(lpdis->hDC,TRANSPARENT);
+			SetBkMode(lpdis->hDC, TRANSPARENT);
 		}
 
 		// マウス操作用ボタンの描画
@@ -1260,7 +1263,7 @@ void JobListItemDraw(DRAWITEMSTRUCT *lpdis)
 				box.top++;
 				box.bottom--;
 				box.right--;
-				FrameRect(lpdis->hDC,&box,GetStockObject(DKGRAY_BRUSH));
+				FrameRect(lpdis->hDC, &box, GetStockObject(DKGRAY_BRUSH));
 				box.right++;
 				box.bottom++;
 				box.top--;
@@ -1274,40 +1277,40 @@ void JobListItemDraw(DRAWITEMSTRUCT *lpdis)
 				HGDIOBJ hOldBrush;
 				POINT pos[3];
 
-				hOldBrush = SelectObject(lpdis->hDC,GetStockObject(BLACK_BRUSH));
+				hOldBrush = SelectObject(lpdis->hDC, GetStockObject(BLACK_BRUSH));
 				pos[0].x = pos[2].x = box.left;
 				pos[0].y = box.top;
 				pos[1].x = box.right;
 				pos[1].y = box.top + ah;
 				pos[2].y = box.bottom;
-				Polygon(lpdis->hDC,pos,3);
-				SelectObject(lpdis->hDC,hOldBrush);
+				Polygon(lpdis->hDC, pos, 3);
+				SelectObject(lpdis->hDC, hOldBrush);
 			}else{ // 停止ボタン
-				FillBox(lpdis->hDC,&box,GetStockObject(BLACK_BRUSH));
+				FillBox(lpdis->hDC, &box, GetStockObject(BLACK_BRUSH));
 			}
 			box = lpdis->rcItem;
 			box.right -= height;
 		}
 
 		// 表示文字列を描画
-		len = (int)SendMessage(lpdis->hwndItem,LB_GETTEXT,lpdis->itemID,(LPARAM)buf);
-		DrawText(lpdis->hDC,buf,len,&box,DT_END_ELLIPSIS | DT_NOPREFIX);
-		SetBkMode(lpdis->hDC,OPAQUE);
+		len = (int)SendMessage(lpdis->hwndItem, LB_GETTEXT, lpdis->itemID, (LPARAM)buf);
+		DrawText(lpdis->hDC, buf, len, &box, DT_END_ELLIPSIS | DT_NOPREFIX);
+		SetBkMode(lpdis->hDC, OPAQUE);
 	}
 
 	// フォーカス枠を描画
 	if ( lpdis->itemState & ODS_FOCUS ){
-		FrameRect(lpdis->hDC,&lpdis->rcItem,GetStockObject(DKGRAY_BRUSH));
+		FrameRect(lpdis->hDC, &lpdis->rcItem, GetStockObject(DKGRAY_BRUSH));
 	}
 }
 
-void JobListSelect(HWND hWnd,int listindex,int mode)
+void JobListSelect(HWND hWnd, int listindex, int mode)
 {
 	HWND hTargetWnd;
 	int state;
 
-	int index = (int)SendMessage(hWnd,LB_GETITEMDATA,(WPARAM)listindex,0);
-//	index = CallWindowProc(OldJobProc,hWnd,LB_GETITEMDATA,(WPARAM)listindex,0); ←こちらだと失敗する。
+	int index = (int)SendMessage(hWnd, LB_GETITEMDATA, (WPARAM)listindex, 0);
+//	index = CallWindowProc(OldJobProc, hWnd, LB_GETITEMDATA, (WPARAM)listindex, 0); ←こちらだと失敗する。
 	if ( (listindex < 0) && (listindex >= X_MaxJob) ) return;
 
 	UsePPx();
@@ -1317,32 +1320,32 @@ void JobListSelect(HWND hWnd,int listindex,int mode)
 
 	if ( hTargetWnd == NULL ) return;
 
-	if ( !(GetWindowLongPtr(hTargetWnd,GWL_STYLE) & WS_VISIBLE) ){
-		ShowWindow(hTargetWnd,SW_RESTORE);
+	if ( !(GetWindowLongPtr(hTargetWnd, GWL_STYLE) & WS_VISIBLE) ){
+		ShowWindow(hTargetWnd, SW_RESTORE);
 	}
 
 	if ( mode == JOBSELECTMODE_FOCUS ){
-		ShowWindow(hTargetWnd,SW_SHOWNORMAL);
+		ShowWindow(hTargetWnd, SW_SHOWNORMAL);
 		SetForegroundWindow(hTargetWnd);
 	}else{
 		if ( state & JOBFLAG_ENABLEHIDE ){
-			SendMessage(hTargetWnd,WM_COMMAND,
-					(mode == JOBSELECTMODE_CLOSE) ? IDCANCEL : IDOK,0);
+			SendMessage(hTargetWnd, WM_COMMAND,
+					(mode == JOBSELECTMODE_CLOSE) ? IDCANCEL : IDOK, 0);
 		}else{
-			PostMessage(hTargetWnd,WM_KEYDOWN,VK_PAUSE,0);
+			PostMessage(hTargetWnd, WM_KEYDOWN, VK_PAUSE, 0);
 		}
 	}
 }
 
-void JobListButtonUp(HWND hWnd,LPARAM lParam)
+void JobListButtonUp(HWND hWnd, LPARAM lParam)
 {
-	int index,height,mode = JOBSELECTMODE_FOCUS;
+	int index, height, mode = JOBSELECTMODE_FOCUS;
 	RECT box;
 
-	index = (int)CallWindowProc(OldJobProc,hWnd,LB_ITEMFROMPOINT,0,lParam);
+	index = (int)CallWindowProc(OldJobProc, hWnd, LB_ITEMFROMPOINT, 0, lParam);
 	if ( (index < 0) || HIWORD(index) ) return;
 
-	CallWindowProc(OldJobProc,hWnd,LB_GETITEMRECT,0,(LPARAM)&box);
+	CallWindowProc(OldJobProc, hWnd, LB_GETITEMRECT, 0, (LPARAM)&box);
 	height = box.bottom - box.top;
 	if ( (height * SHOWJOBBUTTON_MINRATE) < (box.right - box.left) ){
 		int x = LOWORD(lParam);
@@ -1356,10 +1359,10 @@ void JobListButtonUp(HWND hWnd,LPARAM lParam)
 			}
 		}
 	}
-	JobListSelect(hWnd,index,mode);
+	JobListSelect(hWnd, index, mode);
 }
 
-LRESULT CALLBACK JobListWndProc(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
+LRESULT CALLBACK JobListWndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch(iMsg){
 		case WM_KEYDOWN:
@@ -1377,14 +1380,14 @@ LRESULT CALLBACK JobListWndProc(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
 						selectmode = JOBSELECTMODE_FOCUS;
 					}
 				}
-				InvalidateRect(hWnd,NULL,TRUE);
+				InvalidateRect(hWnd, NULL, TRUE);
 				return 0;
 			}
 
 			if ( (wParam == VK_SPACE) || (wParam == VK_RETURN) ){
-				int index = (int)CallWindowProc(OldJobProc,hWnd,LB_GETCURSEL,0,0);
+				int index = (int)CallWindowProc(OldJobProc, hWnd, LB_GETCURSEL, 0, 0);
 
-				if ( index >= 0 ) JobListSelect(hWnd,index,selectmode);
+				if ( index >= 0 ) JobListSelect(hWnd, index, selectmode);
 				return 0;
 			}
 			if ( wParam == VK_ESCAPE ){
@@ -1393,17 +1396,17 @@ LRESULT CALLBACK JobListWndProc(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
 				if ( Sm->JobList.showmode == JOBLIST_INNER ){
 					SetFocus(GetParent(hPWnd));
 				}else{
-					PostMessage(hPWnd,WM_CLOSE,0,0);
+					PostMessage(hPWnd, WM_CLOSE, 0, 0);
 				}
 				return 0;
 			}
 			break;
 
 		case WM_LBUTTONUP:
-			JobListButtonUp(hWnd,lParam);
+			JobListButtonUp(hWnd, lParam);
 			break;
 	}
-	return CallWindowProc(OldJobProc,hWnd,iMsg,wParam,lParam);
+	return CallWindowProc(OldJobProc, hWnd, iMsg, wParam, lParam);
 }
 
 void DestroyJobList(HWND hWnd)
@@ -1415,34 +1418,34 @@ void DestroyJobList(HWND hWnd)
 	HFONT hMesFont;
 	HBRUSH hJobBackBrush;
 
-	for ( index = 0 ; index < X_MaxJob ; index++,job++ ){
+	for ( index = 0 ; index < X_MaxJob ; index++, job++ ){
 		if ( job->ThreadID == 0 ) continue;
 		if ( !(job->state.dw & JOBFLAG_ENABLEHIDE) ) continue;
-		if ( !(GetWindowLongPtr(job->hWnd,GWL_STYLE) & WS_VISIBLE) ){
-			ShowWindow(job->hWnd,SW_SHOWNOACTIVATE);
+		if ( !(GetWindowLongPtr(job->hWnd, GWL_STYLE) & WS_VISIBLE) ){
+			ShowWindow(job->hWnd, SW_SHOWNOACTIVATE);
 		}
 	}
 	Sm->JobList.hWnd = NULL;
-	hMesFont = (HFONT)SendMessage(hWnd,WM_GETFONT,0,0);
+	hMesFont = (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0);
 	if ( hMesFont != NULL ) DeleteObject(hMesFont);
 
-	hJobBackBrush = (HBRUSH)GetWindowLongPtr(hWnd,GWLP_USERDATA);
+	hJobBackBrush = (HBRUSH)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 	if ( hJobBackBrush != NULL ) DeleteObject(hJobBackBrush);
 
 	if ( Sm->JobList.showmode != JOBLIST_INNER ){
 		wp.length = sizeof(wp);
-		GetWindowPlacement(hWnd,&wp);
+		GetWindowPlacement(hWnd, &wp);
 		if ( wp.showCmd == SW_SHOWNORMAL ){
 			WPos.show = (BYTE)wp.showCmd;
 			WPos.reserved = 0;
-			GetWindowRect(hWnd,&WPos.pos);
-			SetCustTable(T("_WinPos"),T("JobLst"),&WPos,sizeof(WPos));
+			GetWindowRect(hWnd, &WPos.pos);
+			SetCustTable(T("_WinPos"), T("JobLst"), &WPos, sizeof(WPos));
 		}
 		PostQuitMessage(EXIT_SUCCESS);
 	}
 }
 
-LRESULT CALLBACK JobListParentWndProc(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
+LRESULT CALLBACK JobListParentWndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch(iMsg){
 		case WM_DRAWITEM:
@@ -1454,29 +1457,29 @@ LRESULT CALLBACK JobListParentWndProc(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM l
 			break;
 
 		case WM_CTLCOLORLISTBOX: {
-			LRESULT hJobBackBrush = GetWindowLongPtr(hWnd,GWLP_USERDATA);
+			LRESULT hJobBackBrush = GetWindowLongPtr(hWnd, GWLP_USERDATA);
 
 			if ( hJobBackBrush != 0 ){
-				SetTextColor((HDC)wParam,CJ_log[0]);
-				SetBkColor((HDC)wParam,CJ_log[1]);
+				SetTextColor((HDC)wParam, CJ_log[0]);
+				SetBkColor((HDC)wParam, CJ_log[1]);
 				return hJobBackBrush;
 			}
-			return DefWindowProc(hWnd,iMsg,wParam,lParam);
+			return DefWindowProc(hWnd, iMsg, wParam, lParam);
 		}
 		case WM_SIZE:
-			SetWindowPos(Sm->JobList.hWnd,NULL,
-				0,0,LOWORD(lParam),HIWORD(lParam),
+			SetWindowPos(Sm->JobList.hWnd, NULL,
+				0, 0, LOWORD(lParam), HIWORD(lParam),
 				SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
 		// default へ
 
 		default:
-			return DefWindowProc(hWnd,iMsg,wParam,lParam);
+			return DefWindowProc(hWnd, iMsg, wParam, lParam);
 	}
 	return 0;
 }
 
 #define JOBINFOTEXTSIZE (VFPS + 32)
-void MakeJobInfoText(HWND hWnd,DWORD state,TCHAR *text)
+void MakeJobInfoText(HWND hWnd, DWORD state, TCHAR *text)
 {
 	TCHAR *p;
 	const TCHAR *sstr = NilStr;
@@ -1492,49 +1495,49 @@ void MakeJobInfoText(HWND hWnd,DWORD state,TCHAR *text)
 	}
 	statetype = state & JOBFLAG_NAMEMASK;
 	if ( statetype >= JOBSTATE_MAX ) statetype = JOBSTATE_NORMAL;
-	p = text + wsprintf(text,T("%s%s:"),sstr,MessageText(JobTypeNames[statetype]) );
+	p = text + wsprintf(text, T("%s%s:"), sstr, MessageText(JobTypeNames[statetype]) );
 	if ( hWnd == NULL ){
 		THREADSTRUCT *ts;
 
 		UsePPx();
 		ts = GetCurrentThreadInfo();
-		if ( ts != NULL ) tstrcpy(p,ts->ThreadName);
+		if ( ts != NULL ) tstrcpy(p, ts->ThreadName);
 		FreePPx();
 	}else{
-		GetWindowText(hWnd,p,JOBINFOTEXTSIZE - (p - text));
+		GetWindowText(hWnd, p, JOBINFOTEXTSIZE - (p - text));
 		if ( Isdigit(*p) ){
 			TCHAR *p2;
 
-			if ( (p2 = tstrchr(p,'/')) != NULL ){
+			if ( (p2 = tstrchr(p, '/')) != NULL ){
 				p2 += 1;
-				memmove(p,p2,TSTRSIZE(p2));
+				memmove(p, p2, TSTRSIZE(p2));
 			}
 		}
 	}
 }
 
-void USEFASTCALL AddJobListStr(int i,const TCHAR *text,int posindex)
+void USEFASTCALL AddJobListStr(int i, const TCHAR *text, int posindex)
 {
 	int index;
 
-	index = (int)SendMessage(Sm->JobList.hWnd,LB_INSERTSTRING,(WPARAM)posindex,(LPARAM)text);
-	SendMessage(Sm->JobList.hWnd,LB_SETITEMDATA,(WPARAM)index,(LPARAM)i);
+	index = (int)SendMessage(Sm->JobList.hWnd, LB_INSERTSTRING, (WPARAM)posindex, (LPARAM)text);
+	SendMessage(Sm->JobList.hWnd, LB_SETITEMDATA, (WPARAM)index, (LPARAM)i);
 }
 
 void ShowJobListWnd(HWND hWnd)
 {
 	HWND hParent;
-	RECT targetbox,box;
+	RECT targetbox, box;
 
 	if ( Sm->JobList.showmode == JOBLIST_INNER ) return;
 
 	hParent = GetParent(Sm->JobList.hWnd);
 	if ( X_jlst[0] != JOBLIST_FLOAT ){
-		ShowWindow(hParent,SW_SHOWNOACTIVATE);
+		ShowWindow(hParent, SW_SHOWNOACTIVATE);
 		return;
 	}
 
-	if ( hWnd == NULL ) hWnd = PPcGetWindow(0,CGETW_GETFOCUS);
+	if ( hWnd == NULL ) hWnd = PPcGetWindow(0, CGETW_GETFOCUS);
 	if ( hWnd == NULL ){
 		hWnd = GetForegroundWindow();
 	}else{
@@ -1546,16 +1549,16 @@ void ShowJobListWnd(HWND hWnd)
 			hWnd = hWParent;
 		}
 	}
-	GetWindowRect(hWnd,&targetbox);
-	GetWindowRect(hParent,&box);
+	GetWindowRect(hWnd, &targetbox);
+	GetWindowRect(hParent, &box);
 
-	SetWindowPos(hParent,HWND_TOP,
+	SetWindowPos(hParent, HWND_TOP,
 			targetbox.right,
 			targetbox.bottom - (box.bottom - box.top),
-			0,0,SWP_NOACTIVATE | SWP_SHOWWINDOW | SWP_NOSIZE);
+			0, 0, SWP_NOACTIVATE | SWP_SHOWWINDOW | SWP_NOSIZE);
 
-	if ( SendMessage(Sm->JobList.hWnd,LB_GETCURSEL,0,0) == LB_ERR ){
-		SendMessage(Sm->JobList.hWnd,LB_SETCURSEL,0,0);
+	if ( SendMessage(Sm->JobList.hWnd, LB_GETCURSEL, 0, 0) == LB_ERR ){
+		SendMessage(Sm->JobList.hWnd, LB_SETCURSEL, 0, 0);
 	}
 }
 
@@ -1564,15 +1567,15 @@ void InitJobList(HWND hMainWnd)
 	WNDCLASS wcClass;
 	HWND hParentWnd;
 	DWORD style;
-	WINPOS WPos = {{0,0,200,100},0,0};
+	WINPOS WPos = {{0, 0, 200, 100}, 0, 0};
 
 	wcClass.style			= 0;
 	wcClass.lpfnWndProc		= JobListParentWndProc;
 	wcClass.cbClsExtra		= 0;
 	wcClass.cbWndExtra		= 0;
 	wcClass.hInstance		= DLLhInst;
-	wcClass.hIcon			= LoadIcon(DLLhInst,MAKEINTRESOURCE(Ic_FOP));
-	wcClass.hCursor			= LoadCursor(NULL,IDC_ARROW);
+	wcClass.hIcon			= LoadIcon(DLLhInst, MAKEINTRESOURCE(Ic_FOP));
+	wcClass.hCursor			= LoadCursor(NULL, IDC_ARROW);
 	wcClass.hbrBackground	= (HBRUSH)(COLOR_WINDOW + 1);
 	wcClass.lpszMenuName	= NULL;
 	wcClass.lpszClassName	= T("Jobist");
@@ -1584,39 +1587,39 @@ void InitJobList(HWND hMainWnd)
 	}else{
 		style = WS_CHILD | WS_VISIBLE;
 	}
-	GetCustTable(T("_WinPos"),T("JobLst"),&WPos,sizeof(WPos));
+	GetCustTable(T("_WinPos"), T("JobLst"), &WPos, sizeof(WPos));
 	WPos.pos.right -= WPos.pos.left;
 	if ( WPos.pos.right < 32 ) WPos.pos.right = 200;
 	WPos.pos.bottom -= WPos.pos.top;
 	if ( WPos.pos.bottom < 32 ) WPos.pos.bottom = 100;
 
-	hParentWnd = CreateWindowEx(WS_EX_TOOLWINDOW,T("Jobist"),T("PPx job"),
-			style,WPos.pos.left,WPos.pos.top,
-			WPos.pos.right,WPos.pos.bottom,hMainWnd,NULL,DLLhInst,NULL);
+	hParentWnd = CreateWindowEx(WS_EX_TOOLWINDOW, T("Jobist"), T("PPx job"),
+			style, WPos.pos.left, WPos.pos.top,
+			WPos.pos.right, WPos.pos.bottom, hMainWnd, NULL, DLLhInst, NULL);
 
-	GetCustData(T("CC_log"),&CJ_log,sizeof(CJ_log));
+	GetCustData(T("CC_log"), &CJ_log, sizeof(CJ_log));
 
-	Sm->JobList.hWnd = CreateWindowEx(0,LISTBOXstr,NilStr,
+	Sm->JobList.hWnd = CreateWindowEx(0, LISTBOXstr, NilStr,
 			WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_HASSTRINGS | LBS_OWNERDRAWFIXED | LBS_NOINTEGRALHEIGHT,
-			0,0,200,100,hParentWnd,NULL,DLLhInst,NULL);
+			0, 0, 200, 100, hParentWnd, NULL, DLLhInst, NULL);
 
 	if ( Sm->JobList.hWnd != NULL ){
 		HBRUSH hJobBackBrush = NULL;
 		LOGFONTWITHDPI cursfont;
 
 		OldJobProc = (WNDPROC)SetWindowLongPtr(
-				Sm->JobList.hWnd,GWLP_WNDPROC,(LONG_PTR)JobListWndProc);
+				Sm->JobList.hWnd, GWLP_WNDPROC, (LONG_PTR)JobListWndProc);
 
-		GetPPxFont(PPXFONT_F_mes,GetMonitorDPI(hParentWnd),&cursfont);
+		GetPPxFont(PPXFONT_F_mes, GetMonitorDPI(hParentWnd), &cursfont);
 
-		SendMessage(Sm->JobList.hWnd,WM_SETFONT,(WPARAM)
-			CreateFontIndirect(&cursfont.font),TMAKELPARAM(TRUE,0));
+		SendMessage(Sm->JobList.hWnd, WM_SETFONT, (WPARAM)
+			CreateFontIndirect(&cursfont.font), TMAKELPARAM(TRUE, 0));
 		if ( (hMainWnd != NULL) && (CJ_log[0] != C_AUTO) || (CJ_log[1] != C_AUTO) ){
 			if ( CJ_log[0] == C_AUTO) CJ_log[0] = GetSysColor(COLOR_WINDOWTEXT);
 			if ( CJ_log[1] == C_AUTO) CJ_log[1] = GetSysColor(COLOR_WINDOW);
 			hJobBackBrush = CreateSolidBrush(CJ_log[1]);
 		}
-		SetWindowLongPtr(hParentWnd,GWLP_USERDATA,(LONG_PTR)hJobBackBrush);
+		SetWindowLongPtr(hParentWnd, GWLP_USERDATA, (LONG_PTR)hJobBackBrush);
 		ShowJobListWnd(NULL);
 	}
 }
@@ -1625,7 +1628,7 @@ void InitJobList(HWND hMainWnd)
 DWORD WINAPI JobListThread(LPVOID param)
 {
 	MSG msg;
-	THREADSTRUCT threadstruct = {T("Joblist"),XTHREAD_EXITENABLE | XTHREAD_TERMENABLE,NULL,0,0};
+	THREADSTRUCT threadstruct = {T("Joblist"), XTHREAD_EXITENABLE | XTHREAD_TERMENABLE, NULL, 0, 0};
 	UnUsedParam(param);
 
 	PPxRegisterThread(&threadstruct);
@@ -1634,7 +1637,7 @@ DWORD WINAPI JobListThread(LPVOID param)
 
 	if ( Sm->JobList.hWnd != NULL ){
 		for ( ; ; ){
-			if ( (int)GetMessage(&msg,NULL,0,0) <= 0 ) break;
+			if ( (int)GetMessage(&msg, NULL, 0, 0) <= 0 ) break;
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
@@ -1650,15 +1653,15 @@ void CreateJobListWnd(void)
 	HWND hMainWnd = Sm->JobList.hWnd;
 
 	X_jlst[0] = JOBLIST_OFF;
-	GetCustData(T("X_jlst"),X_jlst,sizeof(X_jlst));
+	GetCustData(T("X_jlst"), X_jlst, sizeof(X_jlst));
 
 	Sm->JobList.hWnd = NULL;
 	Sm->JobList.hidemode = X_jlst[1];
 	if ( hMainWnd == NULL ){
 		int i;
 
-		CloseHandle(CreateThread(NULL,0,
-				(LPTHREAD_START_ROUTINE)JobListThread,0,0,&tid));
+		CloseHandle(CreateThread(NULL, 0,
+				(LPTHREAD_START_ROUTINE)JobListThread, 0, 0, &tid));
 		for ( i = 0 ; i < 60 ; i++ ){
 			Sleep(50);
 			if ( Sm->JobList.hWnd != NULL ) break;
@@ -1677,8 +1680,8 @@ void CreateJobListWnd(void)
 			if ( Sm->Job[i].ThreadID == 0 ) continue;
 			hJobWnd = Sm->Job[i].hWnd;
 			state = Sm->Job[i].state.dw;
-			MakeJobInfoText(hJobWnd,state,buf);
-			AddJobListStr(i,buf,-1);
+			MakeJobInfoText(hJobWnd, state, buf);
+			AddJobListStr(i, buf, -1);
 		}
 	}
 }
@@ -1689,7 +1692,7 @@ void CheckJobList(void)
 	JobX *job;
 
 	job = Sm->Job;
-	for ( i = 0 ; i < X_MaxJob ; i++,job++ ){
+	for ( i = 0 ; i < X_MaxJob ; i++, job++ ){
 		if ( job->ThreadID &&
 			 (job->hWnd != NULL) &&
 			 (IsWindow(job->hWnd) == FALSE) ){
@@ -1700,10 +1703,10 @@ void CheckJobList(void)
 
 void StartNextJobTask(void)
 {
-	int i,index C4701CHECK;
+	int i, index C4701CHECK;
 	HWND hNextJobWnd;
 
-	if ( GetCustDword(T("X_fopw"),0) != 2 ) return;
+	if ( GetCustDword(T("X_fopw"), 0) != 2 ) return;
 	hNextJobWnd = NULL;
 	UsePPx();
 	for ( i = 0 ; i < X_MaxJob ; i++ ){
@@ -1728,12 +1731,12 @@ void StartNextJobTask(void)
 	if ( hNextJobWnd != NULL ){
 		DWORD_PTR sendresult = 0;
 
-		SendMessageTimeout(hNextJobWnd,WM_COMMAND,IDM_CONTINUE,0,SMTO_ABORTIFHUNG,2000,&sendresult);
+		SendMessageTimeout(hNextJobWnd, WM_COMMAND, IDM_CONTINUE, 0, SMTO_ABORTIFHUNG, 2000, &sendresult);
 		if ( sendresult != (DWORD_PTR)IDM_CONTINUE ){
 			// 実行失敗
 			UsePPx();
 			if ( Sm->Job[index].hWnd == hNextJobWnd ){  // C4701ok
-				resetflag(Sm->Job[index].state.dw,JOBFLAG_WAITJOB);
+				resetflag(Sm->Job[index].state.dw, JOBFLAG_WAITJOB);
 			}
 			FreePPx();
 
@@ -1745,10 +1748,10 @@ void StartNextJobTask(void)
 
 int USEFASTCALL FindJobListIndex(int i)
 {
-	int index = 0,li;
+	int index = 0, li;
 
 	for ( ; ; ){
-		li = (int)SendMessage(Sm->JobList.hWnd,LB_GETITEMDATA,(WPARAM)index,0);
+		li = (int)SendMessage(Sm->JobList.hWnd, LB_GETITEMDATA, (WPARAM)index, 0);
 		if ( li < 0 ) return -1;
 		if ( li == i ) return index;
 		index++;
@@ -1764,16 +1767,16 @@ void DeleteJobTaskMain(int i)
 	index = FindJobListIndex(i);
 	if ( index < 0 ) return;
 
-	SendMessage(Sm->JobList.hWnd,LB_DELETESTRING,(WPARAM)index,0);
+	SendMessage(Sm->JobList.hWnd, LB_DELETESTRING, (WPARAM)index, 0);
 	if ( (Sm->JobList.showmode != JOBLIST_INNER) &&
-		 ((int)SendMessage(Sm->JobList.hWnd,LB_GETCOUNT,0,0) <= 0) ){
-		ShowWindow(GetParent(Sm->JobList.hWnd),SW_HIDE);
+		 ((int)SendMessage(Sm->JobList.hWnd, LB_GETCOUNT, 0, 0) <= 0) ){
+		ShowWindow(GetParent(Sm->JobList.hWnd), SW_HIDE);
 	}
 }
 
-BOOL SetJobTask(HWND hWnd,DWORD state)
+BOOL SetJobTask(HWND hWnd, DWORD state)
 {
-	DWORD i,challenge,ThreadID;
+	DWORD i, challenge, ThreadID;
 
 	TCHAR buf[JOBINFOTEXTSIZE];
 
@@ -1792,7 +1795,7 @@ BOOL SetJobTask(HWND hWnd,DWORD state)
 
 		if ( state & (JOBFLAG_REG | JOBFLAG_UNREG) ){
 			if ( state & JOBFLAG_UNREG ){ // 終了系
-				resetflag(jxp->state.dw,state);
+				resetflag(jxp->state.dw, state);
 				if ( jxp->state.b.count == 0 ){ // 参照0なら削除
 					FreePPx();
 					jxp->ThreadID = 0;
@@ -1802,22 +1805,22 @@ BOOL SetJobTask(HWND hWnd,DWORD state)
 				if ( !(state & JOBFLAG_CHANGESTATE) ) jxp->state.b.count--;
 			}else{	// 登録系 JOBFLAG_REG
 				jxp->hWnd = hWnd;
-				setflag(jxp->state.dw,state);
+				setflag(jxp->state.dw, state);
 				if ( !(state & JOBFLAG_CHANGESTATE) ) jxp->state.b.count++;
 			}
 			FreePPx();
 			if ( Sm->JobList.hWnd != NULL ){ // 一覧の内容を更新
 				int index = FindJobListIndex(i);
-				int listindex = (int)SendMessage(Sm->JobList.hWnd,LB_GETCURSEL,0,0);
+				int listindex = (int)SendMessage(Sm->JobList.hWnd, LB_GETCURSEL, 0, 0);
 
-				MakeJobInfoText(hWnd,jxp->state.dw,buf);
+				MakeJobInfoText(hWnd, jxp->state.dw, buf);
 				if ( index >= 0 ){
-					SendMessage(Sm->JobList.hWnd,LB_DELETESTRING,(WPARAM)index,0);
+					SendMessage(Sm->JobList.hWnd, LB_DELETESTRING, (WPARAM)index, 0);
 				}
-				AddJobListStr(i,buf,index);
+				AddJobListStr(i, buf, index);
 				if ( listindex == LB_ERR ) listindex = 0;
-				SendMessage(Sm->JobList.hWnd,LB_SETCURSEL,listindex,0);
-				InvalidateRect(Sm->JobList.hWnd,NULL,TRUE);
+				SendMessage(Sm->JobList.hWnd, LB_SETCURSEL, listindex, 0);
+				InvalidateRect(Sm->JobList.hWnd, NULL, TRUE);
 			}
 			return TRUE;
 		}
@@ -1833,7 +1836,7 @@ BOOL SetJobTask(HWND hWnd,DWORD state)
 
 	if ( X_jlst[0] < 0 ){
 		X_jlst[0] = JOBLIST_OFF;
-		GetCustData(T("X_jlst"),X_jlst,sizeof(X_jlst));
+		GetCustData(T("X_jlst"), X_jlst, sizeof(X_jlst));
 	}
 
 	// 新規登録 (限度一杯なら 30 秒待つ)
@@ -1851,8 +1854,8 @@ BOOL SetJobTask(HWND hWnd,DWORD state)
 					CreateJobListWnd();
 				}
 			}else{
-				MakeJobInfoText(hWnd,state,buf);
-				AddJobListStr(i,buf,-1);
+				MakeJobInfoText(hWnd, state, buf);
+				AddJobListStr(i, buf, -1);
 				ShowJobListWnd(hWnd);
 			}
 			return TRUE;
@@ -1863,7 +1866,7 @@ BOOL SetJobTask(HWND hWnd,DWORD state)
 	// 登録できなかった→管理対象外として実行
 fin:
 	FreePPx();
-	if ( Sm->JobList.hWnd != NULL ) InvalidateRect(Sm->JobList.hWnd,NULL,FALSE);
+	if ( Sm->JobList.hWnd != NULL ) InvalidateRect(Sm->JobList.hWnd, NULL, FALSE);
 	return FALSE;
 }
 
@@ -1889,12 +1892,12 @@ fin:
 BOOL CheckJobWait(HANDLE hHandle)
 {
 	if ( hHandle != NULL ){ // X_fopw == 1
-		return (WaitForSingleObject(hHandle,0) != WAIT_OBJECT_0);
+		return (WaitForSingleObject(hHandle, 0) != WAIT_OBJECT_0);
 	}else{ // X_fopw == 2
 		int i;
 
 		if ( DOpenThread == INVALID_HANDLE_VALUE ){
-			GETDLLPROC(hKernel32,OpenThread);
+			GETDLLPROC(hKernel32, OpenThread);
 		}
 
 		for ( i = 0 ; i < X_MaxJob ; i++ ){
@@ -1910,7 +1913,7 @@ BOOL CheckJobWait(HANDLE hHandle)
 
 				hThread = DOpenThread(
 						STANDARD_RIGHTS_REQUIRED | THREAD_TERMINATE,
-						FALSE,Sm->Job[i].ThreadID);
+						FALSE, Sm->Job[i].ThreadID);
 				if ( hThread != NULL ){ // スレッドは有効
 					CloseHandle(hThread);
 				}else{
@@ -1924,17 +1927,17 @@ BOOL CheckJobWait(HANDLE hHandle)
 	}
 }
 
-BOOL JobListMenu(EXECSTRUCT *Z,TCHAR param)
+BOOL JobListMenu(EXECSTRUCT *Z, TCHAR param)
 {
 	int i = 0;
 
 	if ( param == 's' ){
-		SetJobTask(Z->hWnd,JOBSTATE_STARTJOB | JOBSTATE_NORMAL);
+		SetJobTask(Z->hWnd, JOBSTATE_STARTJOB | JOBSTATE_NORMAL);
 		return TRUE;
 	}
 
 	if ( param == 'e' ){
-		SetJobTask(Z->hWnd,JOBSTATE_UNREGIST);
+		SetJobTask(Z->hWnd, JOBSTATE_UNREGIST);
 		return TRUE;
 	}
 
@@ -1947,13 +1950,13 @@ BOOL JobListMenu(EXECSTRUCT *Z,TCHAR param)
 
 	if ( param == 'l' ){
 		if ( (Sm->JobList.hWnd != NULL) && IsTrue(IsWindow(Sm->JobList.hWnd)) ){
-			int listindex = (int)SendMessage(Sm->JobList.hWnd,LB_GETCOUNT,0,0);
+			int listindex = (int)SendMessage(Sm->JobList.hWnd, LB_GETCOUNT, 0, 0);
 
 			if ( listindex <= 0 ) return FALSE;
-			JobListSelect(Sm->JobList.hWnd,listindex - 1,JOBSELECTMODE_CLOSE);
+			JobListSelect(Sm->JobList.hWnd, listindex - 1, JOBSELECTMODE_CLOSE);
 		}else{
 			HWND hTargetWnd;
-			int state,li = i;
+			int state, li = i;
 
 			for ( ; i < X_MaxJob ; i++ ){
 				if ( Sm->Job[i].ThreadID ) li = i;
@@ -1966,9 +1969,9 @@ BOOL JobListMenu(EXECSTRUCT *Z,TCHAR param)
 
 			if ( hTargetWnd != NULL ){
 				if ( state & JOBFLAG_ENABLEHIDE ){
-					SendMessage(hTargetWnd,WM_COMMAND,IDCANCEL,0);
+					SendMessage(hTargetWnd, WM_COMMAND, IDCANCEL, 0);
 				}else{
-					PostMessage(hTargetWnd,WM_KEYDOWN,VK_PAUSE,0);
+					PostMessage(hTargetWnd, WM_KEYDOWN, VK_PAUSE, 0);
 				}
 			}
 		}
@@ -1993,8 +1996,8 @@ BOOL JobListMenu(EXECSTRUCT *Z,TCHAR param)
 	}
 	SetForegroundWindow(Sm->JobList.hWnd);
 	SetFocus(Sm->JobList.hWnd);
-	if ( SendMessage(Sm->JobList.hWnd,LB_GETCURSEL,0,0) == LB_ERR ){
-		SendMessage(Sm->JobList.hWnd,LB_SETCURSEL,0,0);
+	if ( SendMessage(Sm->JobList.hWnd, LB_GETCURSEL, 0, 0) == LB_ERR ){
+		SendMessage(Sm->JobList.hWnd, LB_SETCURSEL, 0, 0);
 	}
 	return TRUE; // 一覧表示...コマンド後続を終了
 }

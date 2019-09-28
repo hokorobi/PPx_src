@@ -30,19 +30,19 @@
 #define EX_NOT		0xffe9	// !			否定prefix
 #define EX_AND		0xffea	// &			必須条件prefix
 #define EX_ATTR		0xffeb	// attributes:	属性限定
-#define EX_WRITEDATEREL 0xffec	// date:(w)		時刻限定(日数) ※以下、順番
-#define EX_WRITEDATEABS 0xffed	// date:(w)		時刻限定(日付)   依存
-#define EX_CREATEDATEREL 0xffee	// date:c		時刻限定(日数)
-#define EX_CREATEDATEABS 0xffef	// date:c		時刻限定(日付)
-#define EX_ACCESSDATEREL 0xfff0	// date:a		時刻限定(日数)
-#define EX_ACCESSDATEABS 0xfff1	// date:a		時刻限定(日付) ここまで依存
+#define EX_WRITEDATEREL 0xffec	// date:(w)	時刻限定(日数) ※以下、順番
+#define EX_WRITEDATEABS 0xffed	// date:(w)	時刻限定(日付)   依存
+#define EX_CREATEDATEREL 0xffee	// date:c	時刻限定(日数)
+#define EX_CREATEDATEABS 0xffef	// date:c	時刻限定(日付)
+#define EX_ACCESSDATEREL 0xfff0	// date:a	時刻限定(日数)
+#define EX_ACCESSDATEABS 0xfff1	// date:a	時刻限定(日付) ここまで依存
 #define EX_SIZE		0xfff2	// size:		ファイルサイズ限定
 #define EX_BREGEXP	0xfff3	// /.../		正規表現 bregexp(s/.../)
 #define EX_BREGONIG	0xfff4	// /.../		正規表現 bregonig(s/.../)
 #define EX_IREGEXP	0xfff5	// /.../		正規表現 IRegExp(s/.../)
 #define EX_ROMA		0xfff6	// roma:		roma
 #define EX_DIR		0xfff7	// path:		ディレクトリ指定prefix
-#define EX_JOINEXT	0xfff8	// option:i		拡張子を分離しないで比較
+#define EX_JOINEXT	0xfff8	// i: ,o:x		拡張子を分離しないで比較(_NOEXT)
 //#define EX_GROUP	0xfffx	// (...)		グループ化prefix
 
 #define TYPE_EQUAL	B0	// 指定値と同じ
@@ -73,17 +73,6 @@ typedef struct {
 	TCHAR *param;		// name内の':'の位置
 } MAKEFNSTRUCT;
 
-//----------------------------------------------------------------- BSTR 作成
-BSTR CreateBstringLenA(const char *string, int size);
-#define CreateBstringA(string) CreateBstringLenA(string, -1)
-#ifdef UNICODE
-#define CreateBstring(string) DSysAllocString(string)
-#define CreateBstringLen(string, size) DSysAllocStringLen(string, size)
-#else
-#define CreateBstring(string) CreateBstringA(string)
-#define CreateBstringLen(string, size) CreateBstringLenA(string, size)
-#endif
-
 //----------------------------------------------------------------- migemo 定義
 typedef struct _migemo{int dummy;} migemo;
 #if !defined(_WIN64) && USETASM32
@@ -109,7 +98,7 @@ LOADWINAPISTRUCT MIGEMODLL[] = {
 	LOADWINAPI1ND(migemo_close),
 	LOADWINAPI1ND(migemo_query),
 	LOADWINAPI1ND(migemo_release),
-	{NULL,NULL}
+	{NULL, NULL}
 };
 
 #ifdef UNICODE
@@ -179,7 +168,7 @@ LOADWINAPISTRUCT BREGONIGDLL[] = {
 	LOADWINAPI1Tx(BSubst),
 	LOADWINAPI1Tx(BTrans),
 	LOADWINAPI1Tx(BRegfree),
-	{NULL,NULL}
+	{NULL, NULL}
 };
 
 // Oleaut32 関連定義 ----------------------------------------------------------
@@ -208,14 +197,14 @@ LOADWINAPISTRUCT OLEAUT32_SysStr[] = {
 	LOADWINAPI1(GetActiveObject),
 	LOADWINAPI1(RegisterActiveObject),
 	LOADWINAPI1(RevokeActiveObject),
-	{NULL,NULL}
+	{NULL, NULL}
 };
 
 LOADWINAPISTRUCT OLEAUT32_Variant[] = {
 	LOADWINAPI1(VariantInit),
 	LOADWINAPI1(VariantClear),
 	LOADWINAPI1(VariantChangeType),
-	{NULL,NULL}
+	{NULL, NULL}
 };
 
 
@@ -422,6 +411,8 @@ void FreeMigemo(void)
 	LoadMigemo = MIGEMO_FREE;
 }
 
+volatile LONG Migemo_Query_count;
+
 BOOL InitMigemo(void)
 {
 	TCHAR migemodicpath[MAX_PATH];
@@ -431,6 +422,7 @@ BOOL InitMigemo(void)
 	WaitMigemoLoad();
 	if ( LoadMigemo == MIGEMO_READY ) return TRUE;
 	LoadMigemo = MIGEMO_LOADING;
+	Migemo_Query_count = 0;
 
 	hMigemoDLL = LoadWinAPI("MIGEMO.DLL", NULL, MIGEMODLL, LOADWINAPI_LOAD);
 	#ifdef _WIN64
@@ -479,7 +471,7 @@ BOOL InitMigemo(void)
 		}
 		PMessageBox(NULL, T("migemo-dict open error"), NULL, MB_APPLMODAL | MB_OK);
 	}
-	LoadMigemo = MIGEMO_FREE;
+	LoadMigemo = MIGEMO_LOAD_ERROR;
 	FreeMigemo();
 	LoadMigemo = MIGEMO_LOAD_ERROR;
 	PMessageBox(NULL, MES_MIGE, NULL, MB_APPLMODAL | MB_OK);
@@ -568,20 +560,33 @@ PPXDLL BOOL PPXAPI SearchRomaString(const TCHAR *text, const TCHAR *searchstr, D
 			}
 		}
 		if ( usehist == FALSE ){	// Migemo で正規表現を取得する
-			size_t length;
+			DWORD querysize;
+			int chance = 0;
 			#ifdef UNICODE
 				WideCharToMultiByte(migemocodepage, 0, searchstr, -1, searchstrA, VFPS, NULL, NULL);
 			#endif
-			query = migemo_query(migemodic, SSTR);
+			for (;;){
+				if ( InterlockedIncrement((LPLONG)&Migemo_Query_count) < 2 ){
+					query = migemo_query(migemodic, SSTR);
+					InterlockedDecrement((LPLONG)&Migemo_Query_count);
+					break;
+				}
+				InterlockedDecrement((LPLONG)&Migemo_Query_count);
+				Sleep(20);
+				if ( ++chance < 30 ) continue;
+				query = NULL;
+				break;
+			}
 			if ( query != NULL ){
-				length = strlen(query);
+				querysize = strlen32(query);
 			}else{
 				if ( IsTrue(usesave) ) FreePPx();
 				return FALSE;
 			}
-			if ( IsTrue(usesave) && length && (length < 0xff00) ){
-				LimitHistory(PPXH_ROMASTR);
-				WriteHistory(PPXH_ROMASTR, searchstr, (WORD)(length + 1), query);
+			if ( IsTrue(usesave) && (querysize > 0) && (querysize < 0xff00) ){
+				if ( LimitHistory(PPXH_ROMASTR, querysize) ){
+					WriteHistory(PPXH_ROMASTR, searchstr, (WORD)(querysize + 1), query);
+				}
 			}
 		}
 													// RegExp を準備
@@ -1769,7 +1774,6 @@ PPXDLL DWORD PPXAPI MakeFN_REGEXP(FN_REGEXP *fn, const TCHAR *src)
 		exm.dest += ((EXS_DATA *)exm.dest)->next;
 	}							// 末端処理
 	((EXS_DATA *)exm.dest)->next = 0;
-//	XMessage(NULL, NULL, XM_DUMP, (char *)fn->b, 64);
 	return mfs.flags;
 error:
 	((EXS_DATA *)exm.dest)->ext = EX_NONE;
@@ -2313,14 +2317,17 @@ int CheckExtMode(EXSMEM *exm, MAKEFNSTRUCT *mfs)
 
 				GetParamFlags(&gpfs, (const TCHAR **)&mfs->param, inclabel);
 				mfs->flags = (mfs->flags & ~(REGEXPF_PATHMASK | REGEXPF_NOEXT | REGEXPF_SILENTERROR | REGEXPF_WORDMATCH)) | gpfs.value;
-				// REGEXPF_PATHMASK 以外のフラグがなければ、保存不要
-				if ( !(gpfs.value & ~REGEXPF_PATHMASK) ){
+
+				// REGEXPF_NOEXT フラグがなければ、保存不要
+				if ( !(gpfs.value & REGEXPF_NOEXT) ){
 					((EXS_ATTR *)exm->dest)->ext = 0;
 					((EXS_OPTION *)exm->dest)->next = 0;
 					break;
 				}
-			}	// 拡張子非分離指定
-			if ( CheckExsmem(exm, sizeof(EXS_OPTION)) == FALSE ) return CEM_ERROR;
+			}	// 拡張子非分離指定(REGEXPF_NOEXT)
+			if ( CheckExsmem(exm, sizeof(EXS_OPTION)) == FALSE ){
+				return CEM_ERROR;
+			}
 			((EXS_OPTION *)exm->dest)->ext = EX_JOINEXT;
 			((EXS_OPTION *)exm->dest)->next = sizeof(EXS_OPTION);
 			mfs->useext = FALSE;

@@ -834,7 +834,7 @@ void USEFASTCALL SetDummyCell(ENTRYCELL *cell, const TCHAR *lfn)
 	cell->attr = ECA_ETC;
 	cell->attrsortkey = 0;
 	// dwFileAttributes, ftCreationTime, ftLastAccessTime, ftLastWriteTime, nFileSize
-	memset(&cell->f, 0, (sizeof(DWORD) * 3) +(sizeof(FILETIME) * 3));
+	memset(&cell->f, 0, (sizeof(DWORD) * 3) + (sizeof(FILETIME) * 3));
 #if FREEPOSMODE
 	cell->pos.x = NOFREEPOS;
 #endif
@@ -1826,20 +1826,31 @@ void ExistCheck(TCHAR *dst, const TCHAR *path, const TCHAR *name)
 	GetUniqueEntryName(dst);
 }
 
+#if !NODLL
+const TCHAR SusiePath[] = T("Software\\Takechin\\Susie\\Plug-in");
+const TCHAR StrPath[] = T("PATH");
+#else
+extern const TCHAR SusiePath[];
+extern const TCHAR StrPath[];
+#endif
 BOOL LoadImageSaveAPI(void)
 {
 	TCHAR dir[MAX_PATH], path[MAX_PATH];
 
 	dir[0] = '\0';
 	GetCustData(T("P_susieP"), dir, sizeof(dir));
-	if ( dir[0] ){
+	if ( dir[0] != '\0' ){
 		VFSFixPath(NULL, dir, PPcPath, VFSFIX_FULLPATH | VFSFIX_REALPATH);
-		VFSFullPath(path, TWICNAME, dir);
+	}else if ( GetRegString(HKEY_CURRENT_USER,	// 2)susie ‚ª”FŽ¯‚·‚é dir
+			SusiePath, StrPath, dir, TSIZEOF(dir)) ){
+	}else{										// 3)ppx dir
+		tstrcpy(dir, PPcPath);
+	}
+	VFSFullPath(path, TWICNAME, dir);
+	hTSusiePlguin = LoadLibrary(path);
+	if ( hTSusiePlguin == NULL ){
+		VFSFullPath(path, TGDIPNAME, dir);
 		hTSusiePlguin = LoadLibrary(path);
-		if ( hTSusiePlguin == NULL ){
-			VFSFullPath(path, TGDIPNAME, dir);
-			hTSusiePlguin = LoadLibrary(path);
-		}
 	}
 	if ( hTSusiePlguin == NULL ){
 		hTSusiePlguin = LoadLibrary(TWICNAME);
@@ -2251,69 +2262,79 @@ void PPcLayoutCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 void WriteStdoutChooseName(TCHAR *name)
 {
 	SIZE32_T len;
-	char bufA[VFPS * 2], *src;
+	char *bufA = NULL, *src;
 	DWORD tmp;
 	#ifdef UNICODE
-		switch (X_ChooseMode){
-			case CHOOSEMODE_CON_UTF16:
-			case CHOOSEMODE_MULTICON_UTF16:
-				src = (char *)name;
-				len = strlenW(name) * sizeof(WCHAR);
-				break;
+		if ( (X_ChooseMode == CHOOSEMODE_CON_UTF16) ||
+			 (X_ChooseMode == CHOOSEMODE_MULTICON_UTF16) ){
+			src = (char *)name;
+			len = strlenW(name) * sizeof(WCHAR);
+		}else{
+			UINT codepage = CP_ACP;
 
-			case CHOOSEMODE_CON_UTF8:
-			case CHOOSEMODE_MULTICON_UTF8:
-				UnicodeToUtf8(name, bufA, sizeof bufA);
-				src = bufA;
-				len = strlen32(bufA);
-				break;
-
-//			case CHOOSEMODE_CON:
-//			case CHOOSEMODE_MULTICON:
-			default:
-				UnicodeToAnsi(name, bufA, sizeof bufA);
-				src = bufA;
-				len = strlen32(bufA);
-				break;
+			if ( (X_ChooseMode == CHOOSEMODE_CON_UTF8) ||
+				 (X_ChooseMode == CHOOSEMODE_MULTICON_UTF8) ){
+				 codepage = CP_UTF8;
+			}
+			len = WideCharToMultiByte(codepage, 0, name, -1, NULL, 0, NULL, NULL) + 1;
+			bufA = (char *)PPcHeapAlloc( len );
+			if ( bufA == NULL ) return;
+			src = bufA;
+			len = WideCharToMultiByte(codepage, 0, name, -1, bufA, len, NULL, NULL);
+			if ( len != 0 ) len--;
 		}
+		WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), src, len, &tmp, NULL);
 	#else
-		WCHAR bufW[VFPS * 2];
+		WCHAR *bufW = NULL;
+		DWORD lengthA, lengthW;
 
-		switch (X_ChooseMode){
-			case CHOOSEMODE_CON_UTF16:
-			case CHOOSEMODE_MULTICON_UTF16:
-				AnsiToUnicode(name, bufW, VFPS * 2);
-				src = (char *)bufW;
-				len = strlenW(bufW) * sizeof(WCHAR);
-				break;
-
-			case CHOOSEMODE_CON_UTF8:
-			case CHOOSEMODE_MULTICON_UTF8:
-				AnsiToUnicode(name, bufW, VFPS * 2);
-				UnicodeToUtf8(bufW, bufA, sizeof bufA);
-				src = bufA;
-				len = strlen(src);
-				break;
-
-//			case CHOOSEMODE_CON:
-//			case CHOOSEMODE_MULTICON:
-			default:
-				src = (char *)name;
-				len = strlen(name);
-				break;
+		if ( (X_ChooseMode == CHOOSEMODE_CON) ||
+			 (X_ChooseMode == CHOOSEMODE_MULTICON) ){
+			src = (char *)name;
+			len = strlen(name);
+		}else{ // UTF16/UTF8
+			lengthW = AnsiToUnicode(name, NULL, 0) + 1;
+			bufW = (WCHAR *)PPcHeapAlloc( lengthW * sizeof(WCHAR) );
+			if ( bufW == NULL ) return;
+			lengthW = AnsiToUnicode(name, bufW, lengthW);
+			src = (char *)bufW;
+			len = (lengthW != 0) ? ((lengthW - 1) * sizeof(WCHAR)) : 0;
+			if ( (X_ChooseMode == CHOOSEMODE_CON_UTF8) ||
+				 (X_ChooseMode == CHOOSEMODE_MULTICON_UTF8) ){
+				lengthA = UnicodeToUtf8(bufW, NULL, 0) + 1;
+				bufA = (char *)PPcHeapAlloc( lengthA );
+				if ( bufA != NULL ){
+					src = bufA;
+					len = UnicodeToUtf8(bufW, bufA, lengthA);
+					if ( len != 0 ) len--;
+				}
+			}
 		}
+		WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), src, len, &tmp, NULL);
+		if ( bufW != NULL ) PPcHeapFree(bufW);
 	#endif
-	WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), src, len, &tmp, NULL);
+	if ( bufA != NULL ) PPcHeapFree(bufA);
 }
 
 void DoChooseResult(PPC_APPINFO *cinfo, TCHAR *Param)
 {
 	TCHAR buf[VFPS];
+	ERRORCODE result = NO_ERROR;
+
+	ThGetString(NULL, T("CHOOSE"), buf, VFPS);
+	if ( buf[0] == '\0' ) tstrcpy(buf, T("%#FCD"));
+	PP_InitLongParam(Param);
 
 	switch(X_ChooseMode){
 		case CHOOSEMODE_EDIT:
-			PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, T("%#FCD"), Param, XEO_DISPONLY);
-			SendMessage(hChooseWnd, WM_SETTEXT, 0, (LPARAM)Param);
+			result = PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, buf, Param, XEO_DISPONLY | XEO_EXTRACTLONG);
+			if ( result == ERROR_PARTIAL_COPY ){
+				wsprintf(buf, T("Text length (%d) seems long, continue?"), tstrlen(PP_GetLongParamRAW(Param)) );
+				if ( IDYES != PMessageBox(cinfo->info.hWnd, buf, NULL, MB_ICONQUESTION | MB_YESNO | MB_DEFBUTTON2) ){
+					break;
+				}
+			}
+			SendMessage(hChooseWnd, WM_SETTEXT, 0, (LPARAM)PP_GetLongParam(Param, result) );
 			break;
 
 		case CHOOSEMODE_DD:
@@ -2323,8 +2344,8 @@ void DoChooseResult(PPC_APPINFO *cinfo, TCHAR *Param)
 		case CHOOSEMODE_CON_UTF8:
 		case CHOOSEMODE_CON_UTF16:
 		case CHOOSEMODE_CON: {
-			PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, T("%#FCD"), Param, XEO_DISPONLY);
-			WriteStdoutChooseName(Param);
+			result = PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, buf, Param, XEO_DISPONLY | XEO_EXTRACTLONG);
+			WriteStdoutChooseName(PP_GetLongParam(Param, result));
 			break;
 		}
 
@@ -2336,7 +2357,7 @@ void DoChooseResult(PPC_APPINFO *cinfo, TCHAR *Param)
 
 			InitEnumMarkCell(cinfo, &work);
 			while ( (cell = EnumMarkCell(cinfo, &work)) != NULL ){
-				VFSFullPath(buf, cell->f.cFileName, cinfo->RealPath);
+				VFSFullPath(buf, (TCHAR *)GetCellFileName(cinfo, cell, buf), cinfo->RealPath);
 				if ( tstrchr(buf, ' ') ){
 					wsprintf(Param, T("\"%s\"\r\n"), buf);
 				}else{
@@ -2347,6 +2368,7 @@ void DoChooseResult(PPC_APPINFO *cinfo, TCHAR *Param)
 			break;
 		}
 	}
+	PP_FreeLongParam(Param, result);
 	PostMessage(cinfo->info.hWnd, WM_CLOSE, 0, 0);
 }
 

@@ -888,9 +888,9 @@ ERRORCODE PPcCompare(PPC_APPINFO *cinfo, int mode)
 		}
 		AppendMenuString(hMenu, CMP_1SIZE, MES_CMPZ);
 		AppendMenuString(hMenu, CMP_1COMMENT, MES_CMPM);
-		if ( CompareHashFromClipBoard(cinfo, 0) != 0 ){
-			AppendMenuString(hMenu, CMP_1HASH, StrMesCMPH);
-		}
+		AppendMenu(hMenu,
+				(CompareHashFromClipBoard(cinfo, 0) != 0) ? MF_ES : MF_GS,
+				CMP_1HASH, MessageText(StrMesCMPH));
 		AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
 		AppendMenuString(hMenu, CMP_DETAIL, MES_CMPD);
 		mode = PPcTrackPopupMenu(cinfo, hMenu);

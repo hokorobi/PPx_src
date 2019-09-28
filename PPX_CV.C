@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------------------
-	Paper Plane xUI											PPc,PPv共用
+	Paper Plane xUI											PPc, PPv共用
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
 #include <commctrl.h>
@@ -27,7 +27,7 @@ const TCHAR StrX_bg[] = T("X_bg");
 const TCHAR DwmapiName[] = T("dwmapi.dll");
 
 const TCHAR arrow[] = T("UDLR");
-const TCHAR *arrowJ[] = {T("↑"),T("↓"),T("←"),T("→")};
+const TCHAR *arrowJ[] = {T("↑"), T("↓"), T("←"), T("→")};
 
 const TCHAR WallpaperError[] = T("Wallpaper file not found");
 
@@ -55,9 +55,9 @@ struct CLIPNAMES{
 	{CF_OWNERDISPLAY,	T("Application draw picture")},
 	{CF_DSPTEXT,		T("Private Text")},
 	{CF_DSPBITMAP,		T("Private BITMAP")},
-	{CF_DSPMETAFILEPICT,T("Private Meta picture")},
+	{CF_DSPMETAFILEPICT, T("Private Meta picture")},
 	{CF_DSPENHMETAFILE,	T("Private Ex Meta picture")},
-	{0,NULL}
+	{0, NULL}
 };
 
 #define xDWM_BB_ENABLE B0
@@ -106,10 +106,10 @@ xWINCOMPATTRDATA BackComp = {19, &BackAccent, sizeof(xACCENTPOLICY)};
 
 POINT ZeroPoint = {0, 0};
 
-DefineWinAPI(HRESULT,DwmEnableBlurBehindWindow,(HWND,const xDWM_BLURBEHIND *)) = NULL;
-TypedefWinAPI(BOOL,SetLayeredWindowAttributes,(HWND hwnd,COLORREF crKey,BYTE bAlpha,DWORD dwFlags));
-DefineWinAPI(BOOL,UpdateLayeredWindow,(HWND hWnd,HDC hdcDst,POINT *pptDst,SIZE *psize,HDC hdcSrc,POINT *pptSrc,COLORREF crKey,xBLENDFUNCTION *pblend,DWORD dwFlags));
-DefineWinAPI(BOOL,SetWindowCompositionAttribute,(HWND, xWINCOMPATTRDATA*)) = NULL; // Win7 以降
+DefineWinAPI(HRESULT, DwmEnableBlurBehindWindow, (HWND, const xDWM_BLURBEHIND *)) = NULL;
+TypedefWinAPI(BOOL, SetLayeredWindowAttributes, (HWND hwnd, COLORREF crKey, BYTE bAlpha, DWORD dwFlags));
+DefineWinAPI(BOOL, UpdateLayeredWindow, (HWND hWnd, HDC hdcDst, POINT *pptDst, SIZE *psize, HDC hdcSrc, POINT *pptSrc, COLORREF crKey, xBLENDFUNCTION *pblend, DWORD dwFlags));
+DefineWinAPI(BOOL, SetWindowCompositionAttribute, (HWND, xWINCOMPATTRDATA*)) = NULL; // Win7 以降
 
 extern ValueWinAPI(SetLayeredWindowAttributes);
 #if !NODLL
@@ -265,7 +265,7 @@ int PPxDoubleClickMouseButton(MOUSESTATE *ms, HWND hWnd, WPARAM wParam, LPARAM l
 // マウスカーソルの移動
 BOOL PPxMoveMouse(MOUSESTATE *ms, HWND hWnd, LPARAM lParam)
 {
-	POINT clipos,scrpos;
+	POINT clipos, scrpos;
 	BOOL result = FALSE;
 
 	if ( ms->PushButton <= MOUSEBUTTON_CANCEL ) return FALSE; // キャンセル状態
@@ -351,9 +351,9 @@ BOOL PPxCheckMouseGesture(MOUSESTATE *stat, TCHAR *textbuf, const TCHAR *keyname
 	stat->gesture.step[stat->gesture.count] = '\0';
 
 	if ( LOWORD(GetUserDefaultLCID()) == LCID_JAPANESE ){
-		TCHAR *src,*dest;
+		TCHAR *src, *dest;
 
-		for ( src = stat->gesture.step,dest = textbuf ; *src ;  ){
+		for ( src = stat->gesture.step, dest = textbuf ; *src ;  ){
 			int direction;
 			switch ( *src++ ){
 				case 'U':
@@ -425,9 +425,9 @@ void LoadWallpaper(BGSTRUCT *bg, HWND hWnd, const TCHAR *regid)
 	TCHAR buf[VFPS];
 	TCHAR rpath[VFPS];
 	const TCHAR *ptr;
-	int opaque,mode;
+	int opaque, mode;
 	int bright = 100;
-	int dispW,dispH;
+	int dispW, dispH;
 
 	if ( X_fles == 2 ){ // ●仮
 		if ( DSetLayeredWindowAttributes == NULL ){
@@ -446,7 +446,7 @@ void LoadWallpaper(BGSTRUCT *bg, HWND hWnd, const TCHAR *regid)
 	// 透明度の設定 -----
 	opaque = 100;
 	buf[0] = '\0';
-	wsprintf(rpath,T("O_%s"),regid);
+	wsprintf(rpath, T("O_%s"), regid);
 	if ( NO_ERROR != GetCustTable(StrX_bg, rpath, &buf, sizeof(buf)) ){
 		GetCustTable(StrX_bg, T("Opaque"), &buf, sizeof(buf));
 	}
@@ -490,7 +490,7 @@ void LoadWallpaper(BGSTRUCT *bg, HWND hWnd, const TCHAR *regid)
 			}
 			if ( (DSetLayeredWindowAttributes != NULL) && (GetParent(hWnd) == NULL) ){
 				SetWindowLong(hWnd, GWL_EXSTYLE,
-						GetWindowLong(hWnd,GWL_EXSTYLE) | WS_EX_LAYERED);
+						GetWindowLong(hWnd, GWL_EXSTYLE) | WS_EX_LAYERED);
 				if ( X_fles != 2 ){
 					if ( opaque ){ // 半透明
 						DSetLayeredWindowAttributes(hWnd, 0,
@@ -506,7 +506,7 @@ void LoadWallpaper(BGSTRUCT *bg, HWND hWnd, const TCHAR *regid)
 	// 壁紙の設定 -----
 							// 壁紙を使用するかどうかを判別
 	buf[0] = '\0';
-	wsprintf(rpath,T("T_%s"),regid);
+	wsprintf(rpath, T("T_%s"), regid);
 	if ( NO_ERROR != GetCustTable(StrX_bg, rpath, &buf, sizeof(buf)) ){
 		if ( NO_ERROR != GetCustTable(StrX_bg, T("Type"), &buf, sizeof(buf)) ){
 			UnloadWallpaper(bg);
@@ -532,9 +532,9 @@ void LoadWallpaper(BGSTRUCT *bg, HWND hWnd, const TCHAR *regid)
 	}
 							// 明るさ取得
 	buf[0] = '\0';
-	wsprintf(rpath,T("B_%s"),regid);
-	if ( NO_ERROR != GetCustTable(StrX_bg ,rpath, &buf, sizeof(buf)) ){
-		GetCustTable(StrX_bg ,T("Bright"), &buf, sizeof(buf));
+	wsprintf(rpath, T("B_%s"), regid);
+	if ( NO_ERROR != GetCustTable(StrX_bg, rpath, &buf, sizeof(buf)) ){
+		GetCustTable(StrX_bg, T("Bright"), &buf, sizeof(buf));
 	}
 	if ( buf[0] != '\0' ){
 		ptr = buf;
@@ -542,12 +542,12 @@ void LoadWallpaper(BGSTRUCT *bg, HWND hWnd, const TCHAR *regid)
 	}
 							// 使用する壁紙を決定する
 	buf[0] = '\0';
-	wsprintf(rpath,T("P_%s"),regid);
-	if ( NO_ERROR != GetCustTable(StrX_bg ,rpath, &buf, sizeof(buf)) ){
-		GetCustTable(StrX_bg ,T("Path"), &buf, sizeof(buf));
+	wsprintf(rpath, T("P_%s"), regid);
+	if ( NO_ERROR != GetCustTable(StrX_bg, rpath, &buf, sizeof(buf)) ){
+		GetCustTable(StrX_bg, T("Path"), &buf, sizeof(buf));
 	}
 	if ( buf[0] != '\0' ){
-		VFSFixPath(NULL,buf,NULL,VFSFIX_FULLPATH | VFSFIX_REALPATH);
+		VFSFixPath(NULL, buf, NULL, VFSFIX_FULLPATH | VFSFIX_REALPATH);
 	}else{
 		GetRegString(HKEY_CURRENT_USER,
 				RegIEWallpaperPath, RegWallpaperName, buf, TSIZEOF(buf));
@@ -607,9 +607,9 @@ void LoadWallpaper(BGSTRUCT *bg, HWND hWnd, const TCHAR *regid)
 
 		hDC = GetDC(hWnd);
 		hMDC = CreateCompatibleDC(hDC);
-		bmpinfo = (BITMAPINFO *)LocalAlloc(LMEM_FIXED,bmpsize + bitsize);
+		bmpinfo = (BITMAPINFO *)LocalAlloc(LMEM_FIXED, bmpsize + bitsize);
 
-		memcpy(bmpinfo,bg->X_WPbmp.DIB,bmpsize);
+		memcpy(bmpinfo, bg->X_WPbmp.DIB, bmpsize);
 		bmpinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 		bmpinfo->bmiHeader.biWidth = dispW;
 		bmpinfo->bmiHeader.biHeight = dispH;
@@ -638,16 +638,16 @@ void LoadWallpaper(BGSTRUCT *bg, HWND hWnd, const TCHAR *regid)
 			hOldPal = SelectPalette(hMDC, bg->X_WPbmp.hPalette, FALSE);
 			RealizePalette(hMDC);
 		}
-		StretchDIBits(hMDC, dstx,dsty,dstw,dsth, srcx,srcy,srcw,srch,
-			bg->X_WPbmp.bits,(BITMAPINFO *)bg->X_WPbmp.DIB,
-			DIB_RGB_COLORS,SRCCOPY);
+		StretchDIBits(hMDC, dstx, dsty, dstw, dsth, srcx, srcy, srcw, srch,
+			bg->X_WPbmp.bits, (BITMAPINFO *)bg->X_WPbmp.DIB,
+			DIB_RGB_COLORS, SRCCOPY);
 
 		if ( bg->X_WPbmp.hPalette != NULL ){
-			SelectPalette(hDC,hOldPal,FALSE); // C4701ok
+			SelectPalette(hDC, hOldPal, FALSE); // C4701ok
 		}
 
-		SetStretchBltMode(hMDC,olds);
-		SelectObject(hMDC,hOldBMP);
+		SetStretchBltMode(hMDC, olds);
+		SelectObject(hMDC, hOldBMP);
 
 		// 新しいビットマップを設定
 		if ( bg->X_WPbmp.info != NULL ){
@@ -711,7 +711,7 @@ void DrawWallPaper(DIRECTXARG(DXDRAWSTRUCT *DxDraw) BGSTRUCT *bg, HWND hWnd, PAI
 				((desk.right - desk.left) - bg->X_WPbmp.size.cx) / 2;
 			pos.y = desk.top +
 				((desk.bottom - desk.top) - bg->X_WPbmp.size.cy) / 2;
-			ScreenToClient(hWnd,&pos);
+			ScreenToClient(hWnd, &pos);
 			xm = (pos.x % bg->X_WPbmp.size.cx);
 			if ( xm > 0 ) xm -= bg->X_WPbmp.size.cx;
 			y = (pos.y % bg->X_WPbmp.size.cy);
@@ -787,7 +787,7 @@ void InitOffScreen(BGSTRUCT *bg, HDC hWndDC, SIZE *WndSize)
 void OffScreenToScreen(BGSTRUCT *bg, HWND hWnd, HDC hWndDC, RECT *WndRect, SIZE *WndSize)
 {
 	if ( (X_fles != 2) || (WndRect == NULL) ){
-		BitBlt(hWndDC, 0,0, WndSize->cx,WndSize->cy, bg->hOffScreenDC, 0, 0, SRCCOPY);
+		BitBlt(hWndDC, 0, 0, WndSize->cx, WndSize->cy, bg->hOffScreenDC, 0, 0, SRCCOPY);
 	}else{
 		HDC hScreenDC;
 		POINT wndPos;
@@ -799,9 +799,9 @@ void OffScreenToScreen(BGSTRUCT *bg, HWND hWnd, HDC hWndDC, RECT *WndRect, SIZE 
 		if ( DUpdateLayeredWindow == NULL ){
 			HMODULE hUser32;
 			hUser32 = GetModuleHandle(StrUser32DLL);
-			GETDLLPROC(hUser32,UpdateLayeredWindow);
+			GETDLLPROC(hUser32, UpdateLayeredWindow);
 			if ( DUpdateLayeredWindow == NULL ){
-				BitBlt(hWndDC, 0,0, WndSize->cx,WndSize->cy, bg->hOffScreenDC, 0,0, SRCCOPY);
+				BitBlt(hWndDC, 0, 0, WndSize->cx, WndSize->cy, bg->hOffScreenDC, 0, 0, SRCCOPY);
 				return;
 			}
 		}
@@ -954,7 +954,7 @@ void FillBox(HDC hDC, const RECT *box, HBRUSH hbr)
 {
 	HGDIOBJ hOldObj;
 
-	hOldObj = SelectObject(hDC,hbr);
+	hOldObj = SelectObject(hDC, hbr);
 	PatBlt(hDC, box->left, box->top,
 			box->right - box->left, box->bottom - box->top,
 			PATCOPY);
@@ -984,9 +984,60 @@ BOOL GetAndFixTextMetrics(HDC hDC, TEXTMETRIC *tm)
 		int NumWidth[10], *Nptr, i;
 
 		GetCharWidth32(hDC, '0', '9', NumWidth);
-		for ( i = 0,Nptr = NumWidth ; i < 9 ; i++,Nptr++ ){
+		for ( i = 0, Nptr = NumWidth ; i < 9 ; i++, Nptr++ ){
 			if ( *Nptr > tm->tmAveCharWidth ) tm->tmAveCharWidth = *Nptr;
 		}
 		return TRUE;
 	}
+}
+
+BOOL RecvExecuteByWMCopyData(PPXAPPINFO *info, COPYDATASTRUCT *copydata)
+{
+	TCHAR cmd[CMDLINESIZE], *cmdbuf;
+
+	if ( copydata->cbData >= 0x7fffffff ) return FALSE;
+	if ( copydata->cbData > TSTROFF(CMDLINESIZE) ){
+		cmdbuf = HeapAlloc(GetProcessHeap(), 0, copydata->cbData);
+		if ( cmdbuf == NULL ) return FALSE;
+	}else{
+		cmdbuf = cmd;
+	}
+	memcpy(cmdbuf, copydata->lpData, copydata->cbData);
+	if ( LOWORD(copydata->dwData) == 'H' ) ReplyMessage(TRUE);
+	PP_ExtractMacro(info->hWnd, info, NULL, cmdbuf, NULL, 0);
+	if ( cmdbuf != cmd ) HeapFree(GetProcessHeap(), 0, cmdbuf);
+	return TRUE;
+}
+
+LRESULT ReceiveExtractCall(PPXAPPINFO *info, WPARAM wParam, LPARAM lParam)
+{
+	TCHAR *mapptr, *cmdptr, extractbuf[CMDLINESIZE];
+	ERRORCODE result;
+	DWORD dstlen = CMDLINESIZE;
+
+	mapptr = MapViewOfFile((HANDLE)lParam, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+	if ( mapptr == NULL ) return NO_ERROR;
+	if ( HIWORD(wParam) == (sizeof(DWORD) / sizeof(TCHAR)) ){
+		dstlen = *(DWORD *)mapptr;
+		cmdptr = mapptr + sizeof(DWORD) / sizeof(TCHAR);
+	}else{
+		cmdptr = mapptr;
+	}
+	PP_InitLongParam(extractbuf);
+	result = PP_ExtractMacro(info->hWnd, info, NULL, cmdptr, extractbuf, XEO_EXTRACTEXEC | XEO_EXTRACTLONG);
+
+	if ( result == ERROR_PARTIAL_COPY ){
+		if ( tstrlen(PP_GetLongParamRAW(extractbuf)) >= dstlen ){
+			tstrcpy(mapptr, T("<length over>"));
+		}else{
+			tstrcpy(mapptr, PP_GetLongParamRAW(extractbuf));
+		}
+		PP_FreeLongParamRAW(extractbuf);
+	}else{
+		tstrcpy(mapptr, extractbuf);
+	}
+
+	UnmapViewOfFile(mapptr);
+	CloseHandle((HANDLE)lParam);
+	return NO_ERROR;
 }

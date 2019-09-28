@@ -131,15 +131,15 @@ BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 					*p++ = (BYTE)((*(line - 1) == 'F') ? DE_LFN_EXT : DE_SFN_EXT);
 					line++;
 				}else if ( *line == 'M' ){
-					line++;
 					lastFM = p;
 					*p++ = (BYTE)DE_LFN_MUL;
+					line++;
 				} else{
 					*p++ = (BYTE)((*(line - 1) == 'F') ? DE_LFN : DE_SFN);
 				}
-				len = GetNumberWith((const TCHAR **)&line, 255, 255);
+				len = GetNumberWith((const TCHAR **)&line, DE_FN_ALL_WIDTH, 255);
 				ws += *p++ = len;
-				len = 255;
+				len = DE_FN_WITH_EXT;
 				if ( *line == ',' ){
 					line++;
 					ws += len = (BYTE)GetDigitNumber((const TCHAR **)&line);
@@ -165,13 +165,13 @@ BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 				lineleft[3] = (BYTE)(p - lineleft + 1);
 				SkipSPC(line);
 				if ( (*line != 'F') && (*line != 'f') &&
-					//					(tstrchr(T("ACDHRSTUVXmZnsuz"),*line) != NULL)
+					//					(tstrchr(T("ACDHRSTUVXmZnsuz"), *line) != NULL)
 					!((lineleft[0] == DE_WIDEW) && (tstrchr(DE_ENABLE_FIXLENGTH, *line) != NULL)) ){
 					ErrorMes(PCS, MES_EWFT);
 					return FALSE;
 				}
 				q = line + 1;
-				if ( *q == 'M' ) q++;
+				if ( (*q == 'M') || (*q == 'E') ) q++;
 				lineleft[1] = GetNumberWith((const TCHAR **)&q, 255, 255);
 				break;
 			}

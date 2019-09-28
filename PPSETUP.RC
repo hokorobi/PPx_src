@@ -50,7 +50,8 @@ FONT 12, "ＭＳ ゴシック"
  CONTROL "おまかせインストール(&S)", IDR_AUTOINST, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 20, 200, 12, 0
  CONTROL "カスタムインストール(&C)", IDR_CUSTINST, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 34, 200, 12, 0
  CONTROL "入手済み書庫を使ってアップデート(&P)", IDR_UPDATE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 48, 200, 12, 0
- CONTROL "最新版の確認・入手とアップデート(&H)", IDR_CHECKUPDATE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 62, 200, 12, 0
+ CONTROL "最新版の確認・入手とアップデート(&H)", IDR_CHECKUPDATE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 62, 190, 12, 0
+ CONTROL "試験公開版含む(&R)", IDX_TESTVER, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_GROUP, 200, 62, 80, 12, 0
  CONTROL "アンインストール(&U)", IDR_UNINST, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 76, 200, 12, 0
  CONTROL "検出PPx", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 116, 30, 12, 0
  CONTROL "", IDS_INSTEDPPX, "static", SS_LEFT | SS_SUNKEN | WS_CHILD | WS_VISIBLE, 30, 115, 170, 12
@@ -65,7 +66,8 @@ FONT 10, "MS Sans Serif"
  CONTROL "&Simple install", IDR_AUTOINST, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 20, 200, 12, 0
  CONTROL "&Custom install", IDR_CUSTINST, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 34, 200, 12, 0
  CONTROL "U&Pdate with archive file", IDR_UPDATE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 48, 200, 12, 0
- CONTROL "C&Heck release,and update", IDR_CHECKUPDATE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 62, 200, 12, 0
+ CONTROL "C&Heck release, and update", IDR_CHECKUPDATE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 62, 170, 12, 0
+ CONTROL "Include p&review", IDX_TESTVER, "button", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_GROUP, 180, 62, 100, 12, 0
  CONTROL "&Uninstall", IDR_UNINST, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 8, 76, 200, 12, 0
  CONTROL "found PPx path", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 116, 30, 12, 0
  CONTROL "", IDS_INSTEDPPX, "static", SS_LEFT | SS_SUNKEN | WS_CHILD | WS_VISIBLE, 30, 115, 170, 12
@@ -130,7 +132,7 @@ FONT 10, "MS Sans Serif"
  CONTROL "Select path for setting file.", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 200, 12
  CONTROL "Application Data directory(%APPDATA%,&S)", IDR_USEREG, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 16, 20, 200, 12, 0
  CONTROL "PPx.EXE directory(&U)", IDR_UUSEREG, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 16, 32, 200, 12, 0
- CONTROL "Application Data directory (recommend): use %APPDATA% ,for multi user.\nPPx.EXE directory: for portable.", -1, "static", SS_LEFT | SS_SUNKEN | WS_CHILD | WS_VISIBLE, 0, 52, 252, 70
+ CONTROL "Application Data directory (recommend): use %APPDATA%, for multi user.\nPPx.EXE directory: for portable.", -1, "static", SS_LEFT | SS_SUNKEN | WS_CHILD | WS_VISIBLE, 0, 52, 252, 70
 }
 //-----------------------------------------------------------------------------
 IDD_PPCW DIALOG 0, 0, 290, 194
@@ -174,7 +176,7 @@ FONT 10, "MS Sans Serif"
  CONTROL "Select PPc(file manager) layout", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 200, 12, 0
 
  CONTROL "One window(&1)", IDR_PPC_1WINDOW, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_GROUP, 16, 16, 200, 12, 0
- CONTROL "Multi pains(2 pain,tab...)(&C)", IDR_PPC_COMBO, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 16, 28, 200, 12, 0
+ CONTROL "Multi pains(2 pain, tab...)(&C)", IDR_PPC_COMBO, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 16, 28, 200, 12, 0
  CONTROL "Two windows with jointed(&J)", IDR_PPC_JOINT, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 16, 40, 200, 12, 0
 
  CONTROL "", -1, "static", SS_ETCHEDFRAME | WS_CHILD | WS_VISIBLE, 2, 55, 250, 1, 0
@@ -194,9 +196,9 @@ FONT 10, "MS Sans Serif"
  CONTROL "", IDS_PPC_SEP, "static", SS_ETCHEDFRAME | WS_CHILD | WS_VISIBLE, 2, 88, 250, 1, 0
 
  CONTROL "No tab(&N)", IDR_PPC_TAB_NO, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_GROUP, 20, 92, 116, 12, 0
- CONTROL "each panes,each tab items(&S)", IDR_PPC_TAB_FULLSEPARATE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 138, 92, 116, 12, 0
+ CONTROL "each panes, each tab items(&S)", IDR_PPC_TAB_FULLSEPARATE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 138, 92, 116, 12, 0
  CONTROL "share tab(&G)", IDR_PPC_TAB_SHARE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 20, 104, 116, 12, 0
- CONTROL "each pane,share tab items(&P)", IDR_PPC_TAB_SEMISEPARATE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 138, 104, 116, 12, 0
+ CONTROL "each pane, share tab items(&P)", IDR_PPC_TAB_SEMISEPARATE, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 138, 104, 116, 12, 0
 }
 //-----------------------------------------------------------------------------
 IDD_KEY DIALOG 0, 0, 290, 194
@@ -223,11 +225,11 @@ STYLE WS_POPUP | WS_CAPTION
 CAPTION "PPx Setup Wizard - UI"
 FONT 10, "MS Sans Serif"
 {
- CONTROL "Select UI mapping,color layout.", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 200, 10, 0
+ CONTROL "Select UI mapping, color layout.", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 200, 10, 0
  CONTROL "PPx mapping(&O)", IDR_PPXKEY, "button", BS_AUTORADIOBUTTON | BS_MULTILINE | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 12, 88, 26, 0
  CONTROL "", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 88, 12, 166, 26
  CONTROL "Explorer mapping(&E)", IDR_XPRKEY, "button", BS_AUTORADIOBUTTON | BS_MULTILINE | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 38, 88, 18, 0
- CONTROL "Explorer like key,mouse mapping", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 88, 38, 166, 18
+ CONTROL "Explorer like key, mouse mapping", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 88, 38, 166, 18
  CONTROL "K-Launcher/FD(&K)", IDR_KLKEY, "button", BS_AUTORADIOBUTTON | BS_MULTILINE | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 56, 88, 18, 0
  CONTROL "", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 88, 56, 166, 18
  CONTROL "FILMTN(&F)", IDR_FMKEY, "button", BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 0, 74, 88, 9, 0

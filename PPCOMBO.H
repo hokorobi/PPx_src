@@ -260,7 +260,7 @@ extern int GetPairPaneComboBaseIndex(HWND hTargetWnd);
 
 extern void SwapPane(int targetpane);
 extern void NewPane(int baseindex, const TCHAR *param);
-extern void ClosePanes(HWND hTabWnd, int baseindex, int mode);
+extern void ClosePanes(HWND hTabWnd, int baseindex, int mode, BOOL closelocked);
 extern void CreateNewTabParam(int showindex, int newbaseindex, const TCHAR *param);
 extern HWND GetHwndFromIDCombo(const TCHAR *regid);
 

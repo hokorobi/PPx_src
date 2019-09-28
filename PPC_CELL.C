@@ -1020,7 +1020,6 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo, int offset, const CURSORMOVER *cm)
 			GetCursorPos(&DragSelectPos);
 			ScreenToClient(cinfo->info.hWnd, &DragSelectPos);
 
-			XMessage(NULL, NULL, XM_DbgLOG, T("scroll 1 %d %d"), NcellWMin, cinfo->cellWMin);
 			CalcDragTarget(cinfo, &DragSelectPos, &DragSelectArea);
 			DrawDragFrame(cinfo->info.hWnd, &DragSelectArea);
 			MarkDragArea(cinfo, &DragSelectArea, MARK_REVERSE);
@@ -1107,7 +1106,6 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo, int offset, const CURSORMOVER *cm)
 		#endif // USEDIRECTX
 		if ( (cinfo->MouseStat.PushButton > MOUSEBUTTON_CANCEL) &&
 			 (cinfo->MousePush == MOUSE_MARK) ){
-			XMessage(NULL, NULL, XM_DbgLOG, T("scroll 2 %d %d"), NcellWMin, cinfo->cellWMin);
 			CalcDragTarget(cinfo, &DragSelectPos, &DragSelectArea);
 			MarkDragArea(cinfo, &DragSelectArea, MARK_REVERSE);
 			cinfo->DrawTargetFlags = DRAWT_ALL;

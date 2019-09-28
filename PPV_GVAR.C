@@ -33,7 +33,7 @@
 #define TIMERID_READLINE	107		// 遅延読み込み用タイマID
 #define TIMERID_ANIMATE		108		// アニメーション用タイマID
 #define TIMERID_DRAW		109		// DirextXアニメーション描画用タイマID
-
+// TIMERID_USER : 0xc000-0xdfff
 #define TIMER_DRAGSCROLL	110		// ドラッグスクロールの間隔
 
 #define READLINE_FIRST	4000	// 最初に最低限読む行数

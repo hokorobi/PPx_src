@@ -556,7 +556,7 @@ INT_PTR CALLBACK FileMaskDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 						}
 						if ( *writep == '\0' ) PFS->mask->file[0] = '\0';
 						PFS->mask->attr = GetFileMaskAttr(hDlg);
-						if (MaskEntryMain(PFS->cinfo, PFS->mask, PFS->filename)){
+						if ( MaskEntryMain(PFS->cinfo, PFS->mask, PFS->filename) ){
 							SetMessageOnCaption(hDlg, NULL);
 						}else{
 							SetMessageOnCaption(hDlg, T("bad wildcard attribute"));
@@ -726,10 +726,10 @@ INT_PTR CALLBACK SortDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				}
 				wsprintf(buf, T("%d Ex Comment #%d"), CommentID, CommentID);
 				SendDlgSortCB(hDlg, CB_ADDSTRING, 0, (LPARAM)buf );
-				SendDlgSortCB(hDlg, CB_SETITEMDATA, index, CommentID * 2);
+				SendDlgSortCB(hDlg, CB_SETITEMDATA, (WPARAM)index, (LPARAM)(CommentID * 2));
 				wsprintf(buf, T("%d R)Ex Comment #%d"), CommentID, CommentID);
 				SendDlgSortCB(hDlg, CB_ADDSTRING, 0, (LPARAM)buf );
-				SendDlgSortCB(hDlg, CB_SETITEMDATA, index + 1, CommentID * 2 + 1);
+				SendDlgSortCB(hDlg, CB_SETITEMDATA, (WPARAM)(index + 1), (LPARAM)(CommentID * 2 + 1));
 				index += 2;
 			}
 			{
@@ -740,9 +740,9 @@ INT_PTR CALLBACK SortDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				SendDlgItemMessage(hDlg, IDC_SORT_TYPE1, CB_SETCURSEL, type, 0);
 			}
 			SendDlgItemMessage(hDlg, IDC_SORT_TYPE2, CB_SETCURSEL,
-					xc->mode.dat[1] + 1, 0);
+				(WPARAM)(xc->mode.dat[1] + 1), 0);
 			SendDlgItemMessage(hDlg, IDC_SORT_TYPE3, CB_SETCURSEL,
-					xc->mode.dat[2] + 1, 0);
+				(WPARAM)(xc->mode.dat[2] + 1), 0);
 			CheckDlgButton(hDlg, IDX_SORT_CASE,
 					!(xc->option & SORTE_IGNORECASE));
 			CheckDlgButton(hDlg, IDX_SORT_KANA,

@@ -191,7 +191,6 @@ typedef struct {
 	TCHAR path[VFPS];
 } InitTreeViewItems_Thread_Struct;
 
-
 void WaitTreeViewThread(VFSTREESTRUCT *VTS, BOOL sub)
 {
 	int count = 3000 / 20;
@@ -2335,6 +2334,9 @@ LRESULT CALLBACK TreeProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			FixTreeSize(VTS);
 			goto defchk;
 //			return DefWindowProc(hWnd, message, wParam, lParam);
+
+		case WM_COPYDATA:
+			return PPWmCopyData(&VTS->vtinfo, (COPYDATASTRUCT *)lParam);
 
 		case VTM_SETFLAG:
 			VTS->flags = (DWORD)lParam;

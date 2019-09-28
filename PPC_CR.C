@@ -10,7 +10,7 @@
 #include "PPCOMBO.H"
 #pragma hdrstop
 
-void RegisterAction(PPC_APPINFO *cinfo,HMENU hMenu,PPCMENUINFO *cminfo,BOOL always);
+void RegisterAction(PPC_APPINFO *cinfo, HMENU hMenu, PPCMENUINFO *cminfo, BOOL always);
 
 const TCHAR RegFileExtsPath[] = T("Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\%s");
 const TCHAR RegApplicationName[] = T("Application");
@@ -43,19 +43,19 @@ CRMENUSTACKCHECK DummyCrmCheck;
 #define DelayMenus_MAX 3 // 最後の NULL 分を含める
 
 // 新規の場合は末端に登録する
-int ReplaceCustTable(const TCHAR *str,const TCHAR *sub,const void *bin,size_t b_size)
+int ReplaceCustTable(const TCHAR *str, const TCHAR *sub, const void *bin, size_t b_size)
 {
-	if ( !IsExistCustTable(str,sub) ){ // 新規登録
-		return InsertCustTable(str,sub,0,bin,b_size);
+	if ( !IsExistCustTable(str, sub) ){ // 新規登録
+		return InsertCustTable(str, sub, 0, bin, b_size);
 	}else{
-		return SetCustTable(str,sub,bin,b_size);
+		return SetCustTable(str, sub, bin, b_size);
 	}
 }
 
-BOOL ShellExecEntriesSub(PPC_APPINFO *cinfo,const TCHAR *command,const TCHAR *csrentry,const TCHAR *path,const TCHAR *execpath,BOOL archivemode,DWORD runflag)
+BOOL ShellExecEntriesSub(PPC_APPINFO *cinfo, const TCHAR *command, const TCHAR *csrentry, const TCHAR *path, const TCHAR *execpath, BOOL archivemode, DWORD runflag)
 {
 	const TCHAR *paramPtr;
-	TCHAR name[VFPS],errmsg[VFPS * 2],param[VFPS * 2];
+	TCHAR name[VFPS], errmsg[VFPS * 2], param[VFPS * 2];
 	HANDLE hProcess;
 	int mode;
 
@@ -64,36 +64,36 @@ BOOL ShellExecEntriesSub(PPC_APPINFO *cinfo,const TCHAR *command,const TCHAR *cs
 	if ( IsTrue(archivemode) ){
 		csrentry = FindLastEntryPoint(csrentry);
 	}
-	VFSFullPath(name,(TCHAR *)csrentry,path);
-	if ( VFSGetDriveType(name,&mode,NULL) != NULL ){
+	VFSFullPath(name, (TCHAR *)csrentry, path);
+	if ( VFSGetDriveType(name, &mode, NULL) != NULL ){
 		if ( (mode <= VFSPT_SHN_DESK) || (mode == VFSPT_SHELLSCHEME) ){
-			VFSGetRealPath(NULL,name,name);
+			VFSGetRealPath(NULL, name, name);
 		}
 	}
 	if ( execpath == NULL ){ // csrentry をそのまま実行
 		paramPtr = NilStr;
 	}else{ // csrentry をパラメータにして execpath を実行
-		tstrcpy(param,execpath);
-		tstrreplace(param,T("%1"),name);
-		tstrreplace(param,T("%I"),T(":0"));
-		tstrreplace(param,T("%L"),name);
-		tstrreplace(param,T("%V"),name);
-		tstrreplace(param,T("%W"),path);
+		tstrcpy(param, execpath);
+		tstrreplace(param, T("%1"), name);
+		tstrreplace(param, T("%I"), T(":0"));
+		tstrreplace(param, T("%L"), name);
+		tstrreplace(param, T("%V"), name);
+		tstrreplace(param, T("%W"), path);
 		paramPtr = param;
-		GetLineParam(&paramPtr,name); // 実行ファイルとパラメータとを切り離す
+		GetLineParam(&paramPtr, name); // 実行ファイルとパラメータとを切り離す
 	}
-	hProcess = PPxShellExecute(cinfo->info.hWnd,command,name,paramPtr,path,runflag,errmsg);
+	hProcess = PPxShellExecute(cinfo->info.hWnd, command, name, paramPtr, path, runflag, errmsg);
 	if ( hProcess == NULL ){
-		SetPopMsg(cinfo,POPMSG_MSG,errmsg);
+		SetPopMsg(cinfo, POPMSG_MSG, errmsg);
 		return FALSE;
 	}
 	if ( XC_exem && cinfo->e.markC ) for ( ;; ){
 		DWORD result;
 
-		result = WaitForInputIdle(hProcess,100);
+		result = WaitForInputIdle(hProcess, 100);
 		if ( result != WAIT_TIMEOUT ) break;
 		if ( (GetAsyncKeyState(VK_ESCAPE) | GetAsyncKeyState(VK_PAUSE)) & KEYSTATE_PUSH ){
-			if ( PMessageBox(cinfo->info.hWnd,NULL,NULL,MB_QYES) == IDOK ){
+			if ( PMessageBox(cinfo->info.hWnd, NULL, NULL, MB_QYES) == IDOK ){
 				return FALSE;
 			}
 		}
@@ -102,24 +102,24 @@ BOOL ShellExecEntriesSub(PPC_APPINFO *cinfo,const TCHAR *command,const TCHAR *cs
 	return TRUE;
 }
 
-BOOL ShellExecEntries(PPC_APPINFO *cinfo,const TCHAR *command,const TCHAR *csrentry,const TCHAR *path,const TCHAR *execpath,BOOL archivemode)
+BOOL ShellExecEntries(PPC_APPINFO *cinfo, const TCHAR *command, const TCHAR *csrentry, const TCHAR *path, const TCHAR *execpath, BOOL archivemode)
 {
 	if ( !XC_exem || !cinfo->e.markC ){	// カーソル位置のみ実行
-		return ShellExecEntriesSub(cinfo,command,
-					csrentry,path,execpath,archivemode,0);
+		return ShellExecEntriesSub(cinfo, command,
+					csrentry, path, execpath, archivemode, 0);
 	}else{					// 該当マークについて実行
 		int work;
 		ENTRYCELL *cell;
 
-		InitEnumMarkCell(cinfo,&work);
-		cell = EnumMarkCell(cinfo,&work);
+		InitEnumMarkCell(cinfo, &work);
+		cell = EnumMarkCell(cinfo, &work);
 		while ( cell != NULL ){
 			csrentry = cell->f.cFileName;
-			if ( ShellExecEntriesSub(cinfo,command,
-					csrentry,path,execpath,archivemode,XEO_WAITIDLE) == FALSE ){
+			if ( ShellExecEntriesSub(cinfo, command,
+					csrentry, path, execpath, archivemode, XEO_WAITIDLE) == FALSE ){
 				return FALSE;
 			}
-			cell = EnumMarkCell(cinfo,&work);
+			cell = EnumMarkCell(cinfo, &work);
 		}
 	}
 	return TRUE;
@@ -145,34 +145,34 @@ typedef struct
 	#define MIIM_BITMAP      0x00000080
 #endif
 
-void SetMenuBmp(HMENU hMenu,HICON hIcon,DWORD id)
+void SetMenuBmp(HMENU hMenu, HICON hIcon, DWORD id)
 {
 	HDC hMemDC;
-	HBITMAP hbmp,hOldBmp;
+	HBITMAP hbmp, hOldBmp;
 	BITMAPINFOHEADER bmiHeader;
 	LPVOID lpBits;
 	xMENUITEMINFO mii;
 
-	memset(&bmiHeader,0,sizeof(bmiHeader));
+	memset(&bmiHeader, 0, sizeof(bmiHeader));
 	bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	bmiHeader.biWidth = bmiHeader.biHeight = GetSystemMetrics(SM_CYSMICON);
 	bmiHeader.biPlanes = 1;
 	bmiHeader.biBitCount = 32;
 
 	hMemDC = CreateCompatibleDC(NULL);
-	hbmp = CreateDIBSection(NULL,(LPBITMAPINFO)&bmiHeader,DIB_RGB_COLORS,&lpBits,NULL,0);
-	hOldBmp = (HBITMAP)SelectObject(hMemDC,hbmp);
-	DrawIconEx(hMemDC,0,0,hIcon,bmiHeader.biWidth,bmiHeader.biWidth,0,NULL,DI_NORMAL);
-	SelectObject(hMemDC,hOldBmp);
+	hbmp = CreateDIBSection(NULL, (LPBITMAPINFO)&bmiHeader, DIB_RGB_COLORS, &lpBits, NULL, 0);
+	hOldBmp = (HBITMAP)SelectObject(hMemDC, hbmp);
+	DrawIconEx(hMemDC, 0, 0, hIcon, bmiHeader.biWidth, bmiHeader.biWidth, 0, NULL, DI_NORMAL);
+	SelectObject(hMemDC, hOldBmp);
 	DeleteDC(hMemDC);
 
 	mii.cbSize = sizeof(xMENUITEMINFO);
 	mii.fMask = MIIM_BITMAP;
 	mii.hbmpItem = hbmp;
-	SetMenuItemInfo(hMenu,id,FALSE,(MENUITEMINFO *)&mii);
+	SetMenuItemInfo(hMenu, id, FALSE, (MENUITEMINFO *)&mii);
 }
 
-void SetMenuBmpIdl(HMENU hMenu,LPSHELLFOLDER pSF,LPITEMIDLIST idl,DWORD id)
+void SetMenuBmpIdl(HMENU hMenu, LPSHELLFOLDER pSF, LPITEMIDLIST idl, DWORD id)
 {
 	XLPEXTRACTICON pEI;
 	int iconsize;
@@ -181,48 +181,48 @@ void SetMenuBmpIdl(HMENU hMenu,LPSHELLFOLDER pSF,LPITEMIDLIST idl,DWORD id)
 	int index;
 	UINT flags;
 
-	if ( FAILED(pSF->lpVtbl->GetUIObjectOf(pSF,NULL,1,(LPCITEMIDLIST *)&idl,&IID_IExtractIcon,NULL,(void **)&pEI)) ){
+	if ( FAILED(pSF->lpVtbl->GetUIObjectOf(pSF, NULL, 1, (LPCITEMIDLIST *)&idl, &IID_IExtractIcon, NULL, (void **)&pEI)) ){
 		return;
 	}
 	iconsize = ( GetSystemMetrics(SM_CYMENUCHECK) > 16 ) ? 32 : 16;
-	pEI->lpVtbl->GetIconLocation(pEI,0,iconname,MAX_PATH,&index,&flags);
+	pEI->lpVtbl->GetIconLocation(pEI, 0, iconname, MAX_PATH, &index, &flags);
 	if ( flags & GIL_NOTFILENAME ){
 		// 注意 : Win2000 以前では NULL 不可
-		pEI->lpVtbl->Extract(pEI,iconname,index,&hIcon,NULL,iconsize);
+		pEI->lpVtbl->Extract(pEI, iconname, index, &hIcon, NULL, iconsize);
 	}else{
-		hIcon = LoadIconDx(iconname,index,iconsize);
+		hIcon = LoadIconDx(iconname, index, iconsize);
 	}
 	pEI->lpVtbl->Release( pEI );
 	if ( hIcon != NULL ){
-		SetMenuBmp(hMenu,hIcon,id);
+		SetMenuBmp(hMenu, hIcon, id);
 		DestroyIcon(hIcon);
 	}
 }
 
-void AppendMenuNoDbl(HMENU hMenu,DWORD ID,const TCHAR *str)
+void AppendMenuNoDbl(HMENU hMenu, DWORD ID, const TCHAR *str)
 {
 	TCHAR menustr[CMDLINESIZE];
 	DWORD i;
 
 	for ( i = CRID_OPENWITH ; i < ID ; i++ ){
-		GetMenuString(hMenu,i,menustr,TSIZEOF(menustr),MF_BYCOMMAND);
-		if ( tstricmp(str,menustr) == 0 ) return;
+		GetMenuString(hMenu, i, menustr, TSIZEOF(menustr), MF_BYCOMMAND);
+		if ( tstricmp(str, menustr) == 0 ) return;
 	}
 // HKEY_CURRENT_USER\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache の名前を採用してもよい
-	AppendMenuString(hMenu,ID,str);
+	AppendMenuString(hMenu, ID, str);
 
 	if ( OSver.dwMajorVersion >= 6 ){
 		HICON hIcon;
 
-		wsprintf(menustr,T("Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\%s"),str);
-		if (GetRegString(HKEY_CURRENT_USER, menustr,NilStr,menustr,MAX_PATH) ||
-			GetRegString(HKEY_LOCAL_MACHINE,menustr,NilStr,menustr,MAX_PATH) ){
-			VFSFixPath(NULL,menustr,NULL,0);
+		wsprintf(menustr, T("Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\%s"), str);
+		if (GetRegString(HKEY_CURRENT_USER, menustr, NilStr, menustr, MAX_PATH) ||
+			GetRegString(HKEY_LOCAL_MACHINE, menustr, NilStr, menustr, MAX_PATH) ){
+			VFSFixPath(NULL, menustr, NULL, 0);
 			str = menustr;
 		}
-		hIcon = LoadIconDx(str,LIDX_FILE,32);
+		hIcon = LoadIconDx(str, LIDX_FILE, 32);
 		if ( hIcon != NULL ){
-			SetMenuBmp(hMenu,hIcon,ID);
+			SetMenuBmp(hMenu, hIcon, ID);
 			DestroyIcon(hIcon);
 		}
 	}
@@ -230,11 +230,11 @@ void AppendMenuNoDbl(HMENU hMenu,DWORD ID,const TCHAR *str)
 
 //-----------------------------------------------------------------------------
 // OpenWithList を調査する(Windows2000用)
-DWORD OpenWith2000(HMENU hMenu,const TCHAR *ext,HKEY hRegKey,DWORD IDmin)
+DWORD OpenWith2000(HMENU hMenu, const TCHAR *ext, HKEY hRegKey, DWORD IDmin)
 {
 	DWORD ID = IDmin;
 	DWORD Rtyp;				// レジストリの種類
-	DWORD keyS,appS;
+	DWORD keyS, appS;
 
 	TCHAR rpath[MAX_PATH];	// アプリケーションのキー
 	TCHAR keyN[MAX_PATH];	// レジストリのキー名称
@@ -244,30 +244,30 @@ DWORD OpenWith2000(HMENU hMenu,const TCHAR *ext,HKEY hRegKey,DWORD IDmin)
 
 	int cnt = 0;
 
-	wsprintf(rpath,RegFileExtsPath,ext);
+	wsprintf(rpath, RegFileExtsPath, ext);
 
 	defN[0] = '\0';
-	GetRegString(hRegKey,rpath,RegApplicationName,defN,TSIZEOF(defN));
+	GetRegString(hRegKey, rpath, RegApplicationName, defN, TSIZEOF(defN));
 
-	tstrcat(rpath,RegOpenWithList);
+	tstrcat(rpath, RegOpenWithList);
 
 	// Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\[ext]\OpenWithList から抽出
-	if ( ERROR_SUCCESS == RegOpenKeyEx(hRegKey,rpath,0,KEY_READ,&hAP) ){
+	if ( ERROR_SUCCESS == RegOpenKeyEx(hRegKey, rpath, 0, KEY_READ, &hAP) ){
 		for ( ; ; ){					// 設定を取り出す ---------------------
 			keyS = TSIZEOF(keyN);
 			appS = TSIZEOF(appN);
-			if ( ERROR_SUCCESS != RegEnumValue(hAP,cnt,keyN,&keyS,NULL,
-					&Rtyp,(BYTE *)appN,&appS) ){
+			if ( ERROR_SUCCESS != RegEnumValue(hAP, cnt, keyN, &keyS, NULL,
+					&Rtyp, (BYTE *)appN, &appS) ){
 				break;
 			}
 			if ( keyN[1] == '\0' ){
 				HKEY hTest;
 
-				wsprintf(rpath,T("Applications\\%s\\shell\\Open"),appN);
+				wsprintf(rpath, T("Applications\\%s\\shell\\Open"), appN);
 				if ( ERROR_SUCCESS == RegOpenKeyEx(HKEY_CLASSES_ROOT,
-						rpath,0,KEY_READ,&hTest) ){
+						rpath, 0, KEY_READ, &hTest) ){
 					RegCloseKey(hTest);
-					AppendMenuNoDbl(hMenu,ID,appN);
+					AppendMenuNoDbl(hMenu, ID, appN);
 					ID++;
 					if ( ID >= CRID_OPENWITH_MAX ) break;
 				}
@@ -277,28 +277,28 @@ DWORD OpenWith2000(HMENU hMenu,const TCHAR *ext,HKEY hRegKey,DWORD IDmin)
 	}
 	RegCloseKey(hAP);
 	// Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\[ext]\Application から抽出
-	if ( (ID == CRID_OPENWITH) && defN[0] ) AppendMenuString(hMenu,ID++,defN);
+	if ( (ID == CRID_OPENWITH) && defN[0] ) AppendMenuString(hMenu, ID++, defN);
 	return ID;
 }
 
-void EnumOpenWithList(HMENU hMenu,DWORD *ID,const TCHAR *rpath)
+void EnumOpenWithList(HMENU hMenu, DWORD *ID, const TCHAR *rpath)
 {
 	HKEY hAP;
 	int cnt = 0;
 	DWORD keyS;
 	TCHAR keyN[MAX_PATH];	// レジストリのキー名称
 
-	if ( ERROR_SUCCESS != RegOpenKeyEx(HKEY_CLASSES_ROOT,rpath,0,KEY_READ,&hAP)){
+	if ( ERROR_SUCCESS != RegOpenKeyEx(HKEY_CLASSES_ROOT, rpath, 0, KEY_READ, &hAP)){
 		return;
 	}
 	for ( ; ; ){					// 設定を取り出す ---------------------
 		keyS = TSIZEOF(keyN);
 		if ( ERROR_SUCCESS !=
-				RegEnumKeyEx(hAP,cnt,keyN,&keyS,NULL,NULL,NULL,NULL) ){
+				RegEnumKeyEx(hAP, cnt, keyN, &keyS, NULL, NULL, NULL, NULL) ){
 			break;
 		}
-		if ( tstrchr(keyN,'.') != NULL ){
-			AppendMenuNoDbl(hMenu,*ID,keyN);
+		if ( tstrchr(keyN, '.') != NULL ){
+			AppendMenuNoDbl(hMenu, *ID, keyN);
 			(*ID)++;
 			if ( *ID >= CRID_OPENWITH_MAX ) break;
 		}
@@ -308,57 +308,57 @@ void EnumOpenWithList(HMENU hMenu,DWORD *ID,const TCHAR *rpath)
 }
 
 // OpenWithList を調査する(WindowsXP以降用)
-DWORD OpenWithXP(HMENU hMenu,const TCHAR *ext)
+DWORD OpenWithXP(HMENU hMenu, const TCHAR *ext)
 {
 	DWORD ID = CRID_OPENWITH;
 	TCHAR rpath[MAX_PATH];	// アプリケーションのキー
 	TCHAR header[MAX_PATH];
 
 	// CLASSES_ROOT\SystemFileAssociations\[ext]\OpenWithList から抽出
-	wsprintf(rpath,RegFA,ext);
-	EnumOpenWithList(hMenu,&ID,rpath);
+	wsprintf(rpath, RegFA, ext);
+	EnumOpenWithList(hMenu, &ID, rpath);
 
 	// CLASSES_ROOT\[ext]\PerceivedType に記載された CLASSES_ROOT\SystemFileAssociations\[PerceivedType]\OpenWithList から抽出
 	header[0] = '\0';
-	GetRegString(HKEY_CLASSES_ROOT,ext,RegPerceivedText,header,TSIZEOF(header));
+	GetRegString(HKEY_CLASSES_ROOT, ext, RegPerceivedText, header, TSIZEOF(header));
 	if ( header[0] ){
-		wsprintf(rpath,RegFA,header);
-		EnumOpenWithList(hMenu,&ID,rpath);
+		wsprintf(rpath, RegFA, header);
+		EnumOpenWithList(hMenu, &ID, rpath);
 	}
 	// CLASSES_ROOT\[ext]\OpenWithList から抽出
-	tstrcpy(rpath,ext);
-	tstrcat(rpath,RegOpenWithList);
-	EnumOpenWithList(hMenu,&ID,rpath);
+	tstrcpy(rpath, ext);
+	tstrcat(rpath, RegOpenWithList);
+	EnumOpenWithList(hMenu, &ID, rpath);
 	return ID;
 }
 
-BOOL RPIDL2DisplayNameOf(TCHAR *name,LPSHELLFOLDER sfolder,LPCITEMIDLIST pidl)
+BOOL RPIDL2DisplayNameOf(TCHAR *name, LPSHELLFOLDER sfolder, LPCITEMIDLIST pidl)
 {
 	STRRET strr;
 
 	if ( FAILED(sfolder->lpVtbl->GetDisplayNameOf(sfolder,
-			pidl,SHGDN_INFOLDER | SHGDN_FORPARSING,&strr)) )
+			pidl, SHGDN_INFOLDER | SHGDN_FORPARSING, &strr)) )
 	{
 		return FALSE;
 	}
 	switch (strr.uType){
 		case STRRET_WSTR:
 			#ifdef UNICODE
-				tstrcpy(name,UNIONNAME(strr,pOleStr));
+				tstrcpy(name, UNIONNAME(strr, pOleStr));
 			#else
-				UnicodeToAnsi(UNIONNAME(strr,pOleStr),name,VFPS);
+				UnicodeToAnsi(UNIONNAME(strr, pOleStr), name, VFPS);
 			#endif
 			break;
 
 		case STRRET_OFFSET:
-			tstrcpy(name,(TCHAR *)pidl + UNIONNAME(strr,uOffset));
+			tstrcpy(name, (TCHAR *)pidl + UNIONNAME(strr, uOffset));
 			break;
 
 		case STRRET_CSTR:
 			#ifdef UNICODE
-				AnsiToUnicode(UNIONNAME(strr,cStr),name,VFPS);
+				AnsiToUnicode(UNIONNAME(strr, cStr), name, VFPS);
 			#else
-				tstrcpy(name,UNIONNAME(strr,cStr));
+				tstrcpy(name, UNIONNAME(strr, cStr));
 			#endif
 			break;
 	}
@@ -376,11 +376,11 @@ void WINAPI CRmenuDelayLoad(DelayLoadMenuStruct *DelayMenus)
 	hMenu = DelayMenus->hMenu;
 	if ( (OSver.dwMajorVersion > 5) ||
 		 ((OSver.dwMajorVersion == 5) && OSver.dwMinorVersion) ){
-		ID = OpenWithXP(hMenu,(const TCHAR *)DelayMenus->lParam);
+		ID = OpenWithXP(hMenu, (const TCHAR *)DelayMenus->lParam);
 	}
-	ID = OpenWith2000(hMenu,(const TCHAR *)DelayMenus->lParam,HKEY_CURRENT_USER,ID);
-	ID = OpenWith2000(hMenu,(const TCHAR *)DelayMenus->lParam,HKEY_LOCAL_MACHINE,ID);
-	if ( ID > CRID_OPENWITH ) AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
+	ID = OpenWith2000(hMenu, (const TCHAR *)DelayMenus->lParam, HKEY_CURRENT_USER, ID);
+	ID = OpenWith2000(hMenu, (const TCHAR *)DelayMenus->lParam, HKEY_LOCAL_MACHINE, ID);
+	if ( ID > CRID_OPENWITH ) AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
 
 	// SendToの一覧
 	{
@@ -389,43 +389,43 @@ void WINAPI CRmenuDelayLoad(DelayLoadMenuStruct *DelayMenus)
 		LPENUMIDLIST pEID;
 		LPMALLOC pMA;
 
-		pSF = VFPtoIShell(NULL,T("#9:\\"),NULL);
+		pSF = VFPtoIShell(NULL, T("#9:\\"), NULL);
 		if ( pSF != NULL ){
 			SHGetMalloc(&pMA);
 
-			if ( S_OK == pSF->lpVtbl->EnumObjects(pSF,NULL,
+			if ( S_OK == pSF->lpVtbl->EnumObjects(pSF, NULL,
 				(OSver.dwMajorVersion >= 6) ?
 				ENUMOBJECTSFORFOLDERFLAG_VISTA : ENUMOBJECTSFORFOLDERFLAG_XP,
 				&pEID) ){ // S_FALSE のときは、pEID = NULL
 				for ( ; ; ){
 					DWORD getsi;
 
-					if ( pEID->lpVtbl->Next(pEID,1,&idl,&getsi) != S_OK ){
+					if ( pEID->lpVtbl->Next(pEID, 1, &idl, &getsi) != S_OK ){
 						break;
 					}
 					if ( getsi == 0 ) break;
 
-					if ( IsTrue(PIDL2DisplayNameOf(path,pSF,idl)) ){
-						AppendMenuString(hMenu,DelayMenus->ID,path);
+					if ( IsTrue(PIDL2DisplayNameOf(path, pSF, idl)) ){
+						AppendMenuString(hMenu, DelayMenus->ID, path);
 						if ( OSver.dwMajorVersion >= 6 ){
-							SetMenuBmpIdl(hMenu,pSF,idl,DelayMenus->ID);
+							SetMenuBmpIdl(hMenu, pSF, idl, DelayMenus->ID);
 						}
 						DelayMenus->ID++;
 
-						RPIDL2DisplayNameOf(path,pSF,idl);
-						wsprintf(cmd,T("*sendto \"%s"),path);
-						ThAddString(DelayMenus->thMenuStr,cmd);
+						RPIDL2DisplayNameOf(path, pSF, idl);
+						wsprintf(cmd, T("*sendto \"%s"), path);
+						ThAddString(DelayMenus->thMenuStr, cmd);
 					}
-					pMA->lpVtbl->Free(pMA,idl);
+					pMA->lpVtbl->Free(pMA, idl);
 				}
 				pEID->lpVtbl->Release(pEID);
 			}
 			pMA->lpVtbl->Release(pMA);
 			pSF->lpVtbl->Release(pSF);
 		}
-		AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
+		AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
 	}
-	AppendMenuString(hMenu,CRID_SELECTEXE,MES_REGP);
+	AppendMenuString(hMenu, CRID_SELECTEXE, MES_REGP);
 
 	DelayMenus->hMenu = INVALID_HANDLE_VALUE; // 再度呼ばれないようにする
 }
@@ -435,25 +435,25 @@ void WINAPI DirTypeDelayLoad(DelayLoadMenuStruct *DelayMenus)
 	PPC_APPINFO *cinfo;
 
 	cinfo = (PPC_APPINFO *)DelayMenus->lParam;
-	IsFileDir(cinfo,CEL(cinfo->e.cellN).f.cFileName,NULL,NULL,DelayMenus->hMenu);
+	IsFileDir(cinfo, CEL(cinfo->e.cellN).f.cFileName, NULL, NULL, DelayMenus->hMenu);
 	if ( CEL(cinfo->e.cellN).f.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT ){
-		AppendMenuString(DelayMenus->hMenu,CRID_DIRTYPE_JUNCTION,MES_JNJL);
-		AppendMenuString(DelayMenus->hMenu,CRID_DIRTYPE_JUNCTION_PAIR,MES_JPJL);
+		AppendMenuString(DelayMenus->hMenu, CRID_DIRTYPE_JUNCTION, MES_JNJL);
+		AppendMenuString(DelayMenus->hMenu, CRID_DIRTYPE_JUNCTION_PAIR, MES_JPJL);
 	}
 
 	if ( cinfo->e.Dtype.mode == VFSDT_LFILE ){
-		AppendMenuString(DelayMenus->hMenu,K_M | KC_JMPE,MES_DDJP);
+		AppendMenuString(DelayMenus->hMenu, K_M | KC_JMPE, MES_DDJP);
 	}
 
 	if ( GetMenuItemCount(DelayMenus->hMenu) <= 0 ){
-		AppendMenu(DelayMenus->hMenu,MF_GS,0,T("none"));
+		AppendMenu(DelayMenus->hMenu, MF_GS, 0, T("none"));
 	}
 	DelayMenus->hMenu = INVALID_HANDLE_VALUE; // 再度呼ばれないようにする
 }
 
 BOOL IsArcInArc(PPC_APPINFO *cinfo)
 {
-	TCHAR *fp,*ep;
+	TCHAR *fp, *ep;
 	BOOL arcmode = FALSE;
 	TCHAR ParamHeader[8];
 
@@ -461,7 +461,7 @@ BOOL IsArcInArc(PPC_APPINFO *cinfo)
 	ep = fp + FindExtSeparator(fp);
 	if ( *ep == '.' ){				// 拡張子あり
 		ep++;
-		if ( NO_ERROR == GetCustTable(ExtTableID,ep,ParamHeader,sizeof(ParamHeader)) ){
+		if ( NO_ERROR == GetCustTable(ExtTableID, ep, ParamHeader, sizeof(ParamHeader)) ){
 			if ( ((UTCHAR)ParamHeader[0] == EXTCMD_KEY) &&
 				 (*(WORD *)(ParamHeader + 1) == (WORD)KC_Edir) ){
 				arcmode = TRUE;
@@ -471,16 +471,16 @@ BOOL IsArcInArc(PPC_APPINFO *cinfo)
 	if ( arcmode == FALSE ){
 		FN_REGEXP fn;
 
-		MakeFN_REGEXP(&fn,T(".lzh;.zip;.cab;.rar;.7z"));
-		arcmode = FilenameRegularExpression(fp,&fn);
+		MakeFN_REGEXP(&fn, T(".lzh;.zip;.cab;.rar;.7z"));
+		arcmode = FilenameRegularExpression(fp, &fn);
 		FreeFN_REGEXP(&fn);
 	}
 	return arcmode;
 }
 
-UINT FindMenuID(HMENU hMenu,PPXMENUDATAINFO *pmdi,TCHAR *param,int *menupos,int *exec,TCHAR *Kword)
+UINT FindMenuID(HMENU hMenu, PPXMENUDATAINFO *pmdi, TCHAR *param, int *menupos, int *exec, TCHAR *Kword)
 {
-	TCHAR *destptr,*paramptr;
+	TCHAR *destptr, *paramptr;
 										// キーワードを抽出 -----------------
 	paramptr = param + TSIZEOF(menuidstr) - 1;
 	SkipSpace((const TCHAR **)&paramptr);
@@ -500,22 +500,22 @@ UINT FindMenuID(HMENU hMenu,PPXMENUDATAINFO *pmdi,TCHAR *param,int *menupos,int 
 										// キーワードを検索 -----------------
 	if ( pmdi->th.top != 0 ){
 		const TCHAR *action;
-		DWORD id,pos;
+		DWORD id, pos;
 
 		action = (const TCHAR *)pmdi->th.bottom;
 		id = pmdi->id - CRID_EXTCMD;
 		for ( pos = 0 ; pos < id ; pos++ ){
-			if ( tstricmp(Kword,action) == 0 ){
+			if ( tstricmp(Kword, action) == 0 ){
 				if ( menupos != NULL ) *menupos = pos;
 				return id + CRID_EXTCMD;
 			}
 			action += tstrlen(action) + 1;
 		}
 	}
-	return FindMenuItem(hMenu,Kword,menupos);
+	return FindMenuItem(hMenu, Kword, menupos);
 }
 
-int reglist(PPC_APPINFO *cinfo,HMENU hMenu,PPCMENUINFO *cminfo,PPXMENUDATAINFO *pmdi,int TypeFlag,DelayLoadMenuStruct *DelayMenus)
+int reglist(PPC_APPINFO *cinfo, HMENU hMenu, PPCMENUINFO *cminfo, PPXMENUDATAINFO *pmdi, int TypeFlag, DelayLoadMenuStruct *DelayMenus)
 {
 	int cnt;
 	DWORD ID;
@@ -528,8 +528,8 @@ int reglist(PPC_APPINFO *cinfo,HMENU hMenu,PPCMENUINFO *cminfo,PPXMENUDATAINFO *
 	const TCHAR *regext;
 
 	regext = cminfo->regext;
-	if ( tstricmp(regext,StrShortcutExt) == 0 ){
-		if ( SUCCEEDED(GetLink(cinfo->info.hWnd,cminfo->PathName,LinkTarget)) && LinkTarget[0] ){
+	if ( tstricmp(regext, StrShortcutExt) == 0 ){
+		if ( SUCCEEDED(GetLink(cinfo->info.hWnd, cminfo->PathName, LinkTarget)) && LinkTarget[0] ){
 			DWORD attr;
 
 			attr = GetFileAttributesL(LinkTarget);
@@ -544,24 +544,24 @@ int reglist(PPC_APPINFO *cinfo,HMENU hMenu,PPCMENUINFO *cminfo,PPXMENUDATAINFO *
 	}
 
 	pmdi->id = CRID_EXTCMD;
-	cnt = GetExtentionMenu(hMenu,regext,pmdi);
-	AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
+	cnt = GetExtentionMenu(hMenu, regext, pmdi);
+	AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
 
 	// Send To & OS の拡張子別のプログラムメニュー
 	hSubMenu = CreatePopupMenu();
-	AppendMenu(hMenu,MF_EPOP,(UINT_PTR)hSubMenu,MessageText(MES_OWIT));
+	AppendMenu(hMenu, MF_EPOP, (UINT_PTR)hSubMenu, MessageText(MES_OWIT));
 	DelayMenus[DelayMenus_SENDTO].hMenu = hSubMenu;
 	DelayMenus[DelayMenus_SENDTO].lParam = (LPARAM)cminfo->regext;
 
 	// シェルコンテキストメニュー
-	AppendMenuString(hMenu,K_Mc | K_s | K_F10,MES_SHCM);
+	AppendMenuString(hMenu, K_Mc | K_s | K_F10, MES_SHCM);
 	if ( CEL(cinfo->e.cellN).f.dwFileAttributes &
 			(FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTEX_FOLDER) ){
 		TypeFlag = PPEXTRESULT_DIR;
 	}else if ( (TypeFlag < PPEXTRESULT_NONE) || (TypeFlag > PPEXTRESULT_FILE) ){
 		if ( (TypeFlag == PPEXTRESULT_VFSDIR) ||
 			 (TypeFlag == -PPEXTRESULT_VFSDIR) ||
-			 IsFileDir(cinfo,CEL(cinfo->e.cellN).f.cFileName,NULL,NULL,NULL) ){
+			 IsFileDir(cinfo, CEL(cinfo->e.cellN).f.cFileName, NULL, NULL, NULL) ){
 			TypeFlag = PPEXTRESULT_DIR;
 		}else{
 			TypeFlag = PPEXTRESULT_FILE;
@@ -572,38 +572,38 @@ int reglist(PPC_APPINFO *cinfo,HMENU hMenu,PPCMENUINFO *cminfo,PPXMENUDATAINFO *
 
 	// ディレクトリ移動
 	if ( (TypeFlag != PPEXTRESULT_FILE) || IsArcInArc(cinfo) ){
-		AppendMenuString(hMenu,K_M | KC_Edir,MES_DREN);
-		if ( Combo.Tabs ) AppendMenuString(hMenu,CRID_NEWTAB,MES_TABN);
+		AppendMenuString(hMenu, K_M | KC_Edir, MES_DREN);
+		if ( Combo.Tabs ) AppendMenuString(hMenu, CRID_NEWTAB, MES_TABN);
 	}
 	// その他のディレクトリ移動
 	hSubMenu = CreatePopupMenu();
-	AppendMenu(hMenu,MF_EPOP,(UINT_PTR)hSubMenu,MessageText(MES_OWDT));
+	AppendMenu(hMenu, MF_EPOP, (UINT_PTR)hSubMenu, MessageText(MES_OWDT));
 	DelayMenus[DelayMenus_DIRTYPE].hMenu = hSubMenu;
 	DelayMenus[DelayMenus_DIRTYPE].lParam = (LPARAM)cinfo;
 
 	// ListFile：該当エントリ移動／エントリ消去
 	if ( cinfo->e.Dtype.mode == VFSDT_LFILE ){
-		AppendMenuString(hMenu,K_M | KC_JMPE,MES_DDJP);
-		AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
-		AppendMenuString(hMenu,K_Mc | K_s | 'D',MES_ELST);
-		AppendMenuString(hMenu,K_M | KC_UpdateEntryData,MES_UDED);
+		AppendMenuString(hMenu, K_M | KC_JMPE, MES_DDJP);
+		AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
+		AppendMenuString(hMenu, K_Mc | K_s | 'D', MES_ELST);
+		AppendMenuString(hMenu, K_M | KC_UpdateEntryData, MES_UDED);
 	}
 
-	AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
+	AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
 
 	// 拡張子別メニュー
 	extid = cminfo->regext;
 	if ( *extid == '\0' ) extid = NoextName;
 	if ( extid == StrRegFolder ) extid = DirName;
-	wsprintf(buf,T("M_Ccr%s"),extid);
+	wsprintf(buf, T("M_Ccr%s"), extid);
 
 	ID = CRID_EXTMENU;
-	PP_AddMenu(&cinfo->info,cinfo->info.hWnd,hMenu,&ID,buf,&cminfo->x.th);
-	if ( ID != CRID_EXTMENU ) AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
+	PP_AddMenu(&cinfo->info, cinfo->info.hWnd, hMenu, &ID, buf, &cminfo->x.th);
+	if ( ID != CRID_EXTMENU ) AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
 	cminfo->comID = ID;
 
 	// 基本メニュー
-	PP_AddMenu(&cinfo->info,cinfo->info.hWnd,hMenu,&ID,T("M_Ccr"),&cminfo->x.th);
+	PP_AddMenu(&cinfo->info, cinfo->info.hWnd, hMenu, &ID, T("M_Ccr"), &cminfo->x.th);
 
 	DelayMenus[DelayMenus_SENDTO].ID = cminfo->extitemID = ID;
 	DelayMenus[DelayMenus_SENDTO].thMenuStr = &cminfo->x.th;
@@ -619,7 +619,7 @@ void CrMenu(PPC_APPINFO *cinfo, BOOL ShowMenu)
 	PPCMENUINFO cminfo;
 	PPXMENUDATAINFO pmdi;
 	POINT pos;
-	BOOL popmode,LongParam = FALSE;
+	BOOL popmode, LongParam = FALSE;
 	DelayLoadMenuStruct *OldDelayMenus, DelayMenus[DelayMenus_MAX];
 
 	CRMENUSTACKCHECK *CrmCheck; // スタック異常等の検出用
@@ -630,7 +630,7 @@ void CrMenu(PPC_APPINFO *cinfo, BOOL ShowMenu)
 	}
 /*
 	if ( cinfo->Ref > 25 ){
-		XMessage(cinfo->info.hWnd,NULL,XM_FaERRd,CrMenuR_str);
+		XMessage(cinfo->info.hWnd, NULL, XM_FaERRd, CrMenuR_str);
 		return;
 	}
 */
@@ -686,8 +686,8 @@ void CrMenu(PPC_APPINFO *cinfo, BOOL ShowMenu)
 	Param[CMDLINESIZE - 1] = '\0';
 	if ( CEL(cinfo->e.cellN).f.dwFileAttributes &
 			(FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTEX_FOLDER) ){
-		tstrcpy(cminfo.TypeName,T(":DIR"));
-		TypeFlag = GetCustTable(ExtTableID,T(":DIR"),Param,sizeof(Param));
+		tstrcpy(cminfo.TypeName, T(":DIR"));
+		TypeFlag = GetCustTable(ExtTableID, T(":DIR"), Param, sizeof(Param));
 		if ( TypeFlag != 0 ) TypeFlag = PPEXTRESULT_NONE;
 	}else{
 		TypeFlag = PP_GetExtCommand(cminfo.PathName, ExtTableID, Param, cminfo.TypeName);
@@ -697,7 +697,7 @@ void CrMenu(PPC_APPINFO *cinfo, BOOL ShowMenu)
 		Param[CMDLINESIZE - 1] = '\0';
 	}
 
-	if ( tstrcmp(cminfo.TypeName,T(":DIR")) != 0 ){
+	if ( tstrcmp(cminfo.TypeName, T(":DIR")) != 0 ){
 		cminfo.regext = CEL(cminfo.cellindex).f.cFileName + CEL(cminfo.cellindex).ext;
 		if ( *cminfo.regext == '\0' ){
 			cminfo.regext = VFSFindLastEntry(cminfo.PathName);
@@ -715,20 +715,21 @@ void CrMenu(PPC_APPINFO *cinfo, BOOL ShowMenu)
 			WORD *keyp;
 
 			keyp = (WORD *)(ptr + 1);
-			while ( *keyp ){
+			while ( *keyp != 0 ){
 #ifndef _WIN64
 				// ●↓0.40-0.41で混入したバグ対策
 				if ( (*keyp & (K_ex | K_raw)) == (K_ex | K_raw) ){
-					DeleteCustTable(ExtTableID,cminfo.TypeName,0);
+					DeleteCustTable(ExtTableID, cminfo.TypeName, 0);
 					break;
 				}
 #endif
 				CrmCheck->exectype = *keyp;
-				if ( (CrmCheck->exectype == (K_raw | K_cr)) && (CrmCheck->enter > 20) ){
-					wsprintf(Param,T("E_cr:%s 中の @enter 指定によって再入が起きえているため、動作を中断しました。"),cminfo.TypeName);
-					SetPopMsg(cinfo,POPMSG_MSG,Param);
+				if ( (CrmCheck->exectype == (K_raw | K_cr)) &&
+					 (CrmCheck->enter > 20) ){
+					wsprintf(Param, T("E_cr:%s 中の @enter 指定によって再入が起きえているため、動作を中断しました。"), cminfo.TypeName);
+					SetPopMsg(cinfo, POPMSG_MSG, Param);
 				}else{
-					PPcCommand(cinfo,*keyp++);
+					PPcCommand(cinfo, *keyp++);
 				}
 			}
 			CrmCheck->enter--;
@@ -737,45 +738,45 @@ void CrMenu(PPC_APPINFO *cinfo, BOOL ShowMenu)
 		if ( (UTCHAR)*ptr == EXTCMD_CMD ) ptr++;
 
 		SkipSpace((const TCHAR **)&ptr);
-		if ( memcmp(ptr,menuidstr,TSIZEOF(menuidstr) - 1) == 0 ){
+		if ( memcmp(ptr, menuidstr, TSIZEOF(menuidstr) - 1) == 0 ){
 			int exec = 0;
 			int menupos;
 			UINT menuID;
 										// キーワードに該当する項目を検索 -----
 
 			hMenu = CreatePopupMenu();
-			reglist(cinfo,hMenu,&cminfo,&pmdi,TypeFlag,DelayMenus);
+			reglist(cinfo, hMenu, &cminfo, &pmdi, TypeFlag, DelayMenus);
 
-			menuID = FindMenuID(hMenu,&pmdi,ptr,&menupos,&exec,Kword);
+			menuID = FindMenuID(hMenu, &pmdi, ptr, &menupos, &exec, Kword);
 			if ( menuID != 0 ){
 				if ( exec && !ShowMenu && (menuID <= CRID_MAX) ){ // 直接実行
 					CrmCheck->exectype = 0x10;
-					DoActionMenu(cinfo,hMenu,menuID,cminfo.cellindex,&cminfo.x.th,&pmdi,cminfo.comID);
+					DoActionMenu(cinfo, hMenu, menuID, cminfo.cellindex, &cminfo.x.th, &pmdi, cminfo.comID);
 					goto menufreefin;
 				}else{ // カーソル移動
 					for ( ; menupos >= 0 ; menupos-- ){
-						PostMessage(cinfo->info.hWnd,WM_KEYDOWN,VK_DOWN,0);
-						PostMessage(cinfo->info.hWnd,WM_KEYUP,VK_DOWN,0);
+						PostMessage(cinfo->info.hWnd, WM_KEYDOWN, VK_DOWN, 0);
+						PostMessage(cinfo->info.hWnd, WM_KEYUP, VK_DOWN, 0);
 					}
 				}
 			}else{
-				wsprintf(Param,MessageText(MES_EECR),Kword,cminfo.TypeName);
-				SetPopMsg(cinfo,POPMSG_MSG,Param);
+				wsprintf(Param, MessageText(MES_EECR), Kword, cminfo.TypeName);
+				SetPopMsg(cinfo, POPMSG_MSG, Param);
 				TypeFlag = PPEXTRESULT_NONE; // 自動登録可能にする
 			}
 		}else{
 			CrmCheck->exectype = 0x11;
 			if ( LongParam == FALSE ){
-				PP_ExtractMacro(cinfo->info.hWnd,&cinfo->info,NULL,ptr,NULL,0);
+				PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, ptr, NULL, 0);
 			}else{
-				int size = GetCustTableSize(ExtTableID,cminfo.TypeName);
+				int size = GetCustTableSize(ExtTableID, cminfo.TypeName);
 				TCHAR *LongParamPtr;
 
 				LongParamPtr = PPcHeapAlloc(size);
 				if ( LongParamPtr != NULL ){
-					GetCustTable(ExtTableID,cminfo.TypeName,LongParamPtr,size);
-					PP_ExtractMacro(cinfo->info.hWnd,&cinfo->info,NULL,
-							LongParamPtr + (ptr - Param),NULL,0);
+					GetCustTable(ExtTableID, cminfo.TypeName, LongParamPtr, size);
+					PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL,
+							LongParamPtr + (ptr - Param), NULL, 0);
 					PPcHeapFree(LongParamPtr);
 				}
 			}
@@ -786,13 +787,13 @@ void CrMenu(PPC_APPINFO *cinfo, BOOL ShowMenu)
 		UINT menuID;
 
 		// ディレクトリ移動を試行
-		if ( !ShowMenu && IsTrue(CellLook(cinfo,TypeFlag + 1)) ) goto freefin;
+		if ( !ShowMenu && IsTrue(CellLook(cinfo, TypeFlag + 1)) ) goto freefin;
 
 		// メニュー作成
 		hMenu = CreatePopupMenu();
 
-		if ( !reglist(cinfo,hMenu,&cminfo,&pmdi,TypeFlag,DelayMenus) && !ShowMenu ){
-			VFSFullPath(cminfo.PathName,CEL(cminfo.cellindex).f.cFileName,cinfo->path);
+		if ( !reglist(cinfo, hMenu, &cminfo, &pmdi, TypeFlag, DelayMenus) && !ShowMenu ){
+			VFSFullPath(cminfo.PathName, CEL(cminfo.cellindex).f.cFileName, cinfo->path);
 			CrmCheck->exectype = 0x12;
 			// 書庫内のディレクトリと思われるエントリは表示しない
 			if ( ((cinfo->e.Dtype.mode != VFSDT_UN) &&
@@ -800,7 +801,7 @@ void CrMenu(PPC_APPINFO *cinfo, BOOL ShowMenu)
 				 ((CEL(cminfo.cellindex).f.nFileSizeHigh == 0) &&
 				  (CEL(cminfo.cellindex).f.nFileSizeLow != 0)) ){
 				CrmCheck->exectype = 0x13;
-				PPxView(cinfo->info.hWnd,cminfo.PathName,cinfo->NormalViewFlag);
+				PPxView(cinfo->info.hWnd, cminfo.PathName, cinfo->NormalViewFlag);
 			}
 			goto menufreefin;
 		}
@@ -811,8 +812,8 @@ void CrMenu(PPC_APPINFO *cinfo, BOOL ShowMenu)
 		}else{
 			if ( (UTCHAR)*ptr == EXTCMD_CMD ) ptr++;
 			SkipSpace((const TCHAR **)&ptr);
-			if ( memcmp(ptr,menuidstr,TSIZEOF(menuidstr) - 1) == 0 ){
-				menuID = FindMenuID(hMenu,&pmdi,ptr,NULL,NULL,Kword);
+			if ( memcmp(ptr, menuidstr, TSIZEOF(menuidstr) - 1) == 0 ){
+				menuID = FindMenuID(hMenu, &pmdi, ptr, NULL, NULL, Kword);
 			}else{
 				menuID = 0;
 			}
@@ -823,7 +824,7 @@ void CrMenu(PPC_APPINFO *cinfo, BOOL ShowMenu)
 			minfo.cbSize = sizeof(minfo);
 			minfo.fMask = MIIM_STATE;
 			minfo.fState = MFS_ENABLED | MFS_DEFAULT;
-			SetMenuItemInfo(hMenu,menuID,MF_BYCOMMAND,&minfo);
+			SetMenuItemInfo(hMenu, menuID, MF_BYCOMMAND, &minfo);
 		}
 	}
 										// メニュー表示
@@ -832,19 +833,19 @@ void CrMenu(PPC_APPINFO *cinfo, BOOL ShowMenu)
 
 	cminfo.x.info = &cinfo->info;
 	cminfo.x.commandID = PPXCMDID_MENUONMENU;
-	GetPopupPosition(cinfo,&pos);
-	popmode = PPxSetMenuInfo(hMenu,&cminfo.x);
+	GetPopupPosition(cinfo, &pos);
+	popmode = PPxSetMenuInfo(hMenu, &cminfo.x);
 
 	OldDelayMenus = cinfo->DelayMenus;
 	cinfo->DelayMenus = DelayMenus;
 	cminfo.x.index = TrackPopupMenu(hMenu,
 		popmode ? TPM_LEFTALIGN | TPM_RETURNCMD | TPM_RECURSE : TPM_TDEFAULT,
-		pos.x,pos.y,0,cinfo->info.hWnd,NULL);
+		pos.x, pos.y, 0, cinfo->info.hWnd, NULL);
 	cinfo->DelayMenus = OldDelayMenus;
 	CrmCheck->exectype = 0x14;
 	if ( cminfo.x.Command != NULL ){
 		CrmCheck->exectype = 0x15;
-		PP_ExtractMacro(cinfo->info.hWnd,&cinfo->info,NULL,cminfo.x.Command,NULL,0);
+		PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, cminfo.x.Command, NULL, 0);
 		PPcHeapFree(cminfo.x.Command);
 	}
 
@@ -852,17 +853,17 @@ void CrMenu(PPC_APPINFO *cinfo, BOOL ShowMenu)
 		CrmCheck->exectype = 0x16;
 										// ファイルの内容で判別 ---------------
 		if ( GetShiftKey() & K_c ){
-			RegisterAction(cinfo,hMenu,&cminfo,FALSE);
+			RegisterAction(cinfo, hMenu, &cminfo, FALSE);
 		}else if ( IsTrue(X_acr[0]) && (TypeFlag < PPEXTRESULT_FILE) ){ // 自動選択肢登録
 			const TCHAR *extp;
 
 			// 拡張子あり(ext/:type.ext)なら登録/拡張子無し(name.)は登録しない
 			extp = cminfo.TypeName + FindExtSeparator(cminfo.TypeName);
 			if ( (*extp == '\0') || (*(extp + 1) != '\0') ){ // '.' が末端以外?
-				RegisterAction(cinfo,hMenu,&cminfo,TRUE);
+				RegisterAction(cinfo, hMenu, &cminfo, TRUE);
 			}
 		}
-		DoActionMenu(cinfo,hMenu,cminfo.x.index,cminfo.cellindex,&cminfo.x.th,&pmdi,cminfo.comID);
+		DoActionMenu(cinfo, hMenu, cminfo.x.index, cminfo.cellindex, &cminfo.x.th, &pmdi, cminfo.comID);
 	}
 menufreefin:
 	DestroyMenu(hMenu);
@@ -873,9 +874,9 @@ freefin:
 	CrmCheck->enter--;
 }
 
-void RegisterAction(PPC_APPINFO *cinfo,HMENU hMenu,PPCMENUINFO *cminfo,BOOL always)
+void RegisterAction(PPC_APPINFO *cinfo, HMENU hMenu, PPCMENUINFO *cminfo, BOOL always)
 {
-	TCHAR param[VFPS],TypeText[MAX_PATH];
+	TCHAR param[VFPS], TypeText[MAX_PATH];
 	const TCHAR *TypeName;
 	VFSFILETYPE vft;
 	const TCHAR *ext;
@@ -891,10 +892,10 @@ void RegisterAction(PPC_APPINFO *cinfo,HMENU hMenu,PPCMENUINFO *cminfo,BOOL alwa
 
 	TypeName = cminfo->TypeName;
 	vft.flags = VFSFT_TYPE | VFSFT_STRICT;
-	if ( VFSGetFileType(cminfo->PathName,NULL,0,&vft) == NO_ERROR ){
-		if ( IsExistCustTable(ExtTableID,vft.type) ){
+	if ( VFSGetFileType(cminfo->PathName, NULL, 0, &vft) == NO_ERROR ){
+		if ( IsExistCustTable(ExtTableID, vft.type) ){
 			// 種類名が既にあるので拡張子付きにする
-			wsprintf(TypeText,T("%s%s"),vft.type,ext);
+			wsprintf(TypeText, T("%s%s"), vft.type, ext);
 			TypeName = TypeText;
 		}else{
 			// 種類名が既にないので種類名で登録
@@ -910,7 +911,7 @@ void RegisterAction(PPC_APPINFO *cinfo,HMENU hMenu,PPCMENUINFO *cminfo,BOOL alwa
 		TCHAR *dest;
 
 		// いくつかの内蔵機能は自動登録をさせない
-		GetMenuDataMacro2(p,&cminfo->x.th,cminfo->x.index - CRID_EXTMENU);
+		GetMenuDataMacro2(p, &cminfo->x.th, cminfo->x.index - CRID_EXTMENU);
 		if ( p != NULL ){
 			if ( (*p == '%') && (*(p + 1) == 'K') ){ // %K
 				// \@K
@@ -922,22 +923,22 @@ void RegisterAction(PPC_APPINFO *cinfo,HMENU hMenu,PPCMENUINFO *cminfo,BOOL alwa
 					if ( (*(p + 4) == '^') && ((*(p + 5) == 'X') || (*(p + 5) == 'C') || (*(p + 5) == 'V')) ){
 						return;
 					}
-					if ( tstrchr(T("CMDR"),*(p + 4)) != NULL ) return;
+					if ( tstrchr(T("CMDR"), *(p + 4)) != NULL ) return;
 				}
 			}
-			if ( memcmp(p + 1,T("*sendto"),7 * sizeof(TCHAR)) == 0 ) return;
+			if ( memcmp(p + 1, T("*sendto"), 7 * sizeof(TCHAR)) == 0 ) return;
 		}
 
 		param[0] = EXTCMD_CMD;
-		tstrcpy(param + 1,always ? T("%M_Ccr,!\"") : T("%M_Ccr,\""));
+		tstrcpy(param + 1, always ? T("%M_Ccr,!\"") : T("%M_Ccr,\""));
 		dest = param + tstrlen(param);
 
 		*dest = '\0';
-		GetMenuString(hMenu,cminfo->x.index,dest,VFPS - 20,MF_BYCOMMAND);
+		GetMenuString(hMenu, cminfo->x.index, dest, VFPS - 20, MF_BYCOMMAND);
 		if ( *dest == '\0' ) return;
-		if ( tstrchr(dest,'\t') ){
+		if ( tstrchr(dest, '\t') ){
 			dest--;	// " を除去
-			p = tstrchr(dest,'&');
+			p = tstrchr(dest, '&');
 			if ( p != NULL ){	// ショートカット有り
 				dest[0] = *(p + 1);
 				dest[1] = '\0';
@@ -952,9 +953,9 @@ void RegisterAction(PPC_APPINFO *cinfo,HMENU hMenu,PPCMENUINFO *cminfo,BOOL alwa
 				#endif
 			}
 		}else{
-			tstrcat(param,T("\""));
+			tstrcat(param, T("\""));
 		}
-		ReplaceCustTable(ExtTableID,TypeName,param,TSTRSIZE(param));
+		ReplaceCustTable(ExtTableID, TypeName, param, TSTRSIZE(param));
 	}else if ( cminfo->x.index >= K_M ){	// 内蔵コマンド
 		int key;
 
@@ -964,29 +965,29 @@ void RegisterAction(PPC_APPINFO *cinfo,HMENU hMenu,PPCMENUINFO *cminfo,BOOL alwa
 			param[0] = EXTCMD_KEY;
 			param[1] = (WORD)key;
 			param[2] = 0;
-			ReplaceCustTable(ExtTableID,TypeName,param,TSTROFF(3));
+			ReplaceCustTable(ExtTableID, TypeName, param, TSTROFF(3));
 			// 拡張子もついでに登録
-			if ( (*ext == '.') && !IsExistCustTable(ExtTableID,ext + 1) ){
-				ReplaceCustTable(ExtTableID,ext + 1,param,TSTROFF(3));
+			if ( (*ext == '.') && !IsExistCustTable(ExtTableID, ext + 1) ){
+				ReplaceCustTable(ExtTableID, ext + 1, param, TSTROFF(3));
 			}
 		#else
 			param[0] = EXTCMD_KEY;
 			*(WORD *)(param + 1) = (WORD)key;
 			*(WORD *)(param + 3) = 0;
-			ReplaceCustTable(ExtTableID,TypeName,param,5);
+			ReplaceCustTable(ExtTableID, TypeName, param, 5);
 			// 拡張子もついでに登録
-			if ( (*ext == '.') && !IsExistCustTable(ExtTableID,ext + 1) ){
-				ReplaceCustTable(ExtTableID,ext + 1,param,5);
+			if ( (*ext == '.') && !IsExistCustTable(ExtTableID, ext + 1) ){
+				ReplaceCustTable(ExtTableID, ext + 1, param, 5);
 			}
 		#endif
 	}else{ // 不明IDは何もしない
 		return;
 	}
-	wsprintf(param,T("%s(%s)"),MessageText(SaveSettingsStr),TypeName);
-	SetPopMsg(cinfo,POPMSG_MSG,param);
+	wsprintf(param, T("%s(%s)"), MessageText(SaveSettingsStr), TypeName);
+	SetPopMsg(cinfo, POPMSG_MSG, param);
 }
 
-void GetCcrID(PPC_APPINFO *cinfo,ENTRYINDEX cellindex,TCHAR *result)
+void GetCcrID(PPC_APPINFO *cinfo, ENTRYINDEX cellindex, TCHAR *result)
 {
 	const TCHAR *ext;
 
@@ -997,81 +998,81 @@ void GetCcrID(PPC_APPINFO *cinfo,ENTRYINDEX cellindex,TCHAR *result)
 		ext = CEL(cellindex).f.cFileName + CEL(cellindex).ext;
 	}
 	if ( *ext == '\0' ) ext = NoextName;
-	wsprintf(result,T("M_Ccr%s"),ext);
+	wsprintf(result, T("M_Ccr%s"), ext);
 }
 
-void AddProgToExtMenu(PPC_APPINFO *cinfo,ENTRYINDEX cellindex,const TCHAR *cmd,TCHAR *param)
+void AddProgToExtMenu(PPC_APPINFO *cinfo, ENTRYINDEX cellindex, const TCHAR *cmd, TCHAR *param)
 {
 	TCHAR typename[MAX_PATH];
 	TCHAR keyname[MAX_PATH];
 
-	tstrcpy(keyname,cmd);
+	tstrcpy(keyname, cmd);
 	{
 		TCHAR *p = keyname + FindExtSeparator(keyname);
 		*p = '\0';
 	}
 
-	GetCcrID(cinfo,cellindex,typename);
-	if ( !IsExistCustTable(typename,keyname) ){ // 未登録なので新規登録
-		tstrreplace(param,T("%1"),T("%FNDC"));
-		tstrreplace(param,T("%I"),T(":0"));
-		tstrreplace(param,T("%L"),T("%FNDC"));
-		tstrreplace(param,T("%V"),T("%FNDC"));
-		tstrreplace(param,T("%W"),T("%1"));
-		InsertCustTable(typename,keyname,0,param,TSTRSIZE(param));
+	GetCcrID(cinfo, cellindex, typename);
+	if ( !IsExistCustTable(typename, keyname) ){ // 未登録なので新規登録
+		tstrreplace(param, T("%1"), T("%FNDC"));
+		tstrreplace(param, T("%I"), T(":0"));
+		tstrreplace(param, T("%L"), T("%FNDC"));
+		tstrreplace(param, T("%V"), T("%FNDC"));
+		tstrreplace(param, T("%W"), T("%1"));
+		InsertCustTable(typename, keyname, 0, param, TSTRSIZE(param));
 	}
 }
 
-void DoActionMenu_NewTab(PPC_APPINFO *cinfo,ENTRYINDEX cellindex)
+void DoActionMenu_NewTab(PPC_APPINFO *cinfo, ENTRYINDEX cellindex)
 {
 	TCHAR param[CMDLINESIZE];
 
 	param[0] = '\"';
-	VFSFullPath(param + 1,CEL(cellindex).f.cFileName,cinfo->path);
-	CallPPcParam(Combo.hWnd,param);
+	VFSFullPath(param + 1, CEL(cellindex).f.cFileName, cinfo->path);
+	CallPPcParam(Combo.hWnd, param);
 }
 
-void DoActionMenu_SelectExe(PPC_APPINFO *cinfo,ENTRYINDEX cellindex)
+void DoActionMenu_SelectExe(PPC_APPINFO *cinfo, ENTRYINDEX cellindex)
 {
-	TCHAR param[CMDLINESIZE],buf[CMDLINESIZE];
+	TCHAR param[CMDLINESIZE], buf[CMDLINESIZE];
 	TCHAR cmd[VFPS];
 
-	GetCcrID(cinfo,cellindex,buf);
-	wsprintf(cmd,MessageText(MES_SSRP),buf);
+	GetCcrID(cinfo, cellindex, buf);
+	wsprintf(cmd, MessageText(MES_SSRP), buf);
 	param[1] = '\0';
 
-	if ( PPctInput(cinfo,cmd,param + 1,TSIZEOF(param) - 1,
-			PPXH_NAME_R,PPXH_FILENAME) > 0 ){
+	if ( PPctInput(cinfo, cmd, param + 1, TSIZEOF(param) - 1,
+			PPXH_NAME_R, PPXH_FILENAME) > 0 ){
 		TCHAR *p;
 
 		p = FindLastEntryPoint(param + 1);
-		tstrcpy(cmd,p); // ファイル名部を取得
-		p = tstrchr(cmd,'\"'); // セパレータ除去
+		tstrcpy(cmd, p); // ファイル名部を取得
+		p = tstrchr(cmd, '\"'); // セパレータ除去
 		if ( p != NULL ) *p = '\0';
 		*(cmd + FindExtSeparator(cmd)) = '\0'; // 拡張子除去
 
-		if ( (*(param + 1) != '\"') && tstrchr(param + 1,' ') ){
+		if ( (*(param + 1) != '\"') && tstrchr(param + 1, ' ') ){
 			*param = '\"';
-			tstrcat(param,T("\""));
+			tstrcat(param, T("\""));
 			p = param;
 		}else{
 			p = param + 1;
 		}
-		tstrcat(p,T(" %FDC"));
+		tstrcat(p, T(" %FDC"));
 
-		ReplaceCustTable(buf,cmd,p,TSTRSIZE(p));
-		PP_ExtractMacro(cinfo->info.hWnd,&cinfo->info,NULL,p,NULL,0);
+		ReplaceCustTable(buf, cmd, p, TSTRSIZE(p));
+		PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, p, NULL, 0);
 	}
 }
 
-void DoActionMenu_OpenWith(PPC_APPINFO *cinfo,HMENU hMenu,UINT crID,ENTRYINDEX cellindex,PPXMENUDATAINFO *pmdi)
+void DoActionMenu_OpenWith(PPC_APPINFO *cinfo, HMENU hMenu, UINT crID, ENTRYINDEX cellindex, PPXMENUDATAINFO *pmdi)
 {
-	TCHAR withparam[CMDLINESIZE],buf[CMDLINESIZE];
-	TCHAR cmd[VFPS],newpath[VFPS];
+	TCHAR withparam[CMDLINESIZE], buf[CMDLINESIZE];
+	TCHAR cmd[VFPS], newpath[VFPS];
 	const TCHAR *cfilename;
 	BOOL archivemode;
 
-	tstrcpy( newpath,cinfo->RealPath );
+	tstrcpy( newpath, cinfo->RealPath );
 
 	cfilename = CEL(cellindex).f.cFileName;
 	if ( IsTrue(cinfo->UnpackFix) ){
@@ -1083,7 +1084,7 @@ void DoActionMenu_OpenWith(PPC_APPINFO *cinfo,HMENU hMenu,UINT crID,ENTRYINDEX c
 		cfilename = FindLastEntryPoint(cfilename);
 	}
 	if ( hMenu != NULL ){
-		GetMenuString(hMenu,crID,cmd,TSIZEOF(cmd),MF_BYCOMMAND);
+		GetMenuString(hMenu, crID, cmd, TSIZEOF(cmd), MF_BYCOMMAND);
 	}else{
 		cmd[0] = '\0';
 	}
@@ -1096,20 +1097,20 @@ void DoActionMenu_OpenWith(PPC_APPINFO *cinfo,HMENU hMenu,UINT crID,ENTRYINDEX c
 			crID -= CRID_EXTCMD;
 			while ( crID-- ) action += tstrlen(action) + 1;
 		}
-		ShellExecEntries(cinfo,action,cfilename,newpath,NULL,archivemode);
+		ShellExecEntries(cinfo, action, cfilename, newpath, NULL, archivemode);
 		return;
 	}
 
 	if ( crID >= CRID_DIRTYPE ){ // CRID_DIRTYPE
-		VFSFullPath(newpath,(TCHAR *)cfilename,cinfo->path);
+		VFSFullPath(newpath, (TCHAR *)cfilename, cinfo->path);
 		cinfo->Jfname[0] = '\0';
 
 		switch ( crID ){
 			case CRID_DIRTYPE_PAIR:
 				if ( !(CEL(cellindex).f.dwFileAttributes &
 					(FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTEX_FOLDER)) ){
-					tstrcpy(newpath,cinfo->path);
-					tstrcpy(cinfo->Jfname,cfilename);
+					tstrcpy(newpath, cinfo->path);
+					tstrcpy(cinfo->Jfname, cfilename);
 				}
 				break;
 
@@ -1117,25 +1118,25 @@ void DoActionMenu_OpenWith(PPC_APPINFO *cinfo,HMENU hMenu,UINT crID,ENTRYINDEX c
 			case CRID_DIRTYPE_CLSID_PAIR:
 			case CRID_DIRTYPE_SHORTCUT:
 			case CRID_DIRTYPE_SHORTCUT_PAIR:
-				IsFileDir(cinfo,newpath,newpath,cinfo->Jfname,NULL);
+				IsFileDir(cinfo, newpath, newpath, cinfo->Jfname, NULL);
 				break;
 
 			case CRID_DIRTYPE_JUNCTION:
 			case CRID_DIRTYPE_JUNCTION_PAIR:
-				GetReparsePath(newpath,cmd);
-				if ( cmd[0] != '\0' ) tstrcpy(newpath,cmd);
+				GetReparsePath(newpath, cmd);
+				if ( cmd[0] != '\0' ) tstrcpy(newpath, cmd);
 				if ( !(CEL(cellindex).f.dwFileAttributes &
 					(FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTEX_FOLDER)) ){
 					TCHAR *p = VFSFindLastEntry(newpath);
 
-					if ( *p != '\0' ) tstrcpy(cinfo->Jfname,p + 1);
+					if ( *p != '\0' ) tstrcpy(cinfo->Jfname, p + 1);
 					*p = '\0';
 				}
 				break;
 
 			case CRID_DIRTYPE_STREAM:
 			case CRID_DIRTYPE_STREAM_PAIR:
-				tstrcat(newpath,T("::stream"));
+				tstrcat(newpath, T("::stream"));
 				break;
 
 			default: // CRID_DIRTYPE～CRID_DIRTYPE_STREAM未満 書庫
@@ -1143,36 +1144,36 @@ void DoActionMenu_OpenWith(PPC_APPINFO *cinfo,HMENU hMenu,UINT crID,ENTRYINDEX c
 					if ( (cinfo->e.Dtype.mode == VFSDT_ZIPFOLDER) ||
 						 (cinfo->e.Dtype.mode == VFSDT_UN) ||
 						 (cinfo->e.Dtype.mode == VFSDT_SUSIE) ){
-						if ( IsTrue(CellLook(cinfo,-2)) ) return;
+						if ( IsTrue(CellLook(cinfo, -2)) ) return;
 					}
-					tstrcat(newpath,T("::"));
+					tstrcat(newpath, T("::"));
 				}
-				tstrcat(newpath,cmd);
+				tstrcat(newpath, cmd);
 				break;
 		}
 		if ( (crID >= CRID_DIRTYPE_PAIR) || (GetShiftKey() & K_s) ){
-			SetPairPath(cinfo,newpath,cinfo->Jfname);
+			SetPairPath(cinfo, newpath, cinfo->Jfname);
 			return;
 		}
 
 		if ( IsTrue(cinfo->ChdirLock) ){
-			PPCuiWithPathForLock(cinfo,newpath);
+			PPCuiWithPathForLock(cinfo, newpath);
 		}else{
 			SetPPcDirPos(cinfo);
-			tstrcpy(cinfo->path,newpath);
-			read_entry(cinfo,cinfo->Jfname[0] ? (RENTRY_READ | RENTRY_JUMPNAME) : RENTRY_READ);
+			tstrcpy(cinfo->path, newpath);
+			read_entry(cinfo, cinfo->Jfname[0] ? (RENTRY_READ | RENTRY_JUMPNAME) : RENTRY_READ);
 		}
 		return;
 	}
 
 	{					// Open With(CRID_OPENWITH)
 		// パラメータを取得する(Windows2000のみ)
-		wsprintf(buf,T("Applications\\%s\\shell\\Open\\Command"),cmd);
-		if ( !GetRegString(HKEY_CLASSES_ROOT,buf,NilStr,withparam,TSIZEOF(withparam)) ){
-			wsprintf(withparam,T("%s %%1"),cmd); // ない場合は初期設定(XPなど)
+		wsprintf(buf, T("Applications\\%s\\shell\\Open\\Command"), cmd);
+		if ( !GetRegString(HKEY_CLASSES_ROOT, buf, NilStr, withparam, TSIZEOF(withparam)) ){
+			wsprintf(withparam, T("%s %%1"), cmd); // ない場合は初期設定(XPなど)
 		}
-		ShellExecEntries(cinfo,NULL,cfilename,newpath,withparam,archivemode);
-		AddProgToExtMenu(cinfo,cellindex,cmd,withparam);
+		ShellExecEntries(cinfo, NULL, cfilename, newpath, withparam, archivemode);
+		AddProgToExtMenu(cinfo, cellindex, cmd, withparam);
 	}
 }
 
@@ -1180,14 +1181,14 @@ void DoActionMenu(PPC_APPINFO *cinfo, HMENU hMenu, UINT crID, ENTRYINDEX cellind
 {
 	if ( crID > CRID_MAX ) return;
 	if ( crID == CRID_NEWTAB ){	// 新規タブ
-		DoActionMenu_NewTab(cinfo,cellindex);
+		DoActionMenu_NewTab(cinfo, cellindex);
 		return;
 	}
 	if ( crID == CRID_SELECTEXE ){	// プログラムを選択
-		DoActionMenu_SelectExe(cinfo,cellindex);
+		DoActionMenu_SelectExe(cinfo, cellindex);
 		return;
 	}
-	DxSetMotion(cinfo->DxDraw,DXMOTION_Launch);
+	DxSetMotion(cinfo->DxDraw, DXMOTION_Launch);
 	if ( crID >= CRID_OPENWITH ){
 		DoActionMenu_OpenWith(cinfo, hMenu, crID, cellindex, pmdi);
 		return;
@@ -1209,79 +1210,79 @@ void DoActionMenu(PPC_APPINFO *cinfo, HMENU hMenu, UINT crID, ENTRYINDEX cellind
 		PPcCommand(cinfo, (WORD)((crID - K_M) | K_raw));
 		return;
 	}
-	SetPopMsg(cinfo,POPMSG_MSG,T("action id error"));
+	SetPopMsg(cinfo, POPMSG_MSG, T("action id error"));
 }
 
-void ExecMenuCust(PPCMENUINFO *cminfo,const TCHAR *param)
+void ExecMenuCust(PPCMENUINFO *cminfo, const TCHAR *param)
 {
 	cminfo->x.Command = PPcHeapAlloc(TSTROFF(CMDLINESIZE));
 	if ( cminfo->x.Command == NULL ) return;
-	tstrcpy(cminfo->x.Command,param);
-	PostMessage(cminfo->x.info->hWnd,WM_CHAR,0x1f,0); // メニューを閉じる
+	tstrcpy(cminfo->x.Command, param);
+	PostMessage(cminfo->x.info->hWnd, WM_CHAR, 0x1f, 0); // メニューを閉じる
 }
 
-void PPcCRMenuOnMenu(PPC_APPINFO *cinfo,PPCMENUINFO *cminfo)
+void PPcCRMenuOnMenu(PPC_APPINFO *cinfo, PPCMENUINFO *cminfo)
 {
 	HMENU hMenu;
 	int index;
 	POINT pos;
 	TCHAR param[CMDLINESIZE];
 
-	wsprintf(param,T("%s %s"),cminfo->regext,cminfo->TypeName);
-	SetPopMsg(cinfo,POPMSG_NOLOGMSG,param);
+	wsprintf(param, T("%s %s"), cminfo->regext, cminfo->TypeName);
+	SetPopMsg(cinfo, POPMSG_NOLOGMSG, param);
 
 	hMenu = CreatePopupMenu();
 	if ( ((DWORD)cminfo->x.index < cminfo->extitemID) ||
 		 ((cminfo->x.index >= CRID_EXTCMD) && (cminfo->x.index < CRID_NEWTAB))){
-		AppendMenuString(hMenu,CRMOM_DEFAULTSELECT,MES_MCRDstr);
-		AppendMenuString(hMenu,CRMOM_DEFAULTEXECUTE,MES_MCREstr);
+		AppendMenuString(hMenu, CRMOM_DEFAULTSELECT, MES_MCRDstr);
+		AppendMenuString(hMenu, CRMOM_DEFAULTEXECUTE, MES_MCREstr);
 
 		if ( (cminfo->x.index >= CRID_EXTMENU) &&
 			 ((DWORD)cminfo->x.index < cminfo->extitemID) ){
-			AppendMenuString(hMenu,CRMOM_MODIFYITEM,MES_MEMDstr);
+			AppendMenuString(hMenu, CRMOM_MODIFYITEM, MES_MEMDstr);
 		}
-		AppendMenu(hMenu,MF_SEPARATOR,0,NULL);
+		AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
 	}
 
-	AppendMenuString(hMenu,CRMOM_ADDEXTITEM,MES_MCRXstr);
-	AppendMenuString(hMenu,CRMOM_ADDCOMMONITEM,MES_MCRCstr);
-	TinyGetMenuPopPos(FindWindow(T("#32768"),NULL),&pos);
-	index = TrackPopupMenu(hMenu,TPM_TDEFAULT | TPM_RECURSE,
-			pos.x,pos.y,0,cinfo->info.hWnd,NULL);
+	AppendMenuString(hMenu, CRMOM_ADDEXTITEM, MES_MCRXstr);
+	AppendMenuString(hMenu, CRMOM_ADDCOMMONITEM, MES_MCRCstr);
+	TinyGetMenuPopPos(FindWindow(T("#32768"), NULL), &pos);
+	index = TrackPopupMenu(hMenu, TPM_TDEFAULT | TPM_RECURSE,
+			pos.x, pos.y, 0, cinfo->info.hWnd, NULL);
 
 	DestroyMenu(hMenu);
 	switch (index){
 		case CRMOM_DEFAULTSELECT:
 		case CRMOM_DEFAULTEXECUTE:
-			RegisterAction(cinfo,cminfo->x.hMenu,cminfo,(index == CRMOM_DEFAULTEXECUTE) );
+			RegisterAction(cinfo, cminfo->x.hMenu, cminfo, (index == CRMOM_DEFAULTEXECUTE) );
 			break;
 
 		case CRMOM_ADDCOMMONITEM:
-			ExecMenuCust(cminfo,CcrEditParam);
+			ExecMenuCust(cminfo, CcrEditParam);
 			break;
 
 		case CRMOM_ADDEXTITEM: {
 			const TCHAR *regext;
 
-			tstrcpy(param,CcrEditParam);
+			tstrcpy(param, CcrEditParam);
 			regext = cminfo->regext;
 			if ( *regext == '\0' ) regext = NoextName;
 			if ( regext == StrRegFolder ) regext = DirName;
-			tstrcat(param,regext);
-			ExecMenuCust(cminfo,param);
+			tstrcat(param, regext);
+			ExecMenuCust(cminfo, param);
 			break;
 		}
 
 		case CRMOM_MODIFYITEM:
-			tstrcpy(param,CcrEditParam);
+			tstrcpy(param, CcrEditParam);
 			if ( (DWORD)cminfo->x.index < cminfo->comID ){
-				GetCcrID(cinfo,cminfo->cellindex,param + CMDLINESIZE / 2);
-				wsprintf(param + tstrlen(param),T("%s:#%d"),
-					param + CMDLINESIZE / 2 + 5,cminfo->x.index - CRID_EXTMENU);
+				GetCcrID(cinfo, cminfo->cellindex, param + CMDLINESIZE / 2);
+				wsprintf(param + tstrlen(param), T("%s:#%d"),
+					param + CMDLINESIZE / 2 + 5, cminfo->x.index - CRID_EXTMENU);
 			}else{
-				wsprintf(param + tstrlen(param),T(":#%d"),cminfo->x.index - cminfo->comID);
+				wsprintf(param + tstrlen(param), T(":#%d"), cminfo->x.index - cminfo->comID);
 			}
-			PP_ExtractMacro(cinfo->info.hWnd,&cinfo->info,NULL,param,NULL,0);
+			PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, param, NULL, 0);
 			break;
 	}
 }

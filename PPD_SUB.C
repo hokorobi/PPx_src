@@ -131,6 +131,8 @@ HANDLE SpinThreadAliveCheck(void)
 	}
 }
 
+#define NO_SYNCDIALOG 1
+
 #if PPXSYNCDEBUG
 int UsePPxDialog(const TCHAR *text, const char *filename, int fileline, UINT flags)
 {
@@ -138,12 +140,20 @@ int UsePPxDialog(const TCHAR *text, const char *filename, int fileline, UINT fla
 
 	wsprintf(titlebuf, T("PPx synchronize error(UsePPx)%hs(%d),%hs,%hs"),
 			filename, fileline, Sm->UsePPxFirst, Sm->UsePPxLast);
-	return MessageBox(NULL, text, titlebuf, flags);
+	#if NO_SYNCDIALOG
+		return 0;
+	#else
+		return MessageBox(NULL, text, titlebuf, flags);
+	#endif
 }
 
 PPXDLL void PPXAPI UsePPxDebug(const char *filename, int fileline)
 #else
-#define UsePPxDialog(text, filename, fileline, flags) MessageBox(NULL, text, UsePPxTitle, flags)
+	#if NO_SYNCDIALOG
+		#define UsePPxDialog(text, filename, fileline, flags)
+	#else
+		#define UsePPxDialog(text, filename, fileline, flags) MessageBox(NULL, text, UsePPxTitle, flags)
+	#endif
 PPXDLL void PPXAPI UsePPx(void)
 #endif
 {
@@ -152,8 +162,10 @@ PPXDLL void PPXAPI UsePPx(void)
 	DWORD Tick = GetTickCount();
 	DWORD SpinCheckWait;
 	DWORD checkflag = 0;
+	#if !NO_SYNCDIALOG
 	HWND hDlgWnd = NULL;
 	MESSAGEDATA md;
+	#endif
 
 	for ( ; ; ){
 		// 構造体へのアクセス権を確保
@@ -170,8 +182,6 @@ PPXDLL void PPXAPI UsePPx(void)
 			}
 			// オーバーフローしたときはすぐにダイアログがでる→ok
 			if ( TickDelta >= UsePPxSpinMaxTime ){
-				int result;
-
 				setflag(checkflag, USE_SPINTIMEOUT);
 				if ( Sm->UsePPxSync.ThreadID == ThreadID ){ // 再入
 					setflag(checkflag, USE_SPINTIMEOUT_SAMETHREAD);
@@ -191,14 +201,26 @@ PPXDLL void PPXAPI UsePPx(void)
 				}
 
 				setflag(checkflag, USE_SPINTIMEOUT_DIALOG);
-				result = UsePPxDialog(LockErrorMessage, filename, fileline,
-						MB_ICONEXCLAMATION | MB_RETRYCANCEL);
-				if ( (result == 0) || (result == IDCANCEL) ){
+
+				#if NO_SYNCDIALOG
+					UsePPxDialog(LockErrorMessage, filename, fileline,
+							MB_ICONEXCLAMATION | MB_RETRYCANCEL);
 					Sm->UsePPxSync.ThreadID = 0; // 強制解放
 					break;
-				}else{
-					continue;
+				#else
+				{
+					int result;
+
+					result = UsePPxDialog(LockErrorMessage, filename, fileline,
+							MB_ICONEXCLAMATION | MB_RETRYCANCEL);
+					if ( (result == 0) || (result == IDCANCEL) ){
+						Sm->UsePPxSync.ThreadID = 0; // 強制解放
+						break;
+					}else{
+						continue;
+					}
 				}
+				#endif
 			}
 		}
 		// 構造体へのアクセス権を確保完了
@@ -208,9 +230,11 @@ PPXDLL void PPXAPI UsePPx(void)
 				wsprintfA(Sm->UsePPxLast, "R:%s(%d)+%d", filename, fileline, Sm->UsePPxSync.SpinCount);
 			#endif
 			if ( Sm->UsePPxSync.SpinCount > 0xffff ){
+				#if !NO_SYNCDIALOG
 				if ( Sm->NowShutdown == FALSE ){
 					UsePPxDialog(T("Reentrance error"), filename, fileline, MB_OK);
 				}
+				#endif
 			}else{
 				Sm->UsePPxSync.SpinCount++;
 			}
@@ -230,18 +254,18 @@ PPXDLL void PPXAPI UsePPx(void)
 			// 利用中スレッドが死亡→奪う
 			if ( hThread == NULL ) setflag(checkflag, USE_CHECK_DIE);
 
+			#if NO_SYNCDIALOG
+				setflag(checkflag, USE_CHECK_DIALOG_ERROR);
+				InterlockedExchange(&Sm->UsePPxSync.SpinLock, 0); //spin解放
+				Sleep(10);
+				goto forceuse;
+			#else
 			// ダイアログがないなら表示
 			if ( (Sm->NowShutdown == FALSE) && (hThread != NULL) ){
 				if ( hDlgWnd == NULL ){
 					#if PPXSYNCDEBUG
 						TCHAR titlebuf[200];
-					#endif
-/*
-					if ( Sm->UsePPxSync.ThreadID == ThreadID ){
-						setflag(checkflag, USE_CHECK_DIALOG_SAMETHREAD);
-					}
-*/
-					#if PPXSYNCDEBUG
+
 						wsprintf(titlebuf, T("PPx synchronize error(UsePPx)(%hs:%d),Flag:%x,Spin:%d,NowThread:%s(%d),BlockThread:%s(%d),BlockFirst:%hs,BlockLast:%hs"),
 								filename, fileline, checkflag, Sm->UsePPxSync.SpinCount, GetThreadName(ThreadID), ThreadID, GetThreadName(OldThreadID), OldThreadID, Sm->UsePPxFirst, Sm->UsePPxLast);
 						md.title = titlebuf;
@@ -253,7 +277,7 @@ PPXDLL void PPXAPI UsePPx(void)
 					md.text = LockErrorMessage;
 					md.style = MB_PPX_USEPPXCHECKOKCANCEL | MB_DEFBUTTON2 | MB_ICONEXCLAMATION;
 					hDlgWnd = CreateDialogParam(DLLhInst, MAKEINTRESOURCE(IDD_NULL), NULL, MessageBoxDxProc, (LPARAM)&md);
-					if ( hDlgWnd == NULL){
+					if ( hDlgWnd == NULL ){
 						setflag(checkflag, USE_CHECK_DIALOG_ERROR);
 						goto forceuse;
 					}
@@ -277,6 +301,7 @@ PPXDLL void PPXAPI UsePPx(void)
 				Sleep(10);
 				continue;
 			}
+			#endif
 		}
 forceuse:
 		// 新規利用
@@ -290,7 +315,9 @@ forceuse:
 		break;
 	}
 	InterlockedExchange(&Sm->UsePPxSync.SpinLock, 0);
+#if !NO_SYNCDIALOG
 	if ( hDlgWnd != NULL ) DestroyWindow(hDlgWnd);
+#endif
 	if ( checkflag ){
 #if PPXSYNCDEBUG
 		XMessage(NULL, NULL, XM_DbgLOG, T("UsePPx %hs(%d): %x,%d,%s-%d,%s-%d,%hs,%hs"),
@@ -339,7 +366,6 @@ PPXDLL void PPXAPI FreePPx(void)
 		}
 		// オーバーフローしたときはすぐにダイアログがでる→ok
 		if ( TickDelta >= UsePPxSpinMaxTime ){
-			int result;
 
 			if ( Sm->UsePPxSync.ThreadID != GetCurrentThreadId() ){
 				// 他のスレッドによって奪われていた
@@ -349,15 +375,22 @@ PPXDLL void PPXAPI FreePPx(void)
 				}
 				return;
 			}
-			if ( IsTrue(Sm->NowShutdown) ) break;
-			result = FreePPxDialog(LockErrorMessage, filename, fileline,
-					MB_ICONEXCLAMATION | MB_RETRYCANCEL);
-			if ( (result != IDCANCEL) && (result != 0) ){
-				Tick = GetTickCount();
-				continue;
-			}else{
+			#if NO_SYNCDIALOG
 				break;
+			#else
+			{
+				int result;
+				if ( IsTrue(Sm->NowShutdown) ) break;
+				result = FreePPxDialog(LockErrorMessage, filename, fileline,
+						MB_ICONEXCLAMATION | MB_RETRYCANCEL);
+				if ( (result != IDCANCEL) && (result != 0) ){
+					Tick = GetTickCount();
+					continue;
+				}else{
+					break;
+				}
 			}
+			#endif
 		}
 	}
 
@@ -577,7 +610,7 @@ PPXDLL TCHAR * PPXAPI ThAllocString(ThSTRUCT *TH, const TCHAR *name, DWORD strsi
 	return (TCHAR *)(char *)(tvs->name + namesize);
 }
 
-PPXDLL const TCHAR * PPXAPI ThGetString(ThSTRUCT *TH, const TCHAR *name, TCHAR *str, DWORD strbufsize)
+PPXDLL const TCHAR * PPXAPI ThGetString(ThSTRUCT *TH, const TCHAR *name, TCHAR *str, DWORD strlength)
 {
 	DWORD namesize = TSTRLENGTH32(name);
 	THVARS *tvs, *maxtvs;
@@ -589,7 +622,7 @@ PPXDLL const TCHAR * PPXAPI ThGetString(ThSTRUCT *TH, const TCHAR *name, TCHAR *
 		if ( (tvs->namesize == (WORD)namesize) &&
 			 (memcmp(tvs->name, name, namesize) == 0) ){
 			if ( str != NULL ){
-				tstrlimcpy(str, (TCHAR *)(char *)(tvs->name + namesize), strbufsize - 1 );
+				tstrlimcpy(str, (TCHAR *)(char *)(tvs->name + namesize), strlength - 1 );
 			}
 			return (TCHAR *)(char *)(tvs->name + namesize);
 		}
@@ -600,7 +633,7 @@ PPXDLL const TCHAR * PPXAPI ThGetString(ThSTRUCT *TH, const TCHAR *name, TCHAR *
 	return NULL;
 }
 
-PPXDLL BOOL PPXAPI ThEnumString(ThSTRUCT *TH, int index, TCHAR *name, TCHAR *str, DWORD strbufsize)
+PPXDLL BOOL PPXAPI ThEnumString(ThSTRUCT *TH, int index, TCHAR *name, TCHAR *str, DWORD strlength)
 {
 	THVARS *tvs, *maxtvs;
 
@@ -611,7 +644,7 @@ PPXDLL BOOL PPXAPI ThEnumString(ThSTRUCT *TH, int index, TCHAR *name, TCHAR *str
 		if ( tvs->namesize && (index-- == 0) ){
 			memcpy(name, tvs->name, tvs->namesize);
 			name[tvs->namesize / sizeof(TCHAR)] = '\0';
-			tstrlimcpy(str, (TCHAR *)(char *)(tvs->name + tvs->namesize), strbufsize - 1);
+			tstrlimcpy(str, (TCHAR *)(char *)(tvs->name + tvs->namesize), strlength - 1);
 			return TRUE;
 		}
 		tvs = (THVARS *)(char *)( (char *)tvs + tvs->varsize );
@@ -1674,23 +1707,6 @@ BOOL CALLBACK EnumChildTextFixProc(HWND hWnd, LPARAM lParam)
 	return TRUE;
 }
 
-#define TESTDARK 0
-#if TESTDARK
-const WCHAR M1[] = L"explorer";
-const WCHAR M2[] = L"DarkMode_Explorer";
-DefineWinAPI(HRESULT, DwmSetWindowAttribute, (HWND, DWORD, LPCVOID, DWORD));
-DefineWinAPI(HRESULT, SetWindowTheme, (HWND, LPCWSTR name, LPCWSTR idlist));
-DefineWinAPI(BOOL, AllowDarkModeForWindow, (HWND, BOOL));
-
-#pragma argsused
-BOOL CALLBACK EnumDarkFixProc(HWND hWnd, LPARAM lParam)
-{
-	BOOL mode = TRUE;
-	DSetWindowTheme(hWnd, M2, NULL);
-	DDwmSetWindowAttribute(hWnd, 19, &mode, sizeof(mode));
-	return TRUE;
-}
-#endif
 PPXDLL void PPXAPI LocalizeDialogText(HWND hDlg, DWORD titleID)
 {
 	if ( MessageTextTable == NULL ) LoadMessageTextTable();
@@ -1705,31 +1721,6 @@ PPXDLL void PPXAPI LocalizeDialogText(HWND hDlg, DWORD titleID)
 		}
 		EnumChildWindows(hDlg, EnumChildTextFixProc, 0);
 	}
-
-#if TESTDARK
-{
-	HANDLE hUxtheme;
-
-	hUxtheme = GetModuleHandle(T("uxtheme.dll"));
-	if ( hUxtheme != NULL ){
-		GETDLLPROC(hUxtheme, SetWindowTheme);
-		if ( DSetWindowTheme != NULL ){
-			BOOL mode = TRUE;
-
-			DAllowDarkModeForWindow = (impAllowDarkModeForWindow)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(133));
-			DAllowDarkModeForWindow(hDlg, TRUE);
-//			DSetWindowTheme(hDlg, M1, NULL);
-			DSetWindowTheme(hDlg, M2, NULL);
-//			DSetWindowTheme(hDlg, L"", L"");	// Classic
-//			DSetWindowTheme(hDlg, NULL, NULL);	// 最新テーマ？
-			GETDLLPROC(GetModuleHandle(T("dwmapi.dll")), DwmSetWindowAttribute);
-			DDwmSetWindowAttribute(hDlg, 19, &mode, sizeof(mode));
-			EnumChildWindows(hDlg, EnumDarkFixProc, 0);
-		}
-	}
-}
-#endif
-
 }
 
 /* ● 1.46+3 未使用みたいなので廃止
@@ -2186,3 +2177,40 @@ void GetPopMenuPos(HWND hWnd, POINT *pos, WORD key)
 	}
 }
 
+int GetNowTime(TCHAR *text,int mode)
+{
+	SYSTEMTIME nowTime;
+
+	GetLocalTime(&nowTime);
+	return wsprintf(text,
+			(mode == 0) ?	T("%04d-%02d-%02d %02d:%02d:%02d") :
+							T("%04d-%02d-%02d"),
+			nowTime.wYear, nowTime.wMonth, nowTime.wDay,
+			nowTime.wHour, nowTime.wMinute, nowTime.wSecond);
+}
+
+BOOL PPRecvExecuteByWMCopyData(PPXAPPINFO *info, COPYDATASTRUCT *copydata)
+{
+	TCHAR cmd[CMDLINESIZE], *cmdbuf;
+
+	if ( copydata->cbData >= 0x7fffffff ) return FALSE;
+	if ( copydata->cbData > TSTROFF(CMDLINESIZE) ){
+		cmdbuf = HeapAlloc(GetProcessHeap(), 0, copydata->cbData);
+		if ( cmdbuf == NULL ) return FALSE;
+	}else{
+		cmdbuf = cmd;
+	}
+	memcpy(cmdbuf, copydata->lpData, copydata->cbData);
+	if ( LOWORD(copydata->dwData) == 'H' ) ReplyMessage(TRUE);
+	PP_ExtractMacro(info->hWnd, info, NULL, cmdbuf, NULL, 0);
+	if ( cmdbuf != cmd ) HeapFree(GetProcessHeap(), 0, cmdbuf);
+	return TRUE;
+}
+
+BOOL PPWmCopyData(PPXAPPINFO *info, COPYDATASTRUCT *copydata)
+{
+	if ( LOWORD(copydata->dwData) == 'H' ){ // コマンド実行(非同期)
+		return PPRecvExecuteByWMCopyData(info, copydata);
+	}
+	return FALSE;
+}

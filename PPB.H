@@ -34,5 +34,7 @@ extern void TitleDisp(const TCHAR *addmes);
 #define TCI_EXECUTE	-2	// é¿çs
 #define TCI_QUIT	-1	// èIóπ
 extern int tCInput(TCHAR *buf, size_t bsize, WORD htype);
-extern void Replace(const TCHAR *istr, BOOL all);
+#define REPLACE_ALL	B0
+#define REPLACE_SELECT	B1
+extern void Replace(const TCHAR *istr, int flags);
 extern void CommonCommand(int key);

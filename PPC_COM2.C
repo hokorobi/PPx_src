@@ -2371,7 +2371,7 @@ ERRORCODE SetCellDisplayFormat(PPC_APPINFO *cinfo, int selectindex)
 {
 	int index, mode = selectindex;
 	TCHAR sname[VFPS];
-	// ,txt[VFPS];
+	// , txt[VFPS];
 	HMENU hMenu;
 	ERRORCODE result = NO_ERROR;
 	DWORD fmtsize;
@@ -3500,7 +3500,7 @@ void PPcSystemMenu(PPC_APPINFO *cinfo)
 		WM_SYSCOMMAND, SC_KEYMENU, TMAKELPARAM(0, 0));
 
 	// メニューを表示させるキーを予め送信
-	PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, T("%k\"&down"), NULL, 0);
+	PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, T("%k\"down"), NULL, 0);
 }
 
 HWND GetMWbase(PPC_APPINFO *cinfo, TCHAR *buf)
@@ -3552,7 +3552,7 @@ void PPcReloadCustomize(PPC_APPINFO *cinfo, LPARAM idparam)
 {
 	BOOL cust1st = TRUE; // 別PPcで共通カスタマイズを行っていた場合は FALSE
 
-	PPxCommonCommand(cinfo->info.hWnd, (WPARAM)idparam, K_Lcust);
+	PPxCommonCommand(cinfo->info.hWnd, (LPARAM)idparam, K_Lcust);
 
 	if ( idparam != 0 ){
 		if ( idparam == CommonCustTickID ){

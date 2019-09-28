@@ -29,7 +29,7 @@ ERRORCODE Execute_ExtractMacro(const TCHAR *param)
 	}
 	GETDLLPROC(hDLL, PP_ExtractMacro);
 
-	result = DPP_ExtractMacro(GetActiveWindow(),NULL,NULL, param,NULL, 0);
+	result = DPP_ExtractMacro(GetActiveWindow(), NULL, NULL, param, NULL, 0);
 
 	FreeLibrary(hDLL);
 	return result;
@@ -111,7 +111,10 @@ INT_PTR CALLBACK SetTypeDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam
 					XX_setupmode = GetDlgButtons(hDlg, IDR_AUTOINST, IDR_UNINST);
 
 					if ( XX_setupmode == IDR_CHECKUPDATE ){
-						if ( Execute_ExtractMacro(T("*checkupdate")) != NO_ERROR ){
+						if ( Execute_ExtractMacro(
+								IsDlgButtonChecked(hDlg, IDX_TESTVER) ?
+								T("*checkupdate p") :
+								T("*checkupdate")) != NO_ERROR ){
 							SetWindowLongPtr(hDlg, DWLP_MSGRESULT,
 									UsePageInfo[PAGE_SETTYPE].rID);
 							break;
@@ -415,7 +418,7 @@ INT_PTR CALLBACK AppDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 					TCHAR buf[MAX_PATH];
 
 					if ( SelectDirectory(hDlg, MessageStr[MSG_SELECTSUSIE],
-							BIF_RETURNONLYFSDIRS,NULL, buf) == FALSE ) break;
+							BIF_RETURNONLYFSDIRS, NULL, buf) == FALSE ) break;
 					SetDlgItemText(hDlg, IDE_SUSIEDIR, buf);
 					break;
 				}
@@ -435,7 +438,7 @@ INT_PTR CALLBACK AppDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 					for ( arcs = UNARCS ; *arcs ; arcs++ ){
 						HMODULE hDLL;
 
-						hDLL = LoadLibraryEx(*arcs,NULL,
+						hDLL = LoadLibraryEx(*arcs, NULL,
 								DONT_RESOLVE_DLL_REFERENCES);
 						if ( hDLL != NULL ){
 							TCHAR dpath[MAX_PATH];
@@ -577,7 +580,7 @@ INT_PTR CALLBACK CopyDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 				// Vista は管理者権限で PPc を起動するため起動オプションを無効
 				if ( (OSver.dwMajorVersion >= 6) &&
 						(AdminCheck() == ADMINMODE_ELEVATE) ){
-					SetDlgItemText(hDlg, IDX_STARTPPC,NilStr);
+					SetDlgItemText(hDlg, IDX_STARTPPC, NilStr);
 					CheckDlgButton(hDlg, IDX_STARTPPC, FALSE);
 				}else{
 					CheckDlgButton(hDlg, IDX_STARTPPC, TRUE);
@@ -590,7 +593,7 @@ INT_PTR CALLBACK CopyDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 					if ( SetupResult != SRESULT_NOERROR ){
 						CheckDlgButton(hDlg, IDX_STARTPPC, FALSE);
 					}
-					WriteResult(NilStr,RESULT_ALLDONE);
+					WriteResult(NilStr, RESULT_ALLDONE);
 					if ( IsTrue(XX_resultquiet) && (SetupResult == SRESULT_NOERROR) ){
 						PropSheet_PressButton(NHPTR->hwndFrom, PSBTN_FINISH);
 					}
@@ -647,7 +650,7 @@ INT_PTR CALLBACK UpDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 				case IDB_UPSRC:{
 					TCHAR buf[MAX_PATH];
 					if ( SelectDirectory(hDlg, MessageStr[MSG_SELECTPPX],
-							BIF_RETURNONLYFSDIRS,NULL, buf) == FALSE ) break;
+							BIF_RETURNONLYFSDIRS, NULL, buf) == FALSE ) break;
 					SetDlgItemText(hDlg, IDE_UPSRC, buf);
 					break;
 				}
@@ -734,7 +737,7 @@ BOOL CreateSourceDirectory(TCHAR *dir)
 	GetTempPath(TSIZEOF(buf), buf);
 	wsprintf(dir, T("%s\\PPXUPDIR"), buf);
 	DeleteDir(dir);
-	if ( CreateDirectory(dir,NULL) != FALSE ){
+	if ( CreateDirectory(dir, NULL) != FALSE ){
 		DeleteUpsrc = TRUE;
 		return TRUE;
 	}else{

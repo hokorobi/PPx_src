@@ -25,13 +25,13 @@ THREADSTRUCT *ThreadBottom = NULL;
 	#define CHECK_HOOK "hookx64"
 
 	#define CPUTYPE IMAGE_FILE_MACHINE_AMD64
-	#define LOADWINAPI164(name) {(void (WINAPI **)())&(D ## name),#name "64"}
+	#define LOADWINAPI164(name) {(void (WINAPI **)())&(D ## name), #name "64"}
 	#define TAIL64(name) name ## 64
 	#ifdef UNICODE
-		#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name),#name "W64"}
+		#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name), #name "W64"}
 		#define TAIL64T(name) name ## W64
 	#else
-		#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name),#name "64"}
+		#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name), #name "64"}
 		#define TAIL64T(name) name ## 64
 	#endif
 #endif
@@ -42,13 +42,13 @@ THREADSTRUCT *ThreadBottom = NULL;
 	#define CHECK_HOOK "hook"
 
 	#define CPUTYPE IMAGE_FILE_MACHINE_ARM
-	#define LOADWINAPI164(name) {(void (WINAPI **)())&(D ## name),#name}
+	#define LOADWINAPI164(name) {(void (WINAPI **)())&(D ## name), #name}
 	#define TAIL64(name) name
 	#ifdef UNICODE
-		#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name),#name "W"}
+		#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name), #name "W"}
 		#define TAIL64T(name) name ## W
 	#else
-		#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name),#name}
+		#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name), #name}
 		#define TAIL64T(name) name
 	#endif
 #endif
@@ -59,13 +59,13 @@ THREADSTRUCT *ThreadBottom = NULL;
 	#define CHECK_HOOK "hook64"
 
 	#define CPUTYPE IMAGE_FILE_MACHINE_ARM64
-	#define LOADWINAPI164(name) {(void (WINAPI **)())&(D ## name),#name}
+	#define LOADWINAPI164(name) {(void (WINAPI **)())&(D ## name), #name}
 	#define TAIL64(name) name
 	#ifdef UNICODE
-		#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name),#name "W"}
+		#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name), #name "W"}
 		#define TAIL64T(name) name ## W
 	#else
-		#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name),#name}
+		#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name), #name}
 		#define TAIL64T(name) name
 	#endif
 #endif
@@ -76,19 +76,19 @@ THREADSTRUCT *ThreadBottom = NULL;
 	#define CHECK_HOOK "hook"
 
 	#define CPUTYPE IMAGE_FILE_MACHINE_I386
-	#define LOADWINAPI164(name) {(void (WINAPI **)())&(D ## name),#name}
+	#define LOADWINAPI164(name) {(void (WINAPI **)())&(D ## name), #name}
 	#define TAIL64(name) name
 	#ifdef UNICODE
-		#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name),#name "W"}
+		#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name), #name "W"}
 		#define TAIL64T(name) name ## W
 	#else
-		#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name),#name}
+		#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name), #name}
 		#define TAIL64T(name) name
 	#endif
 #endif
 
 #ifdef UNICODE
-	#define GETDLLPROCTA(handle,name) D ## name = (imp ## name)GetProcAddress(handle,#name "W");
+	#define GETDLLPROCTA(handle, name) D ## name = (imp ## name)GetProcAddress(handle, #name "W");
 
 	typedef struct {
 		DWORD dwSize;
@@ -103,7 +103,7 @@ THREADSTRUCT *ThreadBottom = NULL;
 		WCHAR szExePath[MAX_PATH];
 	} MODULEENTRY32X;
 #else
-	#define GETDLLPROCTA(handle,name) D ## name = (imp ## name)GetProcAddress(handle,#name);
+	#define GETDLLPROCTA(handle, name) D ## name = (imp ## name)GetProcAddress(handle, #name);
 	#define MODULEENTRY32X MODULEENTRY32
 #endif
 
@@ -199,12 +199,12 @@ const TCHAR *msgstringsE[] = {
 
 #if defined(UNICODE) && !defined(CBA_READ_MEMORY) && !defined(WINEGCC)
 typedef struct {
-	DWORD SizeOfStruct,BaseOfImage,ImageSize,TimeDateStamp,CheckSum,NumSyms;
+	DWORD SizeOfStruct, BaseOfImage, ImageSize, TimeDateStamp, CheckSum, NumSyms;
 	SYM_TYPE SymType;
-	WCHAR ModuleName[32],ImageName[256],LoadedImageName[256];
-} IMAGEHLP_MODULEW,*PIMAGEHLP_MODULEW;
+	WCHAR ModuleName[32], ImageName[256], LoadedImageName[256];
+} IMAGEHLP_MODULEW, *PIMAGEHLP_MODULEW;
 #endif
-DefineWinAPI(BOOL,StackWalk,(DWORD,HANDLE,HANDLE,TAIL64(LPSTACKFRAME),PVOID,
+DefineWinAPI(BOOL, StackWalk, (DWORD, HANDLE, HANDLE, TAIL64(LPSTACKFRAME), PVOID,
 	TAIL64(PREAD_PROCESS_MEMORY_ROUTINE),
 	TAIL64(PFUNCTION_TABLE_ACCESS_ROUTINE),
 	TAIL64(PGET_MODULE_BASE_ROUTINE),
@@ -236,9 +236,9 @@ LOADWINAPISTRUCT IMAGEHLPDLL[] = {
 int ShowErrorDialog(const TCHAR **Msg,int msgtype,const TCHAR *threadtext,const TCHAR *infotext,const TCHAR *addrtext,const TCHAR *comment);
 
 // 指定スレッドを検索 ---------------------------------------------------------
-THREADSTRUCT *GetThreadInfoFromID(THREADSTRUCT **prev,DWORD ThreadID)
+THREADSTRUCT *GetThreadInfoFromID(THREADSTRUCT **prev, DWORD ThreadID)
 {
-	THREADSTRUCT *pT,*prevT = NULL;
+	THREADSTRUCT *pT, *prevT = NULL;
 
 	pT = ThreadBottom;
 	if ( IsTrue(IsBadReadPtr(pT,sizeof(THREADSTRUCT))) ){
@@ -785,7 +785,8 @@ DWORD WINAPI PPxUnhandledExceptionFilterMain(ExceptionData *EP)
 			}
 		}
 		if ( ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW ){
-			stackptr += wsprintf(stackptr,T("\tstacks:%d:%d#%x\n"),count,CrmenuCheck.enter,CrmenuCheck.exectype);
+			stackptr += wsprintf(stackptr,T("\tstacks:%d:%d#%x\n"),
+					count, CrmenuCheck.enter, CrmenuCheck.exectype);
 		}
 	}
 	if ( stackinfo == stackptr ){

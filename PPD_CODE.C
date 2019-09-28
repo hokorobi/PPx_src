@@ -55,7 +55,7 @@ label s_ekey[EKEY_MAX + 1] = {
 	{T("XFER"),		K_v | VK_CONVERT},
 	{T("NFER"),		K_v | VK_NONCONVERT},
 //	{T("ACCEPT"),	K_v | VK_ACCEPT},
-///	{T("MODECHANGE"),K_v | VK_MODECHANGE},
+///	{T("MODECHANGE"), K_v | VK_MODECHANGE},
 //20
 	{T("SPACE"),	K_v | VK_SPACE},
 	{T("PUP"),		K_v | VK_PRIOR},
@@ -90,7 +90,7 @@ label s_ekey[EKEY_MAX + 1] = {
 	{T("NUM9"),		K_v | VK_NUMPAD9},
 	{T("NUM*"),		K_v | VK_MULTIPLY},
 	{T("NUM+"),		K_v | VK_ADD},
-	{T("SEPARATOR"),K_v | VK_SEPARATOR},
+	{T("SEPARATOR"), K_v | VK_SEPARATOR},
 	{T("NUM-"),		K_v | VK_SUBTRACT},
 	{T("NUM."),		K_v | VK_DECIMAL},
 	{T("NUM/"),		K_v | VK_DIVIDE},
@@ -134,7 +134,7 @@ label s_ekey[EKEY_MAX + 1] = {
 
 	{T("PWTOP"),	KC_PTOP},
 	{T("PWBOTTOM"),	KC_PBOT},
-	{T("TOGGLEVFS"),KC_Tvfs},
+	{T("TOGGLEVFS"), KC_Tvfs},
 	{T("C_DIR"),	KC_Edir},
 
 	{T("LAYOUT"),	K_layout},
@@ -146,9 +146,9 @@ label s_ekey[EKEY_MAX + 1] = {
 	{T("LOADEVENT"),	K_E_LOAD},
 	{T("SELECTEVENT"),	K_E_SELECT},
 	{T("ACTIVEEVENT"),	K_E_ACTIVE},
-//	{T("INACTIVEEVENT"),K_E_INACTIVE},
+//	{T("INACTIVEEVENT"), K_E_INACTIVE},
 //	{T("TABLETMODEEVENT"),	K_E_TABLET},
-//	{T("PCMODEEVENT"),K_E_PC},
+//	{T("PCMODEEVENT"), K_E_PC},
 
 	{T("RANGEEVENT1"),	K_E_RANGE1},
 	{T("RANGEEVENT2"),	K_E_RANGE2},
@@ -177,14 +177,14 @@ label s_ekey[EKEY_MAX + 1] = {
 	{T("POWEROFF"),	K_Poff},
 	{T("REBOOT"),	K_Rbt},
 	{T("SHUTDOWN"),	K_Sdw},
-	{T("TERMINATE"),K_Fsdw},
+	{T("TERMINATE"), K_Fsdw},
 	{T("SUSPEND"),	K_Suspend},
-	{T("HIBERNATE"),K_Hibernate},
+	{T("HIBERNATE"), K_Hibernate},
 	{T("ABOUT"),	K_about},
 	{T("SUPPORT"),	K_supot},
 	{T("LOADCUST"),	K_Lcust},
 	{T("SAVECUST"),	K_Scust},
-	{T("CUSTOMIZE"),K_cust},
+	{T("CUSTOMIZE"), K_cust},
 	{T("LOADVFS"),	K_Lvfs},
 	{T("FREEVFS"),	K_Fvfs},
 
@@ -192,36 +192,36 @@ label s_ekey[EKEY_MAX + 1] = {
 	{T("||"),		K_MBRK},
 	{T("NULL"),		K_NULL},
 // EKEY_MAX
-	{NilStr,0}
+	{NilStr, 0}
 };
 
 COLORLABEL guicolor[] = {
-	{T("_BLA")	,C_BLACK},
-	{T("_BLU")	,C_BLUE},
-	{T("_RED")	,C_RED},
-	{T("_MAG")	,C_MAGENTA},
+	{T("_BLA"), C_BLACK},
+	{T("_BLU"), C_BLUE},
+	{T("_RED"), C_RED},
+	{T("_MAG"), C_MAGENTA},
 
-	{T("_GRE")	,C_GREEN},
-	{T("_CYA")	,C_CYAN},
-	{T("_BRO")	,C_YELLOW},
-	{T("_WHI")	,C_WHITE},
+	{T("_GRE"), C_GREEN},
+	{T("_CYA"), C_CYAN},
+	{T("_BRO"), C_YELLOW},
+	{T("_WHI"), C_WHITE},
 
-	{T("_DBLA")	,C_DBLACK},
-	{T("_DBLU")	,C_DBLUE},
-	{T("_DRED")	,C_DRED},
-	{T("_DMAG")	,C_DMAGENTA},
+	{T("_DBLA"), C_DBLACK},
+	{T("_DBLU"), C_DBLUE},
+	{T("_DRED"), C_DRED},
+	{T("_DMAG"), C_DMAGENTA},
 
-	{T("_DGRE")	,C_DGREEN},
-	{T("_DCYA")	,C_DCYAN},
-	{T("_DBRO")	,C_DYELLOW},
-	{T("_DWHI")	,C_DWHITE},
+	{T("_DGRE"), C_DGREEN},
+	{T("_DCYA"), C_DCYAN},
+	{T("_DBRO"), C_DYELLOW},
+	{T("_DWHI"), C_DWHITE},
 
-	{T("_MGRE")	,C_MGREEN},
-	{T("_SBLU")	,C_SBLUE},
-	{T("_CREM")	,C_CREAM},
-	{T("_GRAY")	,C_GRAY},
+	{T("_MGRE"), C_MGREEN},
+	{T("_SBLU"), C_SBLUE},
+	{T("_CREM"), C_CREAM},
+	{T("_GRAY"), C_GRAY},
 
-	{T("_AUTO")	,C_AUTO}
+	{T("_AUTO"), C_AUTO}
 };
 
 /*-----------------------------------------------------------------------------
@@ -328,11 +328,11 @@ PPXDLL INT_PTR PPXAPI GetNumber(LPCTSTR *ptr)
 		switch( *p ){
 			case '~':		// 全ビットの反転
 				p++;
-				setflag(flag,NUM_NOT);
+				setflag(flag, NUM_NOT);
 				continue;
 			case '-':		// 負数
 				p++;
-				setflag(flag,NUM_MINUS);
+				setflag(flag, NUM_MINUS);
 				continue;
 			case '+':		// 正数
 				p++;
@@ -345,11 +345,11 @@ PPXDLL INT_PTR PPXAPI GetNumber(LPCTSTR *ptr)
 														// Hnnnn 形式(16) -----
 	if ( (c == 'H') && Isxdigit(*(p + 1)) ){
 		p++;
-		setflag(flag,NUM_GOT);
+		setflag(flag, NUM_GOT);
 		n = GetHexNumber((const TCHAR **)&p);
 														// Bnnnn 形式(2) ------
 	}else if ( (c == 'B') && ((UTCHAR)(*(p+1) - '0') < 2) ){
-		setflag(flag,NUM_GOT);
+		setflag(flag, NUM_GOT);
 		while(*(++p)){
 			c = (UTCHAR)(*p - '0');
 			if ( c >= 2 ) break;
@@ -359,14 +359,14 @@ PPXDLL INT_PTR PPXAPI GetNumber(LPCTSTR *ptr)
 														// 'あ' 形式(char) ----
 #ifndef UNICODE
 		if ( IskanjiA(*(p+1)) && *(p+2) && (*(p+3) == '\'') ){
-			setflag(flag,NUM_GOT);
+			setflag(flag, NUM_GOT);
 			n = *(WORD *)(p + 1);
 			p += 4;
 														// 'A' 形式(char) -----
 		}else
 #endif
 		 if ( *(p+1) && (*(p+2) == '\'') ){
-			setflag(flag,NUM_GOT);
+			setflag(flag, NUM_GOT);
 			n = *(p + 1);
 			p += 3;
 		}
@@ -374,11 +374,11 @@ PPXDLL INT_PTR PPXAPI GetNumber(LPCTSTR *ptr)
 	}else if ( (c == '0') &&
 			((*(p+1) == 'X') || (*(p+1) == 'x')) && Isxdigit(*(p+2)) ){
 		p += 2;
-		setflag(flag,NUM_GOT);
+		setflag(flag, NUM_GOT);
 		n = GetHexNumber((const TCHAR **)&p);
 	}else{												// nnnn 形式(10) ------
 		while( Isdigit(*p) ){
-			setflag(flag,NUM_GOT);
+			setflag(flag, NUM_GOT);
 			n = n * 10 + (INT_PTR)(UTCHAR)(*p++ - (UTCHAR)'0');
 		}
 	}
@@ -506,7 +506,7 @@ int USEFASTCALL GetShiftCode(const TCHAR **ptr)
 /*-----------------------------------------------------------------------------
 	シフトキー文字列を得る
 -----------------------------------------------------------------------------*/
-PPXDLL TCHAR * PPXAPI PutShiftCode(TCHAR *str,int key)
+PPXDLL TCHAR * PPXAPI PutShiftCode(TCHAR *str, int key)
 {
 	if (key & K_raw) *str++ = '@';
 	if (key & K_e) *str++ = '~';
@@ -523,9 +523,9 @@ PPXDLL int PPXAPI GetKeyCode(LPCTSTR *ptr)
 {
 	int shift;			/* シフトフラグ */
 	int brk = 0;		/* '' 使用中フラグ */
-	int key,i;			/* 現在のキーコード */
-	TCHAR buf[256],*buf_p;
-	const TCHAR *lp,*lp_bak;
+	int key, i;			/* 現在のキーコード */
+	TCHAR buf[256], *buf_p;
+	const TCHAR *lp, *lp_bak;
 
 	shift = GetShiftCode(ptr);
 	lp = *ptr;
@@ -567,7 +567,7 @@ PPXDLL int PPXAPI GetKeyCode(LPCTSTR *ptr)
 	key = buf[0];
 	if ( buf[1] ){				/* ２文字以上ならエイリアス判断を行う ********/
 		for ( i = 0 ; s_ekey[i].num ; i++ ){
-			if ( !tstrcmp(buf,s_ekey[i].str) ){
+			if ( !tstrcmp(buf, s_ekey[i].str) ){
 				key = s_ekey[i].num;
 				break;
 			}
@@ -580,32 +580,32 @@ PPXDLL int PPXAPI GetKeyCode(LPCTSTR *ptr)
 /*-----------------------------------------------------------------------------
 	キー文字列を得る
 -----------------------------------------------------------------------------*/
-PPXDLL void PPXAPI PutKeyCode(TCHAR *str,int key)
+PPXDLL void PPXAPI PutKeyCode(TCHAR *str, int key)
 {
 #ifndef RELEASE
 	if ( CheckCodeTable ){
-		int i,num,oldnum = 0;
+		int i, num, oldnum = 0;
 		CheckCodeTable = 0;
 		for ( i = 0 ; s_ekey[i].num ; i++ ){
 			num = s_ekey[i].num;
 			if ( (num & K_e) != (oldnum & K_e) ){
 				if ( i != EKEY_INTERNAL ){
-					XMessage(NULL,NULL,XM_DbgDIA,T("PutKeyCode - EKEY_INTERNAL error : %d"),i);
+					XMessage(NULL, NULL, XM_DbgDIA, T("PutKeyCode - EKEY_INTERNAL error : %d"), i);
 				}
 			}
 			if ( num < oldnum ){
-				XMessage(NULL,NULL,XM_DbgDIA,T("PutKeyCode - s_ekey error : %d %s"),i,s_ekey[i].str);
+				XMessage(NULL, NULL, XM_DbgDIA, T("PutKeyCode - s_ekey error : %d %s"), i, s_ekey[i].str);
 			}
 			oldnum = num;
 		}
 		if ( i != EKEY_MAX ){
-			XMessage(NULL,NULL,XM_DbgDIA,T("PutKeyCode - 	EKEY_MAX error : %d"),i);
+			XMessage(NULL, NULL, XM_DbgDIA, T("PutKeyCode - 	EKEY_MAX error : %d"), i);
 		}
 	}
 #endif
 	if ( !(key & (K_ex | K_internal)) ){	// 一般キーならシフトキーを解析
-		str = PutShiftCode(str,key);
-		resetflag(key,K_raw | K_e | K_a | K_c | K_s);
+		str = PutShiftCode(str, key);
+		resetflag(key, K_raw | K_e | K_a | K_c | K_s);
 	}
 	if ( key & (K_v | K_ex) ){
 		int mini, maxi;
@@ -627,19 +627,19 @@ PPXDLL void PPXAPI PutKeyCode(TCHAR *str,int key)
 				maxi = mid;
 			}else{
 				if ( (mid > 0) && (s_ekey[mid - 1].num == key ) ) mid--;
-				tstrcpy(str,s_ekey[mid].str);
+				tstrcpy(str, s_ekey[mid].str);
 				return;
 			}
 		}
-		wsprintf(str,T("V_H%02X"),key & ~K_v);
+		wsprintf(str, T("V_H%02X"), key & ~K_v);
 	}else if ( IsalnumA(key) ){
-		wsprintf(str,T("%c"),key); // 8bit に丸められる
+		wsprintf(str, T("%c"), key); // 8bit に丸められる
 	}else{
-		wsprintf(str,T("\'%c\'"),key); // 8bit に丸められる
+		wsprintf(str, T("\'%c\'"), key); // 8bit に丸められる
 	}
 }
 
-int USEFASTCALL HexFormat(TCHAR *buf,int unit,DWORD low,DWORD high)
+int USEFASTCALL HexFormat(TCHAR *buf, int unit, DWORD low, DWORD high)
 {
 	int shift;
 
@@ -652,19 +652,19 @@ int USEFASTCALL HexFormat(TCHAR *buf,int unit,DWORD low,DWORD high)
 
 		if ( high ){
 #ifndef _WIN64 // 32bit
-			DWORD low2,high2;
+			DWORD low2, high2;
 
-			DDwordToDten(low,high,&low2,&high2);
-			return wsprintf(buf,T("%u%09u"),high2,low2);
+			DDwordToDten(low, high, &low2, &high2);
+			return wsprintf(buf, T("%u%09u"), high2, low2);
 #else // 64bit
 			DWORD_PTR l64;
 
 			l64 = (DWORD_PTR)low + ((DWORD_PTR)high << 32);
-			return wsprintf(buf,T("%I64u"),l64);
+			return wsprintf(buf, T("%I64u"), l64);
 #endif
 		}
 	}
-	return wsprintf(buf,T("%u"),low);
+	return wsprintf(buf, T("%u"), low);
 }
 
 /*-----------------------------------------------------------------------------
@@ -672,13 +672,13 @@ int USEFASTCALL HexFormat(TCHAR *buf,int unit,DWORD low,DWORD high)
 
 	str 出力先
 -----------------------------------------------------------------------------*/
-PPXDLL void PPXAPI FormatNumber(TCHAR *str,DWORD flag,int length,DWORD low,DWORD high)
+PPXDLL void PPXAPI FormatNumber(TCHAR *str, DWORD flag, int length, DWORD low, DWORD high)
 {
-	TCHAR buf[0x20],unit = '\0',*src,*dest;
-	int l,fixedl;
+	TCHAR buf[0x20], unit = '\0', *src, *dest;
+	int l, fixedl;
 
 	fixedl = length;
-	if ( flag & XFN_MUL ) DDmul(low,high,&low,&high);
+	if ( flag & XFN_MUL ) DDmul(low, high, &low, &high);
 	if ( flag & (XFN_UNITSPACE | XFN_MINUNITMASK) ){
 		unit = ' ';
 		fixedl--;
@@ -690,9 +690,9 @@ PPXDLL void PPXAPI FormatNumber(TCHAR *str,DWORD flag,int length,DWORD low,DWORD
 		int unittype;
 
 		unittype = (flag /* & XFN_MINUNITMASK */) >> XFN_MINUNITSHIFT;
-		AddDD(low,high,(DWORD)(unittype << 10) - 1,0);
+		AddDD(low, high, (DWORD)(unittype << 10) - 1, 0);
 		for ( ; ; ){
-			l = HexFormat(buf,unittype,low,high);
+			l = HexFormat(buf, unittype, low, high);
 			if ( l <= fixedl ) break;
 			unittype++;
 		};
@@ -700,18 +700,18 @@ PPXDLL void PPXAPI FormatNumber(TCHAR *str,DWORD flag,int length,DWORD low,DWORD
 	}else{
 		if ( high ){
 #ifndef _WIN64 // 32bit
-			DWORD low2,high2;
+			DWORD low2, high2;
 
-			DDwordToDten(low,high,&low2,&high2);
-			l = wsprintf(buf,T("%u%09u"),high2,low2);
+			DDwordToDten(low, high, &low2, &high2);
+			l = wsprintf(buf, T("%u%09u"), high2, low2);
 #else // 64bit
 			DWORD_PTR l64;
 
 			l64 = (DWORD_PTR)low + ((DWORD_PTR)high << 32);
-			l = wsprintf(buf,T("%I64u"),l64);
+			l = wsprintf(buf, T("%I64u"), l64);
 #endif
 		}else{
-			l = wsprintf(buf,T("%u"),low);
+			l = wsprintf(buf, T("%u"), low);
 		}
 	}
 
@@ -731,12 +731,12 @@ PPXDLL void PPXAPI FormatNumber(TCHAR *str,DWORD flag,int length,DWORD low,DWORD
 		i = (l - fixedl - 1) / 3;
 		if ( flag & (XFN_HEXUNIT | XFN_MINUNITMASK)){
 			// 仮減らし
-			l = HexFormat(buf,i + 1,low,high);
+			l = HexFormat(buf, i + 1, low, high);
 
 			// 何とか収まるので調整
 			if ( ((fixedl - l) >= 3) && (buf[0] == '9') && (buf[1] < '7') ){
 				i--;
-				l = HexFormat(buf,i + 1,low,high);
+				l = HexFormat(buf, i + 1, low, high);
 			}
 			unit = UnitH[i];
 
@@ -795,9 +795,9 @@ PPXDLL void PPXAPI FormatNumber(TCHAR *str,DWORD flag,int length,DWORD low,DWORD
 }
 
 // 色設定 ---------------------------------------------------------------------
-PPXDLL COLORREF PPXAPI GetColor(LPCTSTR *linesrc,BOOL usealias)
+PPXDLL COLORREF PPXAPI GetColor(LPCTSTR *linesrc, BOOL usealias)
 {
-	TCHAR buf[100],*dst,data;
+	TCHAR buf[100], *dst, data;
 	const TCHAR *pt;
 	int i;
 	COLORREF color;
@@ -809,14 +809,14 @@ PPXDLL COLORREF PPXAPI GetColor(LPCTSTR *linesrc,BOOL usealias)
 	*dst = '\0';
 										// 追加識別子を判別
 	if ( usealias ){	// A_color は自己参照させない
-		if ( NO_ERROR == GetCustTable(T("A_color"),buf,&color,sizeof(color)) ){
+		if ( NO_ERROR == GetCustTable(T("A_color"), buf, &color, sizeof(color)) ){
 			*linesrc = pt - 1;
 			return color;
 		}
 	}
 										// 定義済み識別子を判別
 	for ( i = 0 ; i < color_s ; i++ ){
-		if ( !tstrcmp(buf,guicolor[i].str) ){
+		if ( !tstrcmp(buf, guicolor[i].str) ){
 			*linesrc = pt - 1;
 			return guicolor[i].num;
 		}
@@ -827,10 +827,10 @@ PPXDLL COLORREF PPXAPI GetColor(LPCTSTR *linesrc,BOOL usealias)
 
 // Win95等の CP_UTF8 未対応環境用
 #ifndef _WIN64
-int WINAPI MultiByteToWideCharU8_Win4(UINT CodePage,DWORD dwFlags,const char *lpMultiByteStr,int cchMultiByte,WCHAR *lpWideCharStr,int cchWideChar)
+int WINAPI MultiByteToWideCharU8_Win4(UINT CodePage, DWORD dwFlags, const char *lpMultiByteStr, int cchMultiByte, WCHAR *lpWideCharStr, int cchWideChar)
 {
 	if ( CodePage == CP_UTF8 ){
-		const char *src = lpMultiByteStr,*srcmax = lpMultiByteStr + cchMultiByte;
+		const char *src = lpMultiByteStr, *srcmax = lpMultiByteStr + cchMultiByte;
 		if ( cchWideChar == 0 ){
 			int count = (cchMultiByte < 0) ? 1 : 0;
 
@@ -933,14 +933,14 @@ int WINAPI MultiByteToWideCharU8_Win4(UINT CodePage,DWORD dwFlags,const char *lp
 			return dst - lpWideCharStr;
 		}
 	}else{
-		return MultiByteToWideChar(CodePage,dwFlags,lpMultiByteStr,cchMultiByte,lpWideCharStr,cchWideChar);
+		return MultiByteToWideChar(CodePage, dwFlags, lpMultiByteStr, cchMultiByte, lpWideCharStr, cchWideChar);
 	}
 }
 
-int WINAPI WideCharToMultiByteU8_Win4(UINT CodePage,DWORD dwFlags,const WCHAR *lpWideCharStr,int cchWideChar,char *lpMultiByteStr,int cchMultiByte,const char *lpDefaultChar,BOOL *lpfUsedDefaultChar)
+int WINAPI WideCharToMultiByteU8_Win4(UINT CodePage, DWORD dwFlags, const WCHAR *lpWideCharStr, int cchWideChar, char *lpMultiByteStr, int cchMultiByte, const char *lpDefaultChar, BOOL *lpfUsedDefaultChar)
 {
 	if ( CodePage == CP_UTF8 ){
-		const WCHAR *src = lpWideCharStr,*srcmax = lpWideCharStr + cchWideChar;
+		const WCHAR *src = lpWideCharStr, *srcmax = lpWideCharStr + cchWideChar;
 
 		if ( cchMultiByte == 0 ){
 			int count = (cchWideChar < 0) ? 1 : 0;
@@ -980,7 +980,7 @@ int WINAPI WideCharToMultiByteU8_Win4(UINT CodePage,DWORD dwFlags,const WCHAR *l
 			}
 			return count;
 		}else{
-			char *dst,*dstmax;
+			char *dst, *dstmax;
 
 			dst = lpMultiByteStr;
 			dstmax = lpMultiByteStr + cchMultiByte;
@@ -1039,28 +1039,28 @@ int WINAPI WideCharToMultiByteU8_Win4(UINT CodePage,DWORD dwFlags,const WCHAR *l
 			return dst - lpMultiByteStr;
 		}
 	}else{
-		return WideCharToMultiByte(CodePage,dwFlags,lpWideCharStr,cchWideChar,lpMultiByteStr,cchMultiByte,lpDefaultChar,lpfUsedDefaultChar);
+		return WideCharToMultiByte(CodePage, dwFlags, lpWideCharStr, cchWideChar, lpMultiByteStr, cchMultiByte, lpDefaultChar, lpfUsedDefaultChar);
 	}
 }
 
-int WINAPI MultiByteToWideCharU8_Init(UINT CodePage,DWORD dwFlags,const char *lpMultiByteStr,int cchMultiByte,WCHAR *lpWideCharStr,int cchWideChar)
+int WINAPI MultiByteToWideCharU8_Init(UINT CodePage, DWORD dwFlags, const char *lpMultiByteStr, int cchMultiByte, WCHAR *lpWideCharStr, int cchWideChar)
 {
 	if ( WinType < WINTYPE_2000 ){
 		DMultiByteToWideCharU8 = MultiByteToWideCharU8_Win4;
 	}else{
-		DMultiByteToWideCharU8 = (impMultiByteToWideCharU8)GetProcAddress(hKernel32,"MultiByteToWideChar");
+		DMultiByteToWideCharU8 = (impMultiByteToWideCharU8)GetProcAddress(hKernel32, "MultiByteToWideChar");
 	}
-	return DMultiByteToWideCharU8(CodePage,dwFlags,lpMultiByteStr,cchMultiByte,lpWideCharStr,cchWideChar);
+	return DMultiByteToWideCharU8(CodePage, dwFlags, lpMultiByteStr, cchMultiByte, lpWideCharStr, cchWideChar);
 }
 
-int WINAPI WideCharToMultiByteU8_Init(UINT CodePage,DWORD dwFlags,const WCHAR *lpWideCharStr,int cchWideChar,char *lpMultiByteStr,int cchMultiByte,const char *lpDefaultChar,BOOL *lpfUsedDefaultChar)
+int WINAPI WideCharToMultiByteU8_Init(UINT CodePage, DWORD dwFlags, const WCHAR *lpWideCharStr, int cchWideChar, char *lpMultiByteStr, int cchMultiByte, const char *lpDefaultChar, BOOL *lpfUsedDefaultChar)
 {
 	if ( WinType < WINTYPE_2000 ){
 		DWideCharToMultiByteU8 = WideCharToMultiByteU8_Win4;
 	}else{
-		DWideCharToMultiByteU8 = (impWideCharToMultiByteU8)GetProcAddress(hKernel32,"WideCharToMultiByte");
+		DWideCharToMultiByteU8 = (impWideCharToMultiByteU8)GetProcAddress(hKernel32, "WideCharToMultiByte");
 	}
-	return DWideCharToMultiByteU8(CodePage,dwFlags,lpWideCharStr,cchWideChar,lpMultiByteStr,cchMultiByte,lpDefaultChar,lpfUsedDefaultChar);
+	return DWideCharToMultiByteU8(CodePage, dwFlags, lpWideCharStr, cchWideChar, lpMultiByteStr, cchMultiByte, lpDefaultChar, lpfUsedDefaultChar);
 
 }
 

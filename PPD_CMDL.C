@@ -64,11 +64,11 @@ PPXDLL BOOL PPXAPI NextParameter(LPCTSTR *str)
 
 RET:	先頭の文字(何もなかったら 0)
 -----------------------------------------------------------------------------*/
-PPXDLL UTCHAR PPXAPI GetLineParam(LPCTSTR *str,TCHAR *param)
+PPXDLL UTCHAR PPXAPI GetLineParam(LPCTSTR *str, TCHAR *param)
 {
-	UTCHAR code,bottom;
+	UTCHAR code, bottom;
 	const TCHAR *src;
-	TCHAR *dst,*dstmax;
+	TCHAR *dst, *dstmax;
 
 	src = *str;
 	dst = param;
@@ -80,7 +80,7 @@ PPXDLL UTCHAR PPXAPI GetLineParam(LPCTSTR *str,TCHAR *param)
 		return '\0';
 	}
 	if ( code == '\"' ){
-		GetQuotedParameter(&src,dst,dstmax);
+		GetQuotedParameter(&src, dst, dstmax);
 	}else{
 		do {
 			src++;
@@ -109,7 +109,7 @@ PPXDLL UTCHAR PPXAPI GetLineParam(LPCTSTR *str,TCHAR *param)
 
 RET:	== '-':found
 -----------------------------------------------------------------------------*/
-PPXDLL UTCHAR PPXAPI GetOptionParameter(LPCTSTR *commandline,TCHAR *optionname,TCHAR **optionparameter)
+PPXDLL UTCHAR PPXAPI GetOptionParameter(LPCTSTR *commandline, TCHAR *optionname, TCHAR **optionparameter)
 {
 	UTCHAR code;
 
@@ -139,23 +139,23 @@ PPXDLL UTCHAR PPXAPI GetOptionParameter(LPCTSTR *commandline,TCHAR *optionname,T
 			}else{
 				*dest++ = *src++;
 			}
-			GetLineParam(&src,dest);
+			GetLineParam(&src, dest);
 		}else{
 			if ( optionparameter != NULL ) *optionparameter = dest;
 		}
 		*commandline = src;
 		return '-';
 	}else{
-		return GetLineParam(commandline,optionname);
+		return GetLineParam(commandline, optionname);
 	}
 }
 
-PPXDLL UTCHAR PPXAPI GetOption(LPCTSTR *commandline,TCHAR *param)
+PPXDLL UTCHAR PPXAPI GetOption(LPCTSTR *commandline, TCHAR *param)
 {
-	return GetOptionParameter(commandline,param,NULL);
+	return GetOptionParameter(commandline, param, NULL);
 }
 
-void GetQuotedParameter(LPCTSTR *commandline,TCHAR *param,const TCHAR *parammax)
+void GetQuotedParameter(LPCTSTR *commandline, TCHAR *param, const TCHAR *parammax)
 {
 	const TCHAR *ptr,*ptrfirst,*ptrlast;
 	TCHAR *dest;
@@ -209,7 +209,7 @@ void GetQuotedParameter(LPCTSTR *commandline,TCHAR *param,const TCHAR *parammax)
 	}
 }
 
-// , 区切りのパラメータを１つ取得する ※PPC_SUB.Cにも
+// ,/改行 区切りのパラメータを１つ取得する ※PPC_SUB.Cにも
 UTCHAR GetCommandParameter(LPCTSTR *commandline,TCHAR *param,size_t paramlen)
 {
 	const TCHAR *src;
@@ -243,4 +243,56 @@ UTCHAR GetCommandParameter(LPCTSTR *commandline,TCHAR *param,size_t paramlen)
 	*dest = '\0';
 	*commandline = src;
 	return firstcode;
+}
+
+// 改行使用可能なパラメータ取得
+void GetLfGetParam(const TCHAR **param, TCHAR *dest, DWORD destlength)
+{
+	const TCHAR *src = *param;
+	TCHAR *destptr;
+
+	destptr = dest;
+	if ( SkipSpace(&src) == '\"' ){ // " 処理
+		src++;
+		for (;;){
+			TCHAR c;
+
+			c = *src;
+			if ( c == '\0' ) goto end;
+			if ( c == '\"' ){
+				if ( *(src + 1) != '\"' ){ // 末尾？
+					src++;
+					break;
+				}
+				src++; // "" ... " 自身
+			}
+			if ( destlength ){
+				*destptr++ = c;
+				destlength--;
+			}
+			src++;
+			continue;
+		}
+	}
+
+	for (;;){
+		TCHAR c;
+
+		c = *src;
+		if ( c == '\0' ) break;
+
+		if ( ((UTCHAR)c <= ' ') || (c == ',') ){
+			break;
+		}
+		if ( destlength ){
+			*destptr++ = c;
+			destlength--;
+		}
+		src++;
+		continue;
+	}
+	while ( (destptr > dest) && (*(destptr - 1) == ' ') ) destptr--;
+end:
+	*param = src;
+	*destptr = '\0';
 }

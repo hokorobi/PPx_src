@@ -811,7 +811,6 @@ void GetDropFormat(DROPTYPE &DDtype, LPDATAOBJECT pDataObj)
 		fe.dwAspect = DVASPECT_CONTENT;
 		fe.lindex = -1;
 		fe.tymed = TYMED_HGLOBAL;
-		XMessage(NULL, NULL, XM_DbgLOG, T("%x"), pDataObj->QueryGetData(&fe));
 
 /*
 		STGMEDIUM stm;

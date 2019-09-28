@@ -427,7 +427,7 @@ void WmSettingChange(HWND hWnd, LPARAM lParam)
 
 return ERROR_INVALID_FUNCTION :未処理
 -----------------------------------------------------------------------------*/
-PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd, WPARAM wParam, WORD key)
+PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd, LPARAM lParam, WORD key)
 {
 	key &= ~K_raw;
 	switch ( key ){
@@ -437,25 +437,25 @@ PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd, WPARAM wParam, WORD key)
 			break;
 
 		case K_GETJOBWINDOW:
-			if ( wParam == 0 ) return (Sm->JobList.hWnd != NULL);
-			if ( wParam == 1 ){
+			if ( lParam == 0 ) return (Sm->JobList.hWnd != NULL);
+			if ( lParam == 1 ){
 				if ( Sm->JobList.hWnd != NULL ){
 					PostMessage(Sm->JobList.hWnd, WM_CLOSE, 0, 0);
 				}
 				break;
 			}
 			if ( Sm->JobList.hWnd != NULL ){
-				*(HWND *)wParam = NULL;
+				*(HWND *)lParam = NULL;
 				break; // 使用済み
 			}
 			Sm->JobList.hWnd = hWnd;
 			Sm->JobList.showmode = JOBLIST_INNER;
 			CreateJobListWnd();
-			*(HWND *)wParam = GetParent(Sm->JobList.hWnd);
+			*(HWND *)lParam = GetParent(Sm->JobList.hWnd);
 			break;
 
 		case K_ADDJOBTASK:
-			SetJobTask(hWnd, (wParam & JOBFLAG_STATEMASK) ? wParam : wParam | JOBSTATE_REGIST);
+			SetJobTask(hWnd, (lParam & JOBFLAG_STATEMASK) ? lParam : lParam | JOBSTATE_REGIST);
 			break;
 
 		case K_DELETEJOBTASK:
@@ -492,7 +492,7 @@ PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd, WPARAM wParam, WORD key)
 			break;
 /*
 		case K_SETTINGCHANGE:
-			WmSettingChange(hWnd, wParam);
+			WmSettingChange(hWnd, lParam);
 			break;
 		case K_E_PC:
 			TouchMode = 0;
@@ -504,9 +504,9 @@ PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd, WPARAM wParam, WORD key)
 			break;
 
 		case K_Lcust:
-			if ( wParam != 0 ){
-				if ( CustTick != (DWORD)wParam ) break; // 重複なので省略
-				CustTick = wParam;
+			if ( lParam != 0 ){
+				if ( CustTick != (DWORD)lParam ) break; // 重複なので省略
+				CustTick = lParam;
 			}else{
 				CustTick = GetTickCount();
 			}

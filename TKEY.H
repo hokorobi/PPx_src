@@ -31,6 +31,8 @@
 	bae0-baff	  PPtray
 	ba80-badf	  PPtree
 	ba40-ba7f	  combo window
+	390x		user timer
+	38xx/b8xx	user define
 	x000-x7FF(x:3, B)WM_SYSCOMMAND
 */
 
@@ -318,11 +320,12 @@ typedef struct {
 #define KE_2a	0x3b40				//
 #define KE_closeUList	0x3b41		// 上側補完リストを閉じる(使用中なら無視)
 // 通信用
+#define KE_insertsel	0xbb00		// *insertsel lParam : 文字列
 #define KE_insert	0xbb01			// *insert lParam : 文字列
 #define KE_replace	0xbb02			// *replace lParam : 文字列
 #define KE_openfile	0xbb03			// 指定のファイルを開く lParam : ファイル名
-#define KE_seltext	0xbb04			// *selecttext
-#define KE_edtext	0xbb05			// *edittext
+#define KE_seltext	0xbb04			// %*selecttext
+#define KE_edtext	0xbb05			// %*edittext
 #define KE_closecheck	0xbb06		// 終了時の保存チェック。0なら中止要求
 #define KE_setkeya	0xbb07			// 追加キー割当て lParam : static 文字列
 #define KE_defmenu	0xbb08			// *defaultmenu
@@ -381,10 +384,11 @@ typedef struct {
 #define KCW_layout		0xba56		// layout更新
 #define KCW_eject		0xba57		// ペインを独立化 lParam:baseindex
 #define KCW_pathfocus	0xba58		// 指定パスの窓があればフォーカス lParam:pat
-#define KCW_closetabs	0xba59		// lParam: first/last
+#define KCW_closetabs	0xba59		// ロック無しタブを閉じる lParam: first/last
 #define KCW_ActivateWnd	0xba5a		// HIWORD wParam:showind lParam:baseind
 #define KCW_SelectWnd	0xba5b
 #define KCW_ppclist		0xba5c		// ppc一覧のメモリを取得
+#define KCW_closealltabs 0xba5d		// ロック有・PPc以外も閉じる
 
 #define KCW_captureEx	0xba5f		// キャプチャされた窓がPPx対応かを確認する
 									// 戻り値が MAKELPARAM(1, KCW_captureEx)なら

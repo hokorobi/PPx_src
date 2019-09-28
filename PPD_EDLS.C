@@ -96,7 +96,7 @@ void USEFASTCALL CaretFixToA(const char *str, DWORD *of)
 #endif
 
 #ifndef UNICODE
-void GetEditSel(HWND hWnd, TCHAR *buf, ECURSOR *cursor)
+void GetEditSel(HWND hWnd, const TCHAR *buf, ECURSOR *cursor)
 {
 	SendMessage(hWnd, EM_GETSEL, (WPARAM)&cursor->start, (LPARAM)&cursor->end);
 	if ( xpbug < 0 ){
@@ -105,7 +105,7 @@ void GetEditSel(HWND hWnd, TCHAR *buf, ECURSOR *cursor)
 	}
 }
 
-void SetEditSel(HWND hWnd, TCHAR *buf, DWORD start, DWORD end)
+void SetEditSel(HWND hWnd, const TCHAR *buf, DWORD start, DWORD end)
 {
 	if ( xpbug < 0 ){
 		CaretFixToW(buf, &start);
@@ -269,13 +269,13 @@ TCHAR *SearchFileInedMain(ESTRUCT *ED, TCHAR *str, int mode)
 	for ( ; ; ){
 		if ( ED->hF != NULL ){					// 前回に検索を行っている場合…
 			if ( tstrcmp(str, ED->Fname) == 0 ){	// 検索直後なら検索続行
-				if ( FindNextFile(ED->hF,&ff) == FALSE ){
+				if ( FindNextFile(ED->hF, &ff) == FALSE ){
 												// 最後までやったので最初から
 					FindClose(ED->hF);
 					ED->hF = NULL;
 /*					現在、うまく伝達できないので休止中
 					if ( !(mode & CMDSEARCH_ONE) ){
-						SetMessageForEdit(ED->info->hWnd,MES_EENF);
+						SetMessageForEdit(ED->info->hWnd, MES_EENF);
 					}
 */
 					if ( (mode & CMDSEARCH_ONE) &&
@@ -291,10 +291,10 @@ TCHAR *SearchFileInedMain(ESTRUCT *ED, TCHAR *str, int mode)
 
 					limit--;
 					if ( limit <= 0 ) goto searchfail;
-					ED->hF = FindFirstFileL(ED->Fsrc,&ff);
+					ED->hF = FindFirstFileL(ED->Fsrc, &ff);
 					if ( ED->hF == INVALID_HANDLE_VALUE ){
 						ED->hF = NULL;
-//						SetMessageForEdit(ED->info->hWnd,T("retry error"));
+//						SetMessageForEdit(ED->info->hWnd, T("retry error"));
 					 	goto searchfail;
 					}
 				}
@@ -306,7 +306,7 @@ TCHAR *SearchFileInedMain(ESTRUCT *ED, TCHAR *str, int mode)
 		if ( ED->hF == NULL ){					// 新規検索
 			ED->cmdsearch = mode & ~CMDSEARCHI_FINDFIRST;
 			if ( SearchFileInedInit(ED, str, &ff) == FALSE ) goto searchfail; //C4701ok
-			setflag(mode,CMDSEARCHI_FINDFIRST);
+			setflag(mode, CMDSEARCHI_FINDFIRST);
 		}
 						// ファイル列挙に成功したため、内容一致を調べる -------
 		if ( ED->cmdsearch & CMDSEARCH_DIRECTORY ){ // dir 属性？
@@ -315,11 +315,11 @@ TCHAR *SearchFileInedMain(ESTRUCT *ED, TCHAR *str, int mode)
 		// 部分/roma一致
 		if ( ED->cmdsearch & (CMDSEARCH_FLOAT | CMDSEARCH_ROMA) ){
 			if ( ED->cmdsearch & CMDSEARCH_ROMA ){
-				if ( SearchRomaString(ff.cFileName, ED->Fword, ISEA_ROMA | ISEA_FLOAT | ISEA_FNAME, &ED->romahandle) == FALSE ){
+				if ( SearchRomaString(ff.cFileName, ED->Fword, ISEA_FLOAT, &ED->romahandle) == FALSE ){
 					continue;
 				}
 			}else{ // CMDSEARCH_FLOAT
-				if ( tstristr(ff.cFileName,ED->Fword) == NULL ) continue;
+				if ( tstristr(ff.cFileName, ED->Fword) == NULL ) continue;
 			}
 		}else{ // 前方一致
 			TCHAR bkchr, *nametail;
@@ -327,7 +327,7 @@ TCHAR *SearchFileInedMain(ESTRUCT *ED, TCHAR *str, int mode)
 			nametail = ff.cFileName + tstrlen(ED->Fword);
 			bkchr = *nametail;
 			*nametail = '\0';
-			if ( tstricmp(ff.cFileName,ED->Fword) != 0 ) continue;
+			if ( tstricmp(ff.cFileName, ED->Fword) != 0 ) continue;
 			*nametail = bkchr;
 		}
 											// 検索成功 -----------------------
@@ -339,12 +339,12 @@ TCHAR *SearchFileInedMain(ESTRUCT *ED, TCHAR *str, int mode)
 			if ( ff.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) continue;
 
 			buf[0] = '\0';
-			ExpandEnvironmentStrings(T("%PATHEXT%"),buf,
+			ExpandEnvironmentStrings(T("%PATHEXT%"), buf,
 					TSIZEOF(buf) - TSIZEOF(EXTPATHEXT) - 1);
-			if ( buf[0] != '\0' ) tstrcat(buf,T(";"));
-			tstrcat(buf,T(EXTPATHEXT));
-			MakeFN_REGEXP(&fn,buf);
-			result = FinddataRegularExpression(&ff,&fn);
+			if ( buf[0] != '\0' ) tstrcat(buf, T(";"));
+			tstrcat(buf, T(EXTPATHEXT));
+			MakeFN_REGEXP(&fn, buf);
+			result = FinddataRegularExpression(&ff, &fn);
 			FreeFN_REGEXP(&fn);
 			if ( result ){
 				break;
@@ -356,7 +356,7 @@ TCHAR *SearchFileInedMain(ESTRUCT *ED, TCHAR *str, int mode)
 		if ( ff.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ){
 			if ( IsRelativeDirectory(ff.cFileName) ) continue;
 			if ( !(ED->cmdsearch & CMDSEARCH_NOADDSEP) ){
-				tstrcat(ff.cFileName,T("\\"));
+				tstrcat(ff.cFileName, T("\\"));
 			}
 		}
 		break;
@@ -372,7 +372,7 @@ searchfail:
 
 PPXDLL TCHAR * PPXAPI SearchFileIned(ESTRUCT *ED, TCHAR *line, ECURSOR *cursor, int mode)
 {
-	TCHAR *p;
+	TCHAR *ptr;
 	int braket = BRAKET_NONE;
 	DWORD nwP;
 
@@ -386,38 +386,38 @@ PPXDLL TCHAR * PPXAPI SearchFileIned(ESTRUCT *ED, TCHAR *line, ECURSOR *cursor, 
 	}else{
 										// 範囲選択がされていない時の抽出処理 -
 		if ( cursor->start == cursor->end ){
-			braket = GetWordStrings(line,cursor);
+			braket = GetWordStrings(line, cursor);
 		}
 		line[cursor->end] = '\0';
 	}
 	nwP = cursor->start;
 #ifndef UNICODE
 	if ( (mode & CMDSEARCH_EDITBOX ) && (xpbug < 0) ){
-		CaretFixToW(line,&cursor->start);
-		CaretFixToW(line,&cursor->end);
+		CaretFixToW(line, &cursor->start);
+		CaretFixToW(line, &cursor->end);
 	}
 #endif
 	if ( mode & CMDSEARCHI_SAVEWORD ){
-		if ( braket ) setflag( mode,CMDSEARCHI_FINDBRAKET );
+		if ( braket ) setflag( mode, CMDSEARCHI_FINDBRAKET );
 		if ( ED->FnameP == NULL ) return NULL;
-		tstrcpy(ED->FnameP,line + nwP);
+		tstrcpy(ED->FnameP, line + nwP);
 	}
-	p = SearchFileInedMain(ED,line + nwP,mode);
+	ptr = SearchFileInedMain(ED, line + nwP, mode);
 
-	if ( p == NULL ) return NULL;	// 検索失敗
+	if ( ptr == NULL ) return NULL;	// 検索失敗
 									// 検索成功
 	if ( mode & CMDSEARCH_MULTI ){
-		if ( tstrchr(p,' ') != NULL ){	// 空白あり→ブラケット必要
+		if ( tstrchr(ptr, ' ') != NULL ){	// 空白あり→ブラケット必要
 			TCHAR *nline;
 
 			nline = line;
 			if ( braket == BRAKET_NONE ) *nline++ = '\"'; // ブラケット無し
-			tstrcpy(nline,p);
-			if ( braket != BRAKET_LEFTRIGHT ) tstrcat(nline,T("\"")); // 右ブラケット無し
-			p = line;
+			tstrcpy(nline, ptr);
+			if ( braket != BRAKET_LEFTRIGHT ) tstrcat(nline, T("\"")); // 右ブラケット無し
+			ptr = line;
 		}
 	}
-	return p;
+	return ptr;
 }
 
 /*-----------------------------------------------------------------------
@@ -431,9 +431,9 @@ PPXDLL TCHAR * PPXAPI SearchFileIned(ESTRUCT *ED, TCHAR *line, ECURSOR *cursor, 
 	2nd:削除した文字列
 ----------------------------------------------------------------------*/
 // テキストスタックに保存 -----------------------------------------------------
-PPXDLL void PPXAPI PushTextStack(TCHAR mode,TCHAR *text)
+PPXDLL void PPXAPI PushTextStack(TCHAR mode, TCHAR *text)
 {
-	TCHAR *p,*b;
+	TCHAR *p, *b;
 	int size;	// 保存に必要な大きさ
 
 	if ( !text ) return;
@@ -451,28 +451,28 @@ PPXDLL void PPXAPI PushTextStack(TCHAR mode,TCHAR *text)
 										// 容量チェック
 	if ( (TextStackSize - (p - Sm->TextStack)) < size ){
 		if ( b != NULL ){
-			memmove(Sm->TextStack,b,TSTROFF(p - b));
+			memmove(Sm->TextStack, b, TSTROFF(p - b));
 			p -= b - Sm->TextStack;
 		}else{
 			p = Sm->TextStack;
 		}
 	}
 	*p = (UTCHAR)(mode | B7);
-	tstrcpy(p + 1,text);
+	tstrcpy(p + 1, text);
 	*(p + size - 1) = 0;
 	FreePPx();
 }
 
 // テキストスタックから取り出す -----------------------------------------------
-PPXDLL void PPXAPI PopTextStack(TCHAR *mode,TCHAR *text)
+PPXDLL void PPXAPI PopTextStack(TCHAR *mode, TCHAR *text)
 {
-	TCHAR *ptr,*b;
+	TCHAR *ptr, *b;
 										// 末尾を捜す
 	UsePPx();
 	for ( b = ptr = Sm->TextStack ; *ptr ; ptr += tstrlen(ptr) + 1 ) b = ptr;
 	*mode = (*b) & (TCHAR)~B7;
 	if (*b){
-		tstrcpy(text,b + 1);
+		tstrcpy(text, b + 1);
 		*b = '\0';
 	}else{
 		*text = '\0';
@@ -480,18 +480,18 @@ PPXDLL void PPXAPI PopTextStack(TCHAR *mode,TCHAR *text)
 	FreePPx();
 }
 
-BOOL USEFASTCALL SelectEditStringsS(PPxEDSTRUCT *PES,TEXTSEL *ts,int mode)
+BOOL USEFASTCALL SelectEditStringsS(PPxEDSTRUCT *PES, TEXTSEL *ts, int mode)
 {
 	DWORD len;
 
-	len = SendMessage(PES->hWnd,WM_GETTEXT,EDITBUFSIZE,(LPARAM)ts->text);
+	len = SendMessage(PES->hWnd, WM_GETTEXT, EDITBUFSIZE, (LPARAM)ts->text);
 	if ( len >= EDITBUFSIZE ) return FALSE;		// 入りきらない
-	SendMessage(PES->hWnd,EM_GETSEL,(WPARAM)&ts->cursor.start,(LPARAM)&ts->cursor.end);
+	SendMessage(PES->hWnd, EM_GETSEL, (WPARAM)&ts->cursor.start, (LPARAM)&ts->cursor.end);
 	ts->cursororg = ts->cursor;
 #ifndef UNICODE
 	if ( xpbug < 0 ){						// XP bug 回避
-		CaretFixToA(ts->text,&ts->cursor.start);
-		CaretFixToA(ts->text,&ts->cursor.end);
+		CaretFixToA(ts->text, &ts->cursor.start);
+		CaretFixToA(ts->text, &ts->cursor.end);
 	}
 #endif
 	if ( (ts->cursor.start >= EDITBUFSIZE) || (ts->cursor.end >= EDITBUFSIZE) ){
@@ -503,7 +503,7 @@ BOOL USEFASTCALL SelectEditStringsS(PPxEDSTRUCT *PES,TEXTSEL *ts,int mode)
 		ts->word = ts->text + ts->cursor.start;
 		return TRUE;
 	}else{						// 範囲選択なし
-		TCHAR *top,*end;
+		TCHAR *top, *end;
 
 		top = end = ts->text + ts->cursor.start;
 		switch ( mode ){
@@ -515,7 +515,7 @@ BOOL USEFASTCALL SelectEditStringsS(PPxEDSTRUCT *PES,TEXTSEL *ts,int mode)
 				#endif
 				break;
 			case TEXTSEL_BACK:	// BS
-				top -= bchrlen(ts->text,top - ts->text);
+				top -= bchrlen(ts->text, top - ts->text);
 				break;
 			case TEXTSEL_WORD:	// Word
 				while( (UTCHAR)*end > ' ' ) end++;
@@ -530,40 +530,40 @@ BOOL USEFASTCALL SelectEditStringsS(PPxEDSTRUCT *PES,TEXTSEL *ts,int mode)
 		}
 		*end = 0;
 
-		SetEditSel(PES->hWnd,ts->text,top - ts->text,end - ts->text);
+		SetEditSel(PES->hWnd, ts->text, top - ts->text, end - ts->text);
 		ts->word = top;
 		return TRUE;
 	}
 }
 
-BOOL USEFASTCALL SelectEditStringsM(PPxEDSTRUCT *PES,TEXTSEL *ts,int mode)
+BOOL USEFASTCALL SelectEditStringsM(PPxEDSTRUCT *PES, TEXTSEL *ts, int mode)
 {
 	size_t line, topline, buflength;
-	LRESULT wLP,wBP;
+	LRESULT wLP, wBP;
 	TCHAR *destptr;
 	TCHAR tmpbuf[EDITBUFSIZE];
 	DWORD pos;
 #ifndef UNICODE
 	DWORD pos2;
 #endif
-	SendMessage(PES->hWnd,EM_GETSEL,
-			(WPARAM)&ts->cursor.start,(WPARAM)&ts->cursor.end);
+	SendMessage(PES->hWnd, EM_GETSEL,
+			(WPARAM)&ts->cursor.start, (WPARAM)&ts->cursor.end);
 	ts->cursororg = ts->cursor;
 									// 読み込み位置を決定 -----------------
 	if ( ts->cursor.start != ts->cursor.end ){			// 範囲選択あり
-		line = SendMessage(PES->hWnd,EM_LINEFROMCHAR,
-				(WPARAM)ts->cursor.start,0);
-		topline = SendMessage(PES->hWnd,EM_LINEFROMCHAR,
-				(WPARAM)ts->cursor.end,0);
+		line = SendMessage(PES->hWnd, EM_LINEFROMCHAR,
+				(WPARAM)ts->cursor.start, 0);
+		topline = SendMessage(PES->hWnd, EM_LINEFROMCHAR,
+				(WPARAM)ts->cursor.end, 0);
 	}else{						// 範囲選択なし
-		line = SendMessage(PES->hWnd,EM_LINEFROMCHAR,(WPARAM)-1,0);
+		line = SendMessage(PES->hWnd, EM_LINEFROMCHAR, (WPARAM)-1, 0);
 		if ( (mode == TEXTSEL_BACK) && line ) line--;
 		topline = line + 1;
 	}
 									// 行単位で読み込み -----------------------
 	destptr = ts->text;
 	buflength = EDITBUFSIZE;
-	wBP = wLP = SendMessage(PES->hWnd,EM_LINEINDEX,(WPARAM)line,0);
+	wBP = wLP = SendMessage(PES->hWnd, EM_LINEINDEX, (WPARAM)line, 0);
 	if ( (LONG_PTR)wLP >= 0 ) do {
 		size_t len;
 
@@ -610,20 +610,20 @@ BOOL USEFASTCALL SelectEditStringsM(PPxEDSTRUCT *PES,TEXTSEL *ts,int mode)
 	// 頭出し
 	pos = ts->cursor.start - wBP;
 #ifndef UNICODE
-	CaretFixToA(ts->text,&pos);
+	CaretFixToA(ts->text, &pos);
 #endif
 	if ( pos >= EDITBUFSIZE ) return FALSE;
 	destptr = ts->text + pos;
 	if ( ts->cursor.start < ts->cursor.end ){	// 範囲選択あり
 		pos = ts->cursor.end - ts->cursor.start;
 #ifndef UNICODE
-		CaretFixToA(destptr,&pos);
+		CaretFixToA(destptr, &pos);
 #endif
 		if ( (destptr + pos) >= (ts->text + EDITBUFSIZE) ) return FALSE;
 		*(destptr + pos) = '\0';
 		ts->word = destptr;
 	}else{						// 範囲選択なし
-		TCHAR *top,*end;
+		TCHAR *top, *end;
 
 		top = end = destptr;
 		switch ( mode ){
@@ -644,7 +644,7 @@ BOOL USEFASTCALL SelectEditStringsM(PPxEDSTRUCT *PES,TEXTSEL *ts,int mode)
 					top--;
 					if ( (ts->text < top) && ( *(top - 1) == 0xd ) ) top--;
 				}else{
-					top -= bchrlen(ts->text,top - ts->text);
+					top -= bchrlen(ts->text, top - ts->text);
 				}
 				break;
 			case TEXTSEL_WORD:	// Word
@@ -667,83 +667,83 @@ BOOL USEFASTCALL SelectEditStringsM(PPxEDSTRUCT *PES,TEXTSEL *ts,int mode)
 			pos = end - ts->text;
 			pos2 = top - ts->text;
 			if ( xpbug < 0 ){
-				CaretFixToW(ts->text,&pos);
-				CaretFixToW(ts->text,&pos2);
+				CaretFixToW(ts->text, &pos);
+				CaretFixToW(ts->text, &pos2);
 			}
-			SendMessage(PES->hWnd,EM_SETSEL,pos2 + wBP,pos + wBP);
+			SendMessage(PES->hWnd, EM_SETSEL, pos2 + wBP, pos + wBP);
 		#else
-			SendMessage(PES->hWnd,EM_SETSEL,
-					top - ts->text + wBP,end - ts->text + wBP);
+			SendMessage(PES->hWnd, EM_SETSEL,
+					top - ts->text + wBP, end - ts->text + wBP);
 		#endif
 		ts->word = top;
 	}
 	return TRUE;
 }
 
-BOOL SelectEditStrings(PPxEDSTRUCT *PES,TEXTSEL *ts,int mode)
+BOOL SelectEditStrings(PPxEDSTRUCT *PES, TEXTSEL *ts, int mode)
 {
 	BOOL result;
 
 	if ( PES->flags & PPXEDIT_TEXTEDIT ){
-		SendMessage(PES->hWnd,WM_SETREDRAW,FALSE,0);
-		result = SelectEditStringsM(PES,ts,mode);	// マルチライン用
+		SendMessage(PES->hWnd, WM_SETREDRAW, FALSE, 0);
+		result = SelectEditStringsM(PES, ts, mode);	// マルチライン用
 	}else{
-		SendMessage(PES->hWnd,WM_SETREDRAW,FALSE,0);
-		result = SelectEditStringsS(PES,ts,mode);	// 一行用
+		SendMessage(PES->hWnd, WM_SETREDRAW, FALSE, 0);
+		result = SelectEditStringsS(PES, ts, mode);	// 一行用
 	}
-	SendMessage(PES->hWnd,WM_SETREDRAW,TRUE,0);
+	SendMessage(PES->hWnd, WM_SETREDRAW, TRUE, 0);
 	return result;
 }
 
-void GetHeight(PPxEDSTRUCT *PES,HFONT hFont)
+void GetHeight(PPxEDSTRUCT *PES, HFONT hFont)
 {
 	HDC hDC;
 	HGDIOBJ hOldFont C4701CHECK;	//一時保存用
 	TEXTMETRIC tm;
 
 	hDC = GetWindowDC(PES->hWnd);
-	if ( hFont ) hOldFont = SelectObject(hDC,hFont);
-	GetTextMetrics(hDC,&tm);
-	if ( hFont ) SelectObject(hDC,hOldFont); // C4701ok
-	ReleaseDC(PES->hWnd,hDC);
+	if ( hFont ) hOldFont = SelectObject(hDC, hFont);
+	GetTextMetrics(hDC, &tm);
+	if ( hFont ) SelectObject(hDC, hOldFont); // C4701ok
+	ReleaseDC(PES->hWnd, hDC);
 
 	PES->fontY = tm.tmHeight;
 }
 
-void LineCursor(PPxEDSTRUCT *PES,DWORD mes)
+void LineCursor(PPxEDSTRUCT *PES, DWORD mes)
 {
 	POINT pos;
 	DWORD line;
 	HDC hDC;
 
 	if ( GetFocus() != PES->hWnd ) return;
-	line = CallWindowProc(PES->hOldED,PES->hWnd,EM_GETFIRSTVISIBLELINE,0,0);
+	line = CallWindowProc(PES->hOldED, PES->hWnd, EM_GETFIRSTVISIBLELINE, 0, 0);
 	GetCaretPos(&pos);
 	if ( (PES->caretY != pos.y) || (line != PES->caretLY) || (mes == WM_PAINT)){
 		HBRUSH hBrush;
 		RECT box;
 		int topbackup;
 
-		CallWindowProc(PES->hOldED,PES->hWnd,EM_GETRECT,0,(LPARAM)&box);
+		CallWindowProc(PES->hOldED, PES->hWnd, EM_GETRECT, 0, (LPARAM)&box);
 		if ( PES->exstyle & WS_EX_CLIENTEDGE ){
 			box.top++;
 			box.left++;
 		}
 
 		hDC = GetWindowDC(PES->hWnd);
-		hBrush = (HBRUSH)SendMessage(GetParent(PES->hWnd),WM_CTLCOLOREDIT,(WPARAM)hDC,(LPARAM)PES->hWnd);
+		hBrush = (HBRUSH)SendMessage(GetParent(PES->hWnd), WM_CTLCOLOREDIT, (WPARAM)hDC, (LPARAM)PES->hWnd);
 		topbackup = box.top;
 		box.top += PES->caretY + (PES->caretLY - line + 1) * PES->fontY - 1;
 		box.bottom = box.top + 1;
-		FillBox(hDC,&box,hBrush);
+		FillBox(hDC, &box, hBrush);
 
 		box.top = topbackup + pos.y + PES->fontY - 1;
 		box.bottom = box.top + 1;
 		hBrush = CreateSolidBrush(GetTextColor(hDC));
-		FillBox(hDC,&box,hBrush);
+		FillBox(hDC, &box, hBrush);
 		DeleteObject(hBrush);
 
-		ReleaseDC(PES->hWnd,hDC);
+		ReleaseDC(PES->hWnd, hDC);
 		PES->caretY = pos.y;
 		PES->caretLY = line;
 	}
@@ -754,17 +754,17 @@ void LineCursor(PPxEDSTRUCT *PES,DWORD mes)
 //-----------------------------------------------------------------------------
 // システムフックハンドラ
 //-----------------------------------------------------------------------------
-LRESULT CALLBACK CBTProc(int nCode,WPARAM wParam,LPARAM lParam)
+LRESULT CALLBACK CBTProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
 	if( nCode == HCBT_CREATEWND ){
 		TCHAR buf[MAX_PATH];
 
-		GetClassName((HWND)wParam,buf,TSIZEOF(buf));
-		if( tstricmp(buf,T("Edit")) == 0 ){
-			PPxRegistExEdit(NULL,(HWND)wParam,0,NULL,0,0,0);
+		GetClassName((HWND)wParam, buf, TSIZEOF(buf));
+		if( tstricmp(buf, T("Edit")) == 0 ){
+			PPxRegistExEdit(NULL, (HWND)wParam, 0, NULL, 0, 0, 0);
 		}
 	}
-	return CallNextHookEx(Sm->hhookCBT,nCode,wParam,lParam);
+	return CallNextHookEx(Sm->hhookCBT, nCode, wParam, lParam);
 }
 
 #pragma argsused

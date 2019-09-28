@@ -2267,6 +2267,7 @@ LRESULT WmComboCommand(HWND hWnd, WPARAM wParam, LPARAM lParam)
 			break;
 		}
 
+		case KCW_closealltabs:
 		case KCW_closetabs: {
 			int first = (short)LOWORD(lParam);
 			int last = (short)HIWORD(lParam);
@@ -2282,6 +2283,14 @@ LRESULT WmComboCommand(HWND hWnd, WPARAM wParam, LPARAM lParam)
 				if ( Combo.hWnd == BADHWND ) break;
 				tie.mask = TCIF_PARAM;
 				if ( TabCtrl_GetItem(hTabWnd, last, &tie) == FALSE ) break;
+				if ( LOWORD(wParam) == KCW_closetabs ){ // ñ¢ÉçÉbÉNPPCÇ…å¿íË
+					int baseindex = GetComboBaseIndex((HWND)tie.lParam);
+					if ( baseindex < 0 ) continue;
+					if ( Combo.base[baseindex].cinfo == NULL ) continue;
+					if ( IsTrue(Combo.base[baseindex].cinfo->ChdirLock) ){
+						continue;
+					}
+				}
 				PostMessage((HWND)tie.lParam, WM_CLOSE, 0, 0);
 			}
 			break;

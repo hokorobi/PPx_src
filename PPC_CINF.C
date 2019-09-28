@@ -41,14 +41,17 @@ void SendExtract(HWND hTargetWnd, const TCHAR *src, TCHAR *destbuf)
 	HANDLE hMap, hSendMap, hProcess;
 	TCHAR *param;
 	DWORD_PTR result;
+	DWORD mapsize;
 
+	mapsize = TSTRSIZE(src);
+	if ( mapsize < TSTROFF(CMDLINESIZE) ) mapsize = TSTROFF(CMDLINESIZE);
 	hMap = CreateFileMapping(INVALID_HANDLE_VALUE,
-			NULL, PAGE_READWRITE, 0, CMDLINESIZE, NULL);
+			NULL, PAGE_READWRITE, 0, mapsize, NULL);
 	if ( hMap == NULL ){
 		PPErrorBox(NULL, NULL, PPERROR_GETLASTERROR);
 		return;
 	}
-	param = MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, CMDLINESIZE);
+	param = MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, mapsize);
 	if ( param == NULL ){
 		CloseHandle(hMap);
 		PPErrorBox(NULL, NULL, PPERROR_GETLASTERROR);
@@ -61,6 +64,7 @@ void SendExtract(HWND hTargetWnd, const TCHAR *src, TCHAR *destbuf)
 	tstrcpy(param, src);
 	SendMessageTimeout(hTargetWnd, WM_PPXCOMMAND, K_EXTRACT, (LPARAM)hSendMap, SMTO_NORMAL, 10000, &result);
 	CloseHandle(hSendMap);
+	CloseHandle(hProcess);
 
 	tstrcpy(destbuf, param);
 	UnmapViewOfFile(param);
@@ -86,7 +90,7 @@ int GetInfoShowIndex(PPC_APPINFO *cinfo, int index)
 		hCWnd = cinfo->info.hWnd;
 	}else if ( index == -2 ){
 		hCWnd = hComboFocus;
-	}else if ( index == (LONG_PTR)-3 ){
+	}else if ( index == -3 ){
 		hCWnd = (HWND)SendMessage(cinfo->hComboWnd, WM_PPXCOMMAND,
 				KCW_getpairwnd, (LPARAM)hComboFocus);
 	}else{
@@ -956,31 +960,6 @@ void PPcSyncProperties(PPC_APPINFO *cinfo, const TCHAR *param)
 	}
 }
 
-void PPcHighlight(PPC_APPINFO *cinfo, const TCHAR *param) // ●1.1x試作品
-{
-	TCHAR buf[CMDLINESIZE];
-
-	if ( GetCommandParameter(&param, buf, TSIZEOF(buf)) == '\0' ){
-		if ( !cinfo->e.markC ){ // マーク無し→ハイライト解除
-			int n;
-
-			for ( n = 0 ; n < cinfo->e.cellIMax ; n++ ){
-				CEL(n).state = CEL(n).state & (BYTE)ECS_HLMASK;
-			}
-		}else{ // マーク有り→ハイライト設定
-			ENTRYCELL *cell;
-			int work;
-
-			InitEnumMarkCell(cinfo, &work);
-			while ( (cell = EnumMarkCell(cinfo, &work)) != NULL ){
-				if ( cell->state < ECS_NORMAL ) continue; // SysMsgやDeletedなのでだめ
-				cell->state = (cell->state & (BYTE)ECS_HLMASK) | (BYTE)(ECS_HLBIT * 2);
-			}
-		}
-		Repaint(cinfo);
-	}
-}
-
 // 改行使用可能なパラメータ取得
 void GetAdvGetParam(const TCHAR **param, TCHAR *dest, DWORD destlength)
 {
@@ -1300,7 +1279,7 @@ void PPvOptionCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 	}
 }
 
-void PPcFileCommand(PPC_APPINFO *cinfo, const TCHAR *param)
+void PPcFileCommand(PPC_APPINFO *cinfo, const TCHAR *param) // *ppcfile
 {
 	TCHAR mode[VFPS];
 	const TCHAR *optionptr = NULL;
@@ -1345,6 +1324,129 @@ void PPcFileCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 		}
 	}
 	PPcFileOperation(cinfo, mode, destpath, optionptr);
+}
+
+ERRORCODE RangeCommand(PPC_APPINFO *cinfo, const TCHAR *params) // *range
+{
+	#define MARKOFFSET -2
+	ENTRYINDEX start = NO_MARK_ID, end = NO_MARK_ID, index;
+	int mode = MARK_CHECK + MARKOFFSET; // 0< マーク関係、0>:highlight
+	TCHAR parambuf[CMDLINESIZE], paramtmp[VFPS], code;
+	const TCHAR *more, *opt, *param;
+
+	tstrcpy(parambuf, params);
+	for (;;){
+		TCHAR *ptr;
+		ptr = tstrchr(parambuf, ',');
+		if ( ptr == NULL ) break;
+		*ptr = ' ';
+	}
+	param = parambuf;
+
+	for ( ;; ){
+		index = NO_MARK_ID;
+		code = GetOptionParameter(&param, paramtmp, (TCHAR **)&more);
+		if ( code == '\0' ) break;
+		opt = (code == '-') ? paramtmp + 1 : paramtmp;
+		if ( tstricmp(opt, T("CURSOR")) == 0 ){
+			index = cinfo->e.cellN;
+		}else if ( Isdigit(*opt) ){
+			more = opt;
+			index = GetNumber(&more);
+		}else if ( tstricmp(opt, T("ALL")) == 0 ){
+			start = 0;
+			end = cinfo->e.cellIMax - 1;
+		}else if ( tstricmp(opt, T("FIRST")) == 0 ){
+			index = 0;
+			for (;;){
+				if ( !(CEL(index).attr & (ECA_THIS | ECA_PARENT | ECA_ETC)) &&
+					 (CEL(index).state >= ECS_NORMAL) ){
+					break;
+				}
+				index++;
+			}
+		}else if ( tstricmp(opt, T("FIRSTMARK")) == 0 ){
+			index = GetCellIndexFromCellData(cinfo, cinfo->e.markTop);
+		}else if ( tstricmp(opt, T("LAST")) == 0 ){
+			index = cinfo->e.cellIMax - 1;
+		}else if ( tstricmp(opt, T("LASTMARK")) == 0 ){
+			index = GetCellIndexFromCellData(cinfo, cinfo->e.markLast);
+		}else if ( tstricmp(opt, T("POINT")) == 0 ){
+			index = cinfo->e.cellPoint;
+		}else if ( tstricmp(opt, T("MARKED")) == 0 ){
+			start = ENDMARK_ID;
+		}else if ( tstricmp(opt, T("MARK")) == 0 ){
+			mode = MARK_CHECK + MARKOFFSET;
+		}else if ( tstricmp(opt, T("UNMARK")) == 0 ){
+			mode = MARK_REMOVE + MARKOFFSET;
+		}else if ( tstricmp(opt, T("REVERSEMARK")) == 0 ){
+			mode = MARK_REVERSE + MARKOFFSET;
+		}else if ( tstricmp(opt, T("HIGHLIGHT")) == 0 ){
+			if ( Isdigit(*more) ){
+				mode = GetNumber(&more);
+				if ( mode > ECS_HLMAX ) return ERROR_INVALID_PARAMETER;
+			}else{
+				mode = 1;
+			}
+		}else{
+			XMessage(NULL, NULL, XM_GrERRld, StrBadOption, paramtmp);
+			return ERROR_INVALID_PARAMETER;
+		}
+		if ( index >= 0 ){
+			if ( index >= cinfo->e.cellIMax ) return ERROR_INVALID_PARAMETER;
+			if ( start < 0 ){
+				start = index;
+			}else{
+				end = index;
+			}
+		}
+	}
+	if ( start == NO_MARK_ID ) return ERROR_INVALID_PARAMETER;
+	if ( end < 0 ) end = start;
+	if ( start > end ){
+		index = start;
+		start = end;
+		end = index;
+	}
+	if ( mode < 0 ){ // mark
+		ENTRYINDEX i;
+		ENTRYCELL *cell;
+
+		cinfo->MarkMask = MARKMASK_DIRFILE;
+		if ( start == ENDMARK_ID ){
+			if ( mode == MARK_CHECK + MARKOFFSET ) return NO_ERROR; // 何も起きない
+			// MARK_UNMARK / MARK_REVERSE →マークが全て消える
+			ClearMark(cinfo);
+			return NO_ERROR;
+		}
+		mode -= MARKOFFSET;
+		for ( i = start ; i <= end ; i++ ){
+			cell = &CEL(i);
+			if ( cell->state < ECS_NORMAL ) continue; // SysMsgやDeletedなのでだめ
+			CellMark(cinfo, i, mode);
+		}
+	}else{ // highlight
+		BYTE hldata;
+		ENTRYINDEX i;
+		ENTRYCELL *cell;
+		int work;
+
+		hldata = (BYTE)(mode * ECS_HLBIT);
+		if ( start == ENDMARK_ID ){
+			InitEnumMarkCell(cinfo, &work);
+			while ( (cell = EnumMarkCell(cinfo, &work)) != NULL ){
+				if ( cell->state < ECS_NORMAL ) continue; // SysMsgやDeletedなのでだめ
+				cell->state = (cell->state & (BYTE)ECS_HLMASK) | hldata;
+			}
+		}else{
+			for ( i = start ; i <= end ; i++ ){
+				cell = &CEL(i);
+				cell->state = (cell->state & (BYTE)ECS_HLMASK) | hldata;
+			}
+		}
+	}
+	Repaint(cinfo);
+	return NO_ERROR;
 }
 
 void PairRateCommand(PPC_APPINFO *cinfo, const TCHAR *param) // *pairrate
@@ -1645,6 +1747,7 @@ ERRORCODE CaptureWindowCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 				}
 			}else{
 				XMessage(NULL, NULL, XM_GrERRld, StrBadOption, paramtmp);
+				return ERROR_INVALID_PARAMETER;
 			}
 		}
 	}
@@ -2297,8 +2400,6 @@ ERRORCODE PPcGetIInfo_Command(PPC_APPINFO *cinfo, PPXAPPINFOUNION *uptr)
 			OnArcPathMode(cinfo);
 		}else if ( !tstrcmp(uptr->str, T("ENTRYTIP")) ){
 			PPcEntryTip(cinfo, param);
-		}else if ( !tstrcmp(uptr->str, T("HIGHLIGHT")) ){
-			PPcHighlight(cinfo, param);
 		}else if ( !tstrcmp(uptr->str, T("IE")) ){
 			PPcOCX(cinfo, param, OCX_IE);
 		}else if ( !tstrcmp(uptr->str, T("INSERTDIR")) ){
@@ -2331,6 +2432,8 @@ ERRORCODE PPcGetIInfo_Command(PPC_APPINFO *cinfo, PPXAPPINFOUNION *uptr)
 			PPcFileCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str, T("PPVOPTION")) ){
 			PPvOptionCommand(cinfo, param);
+		}else if ( !tstrcmp(uptr->str, T("RANGE")) ){
+			return RangeCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str, T("SENDTO")) ){
 			ExecSendTo(cinfo, param);
 		}else if ( !tstrcmp(uptr->str, T("SETMASKENTRY")) ){
@@ -2628,6 +2731,37 @@ DWORD_PTR USECDECL PPcGetIInfo(PPC_APPINFO *cinfo, DWORD cmdID, PPXAPPINFOUNION 
 			uptr->nums[0] = CEL(cinfo->e.cellN).f.nFileSizeLow;
 			uptr->nums[1] = CEL(cinfo->e.cellN).f.nFileSizeHigh;
 			break;
+
+		case PPXCMDID_GETREQHWND:
+			if ( uptr != NULL ){
+				switch ( uptr->str[0] ){
+					case '\0':
+						return (DWORD_PTR)cinfo->info.hWnd;
+					case 'A': {
+						PPXDOCKS *docks;
+						if ( cinfo->combo ){
+							if ( Combo.hAddressWnd != NULL ){
+								return (DWORD_PTR)Combo.hAddressWnd;
+							}
+							docks = &comboDocks;
+						}else{
+							docks = &cinfo->docks;
+						}
+						return (docks->t.hAddrWnd != NULL) ? (DWORD_PTR)docks->t.hAddrWnd : (DWORD_PTR)docks->b.hAddrWnd;
+					}
+					case 'F':
+						return (DWORD_PTR)cinfo->Tip.hTipWnd;
+					case 'I':
+						return (DWORD_PTR)cinfo->hSyncInfoWnd;
+					case 'P':
+						return (DWORD_PTR)hPropWnd;
+					case 'R':
+						return (hCommonLog != NULL) ? (DWORD_PTR)hCommonLog : (DWORD_PTR)Combo.Report.hWnd;
+					case 'T':
+						return (cinfo->hTreeWnd != NULL) ? (DWORD_PTR)cinfo->hTreeWnd : (DWORD_PTR)Combo.hTreeWnd;
+				}
+			}
+			return 0;
 
 		case PPXCMDID_ENTRYMSIZE: {
 			ENTRYCELL *cell;
@@ -2959,6 +3093,12 @@ DWORD_PTR USECDECL PPcGetIInfo(PPC_APPINFO *cinfo, DWORD cmdID, PPXAPPINFOUNION 
 
 		case PPXCMDID_SLOWMODE:
 			uptr->num = cinfo->SlowMode;
+			break;
+
+		case PPXCMDID_POINTINFO:
+			uptr->nums[0] = cinfo->e.cellPointType;
+			uptr->nums[1] = cinfo->e.cellPoint;
+			uptr->nums[2] = 0; // reserved(Y指定?)
 			break;
 
 		case PPXCMDID_SETSLOWMODE:

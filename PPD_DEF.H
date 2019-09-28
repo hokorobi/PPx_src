@@ -172,6 +172,7 @@ extern ENUMCUSTCACHESTRUCT enumcustcache;
 //================================================================ コマンド実行
 #define CmdFuncMaxLen	64	// *commane / %*function の名称最大値 + 1
 
+// Z->status
 #define ST_PATHFIX		B0	// 次の編集はパス補完が必要
 #define ST_SDIRREF		B1	// サブディレクトリを参照している
 #define ST_CHKSDIRREF	B2	// ST_SDIRREF の判定を済ませている
@@ -181,6 +182,7 @@ extern ENUMCUSTCACHESTRUCT enumcustcache;
 #define ST_USETREE		B6	// 部分編集のRefはツリー形式
 #define ST_EXECLOOP		B7	// 繰り返し実行中
 #define ST_EDITHIST		B8	// 一行編集のヒストリ指定有り
+#define ST_LONGRESULT	B9	// Z->LongResultLen の値が有効
 
 typedef struct tagOLDSRCSTRUCT {	// 入れ子解析時に使用する
 	const TCHAR *src;
@@ -203,7 +205,7 @@ typedef struct {
 	const TCHAR *src;		// 解析先頭
 	TCHAR *dst;				// 展開位置
 
-	ThSTRUCT ExtendDst;		// 展開内用の拡張保存領域
+	ThSTRUCT ExtendDst;		// 展開内容の拡張保存領域
 	ThSTRUCT StringVariable;	// 文字列変数領域
 
 	PPXCMDENUMSTRUCT IInfo;
@@ -216,15 +218,20 @@ typedef struct {
 	ERRORCODE result;		// 戻り値の保存
 	DWORD ExitCode;			// XEO_SEQUENTIAL 指定時の プロセス終了コード
 	DWORD command;			// CID_ // ※表示用展開はCID_FILE_EXEC限定
+	DWORD LongResultLen;	// dst の最大値 ( ST_LONGRESULT 有効時 )
 	int status;				// 状態保存フラグ (上記ST_ を使用)
 	int useppb;				// 専有している PPB の ID
 	int flag;				// 各種フラグ XEO_????
-	BOOL quotation;			// 関数モジュールのパラメータが " を使用中
 
-	struct EXECSTRUCT_Edit {	// 編集関連
-		TCHAR *ed;					// 編集開始位置(%!用)
-		TCHAR *EdBottom;			// 編集開始位置(%{用)
-		int   CsrBottom, CsrTop;		// カーソル／選択開始／終了位置(%|)
+	struct {
+		BOOL quotation;			// 関数モジュールのパラメータが " を使用中
+		DWORD off; // 関数の開始位置byte ※ 0:未使用 1-:開始位置 + 1
+	} func;
+
+	struct {	// 編集関連
+		int EdPartStart;		// %{ の位置
+		int EdOffset;			// 部分編集(%{ / %!)開始位置
+		int CsrStart, CsrEnd;	// カーソル／選択開始／終了位置(%|)
 
 		struct EXECSTRUCT_Cache {
 			const TCHAR *srcptr; // キャッシュ対象テキストのsrcの位置
@@ -298,6 +305,8 @@ extern const TCHAR *ZGetTitleName(EXECSTRUCT *Z);
 extern BOOL ZTinput(EXECSTRUCT *Z, TINPUT *tinput);
 extern void GetValue(EXECSTRUCT *Z, DWORD cmdID, TCHAR *dest);
 extern void ZStringVariable(EXECSTRUCT *Z, const TCHAR **src, int mode);
+extern BOOL StoreLongParam(EXECSTRUCT *Z,DWORD addlen);
+extern DWORD USEFASTCALL GetLongParamMaxLen(EXECSTRUCT *Z);
 
 extern const TCHAR HistType[];
 extern const TCHAR Title_ValueName[];
@@ -316,6 +325,7 @@ extern void GetWindowHashList(HMENU hMenuDest, DWORD *PopupID);
 //------------------------------------------------------------------ ppd_cmdl.c
 extern void GetQuotedParameter(LPCTSTR *commandline, TCHAR *param, const TCHAR *parammax);
 extern UTCHAR GetCommandParameter(LPCTSTR *commandline, TCHAR *param, size_t paramlen);
+extern void GetLfGetParam(const TCHAR **param, TCHAR *dest, DWORD destlength);
 
 //------------------------------------------------------------------ ppd_code.c
 extern INT_PTR GetDigitNumber(const TCHAR **ptr);
@@ -417,7 +427,7 @@ typedef struct {
 
 extern void DefCust(int mode);
 extern int CountHistory(WORD type);
-extern void LimitHistory(WORD type);
+extern BOOL LimitHistory(WORD type, DWORD addsize);
 extern DWORD USEFASTCALL GetCustDword(const TCHAR *name, DWORD defaultvalue);
 extern void LoadMessageTextTable(void);
 extern void USEFASTCALL MakeCustMemSharename(TCHAR *custsharename, int id);
@@ -426,9 +436,10 @@ extern void ReloadMessageText(void);
 
 //------------------------------------------------------------------ ppd_mdl.c
 extern int CommandModule(EXECSTRUCT *Z, const TCHAR *ptr);
-extern void FunctionModule(EXECSTRUCT *Z);
+extern void ExecuteFunction(EXECSTRUCT *Z);
 extern void FreePPxModule(void);
 extern void NestedFunction(EXECSTRUCT *Z);
+extern UTCHAR ZFixParameter(TCHAR **commandline);
 
 //------------------------------------------------------------------ ppd_menu.c
 #define MENUFLAG_SELECT		B0
@@ -496,6 +507,9 @@ extern UINT VTypeToCPlist[VTypeToCPlist_max];
 #define K_mouse K_internal // マウスによる操作(メニュー位置判定用)
 extern void GetPopMenuPos(HWND hWnd, POINT *pos, WORD key);
 extern HMODULE LoadSystemWinAPI(DWORD dllID, LOADWINAPISTRUCT *apis);
+extern int GetNowTime(TCHAR *text,int mode);
+extern BOOL PPRecvExecuteByWMCopyData(PPXAPPINFO *info, COPYDATASTRUCT *copydata);
+extern BOOL PPWmCopyData(PPXAPPINFO *info, COPYDATASTRUCT *copydata);
 
 //------------------------------------------------------------------ ppd_task.c
 extern void FixTask(void);
@@ -579,6 +593,19 @@ extern LOADWINAPISTRUCT OLEAUT32_Variant[];
 extern void (STDAPICALLTYPE *DVariantInit)(VARIANTARG * pvarg);
 extern HRESULT (STDAPICALLTYPE *DVariantClear)(VARIANTARG * pvarg);
 extern HRESULT (STDAPICALLTYPE *DVariantChangeType)(VARIANTARG * pvargDest, VARIANTARG *pvarSrc, USHORT wFlags, VARTYPE vt);
+
+extern BSTR (STDAPICALLTYPE *DSysAllocString)(const OLECHAR *);
+extern BSTR CreateBstringLenA(const char *string, int size);
+#define CreateBstringA(string) CreateBstringLenA(string, -1)
+#ifdef UNICODE
+#define CreateBstring(string) DSysAllocString(string)
+#define CreateBstringLen(string, size) DSysAllocStringLen(string, size)
+#else
+#define CreateBstring(string) CreateBstringA(string)
+#define CreateBstringLen(string, size) CreateBstringLenA(string, size)
+#endif
+
+extern HMODULE hOleaut32DLL;
 
 typedef struct {
 	DWORD value, mask;

@@ -85,6 +85,7 @@ Function の cmdID 割当て：記載がない限り、戻り値が 0 なら未実装
 #define PPXCMDID_EXTRACT		0x0402	// 指定文字列を展開して再格納
 #define PPXCMDID_FUNCTION		0x0403	// 未定義 %*function
 #define PPXCMDID_GETKEYNAME		0x0404	// key が示すキー名称をstrに出力
+#define PPXCMDID_LONG_EXTRACT	0x0405	// PPXCMDID_EXTRACT のover CMDLINESIZE
 
 #define PPXCMDID_MENUONMENU		0x0700	// メニュー上のメニューのトリガ
 #define PPXCMDID_ADDEXMENU		0x0701	// ポップアップ用追加メニュー(?xxx)生成
@@ -159,12 +160,19 @@ typedef struct {
 #define PPXCMDID_SYNCVIEW		0x0860	// 連動ビュー状態
 //#define PPXCMDID_SYNCINFO		0x0861	// 連動情報表示
 #define PPXCMDID_SLOWMODE		0x0862	// 低速モード
+#define PPXCMDID_POINTINFO		0x0863	// マウスカーソルが示す場所の情報 type,index/X,Y
 // 選択情報 8x(他使用済み)
 #define PPXCMDID_CSRINDEX		0x0880	// 該当エントリのカーソルindex(PPc)
-#define PPXCMDID_CSRX			0x0888	// 該当エントリのカーソル X 位置(PPv)
-#define PPXCMDID_CSRY			0x0889	// 該当エントリのカーソル Y 位置(PPv)
-#define PPXCMDID_CSRRECT		0x088f	// 該当エントリのカーソル の矩形(x, y, l, w, スクリーン座標)
+#define PPXCMDID_CSRX			0x0888	// カーソル X 位置(PPv ※現在未使用)
+#define PPXCMDID_CSRY			0x0889	// カーソル Y 位置(PPv ※現在未使用)
+#define PPXCMDID_CSRLOCATE		0x088e	// カーソル位置 (x, y, w, h)
+		// PPc x,y カーソル位置		w,h
+		// PPv x,y カーソル位置		w,h 選択位置?
+		// PPe x,y カーソル・選択位置
 
+#define PPXCMDID_CSRRECT		0x088f	// メニュー表示用座標情報 (x, y, w, h)
+		//	x,y メニュー表示スクリーン座標(ほぼ PPXCMDID_POPUPPOS)
+		//	w,h PPc:エントリの幅、高さ PPv,PPe:基準フォントサイズ ※PPe x=1固定
 // 選択物情報
 // PPc
 #define PPXCMDID_CSRATTR		0x0900	// 該当エントリの属性(GetFileAttributes
@@ -245,6 +253,7 @@ typedef struct {
 #define PPXCMDID_CSRMARKLAST	0x0a86	// 最後のマークエントリ
 //#define PPXCMDID_CSRSETX		0x0a88	// 該当エントリの X 位置(PPv)
 //#define PPXCMDID_CSRSETY		0x0a89	// 該当エントリの Y 位置(PPv)
+#define PPXCMDID_CSRSETLOCATE	0x0a8e	// カーソル位置 (x, y, w, h)
 
 #define PPXCMDID_ENTRYMARKFIRST	0x0a93	// 最初のマークエントリ
 #define PPXCMDID_ENTRYMARKNEXT	0x0a94	// 次のマークエントリ
@@ -281,6 +290,7 @@ typedef struct {
 #define PPXCMDID_REPORTSEARCH_FDATA		0x0c07 // 検索結果を通知(FINDDATA)
 #define PPXCMDID_GETWNDVARIABLEDATA 0x0c10  // 窓別特殊環境変数の値を取得
 #define PPXCMDID_SETWNDVARIABLEDATA 0x0c11  // 窓別特殊環境変数の値を設定
+#define PPXCMDID_LONG_RESULT		0x0c12  // CMDLINESIZE を越える結果の受付
 
 
 //## 0xff000～0xfffff:	内部用
@@ -317,6 +327,7 @@ struct tagPPXAPPINFOW;
 
 typedef union {
 	char str[1];
+	WCHAR strW[1];
 	WORD key;
 	DWORD num;
 	DWORD nums[1];
@@ -374,7 +385,21 @@ typedef struct {	// %F で使用する構造体
 	TCHAR dest[VFPS];
 } PPXCMD_F;
 
+#define SetLongResult(ppxa, pxs, text) \
+	if ( 1 == (ppxa)->Function((ppxa), PPXCMDID_LONG_RESULT, (text)) ){ \
+		(pxs).command->resultstring[0] = '\0'; \
+	}else{ \
+		if ( wcslen(text) < CMDLINESIZE ){ \
+			wcscpy((pxs).command->resultstring, text); \
+		}else{ \
+			wcscpy((pxs).command->resultstring, L"<length over>"); \
+		} \
+	}
+
 #define PPXRCDATA_CUSTOMIZE_LIST 10601 // モジュール毎の追加設定テキスト
+#define TIMERID_TIMERMODULE 0xbf00 // - 0xbfff // timer module で使用
+#define TIMERID_USER_MIN 0xC000
+#define TIMERID_USER_MAX 0xDFFF
 //===================================================================その他定数
 /*-----------------------------------------------------------------------------
 	PPXCOMMAND_WM : PPx の RegisterWindowMessage 用文字
@@ -467,8 +492,8 @@ extern PPXDLL BOOL PPXAPI ThCatStringA(ThSTRUCT *TH, const char *data);
 #endif
 extern PPXDLL BOOL PPXAPI ThSetString(ThSTRUCT *TH, const TCHAR *name, const TCHAR *str);
 extern PPXDLL TCHAR * PPXAPI ThAllocString(ThSTRUCT *TH, const TCHAR *name, SIZE32_T strsize);
-extern PPXDLL const TCHAR * PPXAPI ThGetString(ThSTRUCT *TH, const TCHAR *name, TCHAR *str, SIZE32_T strbufsize);
-extern PPXDLL BOOL PPXAPI ThEnumString(ThSTRUCT *TH, int index, TCHAR *name, TCHAR *str, SIZE32_T strbufsize);
+extern PPXDLL const TCHAR * PPXAPI ThGetString(ThSTRUCT *TH, const TCHAR *name, TCHAR *str, SIZE32_T strlength);
+extern PPXDLL BOOL PPXAPI ThEnumString(ThSTRUCT *TH, int index, TCHAR *name, TCHAR *str, SIZE32_T strlength);
 
 // PP_ExtractMacro 内のThGetString (%so) で取得可能な文字列
 #define StringVariable_Command_Title "title"		// %" の内容
@@ -713,14 +738,14 @@ extern PPXDLL BOOL PPXAPI PPxHookEdit(int local);
 //======================================================== 外部プロセス実行関連
 //------------------------------ 実行関係のオプション( %O )
 //						 0         1         2         3
-//						 0123456789012345678901234567890
-#define XEO_STRINGS		"ABbgcCeHhEOsRrTWpDuPIiNSqxndalv"
+//						 012345678 9012345678901234567890
+#define XEO_STRINGS		"ABbgcCeH\6EOsRrTWpDuPIiNSqxndalv"
+#define XEO_STRLENGTH	31 // \0 除く
 
 // マクロ文字展開制御
 #define XEO_DIRWILD		B0	// A:ディレクトリの末尾を \*.*
 #define XEO_NOEXECMARK	B12	// R: r オプションを無効にする
 #define XEO_EXECMARK	B13	// r:マーク全てを対象
-#define XEO_EXTRACTEXEC	B9	// E:展開時に *command を実行する
 #define XEO_DISPONLY	B17	// D:メニュー表示用処理
 #define XEO_UTF8		B18	// u:レスポンスファイル等でutf-8を使用する
 //#define XEO_PATHLHA		//  :UNLHA32.DLL向けに先頭「-」を変換
@@ -730,8 +755,10 @@ extern PPXDLL BOOL PPXAPI PPxHookEdit(int local);
 #define XEO_INRETURN	B5	// C:改行をパラメータに含める
 //#define XEO_NOEDITR	B6	// e:連続実行時に編集しない
 //#define XEO_NOHISTALL	B7	// H:全体をヒストリに保存しない
-//#define XEO_NOHIST	B8	// h:部分を残さない
 #define XEO_NOEDIT		B22	// N:編集しない
+// PP_ExtractMacro の extract パラメータ使用時の動作
+#define XEO_EXTRACTLONG	B8	// -: LONGEXTRACTPARAM を使用している
+#define XEO_EXTRACTEXEC	B9	// E:展開時に *command を実行する
 
 // ファイル実行時制御
 //起動時ウィンドウ
@@ -780,8 +807,22 @@ extern PPXDLL BOOL PPXAPI CheckExebin(const TCHAR *path, int type);
 extern PPXDLL HANDLE PPXAPI PPxShellExecute(HWND hwnd, LPCTSTR lpOperation, LPCTSTR lpFile, LPCTSTR lpParameters, LPCTSTR lpDirectory, int flag, TCHAR *ErrMsg);
 
 //================================================================== マクロ関連
-#define CMDLINESIZE 0x400		// コマンドラインの大きさ
-#define MAXCMDLINESIZE 0x8000	// OSが受付可能なコマンドラインの最大サイズ
+#define CMDLINESIZE 0x400		// コマンドラインの文字数
+#define MAXCMDLINESIZE 0x8000	// OSが受付可能なコマンドラインの最大文字数
+#define CMDEXE_LENGTH 8000		// CME.EXE の受付可能な文字数
+
+typedef union tagLONGEXTRACTPARAM { // XEO_EXTRACTLONG が有効のときに使用
+	TCHAR text[CMDLINESIZE]; // CMDLINESIZE を越えない場合の保存先
+	struct { // 戻り値が ERROR_PARTIAL_COPY のときに使用する
+		union tagLONGEXTRACTPARAM *id; // 自分自身を示すポインタ(union有効id)
+		ThSTRUCT th; // 展開先
+	} longtext;
+} LONGEXTRACTPARAM;
+#define PP_InitLongParam(param) (((LONGEXTRACTPARAM *)(param))->longtext.id = ((LONGEXTRACTPARAM *)(param)))
+#define PP_GetLongParamRAW(param) ((TCHAR *)((LONGEXTRACTPARAM *)(param))->longtext.th.bottom)
+#define PP_GetLongParam(param, result) ( ((result) != ERROR_PARTIAL_COPY) ? (param) : PP_GetLongParamRAW(param) )
+#define PP_FreeLongParamRAW(param) {ThFree(&((LONGEXTRACTPARAM *)(param))->longtext.th);}
+#define PP_FreeLongParam(param, result) {if ( (result) == ERROR_PARTIAL_COPY ) PP_FreeLongParamRAW(param);}
 
 extern PPXDLL void PPXAPI PPxRegGetIInfo(PPXAPPINFO *ptr);
 extern PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd, PPXAPPINFO *ParentInfo, POINT *pos, const TCHAR *param, TCHAR *extract, int flag);
@@ -1273,7 +1314,7 @@ extern PPXDLL TCHAR * PPXAPI GetToolBarCmd(HWND hToolbarWnd, ThSTRUCT *thCmd, UI
 #define CloseToolBar(hWnd) DestroyWindow(hWnd)
 
 //========================================================= 各種PPxのための処理
-extern PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd, WPARAM wParam, WORD key);
+extern PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd, LPARAM lParam, WORD key);
 extern PPXDLL LRESULT PPXAPI PPxCommonExtCommand(WORD key, WPARAM wParam);
 
 // X_win の設定内容
@@ -1306,7 +1347,7 @@ extern PPXDLL void PPXAPI PPcOldPath(INT_PTR RegNo, DWORD join, TCHAR *str);
 extern PPXDLL HWND PPXAPI PPxCombo(HWND hWnd);
 
 //-------------------------------------------------------------------- PPV 関連
-// B16 以降はPPv内部で使用
+// B16-B23 はPPv内部で使用
 #define PPV_DISABLEBOOT		B0	// PPvが無ければそのまま(指定なければ起動)
 #define PPV_NOFOREGROUND	B1	// PPvを前面にしない
 #define PPV_NOENSURE		B2	// 必ず表示しなくてもよい(連動表示向け設定)
@@ -1314,6 +1355,7 @@ extern PPXDLL HWND PPXAPI PPxCombo(HWND hWnd);
 #define PPV_BOOTID			B4	// B24～B31に使用するPPvのID(ASCII)あり
 #define PPV_HEADVIEW		B5	// 途中まで読んで表示(PPV_NOENSUREと併用時)
 #define PPV_SYNCVIEW		B6	// 連動表示設定
+#define PPV_SETPARENTWND	B7	// hWnd を PPv に親として登録(-parent)
 extern PPXDLL BOOL PPXAPI PPxView(HWND hWnd, const TCHAR *param, int flags);
 extern PPXDLL int PPXAPI PPvViewName(TCHAR *param);
 

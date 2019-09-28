@@ -21,7 +21,9 @@
 #endif
 
 BOOL EditExtractText(EXECSTRUCT *Z);
-BOOL EnumEntries(EXECSTRUCT *Z, const TCHAR *extract);
+BOOL EnumEntries(EXECSTRUCT *Z);
+void ZInit(EXECSTRUCT *Z);
+DWORD USEFASTCALL GetLongParamMaxLen(EXECSTRUCT *Z);
 
 const TCHAR HistType[] = T("gnhdcfsmpveuUxX");	// ヒストリ種類を表わす文字 ※ R, O は別の用途で使用中
 #define HistType_GENERAL 0 // g 相当
@@ -30,6 +32,8 @@ const TCHAR HistType[] = T("gnhdcfsmpveuUxX");	// ヒストリ種類を表わす文字 ※ R,
 const TCHAR ExecuteDefaultTitle[] = MES_TEXE;
 const TCHAR Title_ValueName[] = T(StringVariable_Command_Title);
 const TCHAR ResponseName_ValueName[] = T(StringVariable_Command_Response);
+
+#define GetDestOffset(Z) (((Z)->ExtendDst.top / sizeof(TCHAR)) + ((Z)->dst - (Z)->DstBuf))
 
 #ifndef GW_ENABLEDPOPUP
 #define GW_ENABLEDPOPUP 6
@@ -98,7 +102,7 @@ BOOL GetEditMode(const TCHAR **param, TINPUT_EDIT_OPTIONS *options)
 
 	p = tstrchr(HistType, **param);
 	if ( (p == NULL) || (*p == '\0') ){
-		XMessage(NULL,NULL, XM_GrERRld, T("option error"));
+		XMessage(NULL, NULL, XM_GrERRld, T("option error"));
 		return FALSE;
 	}
 
@@ -177,6 +181,74 @@ void LineEscape(EXECSTRUCT *Z) // %b 行末エスケープ・文字挿入
 			c = (TCHAR)GetNumber(&Z->src);
 			if ( c != 0 ) *Z->dst++ = c;
 			break;
+	}
+}
+
+BOOL USEFASTCALL ZExecAndCheckError(EXECSTRUCT *Z) // %&
+{
+	setflag(Z->flag, XEO_SEQUENTIAL);
+	if ( Z->flag & XEO_DISPONLY ){		// 表示のみ
+		*Z->dst++ = ':';
+		return FALSE;
+	}				// 実行
+	ZExec(Z);
+	if ( Z->result != NO_ERROR ) return FALSE;
+	if ( Z->ExitCode != 0 ){
+		Z->result = ERROR_CANCELLED;
+		return FALSE;
+	}
+	ZInit(Z);
+	return TRUE;
+}
+
+void USEFASTCALL ZStringOnDir(EXECSTRUCT *Z) // %S
+{
+	if ( !(Z->status & ST_CHKSDIRREF) ){ // 属性判定をしていないならここで。
+		if ( PPxEnumInfoFunc(Z->Info, PPXCMDID_ENUMATTR, Z->dst, &Z->IInfo) &&
+			(*(DWORD *)Z->dst & FILE_ATTRIBUTE_DIRECTORY) ){
+			setflag(Z->status, ST_SDIRREF | ST_CHKSDIRREF);
+		}else{
+			setflag(Z->status, ST_CHKSDIRREF);
+		}
+	}
+
+	if ( SkipSpace(&Z->src) == '\"' ) Z->src++;
+	while ( *Z->src && (*Z->src != '\"') ){
+		if ( Z->status & ST_SDIRREF ){ // サブディレクトリがあるときだけ複写
+			*Z->dst++ = *Z->src++;
+		}else{
+			Z->src++;
+		}
+	}
+	if ( *Z->src == '\"' ) Z->src++;
+}
+
+void USEFASTCALL ZAddSeparator(EXECSTRUCT *Z){	// "%\"
+	TCHAR *buftop;
+
+	setflag(Z->status, ST_PATHFIX);
+	buftop = Z->DstBuf;
+#ifndef UNICODE
+	if ( (Z->command >= CID_USERNAME) || (Z->func.off != 0) ){
+		buftop = Z->dst;
+		while ( buftop > Z->DstBuf ){
+			if ( *(buftop - 1) == '\0' ) break;
+			buftop--;
+		}
+	}
+#endif
+	if ( Z->dst > buftop ){
+		UTCHAR c;
+
+		c = (UTCHAR)*(Z->dst - 1);
+#ifdef UNICODE
+		if ( (c  > ' ') && (c != '\"') && (c != '\\') ) *Z->dst++ = '\\';
+#else
+		if ( (c  > ' ') && (c != '\"') ){
+			CatPath(NULL, buftop, NilStr);
+			Z->dst += tstrlen(Z->dst);
+		}
+#endif
 	}
 }
 
@@ -273,7 +345,7 @@ void GetFmacroString(DWORD flag, TCHAR *src, TCHAR *dest)
 				TCHAR *p, *q, *r;
 				int mode;
 
-				p = VFSGetDriveType(src, &mode,NULL);
+				p = VFSGetDriveType(src, &mode, NULL);
 				if ( p != NULL ){
 					if ( mode == VFSPT_DRIVE ){
 						*p = '\0';
@@ -309,7 +381,7 @@ void GetFmacroString(DWORD flag, TCHAR *src, TCHAR *dest)
 			*(lastentry + FindExtSeparator(lastentry)) = '\0';
 		}
 	}
-	if ( flag & FMOPT_LASTSEPARATOR ) CatPath(NULL, src,NilStr);
+	if ( flag & FMOPT_LASTSEPARATOR ) CatPath(NULL, src, NilStr);
 
 	if ( !(flag & FMOPT_NOBLANKET) &&
 		 ((flag & FMOPT_BLANKET) || tstrchr(src, ' ') || tstrchr(src, ',')) ){
@@ -495,7 +567,7 @@ BOOL USEFASTCALL MenuCmd(EXECSTRUCT *Z)
 		}
 
 		if ( (*(cid + 2) != ':') ?
-				(PP_GetExtCommand(def, cid + 1, param,NULL) == PPEXTRESULT_FILE)
+				(PP_GetExtCommand(def, cid + 1, param, NULL) == PPEXTRESULT_FILE)
 			  : (NO_ERROR == GetCustTable(cid + 3, def, param, TSTROFF(CMDLINESIZE)))
 		){
 			const TCHAR *newsrc;
@@ -517,7 +589,7 @@ BOOL USEFASTCALL MenuCmd(EXECSTRUCT *Z)
 					newsrc += sizeof(WORD) / sizeof(TCHAR);
 				}
 			}
-			BackupSrc(Z,newsrc);
+			BackupSrc(Z, newsrc);
 		}else{
 			Z->result = ERROR_NO_MORE_ITEMS;
 		}
@@ -530,31 +602,56 @@ void ExtractPPxCall(HWND hTargetWnd, EXECSTRUCT *Z, const TCHAR *macroparam)
 {
 	DWORD pid;
 	HANDLE hMap, hSendMap, hProcess;
-	TCHAR *param;
+	TCHAR *mapptr;
+	DWORD srclen, dstlen, mapsize, offlen;
+
+	srclen = tstrlen32(macroparam) + 1;
+	dstlen = GetLongParamMaxLen(Z);
+	if ( dstlen <= CMDLINESIZE ) {
+		offlen = 0;
+	}else{
+		DWORD maxdest;
+
+		offlen = sizeof(DWORD) / sizeof(TCHAR);
+		maxdest = (WinType >= WINTYPE_7) ? 4 * MB / sizeof(TCHAR) : 512 * KB / sizeof(TCHAR);
+		if ( dstlen > maxdest ) dstlen = maxdest;
+	}
+	srclen += offlen;
+	mapsize = max(srclen, dstlen) * sizeof(TCHAR);
+	if ( mapsize < TSTROFF(CMDLINESIZE) ) mapsize = TSTROFF(CMDLINESIZE);
 
 	hMap = CreateFileMapping(INVALID_HANDLE_VALUE,
-				NULL, PAGE_READWRITE, 0, TSTROFF(CMDLINESIZE),NULL);
+			NULL, PAGE_READWRITE, 0, mapsize, NULL);
 	if ( hMap == NULL ){
-		PPErrorBox(NULL,NULL, PPERROR_GETLASTERROR);
+		PPErrorBox(Z->hWnd, NULL, PPERROR_GETLASTERROR);
 		return;
 	}
-	param = MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, TSTROFF(CMDLINESIZE));
-	if ( param == NULL ){
+	mapptr = MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, mapsize);
+	if ( mapptr == NULL ){
 		CloseHandle(hMap);
-		PPErrorBox(NULL,NULL, PPERROR_GETLASTERROR);
+		PPErrorBox(Z->hWnd, NULL, PPERROR_GETLASTERROR);
 		return;
 	}
 	GetWindowThreadProcessId(hTargetWnd, &pid);
 	hProcess = OpenProcess(PROCESS_DUP_HANDLE, FALSE, pid);
 	DuplicateHandle(GetCurrentProcess(), hMap,
-				hProcess, &hSendMap, 0, FALSE, DUPLICATE_SAME_ACCESS);
-	tstrcpy(param, macroparam);
-	SendMessage(hTargetWnd, WM_PPXCOMMAND, K_EXTRACT, (LPARAM)hSendMap);
+			hProcess, &hSendMap, 0, FALSE, DUPLICATE_SAME_ACCESS);
+	if ( dstlen > CMDLINESIZE ) *(DWORD *)mapptr = dstlen;
+	tstrcpy(mapptr + offlen, macroparam);
+	SendMessage(hTargetWnd, WM_PPXCOMMAND, TMAKEWPARAM(K_EXTRACT, offlen), (LPARAM)hSendMap);
 	CloseHandle(hSendMap);
+	CloseHandle(hProcess);
 
-	tstrcpy(Z->dst, param);
-	Z->dst += tstrlen(Z->dst);
-	UnmapViewOfFile(param);
+	dstlen = tstrlen32(mapptr);
+	if ( dstlen >= CMDLINESIZE ){
+		if ( IsTrue(StoreLongParam(Z, dstlen)) ){
+			ThCatString(&Z->ExtendDst, mapptr);
+		}
+	}else{
+		tstrcpy(Z->dst, mapptr);
+		Z->dst += dstlen;
+	}
+	UnmapViewOfFile(mapptr);
 	CloseHandle(hMap);
 	return;
 }
@@ -681,7 +778,7 @@ BOOL CreateResponseFile(EXECSTRUCT *Z)
 		writebom = TRUE;
 	}
 
-	if ( ThGetString(&Z->StringVariable,ResponseName_ValueName, Z->dst, VFPS) != NULL ){ // 実行(作成済み)
+	if ( ThGetString(&Z->StringVariable, ResponseName_ValueName, Z->dst, VFPS) != NULL ){ // 実行(作成済み)
 		Z->dst += tstrlen(Z->dst);
 		while ( Isalpha(*Z->src) ) Z->src++; // 書式設定をスキップ
 		return TRUE;
@@ -732,18 +829,19 @@ BOOL CreateResponseFile(EXECSTRUCT *Z)
 
 										// 実行(新規作成)
 	MakeTempEntry(MAX_PATH, Z->dst, FILE_ATTRIBUTE_NORMAL);
-	hFile = CreateFile(Z->dst, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
-			NULL, CREATE_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+	hFile = CreateFile(Z->dst, GENERIC_WRITE,
+			FILE_SHARE_READ | FILE_SHARE_WRITE,
+			NULL, CREATE_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if ( hFile == INVALID_HANDLE_VALUE ){
 		Z->result = GetLastError();
 		return FALSE;
 	}
 	PPxInfoFunc(Z->Info, PPXCMDID_GETTMPFILENAME, Z->dst);
-	ThSetString(&Z->StringVariable,ResponseName_ValueName, Z->dst);
+	ThSetString(&Z->StringVariable, ResponseName_ValueName, Z->dst);
 	if ( tstrchr(Z->dst, ' ') == NULL ){
 		Z->dst += tstrlen(Z->dst);
 	}else{
-		Z->dst += wsprintf(Z->dst, T("\"%s\""), ThGetString(&Z->StringVariable,ResponseName_ValueName,NULL, 0));
+		Z->dst += wsprintf(Z->dst, T("\"%s\""), ThGetString(&Z->StringVariable, ResponseName_ValueName, NULL, 0));
 	}
 	buf[0] = '\"';
 
@@ -751,9 +849,9 @@ BOOL CreateResponseFile(EXECSTRUCT *Z)
 
 	if ( writebom ){
 		if ( codepage == CP_PPX_UCF2 ){
-			WriteFile(hFile, UCF2HEADER, UCF2HEADERSIZE, &size,NULL);
+			WriteFile(hFile, UCF2HEADER, UCF2HEADERSIZE, &size, NULL);
 		}else{
-			WriteFile(hFile, UTF8HEADER, UTF8HEADERSIZE, &size,NULL);
+			WriteFile(hFile, UTF8HEADER, UTF8HEADERSIZE, &size, NULL);
 		}
 	}
 
@@ -793,27 +891,27 @@ BOOL CreateResponseFile(EXECSTRUCT *Z)
 		}
 		#ifdef UNICODE
 			if ( codepage != CP_PPX_UCF2 ){
-				if ( 0 == WideCharToMultiByteU8(codepage, 0, p, -1, bufA, sizeof(bufA),NULL,NULL) ){
+				if ( 0 == WideCharToMultiByteU8(codepage, 0, p, -1, bufA, sizeof(bufA), NULL, NULL) ){
 					strcpy(bufA, "<long>");
 				}
-				if ( WriteFile(hFile, bufA, strlen32(bufA), &size,NULL) == FALSE ) break;
-				if ( WriteFile(hFile, "\r\n", 2, &size,NULL) == FALSE ) break;
+				if ( WriteFile(hFile, bufA, strlen32(bufA), &size, NULL) == FALSE ) break;
+				if ( WriteFile(hFile, "\r\n", 2, &size, NULL) == FALSE ) break;
 			}else{
-				if ( WriteFile(hFile, p, TSTRLENGTH32(p), &size,NULL) == FALSE ) break;
-				if ( WriteFile(hFile, L"\r\n", 4, &size,NULL) == FALSE ) break;
+				if ( WriteFile(hFile, p, TSTRLENGTH32(p), &size, NULL) == FALSE ) break;
+				if ( WriteFile(hFile, L"\r\n", 4, &size, NULL) == FALSE ) break;
 			}
 		#else
 			if ( codepage == CP_UTF8 ){
 				WCHAR bufW[VFPS];
 
 				AnsiToUnicode(p, bufW, TSIZEOF(bufW));
-				if ( 0 == WideCharToMultiByteU8(codepage, 0, bufW, -1, buf + 1, sizeof(buf) - 2,NULL,NULL) ){
+				if ( 0 == WideCharToMultiByteU8(codepage, 0, bufW, -1, buf + 1, sizeof(buf) - 2, NULL, NULL) ){
 					strcpy(buf + 1, "<long>");
 				}
 				p = buf + 1;
 			}
-			if ( WriteFile(hFile, p, strlen(p), &size,NULL) == FALSE ) break;
-			if ( WriteFile(hFile, "\r\n", 2, &size,NULL) == FALSE ) break;
+			if ( WriteFile(hFile, p, strlen(p), &size, NULL) == FALSE ) break;
+			if ( WriteFile(hFile, "\r\n", 2, &size, NULL) == FALSE ) break;
 		#endif
 		if ( PPxEnumInfoFunc(Z->Info, PPXCMDID_NEXTENUM, buf + 1, &Z->IInfo)== 0){
 			break;
@@ -828,7 +926,7 @@ const TCHAR *ZGetTitleName(EXECSTRUCT *Z)
 {
 	const TCHAR *title;
 
-	title = ThGetString(&Z->StringVariable, Title_ValueName,NULL, 0);
+	title = ThGetString(&Z->StringVariable, Title_ValueName, NULL, 0);
 	if ( title == NULL ) title = MessageText(ExecuteDefaultTitle);
 	return title;
 }
@@ -865,49 +963,6 @@ BOOL ZTinput(EXECSTRUCT *Z, TINPUT *tinput)
 	}
 	return TRUE;
 }
-
-#if 0
-HWND GetWindowAloneOnCombo(const TCHAR *ID)
-{
-	HWND hTargetWnd = Sm->ppc.hComboWnd[ID[2] - 'A'];
-	HWND hWnd;
-
-	if ( (hTargetWnd != NULL) && (hTargetWnd != BADHWND) ){
-	DWORD pid;
-	HANDLE hMap, hSendMap, hProcess;
-	TCHAR *param;
-	const TCHAR *np;
-
-	hMap = CreateFileMapping(INVALID_HANDLE_VALUE,
-				NULL, PAGE_READWRITE, 0, TSTROFF(CMDLINESIZE),NULL);
-	if ( hMap == NULL ) return BADHWND;
-	param = MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, TSTROFF(CMDLINESIZE));
-	if ( param == NULL ){
-		CloseHandle(hMap);
-		return BADHWND;
-	}
-	GetWindowThreadProcessId(hTargetWnd, &pid);
-	hProcess = OpenProcess(PROCESS_DUP_HANDLE, FALSE, pid);
-	DuplicateHandle(GetCurrentProcess(), hMap,
-				hProcess, &hSendMap, 0, FALSE, DUPLICATE_SAME_ACCESS);
-
-	wsprintf ( param, T("%%N%s"), ID );
-	SendMessage(hTargetWnd, WM_PPXCOMMAND, K_EXTRACT, (LPARAM)hSendMap);
-	CloseHandle(hSendMap);
-
-	np = param;
-	hWnd = (HWND)GetDigitNumber(&np);
-
-	UnmapViewOfFile(param);
-	CloseHandle(hMap);
-
-		if ( hWnd == NULL ) hWnd = BADHWND;
-		return hWnd;
-	}
-
-	return BADHWND; // 該当なし
-}
-#endif
 
 HWND GetPPcPairWindow(PPXAPPINFO *ppxa)
 {
@@ -951,16 +1006,8 @@ PPXDLL HWND PPXAPI GetPPxhWndFromID(PPXAPPINFO *ppxa, const TCHAR **src, TCHAR *
 	}
 
 	if ( !Isalpha(code) ){
-		if ( code == '-' ){ // PPv の呼び出し元 PPc
-			HWND hWnd;
-
+		if ( code == '-' ){ // 特殊
 			(*src)++;
-			hWnd = (HWND)PPxInfoFunc(ppxa, PPXCMDID_GETREQHWND, NULL);
-			if ( hWnd != NULL ){
-				while ( Isalpha(**src) || (**src == '_') ) (*src)++;
-				return hWnd;
-			}
-			if ( !Isalpha(**src) ) return BADHWND; // 指定なし
 		}else{
 			return NULL; // 指定なし
 		}
@@ -971,6 +1018,14 @@ PPXDLL HWND PPXAPI GetPPxhWndFromID(PPXAPPINFO *ppxa, const TCHAR **src, TCHAR *
 		*bufp++ = upper(*((*src)++));
 	}
 	*bufp = '\0';
+
+	if ( code == '-' ){ // 特殊
+		HWND hWnd = (HWND)PPxInfoFunc(ppxa, PPXCMDID_GETREQHWND, buf);
+		if ( hWnd != NULL ) return hWnd;
+		if ( buf[0] != 'C' ) return BADHWND;
+		// -C を C 扱いで参照する
+	}
+
 	if ( offset >= REGIDSIZE ){ // C_Zxyy / CZxyy 形式？
 		HWND hWnd;
 
@@ -1095,7 +1150,7 @@ PPXDLL void PPXAPI ForceSetForegroundWindow(HWND hWnd)
 	DWORD inactiveTID, activeTID;
 
 	inactiveTID	= GetCurrentThreadId();
-	activeTID	= GetWindowThreadProcessId(GetForegroundWindow(),NULL);
+	activeTID	= GetWindowThreadProcessId(GetForegroundWindow(), NULL);
 	AttachThreadInput(inactiveTID, activeTID, TRUE);
 	if ( WinType >= WINTYPE_2000 ){ // ダイアログがあれば、そちらを対象に
 		if ( IsWindowEnabled(hWnd) == FALSE ){ // 子ウィンドウがないと、別のウィンドウを示すので、対策
@@ -1254,7 +1309,7 @@ PPXDLL HWND PPXAPI GetWindowHandleByText(PPXAPPINFO *ppxa, const TCHAR *param)
 	const TCHAR *ptr;
 									// PPx 指定あり？
 	ptr = param;
-	hTargetWnd = GetPPxhWndFromID(ppxa, &ptr,NULL);
+	hTargetWnd = GetPPxhWndFromID(ppxa, &ptr, NULL);
 	if ( (hTargetWnd != NULL) && (hTargetWnd != BADHWND) ){
 		return hTargetWnd;
 	}
@@ -1279,7 +1334,7 @@ void ZReadOption(EXECSTRUCT *Z)
 	while ( (c = *Z->src) != '\0' ){
 		Z->src++;
 		if ( c == ',' ) break;
-		for ( i = 0 ; XEO_OptionString[i] ; i++ ){
+		for ( i = 0 ; i < XEO_STRLENGTH ; i++ ){
 			if ( c == XEO_OptionString[i] ){
 				c = *Z->src;
 				switch(c){
@@ -1296,7 +1351,7 @@ void ZReadOption(EXECSTRUCT *Z)
 				break;
 			}
 		}
-		if ( XEO_OptionString[i] == '\0' ){
+		if ( i >= XEO_STRLENGTH ){
 			Z->src--;
 			break;
 		}
@@ -1316,7 +1371,7 @@ void BackupSrc(EXECSTRUCT *Z, const TCHAR *newsrc)
 	next->backptr = Z->oldsrc;
 	Z->oldsrc = next;
 	Z->src = (TCHAR *)&next[1];
-	tstrcpy((TCHAR *)&next[1],newsrc);
+	tstrcpy((TCHAR *)&next[1], newsrc);
 }
 
 void Freeoldsrc(EXECSTRUCT *Z)
@@ -1397,39 +1452,69 @@ void ZGetMessageText(EXECSTRUCT *Z)
 
 void ZExpandAliasWithExtract(EXECSTRUCT *Z)
 {
-	TCHAR *p;
+	TCHAR *ptr;
 	DWORD size;
+	int flags = 0;
 
-	p = Z->dst;
+	ptr = Z->dst;
 	if ( *Z->src == '\'' ) Z->src++;
-	while ( ((UTCHAR)*Z->src >= ' ') && (*Z->src != '\'') ) *p++ = *Z->src++;
+	while ( ((UTCHAR)*Z->src >= ' ') && (*Z->src != '\'') ) *ptr++ = *Z->src++;
 	if ( *Z->src == '\'' ) Z->src++;
-	*p = '\0';
+	*ptr = '\0';
 
 	size = CMDLINESIZE - (Z->dst - Z->DstBuf);
 	GetCustTable(T("A_exec"), Z->dst, Z->dst, TSTROFF(size));
-	Z->result = PP_ExtractMacro(Z->hWnd, Z->Info,NULL, Z->dst, Z->dst, 0);
+/*
+	if ( (*Z->dst == '*') &&
+		 (Z->dst == Z->DstBuf) && (Z->ExtendDst.top == 0) &&
+		 (Z->command == CID_FILE_EXEC) &&
+		 !(Z->flag & XEO_DISPONLY) ){
+		flags = XEO_EXTRACTEXEC;
+	}
+*/
+	Z->result = PP_ExtractMacro(Z->hWnd, Z->Info, NULL, Z->dst, Z->dst, flags);
 	Z->dst += tstrlen(Z->dst);
 }
 
 void ZExpandAlias(EXECSTRUCT *Z)
 {
-	TCHAR buf[CMDLINESIZE], *p;
-	DWORD size;
+	TCHAR name[CMDLINESIZE], *namep;
+	int leftlen;
 
-	p = buf;
-	while ( ((UTCHAR)*Z->src >= ' ') && (*Z->src != '\'') ) *p++ = *Z->src++;
+	namep = name;
+	while ( ((UTCHAR)*Z->src >= ' ') && (*Z->src != '\'') ) *namep++ = *Z->src++;
 	if ( *Z->src == '\'' ) Z->src++;
-	*p = '\0';
+	*namep = '\0';
 
-	size = CMDLINESIZE - (Z->dst - Z->DstBuf);
-	if ( NO_ERROR != GetCustTable(T("A_exec"), buf, Z->dst, TSTROFF(size)) ){
-		GetEnvironmentVariable(buf, Z->dst, size);
+	leftlen = CMDLINESIZE - (Z->dst - Z->DstBuf);
+	if ( leftlen <= 0 ) leftlen = 1;
+	Z->dst[leftlen - 1] = '\0'; // 目印
+	if ( NO_ERROR != GetCustTable(T("A_exec"), name, Z->dst, TSTROFF(leftlen)) ){
+		int envlen;
+		envlen = GetEnvironmentVariable(name, Z->dst, leftlen);
+		if ( envlen >= leftlen ){
+			if ( StoreLongParam(Z, envlen) == FALSE ) return;
+			if ( ThSize(&Z->ExtendDst, TSTROFF(envlen)) == FALSE ){
+				return;
+			}
+			GetEnvironmentVariable(name, (TCHAR *)ThLast(&Z->ExtendDst), envlen);
+			Z->ExtendDst.top += envlen - 1;
+		}
+	}else if ( Z->dst[leftlen - 1] != '\0' ){ // 目印破損→足りない
+		int newsize;
+
+		newsize = GetCustTableSize(T("A_exec"), name);
+		if ( StoreLongParam(Z, newsize) == FALSE ) return;
+		if ( ThSize(&Z->ExtendDst, newsize) == FALSE ){
+			return;
+		}
+		GetCustTable(T("A_exec"), name, (TCHAR *)ThLast(&Z->ExtendDst), newsize);
+		Z->ExtendDst.top += tstrlen32((TCHAR *)ThLast(&Z->ExtendDst));
 	}
 	Z->dst += tstrlen(Z->dst);
 }
 
-void GetPPxHWND(EXECSTRUCT *Z)
+void GetPPxHWND(EXECSTRUCT *Z) // %N
 {
 	HWND hWnd;
 
@@ -1530,6 +1615,56 @@ void GetCursorFileName(EXECSTRUCT *Z) // %R, %Y, %t
 	Z->dst += tstrlen(Z->dst);
 }
 
+// extract に結果を保存する
+void SetLongParamToParam(EXECSTRUCT *Z, LONGEXTRACTPARAM *extract)
+{
+	if ( (Z->flag & XEO_EXTRACTLONG) &&
+		 (extract->longtext.id == extract) ){ // 保存可能
+		ThAddString(&Z->ExtendDst, Z->DstBuf);
+		extract->longtext.th = Z->ExtendDst;
+		Z->ExtendDst.bottom = NULL; // 呼び出し元で解放させる
+		Z->result = ERROR_PARTIAL_COPY;
+	}else{ // 保存できないので先頭だけ。
+		Z->result = RPC_S_STRING_TOO_LONG;
+		tstrlimcpy(extract->text, (Z->ExtendDst.top != 0) ?
+				(TCHAR *)Z->ExtendDst.bottom : Z->DstBuf, CMDLINESIZE);
+	}
+}
+
+DWORD USEFASTCALL GetLongParamMaxLen(EXECSTRUCT *Z)
+{
+	if ( Z->status & ST_LONGRESULT ){
+		return Z->LongResultLen;
+	}else if ( (Z->command == CID_FILE_EXEC) && // 実行(CID_FILE_EXEC) のとき
+		 !(Z->flag & (XEO_DISPONLY | XEO_NOEDIT)) ){
+		return CMDEXE_LENGTH;
+	}else if ( (Z->command == CID_SET) || (Z->command == 'I') || (Z->command == 'Q') ){ // 環境変数は 32K-1 が最大値
+		return 0x7fc0; // 約32k
+	}else if ( (Z->flag & XEO_EXTRACTLONG) || (Z->command == CID_CLIPTEXT) ){
+		return 0x6fffffff;
+	}else{
+		return CMDLINESIZE;
+	}
+}
+
+BOOL StoreLongParam(EXECSTRUCT *Z, DWORD addlen)
+{
+	DWORD size;
+
+	if ( (Z->ExtendDst.top + (Z->dst - Z->DstBuf) + addlen) >= GetLongParamMaxLen(Z) ){
+		return FALSE;
+	}
+
+	// 長いパラメータに対応しているので、保存
+	*Z->dst = '\0';
+	size = TSTROFF(Z->dst - Z->DstBuf + 1);
+	ThAppend(&Z->ExtendDst, Z->DstBuf, size);
+	Z->ExtendDst.top -= TSTROFF(1); // '\0' 分減らす
+	Z->dst = Z->DstBuf;
+	*Z->dst = '\0';
+	return TRUE;
+}
+
 DWORD GetModuleNameHash(const TCHAR *src, TCHAR *dest)
 {
 	DWORD hash = 0;
@@ -1605,9 +1740,10 @@ BOOL GetCommandString(EXECSTRUCT *Z)
 void ZInit(EXECSTRUCT *Z)
 {
 	Z->command = CID_FILE_EXEC;
-	Z->dst = Z->edit.EdBottom = Z->DstBuf;
-	Z->edit.CsrBottom = 0;
-	Z->edit.CsrTop = -1;
+	Z->dst = Z->DstBuf;
+	Z->edit.EdPartStart = 0;
+	Z->edit.CsrStart = 0;
+	Z->edit.CsrEnd = -1;
 }
 
 /*-----------------------------------------------------------------------------
@@ -1624,64 +1760,46 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd, PPXAPPINFO *ParentInfo, POINT
 {
 	EXECSTRUCT Z;
 	BOOL loadnext = FALSE;
-	TCHAR *funcstart = NULL;
-
-#ifdef WINEGCC
-	setflag(flags, XEO_NOUSEPPB);
-#endif
 										// 最初の初期化 -----------------------
 	ThInit(&Z.ExtendDst);
 	ThInit(&Z.ExpandCache);
 	ThInit(&Z.StringVariable);
 	Z.hWnd = hWnd;
 	Z.posptr = pos;
-
-	if ( ParentInfo != NULL ){
-		Z.Info = ParentInfo;
-	}else{
-		Z.Info = PPxDefInfo;
-	}
-
-	PPxEnumInfoFunc(Z.Info, PPXCMDID_STARTENUM, Z.DstBuf, &Z.IInfo);
+	Z.Info = (ParentInfo != NULL) ? ParentInfo : PPxDefInfo;
 	Z.oldsrc = NULL;
 	Z.status = 0;
 	Z.result = NO_ERROR;
 	Z.curdir[0] = '\0';
 	Z.useppb = -1;
 	Z.edit.cache.hash = MAX32;
-	while ( Z.result == NO_ERROR ){
-										// 繰り返し行う初期化 -----------------
+	PPxEnumInfoFunc(Z.Info, PPXCMDID_STARTENUM, Z.DstBuf, &Z.IInfo);
+#ifdef WINEGCC
+	setflag(flags, XEO_NOUSEPPB);
+#endif
+	for (;;){		// 文字列先頭 : 初期化 ----------------
+		if ( Z.result != NO_ERROR ){
+			if ( Z.result == RPC_S_STRING_TOO_LONG ){
+				PPErrorBox(Z.hWnd, NULL, RPC_S_STRING_TOO_LONG);
+			}
+			break;
+		}
+
 		Z.flag = flags;
 		Z.status = Z.status & (ST_EXECLOOP);
 		Z.src = param;
 		Z.ExtendDst.top = 0;
-		Z.quotation = FALSE;
+		Z.func.quotation = FALSE;
+		Z.func.off = 0;
 		ZInit(&Z);
 		Freeoldsrc(&Z);
-										// パラメータの解析開始 ---------------
+										// 1文の頭 : 解析開始 -----------------
 		while ( Z.result == NO_ERROR ){
-			if ( (Z.DstBuf + CMDLINESIZE - 1) <= Z.dst ){ // 長さ制限
-				if ( (Z.command == CID_FILE_EXEC) &&
-					 (Z.edit.ed == NULL) &&
-					 !(Z.flag & (XEO_DISPONLY | XEO_NOEDIT)) &&
-					 (extract == NULL) ){
-					// 通常実行 && 部分編集無し && 展開無し
-					// コマンドラインは 32k, cmd は 8k までなので、チェックする
-					if ( (Z.ExtendDst.top + (Z.dst - Z.DstBuf)) > 8000 ){
-						Z.result = RPC_S_STRING_TOO_LONG;
-						PPErrorBox(Z.hWnd,NULL,RPC_S_STRING_TOO_LONG);
-						break;
-					}
-				}else if ( (Z.command != CID_CLIPTEXT) &&
-						   (Z.command != CID_SET) ){
+			if ( (Z.dst - Z.DstBuf) >= (CMDLINESIZE - 1) ){ // 長さ制限
+				if ( StoreLongParam(&Z, 0) == FALSE ){
 					Z.result = RPC_S_STRING_TOO_LONG;
-					PPErrorBox(Z.hWnd,NULL,RPC_S_STRING_TOO_LONG);
 					break;
 				}
-				*Z.dst = '\0';
-				ThCatString(&Z.ExtendDst, Z.DstBuf);
-				Z.dst = Z.DstBuf;
-				*Z.dst = '\0';
 			}
 
 			if ( *Z.src == '\0' ){ // src の nested を戻す
@@ -1695,38 +1813,38 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd, PPXAPPINFO *ParentInfo, POINT
 				continue;
 			}
 														// *コマンド / コマンド
-			if ( (Z.dst == Z.DstBuf) && (Z.command == CID_FILE_EXEC) &&
-					!(Z.flag & XEO_DISPONLY) &&
-					((extract == NULL) || (Z.flag & XEO_EXTRACTEXEC)) ){
+			if ( (Z.dst == Z.DstBuf) && (Z.ExtendDst.top == 0) &&
+				 (Z.command == CID_FILE_EXEC) &&
+				 !(Z.flag & XEO_DISPONLY) &&
+				 ((extract == NULL) || (Z.flag & XEO_EXTRACTEXEC)) ){
 				if ( GetCommandString(&Z) == FALSE ) continue;
 			}
 
-			if ( (*Z.src == '\"') && (funcstart != NULL) ){ // " チェック
-				*Z.dst++ = *Z.src++;
-				if ( Z.quotation ){
-					if ( *Z.src != '\"' ){
-						Z.quotation = FALSE;
+			if ( Z.func.off != 0 ){ // 関数内解析
+				if ( *Z.src == '\"' ){ // " チェック
+					*Z.dst++ = *Z.src++;
+					if ( Z.func.quotation ){
+						if ( *Z.src != '\"' ){
+							Z.func.quotation = FALSE;
+						}else{ // "" → " に置換
+							*Z.dst++ = *Z.src++;
+							continue;
+						}
 					}else{
-						*Z.dst++ = *Z.src++;
+						Z.func.quotation = TRUE;
 						continue;
 					}
-				}else{
-					Z.quotation = TRUE;
+				}
+				if ( (*Z.src == ')') && (Z.func.quotation == FALSE) ){ // 関数末端
+					Z.src++;
+					ExecuteFunction(&Z);
 					continue;
 				}
 			}
 
-			// 関数末端
-			if ( (*Z.src == ')') && (funcstart != NULL) && (Z.quotation == FALSE) ){
-				Z.src++;
-				*Z.dst = '\0';
-				Z.dst = funcstart;
-				FunctionModule(&Z);
-				funcstart = NULL;
-				continue;
-			}
-
-			if ( ((UTCHAR)(*Z.src) < ' ') && ((*Z.src == '\n') || (*Z.src == '\r')) && !(Z.flag & XEO_INRETURN) ){ // 改行
+			if ( ((UTCHAR)(*Z.src) < ' ') &&			// 改行
+				 ((*Z.src == '\n') || (*Z.src == '\r')) &&
+				 !(Z.flag & XEO_INRETURN) ){
 				do {
 					Z.src++;
 				} while ( (*Z.src == '\n') || (*Z.src == '\r') );
@@ -1744,20 +1862,20 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd, PPXAPPINFO *ParentInfo, POINT
 				*Z.dst++ = *Z.src++;
 				continue;
 			}
-
-			Z.edit.ed = NULL;
+									//--------------------------- マクロ % 解析
+			Z.edit.EdOffset = -1;
 			resetflag(Z.status, ST_PATHFIX);
 			if ( *(++Z.src) == '!' ){		// %!	部分編集 ------------------
-				Z.edit.ed = Z.dst;
+				Z.edit.EdOffset = GetDestOffset(&Z);
 				Z.src++;
 			}else if ( *(Z.src) == '$' ){	// %$	キャッシュ付き部分編集 ---
 				setflag(Z.status, ST_USECACHE);
-				Z.edit.ed = Z.dst;
+				Z.edit.EdOffset = GetDestOffset(&Z);
 				Z.src++;
 				Z.edit.cache.srcptr = Z.src;
 			}
 			*Z.dst = '\0';
-			switch( *Z.src++ ){ //---------------------------------- マクロ解析
+switch( *Z.src++ ){
 	case '\0':					//----- NULL	文末 --------------------------
 		Z.src--;
 		break;
@@ -1767,34 +1885,39 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd, PPXAPPINFO *ParentInfo, POINT
 		break;
 
 	case '#':					//----- %#		対象ファイル名 ----------------
-		loadnext = EnumEntries(&Z, extract); // ※extractは、展開の有無判断用
+		loadnext = EnumEntries(&Z);
 		break;
 
 	case '\'':					//----- %'		A_exec / 環境変数参照 ---------
 		ZExpandAlias(&Z);
 		break;
 
-	case '*': {					//----- %*		関数モジュール ----------------
+	case '*': {					//----- %*		関数・関数モジュール
 		TCHAR *dst;
 		const TCHAR *olds;
 
 		for ( dst = Z.dst ; Isalnum(*Z.src) ; ) *dst++ = *Z.src++;
-		*dst++ = '\0';
-		*dst = '\0';
+		*dst++ = '\0'; // 関数名末端
+		*dst = '\0'; // パラメータ末端
 
 		olds = Z.src;
 		if ( SkipSpace(&Z.src) != '(' ){ // 括弧無し
+			int oldfuncoff;
 			Z.src = olds;
-			FunctionModule(&Z);
+			oldfuncoff = Z.func.off;
+			Z.func.off = Z.ExtendDst.top + (Z.dst - Z.DstBuf) * sizeof(TCHAR) + 1;
+			Z.dst = dst;
+			ExecuteFunction(&Z);
+			Z.func.off = oldfuncoff;
 			if ( Z.result != NO_ERROR ) continue;
-		}else if ( funcstart != NULL ){ // %* 内 %*
+		}else if ( Z.func.off != 0 ){ // %* 内 %*
 			NestedFunction(&Z);
 			if ( Z.result != NO_ERROR ) continue;
 		}else{ // 括弧有り
 			Z.src++;
-			funcstart = Z.dst;
+			Z.func.off = Z.ExtendDst.top + (Z.dst - Z.DstBuf) * sizeof(TCHAR) + 1;
 			Z.dst = dst;
-			Z.quotation = FALSE;
+			Z.func.quotation = FALSE;
 			continue;
 		}
 		break;
@@ -1811,20 +1934,8 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd, PPXAPPINFO *ParentInfo, POINT
 		break;
 
 	case '&':					//----- %&	終了コードで判断 ----------------
-		setflag(Z.flag, XEO_SEQUENTIAL);
-		if ( Z.flag & XEO_DISPONLY ){		// 表示のみ
-			*Z.dst++ = ':';
-			break;
-		}else{					// 実行
-			ZExec(&Z);
-			if ( Z.result != NO_ERROR ) break;
-			if ( Z.ExitCode != 0 ){
-				Z.result = ERROR_CANCELLED;
-				break;
-			}
-			ZInit(&Z);
-			continue;
-		}
+		if ( IsTrue(ZExecAndCheckError(&Z)) ) continue;
+		break;
 
 	case ':':					//----- %:		コマンド区切り ----------------
 		if ( Z.flag & XEO_DISPONLY ){		// 表示のみ
@@ -1848,12 +1959,12 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd, PPXAPPINFO *ParentInfo, POINT
 		break;
 
 	case 'E':					//----- %E		パラメータ入力 ----------------
-		Z.edit.ed = Z.dst;
+		Z.edit.EdOffset = GetDestOffset(&Z);
 		break;
 
 	case 'F':					//----- %F		 ----------------
 		ZGetName(&Z, Z.dst, '\0');
-		if ( Z.quotation != FALSE ) tstrreplace(Z.dst, T("\""), T("\"\""));
+		if ( Z.func.quotation != FALSE ) tstrreplace(Z.dst, T("\""), T("\"\""));
 		Z.dst += tstrlen(Z.dst);
 		break;
 
@@ -1904,7 +2015,7 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd, PPXAPPINFO *ParentInfo, POINT
 
 	case 'P':					//----- %P		パス・ファイル名入力 ----------
 		setflag(Z.status, ST_PATHFIX);
-		Z.edit.ed = Z.dst;
+		Z.edit.EdOffset = GetDestOffset(&Z);
 		break;
 
 	case 'R':					//----- %R		カーソル位置ファイル名 --------
@@ -1916,59 +2027,16 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd, PPXAPPINFO *ParentInfo, POINT
 		break;
 
 	case 'S':					//------ %S		ディレクトリがある場合の文字列-
-		if ( !(Z.status & ST_CHKSDIRREF) ){ // 属性判定をしていないならここで。
-			if ( PPxEnumInfoFunc(Z.Info, PPXCMDID_ENUMATTR, Z.dst, &Z.IInfo) &&
-					(*(DWORD *)Z.dst & FILE_ATTRIBUTE_DIRECTORY) ){
-				setflag(Z.status, ST_SDIRREF | ST_CHKSDIRREF);
-			}else{
-				setflag(Z.status, ST_CHKSDIRREF);
-			}
-		}
-
-		if ( SkipSpace(&Z.src) == '\"' ) Z.src++;
-		while ( *Z.src && (*Z.src != '\"') ){
-			if ( Z.status & ST_SDIRREF ){ // サブディレクトリがあるときだけ複写
-				*Z.dst++ = *Z.src++;
-			}else{
-				Z.src++;
-			}
-		}
-		if ( *Z.src == '\"' ) Z.src++;
+		ZStringOnDir(&Z);
 		break;
 
 	case 'W':					//----- %W		Window Caption取得 ------------
 		ZGetWndCaptionMacro(&Z);
 		break;
 
-	case '\\': {				//----- %\		\ の付加 ----------------------
-		TCHAR *buftop;
-
-		setflag(Z.status, ST_PATHFIX);
-		buftop = Z.DstBuf;
-#ifndef UNICODE
-		if ( (Z.command >= CID_USERNAME) || (funcstart != NULL) ){
-			buftop = Z.dst;
-			while ( buftop > Z.DstBuf ){
-				if ( *(buftop - 1) == '\0' ) break;
-				buftop--;
-			}
-		}
-#endif
-		if ( Z.dst > buftop ){
-			UTCHAR c;
-
-			c = (UTCHAR)*(Z.dst - 1);
-#ifdef UNICODE
-			if ( (c  > ' ') && (c != '\"') && (c != '\\') ) *Z.dst++ = '\\';
-#else
-			if ( (c  > ' ') && (c != '\"') ){
-				CatPath(NULL, buftop,NilStr);
-				Z.dst += tstrlen(Z.dst);
-			}
-#endif
-		}
+	case '\\':					//----- %\		\ の付加 ----------------------
+		ZAddSeparator(&Z);
 		break;
-	}
 
 	case '@':					//----- %@		レスポンスファイル 対応 %C ----
 		*Z.dst++ = '@';
@@ -2031,23 +2099,23 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd, PPXAPPINFO *ParentInfo, POINT
 		break;
 
 	case '{':					//----- %{		部分編集指定開始 --------------
-		Z.edit.ed = NULL; // %$ での編集を無効にする
-		Z.edit.EdBottom = Z.dst;
-		Z.edit.CsrBottom = 0;
-		Z.edit.CsrTop = -1;
+		Z.edit.EdOffset = -1; // %$ での編集を無効にする
+		Z.edit.EdPartStart = GetDestOffset(&Z);
+		Z.edit.CsrStart = 0;
+		Z.edit.CsrEnd = -1;
 		break;
 
 	case '|':					//----- %|		カーソル位置指定 --------------
-		if ( Z.edit.CsrTop == -1 ){	// 1st:指定位置にカーソル
-			Z.edit.CsrBottom = Z.edit.CsrTop = Z.dst - Z.edit.EdBottom;
+		if ( Z.edit.CsrEnd == -1 ){	// 1st:指定位置にカーソル
+			Z.edit.CsrStart = Z.edit.CsrEnd = GetDestOffset(&Z) - Z.edit.EdPartStart;
 		}else{					// 2nd:指定範囲を選択
-			Z.edit.CsrBottom = Z.edit.CsrTop;
-			Z.edit.CsrTop = Z.dst - Z.edit.EdBottom;
+			Z.edit.CsrStart = Z.edit.CsrEnd;
+			Z.edit.CsrEnd = GetDestOffset(&Z) - Z.edit.EdPartStart;
 		}
 		break;
 
 	case '}':					//----- %}		部分編集指定終了 --------------
-		Z.edit.ed = Z.edit.EdBottom;
+		Z.edit.EdOffset = Z.edit.EdPartStart;
 		break;
 
 	case '~': {					//----- %~		反対窓内容取得 ----------------
@@ -2067,19 +2135,19 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd, PPXAPPINFO *ParentInfo, POINT
 		*Z.dst++ = *(Z.src - 1);
 }
 //-----------------------------------------------------------------------------
-			if ((Z.edit.ed != NULL) && !(Z.flag &(XEO_DISPONLY | XEO_NOEDIT))){
-				*Z.dst = '\0';
-				if( EditExtractText(&Z) == FALSE ) break; // 部分編集
+			if ( (Z.edit.EdOffset >= 0) && !(Z.flag & (XEO_DISPONLY | XEO_NOEDIT)) ){
+				if( EditExtractText(&Z) == FALSE ) break; // %!x 部分編集
 			}
-		}
+		} // 全文の展開が完了
 		*Z.dst = '\0';
 		if ( Z.result != NO_ERROR ) break; // エラー有り
 
 		if ( extract != NULL ){	// 展開処理
-			Z.DstBuf[CMDLINESIZE - 1] = '\0';
-			tstrcpy(extract, Z.DstBuf);
-			if ( (Z.DstBuf + CMDLINESIZE - 1) <= Z.dst ){ // 長さ制限
-				Z.result = RPC_S_STRING_TOO_LONG;
+			if ( (Z.ExtendDst.top != 0) ||
+				 ((Z.dst - Z.DstBuf) >= (CMDLINESIZE - 1)) ){ // 長さ制限
+				SetLongParamToParam(&Z, (LONGEXTRACTPARAM *)extract);
+			}else{
+				tstrcpy(extract, Z.DstBuf);
 			}
 		}else{					// 実行処理
 			ZExec(&Z);
@@ -2094,7 +2162,7 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd, PPXAPPINFO *ParentInfo, POINT
 				}else{ // %# は既に PPXCMDID_NEXTENUM を実行済み
 					loadnext = FALSE;
 					PPxEnumInfoFunc(Z.Info, 'C', Z.DstBuf, &Z.IInfo);
-					if ( Z.DstBuf[0] ) continue;
+					if ( Z.DstBuf[0] != '\0' ) continue;
 				}
 			}
 		}
@@ -2106,7 +2174,7 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd, PPXAPPINFO *ParentInfo, POINT
 		if ( (extract == NULL) && (Z.flag & XEO_DELTEMP) ){
 			const TCHAR *ResName;
 
-			ResName = ThGetString(&Z.StringVariable, ResponseName_ValueName,NULL, 0);
+			ResName = ThGetString(&Z.StringVariable, ResponseName_ValueName, NULL, 0);
 			if ( ResName != NULL ) DeleteFileL(ResName);
 		}
 		if ( (Z.flag & XEO_DOWNCSR) && (Z.result == NO_ERROR) ){
@@ -2139,7 +2207,7 @@ PPXDLL int PPXAPI PP_GetExtCommand(const TCHAR *src, const TCHAR *ID, TCHAR *cmd
 {
 	VFSFILETYPE vft;
 	int count = 0;
-	TCHAR kword[MAX_PATH],name[VFPS];
+	TCHAR kword[MAX_PATH], name[VFPS];
 	BYTE *filebuf;
 	const TCHAR *namep, *extp;
 	DWORD size = 0;
@@ -2157,8 +2225,8 @@ PPXDLL int PPXAPI PP_GetExtCommand(const TCHAR *src, const TCHAR *ID, TCHAR *cmd
 	vft.type[0] = '\0';
 
 	hFile = CreateFileL(src, GENERIC_READ,
-			FILE_SHARE_WRITE | FILE_SHARE_READ,NULL,
-			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,NULL);
+			FILE_SHARE_WRITE | FILE_SHARE_READ, NULL,
+			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if ( hFile != INVALID_HANDLE_VALUE ){
 		size = ReadFileHeader(hFile, filebuf, VFS_check_size);
 		CloseHandle(hFile);
@@ -2172,7 +2240,7 @@ PPXDLL int PPXAPI PP_GetExtCommand(const TCHAR *src, const TCHAR *ID, TCHAR *cmd
 		}else{
 			tstrcpy(name, src);
 
-			if ( VFSCheckDir(name, filebuf, size,NULL) ){
+			if ( VFSCheckDir(name, filebuf, size, NULL) ){
 				result = PPEXTRESULT_VFSDIR;
 			}
 		}
@@ -2190,7 +2258,7 @@ PPXDLL int PPXAPI PP_GetExtCommand(const TCHAR *src, const TCHAR *ID, TCHAR *cmd
 		if ( GetCustDword(T("X_exts"), 0) == 0 ){
 			if ( *extp == '.' ){				// 拡張子あり
 				wsprintf(name, T("%s%s"), vft.type, extp);
-				if ( NO_ERROR == GetCustTable(ID,name, cmdbuf, TSTROFF(CMDLINESIZE)) ){
+				if ( NO_ERROR == GetCustTable(ID, name, cmdbuf, TSTROFF(CMDLINESIZE)) ){
 					if ( !IsCmdNul(cmdbuf) ) return result; // 空欄なら以降の名前判別へ
 				}
 			}
@@ -2206,10 +2274,10 @@ PPXDLL int PPXAPI PP_GetExtCommand(const TCHAR *src, const TCHAR *ID, TCHAR *cmd
 		extp++;
 		if ( TypeName != NULL ) tstrcpy(TypeName, extp);
 	}else{								// 拡張子なし
-		tstrcpy(name,namep);
+		tstrcpy(name, namep);
 		tstrcat(name, T("."));
 		namep = name;
-		if ( TypeName != NULL ) tstrcpy(TypeName,name);
+		if ( TypeName != NULL ) tstrcpy(TypeName, name);
 	}
 										// ファイル名で判別 -------------------
 	for ( ; EnumCustTable(count, ID, kword, cmdbuf, ISCMDNULREQUEIERSIZE) >= 0 ; count++ ){ // 限定
@@ -2226,7 +2294,7 @@ PPXDLL int PPXAPI PP_GetExtCommand(const TCHAR *src, const TCHAR *ID, TCHAR *cmd
 			if ( fnresult ) goto enumhit;
 		}
 		if ( tstrchr(kword, '.') ){			// 名前で判別
-			if ( !tstricmp(kword,namep) ) goto enumhit;
+			if ( !tstricmp(kword, namep) ) goto enumhit;
 		}else{								// 拡張子で判別
 			if ( !tstricmp(kword, extp) ) goto enumhit;
 		}
@@ -2247,13 +2315,13 @@ enumhit:
 }
 
 // %# 本体
-BOOL EnumEntries(EXECSTRUCT *Z, const TCHAR *extract)
+BOOL EnumEntries(EXECSTRUCT *Z)
 {
 	BOOL useopt = FALSE;
 	const TCHAR *oldsrc;
 	const TCHAR *ptr;
-	TCHAR separator = ' ', *enummax, buf[VFPS];
-	int maxentries = 0xfffffff;
+	TCHAR separator = ' ', buf[VFPS];
+	int maxentries = 0xfffffff, maxlen;
 
 	oldsrc = Z->src;
 	if ( Isdigit(*oldsrc) ) maxentries = GetDigitNumber(&oldsrc);
@@ -2265,7 +2333,8 @@ BOOL EnumEntries(EXECSTRUCT *Z, const TCHAR *extract)
 		useopt = TRUE;
 		oldsrc++;
 	}
-	enummax = Z->DstBuf + CMDLINESIZE - (1 + 3);
+											// 最大長を決める
+	maxlen = GetLongParamMaxLen(Z) - (1 + 3);
 	// 後段の文字列が残るように末尾を決定
 	ptr = Z->src;
 	while ( ((UTCHAR)(*ptr) >= ' ') || ((*ptr != '\n') && (*ptr == '\r')) ){ // 改行以外
@@ -2275,45 +2344,38 @@ BOOL EnumEntries(EXECSTRUCT *Z, const TCHAR *extract)
 			}else if ( *(ptr + 1) == ':' ){
 				break; // コマンド区切り
 			}else {
-				enummax -= 100; // 仮の確保幅
-				if ( enummax < Z->dst ){
-					enummax = Z->dst;
+				maxlen -= 100; // 仮の確保幅
+				if ( maxlen < (Z->dst - Z->DstBuf) ){
+					maxlen = (Z->dst - Z->DstBuf);
 					break;
 				}
 			}
 		}
 		ptr++;
-		enummax--;
+		maxlen--;
 	}
 	setflag(Z->status, ST_CHKSDIRREF);
 	for ( ; ; ){
-		int len;
+		int len, dstlen;
 
 		Z->src = oldsrc;
 		if ( IsTrue(useopt) ){
 			if ( (*(oldsrc - 1) == 'F') &&
-					PPxEnumInfoFunc(Z->Info, PPXCMDID_ENUMATTR, buf, &Z->IInfo) &&
-					(*(DWORD *)buf & FILE_ATTRIBUTE_DIRECTORY) ){
+				 PPxEnumInfoFunc(Z->Info, PPXCMDID_ENUMATTR, buf, &Z->IInfo) &&
+				 (*(DWORD *)buf & FILE_ATTRIBUTE_DIRECTORY) ){
 				setflag(Z->status, ST_SDIRREF);
 			}
-
 			ZGetName(Z, buf, '\0'); // ST_SDIRREF 判定は、%F のときにはない
-			if ( Z->quotation != FALSE ) tstrreplace(buf, T("\""), T("\"\""));
+			if ( Z->func.quotation != FALSE ) tstrreplace(buf, T("\""), T("\"\""));
 		}else{
 			ZGetName(Z, buf, 'C'); // ST_SDIRREF 判定内蔵
 		}
 
 		len = tstrlen32(buf);
-		if ( enummax <= (Z->dst + len) ){
-			if ( (Z->command == CID_FILE_EXEC) && (Z->edit.ed == NULL) && !(Z->flag & (XEO_DISPONLY | XEO_NOEDIT)) && (extract == NULL) ){ // 通常実行 && 部分編集無し && 展開無し
-				// コマンドラインは 32k, cmd は 8k までなので、チェックする
-				if ( Z->ExtendDst.top > (8000 - CMDLINESIZE * 2) ) break;
-			}else if ( Z->command != CID_CLIPTEXT ){
-				break;
-			}
-			*Z->dst = '\0';
-			ThCatString(&Z->ExtendDst, Z->DstBuf);
-			Z->dst = Z->DstBuf;
+		dstlen = (Z->dst - Z->DstBuf) + len;
+		if ( (Z->ExtendDst.top + dstlen ) >= (DWORD)maxlen ) break; // 大きさ越える
+		if ( dstlen >= CMDLINESIZE ){
+			if ( StoreLongParam(Z, 0) == FALSE ) break; // これ以上展開しない
 		}
 		if ( (buf[0] != '\"') && (tstrchr(buf, separator)) != NULL ){
 			Z->dst += wsprintf(Z->dst, T("\"%s\""), buf);
@@ -2324,26 +2386,27 @@ BOOL EnumEntries(EXECSTRUCT *Z, const TCHAR *extract)
 		if ( PPxEnumInfoFunc(Z->Info, PPXCMDID_NEXTENUM, buf, &Z->IInfo) == 0 ){
 			break;
 		}
+		if ( --maxentries == 0 ) break;
 		*Z->dst++ = separator;
 		*Z->dst = '\0';
-
-		if ( --maxentries == 0 ) break;
 	}
 	return TRUE;
 }
 
 DWORD GetCacheHash(EXECSTRUCT *Z)
 {
-	const TCHAR *plast, *p;
+	const TCHAR *plast, *srcptr;
 	DWORD hash = 0;
 
-	p = Z->edit.cache.srcptr;
+	srcptr = Z->edit.cache.srcptr;
 	plast = Z->src;
-	if ( (plast - p) > CMDLINESIZE ){
-		hash = *p;
-	}else{
-		for ( ; p < plast ; p++ ) hash += *p;
+	if ( (plast - srcptr) > CMDLINESIZE ){
+		size_t len = tstrlen(srcptr);
+		if ( len < (size_t)(plast - srcptr) ){
+			plast = srcptr + len;
+		}
 	}
+	for ( ; srcptr < plast ; srcptr++ ) hash += *srcptr;
 	return hash;
 }
 
@@ -2353,31 +2416,44 @@ BOOL EditExtractText(EXECSTRUCT *Z)
 	TINPUT tinput;
 	DWORD hash C4701CHECK;
 
+	if ( Z->ExtendDst.top == 0 ){
+		*Z->dst = '\0';
+		tinput.buff = Z->DstBuf + Z->edit.EdOffset;
+		tinput.size = CMDLINESIZE - ToSIZE32_T(Z->dst - Z->DstBuf) - 1;
+	}else{
+		if ( StoreLongParam(Z, 0) == FALSE ) return FALSE;
+		tinput.size = Z->ExtendDst.size / sizeof(TCHAR) - Z->edit.EdOffset;
+		if ( tinput.size >= 0x8000 ) tinput.size = 0x7fff;
+		tinput.buff = (TCHAR *)Z->ExtendDst.bottom + Z->edit.EdOffset;
+	}
+
 	if ( (Z->status & ST_USECACHE) &&
 		 (Z->edit.cache.hash == (hash = GetCacheHash(Z))) ){
 		// キャッシュが使用できる
-		ThGetString(&Z->StringVariable, EditCache_ValueName, Z->edit.ed, CMDLINESIZE);
+		ThGetString(&Z->StringVariable, EditCache_ValueName, tinput.buff, tinput.size);
 	}else{
 		tinput.title	= ZGetTitleName(Z);
-		tinput.buff		= Z->edit.ed;
-		tinput.size		= CMDLINESIZE - (Z->dst - Z->DstBuf) - 1;
 		tinput.flag		= TIEX_USESELECT | TIEX_USEINFO;
-		tinput.firstC	= Z->edit.CsrBottom;
-		tinput.lastC	= Z->edit.CsrTop;
+		tinput.firstC	= Z->edit.CsrStart;
+		tinput.lastC	= Z->edit.CsrEnd;
 		if ( ZTinput(Z, &tinput) == FALSE ) return FALSE;
 
 		if ( Z->status & ST_PATHFIX ){
-			VFSFixPath(NULL, Z->edit.ed, GetZCurDir(Z), VFSFIX_VFPS);
+			VFSFixPath(NULL, tinput.buff, GetZCurDir(Z), VFSFIX_VFPS);
 		}
 		if ( Z->status & ST_USECACHE ){
 			Z->edit.cache.hash = hash; // C4701ok
-			ThSetString(&Z->StringVariable, EditCache_ValueName, Z->edit.ed);
+			ThSetString(&Z->StringVariable, EditCache_ValueName, tinput.buff);
 		}
 	}
-	Z->dst = Z->edit.ed + tstrlen(Z->edit.ed);
-	Z->edit.EdBottom = Z->dst;
-	Z->edit.CsrBottom = 0;
-	Z->edit.CsrTop = -1;
+	if ( Z->ExtendDst.top != 0 ){
+		Z->ExtendDst.top = (Z->edit.EdOffset + tstrlen(tinput.buff)) * sizeof(TCHAR);
+	}else{
+		Z->dst = tinput.buff + tstrlen(tinput.buff);
+	}
 	resetflag(Z->status, ST_USECACHE);
+	Z->edit.EdPartStart = GetDestOffset(Z);
+	Z->edit.CsrStart = 0;
+	Z->edit.CsrEnd = -1;
 	return TRUE;
 }

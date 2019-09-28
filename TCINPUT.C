@@ -32,13 +32,13 @@ int SelStart = 0;	// 選択開始位置
 int SelEnd = 0;		// 選択終了位置
 
 typedef enum {
-	CMODE_EDIT = 0,CMODE_SCROLL,CMODE_SELECT
+	CMODE_EDIT = 0, CMODE_SCROLL, CMODE_SELECT
 } CMODEINFO;
 
 CMODEINFO cmode;	// CMODE_
 struct tagSCROLLMODEINFO {
-	int cx,cy;	// スクロールモード時のカーソル座標
-	int sx,sy;	// スクロールモード時の選択座標
+	int cx, cy;	// スクロールモード時のカーソル座標
+	int sx, sy;	// スクロールモード時の選択座標
 	int BackupY;	// スクロールモード開始時の編集行
 	BOOL LineMode;
 } sinfo;
@@ -73,35 +73,35 @@ int WheelOffset = 0;
 DWORD OldMouseButton = 0;
 
 struct {
-	WORD ed,select;
+	WORD ed, select;
 } CB_edit[2] = {
-	{T_CYA | TR_DGR | T_DL,TR_CYA | T_DGR | T_DL},
-	{T_GRE | TR_DCY | T_DL,TR_GRE | T_DCY | T_DL}
+	{T_CYA | TR_DGR | T_DL, TR_CYA | T_DGR | T_DL},
+	{T_GRE | TR_DCY | T_DL, TR_GRE | T_DCY | T_DL}
 };
 #define FORMLINEWIDTH 60
 
 TMENU editmenu[] = {
-	{1,MES_EDBL},
-	{K_c | 'C',MES_EDCP},
-	{K_c | 'X',MES_EDCU},
-	{K_c | 'V',MES_EDPA},
-	{K_c | 'A',MES_EDAL},
-	{0,MES_EDCA},
-	{0,NULL}
+	{1, MES_EDBL},
+	{K_c | 'C', MES_EDCP},
+	{K_c | 'X', MES_EDCU},
+	{K_c | 'V', MES_EDPA},
+	{K_c | 'A', MES_EDAL},
+	{0, MES_EDCA},
+	{0, NULL}
 };
 
 TMENU selectmenu[] = {
-	{K_c | 'C',MES_EDCP},
-	{K_c | 'A',MES_EDAL},
-	{0,MES_EDCA},
-	{0,NULL}
+	{K_c | 'C', MES_EDCP},
+	{K_c | 'A', MES_EDAL},
+	{0, MES_EDCA},
+	{0, NULL}
 };
 
 int MouseCommand(MOUSE_EVENT_RECORD *me);
 void CommonCommand(int key);
 void EditModeCommand(int key);
 void ScrollModeCommand(int key);
-void MoveCursorS(int offX,int offY,int key);
+void MoveCursorS(int offX, int offY, int key);
 int PPbContextMenu(void);
 
 #ifdef UNICODE
@@ -119,8 +119,8 @@ typedef struct {
 	WCHAR FaceName[LF_FACESIZE];
 } xCONSOLE_FONT_INFOEX;
 
-DefineWinAPI(BOOL,GetCurrentConsoleFontEx,(HANDLE hConsoleOutput,BOOL bMaximumWindow,xCONSOLE_FONT_INFOEX *lpConsoleCurrentFontEx)) = NULL;
-DefineWinAPI(BOOL,SetCurrentConsoleFontEx,(HANDLE hConsoleOutput,BOOL bMaximumWindow,xCONSOLE_FONT_INFOEX *lpConsoleCurrentFontEx));
+DefineWinAPI(BOOL, GetCurrentConsoleFontEx, (HANDLE hConsoleOutput, BOOL bMaximumWindow, xCONSOLE_FONT_INFOEX *lpConsoleCurrentFontEx)) = NULL;
+DefineWinAPI(BOOL, SetCurrentConsoleFontEx, (HANDLE hConsoleOutput, BOOL bMaximumWindow, xCONSOLE_FONT_INFOEX *lpConsoleCurrentFontEx));
 
 const TCHAR Kernel32DLL[] = T("kernel32.dll");
 SHORT DefaultFontY = 0; // 元のフォントサイズ(未設定:0)
@@ -133,12 +133,12 @@ void ConChangeFontSize(SHORT delta)
 		HMODULE hKernel32;
 
 		hKernel32 = GetModuleHandle(Kernel32DLL);
-		GETDLLPROC(hKernel32,GetCurrentConsoleFontEx);
-		GETDLLPROC(hKernel32,SetCurrentConsoleFontEx);
+		GETDLLPROC(hKernel32, GetCurrentConsoleFontEx);
+		GETDLLPROC(hKernel32, SetCurrentConsoleFontEx);
 		if ( DSetCurrentConsoleFontEx == NULL ) return;
 	}
 	cfi.cbSize = sizeof(cfi);
-	DGetCurrentConsoleFontEx(hStdout,FALSE,&cfi);
+	DGetCurrentConsoleFontEx(hStdout, FALSE, &cfi);
 	if ( DefaultFontY == 0 ) DefaultFontY = cfi.dwFontSize.Y;
 	if ( delta != -2 ){
 		if ( (cfi.dwFontSize.Y + delta) < 5 ) return;
@@ -146,7 +146,7 @@ void ConChangeFontSize(SHORT delta)
 	}else{
 		cfi.dwFontSize.Y = DefaultFontY;
 	}
-	DSetCurrentConsoleFontEx(hStdout,FALSE,&cfi);
+	DSetCurrentConsoleFontEx(hStdout, FALSE, &cfi);
 }
 
 void ScrollArea(int offY)
@@ -154,7 +154,7 @@ void ScrollArea(int offY)
 	SMALL_RECT box;
 	CONSOLE_SCREEN_BUFFER_INFO cinfo;
 
-	GetConsoleWindowInfo(hStdout,&cinfo);
+	GetConsoleWindowInfo(hStdout, &cinfo);
 
 	box = cinfo.srWindow;
 	if ( (box.Top + offY) < 0 ){
@@ -165,7 +165,7 @@ void ScrollArea(int offY)
 	}
 	box.Top += (short)offY;
 	box.Bottom += (short)offY;
-	SetConsoleWindowInfo(hStdout,TRUE,&box);
+	SetConsoleWindowInfo(hStdout, TRUE, &box);
 	eflag = TCI_TI_SCROLL;
 }
 
@@ -187,7 +187,7 @@ int BackEditWord(int x)
 	return x;
 }
 
-TCHAR *ClipText_FixPtr(TCHAR *src,int x)
+TCHAR *ClipText_FixPtr(TCHAR *src, int x)
 {
 	int charlen;
 	while ( x > 0 ){
@@ -208,8 +208,8 @@ void ClipText(void)
 	COORD pos;
 	SIZE range;
 	int i;
-	TCHAR *src,*srcO,*dst,*spc;
-	DWORD readsize,col;
+	TCHAR *src, *srcO, *dst, *spc;
+	DWORD readsize, col;
 	HGLOBAL hG;
 
 	if ( (RevBuf == NULL) || !IsTrue(OpenClipboard(NULL)) ) return;
@@ -249,34 +249,34 @@ void ClipText(void)
 			if ( range.cy >= 3 ) allocsize += (range.cy - 2) * (screen.dwSize.X + 2);
 			allocsize += range.cx + 2; // 末尾行
 		}
-		srcO = HeapAlloc(GetProcessHeap(),0,TSTROFF(screen.dwSize.X));
-		hG = GlobalAlloc(GMEM_MOVEABLE,TSTROFF(allocsize + 2));
+		srcO = HeapAlloc(GetProcessHeap(), 0, TSTROFF(screen.dwSize.X));
+		hG = GlobalAlloc(GMEM_MOVEABLE, TSTROFF(allocsize + 2));
 		if ( hG == NULL ) return;
 		dst = GlobalLock(hG);
 		x = pos.X;
 		pos.X = 0;
 		for ( i = 0 ; i < range.cy ; i++ ){
 			#ifndef WINEGCC
-			ReadConsoleOutputCharacter(hStdout,srcO,screen.dwSize.X,pos,&readsize);
+			ReadConsoleOutputCharacter(hStdout, srcO, screen.dwSize.X, pos, &readsize);
 			#else
-				tCsrPos(0,pos.Y);
-				innstr(srcO,screen.dwSize.X);
+				tCsrPos(0, pos.Y);
+				innstr(srcO, screen.dwSize.X);
 			#endif
 			pos.Y++;
 			src = srcO;
 			if ( range.cy <= 1 ){ // 1行
-				src = ClipText_FixPtr(src,x);
-				readsize = ClipText_FixPtr(src,range.cx) - src;
+				src = ClipText_FixPtr(src, x);
+				readsize = ClipText_FixPtr(src, range.cx) - src;
 			}else{
 				if ( i == 0 ){ // 1行
-					src = ClipText_FixPtr(src,x);
-					readsize = ClipText_FixPtr(src,screen.dwSize.X - x) - src;
+					src = ClipText_FixPtr(src, x);
+					readsize = ClipText_FixPtr(src, screen.dwSize.X - x) - src;
 				}else if ( i == (range.cy - 1) ){ // 末尾行
-					readsize = ClipText_FixPtr(src,range.cx) - src;
+					readsize = ClipText_FixPtr(src, range.cx) - src;
 				} // 中間行
 			}
 			spc = dst;
-			for ( col = 0 ; col < readsize ; src++,col++ ){
+			for ( col = 0 ; col < readsize ; src++, col++ ){
 				UTCHAR c;
 
 				c = (UTCHAR)*src;
@@ -292,21 +292,21 @@ void ClipText(void)
 			}
 		}
 	}else{
-		srcO = HeapAlloc(GetProcessHeap(),0,TSTROFF(range.cx));
-		hG = GlobalAlloc(GMEM_MOVEABLE,TSTROFF((range.cx + 2) * range.cy + 2));
+		srcO = HeapAlloc(GetProcessHeap(), 0, TSTROFF(range.cx));
+		hG = GlobalAlloc(GMEM_MOVEABLE, TSTROFF((range.cx + 2) * range.cy + 2));
 		if ( hG == NULL ) return;
 		dst = GlobalLock(hG);
 		for ( i = 0 ; i < range.cy ; i++ ){
 			#ifndef WINEGCC
-			ReadConsoleOutputCharacter(hStdout,srcO,range.cx,pos,&readsize);
+			ReadConsoleOutputCharacter(hStdout, srcO, range.cx, pos, &readsize);
 			#else
-				tCsrPos(pos.X,pos.Y);
-				innstr(srcO,range.cx);
+				tCsrPos(pos.X, pos.Y);
+				innstr(srcO, range.cx);
 			#endif
 			pos.Y++;
 			src = srcO;
 			spc = dst;
-			for ( col = 0 ; col < readsize ; src++,col++ ){
+			for ( col = 0 ; col < readsize ; src++, col++ ){
 				UTCHAR c;
 
 				c = (UTCHAR)*src;
@@ -324,25 +324,25 @@ void ClipText(void)
 		}
 	}
 	*dst = '\0';
-	HeapFree(GetProcessHeap(),0,srcO);
+	HeapFree(GetProcessHeap(), 0, srcO);
 	GlobalUnlock(hG);
 	EmptyClipboard();
-	SetClipboardData(CF_TTEXT,hG);
+	SetClipboardData(CF_TTEXT, hG);
 	CloseClipboard();
 }
 
 
-int CallKeyHook(PPXAPPINFO *info,WORD key)
+int CallKeyHook(PPXAPPINFO *info, WORD key)
 {
 	PPXMKEYHOOKSTRUCT keyhookinfo;
 	PPXMODULEPARAM pmp;
 
 	keyhookinfo.key = key;
 	pmp.keyhook = &keyhookinfo;
-	return CallModule(info,PPXMEVENT_KEYHOOK,pmp,KeyHookEntry);
+	return CallModule(info, PPXMEVENT_KEYHOOK, pmp, KeyHookEntry);
 }
 
-void MoveCursor(int newX,int key)
+void MoveCursor(int newX, int key)
 {
 	if ( newX < 0 ) newX = 0;
 
@@ -373,13 +373,13 @@ void MoveCursor(int newX,int key)
 }
 
 // ----------------------------------------------------------------------------
-void Replace(const TCHAR *istr,BOOL all)
+void Replace(const TCHAR *istr, int flags)
 {
-	size_t len,sellen;
+	size_t len, sellen;
 
 	len = tstrlen(istr);
 	sellen = 0;
-	if ( IsTrue(all) ){								// 置き換え
+	if ( flags & REPLACE_ALL ){							// 全て置き換え
 		if ( maxsize < len + 1 ) return;
 		sellen = tstrlen(EditText);
 		EdX = 0;
@@ -405,18 +405,22 @@ void Replace(const TCHAR *istr,BOOL all)
 		}while( sellen < len );
 		if ( maxsize < (EdX + len + tstrlen(EditText + EdX + sellen)+ 1)) return;
 	}
-	memmove(EditText+EdX+len,EditText+EdX+sellen,TSTRSIZE(EditText+EdX+sellen));
-	memcpy (EditText+EdX    ,istr              ,TSTROFF(len));
+	memmove(EditText + EdX + len, EditText + EdX + sellen, TSTRSIZE(EditText + EdX + sellen));
+	memcpy (EditText + EdX,       istr,                    TSTROFF(len));
 
 	SelStart = SelEnd = 0;
+	if ( flags & REPLACE_SELECT ){
+		SelStart = EdX;
+		SelEnd = EdX + len;
+	}
 	if ( istrt == 0 ) EdX += len;
 	if ( istrt == 2 ) EdX += len - 1;
 	eflag = TCI_TI_DRAW;
 }
 
-int GetMouseX(int ox,int mousex,TCHAR *dl)
+int GetMouseX(int ox, int mousex, const TCHAR *dl)
 {
-	int dispx,x;
+	int dispx, x;
 
 	dispx = 0;
 	for ( x = ox ; *(dl + x) != '\0' ; ){
@@ -435,7 +439,7 @@ int GetMouseX(int ox,int mousex,TCHAR *dl)
 // ----------------------------------------------------------------------------
 void ClearFormLine(void)
 {
-	TCHAR buf[FORMLINEWIDTH + 1],*p;
+	TCHAR buf[FORMLINEWIDTH + 1], *p;
 	COORD pos;
 	int i;
 	DWORD dtmp;
@@ -446,12 +450,12 @@ void ClearFormLine(void)
 
 	pos.X = 0;
 	pos.Y = (SHORT)(screen.dwCursorPosition.Y + 1);
-	SetConsoleCursorPosition(hStdout,pos);
-	WriteConsole(hStdout,buf,FORMLINEWIDTH,&dtmp,NULL);
+	SetConsoleCursorPosition(hStdout, pos);
+	WriteConsole(hStdout, buf, FORMLINEWIDTH, &dtmp, NULL);
 }
 
 // ----------------------------------------------------------------------------
-void USEFASTCALL ReverseLine(WORD *ptr,int len)
+void USEFASTCALL ReverseLine(WORD *ptr, int len)
 {
 	int i;
 
@@ -489,22 +493,22 @@ void ReverseRange(BOOL revon)
 		if ( sinfo.LineMode ){
 			SHORT a;
 												// 読み込み
-			p = RevBuf = HeapAlloc( GetProcessHeap(),0,screen.dwSize.X * range.cy * sizeof(WORD));
+			p = RevBuf = HeapAlloc( GetProcessHeap(), 0, screen.dwSize.X * range.cy * sizeof(WORD));
 			if ( p == NULL ) return;
 			a = pos.X;
 			pos.X = 0;
 			for ( i = 0 ; i < range.cy ; i++ ){
-				ReadConsoleOutputAttribute(hStdout,p,screen.dwSize.X,pos,&s);
+				ReadConsoleOutputAttribute(hStdout, p, screen.dwSize.X, pos, &s);
 				p += s;
 				pos.Y++;
 			}
 			pos.X = a;
 		}else{
 												// 読み込み
-			p = RevBuf = HeapAlloc( GetProcessHeap(),0,range.cx * range.cy * sizeof(WORD));
+			p = RevBuf = HeapAlloc( GetProcessHeap(), 0, range.cx * range.cy * sizeof(WORD));
 			if ( p == NULL ) return;
 			for ( i = 0 ; i < range.cy ; i++ ){
-				ReadConsoleOutputAttribute(hStdout,p,range.cx,pos,&s);
+				ReadConsoleOutputAttribute(hStdout, p, range.cx, pos, &s);
 				p += s;
 				pos.Y++;
 			}
@@ -513,7 +517,7 @@ void ReverseRange(BOOL revon)
 												// 反転
 	if ( sinfo.LineMode ){
 		if ( range.cy <= 1 ){ // 1行
-			ReverseLine(RevBuf + pos.X,range.cx);
+			ReverseLine(RevBuf + pos.X, range.cx);
 		}else{ // 複数行
 			if ( sinfo.sy > sinfo.cy ){
 				pos.X = (SHORT)sinfo.cx;
@@ -523,18 +527,18 @@ void ReverseRange(BOOL revon)
 				range.cx = sinfo.cx;
 			}
 
-			ReverseLine(RevBuf + pos.X,screen.dwSize.X - pos.X); // 先頭行
+			ReverseLine(RevBuf + pos.X, screen.dwSize.X - pos.X); // 先頭行
 			if ( range.cy >= 3 ){ // 中間行
 				for ( i = 1 ; i < (range.cy - 1) ; i++ ){
-					ReverseLine(RevBuf + screen.dwSize.X * i,screen.dwSize.X);
+					ReverseLine(RevBuf + screen.dwSize.X * i, screen.dwSize.X);
 				}
 			}
-			ReverseLine(RevBuf + screen.dwSize.X * (range.cy - 1),range.cx); // 末尾行
+			ReverseLine(RevBuf + screen.dwSize.X * (range.cy - 1), range.cx); // 末尾行
 		}
 		range.cx = screen.dwSize.X;
 		pos.X = 0;
 	}else{
-		ReverseLine(RevBuf,range.cx * range.cy);
+		ReverseLine(RevBuf, range.cx * range.cy);
 	}
 												// 表示
 	if ( revon ) pos.Y -= (SHORT)range.cy;
@@ -542,16 +546,16 @@ void ReverseRange(BOOL revon)
 	p = RevBuf;
 	for ( i = 0 ; i < range.cy ; i++ ){
 		#ifndef WINEGCC
-			WriteConsoleOutputAttribute(hStdout,p,range.cx,pos,&s);
+			WriteConsoleOutputAttribute(hStdout, p, range.cx, pos, &s);
 		#else
-			tFillAtr(pos.X,pos.Y,pos.X + range.cx,pos.Y,0xf0);
+			tFillAtr(pos.X, pos.Y, pos.X + range.cx, pos.Y, 0xf0);
 		#endif
 		p += s;
 		pos.Y++;
 	}
 
 	if ( !revon ){								// 解放
-		HeapFree(GetProcessHeap(),0,RevBuf);
+		HeapFree(GetProcessHeap(), 0, RevBuf);
 		RevBuf = NULL;
 	}
 }
@@ -562,10 +566,10 @@ void ReverseText(int len)
 	WORD temp[TSIZEOF(incsearch.text)];
 	DWORD tempsize;
 
-	ReadConsoleOutputAttribute(hStdout,temp,len,incsearch.pos,&tempsize);
+	ReadConsoleOutputAttribute(hStdout, temp, len, incsearch.pos, &tempsize);
 												// 反転
-	ReverseLine(temp,len);
-	WriteConsoleOutputAttribute(hStdout,temp,len,incsearch.pos,&tempsize);
+	ReverseLine(temp, len);
+	WriteConsoleOutputAttribute(hStdout, temp, len, incsearch.pos, &tempsize);
 }
 
 BOOL ScrIncSearch(int next)
@@ -588,14 +592,14 @@ BOOL ScrIncSearch(int next)
 			DWORD temp;
 
 			if ( FALSE == ReadConsoleOutputCharacter(
-					hStdout,temptext,incsearch.len,pos,&temp) ){
+					hStdout, temptext, incsearch.len, pos, &temp) ){
 				break;
 			}
 			temptext[incsearch.len] = '\0';
-			if ( tstricmp(incsearch.text,temptext) == 0 ){
+			if ( tstricmp(incsearch.text, temptext) == 0 ){
 				if ( oldlen ) ReverseText(oldlen);
 				incsearch.pos = pos;
-				MoveCursorS(pos.X - sinfo.cx,pos.Y - sinfo.cy,0);
+				MoveCursorS(pos.X - sinfo.cx, pos.Y - sinfo.cy, 0);
 				ReverseText(incsearch.len);
 				return TRUE;
 			}
@@ -609,12 +613,12 @@ BOOL ScrIncSearch(int next)
 １文字前の全角／半角の判断
 -----------------------------*/
 #ifdef UNICODE
-	#define bchrlen(str,off) (off ? 1 : 0)
+	#define bchrlen(str, off) (off ? 1 : 0)
 #else
 #if NODLL
-extern int bchrlen(TCHAR *str,int off);
+extern int bchrlen(TCHAR *str, int off);
 #else
-int bchrlen(TCHAR *str,int off)
+int bchrlen(TCHAR *str, int off)
 {
 	int size;
 	TCHAR *max_str;
@@ -631,14 +635,14 @@ int bchrlen(TCHAR *str,int off)
 //----------------------------------------------------------------------------
 void USEFASTCALL HilightLine(WORD atr)
 {
-	tFillAtr(	0					,screen.dwCursorPosition.Y,
-				screen.dwSize.X - 1	,screen.dwCursorPosition.Y,atr);
+	tFillAtr(	0					, screen.dwCursorPosition.Y,
+				screen.dwSize.X - 1	, screen.dwCursorPosition.Y, atr);
 }
 
 #ifdef UNICODE
 int GetScreenX(int x)
 {
-	int i,nx = 0;
+	int i, nx = 0;
 
 	for ( i = 0 ; i < x ; i++ ){
 		WCHAR c;
@@ -658,8 +662,8 @@ void DisplayLine(TCHAR *buf)
 	#ifdef UNICODE
 	WCHAR c;
 	#endif
-	TCHAR dispbuf[CMDLINESIZE],*p;
-	int s = screen.dwSize.X,i,j,linecolor;
+	TCHAR dispbuf[CMDLINESIZE], *p;
+	int s = screen.dwSize.X, i, j, linecolor;
 	COORD pos;
 	DWORD tmp;
 	pos.X = 0;
@@ -696,9 +700,9 @@ void DisplayLine(TCHAR *buf)
 	}
 	*p = '\0';
 #ifndef WINEGCC
-	WriteConsoleOutputCharacter(hStdout,dispbuf,screen.dwSize.X,pos,&tmp);
+	WriteConsoleOutputCharacter(hStdout, dispbuf, screen.dwSize.X, pos, &tmp);
 #else
-	tputposstr(0,screen.dwCursorPosition.Y,dispbuf);
+	tputposstr(0, screen.dwCursorPosition.Y, dispbuf);
 #endif
 
 								// 範囲選択処理 -------------------------------
@@ -712,21 +716,21 @@ void DisplayLine(TCHAR *buf)
 
 		if ( ShowOffset < SelStart ){	// 範囲左端が画面内→左端まで選択解除
 			i = GetScreenX(SelStart - ShowOffset);
-			tFillAtr(	0	 ,screen.dwCursorPosition.Y,
-						i - 1,screen.dwCursorPosition.Y,CB_edit[linecolor].ed);
+			tFillAtr(	0	 , screen.dwCursorPosition.Y,
+						i - 1, screen.dwCursorPosition.Y, CB_edit[linecolor].ed);
 		}
 		if ( s > SelEnd ){	// 範囲右端が画面内→右端以降を選択解除
-			tFillAtr(	GetScreenX(SelEnd - ShowOffset)	,screen.dwCursorPosition.Y,
-						j - 1,screen.dwCursorPosition.Y,CB_edit[linecolor].ed);
+			tFillAtr(	GetScreenX(SelEnd - ShowOffset)	, screen.dwCursorPosition.Y,
+						j - 1, screen.dwCursorPosition.Y, CB_edit[linecolor].ed);
 			j = GetScreenX(SelEnd - ShowOffset);
 		}
 						// 範囲を選択
-		tFillAtr(	i    ,screen.dwCursorPosition.Y,
-					j - 1,screen.dwCursorPosition.Y,CB_edit[linecolor].select);
+		tFillAtr(	i    , screen.dwCursorPosition.Y,
+					j - 1, screen.dwCursorPosition.Y, CB_edit[linecolor].select);
 	}
 }
 // ----------------------------------------------------------------------------
-#define BackupLine(dl,bak) tstrcpy(bak,dl)
+#define BackupLine(dl, bak) tstrcpy(bak, dl)
 // ----------------------------------------------------------------------------
 void SetScrollMode(void)
 {
@@ -743,21 +747,21 @@ void SetSelectMode(MOUSE_EVENT_RECORD *me)
 	sinfo.sx = sinfo.cx = me->dwMousePosition.X;
 	sinfo.sy = sinfo.cy = me->dwMousePosition.Y;
 	sinfo.LineMode = TRUE;
-	tCsrPos(sinfo.cx,sinfo.cy);
+	tCsrPos(sinfo.cx, sinfo.cy);
 	cmode = CMODE_SELECT;
 }
 
 // ----------------------------------------------------------------------------
-void TPushEditStack(TCHAR mode,TCHAR *str,int b,int t)
+void TPushEditStack(TCHAR mode, TCHAR *str, int b, int t)
 {
 	TCHAR buf[CMDLINESIZE];
 
-	memcpy(buf,str + b,TSTROFF(t - b));
+	memcpy(buf, str + b, TSTROFF(t - b));
 	buf[t - b] = '\0';
-	PushTextStack(mode,buf);
+	PushTextStack(mode, buf);
 }
 // ----------------------------------------------------------------------------
-void InitHistorySearch(HISTVAR *hivar,TCHAR *dl)
+void InitHistorySearch(HISTVAR *hivar, TCHAR *dl)
 {
 	hivar->index = -1;
 	hivar->count = 0;
@@ -767,12 +771,12 @@ void InitHistorySearch(HISTVAR *hivar,TCHAR *dl)
 }
 // ----------------------------------------------------------------------------
 // ヒストリの検索方法を決定する
-void GetHistorySearchMode(HISTVAR *hivar,TCHAR *dl)
+void GetHistorySearchMode(HISTVAR *hivar, TCHAR *dl)
 {
-	TCHAR *p,*q,*cmd,*s;
+	TCHAR *p, *q, *cmd, *s;
 
 	if ( EdX == 0 ){							// カーソルが先頭…全体
-		InitHistorySearch(hivar,dl);
+		InitHistorySearch(hivar, dl);
 		hivar->mode = HIST_CMD_ALL;
 		return;
 	}
@@ -789,7 +793,7 @@ void GetHistorySearchMode(HISTVAR *hivar,TCHAR *dl)
 		if (*p == ' ') s = p + 1;
 		p++;
 	}
-	InitHistorySearch(hivar,dl);
+	InitHistorySearch(hivar, dl);
 	if ( s == NULL ){		// 空白がなかった→コマンド検索
 		hivar->mode = (cmd == p) ? HIST_CMD_ALL : HIST_CMD_FIND;	// 文字列なし→全体検索
 		hivar->findstr = cmd;				// 文字列有り→コマンド前方一致検索
@@ -811,7 +815,7 @@ const TCHAR *NextWord(const TCHAR *p)
 	return p;
 }
 // ----------------------------------------------------------------------------
-const TCHAR *SearchLineHistory2(HISTVAR *hivar,const TCHAR *p)
+const TCHAR *SearchLineHistory2(HISTVAR *hivar, const TCHAR *p)
 {
 	switch( hivar->mode ){
 		case HIST_CMD_ALL:			// 全体検索
@@ -820,7 +824,7 @@ const TCHAR *SearchLineHistory2(HISTVAR *hivar,const TCHAR *p)
 		case HIST_CMD_FIND:			// コマンド前方一致検索
 			while ( *p == ' ' ) p++;
 			if ( (tstrlen(p) < hivar->findsize) ||
-				 tstrnicmp(p,hivar->findstr,hivar->findsize) ){
+				 tstrnicmp(p, hivar->findstr, hivar->findsize) ){
 				p = NULL;
 			}
 			break;
@@ -854,7 +858,7 @@ const TCHAR *SearchLineHistory2(HISTVAR *hivar,const TCHAR *p)
 				}
 			}
 			if ( (tstrlen(p) < hivar->findsize) ||
-				 tstrnicmp(p,hivar->findstr,hivar->findsize) ){
+				 tstrnicmp(p, hivar->findstr, hivar->findsize) ){
 				p = NULL;
 			}
 			break;
@@ -862,7 +866,7 @@ const TCHAR *SearchLineHistory2(HISTVAR *hivar,const TCHAR *p)
 	}
 	if ( p ){
 		if ( hivar->mode <= HIST_CMD_FIND ){ // HIST_CMD_ALL / HIST_CMD_FIND
-			tstrcpy(hivar->findstr,p);
+			tstrcpy(hivar->findstr, p);
 		}else{
 			const UTCHAR *src;
 			UTCHAR *dst;
@@ -876,7 +880,7 @@ const TCHAR *SearchLineHistory2(HISTVAR *hivar,const TCHAR *p)
 	return p;
 }
 // ----------------------------------------------------------------------------
-const TCHAR *SearchLineHistory(HISTVAR *hivar,int offset)
+const TCHAR *SearchLineHistory(HISTVAR *hivar, int offset)
 {
 	const TCHAR *p;
 
@@ -884,21 +888,21 @@ const TCHAR *SearchLineHistory(HISTVAR *hivar,int offset)
 	TCHAR buf[100];
 	COORD pos;
 	DWORD tmp;
-	wsprintf(buf,T("Mode:%d Index:%3d Count:%3d"),
-			hivar->mode,hivar->index,hivar->count);
+	wsprintf(buf, T("Mode:%d Index:%3d Count:%3d"),
+			hivar->mode, hivar->index, hivar->count);
 	pos.X = 0;
 	pos.Y = (SHORT)(screen.dwCursorPosition.Y + 1);
-	WriteConsoleOutputCharacter(hStdout,buf,tstrlen(buf),pos,&tmp);
+	WriteConsoleOutputCharacter(hStdout, buf, tstrlen(buf), pos, &tmp);
 #endif
 	if ( offset >= 0 ){			// 古いほうへ検索
 		if ( hivar->count != 0 ){
 			if ( hivar->index == -1 ) hivar->index = 0;
-			p = EnumHistory(hivar->type,hivar->index);
+			p = EnumHistory(hivar->type, hivar->index);
 			if ( p ) for ( ; ; ){
 				for ( ; ; ){
 					const TCHAR *q;
 
-					q = SearchLineHistory2(hivar,p);
+					q = SearchLineHistory2(hivar, p);
 					if ( q != NULL ){
 						if ( *q == '\0' ) break;
 						hivar->count++;
@@ -906,17 +910,17 @@ const TCHAR *SearchLineHistory(HISTVAR *hivar,int offset)
 					}
 					hivar->count++;
 				}
-				p = EnumHistory(hivar->type,hivar->index + 1);
+				p = EnumHistory(hivar->type, hivar->index + 1);
 				if ( p == NULL ) break;
 				hivar->index++;
 				hivar->count = 1;
 			}
 		}else{
 			do{
-				p = EnumHistory(hivar->type,hivar->index + 1);
+				p = EnumHistory(hivar->type, hivar->index + 1);
 				if ( p == NULL) break;
 				hivar->index++;
-				p = SearchLineHistory2(hivar,p);
+				p = SearchLineHistory2(hivar, p);
 			}while( p == NULL );
 		}
 	}else{						// 新しいほうへ検索
@@ -924,7 +928,7 @@ const TCHAR *SearchLineHistory(HISTVAR *hivar,int offset)
 		if ( hivar->index != -1 ){
 			if ( hivar->count != 0 ){
 				for ( ; ; ){
-					p = EnumHistory(hivar->type,hivar->index);
+					p = EnumHistory(hivar->type, hivar->index);
 					if ( p != NULL ){
 						if ( hivar->count < 1 ) hivar->count = HISCOUNT_MAX + 1;
 						hivar->count--;
@@ -932,7 +936,7 @@ const TCHAR *SearchLineHistory(HISTVAR *hivar,int offset)
 						while ( hivar->count != 0 ){
 							const TCHAR *q;
 
-							q = SearchLineHistory2(hivar,p);
+							q = SearchLineHistory2(hivar, p);
 							if ( q != NULL ){
 								if ( *q == '\0' ) break;
 								return q;
@@ -946,9 +950,9 @@ const TCHAR *SearchLineHistory(HISTVAR *hivar,int offset)
 			}else{
 				hivar->index--;
 				while( hivar->index > -1 ){
-					p = EnumHistory(hivar->type,hivar->index);
+					p = EnumHistory(hivar->type, hivar->index);
 					if ( p == NULL ) break;
-					p = SearchLineHistory2(hivar,p);
+					p = SearchLineHistory2(hivar, p);
 					if ( p != NULL ) break;
 					hivar->index--;
 				}
@@ -959,7 +963,7 @@ const TCHAR *SearchLineHistory(HISTVAR *hivar,int offset)
 }
 
 // ----------------------------------------------------------------------------
-int tCInput(TCHAR *buf,size_t bsize,WORD htype)
+int tCInput(TCHAR *buf, size_t bsize, WORD htype)
 {
 	INPUT_RECORD cin;
 	int X_calc = 1;
@@ -978,11 +982,11 @@ int tCInput(TCHAR *buf,size_t bsize,WORD htype)
 	cmode = CMODE_EDIT;
 	baseptr = EditText = buf;
 	eflag = TCI_TI_DRAW;
-	tstrcpy(backuptext,EditText);
+	tstrcpy(backuptext, EditText);
 	RevBuf = NULL;
 
 	SetIMEDefaultStatus(hMainWnd);
-	InitHistorySearch(&hvar,EditText);
+	InitHistorySearch(&hvar, EditText);
 	histype = hvar.type = htype;
 
 	tInit(NULL);
@@ -996,13 +1000,13 @@ int tCInput(TCHAR *buf,size_t bsize,WORD htype)
 
 		pos.Y = screen.dwCursorPosition.Y;
 		pos.X = (SHORT)(screen.dwSize.X - 1);
-		SetConsoleCursorPosition(hStdout,pos);
+		SetConsoleCursorPosition(hStdout, pos);
 		tputstr(T(" ")); // 反映
 		screen.dwCursorPosition.Y--;
 	}
 
-	GetCustData(T("CB_edit"),&CB_edit,sizeof(CB_edit));
-	GetCustData(T("X_calc"),&X_calc,sizeof X_calc);
+	GetCustData(T("CB_edit"), &CB_edit, sizeof(CB_edit));
+	GetCustData(T("X_calc"), &X_calc, sizeof X_calc);
 	do{
 		int key;			// 現在のキーコード
 
@@ -1014,7 +1018,7 @@ int tCInput(TCHAR *buf,size_t bsize,WORD htype)
 		}
 		#ifdef UNICODE
 		{
-			int x,wide = 0;
+			int x, wide = 0;
 			for ( x = ShowOffset ; x < EdX ; x++ ){
 				wide += CCharWide(*(EditText + x));
 			}
@@ -1043,14 +1047,14 @@ int tCInput(TCHAR *buf,size_t bsize,WORD htype)
 					ClearFormLine();
 				}
 			}
-			if ( X_calc && IsTrue(GetCalc(EditText,form,NULL)) ){
+			if ( X_calc && IsTrue(GetCalc(EditText, form, NULL)) ){
 				DWORD dtmp;
 				COORD pos;
 
 				pos.X = 0;
 				pos.Y = (SHORT)(screen.dwCursorPosition.Y + 1);
 				formlen = tstrlen32(form);
-				WriteConsoleOutputCharacter(hStdout,form,formlen,pos,&dtmp);
+				WriteConsoleOutputCharacter(hStdout, form, formlen, pos, &dtmp);
 			}
 		}
 		if ( eflag == TCI_TI_SCROLL ){
@@ -1058,22 +1062,22 @@ int tCInput(TCHAR *buf,size_t bsize,WORD htype)
 		}else if ( cmode == CMODE_EDIT ){
 			#ifdef UNICODE
 				WCHAR *p;
-				int i,x;
+				int i, x;
 
 				tCsrMode(insmode);
-				for ( i = EdX - ShowOffset,x = 0,p = EditText + ShowOffset ; i ; i--,p++ ){
+				for ( i = EdX - ShowOffset, x = 0, p = EditText + ShowOffset ; i ; i--, p++ ){
 					x += TChrlen(*p);
 				}
-				tCsrPos(x,screen.dwCursorPosition.Y);
+				tCsrPos(x, screen.dwCursorPosition.Y);
 			#else
 				tCsrMode(insmode);
-				tCsrPos(EdX - ShowOffset,screen.dwCursorPosition.Y);
+				tCsrPos(EdX - ShowOffset, screen.dwCursorPosition.Y);
 			#endif
 		// カーソルが末尾でないなら、ヒストリの検索方法のキャッシュを解除する。
-			if (*(EditText + EdX)) InitHistorySearch(&hvar,EditText);
+			if (*(EditText + EdX)) InitHistorySearch(&hvar, EditText);
 		}else{
 			tCsrMode(100);
-			tCsrPos(sinfo.cx,sinfo.cy);
+			tCsrPos(sinfo.cx, sinfo.cy);
 		}
 		do{
 			key = tgetc(&cin);
@@ -1083,14 +1087,14 @@ int tCInput(TCHAR *buf,size_t bsize,WORD htype)
 		}while( key == 0 );
 		if ( key > 0 ){
 			if ( KeyHookEntry != NULL ){
-				if ( CallKeyHook(&ppbappinfo,(WORD)key) != PPXMRESULT_SKIP ){
+				if ( CallKeyHook(&ppbappinfo, (WORD)key) != PPXMRESULT_SKIP ){
 					continue;
 				}
 			}
 			CommonCommand(key);
 		}else{
 			if ( key == KEY_RECV ){			// MailSlot 受信（PPB用）
-				if ( EditText != buf ) tstrcpy(buf,EditText);
+				if ( EditText != buf ) tstrcpy(buf, EditText);
 				eflag = TCI_RECV;
 			}
 		}
@@ -1104,13 +1108,13 @@ int tCInput(TCHAR *buf,size_t bsize,WORD htype)
 		COORD pos;
 		WORD atr = T_CYA;
 
-		GetCustData(T("CB_com"),&atr,sizeof(atr));
+		GetCustData(T("CB_com"), &atr, sizeof(atr));
 		HilightLine(atr);				// 編集位置の強調解除
 
 		if ( formlen ) ClearFormLine();
 		pos.X = 0;
 		pos.Y = screen.dwCursorPosition.Y;
-		SetConsoleCursorPosition(hStdout,pos);
+		SetConsoleCursorPosition(hStdout, pos);
 	}
 	return eflag;
 }
@@ -1120,12 +1124,12 @@ void CommonCommand(int key)
 	TCHAR buf[CMDLINESIZE];
 
 	if ( !(key & K_raw) ){
-		PutKeyCode(buf,key);
-		if ( NO_ERROR == GetCustTable(T("KB_edit"),buf,buf,sizeof(buf)) ){
+		PutKeyCode(buf, key);
+		if ( NO_ERROR == GetCustTable(T("KB_edit"), buf, buf, sizeof(buf)) ){
 			WORD *p;
 
 			if ( (UTCHAR)buf[0] == EXTCMD_CMD ){
-				PP_ExtractMacro(hMainWnd,&ppbappinfo,NULL,buf + 1,NULL,(XEO_CONSOLE | XEO_NOUSEPPB) );
+				PP_ExtractMacro(hMainWnd, &ppbappinfo, NULL, buf + 1, NULL, (XEO_CONSOLE | XEO_NOUSEPPB) );
 				return;
 			}
 			p = (WORD *)(((UTCHAR)buf[0] == EXTCMD_KEY) ? (buf + 1) : buf);
@@ -1141,10 +1145,10 @@ void CommonCommand(int key)
 			}
 		}
 	}
-	resetflag(key,K_raw);	// エイリアスビットを無効にする
+	resetflag(key, K_raw);	// エイリアスビットを無効にする
 	switch ( key ){
 		case K_F1:
-			PPxHelp(hMainWnd,HELP_CONTEXT,IDH_PPB);
+			PPxHelp(hMainWnd, HELP_CONTEXT, IDH_PPB);
 			break;
 
 		case K_a | K_F4:			// &[F4] 終了
@@ -1155,11 +1159,11 @@ void CommonCommand(int key)
 			if ( hBackWnd != NULL ){
 				DWORD XV_minf = 2;
 
-				GetCustData (T("XV_minf"),&XV_minf,sizeof(XV_minf));
+				GetCustData (T("XV_minf"), &XV_minf, sizeof(XV_minf));
 				if ( XV_minf == 1 ){
-					SendMessage(hMainWnd,WM_SYSCOMMAND,SC_MINIMIZE,MAX32);
+					SendMessage(hMainWnd, WM_SYSCOMMAND, SC_MINIMIZE, MAX32);
 					ForceSetForegroundWindow(hBackWnd);
-					SetWindowPos(hMainWnd,HWND_BOTTOM,0,0,0,0,SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+					SetWindowPos(hMainWnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
 					hBackWnd = NULL;
 					break;
 				}else if ( XV_minf == 2 ){
@@ -1167,20 +1171,20 @@ void CommonCommand(int key)
 				}
 				hBackWnd = NULL;
 			}
-			ShowWindow(hMainWnd,SW_MINIMIZE);
+			ShowWindow(hMainWnd, SW_MINIMIZE);
 			break;
 
 		case K_a | K_up:				// [↑]
-			MoveWindowByKey(hMainWnd,0,-1);
+			MoveWindowByKey(hMainWnd, 0, -1);
 			break;
 		case K_a | K_dw:			// [↓]
-			MoveWindowByKey(hMainWnd,0,1);
+			MoveWindowByKey(hMainWnd, 0, 1);
 			break;
 		case K_a | K_lf:			// [←]
-			MoveWindowByKey(hMainWnd,-1,0);
+			MoveWindowByKey(hMainWnd, -1, 0);
 			break;
 		case K_a | K_ri:			// [→]
-			MoveWindowByKey(hMainWnd,1,0);
+			MoveWindowByKey(hMainWnd, 1, 0);
 			break;
 
 		case K_c | K_Pup:				// ^[PgUP]
@@ -1201,12 +1205,12 @@ void CommonCommand(int key)
 		case K_a | K_home: {	// &[home]
 			WINPOS WPos;
 
-			GetWindowRect(hMainWnd,&WinPos.pos);
-			wsprintf(buf,T("%s_"),RegCID);
-			if ( NO_ERROR == GetCustTable(T("_WinPos"),buf,&WPos,sizeof(WPos)) ){
-				MoveWindow(hMainWnd,WPos.pos.left,WPos.pos.top,
+			GetWindowRect(hMainWnd, &WinPos.pos);
+			wsprintf(buf, T("%s_"), RegCID);
+			if ( NO_ERROR == GetCustTable(T("_WinPos"), buf, &WPos, sizeof(WPos)) ){
+				MoveWindow(hMainWnd, WPos.pos.left, WPos.pos.top,
 						WinPos.pos.right - WinPos.pos.left,
-						WinPos.pos.bottom - WinPos.pos.top,TRUE);
+						WinPos.pos.bottom - WinPos.pos.top, TRUE);
 			}else{
 				CenterWindow(hMainWnd);
 			}
@@ -1214,9 +1218,9 @@ void CommonCommand(int key)
 		}
 //-----------------------------------------------
 		case K_a | K_s | K_home:	// &\[home]
-			GetWindowRect(hMainWnd,&WinPos.pos);
-			wsprintf(buf,T("%s_"),RegCID);
-			SetCustTable(T("_WinPos"),buf,&WinPos,sizeof(WinPos));
+			GetWindowRect(hMainWnd, &WinPos.pos);
+			wsprintf(buf, T("%s_"), RegCID);
+			SetCustTable(T("_WinPos"), buf, &WinPos, sizeof(WinPos));
 			break;
 
 		case K_v | VK_APPS: {
@@ -1229,7 +1233,7 @@ void CommonCommand(int key)
 		case K_c | K_s | K_v | VK_OEM_PLUS: // US[=/+] JIS[;/+]
 		case K_c | K_s | K_v | VK_SUBTRACT:
 		case K_c | K_s | K_v | VK_OEM_MINUS: // US[-/_] JIS[-/=]
-			PPxCommonCommand(hMainWnd,0,(WORD)key);
+			PPxCommonCommand(hMainWnd, 0, (WORD)key);
 			break;
 
 		case K_c | K_v | VK_ADD:
@@ -1297,7 +1301,7 @@ void EditModeCommand(int key)
 		case K_c | K_s | 'X':
 			if ( *EditText && IsTrue(OpenClipboard(NULL)) ){
 				HGLOBAL hG;
-				int i,j;
+				int i, j;
 				TCHAR *p;
 
 				if ( SelStart != SelEnd ){
@@ -1307,20 +1311,20 @@ void EditModeCommand(int key)
 					i = tstrlen32(EditText);
 					j = 0;
 				}
-				hG = GlobalAlloc(GMEM_MOVEABLE,TSTROFF(i + 1));
+				hG = GlobalAlloc(GMEM_MOVEABLE, TSTROFF(i + 1));
 				if ( hG != NULL ){
 					p = GlobalLock(hG);
-					memcpy(p,(char *)(TCHAR *)(EditText + j),TSTROFF(i));
+					memcpy(p, (char *)(TCHAR *)(EditText + j), TSTROFF(i));
 					*(p + i) = 0;
 					GlobalUnlock(hG);
 					EmptyClipboard();
-					SetClipboardData(CF_TTEXT,hG);
+					SetClipboardData(CF_TTEXT, hG);
 				}
 				CloseClipboard();
 
 				if ( (key & 0xff) == 'X' ){
 					if ( SelStart != SelEnd ){
-						tstrcpy(EditText + SelStart,EditText + SelEnd);
+						tstrcpy(EditText + SelStart, EditText + SelEnd);
 						EdX = SelStart;
 						SelStart = SelEnd = 0;
 					}else{
@@ -1338,7 +1342,7 @@ void EditModeCommand(int key)
 
 				hG = GetClipboardData(CF_TTEXT);
 				if ( hG != NULL ){
-					TCHAR *src,*srcmax,*dest;
+					TCHAR *src, *srcmax, *dest;
 					size_t len;
 
 					src = GlobalLock(hG);
@@ -1362,7 +1366,7 @@ void EditModeCommand(int key)
 
 		case K_c | 'M':
 		case K_cr:					// CR:確定
-			if ( EditText != baseptr ) tstrcpy(baseptr,EditText);
+			if ( EditText != baseptr ) tstrcpy(baseptr, EditText);
 			eflag = TCI_EXECUTE;
 			break;
 
@@ -1393,7 +1397,7 @@ void EditModeCommand(int key)
 			TCHAR *p;
 			ECURSOR cursor;
 
-			tstrcpy(tmp,EditText);
+			tstrcpy(tmp, EditText);
 			if ( SelStart == SelEnd ){
 				cursor.start = EdX;
 				cursor.end	 = EdX;
@@ -1402,7 +1406,7 @@ void EditModeCommand(int key)
 				cursor.end	 = SelEnd;
 			}
 
-			p = SearchFileIned(&ComplED,tmp,&cursor,
+			p = SearchFileIned(&ComplED, tmp, &cursor,
 				((histype & PPXH_COMMAND) ? CMDSEARCH_CURRENT : CMDSEARCH_OFF) |
 				((key != (K_c | 'I')) ? 0 : CMDSEARCH_FLOAT) |
 				CMDSEARCH_MULTI );
@@ -1431,7 +1435,7 @@ void EditModeCommand(int key)
 			#else
 			if ((size_t)newX < maxsize) newX += Chrlen(*(EditText + newX));
 			#endif
-			MoveCursor(newX,key);
+			MoveCursor(newX, key);
 			break;
 		}
 		case       K_c | K_ri:		//  ^→:右へ単語移動
@@ -1442,7 +1446,7 @@ void EditModeCommand(int key)
 				if ( (size_t)newX >= maxsize ) break;
 				newX++;
 			}
-			MoveCursor(newX,key);
+			MoveCursor(newX, key);
 			break;
 		}
 		case       K_lf:			//  ←:左へ移動
@@ -1453,45 +1457,45 @@ void EditModeCommand(int key)
 			#ifdef UNICODE
 			if ( newX != 0 ) newX--;
 			#else
-			if ( newX != 0 ) newX -= bchrlen(EditText,newX);
+			if ( newX != 0 ) newX -= bchrlen(EditText, newX);
 			#endif
-			MoveCursor(newX,key);
+			MoveCursor(newX, key);
 			break;
 		}
 		case       K_c | K_lf:		// ^←:左へ単語移動
 		case K_s | K_c | K_lf:	// ^\←:左へ単語移動+選択
-			MoveCursor(BackEditWord(EdX),key);
+			MoveCursor(BackEditWord(EdX), key);
 			break;
 
 		case       K_home:			//  HOME:左端
 		case K_s | K_home:			// \HOME:左端+選択
-			MoveCursor(0,key);
+			MoveCursor(0, key);
 			break;
 
 		case       K_end:			//  END:右端
 		case K_s | K_end:			// \END:右端+選択
-			MoveCursor(tstrlen32(EditText),key);
+			MoveCursor(tstrlen32(EditText), key);
 			break;
 
 		case K_up:					// ↑:古いヒストリ
 		case K_dw: {				// ↓:新しいヒストリ
 			const TCHAR *p;
 
-			GetHistorySearchMode(&hvar,EditText);
+			GetHistorySearchMode(&hvar, EditText);
 			UsePPx();
-			p = SearchLineHistory(&hvar,(key == K_up) ? 1 : -1);
+			p = SearchLineHistory(&hvar, (key == K_up) ? 1 : -1);
 			if ( p == NULL ){
 				if ( hvar.mode == HIST_CMD_FIND ){
 					hvar.mode = HIST_CMD_ALL;
 					hvar.index = -1;
 					hvar.count = 0;
-					p = SearchLineHistory(&hvar,(key == K_up) ? 1 : -1);
+					p = SearchLineHistory(&hvar, (key == K_up) ? 1 : -1);
 				}
 				if ( hvar.mode == HIST_PARAM_FIND ){
 					hvar.mode = HIST_PARAM_ALL;
 					hvar.index = -1;
 					hvar.count = 1;
-					p = SearchLineHistory(&hvar,(key == K_up) ? 1 : -1);
+					p = SearchLineHistory(&hvar, (key == K_up) ? 1 : -1);
 				}
 			}
 			if ( p != NULL ){
@@ -1505,32 +1509,32 @@ void EditModeCommand(int key)
 		}
 
 		case K_bs:					//	BS:左側の１文字を削除
-			InitHistorySearch(&hvar,EditText);
+			InitHistorySearch(&hvar, EditText);
 			if ( SelStart != SelEnd ){
-				BackupLine(EditText,backuptext);
+				BackupLine(EditText, backuptext);
 
-				TPushEditStack(0,EditText,SelStart,SelEnd);
-				tstrcpy(EditText + SelStart,EditText + SelEnd);
+				TPushEditStack(0, EditText, SelStart, SelEnd);
+				tstrcpy(EditText + SelStart, EditText + SelEnd);
 				EdX = SelStart;
 				SelStart = SelEnd = 0;
 				eflag = TCI_TI_DRAW;
 			}else if ( EdX != 0 ){
 				int len;
 
-				BackupLine(EditText,backuptext);
-				EdX -= len = bchrlen(EditText,EdX);
-				TPushEditStack(0,EditText,EdX,EdX + len);
-				tstrcpy(EditText + EdX,EditText + EdX + len);
+				BackupLine(EditText, backuptext);
+				EdX -= len = bchrlen(EditText, EdX);
+				TPushEditStack(0, EditText, EdX, EdX + len);
+				tstrcpy(EditText + EdX, EditText + EdX + len);
 				eflag = TCI_TI_DRAW;
 			}
 			break;
 
 		case K_s | K_bs:			//	\BS:左側を全て削除
 			if ( EdX != 0 ){
-				InitHistorySearch(&hvar,EditText);
-				BackupLine(EditText,backuptext);
-				TPushEditStack(0,EditText,0,EdX);
-				tstrcpy(EditText,EditText + EdX);
+				InitHistorySearch(&hvar, EditText);
+				BackupLine(EditText, backuptext);
+				TPushEditStack(0, EditText, 0, EdX);
+				tstrcpy(EditText, EditText + EdX);
 				EdX = SelStart = SelEnd = 0;
 				eflag = TCI_TI_DRAW;
 			}
@@ -1538,10 +1542,10 @@ void EditModeCommand(int key)
 
 		case K_a | K_bs:			//	&BS:元に戻す
 		case K_c | 'Z':				//	^Z
-			if ( tstrcmp(backuptext,EditText) != 0 ){
-				tstrcpy(tmp,EditText);
-				tstrcpy(EditText,backuptext);
-				tstrcpy(backuptext,tmp);
+			if ( tstrcmp(backuptext, EditText) != 0 ){
+				tstrcpy(tmp, EditText);
+				tstrcpy(EditText, backuptext);
+				tstrcpy(backuptext, tmp);
 
 				ShowOffset = 0;
 				SelStart = SelEnd = 0;
@@ -1552,23 +1556,23 @@ void EditModeCommand(int key)
 
 		case K_del:					//	DEL:現在の文字を削除
 			if ( SelStart != SelEnd ){
-				BackupLine(EditText,backuptext);
-				TPushEditStack(B0,EditText,SelStart,SelEnd);
-				tstrcpy(EditText + SelStart,EditText + SelEnd);
+				BackupLine(EditText, backuptext);
+				TPushEditStack(B0, EditText, SelStart, SelEnd);
+				tstrcpy(EditText + SelStart, EditText + SelEnd);
 				EdX = SelStart;
 				SelStart = SelEnd = 0;
 				eflag = TCI_TI_DRAW;
 			}else if( *(EditText + EdX) != '\0' ){
 				int len;
 
-				BackupLine(EditText,backuptext);
+				BackupLine(EditText, backuptext);
 				#ifdef UNICODE
 				len = *(EditText + EdX) ? 1 : 0;
 				#else
 				len = Chrlen(*(EditText + EdX));
 				#endif
-				TPushEditStack(B0,EditText,EdX,EdX + len);
-				tstrcpy(EditText + EdX,EditText + EdX + len);
+				TPushEditStack(B0, EditText, EdX, EdX + len);
+				tstrcpy(EditText + EdX, EditText + EdX + len);
 				eflag = TCI_TI_DRAW;
 			}
 			break;
@@ -1576,8 +1580,8 @@ void EditModeCommand(int key)
 		case K_s | K_del:			//	\DEL:現在以降を削除
 		case K_c | K_del:
 			if( *(EditText + EdX) != '\0' ){
-				BackupLine(EditText,backuptext);
-				TPushEditStack(B0,EditText,EdX,tstrlen32(EditText));
+				BackupLine(EditText, backuptext);
+				TPushEditStack(B0, EditText, EdX, tstrlen32(EditText));
 				*(EditText + EdX) = '\0';
 				SelStart = SelEnd = 0;
 				eflag = TCI_TI_DRAW;
@@ -1591,7 +1595,7 @@ void EditModeCommand(int key)
 		case K_c | 'U':{	// ^[U]
 			TCHAR mode;
 
-			PopTextStack(&mode,tmp);
+			PopTextStack(&mode, tmp);
 			if ( tmp[0] ){
 				istr = tmp;
 				if ( mode ) istrt = 1;
@@ -1615,8 +1619,8 @@ void EditModeCommand(int key)
 			key &= 0xff | K_v | K_e | K_c | K_a;	/* shift 情報を破棄 */
 			if ( (' ' <= key) && (key < 0x100) ){
 			#endif
-				BackupLine(EditText,backuptext);
-				InitHistorySearch(&hvar,EditText);
+				BackupLine(EditText, backuptext);
+				InitHistorySearch(&hvar, EditText);
 				istr = tmp;
 				tmp[0] = (TCHAR)key;
 				tmp[1] = '\0';
@@ -1636,12 +1640,12 @@ void EditModeCommand(int key)
 				#endif
 			}
 	}
-	if ( istr ) Replace(istr,FALSE);
+	if ( istr ) Replace(istr, 0);
 }
 
-void MoveCursorS(int offX,int offY,int key)
+void MoveCursorS(int offX, int offY, int key)
 {
-	int newX,newY;
+	int newX, newY;
 
 	newX = sinfo.cx + offX;
 	if ( newX < 0 ){
@@ -1677,7 +1681,7 @@ void MoveCursorS(int offX,int offY,int key)
 	}
 }
 // mode = 0:→↑ 1:←↓
-void JumpWordCursor(BOOL x,int mode,int key)
+void JumpWordCursor(BOOL x, int mode, int key)
 {
 	COORD newXY;
 	TCHAR c;
@@ -1696,7 +1700,7 @@ void JumpWordCursor(BOOL x,int mode,int key)
 	}
 
 	for ( ; ; ){
-		ReadConsoleOutputCharacter(hStdout,&c,1,newXY,&temp);
+		ReadConsoleOutputCharacter(hStdout, &c, 1, newXY, &temp);
 		if ( (mode == 0) || (mode == 3) ){
 			if ( (UTCHAR)c <= ' ' ) mode += 2;
 		}else{
@@ -1712,7 +1716,7 @@ void JumpWordCursor(BOOL x,int mode,int key)
 			(*cur)++;
 		}
 	}
-	MoveCursorS(newXY.X - sinfo.cx,newXY.Y - sinfo.cy,key);
+	MoveCursorS(newXY.X - sinfo.cx, newXY.Y - sinfo.cy, key);
 }
 
 void ScrollModeCommand(int key)
@@ -1742,60 +1746,60 @@ void ScrollModeCommand(int key)
 
 		case K_ri:					// →
 		case K_s | K_ri:			// \→
-			MoveCursorS(1,0,key);
+			MoveCursorS(1, 0, key);
 			break;
 
 		case K_lf:					// ←
 		case K_s | K_lf:			// \←
-			MoveCursorS(-1,0,key);
+			MoveCursorS(-1, 0, key);
 			break;
 
 		case K_up:					// ↑
 		case K_s | K_up:			// \↑
-			MoveCursorS(0,-1,key);
+			MoveCursorS(0, -1, key);
 			break;
 
 		case K_dw:					// ↓
 		case K_s | K_dw:			// \↓
-			MoveCursorS(0,1,key);
+			MoveCursorS(0, 1, key);
 			break;
 
 		case K_Pup:					// Pup
 		case K_s | K_Pup:			// \Pup
-			MoveCursorS(0,-(screen.srWindow.Bottom - screen.srWindow.Top),key);
+			MoveCursorS(0, -(screen.srWindow.Bottom - screen.srWindow.Top), key);
 			break;
 
 		case K_Pdw:					// Pdw
 		case K_s | K_Pdw:			// \Pdw
-			MoveCursorS(0,(screen.srWindow.Bottom - screen.srWindow.Top),key);
+			MoveCursorS(0, (screen.srWindow.Bottom - screen.srWindow.Top), key);
 			break;
 
 		case K_home:				// home
 		case K_s | K_home:			// \home
-			MoveCursorS(-sinfo.cx,0,key);
+			MoveCursorS(-sinfo.cx, 0, key);
 			break;
 
 		case K_end:					// end
 		case K_s | K_end:			// \end
-			MoveCursorS(screen.dwSize.X,0,key);
+			MoveCursorS(screen.dwSize.X, 0, key);
 			break;
 
 		case K_c | K_ri:			// ^→
 		case K_s | K_c | K_ri:		// \^→
-			JumpWordCursor(TRUE,0,key);
+			JumpWordCursor(TRUE, 0, key);
 			break;
 
 		case K_c | K_lf:			// ^←
 		case K_s | K_c | K_lf:		// \^←
-			JumpWordCursor(TRUE,1,key);
+			JumpWordCursor(TRUE, 1, key);
 			break;
 
 		case K_s | K_c | K_dw:		// \^↓
-			JumpWordCursor(FALSE,0,key);
+			JumpWordCursor(FALSE, 0, key);
 			break;
 
 		case K_s | K_c | K_up:		// \^↑
-			JumpWordCursor(FALSE,1,key);
+			JumpWordCursor(FALSE, 1, key);
 			break;
 
 		case K_tab:
@@ -1845,7 +1849,7 @@ int MouseCommand(MOUSE_EVENT_RECORD *me)
 			DWORD NewScrollTick;
 
 			// カーソル位置の補正(NT4.0だとはみでる)
-			GetConsoleWindowInfo(hStdout,&cinfo);
+			GetConsoleWindowInfo(hStdout, &cinfo);
 			if ( me->dwMousePosition.X < 0 ){
 				me->dwMousePosition.X = 0;
 			}
@@ -1872,7 +1876,7 @@ int MouseCommand(MOUSE_EVENT_RECORD *me)
 				sinfo.cx = me->dwMousePosition.X;
 				sinfo.cy = me->dwMousePosition.Y;
 				ReverseRange(TRUE);
-				tCsrPos(sinfo.cx,sinfo.cy);
+				tCsrPos(sinfo.cx, sinfo.cy);
 				NewScrollTick = GetTickCount();
 				// overflow は無視
 				if ( (OldScrollTick + 10) < NewScrollTick ){
@@ -1902,7 +1906,7 @@ int MouseCommand(MOUSE_EVENT_RECORD *me)
 						cinfo.srWindow.Bottom++;
 					}
 					if ( IsTrue(modify) ){
-						SetConsoleWindowInfo(hStdout,TRUE,&cinfo.srWindow);
+						SetConsoleWindowInfo(hStdout, TRUE, &cinfo.srWindow);
 					}
 				}
 			}
@@ -1910,7 +1914,7 @@ int MouseCommand(MOUSE_EVENT_RECORD *me)
 				 (me->dwButtonState & (FROM_LEFT_1ST_BUTTON_PRESSED | RIGHTMOST_BUTTON_PRESSED)) ){
 				int nx;
 
-				nx = GetMouseX(ShowOffset,me->dwMousePosition.X,EditText);
+				nx = GetMouseX(ShowOffset, me->dwMousePosition.X, EditText);
 				if ( mouseSX < nx ){
 					SelStart = mouseSX;
 					EdX = SelEnd = nx;
@@ -1939,7 +1943,7 @@ int MouseCommand(MOUSE_EVENT_RECORD *me)
 				if ( me->dwMousePosition.Y == screen.dwCursorPosition.Y ){
 					int nx;
 
-					nx = GetMouseX(ShowOffset,me->dwMousePosition.X,EditText);
+					nx = GetMouseX(ShowOffset, me->dwMousePosition.X, EditText);
 					if ( nx >= 0 ){
 						SelEnd = ForwardEditWord(nx);
 						SelStart = BackEditWord(nx);
@@ -1961,7 +1965,7 @@ int MouseCommand(MOUSE_EVENT_RECORD *me)
 				}
 			}else{
 			/*
-				JumpWordCursor(TRUE,0,K_s | K_ri);
+				JumpWordCursor(TRUE, 0, K_s | K_ri);
 						eflag = TCI_TI_DRAW;
 						return KEY_DUMMY;
 			*/
@@ -1984,7 +1988,7 @@ int MouseCommand(MOUSE_EVENT_RECORD *me)
 			if ( me->dwControlKeyState & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED) ){
 				if ( me->dwControlKeyState & SHIFT_PRESSED ){
 #if 0 // 現在、正常に機能しない
-					PPxCommonCommand(hMainWnd,0,
+					PPxCommonCommand(hMainWnd, 0,
 						(now < 0) ? (WORD)(K_c | K_s | K_v | VK_ADD) : (WORD)(K_c | K_s | K_v | VK_SUBTRACT));
 #endif
 				}else{
@@ -1997,7 +2001,7 @@ int MouseCommand(MOUSE_EVENT_RECORD *me)
 		}
 
 		default:{		// マウスボタンの状態が変化した
-			DWORD b,c;
+			DWORD b, c;
 			int button = 0;
 													// 左右同時押し
 			if ( me->dwButtonState == (FROM_LEFT_1ST_BUTTON_PRESSED | RIGHTMOST_BUTTON_PRESSED) ){
@@ -2027,7 +2031,7 @@ int MouseCommand(MOUSE_EVENT_RECORD *me)
 							int nx;
 
 							nx = GetMouseX(ShowOffset,
-								 me->dwMousePosition.X,EditText);
+								 me->dwMousePosition.X, EditText);
 							if ( (nx >= 0) &&
 								 ((button == 0) ||
 								 	((nx < SelStart) || (nx > SelEnd )) ) ){

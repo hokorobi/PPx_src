@@ -836,10 +836,12 @@ VFSDLL TCHAR * PPXAPI VFSFullPath(_Out_writes_opt_z_(VFPS) TCHAR *dst, TCHAR *sr
 
 		if ( sc <= 0 ) bp = cutp = dstp = drvp;	// 戻りすぎの場合の対策
 		if ( *srcp == sep ){ // 連続する「\」を除去
-			do {
-				srcp++;
-			}while ( *srcp == sep );
-			if ( *srcp == '\0' ) break;
+			if ( mode != VFSPT_AUXOP ){ // aux: は途中で // が必要なことがある
+				do {
+					srcp++;
+				}while ( *srcp == sep );
+				if ( *srcp == '\0' ) break;
+			}
 		}
 		if ( *srcp == ':' ){		// 疑似ドライブ(quasi-drive)指定
 			const TCHAR *hist, *histr;
@@ -1395,7 +1397,7 @@ void GetIDLSub(TCHAR *path, LPSHELLFOLDER pSF, LPITEMIDLIST pSHidl)
 	tstrcpy(path, T("#:\\"));
 	destp = path + 3; // '\0'
 	idlPtr = (BYTE *)pSHidl;
-	while( *(WORD *)idlPtr ){
+	while( *(WORD *)idlPtr != 0 ){
 		WORD *nextp, old;
 
 		nextp = (WORD *)(BYTE *)(idlPtr + *(WORD *)idlPtr);

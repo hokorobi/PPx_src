@@ -437,6 +437,9 @@ BOOL CreatePPcWindow(PPCSTARTPARAM *psp, MAINWINDOWSTRUCT *mws)
 	PPC_APPINFO *cinfo;
 	int showpane = PSPONE_PANE_DEFAULT;
 	int select = FALSE;
+	HMODULE hUser32;
+
+	hUser32 = GetModuleHandle(StrUser32DLL);
 
 	focusID[0] = '\0';
 	if ( (psp != NULL) && (psp->next != NULL) ){
@@ -617,9 +620,6 @@ BOOL CreatePPcWindow(PPCSTARTPARAM *psp, MAINWINDOWSTRUCT *mws)
 
 #if XTOUCH
 	{
-		HMODULE hUser32;
-
-		hUser32 = GetModuleHandle(StrUser32DLL);
 		GETDLLPROC(hUser32, RegisterTouchWindow);
 		if ( DRegisterTouchWindow != NULL ){
 			if ( DRegisterTouchWindow(cinfo->info.hWnd, 0) ){
@@ -630,17 +630,9 @@ BOOL CreatePPcWindow(PPCSTARTPARAM *psp, MAINWINDOWSTRUCT *mws)
 		}
 	}
 #endif
-	{
-		HMODULE hUser32;
-
-		hUser32 = GetModuleHandle(StrUser32DLL);
-		GETDLLPROC(hUser32, GetGestureInfo);
-	}
+	GETDLLPROC(hUser32, GetGestureInfo);
 
 	if ( XC_page == 0 ){
-		HMODULE hUser32;
-
-		hUser32 = GetModuleHandle(StrUser32DLL);
 		GETDLLPROC(hUser32, SetGestureConfig);
 		if ( DSetGestureConfig != NULL ){
 			DSetGestureConfig(cinfo->info.hWnd, 0, H_GestureConfig_count, H_GestureConfig, sizeof(GESTURECONFIG));

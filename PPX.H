@@ -239,11 +239,12 @@ typedef struct {
 
 //	PPx 本体, PPCOMMON, PPx Module 間の情報交換用構造体
 //## 0xff000～0xfffff:	内部用
-#define PPXCMDID_PPBEXEC	0xff000
-#define PPXCMDID_PPBINSERT	0xff001
-#define PPXCMDID_PPBREPLACE	0xff002
-#define PPXCMDID_PPBSELECTTEXT	0xff003
-#define PPXCMDID_PPBEDITTEXT	0xff004
+#define PPXCMDID_PPBEXEC	0xff000 // *execute
+#define PPXCMDID_PPBINSERT	0xff001 // *insert
+#define PPXCMDID_PPBREPLACE	0xff002 // *replace
+#define PPXCMDID_PPBSELECTTEXT	0xff003 // %*select
+#define PPXCMDID_PPBEDITTEXT	0xff004 // %*edittext
+#define PPXCMDID_PPBINSERTSEL	0xff005 // *insertsel
 typedef struct {
 	const TCHAR *name;
 	int flag;
@@ -373,7 +374,7 @@ typedef enum {
 #define MES_CMPD	T("CMPD|&Detail")
 #define MES_CMPE	T("CMPE|&Exist file")
 #define MES_CMPF	T("CMPF|&Filename without ext.")
-#define MES_CMPH	T("CMPH|Compare &Hash from clipboard")
+#define MES_CMPH	T("CMPH|Compare Hash to &Clipboard")
 #define MES_CMPI	T("CMPI|file s&Ize(no name check)")
 #define MES_CMPL	T("CMPL|&Large file")
 #define MES_CMPN	T("CMPN|new &File")

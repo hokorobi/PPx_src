@@ -309,7 +309,7 @@ void USEFASTCALL ExecOnConsole(EXECSTRUCT *Z, const TCHAR *param)
 	Z->ExitCode = PPxInfoFunc(Z->Info, PPXCMDID_PPBEXEC, &ppbe);
 }
 
-TCHAR * USEFASTCALL ZGetFilePathParam(EXECSTRUCT *Z, LPCTSTR *ptr, TCHAR *path)
+TCHAR * USEFASTCALL ZGetFilePathParam(EXECSTRUCT *Z, const TCHAR **ptr, TCHAR *path)
 {
 	GetCommandParameter(ptr, path, VFPS);
 	if ( *path == '\0' ) return path;
@@ -893,7 +893,7 @@ void CmdClosePPx(const TCHAR *param)
 	FreeFN_REGEXP(&fn);
 }
 
-void CmdHttpGet(EXECSTRUCT *Z, const TCHAR *p)
+void CmdHttpGet(EXECSTRUCT *Z, const TCHAR *param)
 {
 	TCHAR uri[CMDLINESIZE], name[VFPS];
 	ThSTRUCT th;
@@ -902,18 +902,18 @@ void CmdHttpGet(EXECSTRUCT *Z, const TCHAR *p)
 	HANDLE hFile;
 	int inheader = 0;
 
-	GetCommandParameter(&p, uri, TSIZEOF(uri));
+	GetCommandParameter(&param, uri, TSIZEOF(uri));
 	if ( (*uri == '/') && ((*(uri+1) == 'h') || (*(uri+1) == 'H')) ){
 		inheader = 1;
-		NextParameter(&p);
-		GetCommandParameter(&p, uri, TSIZEOF(uri));
+		NextParameter(&param);
+		GetCommandParameter(&param, uri, TSIZEOF(uri));
 	}
-	if ( NextParameter(&p) == FALSE ){
+	if ( NextParameter(&param) == FALSE ){
 		XMessage(Z->hWnd, T("*httpget"), XM_GrERRld, MES_EPRM);
 		Z->result = ERROR_INVALID_PARAMETER;
 		return;
 	}
-	ZGetFilePathParam(Z, &p, name);
+	ZGetFilePathParam(Z, &param, name);
 								// メモリ上に取得 --------------------
 	GetImageByHttp(uri, &th);
 	bottom = (char *)th.bottom;
@@ -1184,7 +1184,7 @@ void CmdCheckUpdate(EXECSTRUCT *Z, const TCHAR *param)
 	}
 }
 
-void CmdCheckSignature(EXECSTRUCT *Z, const TCHAR *line)
+void CmdCheckSignature(EXECSTRUCT *Z, TCHAR *line)
 {
 	TCHAR param[CMDLINESIZE];
 	int VerifyResult;
@@ -1204,8 +1204,12 @@ void CmdCheckSignature(EXECSTRUCT *Z, const TCHAR *line)
 		showsuccessresult = FALSE;
 		line++;
 	}
-	ZGetFilePathParam(Z, &line, param);
-	VerifyResult = VerifyZipImage(param);
+	ZGetFilePathParam(Z, (const TCHAR **)&line, param);
+	if ( param[0] != '\0' ){
+		VerifyResult = VerifyZipImage(param);
+	}else{
+		GetModuleFileName(DLLhInst, param, MAX_PATH);
+	}
 
 	if ( VerifyResult != VERIFYZIP_SUCCEDD ){
 		XMessage(NULL, NULL, XM_GrERRld, MES_EBSG, param);
@@ -1277,11 +1281,11 @@ void CmdMakeDirectory(EXECSTRUCT *Z, const TCHAR *param)
 
 void CmdAddHistory(const TCHAR *param)
 {
-	TCHAR *p, buf[CMDLINESIZE];
+	TCHAR *ptr, buf[CMDLINESIZE];
 
 	GetCommandParameter(&param, buf, TSIZEOF(buf));
-	p = tstrchr(HistType, buf[0]);
-	if ( (p == NULL) || (*p == '\0') || (tstrchr(T("pv"), buf[0]) != NULL) ){
+	ptr = tstrchr(HistType, buf[0]);
+	if ( (ptr == NULL) || (*ptr == '\0') || (tstrchr(T("pv"), buf[0]) != NULL) ){
 		XMessage(NULL, NULL, XM_GrERRld, T("option error"));
 		return;
 	}
@@ -1289,7 +1293,38 @@ void CmdAddHistory(const TCHAR *param)
 	NextParameter(&param);
 	GetCommandParameter(&param, buf, TSIZEOF(buf));
 
-	if ( buf[0] ) WriteHistory(HistWriteTypeflag[p - HistType], buf, 0, NULL);
+	if ( buf[0] != '\0' ){
+		WriteHistory(HistWriteTypeflag[ptr - HistType], buf, 0, NULL);
+	}
+}
+
+void CmdDeleteHistory(const TCHAR *param)
+{
+	TCHAR *ptr, buf[CMDLINESIZE];
+	WORD htype;
+
+	GetCommandParameter(&param, buf, TSIZEOF(buf));
+	ptr = tstrchr(HistType, buf[0]);
+	if ( (ptr == NULL) || (*ptr == '\0') || (tstrchr(T("pv"), buf[0]) != NULL) ){
+		XMessage(NULL, NULL, XM_GrERRld, T("option error"));
+		return;
+	}
+	htype = HistWriteTypeflag[ptr - HistType];
+
+	NextParameter(&param);
+	if ( Isdigit(*param) ){
+		int index = GetNumber(&param);
+		const TCHAR *hptr;
+
+		UsePPx();
+		hptr = EnumHistory(htype, index++);
+		if ( hptr == NULL ) hptr = NilStr;
+		tstrcpy(buf, hptr);
+		FreePPx();
+	}else{
+		GetCommandParameter(&param, buf, TSIZEOF(buf));
+	}
+	if ( buf[0] != '\0' ) DeleteHistory(htype, buf);
 }
 
 void CmdMakeFile(EXECSTRUCT *Z, const TCHAR *param)
@@ -1631,7 +1666,7 @@ void CmdPack(EXECSTRUCT *Z, const TCHAR *param)
 			}
 			*lp++ = '.';
 			tstrcpy(lp, packtype);
-			ThSize(&th, th.size + CMDLINESIZE);
+			ThSize(&th, CMDLINESIZE);
 			ThCatString(&th, T("%u/"));
 			PP_ExtractMacro(Z->hWnd, &pinfo.info, NULL, packcmd, (TCHAR *)ThLast(&th), XEO_NOEDIT);
 			if ( PPxEnumInfoFunc(Z->Info, PPXCMDID_NEXTENUM, buf, &Z->IInfo) == 0 ){
@@ -1647,7 +1682,7 @@ void CmdPack(EXECSTRUCT *Z, const TCHAR *param)
 	}
 }
 
-void CmdNextItem(EXECSTRUCT *Z, const TCHAR *param)
+void CmdNextItem(EXECSTRUCT *Z, const TCHAR *param) // *nextitem
 {
 	int skipcount = 1;
 	TCHAR buf[64];
@@ -1794,20 +1829,20 @@ fin:
 	}
 }
 
-void CustCmd(EXECSTRUCT *Z, const TCHAR *line, BOOL reload)
+void CmdCust(EXECSTRUCT *Z, TCHAR *line, BOOL reload)
 {
 	TCHAR param[CMDLINESIZE];
 
-	if ( SkipSpace(&line) == '@' ){ // filename mode
+	if ( SkipSpace((const TCHAR **)&line) == '@' ){ // filename mode
 		line++;
-		ZGetFilePathParam(Z, &line, param);
+		ZGetFilePathParam(Z, (const TCHAR **)&line, param);
 		CustFile(Z, param, reload);
 	}else{
 		CustLine(Z, line, reload);
 	}
 }
 
-void LineCustCmd(EXECSTRUCT *Z, const TCHAR *line)
+void CmdLineCust(EXECSTRUCT *Z, const TCHAR *line)
 {
 	TCHAR id[MAX_PATH];
 	TCHAR param[CMDLINESIZE], makedata[CMDLINESIZE * 2], *data1st;
@@ -1896,6 +1931,42 @@ void LineCustCmd(EXECSTRUCT *Z, const TCHAR *line)
 		return;
 	}
 	CustCmdSub(Z, makedata, p, FALSE);
+}
+
+void CmdDeleteCust(const TCHAR *param)
+{
+	TCHAR *ptr, key[CMDLINESIZE], name[CMDLINESIZE], first;
+	int index = -1;
+
+	first = SkipSpace(&param);
+	GetCommandParameter(&param, key, TSIZEOF(key));
+	if ( key[0] == '\0' ) return;
+
+	ptr = tstrchr(key, ':');
+	if ( ptr != NULL ){ // key:name 形式
+		*ptr = '\0';
+		param = ptr + 1;
+		if ( *param == '\0' ) return;
+		tstrcpy(name, param);
+	}else if ( NextParameter(&param) == FALSE ){ // "key" のみ
+		if ( first != '\"' ) return;
+		name[0] = '\0';
+	}else if ( Isdigit(*param) ){ // key,index
+		index = GetNumber(&param);
+		if ( index < 0 ) return;
+	}else if( *param == '\"' ){ // key,"name"
+		GetCommandParameter(&param, name, TSIZEOF(name));
+		if ( name[0] == '\0' ) return;
+	}else{
+		return;
+	}
+	if ( index >= 0 ){
+		DeleteCustTable(key, NULL, index);
+	}else if ( name[0] != '\0' ){
+		DeleteCustTable(key, name, 0);
+	}else{
+		DeleteCustData(key);
+	}
 }
 
 void CmdAlias(EXECSTRUCT *Z, TCHAR *param)
@@ -2086,57 +2157,10 @@ void USEFASTCALL CmdPPeEdit(EXECSTRUCT *Z, const TCHAR *param)
 	}
 }
 
-// 改行使用可能なパラメータ取得
-void GetLfGetParam(const TCHAR **param, TCHAR *dest, DWORD destlength)
-{
-	const TCHAR *src = *param;
-
-	SkipSpace(&src);
-	for (;;){
-		TCHAR c;
-
-		c = *src;
-		if ( c == '\0' ) break;
-		if ( c != '\"' ){
-			if ( ((UTCHAR)c <= ' ') || (c == ',') ){
-				break;
-			}
-			if ( destlength ){
-				*dest++ = c;
-				destlength--;
-			}
-			src++;
-			continue;
-		}
-		// " 処理
-		src++;
-		for (;;){
-			c = *src;
-			if ( c == '\0' ) goto end;
-			if ( c == '\"' ){
-				if ( *(src + 1) != '\"' ){ // 末尾？
-					src++;
-					break;
-				}
-				src++; // "" ... " 自身
-			}
-			if ( destlength ){
-				*dest++ = c;
-				destlength--;
-			}
-			src++;
-			continue;
-		}
-	}
-end:
-	*param = src;
-	*dest = '\0';
-}
-
-void USEFASTCALL CmdMessageBox(EXECSTRUCT *Z, const TCHAR *param)
+void USEFASTCALL CmdMessageBox(EXECSTRUCT *Z, TCHAR *param)
 {
 	DWORD style = MB_ICONINFORMATION;
-	TCHAR parambuf[CMDLINESIZE];
+	TCHAR *src;
 
 	if ( Z->command == 'Q' ){
 		// 繰り返し実行中なら、前回に既に ok を押しているので確認しない
@@ -2149,13 +2173,15 @@ void USEFASTCALL CmdMessageBox(EXECSTRUCT *Z, const TCHAR *param)
 			style = MB_ICONQUESTION | MB_OKCANCEL;
 		}
 	}
-	GetLfGetParam(&param, parambuf, TSIZEOF(parambuf));
-	if ( IDOK != PMessageBox(Z->hWnd, parambuf, ZGetTitleName(Z), style) ){
+	src = param;
+//	ZFixParameter(&param);
+	GetLfGetParam((const TCHAR **)&param, param, tstrlen(param) + 1 );
+	if ( IDOK != PMessageBox(Z->hWnd, src, ZGetTitleName(Z), style) ){
 		Z->result = ERROR_CANCELLED;
 	}
 }
 
-void USEFASTCALL CmdKeyCommand(EXECSTRUCT *Z, const TCHAR *param)
+void USEFASTCALL CmdKeyCommand(EXECSTRUCT *Z, const TCHAR *param) // %K
 {
 	HWND hWnd;
 
@@ -2343,7 +2369,7 @@ void CmdFile(EXECSTRUCT *Z, TCHAR *olddir, const TCHAR *pptr, TCHAR *param)
 // １コマンド文を実行する -----------------------------------------------------
 void ZExec(EXECSTRUCT *Z)
 {
-	const TCHAR *param;
+	TCHAR *param;
 	TCHAR *lp;
 	TCHAR linebuf[CMDLINESIZE];
 	TCHAR olddir[VFPS];
@@ -2364,7 +2390,15 @@ void ZExec(EXECSTRUCT *Z)
 		if ( *lp != ' ' ) break;
 		*lp = '\0';
 	}
-	SkipSpace(&param);
+
+	if ( Z->func.off != 0 ){
+		XMessage(Z->hWnd, NULL, XM_GrERRld,
+				T("%%*%s missing ')'."), param + Z->func.off - 1);
+		Z->result = ERROR_INVALID_PARAMETER;
+		return;
+	}
+
+	SkipSpace((const TCHAR **)&param);
 	switch( Z->command ){
 		case CID_FILE_EXEC:				// 外部プロセスを実行
 			if ( *param == '\0' ) break;
@@ -2441,7 +2475,7 @@ void ZExec(EXECSTRUCT *Z)
 			break;
 										// *cd
 		case CID_CD:
-			ZGetFilePathParam(Z, &param, GetZCurDir(Z));
+			ZGetFilePathParam(Z, (const TCHAR **)&param, GetZCurDir(Z));
 			break;
 										// *cursor
 		case CID_CURSOR:
@@ -2456,18 +2490,23 @@ void ZExec(EXECSTRUCT *Z)
 		case CID_FILE:
 			CmdFile(Z, olddir, param, linebuf);
 			break;
-										// *insert
+										// *insert, *insertsel
 		case CID_INSERT:
-			GetCommandParameter(&param, linebuf, TSIZEOF(linebuf));
+		case CID_INSERTSEL:
+			GetCommandParameter((const TCHAR **)&param, linebuf, TSIZEOF(linebuf));
 			if ( Z->flag & XEO_CONSOLE ){
-				Z->result = PPxInfoFunc(Z->Info, PPXCMDID_PPBINSERT, linebuf);
+				Z->result = PPxInfoFunc(Z->Info,
+						(Z->command == CID_INSERT) ? PPXCMDID_PPBINSERT : PPXCMDID_PPBINSERTSEL,
+						 linebuf);
 			}else{
-				SendMessage(Z->hWnd, WM_PPXCOMMAND, KE_insert, (LPARAM)linebuf);
+				SendMessage(Z->hWnd, WM_PPXCOMMAND,
+						(Z->command == CID_INSERT) ? KE_insert : KE_insertsel,
+						(LPARAM)linebuf);
 			}
 			break;
 										// *replace
 		case CID_REPLACE:
-			GetCommandParameter(&param, linebuf, TSIZEOF(linebuf));
+			GetCommandParameter((const TCHAR **)&param, linebuf, TSIZEOF(linebuf));
 			if ( Z->flag & XEO_CONSOLE ){
 				Z->result = PPxInfoFunc(Z->Info, PPXCMDID_PPBREPLACE, linebuf);
 			}else{
@@ -2484,7 +2523,7 @@ void ZExec(EXECSTRUCT *Z)
 			break;
 										// *forfile
 		case CID_FORFILE:
-			GetCommandParameter(&param, linebuf, TSIZEOF(linebuf));
+			GetCommandParameter((const TCHAR **)&param, linebuf, TSIZEOF(linebuf));
 			if ( *param == ',' ) param++;
 			CmdDoForfile(Z, linebuf, param);
 			break;
@@ -2494,15 +2533,19 @@ void ZExec(EXECSTRUCT *Z)
 			break;
 										// *customize
 		case CID_CUSTOMIZE:
-			CustCmd(Z, param, TRUE);
+			CmdCust(Z, param, TRUE);
 			break;
 										// *setcust
 		case CID_SETCUST:
-			CustCmd(Z, param, FALSE);
+			CmdCust(Z, param, FALSE);
 			break;
 										// *linecust
 		case CID_LINECUST:
-			LineCustCmd(Z, param);
+			CmdLineCust(Z, param);
+			break;
+										// *deletecust
+		case CID_DELETECUST:
+			CmdDeleteCust(param);
 			break;
 										// *monitoroff
 		case CID_MONITOROFF:
@@ -2551,7 +2594,7 @@ void ZExec(EXECSTRUCT *Z)
 			break;
 										// *job
 		case CID_JOB:
-			if ( IsTrue(JobListMenu(Z, SkipSpace(&param))) ){
+			if ( IsTrue(JobListMenu(Z, SkipSpace((const TCHAR **)&param))) ){
 				Z->result = ERROR_CANCELLED;
 			}
 			break;
@@ -2561,7 +2604,7 @@ void ZExec(EXECSTRUCT *Z)
 			break;
 										// *help
 		case CID_HELP:
-			GetCommandParameter(&param, linebuf, VFPS);
+			GetCommandParameter((const TCHAR **)&param, linebuf, VFPS);
 			if ( linebuf[0] != '\0' ){
 				PPxHelp(Z->hWnd, HELP_KEY, (DWORD_PTR)linebuf);
 			}else{
@@ -2592,7 +2635,7 @@ void ZExec(EXECSTRUCT *Z)
 		case CID_COMMANDHASH: {
 			DWORD hash;
 
-			GetCommandParameter(&param, linebuf, TSIZEOF(linebuf));
+			GetCommandParameter((const TCHAR **)&param, linebuf, TSIZEOF(linebuf));
 			hash = GetModuleNameHash(linebuf, linebuf);
 			wsprintf(linebuf + tstrlen(linebuf), T(" is 0x%x"), hash);
 			tInput(Z->hWnd, T("COMMANDHASH"), linebuf, TSIZEOF(linebuf), PPXH_GENERAL, PPXH_GENERAL);
@@ -2611,8 +2654,8 @@ void ZExec(EXECSTRUCT *Z)
 		case 'Q':						//	%Q	確認メッセージボックス
 			CmdMessageBox(Z, param);
 			break;
-										// *command
-		case CID_COMMAND:
+										// *keycommand
+		case CID_KEYCOMMAND:
 		// case 'K' へ
 		case 'K':						//	%K	内蔵コマンド
 			CmdKeyCommand(Z, param);
@@ -2629,7 +2672,7 @@ void ZExec(EXECSTRUCT *Z)
 			break;
 		}
 		case CID_IME:
-			SetIMEStatus(Z->hWnd, GetIntNumber(&param) > 0);
+			SetIMEStatus(Z->hWnd, GetIntNumber((const TCHAR **)&param) > 0);
 			break;
 										// *flashwindow
 		case CID_FLASHWINDOW: {
@@ -2642,7 +2685,7 @@ void ZExec(EXECSTRUCT *Z)
 		}
 										// *sound
 		case CID_SOUND:
-			ZGetFilePathParam(Z, &param, linebuf);
+			ZGetFilePathParam(Z, (const TCHAR **)&param, linebuf);
 			PlayWave(linebuf);
 			break;
 										// *wait
@@ -2657,12 +2700,12 @@ void ZExec(EXECSTRUCT *Z)
 			break;
 										//	%j	パスジャンプ
 		case 'j':
-			GetCommandParameter(&param, linebuf, VFPS);
+			GetCommandParameter((const TCHAR **)&param, linebuf, VFPS);
 			PPxInfoFunc(Z->Info, PPXCMDID_CHDIR, linebuf);
 			break;
 										// *string 特殊環境変数
 		case CID_STRING:
-			ZStringVariable(Z, &param, StringVariable_command);
+			ZStringVariable(Z, (const TCHAR **)&param, StringVariable_command);
 			break;
 										// *chopdir 直下のディレクトリを削除
 		case CID_CHOPDIR:
@@ -2696,6 +2739,10 @@ void ZExec(EXECSTRUCT *Z)
 		case CID_ADDHISTORY:
 			CmdAddHistory(param);
 			break;
+										// *deletehistory
+		case CID_DELETEHISTORY:
+			CmdDeleteHistory(param);
+			break;
 										// *trimmark
 		case CID_TRIMMARK:
 			PPxEnumInfoFunc(Z->Info, PPXCMDID_TRIMENUM, Z->DstBuf, &Z->IInfo);
@@ -2715,16 +2762,21 @@ void ZExec(EXECSTRUCT *Z)
 			Z->dst += tstrlen(Z->dst);
 			Z->src += tstrlen(Z->src);
 			break;
+										// *maxlength
+		case CID_MAXLENGTH:
+			Z->LongResultLen = GetDigitNumber((const TCHAR **)&param);
+			setflag(Z->status, ST_LONGRESULT);
+			break;
 										// *jumpentry
 		case CID_JUMPENTRY:
 //		case 'J': へ
 		case 'J':						//	%J	エントリ移動
-			GetCommandParameter(&param, linebuf, VFPS);
+			GetCommandParameter((const TCHAR **)&param, linebuf, VFPS);
 			PPxInfoFunc(Z->Info, PPXCMDID_PATHJUMP, linebuf);
 			break;
 										//	%u	UnXXX を実行
 		case 'u':
-			GetCommandParameter(&param, linebuf, VFPS);
+			GetCommandParameter((const TCHAR **)&param, linebuf, VFPS);
 			if ( *param != ',' ){
 				XMessage(Z->hWnd, T("%u"), XM_GrERRld, MES_EPRM);
 				Z->result = ERROR_INVALID_PARAMETER;

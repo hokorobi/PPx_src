@@ -242,13 +242,14 @@ DWORD_PTR USECDECL PPxGetIInfo(PPV_APPINFO *vinfo, DWORD cmdID, PPXAPPINFOUNION 
 			return PPvCommand(vinfo, uptr->key);
 
 		case PPXCMDID_GETREQHWND:
-			if ( hViewParentWnd != NULL ){
-				return (DWORD_PTR)hViewParentWnd;
-			}else if ( (hLastViewReqWnd != NULL) && IsWindow(hLastViewReqWnd) ){
-				return (DWORD_PTR)hLastViewReqWnd;
-			}else{
-				return 0;
+			if ( (uptr == NULL) || (uptr->str[0] == 'C') ){
+				if ( hViewParentWnd != NULL ){
+					return (DWORD_PTR)hViewParentWnd;
+				}else if ( (hLastViewReqWnd != NULL) && IsWindow(hLastViewReqWnd) ){
+					return (DWORD_PTR)hLastViewReqWnd;
+				}
 			}
+			return (DWORD_PTR)NULL;
 
 		case PPXCMDID_CSRX:
 			uptr->num = VOi->offX;
@@ -273,6 +274,26 @@ DWORD_PTR USECDECL PPxGetIInfo(PPV_APPINFO *vinfo, DWORD cmdID, PPXAPPINFOUNION 
 			uptr->nums[3] = fontY;
 			break;
 		}
+
+		case PPXCMDID_CSRLOCATE:
+			if ( VOsel.cursor != FALSE ) {
+				uptr->nums[0] = VOsel.now.x.offset;
+				uptr->nums[1] = VOsel.now.y.line;
+			}else{
+				uptr->nums[0] = VOi->offX;
+				uptr->nums[1] = VOi->offY;
+			}
+			uptr->nums[2] = VO_maxX;
+			uptr->nums[3] = VO_maxY;
+			break;
+
+		case PPXCMDID_CSRSETLOCATE:
+			if ( VOsel.cursor != FALSE ) {
+				MoveCsrkey(uptr->nums[0] - VOsel.now.x.offset, uptr->nums[1] - VOsel.now.y.line, uptr->nums[2]);
+			}else{
+				MoveCsrkey(uptr->nums[0] - VOi->offX, uptr->nums[1] - VOi->offY, uptr->nums[2]);
+			}
+			break;
 
 		case PPXCMDID_CSRSTATE:
 			uptr->num = vo_.DModeType;
@@ -1058,6 +1079,54 @@ void SetScrollBar(void)
 	sinfo.nMax	= VO_maxX;
 	SetScrollInfo(vinfo.info.hWnd, SB_HORZ, &sinfo, TRUE);
 
+#if 0
+	if ( FileDivideMode >= FDM_DIV ){
+		int per = ; // 0 - 0xffff
+		FileDividePointer.LowPart
+
+		if ( FileRealSize.u.HighPart || (FileRealSize.u.LowPart & 0xffff0000) ){
+						// 0x0200 0000 0000(2TB) Å` 0x1ff ffff ffff ffff(128P)
+			if ( FileRealSize.u.HighPart >= 0x200 ){
+				per = (FileDividePointer.u.HighPart * 100) / FileRealSize.u.HighPart;
+			}else{		// 0x0200 0000(32M) Å` 0x1ff ffff ffff(2TB)
+				per = ( ((((DWORD)FileDividePointer.u.HighPart) << 16) |
+						(FileDividePointer.u.LowPart >> 16)) * 100) /
+					  ( ((((DWORD)FileRealSize.u.HighPart) << 16) |
+						(FileRealSize.u.LowPart >> 16)) );
+			}
+		}else{
+			if ( FileRealSize.u.LowPart > 0x10000 ){
+				per = (FileDividePointer.u.LowPart * 0x10000) / FileRealSize.u.LowPart;
+
+				// 0x0000 0001      Å`  0x0000 ffff(64K)
+			if ( FileRealSize.u.LowPart ){
+				per = (FileDividePointer.u.LowPart * 0x10000) / FileRealSize.u.LowPart;
+			}else{							// 0x0000 0000
+				per = 0;
+			}
+		}
+
+
+
+
+
+
+		sinfo.nPage	= VO_sizeY;
+		sinfo.nMin	= 0;
+		sinfo.nPos	= ;
+		sinfo.nMax	= 0x7f000000;
+		SetScrollInfo(vinfo.info.hWnd, SB_VERT, &sinfo, TRUE);
+
+
+
+	}else{
+		sinfo.nPage	= VO_sizeY;
+		sinfo.nMin	= VO_minY;
+		sinfo.nPos	= VOi->offY;
+		sinfo.nMax	= VO_maxY;
+		SetScrollInfo(vinfo.info.hWnd, SB_VERT, &sinfo, TRUE);
+	}
+#endif
 	sinfo.nPage	= VO_sizeY;
 	sinfo.nMin	= VO_minY;
 	sinfo.nPos	= VOi->offY;

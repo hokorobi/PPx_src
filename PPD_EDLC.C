@@ -13,6 +13,12 @@
 
 #define AllowTick 100 // 補完列挙を中止する時間
 #define ThreadAllowTick 3000 // 補完列挙を中止する時間(スレッド使用時)
+#define CompListItems 100 // 一覧表示する数
+#define ModuleCompItems 100 // Search Module に補完用検索を指示する数
+
+struct {
+	DWORD showtime, stoptime;
+} X_flto = { AllowTick, 0};
 
 /*
 	コンボボックスモード
@@ -23,29 +29,41 @@
 */
 
 TCHAR BTERR[] = T("BackupText err");
+const TCHAR StrTimeOut[] = T("*** timeout ***");
 
 #define ABS(n) (n >= 0 ? n : -n)
-
-#define TEXT_PATH 0
-#define TEXT_WORDPATH 1
-#define TEXT_MASK 2
 
 typedef struct {
 	HWND hWnd;
 	UINT msg;
-	DWORD wParam;
+	DWORD wParam; // ThreadID が格納される
 	int items;
+	int show;
 } LISTADDINFO;
 
-FILLTEXTFILE filltext_cmd = { T("PPXUCMD.TXT"),NULL,NULL/*, {0, 0}*/ };
-FILLTEXTFILE filltext_path = { T("PPXUPATH.TXT"),NULL,NULL/*, {0, 0}*/ };
-FILLTEXTFILE filltext_mask = { T("PPXUMASK.TXT"),NULL,NULL/*, {0, 0}*/ };
+FILLTEXTFILE filltext_cmd = { T("PPXUCMD.TXT"), NULL, NULL/*, {0, 0}*/ };
+FILLTEXTFILE filltext_path = { T("PPXUPATH.TXT"), NULL, NULL/*, {0, 0}*/ };
+FILLTEXTFILE filltext_mask = { T("PPXUMASK.TXT"), NULL, NULL/*, {0, 0}*/ };
 
 typedef struct {
 	PPXAPPINFO info;
 	LISTADDINFO *list;
 	PPxEDSTRUCT *PES;
 } SMODULECAPPINFO;
+
+#define SMODE_PATH 0
+#define SMODE_WORDPATH 1
+#define SMODE_MASK 2
+
+typedef struct {
+	DWORD_PTR romahandle;
+	TCHAR *first, *second;
+	size_t firstlen, secondlen;
+	DWORD startTick;
+//	int smode;
+	DWORD edmode;
+} SEARCHPARAMS;
+
 
 void CleanUpEdit(void)
 {
@@ -118,10 +136,10 @@ DWORD CheckSamelen(const TCHAR *str1, const TCHAR *str2)
 	return len;
 }
 
-BOOL MakeCompleteList(HWND hWnd,  PPxEDSTRUCT *PES)
+BOOL MakeCompleteList(HWND hWnd, PPxEDSTRUCT *PES)
 {
 	ECURSOR cursor;
-	TCHAR *p;
+	TCHAR *ptr;
 	TCHAR buf[VFPS + MAX_PATH], buf2[VFPS + MAX_PATH];
 	DWORD fmode;
 	DWORD len, samelen;
@@ -133,9 +151,9 @@ BOOL MakeCompleteList(HWND hWnd,  PPxEDSTRUCT *PES)
 	SendMessage(PES->hWnd, WM_SETREDRAW, FALSE, 0);
 												// 編集文字列(全て)を取得
 	GetEditSel(PES->hWnd, buf, &cursor);
-	fmode = (PES->ED.cmdsearch & CMDSEARCH_FLOAT) |
+	fmode = (PES->ED.cmdsearch & (CMDSEARCH_NOADDSEP | CMDSEARCH_FLOAT | CMDSEARCH_ROMA)) |
 			((PES->list.WhistID & PPXH_COMMAND) ?
-						CMDSEARCH_CURRENT : CMDSEARCH_OFF) |
+					CMDSEARCH_CURRENT : CMDSEARCH_OFF) |
 			((PES->flags & PPXEDIT_SINGLEREF) ? 0 : CMDSEARCH_MULTI) |
 			CMDSEARCH_EDITBOX | CMDSEARCH_ONE;
 
@@ -146,8 +164,8 @@ BOOL MakeCompleteList(HWND hWnd,  PPxEDSTRUCT *PES)
 	// １回目検索
 	PES->ED.FnameP = PES->list.OldString; // ここでリスト(backuptext)ができていること!
 
-	p = SearchFileIned(&PES->ED, buf, &cursor, fmode | CMDSEARCHI_SAVEWORD);
-	if ( p == NULL ){
+	ptr = SearchFileIned(&PES->ED, buf, &cursor, fmode | CMDSEARCHI_SAVEWORD);
+	if ( ptr == NULL ){
 		SetMessageForEdit(PES->hWnd, MES_EENF);
 		SendMessage(PES->hWnd, WM_SETREDRAW, TRUE, 0);
 		return FALSE;
@@ -155,19 +173,19 @@ BOOL MakeCompleteList(HWND hWnd,  PPxEDSTRUCT *PES)
 	// １回目結果を反映
 	SendMessage(PES->hWnd, EM_SETSEL, cursor.start, cursor.end);
 							// ※↑SearchFileIned 内で加工済み
-	SendMessage(PES->hWnd, EM_REPLACESEL, 0, (LPARAM)p);
+	SendMessage(PES->hWnd, EM_REPLACESEL, 0, (LPARAM)ptr);
 	SendMessage(PES->hWnd, EM_SETSEL, 0, 0);	// 表示開始桁を補正させる
 
-	samelen = len = (DWORD)tstrlen(p);
+	samelen = len = (DWORD)tstrlen(ptr);
 #ifndef UNICODE
-	if ( xpbug < 0 ) CaretFixToW(p, &len);
+	if ( xpbug < 0 ) CaretFixToW(ptr, &len);
 #endif
 	PES->list.select.start = cursor.start;
 	PES->list.select.end = cursor.start + len;
 
 	SendMessage(PES->hWnd, WM_SETREDRAW, TRUE, 0);
-	InvalidateRect(PES->hWnd,NULL, FALSE);
-	tstrcpy(buf2, p);
+	InvalidateRect(PES->hWnd, NULL, FALSE);
+	tstrcpy(buf2, ptr);
 	tstrcpy(buf, PES->ED.Fname);
 
 	// ブラケット処理済みは、これ以上重複処理させない
@@ -177,33 +195,33 @@ BOOL MakeCompleteList(HWND hWnd,  PPxEDSTRUCT *PES)
 	// ２回目検索
 	cursor.start = 0;
 	cursor.end   = tstrlen32(buf);
-	p = SearchFileIned(&PES->ED, buf, &cursor, fmode);
-	if ( p == NULL ){
+	ptr = SearchFileIned(&PES->ED, buf, &cursor, fmode);
+	if ( ptr == NULL ){
 		PostMessage(hWnd, WM_CLOSE, 0, 0);
 	}else{
 		DWORD starttime;
 
 		SendMessage(hWnd, LB_ADDSTRING, 0, (LPARAM)(PES->list.OldString)); // Undo用
 		SendMessage(hWnd, LB_ADDSTRING, 0, (LPARAM)buf2); // １回目
-		SendMessage(hWnd, LB_ADDSTRING, 0, (LPARAM)p); // ２回目
-		samelen = CheckSamelen(buf2, p);
+		SendMessage(hWnd, LB_ADDSTRING, 0, (LPARAM)ptr); // ２回目
+		samelen = CheckSamelen(buf2, ptr);
 		starttime = GetTickCount();
 		// ３回目以降検索
 		for ( ; ; ){
 			tstrcpy(buf, PES->ED.Fname);
 			cursor.start = 0;
 			cursor.end   = tstrlen32(buf);
-			p = SearchFileIned(&PES->ED, buf, &cursor, fmode);
-			if ( p == NULL ) break;
-			SendMessage(hWnd, LB_ADDSTRING, 0, (LPARAM)p);
-			samelen = CheckSamelen(buf2, p);
+			ptr = SearchFileIned(&PES->ED, buf, &cursor, fmode);
+			if ( ptr == NULL ) break;
+			SendMessage(hWnd, LB_ADDSTRING, 0, (LPARAM)ptr);
+			samelen = CheckSamelen(buf2, ptr);
 			if ( (GetTickCount() - starttime) > AllowTick ){
 				SendMessage(hWnd, LB_ADDSTRING, 0, (LPARAM)T("more..."));
 				break;
 			}
 		}
 	}
-	if ( PES->flags & CMDSEARCHI_SELECTPART){
+	if ( PES->flags & CMDSEARCHI_SELECTPART ){
 	#ifndef UNICODE
 		if ( xpbug < 0 ) CaretFixToW(buf2, &samelen);
 	#endif
@@ -212,7 +230,7 @@ BOOL MakeCompleteList(HWND hWnd,  PPxEDSTRUCT *PES)
 	}
 	SendMessage(PES->hWnd, EM_SETSEL,
 			PES->list.select.start + samelen, PES->list.select.start + len);
-	SetMessageForEdit(PES->hWnd,NULL);
+	SetMessageForEdit(PES->hWnd, NULL);
 	SendMessage(hWnd, LB_SETCURSEL, 1, 0);
 	return TRUE;
 }
@@ -243,7 +261,7 @@ BOOL MakeFloatList(HWND hWnd, PPxEDSTRUCT *PES, EDITDIST dist)
 		}
 	}
 										// ヒストリ内容を登録:W:近い内容
-	for ( i = 0 ; i < 100 ; i++ ){
+	for ( i = 0 ; i < CompListItems ; i++ ){
 		const TCHAR *histptrW;
 
 		histptrW = EnumHistory(PES->list.WhistID, i);
@@ -256,7 +274,7 @@ BOOL MakeFloatList(HWND hWnd, PPxEDSTRUCT *PES, EDITDIST dist)
 				SendMessage(hWnd, msg, 0, (LPARAM)histptrW);
 	}
 										// ヒストリ内容を追加登録:R:遠い内容
-	for ( ; i < 100 ; i++ ){
+	for ( ; i < CompListItems ; i++ ){
 		const TCHAR *histptrR;
 
 		histptrR = EnumHistory(PES->list.RhistID & (WORD)~PES->list.WhistID, i);
@@ -400,17 +418,33 @@ HWND CreateListWindowMain(PPxEDSTRUCT *PES, int direction)
 			box.bottom = box.top - ListHeight;
 		}
 	}
+	box.right -= box.left;
+	if ( X_flst[2] != 0 ){
+		int listwidth;
+
+		listwidth = PES->fontY * X_flst[2] / 2;
+		if ( box.right < listwidth ) box.right = listwidth;
+		if ( box.right > (deskbox.right - deskbox.left) ){
+			box.right = deskbox.right - deskbox.left;
+		}
+		if ( (box.left + box.right) > deskbox.right ){
+			box.left = deskbox.right - box.right;
+		}
+		if ( box.left < deskbox.left ){
+			box.left = deskbox.left;
+		}
+	}
 	hListWnd = CreateWindowEx(
 			(WinType >= WINTYPE_2000) ? WS_EX_NOACTIVATE : 0,
-			LISTBOXstr,NilStr,
+			LISTBOXstr, NilStr,
 /* ↓窓枠が太くなる分左右位置がずれる＆上下サイズを変えると高さが縮むので中止
 			(WinType >= WINTYPE_10) ?
 				(WS_THICKFRAME | WS_BORDER | WS_POPUP | WS_VSCROLL | WS_HSCROLL | LBS_NOTIFY) :
 				(WS_BORDER | WS_POPUP | WS_VSCROLL | WS_HSCROLL | LBS_NOTIFY),
 */
 			WS_BORDER | WS_POPUP | WS_VSCROLL | WS_HSCROLL | LBS_NOTIFY,
-			box.left, box.bottom, box.right - box.left, ListHeight,
-			PES->hWnd,NULL, DLLhInst,NULL);
+			box.left, box.bottom, box.right, ListHeight,
+			PES->hWnd, NULL, DLLhInst, NULL);
 	SetWindowLongPtr(hListWnd, GWLP_USERDATA, (LONG_PTR)PES);
 	SendMessage(hListWnd, WM_SETFONT, SendMessage(PES->hWnd, WM_GETFONT, 0, 0), 0);
 
@@ -419,7 +453,7 @@ HWND CreateListWindowMain(PPxEDSTRUCT *PES, int direction)
 		GetWindowRect(hListWnd, &deskbox);
 		ListHeight -= (deskbox.bottom - deskbox.top);
 		if ( ListHeight > 0 ){
-			SetWindowPos(hListWnd,NULL, box.left, box.bottom + ListHeight,
+			SetWindowPos(hListWnd, NULL, box.left, box.bottom + ListHeight,
 				0, 0, SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOREDRAW);
 		}
 	}
@@ -468,14 +502,15 @@ void FixListPosition(PPxEDSTRUCT *PES, HWND hWnd)
 
 	GetWindowRect(hWnd, &parentbox);
 	GetWindowRect(PES->list.hWnd, &listbox);
-	SetWindowPos(PES->list.hWnd,NULL, parentbox.left,
+	if ( X_flst[2] != 0 ) parentbox.left = listbox.left;
+	SetWindowPos(PES->list.hWnd, NULL, parentbox.left,
 		PES->list.direction > 0 ?
 			parentbox.bottom : parentbox.top - (listbox.bottom - listbox.top),
 		0, 0, SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOZORDER);
 
 	if ( PES->list.hSubWnd != NULL ){
 		GetWindowRect(PES->list.hSubWnd, &listbox);
-		SetWindowPos(PES->list.hSubWnd,NULL, parentbox.left,
+		SetWindowPos(PES->list.hSubWnd, NULL, parentbox.left,
 				parentbox.top - (listbox.bottom - listbox.top),
 		0, 0, SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOZORDER);
 	}
@@ -605,7 +640,7 @@ BOOL ListUpDown(HWND hWnd, PPxEDSTRUCT *PES, int offset, int repeat)
 
 	if ( !(PES->flags & PPXEDIT_NOINCLIST) ){
 		if ( PES->list.hWnd == NULL ){
-			if ( PES->flags & PPXEDIT_TEXTEDIT ) return FALSE;	// 複数行は未対応
+			if ( PES->flags & PPXEDIT_TEXTEDIT ) return FALSE;	// PPe は未対応
 			if ( !(PES->style & WS_VSCROLL) ) return FALSE;	// スクロールバー無は未対応
 		}
 		// リスト表示時の処理 -------------------------------------------------
@@ -636,6 +671,9 @@ BOOL ListUpDown(HWND hWnd, PPxEDSTRUCT *PES, int offset, int repeat)
 			int nowindex, index, count;
 
 			nowindex = SendMessage(PES->list.hWnd, LB_GETCURSEL, 0, 0);
+
+//			if ( (PES->flags & PPXEDIT_TEXTEDIT) && (SendMessage(PES->list.hWnd, LB_GETCOUNT, 0, 0) <= 0) ) return FALSE;	// PPe は未対応
+
 			index = nowindex + offset;
 			if ( PES->list.direction < 0 ){ // 第１リスト-上側表示
 				count = SendMessage(PES->list.hWnd, LB_GETCOUNT, 0, 0);
@@ -828,6 +866,25 @@ void ListSearch(HWND hWnd, PPxEDSTRUCT *PES, int len)
 }
 
 // 検索対象の長さを決定
+#if 1 // 深いことはしない用
+#define SMODEPARAM(smode)
+const TCHAR *CalcTargetWordWidth(const TCHAR *text, LPCTSTR *last)
+{
+	TCHAR code;
+	const TCHAR *first;
+
+	while ( (*text == ' ') || (*text == '\t') ) text++;
+	first = text;
+
+	while ( (code = *text) != '\0' ){
+		if ( (code == '\r') || (code == '\n') ) break;
+		text++;
+	}
+	*last = text;
+	return first;
+}
+#else
+#define SMODEPARAM(smode) ,smode
 const TCHAR *CalcTargetWordWidth(const TCHAR *text, LPCTSTR *last, int mode)
 {
 	TCHAR code;
@@ -836,22 +893,28 @@ const TCHAR *CalcTargetWordWidth(const TCHAR *text, LPCTSTR *last, int mode)
 
 	while ( (*text == ' ') || (*text == '\t') ) text++;
 	first = text;
-	if ( mode == TEXT_MASK ){ // マスク文字列用
+	if ( mode == SMODE_MASK ){ // マスク文字列用
 		while ( (code = *text) != '\0' ){
 			if ( (code == '\r') || (code == '\n') ) break;
-			/*
+			#if 0 // コメントを検索対象から外す時用
 			if ( (code == ';') && ((text > first) && ((*(text - 1) == ' ') || (*(text - 1) == '\t')) ) ){
 				break;
 			}
-			*/
+			#endif
 			text++;
 		}
 	}else while ( (code = *text) != '\0' ){ // コマンド・パス
 		if ( (code == '\r') || (code == '\n') ) break;
-		// if ( code == ';' ) break; // コメント
-		/*if ( (code == '\\') && ((UTCHAR)*(text + 1) > ' ') ){ // パスは区切り以降を検索対象にする
+		#if 0 // コメントを検索対象から外す時用
+		if ( code == ';' ) break; // コメント
+		#endif
+		#if 0 // パス形式の時、最終エントリ以降に限定するとき
+		if ( (code == '\\') && ((UTCHAR)*(text + 1) > ' ') ){
 			first = text + 1;
-		}else */if ( mode != TEXT_PATH ){
+		}else
+		#endif
+		#if 0 // 空白区切り以降を検索対象から外す
+		if ( mode != SMODE_PATH ){
 			// くくりのない空白区切り
 			if ( ((code == ' ') || (code == '\t')) && !usebraket ) break;
 			if ( code == '\"' ){
@@ -861,6 +924,7 @@ const TCHAR *CalcTargetWordWidth(const TCHAR *text, LPCTSTR *last, int mode)
 				first = text;
 			}
 		}
+		#endif
 		#ifdef UNICODE
 			text++;
 		#else
@@ -870,6 +934,7 @@ const TCHAR *CalcTargetWordWidth(const TCHAR *text, LPCTSTR *last, int mode)
 	*last = text;
 	return first;
 }
+#endif
 
 TCHAR *tmemimem(const TCHAR *source, const TCHAR *sourcelast, const TCHAR *word, int wordlen)
 {
@@ -979,13 +1044,50 @@ void EnvironmentStringsSearch(LISTADDINFO *list, TCHAR *first, size_t firstlen, 
 	FreeEnvironmentStrings(envptr);
 }
 
+BOOL SearchRomaStringS(const TCHAR *text, TCHAR *textlast, const TCHAR *searchstr, DWORD_PTR *handles)
+{
+	TCHAR backup;
+	BOOL result;
+
+	backup = *textlast;
+	*textlast = '\0';
+
+	result = SearchRomaString(text, searchstr, ISEA_FLOAT, handles);
+	*textlast = backup;
+	return result;
+}
+
+BOOL CheckFillTimeout(LISTADDINFO *list, SEARCHPARAMS *spms)
+{
+	DWORD nowtick = GetTickCount();
+
+	// 表示時間以内
+	if ( list->show == 0 ){
+		if ( (nowtick - spms->startTick) <= X_flto.showtime ) return FALSE;
+		if ( list->items > 0 ){
+			SendMessage(list->hWnd, WM_SETREDRAW, TRUE, 0);
+			ShowWindow(list->hWnd, SW_SHOWNA);
+			list->show = 1;
+		}
+	}
+
+	// TimeOut
+	if ( (nowtick - spms->startTick) <= X_flto.stoptime ) return FALSE;
+	SendMessage(list->hWnd, list->msg, (WPARAM)list->wParam, (LPARAM)StrTimeOut);
+	return TRUE;
+}
+
 // テキストファイルから一覧作成
-void TextSearch(LISTADDINFO *list, FILLTEXTFILE *filltext, const TCHAR *first, size_t firstlen, const TCHAR *second, size_t secondlen, DWORD lastTick, int smode, int braket)
+void TextSearch(LISTADDINFO *list, FILLTEXTFILE *filltext, SEARCHPARAMS *spms SMODEPARAM(smode), int braket)
 {
 	TCHAR buf[CMDLINESIZE], buf2[VFPS];
-	const TCHAR *text, *checkfirst, *checklast;
+	TCHAR *text;
+	const TCHAR *checkfirst;
+	TCHAR *checklast;
+	TCHAR *first;
 	TCHAR *dest;
 	int itemcount = 0;
+	size_t firstlen;
 
 	if ( filltext->mem == NULL ){
 		// マルチスレッドなので、imageptr が更新されても textptr が未設定のことがある→filltextの直接使用は危険
@@ -1009,17 +1111,17 @@ void TextSearch(LISTADDINFO *list, FILLTEXTFILE *filltext, const TCHAR *first, s
 			HeapFree(ProcHeap, 0, imageptr);
 		}
 	}
-
+	first = spms->first;
+	firstlen = spms->firstlen;
 	while ( (*first == '\\') && firstlen ){
 		first++;
 		firstlen--;
 	}
 
 	text = filltext->text;
-
 	while ( *text != '\0' ){
 		if ( (*text != ' ') && (*text != '\t') ){ // 行頭からのみ検索
-			checkfirst = CalcTargetWordWidth(text, &checklast, smode);
+			checkfirst = CalcTargetWordWidth(text,(const TCHAR **) &checklast SMODEPARAM(smode));
 /*
 			{
 				char ab[2000];
@@ -1030,11 +1132,15 @@ void TextSearch(LISTADDINFO *list, FILLTEXTFILE *filltext, const TCHAR *first, s
 
 			}
 */
-			if ( tmemimem(checkfirst, checklast, first, firstlen) != NULL ){
-				if ( second == NULL ){ // １つめのみは前方一致
+			if ( (tmemimem(checkfirst, checklast, first, firstlen) != NULL)
+
+			 ||
+				 ((spms->edmode & CMDSEARCH_ROMA) &&
+				  SearchRomaStringS(checkfirst, checklast, first, &spms->romahandle))  ){
+				if ( spms->second == NULL ){ // １つめのみは前方一致
 					// 一致したので一行取り出す
 					dest = buf;
-					while ( IsEOL(&text) ) *dest++ = *text++;
+					while ( IsEOL((const TCHAR **)&text) ) *dest++ = *text++;
 					*dest = '\0';
 
 					if ( first == NilStrNC ){
@@ -1060,7 +1166,7 @@ void TextSearch(LISTADDINFO *list, FILLTEXTFILE *filltext, const TCHAR *first, s
 							if ( *text == ';' ){ // コメント表示
 								text++;
 								dest = buf;
-								while ( IsEOL(&text) ) *dest++ = *text++;
+								while ( IsEOL((const TCHAR **)&text) ) *dest++ = *text++;
 								*dest = '\0';
 								SetMessageForEdit(list->hWnd, buf);
 							}
@@ -1068,16 +1174,16 @@ void TextSearch(LISTADDINFO *list, FILLTEXTFILE *filltext, const TCHAR *first, s
 
 						for ( ; ; ){
 							// 次の行へ
-							while ( IsEOL(&text) ) text++;
+							while ( IsEOL((const TCHAR **)&text) ) text++;
 							if ( *text != '\0' ) text++;
 
 							if ( (*text != ' ') && (*text != '\t') ) break;
 							while ( (*text == ' ') || (*text == '\t') ) text++;
 
-							if ( !tstrnicmp(second, text, secondlen) ){ // 前方一致したか
+							if ( !tstrnicmp(spms->second, text, spms->secondlen) ){ // 前方一致したか
 								// 一致したので取り出す
 								dest = buf;
-								while ( IsEOL(&text) ) *dest++ = *text++;
+								while ( IsEOL((const TCHAR **)&text) ) *dest++ = *text++;
 								*dest = '\0';
 
 								if ( LB_ERR == AddBraketTextToList(list, buf, braket) ){
@@ -1093,13 +1199,10 @@ void TextSearch(LISTADDINFO *list, FILLTEXTFILE *filltext, const TCHAR *first, s
 			}
 		}
 		// 次の行へ
-		while ( IsEOL(&text) ) text++;
+		while ( IsEOL((const TCHAR **)&text) ) text++;
 		if ( *text != '\0' ) text++;
 
-		if ( GetTickCount() > lastTick ){
-			SendMessage(list->hWnd, list->msg, (WPARAM)list->wParam, (LPARAM)T("*** text search timeout ***"));
-			break;
-		}
+		if ( IsTrue(CheckFillTimeout(list, spms)) ) break;
 	}
 enumbreak:
 	list->items += itemcount;
@@ -1107,38 +1210,37 @@ enumbreak:
 }
 
 // ディレクトリから一覧作成
-void EntrySearch(PPxEDSTRUCT *PES, LISTADDINFO *list, int mode, int braket, TCHAR *first, DWORD lastTick)
+void EntrySearch(PPxEDSTRUCT *PES, LISTADDINFO *list, SEARCHPARAMS *spms, int braket)
 {
 	int itemcount = 0;
-	TCHAR *p;
+	TCHAR *ptr;
 	ESTRUCT ED;
+	DWORD mode;
 
 	ED.hF = NULL;
 	ED.info= PES->info;
-	ED.romahandle = 0;
+	ED.romahandle = spms->romahandle; // 親のを利用
 	ED.cmdsearch = 0;
-
-	setflag(mode, CMDSEARCH_NOADDSEP);
+	mode = spms->edmode | CMDSEARCH_NOADDSEP;
 	for ( ; ; ){
-		p = SearchFileInedMain(&ED, first, mode);
-		if ( p == NULL ) break;
+		ptr = SearchFileInedMain(&ED, spms->first, mode);
+		if ( ptr == NULL ) break;
 
-		if ( LB_ERR == AddBraketTextToList(list, p, braket) ) break;
+		if ( LB_ERR == AddBraketTextToList(list, ptr, braket) ) break;
 		itemcount++;
 
-		if ( GetTickCount() > lastTick ){
-			SendMessage(list->hWnd, list->msg, (WPARAM)list->wParam, (LPARAM)T("*** timeout ***"));
-			break;
-		}
-		memmove(first, p, TSTRSIZE(p));
+		if ( IsTrue(CheckFillTimeout(list, spms)) ) break;
+		memmove(spms->first, ptr, TSTRSIZE(ptr));
 	}
 	list->items += itemcount;
+	spms->romahandle = ED.romahandle;
+	ED.romahandle = 0; // 親で解放させる
 	SearchFileIned(&ED, NilStrNC, NULL, 0);
 	return;
 }
 
 // ヒストリから一覧作成
-void HistorySearch(LISTADDINFO *list, WORD targethist, TCHAR *first, size_t firstlen, DWORD lastTick, int smode, int braket)
+void HistorySearch(LISTADDINFO *list, SEARCHPARAMS *spms, WORD targethist SMODEPARAM(smode), int braket)
 {
 	int itemcount = 0, index;
 	TCHAR textbuf[CMDLINESIZE];
@@ -1155,14 +1257,14 @@ void HistorySearch(LISTADDINFO *list, WORD targethist, TCHAR *first, size_t firs
 			break;
 		}
 
-		if ( GetTickCount() > lastTick ){
+//			Sleep(300);
+		if ( IsTrue(CheckFillTimeout(list, spms)) ) {
 			FreePPx();
-			SendMessage(list->hWnd, list->msg, (WPARAM)list->wParam, (LPARAM)T("*** timeout ***"));
 			break;
 		}
 
 		histlen = tstrlen(hist);
-		if ( firstlen > histlen ){
+		if ( spms->firstlen > histlen ){
 			FreePPx();
 			continue;
 		}
@@ -1172,10 +1274,11 @@ void HistorySearch(LISTADDINFO *list, WORD targethist, TCHAR *first, size_t firs
 		}
 		FreePPx();
 
-		checkfirst = CalcTargetWordWidth(hist, &checklast, smode);
-		if ( tmemimem(checkfirst, checklast, first, firstlen) == NULL ){
-			// 前方一致
-			if ( (checkfirst == hist) || tstrnicmp(hist, first, firstlen) ){
+		checkfirst = CalcTargetWordWidth(hist, &checklast SMODEPARAM(smode));
+		if ( tmemimem(checkfirst, checklast, spms->first, spms->firstlen) == NULL ){
+			if ( ((spms->edmode & CMDSEARCH_ROMA) &&
+				  SearchRomaString(checkfirst, spms->first, ISEA_FLOAT, &spms->romahandle))  ){
+			}else if ( (checkfirst == hist) || tstrnicmp(hist, spms->first, spms->firstlen) ){ // 前方一致
 				continue;
 			}
 		}
@@ -1185,6 +1288,7 @@ void HistorySearch(LISTADDINFO *list, WORD targethist, TCHAR *first, size_t firs
 	list->items += itemcount;
 	return;
 }
+
 
 DWORD_PTR USECDECL SearchCReportModuleFunction(SMODULECAPPINFO *sinfo, DWORD cmdID, PPXAPPINFOUNION *uptr)
 {
@@ -1221,7 +1325,7 @@ void ModuleSearch(PPxEDSTRUCT *PES, LISTADDINFO *list, TCHAR *first, size_t firs
 	msearch.keyword = msg;
 #endif
 	msearch.searchtype = PES->list.WhistID | PES->list.RhistID | PPXH_SEARCH_NAMEONLY;
-	msearch.maxresults = 100;
+	msearch.maxresults = ModuleCompItems;
 	smca.info.Function = (PPXAPPINFOFUNCTION)SearchCReportModuleFunction;
 	smca.info.Name = T("Edit");
 	smca.info.RegID = NilStr;
@@ -1234,31 +1338,28 @@ void ModuleSearch(PPxEDSTRUCT *PES, LISTADDINFO *list, TCHAR *first, size_t firs
 }
 
 // エイリアスから一覧作成
-void AliasSearch(LISTADDINFO *list, TCHAR *first, size_t firstlen, DWORD lastTick, int smode)
+void AliasSearch(LISTADDINFO *list, SEARCHPARAMS *spms SMODEPARAM(smode))
 {
 	int itemcount = 0, index = 0;
 	TCHAR keyword[CMDLINESIZE], param[CMDLINESIZE];
 	int offset = 0;
 
-	if ( *first == '%' ){
+	if ( *spms->first == '%' ){
 		keyword[0] = '%';
 		keyword[1] = '\'';
 		offset = 2;
 	}
 
-	while(EnumCustTable(index++, T("A_exec"), keyword + offset, param, sizeof(param)) >= 0){
+	while( EnumCustTable(index++, T("A_exec"), keyword + offset, param, sizeof(param)) >= 0){
 		const TCHAR *checkfirst, *checklast;
 
-		if ( GetTickCount() > lastTick ){
-			SendMessage(list->hWnd, list->msg, (WPARAM)list->wParam, (LPARAM)T("*** timeout ***"));
-			break;
-		}
+		if ( IsTrue(CheckFillTimeout(list, spms)) ) break;
 
-		if ( firstlen <= tstrlen(keyword) ){
-			checkfirst = CalcTargetWordWidth(keyword, &checklast, smode);
-			if ( tmemimem(checkfirst, checklast, first, firstlen) == NULL ){
+		if ( spms->firstlen <= tstrlen(keyword) ){
+			checkfirst = CalcTargetWordWidth(keyword, &checklast SMODEPARAM(smode));
+			if ( tmemimem(checkfirst, checklast, spms->first, spms->firstlen) == NULL ){
 				// 前方一致
-				if ( (checkfirst == keyword) || tstrnicmp(keyword, first, firstlen) ){
+				if ( (checkfirst == keyword) || tstrnicmp(keyword, spms->first, spms->firstlen) ){
 					continue;
 				}
 			}
@@ -1303,11 +1404,11 @@ void AddCalcNumber(LISTADDINFO *list, TCHAR *first, size_t firstlen)
 	list->items++;
 }
 
-const TCHAR *FindCommandParamPoint(const TCHAR *line, DWORD cursorPos, size_t *secondPos)
+TCHAR *FindCommandParamPoint(TCHAR *line, DWORD cursorPos, size_t *secondPos)
 {
 	DWORD firstWordPos;
-	const TCHAR *tempP;
-	const TCHAR *p;
+	TCHAR *tempP;
+	TCHAR *p;
 
 	if ( cursorPos == 0 ) return NULL;
 
@@ -1351,14 +1452,12 @@ DWORD WINAPI KeyStepFillMain(KEYSTEPFILLMAIN_INFO *ksfinfo)
 {
 	HWND hWnd;
 	ECURSOR cursor;
-	TCHAR line[CMDLINESIZE * 2];
-	DWORD mode;
+	TCHAR linebuf[CMDLINESIZE * 2], *line;
 
 	int dbllist;
 	TCHAR *startP;
 	int braket = 0; // BRAKET_ に 1を足した値
 	DWORD nwP;
-	DWORD lastTick;
 	size_t len;
 	size_t firstWordLen;
 	LISTADDINFO mainlist, sublist;
@@ -1366,6 +1465,7 @@ DWORD WINAPI KeyStepFillMain(KEYSTEPFILLMAIN_INFO *ksfinfo)
 
 	PPxEDSTRUCT *PES;
 	BOOL histmode, threadmode;
+	SEARCHPARAMS spms, spms2;
 
 	PES = ksfinfo->PES;
 	histmode = ksfinfo->histmode;
@@ -1385,46 +1485,54 @@ DWORD WINAPI KeyStepFillMain(KEYSTEPFILLMAIN_INFO *ksfinfo)
 		mainlist.wParam = sublist.wParam = 0;
 	}
 	hWnd = PES->hWnd;
-	mode = PES->ED.cmdsearch & (CMDSEARCH_FLOAT | CMDSEARCH_ROMA);
-	if ( X_flst[0] >= 5 ) mode |= CMDSEARCH_NOUNC;
+	spms.edmode = PES->ED.cmdsearch & (CMDSEARCH_FLOAT | CMDSEARCH_ROMA);
+	if ( X_flst[0] >= 5 ) spms.edmode |= CMDSEARCH_NOUNC;
 												// サイズチェック
-	line[0] = '\0';
+	line = linebuf;
+	linebuf[0] = '\0';
 	if ( IsTrue(histmode) ){
 		cursor.start = cursor.end = 0;
 	}else{
 		if ( (DWORD)SendMessage(hWnd, WM_GETTEXT,
-				TSIZEOF(line), (LPARAM)&line) >= TSIZEOF(line) ){
-			goto fin;
+				CMDLINESIZE, (LPARAM)&linebuf) >= CMDLINESIZE ){
+			DWORD getlen = (DWORD)SendMessage(hWnd, WM_GETTEXTLENGTH, 0, 0);
+			if ( (getlen >= 0x20000) || (OSver.dwMajorVersion < 6) ) goto fin2;
+			line = (TCHAR *)HeapAlloc(DLLheap, 0, TSTROFF(getlen) + CMDLINESIZE);
+			if ( line == NULL ) goto fin2;
+			SendMessage(hWnd, WM_GETTEXT, getlen + 8, (LPARAM)line);
 		}
 												// 編集文字列(全て)を取得
 		GetEditSel(hWnd, line, &cursor);
 	}
-	mode |= CMDSEARCH_ONE | CMDSEARCH_EDITBOX |
+	spms.edmode |= CMDSEARCH_ONE | CMDSEARCH_EDITBOX |
 			((PES->list.WhistID & PPXH_COMMAND) ?
-						CMDSEARCH_CURRENT : CMDSEARCH_OFF) |
+					CMDSEARCH_CURRENT : CMDSEARCH_OFF) |
 			((PES->flags & PPXEDIT_SINGLEREF) ? 0 : CMDSEARCH_MULTI);
 
 	if ( (PES->list.WhistID & (PPXH_DIR | PPXH_PPCPATH)) &&
 		 IsTrue(GetCustDword(T("X_fdir"), TRUE)) ){
-		setflag(mode, CMDSEARCH_DIRECTORY);
+		setflag(spms.edmode, CMDSEARCH_DIRECTORY);
 	}
-	if ( X_flst[1] != 0 ) setflag(mode, CMDSEARCH_FLOAT);
+	if ( X_flst[1] != 0 ) setflag(spms.edmode, CMDSEARCH_FLOAT);
 
 	PES->list.ListWindow = LISTU_FOCUSMAIN;
 	mainlist.hWnd = PES->list.hWnd;
 	mainlist.msg = LB_ADDSTRING;
 	mainlist.items = 0;
+	mainlist.show = 0;
 	dbllist = (X_flst[0] >= 4) && !(PES->flags & PPXEDIT_COMBOBOX);
 	if ( dbllist ){
 		sublist.hWnd = PES->list.hSubWnd;
 		sublist.msg = LB_INSERTSTRING;
 		sublist.items = 0;
+		sublist.show = 0;
 	}else{
 		sublist = mainlist;
+		sublist.show = 1;
 	}
 
 		// 検索対象の切り出し
-	if ( !(mode & CMDSEARCH_MULTI) ){ // 単一パラメータ
+	if ( !(spms.edmode & CMDSEARCH_MULTI) ){ // 単一パラメータ
 		cursor.start = 0;
 		if ( X_flst[0] < 5 ){
 			cursor.end = tstrlen32(line);
@@ -1474,53 +1582,74 @@ DWORD WINAPI KeyStepFillMain(KEYSTEPFILLMAIN_INFO *ksfinfo)
 
 	// 補完一覧の作成 ------------------------------
 	// オーバーフローは、補完がその場で終わるだけなので対処しない
-	lastTick = GetTickCount() + (threadmode ? ThreadAllowTick : AllowTick);
 	len = tstrlen(startP);
 
+	spms.romahandle = spms2.romahandle = 0;
+	spms.first = startP;
+	spms.firstlen = len;
+	spms.second = 0;
+	spms.secondlen = 0;
+	spms.startTick = GetTickCount();
+
 	if ( PES->list.filltext_user.mem != NULL ){
-		const TCHAR *firstWordPtr;
+		TCHAR *firstWordPtr;
 
 		firstWordPtr = FindCommandParamPoint(line, nwP, &firstWordLen);
 		if ( firstWordPtr == NULL ){
-			TextSearch(&mainlist, &PES->list.filltext_user, startP, len, NULL, 0, lastTick, TEXT_PATH, 0);
+			TextSearch(&mainlist, &PES->list.filltext_user, &spms SMODEPARAM(SMODE_PATH), 0);
 		}else{
-			TextSearch(&sublist, &PES->list.filltext_user, firstWordPtr, firstWordLen, startP, len, lastTick, TEXT_WORDPATH, 0);
+			spms2.first = firstWordPtr;
+			spms2.firstlen = firstWordLen;
+			spms2.second = startP;
+			spms2.secondlen = len;
+			spms2.startTick = spms.startTick;
+			spms2.edmode = spms.edmode;
+			TextSearch(&sublist, &PES->list.filltext_user, &spms2 SMODEPARAM(SMODE_WORDPATH), 0);
 		}
 	}
 
 	switch ( PES->list.WhistID ){
 		case PPXH_COMMAND: {
 			WORD histmask;
-			const TCHAR *firstWordPtr;
+			TCHAR *firstWordPtr;
 
 			AddCalcNumber(&sublist, startP, len);
 
 			firstWordPtr = FindCommandParamPoint(line, nwP, &firstWordLen);
 			if ( firstWordPtr == NULL ){ // 最初の単語ならコマンドの補完を行う
-				HistorySearch(&sublist, PPXH_COMMAND, startP, len, lastTick, TEXT_WORDPATH, 0);
-				AliasSearch(&sublist, startP, len, lastTick, TEXT_WORDPATH);
-				TextSearch(&sublist, &filltext_cmd, startP, len,NULL, 0, lastTick, TEXT_WORDPATH, 0);
-				EntrySearch(PES, &mainlist, mode, braket, startP, GetTickCount() + AllowTick);
+				HistorySearch(&sublist, &spms, PPXH_COMMAND SMODEPARAM(SMODE_WORDPATH), 0);
+				AliasSearch(&sublist, &spms SMODEPARAM(SMODE_WORDPATH));
+				TextSearch(&sublist, &filltext_cmd, &spms SMODEPARAM(SMODE_WORDPATH), 0);
+				spms.startTick = GetTickCount();
+				EntrySearch(PES, &mainlist, &spms, braket);
 				histmask = (WORD)~PPXH_COMMAND;
 			}else{
-				TextSearch(&sublist, &filltext_cmd, firstWordPtr, firstWordLen, startP, len, lastTick, TEXT_WORDPATH, 0);
-				EntrySearch(PES, &mainlist, mode, braket, startP, GetTickCount() + AllowTick);
-				HistorySearch(&sublist, PPXH_DIR_R, startP, len, lastTick, TEXT_WORDPATH, braket);
-				TextSearch(&mainlist, &filltext_path, startP, len,NULL, 0, lastTick, TEXT_PATH, braket);
-				AliasSearch(&sublist, startP, len, lastTick, TEXT_WORDPATH);
+				spms2.first = firstWordPtr;
+				spms2.firstlen = firstWordLen;
+				spms2.second = startP;
+				spms2.secondlen = len;
+				spms2.startTick = spms.startTick;
+				spms2.edmode = spms.edmode;
+				TextSearch(&sublist, &filltext_cmd, &spms2 SMODEPARAM(SMODE_WORDPATH), 0);
+
+				spms.startTick = GetTickCount();
+				EntrySearch(PES, &mainlist, &spms, braket);
+				HistorySearch(&sublist, &spms, PPXH_DIR_R SMODEPARAM(SMODE_WORDPATH), braket);
+				TextSearch(&mainlist, &filltext_path, &spms SMODEPARAM(SMODE_PATH), braket);
+				AliasSearch(&sublist, &spms SMODEPARAM(SMODE_WORDPATH));
 				histmask = (WORD)~PPXH_DIR_R;
 			}
 			ModuleSearch(PES, &mainlist, startP, len);
-			HistorySearch(&sublist, PES->list.RhistID & (WORD)~histmask, startP, len, lastTick, TEXT_PATH, 0);
+			HistorySearch(&sublist, &spms, PES->list.RhistID & (WORD)~histmask SMODEPARAM(SMODE_PATH), 0);
 			if ( *startP == '%' ){
 				EnvironmentStringsSearch(&mainlist, startP, len, braket, PES->list.WhistID);
 			}
 			break;
 		}
 		case PPXH_MASK:
-			HistorySearch(&mainlist, PPXH_MASK, startP, len, lastTick, TEXT_MASK, 0);
-			TextSearch(&sublist, &filltext_mask, startP, len,NULL, 0, lastTick, TEXT_MASK, 0);
-			HistorySearch(&sublist, PES->list.RhistID & (WORD)~PPXH_MASK, startP, len, lastTick, TEXT_PATH, 0);
+			HistorySearch(&mainlist, &spms, PPXH_MASK SMODEPARAM(SMODE_MASK), 0);
+			TextSearch(&sublist, &filltext_mask, &spms SMODEPARAM(SMODE_MASK), 0);
+			HistorySearch(&sublist, &spms, PES->list.RhistID & (WORD)~PPXH_MASK SMODEPARAM(SMODE_PATH), 0);
 			break;
 
 		case PPXH_GENERAL:
@@ -1532,18 +1661,19 @@ DWORD WINAPI KeyStepFillMain(KEYSTEPFILLMAIN_INFO *ksfinfo)
 
 		case PPXH_PPCPATH:
 		case PPXH_PPVNAME:
-			HistorySearch(&mainlist, PES->list.WhistID, startP, len, lastTick, TEXT_PATH, 0);
-			TextSearch(&sublist, &filltext_path, startP, len, NULL, 0, lastTick, TEXT_PATH, 0);
-			EntrySearch(PES, &mainlist, mode, braket, startP, GetTickCount() + AllowTick);
+			HistorySearch(&mainlist, &spms, PES->list.WhistID SMODEPARAM(SMODE_PATH), 0);
+			TextSearch(&sublist, &filltext_path, &spms SMODEPARAM(SMODE_PATH), 0);
+			spms.startTick = GetTickCount();
+			EntrySearch(PES, &mainlist, &spms, braket);
 			ModuleSearch(PES, &mainlist, startP, len);
-			HistorySearch(&sublist, PES->list.RhistID & (WORD)~PES->list.WhistID, startP, len, lastTick, TEXT_PATH, 0);
+			HistorySearch(&sublist, &spms, PES->list.RhistID & (WORD)~PES->list.WhistID SMODEPARAM(SMODE_PATH), 0);
 			if ( *startP == '%' ){
 				EnvironmentStringsSearch(&mainlist, startP, len, braket, PES->list.WhistID);
 			}
 			break;
 
 		default:
-			HistorySearch(&mainlist, PES->list.RhistID, startP, len, lastTick, TEXT_WORDPATH, 0);
+			HistorySearch(&mainlist, &spms, PES->list.RhistID SMODEPARAM(SMODE_WORDPATH), 0);
 			break;
 	}
 	if ( PES->ActiveListThreadID != ThreadID ) goto fin;
@@ -1582,7 +1712,15 @@ DWORD WINAPI KeyStepFillMain(KEYSTEPFILLMAIN_INFO *ksfinfo)
 		}
 	}
 fin:
+	if ( spms.romahandle != 0 ){
+		SearchRomaString(NULL, NULL, 0, &spms.romahandle);
+	}
+	if ( spms2.romahandle != 0 ){
+		SearchRomaString(NULL, NULL, 0, &spms2.romahandle);
+	}
+fin2:
 	if ( PES->ActiveListThreadID == ThreadID ) PES->ActiveListThreadID = 0;
+	if ( line != linebuf ) HeapFree(DLLheap, 0, line);
 
 	if ( threadmode == FALSE ) return 0;
 	PES->ListThreadCount--;
@@ -1652,6 +1790,19 @@ void KeyStepFill(PPxEDSTRUCT *PES, BOOL histmode)
 		}
 	}
 
+	if ( X_flto.stoptime == 0 ){
+		GetCustData(T("X_flto"), &X_flto, sizeof(X_flto));
+
+		#ifndef _WIN64
+		if ( OSver.dwMajorVersion < 5 ) {
+			X_flto.stoptime = AllowTick;
+		}else
+		#endif
+		{
+			X_flto.stoptime = ThreadAllowTick;
+		}
+	}
+
 	#ifndef WINEGCC
 	#ifndef _WIN64
 	if ( OSver.dwMajorVersion >= 5 ) // 次の行に続く
@@ -1684,7 +1835,8 @@ HWND PPxRegistExEditCombo(HWND hED, int maxlen, const TCHAR *defstr, WORD rHist,
 	const TCHAR *p;
 	POINT LP = {4, 4};
 	HWND hRealED;
-	LISTADDINFO list = {NULL, CB_ADDSTRING, 0, 0};
+	LISTADDINFO list = {NULL, CB_ADDSTRING, 0, 0, 1};
+	SEARCHPARAMS spms;
 
 	SendMessage(hED, CB_LIMITTEXT, maxlen - 1, 0);
 	if ( *defstr != '\0' ){
@@ -1693,16 +1845,23 @@ HWND PPxRegistExEditCombo(HWND hED, int maxlen, const TCHAR *defstr, WORD rHist,
 	}
 									// ヒストリ内容を登録
 	UsePPx();
-	for ( i = 0 ; i < 100 ; i++ ){
+	for ( i = 0 ; i < CompListItems ; i++ ){
 		if ( (p = EnumHistory((WORD)wHist, i)) == NULL ) break;
 		SendMessage(hED, CB_ADDSTRING, 0, (LPARAM)p);
 	};
 	FreePPx();
 
 	list.hWnd = hED;
-	TextSearch(&list, &filltext_mask,NilStrNC, 0,NULL, 0, GetTickCount() + AllowTick, TEXT_MASK, 0);
+	spms.romahandle = 0;
+	spms.startTick = GetTickCount();
+	spms.first = NilStrNC;
+	spms.firstlen = 0;
+	spms.second = NULL;
+	spms.secondlen = 0;
+
+	TextSearch(&list, &filltext_mask, &spms SMODEPARAM(SMODE_MASK), 0);
 	UsePPx();
-	for ( ; i < 100 ; i++ ){
+	for ( ; i < CompListItems ; i++ ){
 		if ( (p = EnumHistory((WORD)(rHist & ~wHist), i)) == NULL ) break;
 		SendMessage(hED, CB_ADDSTRING, 0, (LPARAM)p);
 	};

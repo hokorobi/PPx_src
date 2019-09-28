@@ -221,8 +221,9 @@ typedef struct {
 #define ECS_SELECT	11	// Selected
 #define ECS_SEPARATE	12	// Separate h line
 #define ECS_HILIGHT	13	// hilight1-7
-#define ECS_HOVER	(ECS_HILIGHT + 7)	// mouse hover
+#define ECS_HOVER	(ECS_HILIGHT + ECS_HLMAX)	// mouse hover
 
+#define ECS_HLMAX	7	// hilight max
 #define ECS_HLBIT	32	// hilight
 #define ECS_STATEMASK	7
 #define ECS_HLMASK	0x1f
@@ -274,7 +275,7 @@ typedef struct {
 #define CCI_NOLOAD	-1 // 未取得
 #define CCI_NODATA	-2 // カラム情報無し
 	int cellcolumn;	// カラムインデックス(ColumnData 内の offset)
-	int icon;		// アイコンインデックス (-1:未登録, -2:空白)
+	int icon;		// アイコンインデックス ICONLIST_xx
 	DIRECTXDEFINE(int iconcache) // DirectX BMP 用index
 									// ファイル情報 ---------------------------
 	WIN32_FIND_DATA f;		// ファイル情報(MultiByte なら WORD分余分)
@@ -533,6 +534,7 @@ typedef struct {
 #define FDW_REQUEST		3	// グレー化済み、表示更新要求(^[F5])が必要
 #define FDW_REQUESTED	4	// 表示更新要求を既に行った
 
+// X_inag
 #define INAG_FOCUS		1
 #define INAG_UNFOCUS	2
 

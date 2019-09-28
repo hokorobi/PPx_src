@@ -19,9 +19,9 @@ const TCHAR UnarcTempClassName[] = T("UnarcTempClass");
 
 const char DefaultZip[0x16] = "PK\5\6\0\0\0\0" "\0\0\0\0\0\0\0\0" "\0\0\0\0\0";
 
-void SetLogBadCrText(PPXAPPINFO *loginfo,const TCHAR *title,const TCHAR *text,int result);
+void SetLogBadCrText(PPXAPPINFO *loginfo, const TCHAR *title, const TCHAR *text, int result);
 
-const DWORD FDIoffset[] = { 0,0xa2,0x1000,0x10000,MAX32 };
+const DWORD FDIoffset[] = { 0, 0xa2, 0x1000, 0x10000, MAX32 };
 
 // 固有チェックを行うDLLリスト
 #define VUCheckListMax 8
@@ -43,7 +43,7 @@ const TCHAR fixime[] = T("*noime%:");
 const TCHAR ShareOpenError[] = MES_ESHO;
 
 #ifndef WINEGCC
-	#define Get_X_unbg GetCustDword(T("X_unbg"),0)
+	#define Get_X_unbg GetCustDword(T("X_unbg"), 0)
 #else
 	#define Get_X_unbg 0 // まだ pptrayがないので無効にする。※PPC_ARCH.Cも
 #endif
@@ -57,11 +57,11 @@ void DummyUnMessage(const TCHAR *message)
 	THREADSTRUCT *ts;
 
 	ts = GetCurrentThreadInfo();
-	XMessage(NULL,(ts == NULL) ? NULL : ts->ThreadName,
-			XM_FaERRld,T("No %s API"),message);
+	XMessage(NULL, (ts == NULL) ? NULL : ts->ThreadName,
+			XM_FaERRld, T("No %s API"), message);
 }
 #pragma argsused
-int WINAPI DummyUnarc(const HWND hwnd,LPCSTR szCmdLine,LPSTR szOutput,const DWORD wSize)
+int WINAPI DummyUnarc(const HWND hwnd, LPCSTR szCmdLine, LPSTR szOutput, const DWORD wSize)
 {
 	UnUsedParam(hwnd);UnUsedParam(szCmdLine);UnUsedParam(szOutput);UnUsedParam(wSize);
 
@@ -69,7 +69,7 @@ int WINAPI DummyUnarc(const HWND hwnd,LPCSTR szCmdLine,LPSTR szOutput,const DWOR
 	return ERROR_NOT_SUPPORT;
 }
 #pragma argsused
-HARC WINAPI DummOpenArchive(const HWND hwnd,LPCSTR szFileName,const DWORD dwMode)
+HARC WINAPI DummOpenArchive(const HWND hwnd, LPCSTR szFileName, const DWORD dwMode)
 {
 	UnUsedParam(hwnd);UnUsedParam(szFileName);UnUsedParam(dwMode);
 
@@ -84,21 +84,21 @@ int WINAPI DummyCloseArchive(HARC harc)
 	return ERROR_NOT_SUPPORT;
 }
 #pragma argsused
-int WINAPI DummyFindFirst(HARC harc,LPCSTR szWildName,INDIVIDUALINFOA *lpSubInfo)
+int WINAPI DummyFindFirst(HARC harc, LPCSTR szWildName, INDIVIDUALINFOA *lpSubInfo)
 {
 	UnUsedParam(harc);UnUsedParam(szWildName);UnUsedParam(lpSubInfo);
 	DummyUnMessage(T("FindFirst"));
 	return ERROR_NOT_SUPPORT;
 }
 #pragma argsused
-int WINAPI DummyFindNext(HARC harc,INDIVIDUALINFOA *lpSubInfo)
+int WINAPI DummyFindNext(HARC harc, INDIVIDUALINFOA *lpSubInfo)
 {
 	UnUsedParam(harc);UnUsedParam(lpSubInfo);
 	DummyUnMessage(T("FindNext"));
 	return ERROR_NOT_SUPPORT;
 }
 #pragma argsused
-BOOL WINAPI DummyCheckArchive(LPCSTR szFileName,const int iMode)
+BOOL WINAPI DummyCheckArchive(LPCSTR szFileName, const int iMode)
 {
 	UnUsedParam(szFileName);UnUsedParam(iMode);
 	DummyUnMessage(T("CheckArchive"));
@@ -113,7 +113,7 @@ BOOL WINAPI DummySetUnicodeMode(const BOOL _bUnicode)
 }
 
 //--------------- SusiePlugin の一覧を用意する。ここで LoadLibrary は行わない。
-void LoadSusiePlugin(TCHAR *path,int all)
+void LoadSusiePlugin(TCHAR *path, int all)
 {
 	SUSIE_DLL sdll;
 	HANDLE hFF;			// FindFile 用ハンドル
@@ -122,15 +122,15 @@ void LoadSusiePlugin(TCHAR *path,int all)
 
 	ThInit(&Thsusie);
 	ThInit(&Thsusie_str);
-	tstrcpy(susiedir,path);
+	tstrcpy(susiedir, path);
 										// プラグインの読み込み位置を決定する
 	#ifndef _WIN64
-		CatPath(dir,path,T("*.SPI"));	// 32bit
+		CatPath(dir, path, T("*.SPI"));	// 32bit
 	#else
-		CatPath(dir,path,T("*.SPH"));	// 64bit
+		CatPath(dir, path, T("*.SPH"));	// 64bit
 	#endif
 										// 検索 -------------------------------
-	hFF = FindFirstFileL(dir,&ff);
+	hFF = FindFirstFileL(dir, &ff);
 	if ( hFF != INVALID_HANDLE_VALUE ){
 		do{
 			SUSIE_DLLSTRINGS X_susie;
@@ -138,7 +138,7 @@ void LoadSusiePlugin(TCHAR *path,int all)
 			X_susie.flags = VFSSUSIE_BMP | VFSSUSIE_ARC;
 			X_susie.filemask[0] = '\0';
 			if ( NO_ERROR == GetCustTable(T("P_susie"),
-					ff.cFileName,&X_susie,sizeof(X_susie)) ){
+					ff.cFileName, &X_susie, sizeof(X_susie)) ){
 										// 利用できないのが確認済みなら次へ
 				if ( !(X_susie.flags | all) ) continue;
 			}
@@ -146,12 +146,12 @@ void LoadSusiePlugin(TCHAR *path,int all)
 			sdll.hadd = NULL;
 			sdll.flags = X_susie.flags;
 			sdll.DllNameOffset = Thsusie_str.top;
-			ThAddString(&Thsusie_str,ff.cFileName);
+			ThAddString(&Thsusie_str, ff.cFileName);
 			sdll.SupportExtOffset = Thsusie_str.top;
-			ThAddString(&Thsusie_str,X_susie.filemask);
-			ThAppend(&Thsusie,&sdll,sizeof sdll);
+			ThAddString(&Thsusie_str, X_susie.filemask);
+			ThAppend(&Thsusie, &sdll, sizeof sdll);
 			susie_items++;
-		}while( IsTrue(FindNextFile(hFF,&ff)) );
+		}while( IsTrue(FindNextFile(hFF, &ff)) );
 		FindClose(hFF);
 	}
 	susie_list = (SUSIE_DLL *)Thsusie.bottom;
@@ -167,7 +167,7 @@ VFSDLL void PPXAPI VFSOn(int mode)
 {
 	VfsMode++;
 //================================================== SUSIE プラグインの読み込み
-	if ( usesusie == FALSE ){ // VFS_BMP,VFS_DIRECTORY の両方とも
+	if ( usesusie == FALSE ){ // VFS_BMP, VFS_DIRECTORY の両方とも
 		TCHAR dir[MAX_PATH];
 		BOOL all;
 
@@ -175,15 +175,15 @@ VFSDLL void PPXAPI VFSOn(int mode)
 													// 1)設定 dir
 		dir[0] = '\0';
 		all = mode & VFS_ALL;
-		GetCustData(T("P_susieP"),dir,sizeof dir);
+		GetCustData(T("P_susieP"), dir, sizeof(dir));
 		if ( dir[0] != '\0' ){
-			VFSFixPath(NULL,dir,DLLpath,VFSFIX_FULLPATH | VFSFIX_REALPATH);
-			LoadSusiePlugin(dir,all);
+			VFSFixPath(NULL, dir, DLLpath, VFSFIX_FULLPATH | VFSFIX_REALPATH);
+			LoadSusiePlugin(dir, all);
 		}else if ( GetRegString(HKEY_CURRENT_USER,	// 2)susie が認識する dir
-				SusiePath,StrPath,dir,sizeof dir) ){
-			LoadSusiePlugin(dir,all);
+				SusiePath, StrPath, dir, TSIZEOF(dir)) ){
+			LoadSusiePlugin(dir, all);
 		}else{										// 3)ppx dir
-			LoadSusiePlugin(DLLpath,all);
+			LoadSusiePlugin(DLLpath, all);
 		}
 		usesusie = TRUE;
 	}
@@ -195,15 +195,15 @@ VFSDLL void PPXAPI VFSOn(int mode)
 		InitializeCriticalSection(&ArchiveSection[VFSAS_UNDLL]);
 		size = GetCustDataSize(T("P_arc"));
 		if ( size > 0 ){
-			TCHAR *tbl,*p;
+			TCHAR *tbl, *p;
 			DWORD w;
 			int i;
 
 			i = CountCustTable(T("P_arc"));
-			undll_list = uD = HeapAlloc( DLLheap,0,size + sizeof(UN_DLL) * i );
+			undll_list = uD = HeapAlloc( DLLheap, 0, size + sizeof(UN_DLL) * i );
 			if ( undll_list == NULL ) return;
 			tbl = (TCHAR *)((char *)undll_list + sizeof(UN_DLL) * i);
-			GetCustData(T("P_arc"),tbl,size);
+			GetCustData(T("P_arc"), tbl, size);
 			for ( ; ; ){
 				w = *(WORD *)tbl;
 				if ( !w ) break;
@@ -319,7 +319,7 @@ VFSDLL void PPXAPI VFSOff(void)
 					FreeLibrary(undll_list[i].hadd);
 				}
 			}
-			HeapFree(DLLheap,0,undll_list);
+			HeapFree(DLLheap, 0, undll_list);
 			undll_list = NULL;
 		}
 		undll_items = 0;
@@ -338,7 +338,7 @@ VFSDLL void PPXAPI VFSOff(void)
 		}
 		susie_items = 0;
 	}
-	// ついでに 正規表現,migemo も解放する
+	// ついでに 正規表現, migemo も解放する
 	FreeRMatch();
 	FreeMigemo();
 	FreePPxModule();
@@ -363,8 +363,8 @@ BOOL CheckAndLoadSusiePlugin(SUSIE_DLL *sudll, const TCHAR *filename, THREADSTRU
 	if ( *p && !(mode & VFS_FORCELOAD_PLUGIN) ){
 		FN_REGEXP fn;
 
-		MakeFN_REGEXP(&fn,p);
-		if( !FilenameRegularExpression(filename,&fn) ){
+		MakeFN_REGEXP(&fn, p);
+		if( !FilenameRegularExpression(filename, &fn) ){
 			FreeFN_REGEXP(&fn);
 			return FALSE;
 		}
@@ -379,11 +379,11 @@ BOOL CheckAndLoadSusiePlugin(SUSIE_DLL *sudll, const TCHAR *filename, THREADSTRU
 // DLL 準備済み?
 	if ( sudll->hadd != NULL ) return TRUE;
 
-	CatPath(dir,susiedir,(TCHAR *)(Thsusie_str.bottom + sudll->DllNameOffset));
+	CatPath(dir, susiedir, (TCHAR *)(Thsusie_str.bottom + sudll->DllNameOffset));
 
 // DLL 読み込み
 	#ifdef UNICODE
-	UnicodeToAnsi(dir,LIBDIRA,MAX_PATH);
+	UnicodeToAnsi(dir, LIBDIRA, MAX_PATH);
 	#endif
 	hI = LoadLibraryA(LIBDIRA);
 
@@ -398,22 +398,22 @@ BOOL CheckAndLoadSusiePlugin(SUSIE_DLL *sudll, const TCHAR *filename, THREADSTRU
 			}
 		}
 		if ( hI == NULL ){
-			PPErrorBox(NULL,(TCHAR *)(Thsusie_str.bottom + sudll->DllNameOffset),errcode);
+			PPErrorBox(NULL, (TCHAR *)(Thsusie_str.bottom + sudll->DllNameOffset), errcode);
 			sudll->flags = 0;
 			return FALSE;
 		}
 	}
-	sudll->GetPluginInfo = (GETPLUGININFO)GetProcAddress(hI,"GetPluginInfo");
+	sudll->GetPluginInfo = (GETPLUGININFO)GetProcAddress(hI, "GetPluginInfo");
 	if ( sudll->GetPluginInfo == NULL ){
 		sudll->flags = 0;
 		return FALSE;
 	}
-	sudll->GetPluginInfo(0,inf,sizeof inf);
+	sudll->GetPluginInfo(0, inf, sizeof inf);
 	X_susie.flags = sudll->flags & ~(VFSSUSIE_BMP | VFSSUSIE_ARC);
 	if ( (inf[2] == 'I') && (inf[3] == 'N' )) X_susie.flags |= VFSSUSIE_BMP;
 	if ( (inf[2] == 'A') && (inf[3] == 'M' )) X_susie.flags |= VFSSUSIE_ARC;
 	if ( X_susie.flags == 0 ){
-		XMessage(NULL,NULL,XM_NiERRld,T("SPI error:%s(%s)"),dir,inf);
+		XMessage(NULL, NULL, XM_NiERRld, T("SPI error:%s(%s)"), dir, inf);
 	}
 	if ( X_susie.flags != sudll->flags ){
 		sudll->flags = X_susie.flags;
@@ -421,37 +421,37 @@ BOOL CheckAndLoadSusiePlugin(SUSIE_DLL *sudll, const TCHAR *filename, THREADSTRU
 			TCHAR *seo;
 
 			seo = (TCHAR *)(Thsusie_str.bottom + sudll->SupportExtOffset);
-			tstrcpy(X_susie.filemask,seo);
+			tstrcpy(X_susie.filemask, seo);
 			SetCustTable(T("P_susie"),
 				(TCHAR *)(Thsusie_str.bottom + sudll->DllNameOffset),
-				&X_susie,sizeof(DWORD) + TSTRSIZE(seo));
+				&X_susie, sizeof(DWORD) + TSTRSIZE(seo));
 		}
 	}
 	sudll->hadd = hI;
-	sudll->IsSupported =(ISSUPPORTED)GetProcAddress(hI,"IsSupported");
+	sudll->IsSupported =(ISSUPPORTED)GetProcAddress(hI, "IsSupported");
 #ifdef UNICODE
-	sudll->IsSupportedW =(ISSUPPORTEDW)GetProcAddress(hI,"IsSupportedW");
+	sudll->IsSupportedW =(ISSUPPORTEDW)GetProcAddress(hI, "IsSupportedW");
 #endif
 															// DIB 変換
 	if ( sudll->flags & VFSSUSIE_BMP ){
-		sudll->GetPicture = (GETPICTURE)GetProcAddress(hI,"GetPicture");
-		sudll->GetPreview = (GETPREVIEW)GetProcAddress(hI,"GetPreview");
+		sudll->GetPicture = (GETPICTURE)GetProcAddress(hI, "GetPicture");
+		sudll->GetPreview = (GETPREVIEW)GetProcAddress(hI, "GetPreview");
 #ifdef UNICODE
-		sudll->GetPictureW = (GETPICTUREW)GetProcAddress(hI,"GetPictureW");
+		sudll->GetPictureW = (GETPICTUREW)GetProcAddress(hI, "GetPictureW");
 #endif
 		return (mode & VFS_BMP);
 	}
 															// ARC
 	if ( sudll->flags & VFSSUSIE_ARC ){
 		sudll->GetArchiveInfo =
-				(GETARCHIVEINFO)GetProcAddress(hI,"GetArchiveInfo");
-		sudll->GetFile = (GETFILE)GetProcAddress(hI,"GetFile");
-		sudll->GetFileInfo = (GETFILEINFO)GetProcAddress(hI,"GetFileInfo");
+				(GETARCHIVEINFO)GetProcAddress(hI, "GetArchiveInfo");
+		sudll->GetFile = (GETFILE)GetProcAddress(hI, "GetFile");
+		sudll->GetFileInfo = (GETFILEINFO)GetProcAddress(hI, "GetFileInfo");
 #ifdef UNICODE
 		sudll->GetArchiveInfoW =
-				(GETARCHIVEINFOW)GetProcAddress(hI,"GetArchiveInfoW");
-		sudll->GetFileW = (GETFILEW)GetProcAddress(hI,"GetFileW");
-		sudll->GetFileInfoW = (GETFILEINFOW)GetProcAddress(hI,"GetFileInfoW");
+				(GETARCHIVEINFOW)GetProcAddress(hI, "GetArchiveInfoW");
+		sudll->GetFileW = (GETFILEW)GetProcAddress(hI, "GetFileW");
+		sudll->GetFileInfoW = (GETFILEINFOW)GetProcAddress(hI, "GetFileInfoW");
 #endif
 		return (mode & VFS_DIRECTORY);
 	}
@@ -463,11 +463,11 @@ BOOL CheckAndLoadSusiePlugin(SUSIE_DLL *sudll, const TCHAR *filename, THREADSTRU
 //=============================================================================
 // File Check
 //=============================================================================
-VFSDLL int PPXAPI VFSCheckDir(const TCHAR *filename,BYTE *header,DWORD hsize,void **dt_opt)
+VFSDLL int PPXAPI VFSCheckDir(const TCHAR *filename, BYTE *header, DWORD hsize, void **dt_opt)
 {
 	int i;
 	THREADSTRUCT *ts;
-	const TCHAR **ThreadName,*DummyThreadName;
+	const TCHAR **ThreadName, *DummyThreadName;
 	const TCHAR *OldTname;
 	TCHAR *DllName = NULL;
 	HMENU hPopupMenu = NULL;
@@ -478,7 +478,7 @@ VFSDLL int PPXAPI VFSCheckDir(const TCHAR *filename,BYTE *header,DWORD hsize,voi
 	#define MenuMode_Extract 2
 	union {
 		TCHAR str[CMDLINESIZE];
-		BYTE bin[0x800];
+		BYTE bin[SUSIE_CHECK_SIZE];
 		FN_REGEXP fn;
 	} buf;
 
@@ -491,7 +491,7 @@ VFSDLL int PPXAPI VFSCheckDir(const TCHAR *filename,BYTE *header,DWORD hsize,voi
 	{
 		TCHAR *sep;
 
-		sep = tstrrchr(filename,':');
+		sep = tstrrchr(filename, ':');
 		if ( (sep != NULL) && (sep > (filename + 1)) && (*(sep - 1) == ':') ){
 			*(sep - 1) = '\0';
 			DllName = sep + 1;
@@ -504,72 +504,72 @@ VFSDLL int PPXAPI VFSCheckDir(const TCHAR *filename,BYTE *header,DWORD hsize,voi
 		if ( hPopupMenu != NULL ){
 			MenuMode = (hsize >= VFSCHKDIR_GETDIRMENU) ? MenuMode_Dir : MenuMode_Extract;
 		}
-		resetflag(hsize,VFSCHKDIR_GETDIRMENU | VFSCHKDIR_GETEXTRACTMENU);
+		resetflag(hsize, VFSCHKDIR_GETDIRMENU | VFSCHKDIR_GETEXTRACTMENU);
 	}
 
 	// -------------------------------- ListFile
-	if ( !memcmp(header,LHEADER,sizeof(LHEADER) - 1) ||
-		 !memcmp(header + 2,L";ListFile\r\n",sizeof(L";ListFile\r\n") - sizeof(WCHAR)) ){
+	if ( !memcmp(header, LHEADER, sizeof(LHEADER) - 1) ||
+		 !memcmp(header + 2, L";ListFile\r\n", sizeof(L";ListFile\r\n") - sizeof(WCHAR)) ){
 		if ( MenuMode == 0 ) return VFSDT_LFILE;
 		if ( MenuMode == MenuMode_Dir ){
-			AppendMenuString(hPopupMenu,menuid++,T("listfile"));
+			AppendMenuString(hPopupMenu, menuid++, T("listfile"));
 		}
 	}
 	{ // ------------------------------ ディスクイメージ
 		const DWORD *o;
 
 		for ( o = FDIoffset ; *o != MAX32 ; o++ ){
-			if ( CheckFATImage(header + *o,header + hsize) != CHECKFAT_NONE ){
+			if ( CheckFATImage(header + *o, header + hsize) != CHECKFAT_NONE ){
 				if ( hPopupMenu == NULL ) return VFSDT_FATIMG;
 				if ( MenuMode == MenuMode_Dir ){
-					AppendMenuString(hPopupMenu,menuid++,T("disk"));
+					AppendMenuString(hPopupMenu, menuid++, T("disk"));
 				}
 			}
 		}
-		if ( (hsize >= 0x2000) && !memcmp(header + 0x1002,"\x90\x90IPL1",6) ){
+		if ( (hsize >= 0x2000) && !memcmp(header + 0x1002, "\x90\x90IPL1", 6) ){
 			if ( MenuMode == 0 ) return VFSDT_FATIMG;
 			if ( MenuMode == MenuMode_Dir ){
-				AppendMenuString(hPopupMenu,menuid++,T("disk"));
+				AppendMenuString(hPopupMenu, menuid++, T("disk"));
 			}
 		}
 	}
 	if ( hsize >= 0x8100 ){
-		if ( !memcmp(header + CDHEADEROFFSET1,StrISO9660,CDHEADERSIZE - 1) ||
-			 !memcmp(header + CDHEADEROFFSET1,StrUDF,CDHEADERSIZE) ){
+		if ( !memcmp(header + CDHEADEROFFSET1, StrISO9660, CDHEADERSIZE - 1) ||
+			 !memcmp(header + CDHEADEROFFSET1, StrUDF, CDHEADERSIZE) ){
 			if ( MenuMode == 0 ) return VFSDT_CDIMG;
 			if ( MenuMode == MenuMode_Dir ){
-				AppendMenuString(hPopupMenu,menuid++,T("CD"));
+				AppendMenuString(hPopupMenu, menuid++, T("CD"));
 			}
 		}
 		if ( (hsize >= 0x9400) && (MenuMode == 0) ){
-			if ( !memcmp(header + CDHEADEROFFSET2,StrISO9660,CDHEADERSIZE) ||
-				 !memcmp(header + CDHEADEROFFSET2,StrUDF,CDHEADERSIZE) ){
+			if ( !memcmp(header + CDHEADEROFFSET2, StrISO9660, CDHEADERSIZE) ||
+				 !memcmp(header + CDHEADEROFFSET2, StrUDF, CDHEADERSIZE) ){
 				return VFSDT_CDIMG;
 			}
-			if ( !memcmp(header + CDHEADEROFFSET3,StrISO9660,CDHEADERSIZE) ||
-				 !memcmp(header + CDHEADEROFFSET3,StrUDF,CDHEADERSIZE) ){
+			if ( !memcmp(header + CDHEADEROFFSET3, StrISO9660, CDHEADERSIZE) ||
+				 !memcmp(header + CDHEADEROFFSET3, StrUDF, CDHEADERSIZE) ){
 				return VFSDT_CDIMG;
 			}
 			if ( *(DWORD *)header == 0 ){
 				HANDLE hFile;
 
-				hFile = CreateFileL(filename,GENERIC_READ,
-						FILE_SHARE_READ | FILE_SHARE_WRITE,NULL,
-						OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
+				hFile = CreateFileL(filename, GENERIC_READ,
+						FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+						OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 				if ( hFile != INVALID_HANDLE_VALUE ){
 					DWORD fsize;
 
-					if ( MAX32 != SetFilePointer(hFile,CDHEADEROFFSET4,NULL,FILE_BEGIN)){
-						ReadFile(hFile,buf.bin,CDHEADERSIZE,&fsize,NULL);
-						if ( !memcmp(buf.bin,StrISO9660,CDHEADERSIZE) ){
+					if ( MAX32 != SetFilePointer(hFile, CDHEADEROFFSET4, NULL, FILE_BEGIN)){
+						ReadFile(hFile, buf.bin, CDHEADERSIZE, &fsize, NULL);
+						if ( !memcmp(buf.bin, StrISO9660, CDHEADERSIZE) ){
 							CloseHandle(hFile);
 							return VFSDT_CDIMG;
 						}
 					}
 
-					if ( MAX32 != SetFilePointer(hFile,DVDHEADEROFFSET,NULL,FILE_BEGIN)){
-						ReadFile(hFile,buf.bin,2,&fsize,NULL);
-						if ( !memcmp(buf.bin,"\2\0",2) ){
+					if ( MAX32 != SetFilePointer(hFile, DVDHEADEROFFSET, NULL, FILE_BEGIN)){
+						ReadFile(hFile, buf.bin, 2, &fsize, NULL);
+						if ( !memcmp(buf.bin, "\2\0", 2) ){
 							CloseHandle(hFile);
 							return VFSDT_CDIMG;
 						}
@@ -585,19 +585,19 @@ VFSDLL int PPXAPI VFSCheckDir(const TCHAR *filename,BYTE *header,DWORD hsize,voi
 	ThreadName = ( ts != NULL ) ? &ts->ThreadName : &DummyThreadName;
 	OldTname = *ThreadName;
 /*
-	separator = tstrrchr(filename,':'); // "::" を検索
+	separator = tstrrchr(filename, ':'); // "::" を検索
 	if ( (separator != NULL) && (separator >= (filename + 2)) &&
 		 (*(separator - 1) == ':') ){
 		DllName = separator + 1;
 	}
 */
 #ifdef UNICODE
-	UnicodeToAnsi(filename,filenameA,VFPS);
+	UnicodeToAnsi(filename, filenameA, VFPS);
 /*
 	{
 		char *separatorA;
 
-		separatorA = strrchr(filenameA,':'); // "::" を検索
+		separatorA = strrchr(filenameA, ':'); // "::" を検索
 		if ( (separatorA != NULL) && (separatorA >= (filenameA + 2)) &&
 			 (*(separatorA - 1) == ':') ){
 			*(separatorA - 1) = '\0';
@@ -616,34 +616,34 @@ VFSDLL int PPXAPI VFSCheckDir(const TCHAR *filename,BYTE *header,DWORD hsize,voi
 		vcs.floatheader = -1;
 		#ifdef UNICODE
 			vcs.filenameW = filename;
-			WideCharToMultiByteU8(CP_UTF8,0,filename,-1,vcs.filename8,VFPS,NULL,NULL);
+			WideCharToMultiByteU8(CP_UTF8, 0, filename, -1, vcs.filename8, VFPS, NULL, NULL);
 		#endif
 		uD = undll_list;
-		for ( i = 0 ; i < undll_items ; i++,uD++ ){
+		for ( i = 0 ; i < undll_items ; i++, uD++ ){
 			if ( uD->flags & UNDLLFLAG_DISABLE_DIR ) continue;
-			if ( (DllName != NULL) && tstricmp(uD->DllName,DllName) ) continue;
+			if ( (DllName != NULL) && tstricmp(uD->DllName, DllName) ) continue;
 			*ThreadName = uD->DllName;
-			if ( uD->VUCheck(uD,&vcs) ){
+			if ( uD->VUCheck(uD, &vcs) ){
 				if ( dt_opt != NULL ){
 					*dt_opt = (void *)(size_t)(uD - undll_list + 1);
 				}
 				*ThreadName = OldTname;
 
 				if ( MenuMode == 0 ) return VFSDT_UN;
-				AppendMenuString(hPopupMenu,menuid++,uD->DllName);
+				AppendMenuString(hPopupMenu, menuid++, uD->DllName);
 				continue;
 			}
 			if ( (MenuMode == MenuMode_Dir) && (uD->SupportWildcard != NULL) ){
 				int result;
 
-				MakeFN_REGEXP(&buf.fn,uD->SupportWildcard);
+				MakeFN_REGEXP(&buf.fn, uD->SupportWildcard);
 				#ifdef UNICODE
-					result = FilenameRegularExpression(vcs.filenameW,&buf.fn);
+					result = FilenameRegularExpression(vcs.filenameW, &buf.fn);
 				#else
-					result = FilenameRegularExpression(vcs.filename,&buf.fn);
+					result = FilenameRegularExpression(vcs.filename, &buf.fn);
 				#endif
 				if ( result && IsTrue(LoadUnDLL(uD)) ){
-					AppendMenuString(hPopupMenu,menuid++,uD->DllName);
+					AppendMenuString(hPopupMenu, menuid++, uD->DllName);
 				}
 				FreeFN_REGEXP(&buf.fn);
 			}
@@ -657,36 +657,37 @@ VFSDLL int PPXAPI VFSCheckDir(const TCHAR *filename,BYTE *header,DWORD hsize,voi
 
 		fp = FindLastEntryPoint(filename);
 		su = susie_list;
-		if ( hsize >= 0x800 ){
+		if ( hsize >= SUSIE_CHECK_SIZE ){
 			hptr = header;
 		}else{
-			memcpy(buf.bin,header,hsize);
+			memcpy(buf.bin, header, hsize);
+			memset(buf.bin + hsize, 0, SUSIE_CHECK_SIZE - hsize);
 			hptr = buf.bin;
 		}
-		for ( i = 0 ; i < susie_items ; i++,su++ ){
+		for ( i = 0 ; i < susie_items ; i++, su++ ){
 			if ( !(su->flags & VFSSUSIE_ARC) ) continue;
 			if ( DllName == NULL ){
 				if ( (su->flags & VFSSUSIE_NOAUTODETECT) &&
 					 (hPopupMenu == NULL) ){
 					continue;
 				}
-			}else if ( tstricmp((TCHAR *)(Thsusie_str.bottom + su->DllNameOffset),DllName) ){
+			}else if ( tstricmp((TCHAR *)(Thsusie_str.bottom + su->DllNameOffset), DllName) ){
 				continue;
 			}
 
-			if ( CheckAndLoadSusiePlugin(su,fp,ts,VFS_DIRECTORY) == FALSE ){
+			if ( CheckAndLoadSusiePlugin(su, fp, ts, VFS_DIRECTORY) == FALSE ){
 				continue;
 			}
 			*ThreadName = (TCHAR *)(Thsusie_str.bottom + su->DllNameOffset);
 
 			#ifdef UNICODE
 				if ( su->IsSupportedW != NULL ){
-					if ( !su->IsSupportedW(filename,hptr) ) continue;
+					if ( !su->IsSupportedW(filename, hptr) ) continue;
 				}else{
-					if ( !su->IsSupported(TFILENAME,hptr) ) continue;
+					if ( !su->IsSupported(TFILENAME, hptr) ) continue;
 				}
 			#else
-				if ( !su->IsSupported(filename,hptr) ) continue;
+				if ( !su->IsSupported(filename, hptr) ) continue;
 			#endif
 
 			if ( dt_opt != NULL ){
@@ -697,8 +698,8 @@ VFSDLL int PPXAPI VFSCheckDir(const TCHAR *filename,BYTE *header,DWORD hsize,voi
 			if ( MenuMode == 0 ) return VFSDT_SUSIE;
 			extbuf[0] = ':';
 			extbuf[1] = ':';
-			tstrcpy(extbuf + 2,(TCHAR *)(Thsusie_str.bottom + su->DllNameOffset));
-			AppendMenuString(hPopupMenu,menuid++,extbuf);
+			tstrcpy(extbuf + 2, (TCHAR *)(Thsusie_str.bottom + su->DllNameOffset));
+			AppendMenuString(hPopupMenu, menuid++, extbuf);
 		}
 	}
 	*ThreadName = OldTname;
@@ -707,27 +708,27 @@ VFSDLL int PPXAPI VFSCheckDir(const TCHAR *filename,BYTE *header,DWORD hsize,voi
 		 (header[2] == (header[3] - 1)) ){	// PKzip ヘッダ
 		const TCHAR *p = zipfldrName;
 
-		if ( GetExecType(&p,NULL,NULL) == GTYPE_DATA ){
+		if ( GetExecType(&p, NULL, NULL) == GTYPE_DATA ){
 			if ( MenuMode == 0 )  return VFSDT_ZIPFOLDER;
-			AppendMenuString(hPopupMenu,menuid++,zipfldrName);
+			AppendMenuString(hPopupMenu, menuid++, zipfldrName);
 		}
 	}
 	if ( (header[2] == '-') && (header[3] == 'l') && (header[4] == 'h') &&
 		 (IsdigitA(header[5]) || (header[5] == 'd')) && (header[6] == '-') ){	// LHA ヘッダ
 		const TCHAR *p = lzhfldrName;
 
-		if ( GetExecType(&p,NULL,NULL) == GTYPE_DATA ){
+		if ( GetExecType(&p, NULL, NULL) == GTYPE_DATA ){
 			if ( MenuMode == 0 ) return VFSDT_LZHFOLDER;
-			AppendMenuString(hPopupMenu,menuid++,lzhfldrName);
+			AppendMenuString(hPopupMenu, menuid++, lzhfldrName);
 		}
 	}
 	if ( (header[0] == 'M') && (header[1] == 'S') && (header[2] == 'C') &&
 		 (header[3] == 'F') && (*(WORD *)(header + 18) < 0x10)){ // CAB ヘッダ
 		const TCHAR *p = cabfldrName;
 
-		if ( GetExecType(&p,NULL,NULL) == GTYPE_DATA ){
+		if ( GetExecType(&p, NULL, NULL) == GTYPE_DATA ){
 			if ( MenuMode == 0 ) return VFSDT_CABFOLDER;
-			AppendMenuString(hPopupMenu,menuid++,cabfldrName);
+			AppendMenuString(hPopupMenu, menuid++, cabfldrName);
 		}
 	}
 	if ( MenuMode == 0 ) return VFSDT_UNKNOWN;
@@ -735,20 +736,20 @@ VFSDLL int PPXAPI VFSCheckDir(const TCHAR *filename,BYTE *header,DWORD hsize,voi
 /*
 	{
 		DWORD attr;
-		TCHAR rpath[MAX_PATH],*ext;	// アプリケーションのキー
+		TCHAR rpath[MAX_PATH], *ext;	// アプリケーションのキー
 
 		ext = VFSFindLastEntry(filename);
 		ext += FindExtSeparator(ext);
 		if ( *ext ){
 			if ( GetRegString(HKEY_CLASSES_ROOT,
-						ext,NilStr,rpath,TSIZEOF(rpath)) ){
-				tstrcat(rpath,T("\\ShellFolder"));
+						ext, NilStr, rpath, TSIZEOF(rpath)) ){
+				tstrcat(rpath, T("\\ShellFolder"));
 				// XP。Win7はStorageHandler
 				if ( GetRegString(HKEY_CLASSES_ROOT,
-							rpath,RegAttr,(TCHAR *)&attr,sizeof(attr)) ){
+							rpath, RegAttr, (TCHAR *)&attr, sizeof(attr)) ){
 					if ( attr & SFGAO_FOLDER ){
-						wsprintf(extbuf,T("+%s"),ext);
-						AppendMenuString(hPopupMenu,menuid++,extbuf);
+						wsprintf(extbuf, T("+%s"), ext);
+						AppendMenuString(hPopupMenu, menuid++, extbuf);
 					} // return VFSDT_SHN;
 				}
 			}
@@ -759,18 +760,18 @@ VFSDLL int PPXAPI VFSCheckDir(const TCHAR *filename,BYTE *header,DWORD hsize,voi
 	// ※ PP_GetExtCommand 内でも VFSCheckDir が使われている。
 	//    但しここは通らない(menu追加でないため)
 	if ( (MenuMode == MenuMode_Extract) &&
-		 (0 <= PP_GetExtCommand(filename,T("E_unpack2"),buf.str,extbuf + 1)) ){
+		 (0 <= PP_GetExtCommand(filename, T("E_unpack2"), buf.str, extbuf + 1)) ){
 		extbuf[0] = '*';
-		AppendMenuString(hPopupMenu,menuid++,extbuf);
+		AppendMenuString(hPopupMenu, menuid++, extbuf);
 	}
 	return menuid - VFSCHK_MENUID;
 }
 
-VFSDLL int PPXAPI VFSCheckImage(const TCHAR *filename,BYTE *header,DWORD hsize,HMENU hPopupMenu)
+VFSDLL int PPXAPI VFSCheckImage(const TCHAR *filename, BYTE *header, DWORD hsize, HMENU hPopupMenu)
 {
 	int i;
 	THREADSTRUCT *ts;
-	const TCHAR **ThreadName,*DummyThreadName;
+	const TCHAR **ThreadName, *DummyThreadName;
 	const TCHAR *OldTname;
 //	TCHAR *DllName = NULL; // 現在、DLLName 限定を行わない
 	int menuid = VFSCHK_MENUID;
@@ -783,7 +784,7 @@ VFSDLL int PPXAPI VFSCheckImage(const TCHAR *filename,BYTE *header,DWORD hsize,H
 	{
 		TCHAR *sep;
 
-		sep = tstrrchr(filename,':');
+		sep = tstrrchr(filename, ':');
 		if ( (sep != NULL) && (sep > (filename + 1)) && (*(sep - 1) == ':') ){
 			*(sep - 1) = '\0';
 		//	DllName = sep + 1;
@@ -794,42 +795,43 @@ VFSDLL int PPXAPI VFSCheckImage(const TCHAR *filename,BYTE *header,DWORD hsize,H
 	OldTname = *ThreadName;
 
 #ifdef UNICODE
-	UnicodeToAnsi(filename,filenameA,VFPS);
+	UnicodeToAnsi(filename, filenameA, VFPS);
 #endif
 //---------------------------------------------------------------- susie の判別
 	{
 		SUSIE_DLL *su;
 		TCHAR *fp;
-		BYTE headerbuf[0x800],*hptr;
+		BYTE headerbuf[SUSIE_CHECK_SIZE], *hptr;
 
 		fp = FindLastEntryPoint(filename);
 		su = susie_list;
-		if ( hsize >= 0x800 ){
+		if ( hsize >= SUSIE_CHECK_SIZE ){
 			hptr = header;
 		}else{
-			memcpy(headerbuf,header,hsize);
+			memcpy(headerbuf, header, hsize);
+			memset(headerbuf + hsize, 0, SUSIE_CHECK_SIZE - hsize);
 			hptr = headerbuf;
 		}
-		for ( i = 0 ; i < susie_items ; i++,su++ ){
+		for ( i = 0 ; i < susie_items ; i++, su++ ){
 			if ( !(su->flags & VFSSUSIE_BMP) ) continue;
-			if ( CheckAndLoadSusiePlugin(su,fp,ts,VFS_BMP | VFS_FORCELOAD_PLUGIN) == FALSE ){
+			if ( CheckAndLoadSusiePlugin(su, fp, ts, VFS_BMP | VFS_FORCELOAD_PLUGIN) == FALSE ){
 				continue;
 			}
 			*ThreadName = (TCHAR *)(Thsusie_str.bottom + su->DllNameOffset);
 
 			#ifdef UNICODE
 				if ( su->IsSupportedW != NULL ){
-					if ( !su->IsSupportedW(filename,hptr) ) continue;
+					if ( !su->IsSupportedW(filename, hptr) ) continue;
 				}else{
-					if ( !su->IsSupported(TFILENAME,hptr) ) continue;
+					if ( !su->IsSupported(TFILENAME, hptr) ) continue;
 				}
 			#else
-				if ( !su->IsSupported(filename,hptr) ) continue;
+				if ( !su->IsSupported(filename, hptr) ) continue;
 			#endif
 
 			*ThreadName = OldTname;
 
-			AppendMenuString(hPopupMenu,menuid++,(TCHAR *)(Thsusie_str.bottom + su->DllNameOffset));
+			AppendMenuString(hPopupMenu, menuid++, (TCHAR *)(Thsusie_str.bottom + su->DllNameOffset));
 		}
 	}
 	*ThreadName = OldTname;
@@ -839,7 +841,7 @@ VFSDLL int PPXAPI VFSCheckImage(const TCHAR *filename,BYTE *header,DWORD hsize,H
 //=============================================================================
 //--------------------------------------------------------------- UnDLL Loaderr
 #pragma argsused
-BOOL VFSVUCheckError(void *uD,VUCHECKSTRUCT *vcs)
+BOOL VFSVUCheckError(void *uD, VUCHECKSTRUCT *vcs)
 {
 	UnUsedParam(uD);UnUsedParam(vcs);
 	return FALSE;
@@ -852,17 +854,17 @@ typedef struct {
 	char *ProcHead;
 } SETUNADDERESSWSTRUCT;
 
-ARCPROC SetUnAdderess(SETUNADDERESSWSTRUCT *sas,const char *name,ARCPROC *Proc)
+ARCPROC SetUnAdderess(SETUNADDERESSWSTRUCT *sas, const char *name, ARCPROC *Proc)
 {
 	ARCPROC adr;
 
-	strcpy(sas->ProcHead,name);
-	*Proc = adr = (ARCPROC)GetProcAddress(sas->hModule,sas->ProcName);
+	strcpy(sas->ProcHead, name);
+	*Proc = adr = (ARCPROC)GetProcAddress(sas->hModule, sas->ProcName);
 	return adr;
 }
 
 #pragma argsused
-BOOL WINAPI NoCheckArchive(LPCSTR szFileName,const int iMode)
+BOOL WINAPI NoCheckArchive(LPCSTR szFileName, const int iMode)
 {
 	UnUsedParam(szFileName);UnUsedParam(iMode);
 	return FALSE;
@@ -880,11 +882,11 @@ BOOL LoadUnDLL(UN_DLL *uD)
 	if ( uD->hadd != NULL ) return TRUE;		// 既に初期化済み
 	if ( uD->VUCheck == VFSVUCheckError ) return FALSE; // 使用不可
 #ifdef UNICODE
-	UnicodeToAnsi(uD->DllName,DllNameA,sizeof(DllNameA));
+	UnicodeToAnsi(uD->DllName, DllNameA, sizeof(DllNameA));
 	#ifdef _WIN64
 		if ( uD->flags & UNDLLFLAG_32bit ){
-			if ( strstr(DllNameA,"32") ){
-				strcpy(DllNameA,"UNBYPASS.DLL");
+			if ( strstr(DllNameA, "32") ){
+				strcpy(DllNameA, "UNBYPASS.DLL");
 			}
 		}
 	#endif
@@ -898,20 +900,20 @@ BOOL LoadUnDLL(UN_DLL *uD)
 		return FALSE;
 	}
 
-	strcpyToA(ProcName,uD->ApiHeadName,sizeof(ProcName));
+	strcpyToA(ProcName, uD->ApiHeadName, sizeof(ProcName));
 	sas.ProcName = ProcName;
 	sas.ProcHead = ProcName + strlen(ProcName);
 									// 各変数のポインタをセット
 	uD->hadd = sas.hModule;
-	SetUnAdderess(&sas,"",&uD->Unarc);
-	SetUnAdderess(&sas,"OpenArchive",	(ARCPROC *)&uD->UnOpenArchive);
-	SetUnAdderess(&sas,"CloseArchive",	&uD->UnCloseArchive);
-	SetUnAdderess(&sas,"FindFirst",		&uD->UnFindFirst);
-	SetUnAdderess(&sas,"FindNext",		&uD->UnFindNext);
-	SetUnAdderess(&sas,"GetWriteTimeEx",&uD->UnGetWriteTimeEx);
-	SetUnAdderess(&sas,"GetCreateTimeEx",&uD->UnGetCreateTimeEx);
-	SetUnAdderess(&sas,"GetAccessTimeEx",&uD->UnGetAccessTimeEx);
-	SetUnAdderess(&sas,"GetOriginalSizeEx",&uD->UnGetOriginalSizeEx);
+	SetUnAdderess(&sas, "", &uD->Unarc);
+	SetUnAdderess(&sas, "OpenArchive",	(ARCPROC *)&uD->UnOpenArchive);
+	SetUnAdderess(&sas, "CloseArchive",	&uD->UnCloseArchive);
+	SetUnAdderess(&sas, "FindFirst",	&uD->UnFindFirst);
+	SetUnAdderess(&sas, "FindNext",		&uD->UnFindNext);
+	SetUnAdderess(&sas, "GetWriteTimeEx", &uD->UnGetWriteTimeEx);
+	SetUnAdderess(&sas, "GetCreateTimeEx", &uD->UnGetCreateTimeEx);
+	SetUnAdderess(&sas, "GetAccessTimeEx", &uD->UnGetAccessTimeEx);
+	SetUnAdderess(&sas, "GetOriginalSizeEx", &uD->UnGetOriginalSizeEx);
 
 	if ( (uD->Unarc == NULL) && (uD->UnOpenArchive == NULL) ){ // 使用できるAPIがない
 		uD->VUCheck = VFSVUCheckError;
@@ -920,32 +922,32 @@ BOOL LoadUnDLL(UN_DLL *uD)
 	if ( uD->flags & UNDLLFLAG_DISABLE_DIR ){
 		uD->UnCheckArchive = NoCheckArchive;
 	}else{
-		if ( SetUnAdderess(&sas,"CheckArchive",&uD->UnCheckArchive) == NULL ){
+		if ( SetUnAdderess(&sas, "CheckArchive", &uD->UnCheckArchive) == NULL ){
 			uD->UnCheckArchive = NoCheckArchive;
-			setflag(uD->flags,UNDLLFLAG_DISABLE_DIR);
+			setflag(uD->flags, UNDLLFLAG_DISABLE_DIR);
 		}
 	}
 	#ifdef UNICODE
 	if ( *uD->ApiHeadName ){
 		if ( ! (uD->flags & UNDLLFLAG_DISABLE_WIDEFUNCTION) ){
-			if ( SetUnAdderess(&sas,"W",&uD->UnarcW) != NULL ){
-				SetUnAdderess(&sas,"OpenArchiveW",(ARCPROC *)&uD->UnOpenArchiveW);
-				SetUnAdderess(&sas,"FindFirstW",&uD->UnFindFirstW);
-				SetUnAdderess(&sas,"FindNextW",&uD->UnFindNextW);
+			if ( SetUnAdderess(&sas, "W", &uD->UnarcW) != NULL ){
+				SetUnAdderess(&sas, "OpenArchiveW", (ARCPROC *)&uD->UnOpenArchiveW);
+				SetUnAdderess(&sas, "FindFirstW", &uD->UnFindFirstW);
+				SetUnAdderess(&sas, "FindNextW", &uD->UnFindNextW);
 				if ( !(uD->flags & UNDLLFLAG_DISABLE_DIR) ){
-					SetUnAdderess(&sas,"CheckArchiveW",&uD->UnCheckArchiveW);
+					SetUnAdderess(&sas, "CheckArchiveW", &uD->UnCheckArchiveW);
 				}
 			}
 		}
 
 		if ( ! (uD->flags & UNDLLFLAG_DISABLE_UNICODEMODE) ){
-			if ( SetUnAdderess(&sas,"SetUnicodeMode",&uD->SetUnicodeMode) == NULL ){
+			if ( SetUnAdderess(&sas, "SetUnicodeMode", &uD->SetUnicodeMode) == NULL ){
 				uD->SetUnicodeMode = DummySetUnicodeMode;
 			}
 			if ( uD->VUCheck == (VUCHECKFUNC)VFS_check_7Zip ){
-				DefineWinAPI(WORD,SevenZipGetVersion,(void));
+				DefineWinAPI(WORD, SevenZipGetVersion, (void));
 
-				GETDLLPROC(sas.hModule,SevenZipGetVersion);
+				GETDLLPROC(sas.hModule, SevenZipGetVersion);
 				if ((DSevenZipGetVersion == NULL) || (DSevenZipGetVersion()<920) ){
 					// 9.20 以前は UNICODE対応が不完全
 					uD->SetUnicodeMode = DummySetUnicodeMode;
@@ -958,32 +960,32 @@ BOOL LoadUnDLL(UN_DLL *uD)
 	return TRUE;
 }
 // %u を実行 ---------------------------------------------------------------
-int UnArc_ExecExtra(UN_DLL *uD,HWND hWnd,const TCHAR *Cmd,PPXAPPINFO *loginfo)
+int UnArc_ExecExtra(UN_DLL *uD, HWND hWnd, const TCHAR *Cmd, PPXAPPINFO *loginfo)
 {
 	const TCHAR *p;
 	char ProcName[CMDLINESIZE];
 	int result;
-	impUnarc Unarc,tmpUnarc;
+	impUnarc Unarc, tmpUnarc;
 	#ifdef UNICODE
 		impUnarcW UnarcW;
 	#endif
-	p = tstrchr(Cmd,']');
-	strcpyToA(ProcName,Cmd + 1,CMDLINESIZE);
+	p = tstrchr(Cmd, ']');
+	strcpyToA(ProcName, Cmd + 1, CMDLINESIZE);
 	ProcName[(p - Cmd) - 1] = '\0';
 
 	Unarc = uD->Unarc;
 	#ifdef UNICODE
 	UnarcW = uD->UnarcW;
 	#endif
-	tmpUnarc = (impUnarc)GetProcAddress(uD->hadd,ProcName);
+	tmpUnarc = (impUnarc)GetProcAddress(uD->hadd, ProcName);
 	if ( tmpUnarc == NULL ) return 1;
 	uD->Unarc = tmpUnarc;
 	#ifdef UNICODE
 		ProcName[(p - Cmd) - 1] = 'W';
 		ProcName[(p - Cmd)] = '\0';
-		uD->UnarcW = (impUnarcW)GetProcAddress(uD->hadd,ProcName);
+		uD->UnarcW = (impUnarcW)GetProcAddress(uD->hadd, ProcName);
 	#endif
-	result = UnArc_ExecMain(uD,hWnd,p + 1,loginfo);
+	result = UnArc_ExecMain(uD, hWnd, p + 1, loginfo);
 	uD->Unarc = Unarc;
 	#ifdef UNICODE
 	uD->UnarcW = UnarcW;
@@ -991,7 +993,7 @@ int UnArc_ExecExtra(UN_DLL *uD,HWND hWnd,const TCHAR *Cmd,PPXAPPINFO *loginfo)
 	return result;
 }
 
-int DoUnarcMain2(UN_DLL *uD,HWND hWnd,const TCHAR *Cmd,PPXAPPINFO *loginfo)
+int DoUnarcMain2(UN_DLL *uD, HWND hWnd, const TCHAR *Cmd, PPXAPPINFO *loginfo)
 {
 	if ( (uD->hadd == NULL) && (LoadUnDLL(uD) == FALSE) ) return 1;
 
@@ -1008,64 +1010,64 @@ int DoUnarcMain2(UN_DLL *uD,HWND hWnd,const TCHAR *Cmd,PPXAPPINFO *loginfo)
 		}
 	#endif
 	// API 指定有り
-	if ( (*Cmd == '[') && tstrchr(Cmd,']') ){
-		return UnArc_ExecExtra(uD,hWnd,Cmd,loginfo);
+	if ( (*Cmd == '[') && tstrchr(Cmd, ']') ){
+		return UnArc_ExecExtra(uD, hWnd, Cmd, loginfo);
 	}
-	return UnArc_ExecMain(uD,hWnd,Cmd,loginfo);
+	return UnArc_ExecMain(uD, hWnd, Cmd, loginfo);
 }
 
-int DoUnarcMain(const TCHAR *DllName,HWND hWnd,const TCHAR *Cmd,PPXAPPINFO *loginfo)
+int DoUnarcMain(const TCHAR *DllName, HWND hWnd, const TCHAR *Cmd, PPXAPPINFO *loginfo)
 {
 	int i;
 	UN_DLL *uD;
 										// UnDll ------------------------------
 	uD = undll_list;
-	for ( i = 0 ; i < undll_items ; i++,uD++ ){
-		if ( tstricmp(uD->DllName,DllName) == 0 ){
-			return DoUnarcMain2(uD,hWnd,Cmd,loginfo);
+	for ( i = 0 ; i < undll_items ; i++, uD++ ){
+		if ( tstricmp(uD->DllName, DllName) == 0 ){
+			return DoUnarcMain2(uD, hWnd, Cmd, loginfo);
 		}
 	}
 	uD = undll_list;
-	for ( i = 0 ; i < undll_items ; i++,uD++ ){
+	for ( i = 0 ; i < undll_items ; i++, uD++ ){
 		if ( (uD->DllYetAnotherName != NULL) &&
-			 (tstricmp(uD->DllYetAnotherName,DllName) == 0) ){
-			return DoUnarcMain2(uD,hWnd,Cmd,loginfo);
+			 (tstricmp(uD->DllYetAnotherName, DllName) == 0) ){
+			return DoUnarcMain2(uD, hWnd, Cmd, loginfo);
 		}
 	}
-	XMessage(hWnd,NULL,XM_GrERRld,MES_ENUD,DllName);
+	XMessage(hWnd, NULL, XM_GrERRld, MES_ENUD, DllName);
 	return 1;
 }
 
-// %uzipfldr.dll,A "書庫フルパス" [*file のオプション]
-int DoUnarcZipfolder(PPXAPPINFO *ppxa,HWND hWnd,const TCHAR *param)
+// %uzipfldr.dll, A "書庫フルパス" [*file のオプション]
+int DoUnarcZipfolder(PPXAPPINFO *ppxa, HWND hWnd, const TCHAR *param)
 {
-	TCHAR dest[VFPS],cmd[CMDLINESIZE],*p;
+	TCHAR dest[VFPS], cmd[CMDLINESIZE], *p;
 	HANDLE hFile;
 	DWORD size;
 
 	if ( *param != 'A' ){
-		XMessage(hWnd,NULL,XM_GrERRld,T("zipfldr command error"));
+		XMessage(hWnd, NULL, XM_GrERRld, T("zipfldr command error"));
 		return 1;
 	}
 	param++;
-	GetCommandParameter(&param,dest,TSIZEOF(dest));
-	p = tstrrchr(dest,'.');
+	GetCommandParameter(&param, dest, TSIZEOF(dest));
+	p = tstrrchr(dest, '.');
 	if ( p == NULL ) p = dest + tstrlen(dest);
-	if ( tstricmp(p,T(".zip")) != 0 ) tstrcat(p,T(".zip"));
+	if ( tstricmp(p, T(".zip")) != 0 ) tstrcat(p, T(".zip"));
 
-	hFile = CreateFileL(dest,GENERIC_WRITE,0,NULL,
-			CREATE_NEW,FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+	hFile = CreateFileL(dest, GENERIC_WRITE, 0, NULL,
+			CREATE_NEW, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if ( hFile != INVALID_HANDLE_VALUE ){
-		WriteFile(hFile,DefaultZip,sizeof(DefaultZip),&size,NULL);
+		WriteFile(hFile, DefaultZip, sizeof(DefaultZip), &size, NULL);
 		CloseHandle(hFile);
 	}
-	wsprintf(cmd,T("*file !copy,,\"%s\"%s"),dest,param);
+	wsprintf(cmd, T("*file !copy,,\"%s\"%s"), dest, param);
 
-	PP_ExtractMacro(hWnd,ppxa,NULL,cmd,NULL,0);
+	PP_ExtractMacro(hWnd, ppxa, NULL, cmd, NULL, 0);
 	return 0;
 }
 
-int DoUnarc(PPXAPPINFO *ppxa,const TCHAR *DllName,HWND hWnd,const TCHAR *param)
+int DoUnarc(PPXAPPINFO *ppxa, const TCHAR *DllName, HWND hWnd, const TCHAR *param)
 {
 	int result;
 	HANDLE hMutex = NULL;
@@ -1073,36 +1075,36 @@ int DoUnarc(PPXAPPINFO *ppxa,const TCHAR *DllName,HWND hWnd,const TCHAR *param)
 	TCHAR cmd[CMDLINESIZE];
 	const TCHAR *ndptr;
 	DWORD X_unbg;
-	int UnAllMode; // ,Dlltype = 0;
+	int UnAllMode; // , Dlltype = 0;
 
 	hBaseWnd = hWnd;
 
 	ndptr = DllName;
 	if ( *ndptr == '/' ) ndptr++;
-	if ( tstrcmp(ndptr,T("zipfldr.dll")) == 0 ){
-		return DoUnarcZipfolder(ppxa,hWnd,param);
+	if ( tstrcmp(ndptr, T("zipfldr.dll")) == 0 ){
+		return DoUnarcZipfolder(ppxa, hWnd, param);
 	}
 /*
-	if ( tstrcmp(ndptr,T("zipfldr.dll")) == 0 ) Dlltype = 1;
-	if ( tstrcmp(ndptr,T("lzhfldr2.dll")) == 0 ) Dlltype = 2;
-	if ( tstrcmp(ndptr,T("cabview.dll")) == 0 ) Dlltype = 3;
-	if ( Dlltype ) return DoUnarcZipfolder(ppxa,hWnd,param,Dlltype);
+	if ( tstrcmp(ndptr, T("zipfldr.dll")) == 0 ) Dlltype = 1;
+	if ( tstrcmp(ndptr, T("lzhfldr2.dll")) == 0 ) Dlltype = 2;
+	if ( tstrcmp(ndptr, T("cabview.dll")) == 0 ) Dlltype = 3;
+	if ( Dlltype ) return DoUnarcZipfolder(ppxa, hWnd, param, Dlltype);
 */
-	UnAllMode = memcmp(param,T("!all,"),TSTROFF(5));
+	UnAllMode = memcmp(param, T("!all,"), TSTROFF(5));
 	if ( *DllName == '/' ){ // background 無効
 		DllName++;
 
 		if ( UnAllMode != 0 ){
-			if ( GetCustDword(T("X_fopw"),0) != 2 ){
-				hMutex = CreateMutex(NULL,FALSE,PPXJOBMUTEX);
+			if ( GetCustDword(T("X_fopw"), 0) != 2 ){
+				hMutex = CreateMutex(NULL, FALSE, PPXJOBMUTEX);
 				if ( hMutex != NULL ){
-					if ( FALSE == WaitJobDialog(hWnd,hMutex,param,1) ){
+					if ( FALSE == WaitJobDialog(hWnd, hMutex, param, 1) ){
 						CloseHandle(hMutex);
 						return 2; // 中止
 					}
 				}
 			}else{
-				if ( WaitJobDialog(hWnd,NULL,param,1) == FALSE ) return 2; // 中止
+				if ( WaitJobDialog(hWnd, NULL, param, 1) == FALSE ) return 2; // 中止
 			}
 		}
 		hWnd = NULL;
@@ -1111,7 +1113,7 @@ int DoUnarc(PPXAPPINFO *ppxa,const TCHAR *DllName,HWND hWnd,const TCHAR *param)
 		if ( X_unbg ){
 			STARTUPINFO si;
 			PROCESS_INFORMATION pi;
-			TCHAR buf[MAX_PATH + CMDLINESIZE],*p;
+			TCHAR buf[MAX_PATH + CMDLINESIZE], *p;
 			const TCHAR *q;
 
 			si.cb			= sizeof(si);
@@ -1123,23 +1125,23 @@ int DoUnarc(PPXAPPINFO *ppxa,const TCHAR *DllName,HWND hWnd,const TCHAR *param)
 			si.lpReserved2	= NULL;
 
 			buf[0] = '\"';
-			GetModuleFileName(DLLhInst,buf + 1,MAX_PATH);
+			GetModuleFileName(DLLhInst, buf + 1, MAX_PATH);
 			p = FindLastEntryPoint(buf + 1);
-			p += wsprintf(p,T(PPTRAYEXE) T("\" /C %%u/%s,"),DllName);
+			p += wsprintf(p, T(PPTRAYEXE) T("\" /C %%u/%s,"), DllName);
 			for ( q = param ; *q ; ){	// '%' をエスケープしつつコピー
 				if ( *q == '%' ) *p++ = '%';
 				*p++ = *q++;
 			}
 			*p = '\0';
 
-			if ( IsTrue(CreateProcess(NULL,buf,NULL,NULL,FALSE,
+			if ( IsTrue(CreateProcess(NULL, buf, NULL, NULL, FALSE,
 					((X_unbg >= 2) ? IDLE_PRIORITY_CLASS : 0) |
-					 CREATE_DEFAULT_ERROR_MODE,NULL,NULL,&si,&pi)) ){
+					 CREATE_DEFAULT_ERROR_MODE, NULL, NULL, &si, &pi)) ){
 				CloseHandle(pi.hProcess);
 				CloseHandle(pi.hThread);
 				return 0;
 			}else{
-				PPErrorBox(hWnd,buf,PPERROR_GETLASTERROR);
+				PPErrorBox(hWnd, buf, PPERROR_GETLASTERROR);
 			}
 		}
 	}
@@ -1151,10 +1153,10 @@ int DoUnarc(PPXAPPINFO *ppxa,const TCHAR *DllName,HWND hWnd,const TCHAR *param)
 
 		param = NULL;
 		uD = undll_list;
-		for ( i = 0 ; i < undll_items ; i++,uD++ ){
-			if ( tstricmp(uD->DllName,DllName) != 0 ) continue;
+		for ( i = 0 ; i < undll_items ; i++, uD++ ){
+			if ( tstricmp(uD->DllName, DllName) != 0 ) continue;
 
-			if ( UnArc_Extract(ppxa,(void *)(i + 1),UNARCEXTRACT_ALL,cmd,XEO_NOEDIT) != NO_ERROR ){
+			if ( UnArc_Extract(ppxa, (void *)(i + 1), UNARCEXTRACT_ALL, cmd, XEO_NOEDIT) != NO_ERROR ){
 				VFSOff();
 				return 1;
 			}
@@ -1162,14 +1164,14 @@ int DoUnarc(PPXAPPINFO *ppxa,const TCHAR *DllName,HWND hWnd,const TCHAR *param)
 			X_unbg = Get_X_unbg;
 			if ( X_unbg ){
 				VFSOff();
-				return DoUnarc(ppxa,DllName - 1,hWnd,cmd);
+				return DoUnarc(ppxa, DllName - 1, hWnd, cmd);
 			}
 			param = cmd;
 			break;
 		}
 		if ( param == NULL ){
 			VFSOff();
-			XMessage(hWnd,NULL,XM_GrERRld,MES_ENUD,DllName);
+			XMessage(hWnd, NULL, XM_GrERRld, MES_ENUD, DllName);
 			return 1;
 		}
 	}
@@ -1187,20 +1189,20 @@ int DoUnarc(PPXAPPINFO *ppxa,const TCHAR *DllName,HWND hWnd,const TCHAR *param)
 			UnarcTempClass.cbClsExtra	= 0;
 			UnarcTempClass.cbWndExtra	= 0;
 			UnarcTempClass.hInstance	= NULL;
-			UnarcTempClass.hIcon		= LoadIcon(DLLhInst,MAKEINTRESOURCE(Ic_FOP));
+			UnarcTempClass.hIcon		= LoadIcon(DLLhInst, MAKEINTRESOURCE(Ic_FOP));
 			UnarcTempClass.hCursor		= NULL;
 			UnarcTempClass.hbrBackground	= NULL;
 			UnarcTempClass.lpszMenuName	= NULL;
 			UnarcTempClass.lpszClassName	= UnarcTempClassName;
 			RegisterClass(&UnarcTempClass);
 
-			hWnd = hTempWnd = CreateWindow(UnarcTempClassName,NilStr,
-					WS_POPUPWINDOW,0,0,0,0,NULL,NULL,DLLhInst,NULL);
-			ShowWindow(hTempWnd,SW_SHOW);
+			hWnd = hTempWnd = CreateWindow(UnarcTempClassName, NilStr,
+					WS_POPUPWINDOW, 0, 0, 0, 0, NULL, NULL, DLLhInst, NULL);
+			ShowWindow(hTempWnd, SW_SHOW);
 			{
 				MSG msg;
 
-				while ( PeekMessage(&msg,hTempWnd,0,0,PM_REMOVE) ){
+				while ( PeekMessage(&msg, hTempWnd, 0, 0, PM_REMOVE) ){
 					if ( msg.message == WM_QUIT ) break;
 					TranslateMessage(&msg);
 					DispatchMessage(&msg);
@@ -1208,11 +1210,11 @@ int DoUnarc(PPXAPPINFO *ppxa,const TCHAR *DllName,HWND hWnd,const TCHAR *param)
 			}
 		}
 
-		SetJobTask(hWnd,JOBSTATE_STARTJOB | JOBSTATE_ARC_PACK);
-		VFSArchiveSection(VFSAS_ENTER | VFSAS_UNDLL | VFSAS_SERIALIZE,NULL);
-		result = DoUnarcMain(DllName,hWnd,param,ppxa);
-		VFSArchiveSection(VFSAS_LEAVE | VFSAS_UNDLL | VFSAS_SERIALIZE,NULL);
-		SetJobTask(hWnd,JOBSTATE_ENDJOB);
+		SetJobTask(hWnd, JOBSTATE_STARTJOB | JOBSTATE_ARC_PACK);
+		VFSArchiveSection(VFSAS_ENTER | VFSAS_UNDLL | VFSAS_SERIALIZE, NULL);
+		result = DoUnarcMain(DllName, hWnd, param, ppxa);
+		VFSArchiveSection(VFSAS_LEAVE | VFSAS_UNDLL | VFSAS_SERIALIZE, NULL);
+		SetJobTask(hWnd, JOBSTATE_ENDJOB);
 
 		if ( hTempWnd != NULL ){
 			if ( GetFocus() != NULL ) SetForegroundWindow(hBaseWnd);
@@ -1228,16 +1230,16 @@ int DoUnarc(PPXAPPINFO *ppxa,const TCHAR *DllName,HWND hWnd,const TCHAR *param)
 	return result;
 }
 //--------------------------------------------------------------- UnDLL default
-int VFSUnWildCheckMain(UN_DLL *uD,VUCHECKSTRUCT *vcs)
+int VFSUnWildCheckMain(UN_DLL *uD, VUCHECKSTRUCT *vcs)
 {
 	FN_REGEXP fn;
 	int result;
 
-	MakeFN_REGEXP(&fn,uD->CheckWildcard);
+	MakeFN_REGEXP(&fn, uD->CheckWildcard);
 #ifdef UNICODE
-	result = FilenameRegularExpression(vcs->filenameW,&fn);
+	result = FilenameRegularExpression(vcs->filenameW, &fn);
 #else
-	result = FilenameRegularExpression(vcs->filename,&fn);
+	result = FilenameRegularExpression(vcs->filename, &fn);
 #endif
 	FreeFN_REGEXP(&fn);
 	return result;
@@ -1245,7 +1247,7 @@ int VFSUnWildCheckMain(UN_DLL *uD,VUCHECKSTRUCT *vcs)
 
 #define VFSUnWildCheckTemplate\
 	if ( uD->CheckWildcard != NULL ){\
-		if ( VFSUnWildCheckMain(uD,vcs) == 0 ) return FALSE;\
+		if ( VFSUnWildCheckMain(uD, vcs) == 0 ) return FALSE;\
 	}
 
 
@@ -1257,17 +1259,17 @@ void SendToCommonLog(const TCHAR *text)
 	copydata.dwData = K_WINDDOWLOG;
 	copydata.cbData = TSTRSIZE32(text);
 	copydata.lpData = (PVOID)text;
-	SendMessage(Sm->hCommonLogWnd,WM_COPYDATA,0,(LPARAM)&copydata);
+	SendMessage(Sm->hCommonLogWnd, WM_COPYDATA, 0, (LPARAM)&copydata);
 }
 
 #ifdef UNICODE
-BOOL VFSUnCheckMainFunction(UN_DLL *uD,VUCHECKSTRUCT *vcs)
+BOOL VFSUnCheckMainFunction(UN_DLL *uD, VUCHECKSTRUCT *vcs)
 {
 	if ( uD->flags & UNDLLFLAG_SKIP_OPENED ){
 		HANDLE hFile;
 
-		if ( (hFile = CreateFile(vcs->filenameW,GENERIC_READ,0,NULL,
-				OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL) )
+		if ( (hFile = CreateFile(vcs->filenameW, GENERIC_READ, 0, NULL,
+				OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL) )
 				== INVALID_HANDLE_VALUE ){
 			SendToCommonLog(MessageText(MES_ESHO));
 			return FALSE;
@@ -1277,23 +1279,23 @@ BOOL VFSUnCheckMainFunction(UN_DLL *uD,VUCHECKSTRUCT *vcs)
 	if ( uD->flags & UNDLLFLAG_SKIPDLLCHECK ) return TRUE;
 
 	if ( uD->UnCheckArchiveW != NULL ){
-		return uD->UnCheckArchiveW(vcs->filenameW,0);
+		return uD->UnCheckArchiveW(vcs->filenameW, 0);
 	}else if ( uD->SetUnicodeMode(TRUE) ){
-		int r = uD->UnCheckArchive(vcs->filename8,0);
+		int r = uD->UnCheckArchive(vcs->filename8, 0);
 		uD->SetUnicodeMode(FALSE);
 		return r;
 	}else{
-		return uD->UnCheckArchive(vcs->filename,0);
+		return uD->UnCheckArchive(vcs->filename, 0);
 	}
 }
 #else
-BOOL VFSUnCheckMainFunction(UN_DLL *uD,VUCHECKSTRUCT *vcs)
+BOOL VFSUnCheckMainFunction(UN_DLL *uD, VUCHECKSTRUCT *vcs)
 {
 	if ( uD->flags & UNDLLFLAG_SKIP_OPENED ){
 		HANDLE hFile;
 
-		if ( (hFile = CreateFile(vcs->filename,GENERIC_READ,0,NULL,
-				OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL) )
+		if ( (hFile = CreateFile(vcs->filename, GENERIC_READ, 0, NULL,
+				OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL) )
 				== INVALID_HANDLE_VALUE ){
 			SendToCommonLog(MessageText(MES_ESHO));
 			return FALSE;
@@ -1302,21 +1304,21 @@ BOOL VFSUnCheckMainFunction(UN_DLL *uD,VUCHECKSTRUCT *vcs)
 	}
 	if ( uD->flags & UNDLLFLAG_SKIPDLLCHECK ) return TRUE;
 
-	return uD->UnCheckArchive(vcs->filename,0);
+	return uD->UnCheckArchive(vcs->filename, 0);
 }
 #endif
 
-BOOL VFS_check_def(UN_DLL *uD,VUCHECKSTRUCT *vcs)
+BOOL VFS_check_def(UN_DLL *uD, VUCHECKSTRUCT *vcs)
 {
 	if ( vcs->floatheader > 0 ) return FALSE;
 	VFSUnWildCheckTemplate;
 	if ( (uD->hadd == NULL) && (LoadUnDLL(uD) == FALSE) ) return FALSE;
-	return VFSUnCheckMainFunction(uD,vcs);
+	return VFSUnCheckMainFunction(uD, vcs);
 }
 //-------------------------------------------------------------- UnDLL Template
-#define VFSUnCheckTemplate(offset,size,first,second) \
+#define VFSUnCheckTemplate(offset, size, first, second) \
 {\
-	BYTE *p,*maxp;\
+	BYTE *p, *maxp;\
 	DWORD fsize;\
 	int s;\
 \
@@ -1329,67 +1331,67 @@ BOOL VFS_check_def(UN_DLL *uD,VUCHECKSTRUCT *vcs)
 		maxp = vcs->header;\
 	}\
 	if ( (s = (int)fsize) <= 0 ) return FALSE;\
-	while( (p = memchr(p,first,s)) != NULL ){\
+	while( (p = memchr(p, first, s)) != NULL ){\
 		if ( second ){\
 			if ( (uD->hadd == NULL) && (LoadUnDLL(uD) == FALSE) ) return FALSE;\
-			return VFSUnCheckMainFunction(uD,vcs);\
+			return VFSUnCheckMainFunction(uD, vcs);\
 		}\
 		s = ToSIZE32_T(maxp - ++p);\
 		if ( s <= 0 ) break;\
 	}\
 }
 //--------------------------------------------------------------- UnDLL LHA
-BOOL VFS_check_LHA(UN_DLL *uD,VUCHECKSTRUCT *vcs)
+BOOL VFS_check_LHA(UN_DLL *uD, VUCHECKSTRUCT *vcs)
 {
 	VFSUnWildCheckTemplate;
-	VFSUnCheckTemplate(2,10,'-',(*(p+1) == 'l') && ( (*(p+2) == 'h') || (*(p+2) == 'z') ) && (*(p+4) == '-') );
+	VFSUnCheckTemplate(2, 10, '-', (*(p+1) == 'l') && ( (*(p+2) == 'h') || (*(p+2) == 'z') ) && (*(p+4) == '-') );
 	return FALSE;
 }
 //--------------------------------------------------------------- UnDLL CAB
-BOOL VFS_check_CAB(UN_DLL *uD,VUCHECKSTRUCT *vcs)
+BOOL VFS_check_CAB(UN_DLL *uD, VUCHECKSTRUCT *vcs)
 {
 	VFSUnWildCheckTemplate;
-	VFSUnCheckTemplate(0,20,'M',(*(p+1) == 'S') && (*(p+2) == 'C') && (*(p+3) == 'F') && (*(WORD *)(p + 18) < 0x10) );
+	VFSUnCheckTemplate(0, 20, 'M', (*(p+1) == 'S') && (*(p+2) == 'C') && (*(p+3) == 'F') && (*(WORD *)(p + 18) < 0x10) );
 	return FALSE;
 }
 //--------------------------------------------------------------- UnDLL Rar
-BOOL VFS_check_Rar(UN_DLL *uD,VUCHECKSTRUCT *vcs)
+BOOL VFS_check_Rar(UN_DLL *uD, VUCHECKSTRUCT *vcs)
 {
 	VFSUnWildCheckTemplate;
-	VFSUnCheckTemplate(0,10,'R',(*(p+1) == 'a') && (*(p+2) == 'r') && (*(p+3) == '!'));
+	VFSUnCheckTemplate(0, 10, 'R', (*(p+1) == 'a') && (*(p+2) == 'r') && (*(p+3) == '!'));
 	return FALSE;
 }
 //--------------------------------------------------------------- UnDLL ARJ
-BOOL VFS_check_ARJ(UN_DLL *uD,VUCHECKSTRUCT *vcs)
+BOOL VFS_check_ARJ(UN_DLL *uD, VUCHECKSTRUCT *vcs)
 {
 	VFSUnWildCheckTemplate;
-	VFSUnCheckTemplate(0,14,'\x60',(*(p + 1) == 0xEA) && (*(p + 10) == 2) && ( (*(p + 2) + (*(p + 3) << 8)) <= 2600) );
+	VFSUnCheckTemplate(0, 14, '\x60', (*(p + 1) == 0xEA) && (*(p + 10) == 2) && ( (*(p + 2) + (*(p + 3) << 8)) <= 2600) );
 
 	return FALSE;
 }
 //--------------------------------------------------------------- UnDLL GCA
-BOOL VFS_check_GCA(UN_DLL *uD,VUCHECKSTRUCT *vcs)
+BOOL VFS_check_GCA(UN_DLL *uD, VUCHECKSTRUCT *vcs)
 {
 	VFSUnWildCheckTemplate;
-	VFSUnCheckTemplate(0,8,'G',(*(p+1) == 'C') && (*(p+2) == 'A'));
+	VFSUnCheckTemplate(0, 8, 'G', (*(p+1) == 'C') && (*(p+2) == 'A'));
 	return FALSE;
 }
 //--------------------------------------------------------------- UnDLL 7-Zip
-BOOL VFS_check_7Zip(UN_DLL *uD,VUCHECKSTRUCT *vcs)
+BOOL VFS_check_7Zip(UN_DLL *uD, VUCHECKSTRUCT *vcs)
 {
 	VFSUnWildCheckTemplate;
-	VFSUnCheckTemplate(0,8,'7',(*(p+1) == 'z') && (*(p+2) == 0xbc) && (*(p+3) == 0xaf));
-	return VFS_check_ZIP(uD,vcs);
+	VFSUnCheckTemplate(0, 8, '7', (*(p+1) == 'z') && (*(p+2) == 0xbc) && (*(p+3) == 0xaf));
+	return VFS_check_ZIP(uD, vcs);
 }
 //--------------------------------------------------------------- UnDLL ZIP
-BOOL VFS_check_ZIP(UN_DLL *uD,VUCHECKSTRUCT *vcs)
+BOOL VFS_check_ZIP(UN_DLL *uD, VUCHECKSTRUCT *vcs)
 {
 	VFSUnWildCheckTemplate;
-	VFSUnCheckTemplate(0,8,'P',(*(p+1) == 'K') && (*(p+2) == 3) && (*(p+3) == 4) );
+	VFSUnCheckTemplate(0, 8, 'P', (*(p+1) == 'K') && (*(p+2) == 3) && (*(p+3) == 4) );
 	return FALSE;
 }
 //--------------------------------------------------------------- UnDLL TAR
-BOOL VFS_check_TAR(UN_DLL *uD,VUCHECKSTRUCT *vcs)
+BOOL VFS_check_TAR(UN_DLL *uD, VUCHECKSTRUCT *vcs)
 {
 	BYTE *header;
 	DWORD fsize;
@@ -1399,44 +1401,44 @@ BOOL VFS_check_TAR(UN_DLL *uD,VUCHECKSTRUCT *vcs)
 	header = vcs->header;
 	fsize = vcs->fsize - 2;
 
-	if (((fsize >= 0x120) && !memcmp(header + 0x101,"ustar",5)) ||	// tar
+	if (((fsize >= 0x120) && !memcmp(header + 0x101, "ustar", 5)) ||	// tar
 		((fsize >= 0x10) &&
-			(!memcmp(header,"\x1f\x9d\x90",3) ||		// compress
-			 !memcmp(header,"\xc7\x71",2) ||			// CPIO
-			 !memcmp(header,"!<arch>\xa",8) ||			// ar
-			 !memcmp(header,"BZh",3) ||					// bzip2
-			 !memcmp(header,"\x1f\x8b",2) ||			// gzip
-			 !memcmp(header,"\xed\xab\xee\xdb",4) ||	// rpm
-			 !memcmp(header,"2.0",3) ||					// deb
-			 !memcmp(header,"\xfd" "7zXZ",6) ||			// xz
-			 !memcmp(header,"\x5d\0\0\x4",5) ||			// lzma
-			 !memcmp(header,"\x5d\0\0\x80",5) ))){		// lzma
+			(!memcmp(header, "\x1f\x9d\x90", 3) ||		// compress
+			 !memcmp(header, "\xc7\x71", 2) ||			// CPIO
+			 !memcmp(header, "!<arch>\xa", 8) ||		// ar
+			 !memcmp(header, "BZh", 3) ||				// bzip2
+			 !memcmp(header, "\x1f\x8b", 2) ||			// gzip
+			 !memcmp(header, "\xed\xab\xee\xdb", 4) ||	// rpm
+			 !memcmp(header, "2.0", 3) ||				// deb
+			 !memcmp(header, "\xfd" "7zXZ", 6) ||		// xz
+			 !memcmp(header, "\x5d\0\0\x4", 5) ||		// lzma
+			 !memcmp(header, "\x5d\0\0\x80", 5) ))){		// lzma
 		if ( (uD->hadd == NULL) && (LoadUnDLL(uD) == FALSE) ) return FALSE;
 		#ifdef UNICODE
 			if ( uD->UnCheckArchiveW != NULL ){
-				return uD->UnCheckArchiveW(vcs->filenameW,0);
+				return uD->UnCheckArchiveW(vcs->filenameW, 0);
 			}
 		#endif
-		return uD->UnCheckArchive(vcs->filename,0);
+		return uD->UnCheckArchive(vcs->filename, 0);
 	}
 	return FALSE;
 }
 
 #ifdef UNICODE
 
-const TCHAR *ConvertResCmd(UN_DLL *undll,const TCHAR *param,TCHAR *parambuf,DWORD flags)
+const TCHAR *ConvertResCmd(UN_DLL *undll, const TCHAR *param, TCHAR *parambuf, DWORD flags)
 {
-	tstrcpy(parambuf,param);
+	tstrcpy(parambuf, param);
 	if ( flags & UNDLLFLAG_RESPONSE_UTF8 ){
 		undll->codepage = CP_UTF8;
-		tstrreplace(parambuf,T("%@"),T("%@8"));
-		tstrreplace(parambuf,T("%a"),T("%a8"));
+		tstrreplace(parambuf, T("%@"), T("%@8"));
+		tstrreplace(parambuf, T("%a"), T("%a8"));
 		return parambuf;
 	}else // if ( flags & UNDLLFLAG_RESPONSE_UTF16 )
 	{
 		undll->codepage = CP_PPX_UCF2;
-		tstrreplace(parambuf,T("%@"),T("%@U"));
-		tstrreplace(parambuf,T("%a"),T("%aU"));
+		tstrreplace(parambuf, T("%@"), T("%@U"));
+		tstrreplace(parambuf, T("%a"), T("%aU"));
 		return parambuf;
 	}
 //	return param;
@@ -1444,7 +1446,7 @@ const TCHAR *ConvertResCmd(UN_DLL *undll,const TCHAR *param,TCHAR *parambuf,DWOR
 #endif
 
 
-VFSDLL ERRORCODE PPXAPI UnArc_Extract(PPXAPPINFO *info,const void *dt_opt,int extractmode,TCHAR *extract,int flags)
+VFSDLL ERRORCODE PPXAPI UnArc_Extract(PPXAPPINFO *info, const void *dt_opt, int extractmode, TCHAR *extract, int flags)
 {
 	const TCHAR *param;
 	#ifdef UNICODE
@@ -1466,7 +1468,7 @@ VFSDLL ERRORCODE PPXAPI UnArc_Extract(PPXAPPINFO *info,const void *dt_opt,int ex
 				undll->SingleExtCMD : undll->PartExtCMD);
 
 	if ( *param == '\0' ){
-		XMessage(NULL,NULL,XM_GrERRld,T("no extract setting"));
+		XMessage(NULL, NULL, XM_GrERRld, T("no extract setting"));
 		return ERROR_CANCELLED;
 	}
 
@@ -1478,25 +1480,25 @@ VFSDLL ERRORCODE PPXAPI UnArc_Extract(PPXAPPINFO *info,const void *dt_opt,int ex
 
 	#ifdef UNICODE
 	if ( undll->UnarcW != NULL ){
-		param = ConvertResCmd(undll,param,parambuf,undll->flags);
+		param = ConvertResCmd(undll, param, parambuf, undll->flags);
 	}else if ( undll->SetUnicodeMode(TRUE) ){
-		param = ConvertResCmd(undll,param,parambuf,UNDLLFLAG_RESPONSE_UTF8);
-		result = PP_ExtractMacro(info->hWnd,info,NULL,param,extract,flags);
-		tstrreplace(extract,T(">"),T(" "));
+		param = ConvertResCmd(undll, param, parambuf, UNDLLFLAG_RESPONSE_UTF8);
+		result = PP_ExtractMacro(info->hWnd, info, NULL, param, extract, flags);
+		tstrreplace(extract, T(">"), T(" "));
 		undll->SetUnicodeMode(FALSE);
 		return result;
 	}else{
 		undll->codepage = CP_ACP;
 	}
 	#endif
-	result = PP_ExtractMacro(info->hWnd,info,NULL,param,extract,flags);
-	tstrreplace(extract,T(">"),T(" "));
+	result = PP_ExtractMacro(info->hWnd, info, NULL, param, extract, flags);
+	tstrreplace(extract, T(">"), T(" "));
 	return result;
 }
 
-void SetLogBadCrTextFix(PPXAPPINFO *loginfo,const TCHAR *title,const TCHAR *text,int result)
+void SetLogBadCrTextFix(PPXAPPINFO *loginfo, const TCHAR *title, const TCHAR *text, int result)
 {
-	TCHAR buf[LOGLENGTH + 0x1000],*dest;
+	TCHAR buf[LOGLENGTH + 0x1000], *dest;
 	TCHAR c;
 
 	for (;;){
@@ -1514,42 +1516,42 @@ void SetLogBadCrTextFix(PPXAPPINFO *loginfo,const TCHAR *title,const TCHAR *text
 			*dest++ = c;
 			if ( c == '\0' ) break;
 		}
-		SetLogBadCrText(loginfo,title,buf,result);
+		SetLogBadCrText(loginfo, title, buf, result);
 		if ( c == '\0' ) break;
 	}
 }
 
-void SetLogBadCrText(PPXAPPINFO *loginfo,const TCHAR *title,const TCHAR *text,int result)
+void SetLogBadCrText(PPXAPPINFO *loginfo, const TCHAR *title, const TCHAR *text, int result)
 {
 	TCHAR *p;
 
-	if ( (loginfo == NULL) || (PPxInfoFunc(loginfo,PPXCMDID_EXTREPORTTEXT,NULL) <= PPXCMDID_EXTREPORTTEXT_CLOSE) ){
+	if ( (loginfo == NULL) || (PPxInfoFunc(loginfo, PPXCMDID_EXTREPORTTEXT, NULL) <= PPXCMDID_EXTREPORTTEXT_CLOSE) ){
 		if ( (Sm->hCommonLogWnd == NULL) && (result == 0) ) return;
 		loginfo = NULL;
 	}
 
-	p = tstrchr(text,'\n');
+	p = tstrchr(text, '\n');
 	if ( (p != NULL) && ((p <= text) || (*(p - 1) != '\r')) ){
-		SetLogBadCrTextFix(loginfo,title,text,result);
+		SetLogBadCrTextFix(loginfo, title, text, result);
 		return;
 	}
 
 	if ( loginfo != NULL ){
-		PPxInfoFunc(loginfo,PPXCMDID_EXTREPORTTEXT,(TCHAR *)text);
+		PPxInfoFunc(loginfo, PPXCMDID_EXTREPORTTEXT, (TCHAR *)text);
 	}else if ( Sm->hCommonLogWnd == NULL ){
-		MessageBox(GetFocus(),text,title,MB_OK);
+		MessageBox(GetFocus(), text, title, MB_OK);
 	}else{
 		SendToCommonLog(text);
 	}
 }
 
 #ifdef UNICODE
-void SetLogBadCrTextA(PPXAPPINFO *loginfo,const TCHAR *title,const char *text,int result,UINT codepage)
+void SetLogBadCrTextA(PPXAPPINFO *loginfo, const TCHAR *title, const char *text, int result, UINT codepage)
 {
 	WCHAR textW[LOGLENGTH + (LOGLENGTH / 2)];
 
-	MultiByteToWideCharU8(codepage,0,text,-1,textW,TSIZEOFW(textW));
-	SetLogBadCrText(loginfo,title,textW,result);
+	MultiByteToWideCharU8(codepage, 0, text, -1, textW, TSIZEOFW(textW));
+	SetLogBadCrText(loginfo, title, textW, result);
 }
 #endif
 
@@ -1561,19 +1563,19 @@ int USEFASTCALL CheckLogOutput(int result)
 {
 	int X_dlog = DLOG_ALLLOG;
 
-	GetCustData(T("X_dlog"),&X_dlog,sizeof(X_dlog));
+	GetCustData(T("X_dlog"), &X_dlog, sizeof(X_dlog));
 	if ( X_dlog != DLOG_ERRORLOG ) return X_dlog;
 	return result;
 }
 
-int UnArc_ExecMain(const UN_DLL *uD,HWND hWnd,const TCHAR *Cmd,PPXAPPINFO *loginfo)
+int UnArc_ExecMain(const UN_DLL *uD, HWND hWnd, const TCHAR *Cmd, PPXAPPINFO *loginfo)
 {
-	HWND hUnarcChildWnd = NULL,hUnarcParentWnd,*hCloseWnd;
+	HWND hUnarcChildWnd = NULL, hUnarcParentWnd, *hCloseWnd;
 	int result;
 	HWND hFWnd;
 	TCHAR log[LOGLENGTH];
 	TCHAR CmdBuf[CMDLINESIZE];
-	const TCHAR *extp,*extpl;
+	const TCHAR *extp, *extpl;
 	#ifdef UNICODE
 		char CmdA[CMDLINESIZE];
 	#endif
@@ -1583,12 +1585,12 @@ int UnArc_ExecMain(const UN_DLL *uD,HWND hWnd,const TCHAR *Cmd,PPXAPPINFO *login
 	hFWnd = hWnd;
 	if ( (DWORD_PTR)hFWnd < 2 ) hFWnd = GetFocus();
 
-	extp = tstrchr(Cmd,'<'); // オプション指定有り…オプションの実体を展開
+	extp = tstrchr(Cmd, '<'); // オプション指定有り…オプションの実体を展開
 	if ( extp != NULL ){
 		TCHAR *cdest;
 		const TCHAR *optptr;
 
-		memcpy(CmdBuf,Cmd,TSTROFF(extp - Cmd));
+		memcpy(CmdBuf, Cmd, TSTROFF(extp - Cmd));
 		cdest = CmdBuf + (extp - Cmd);
 		*cdest = '\0';
 		extp++;
@@ -1611,7 +1613,7 @@ int UnArc_ExecMain(const UN_DLL *uD,HWND hWnd,const TCHAR *Cmd,PPXAPPINFO *login
 			for (;;){
 				if ( *optptr == '\0' ) break;
 				if ( (*optptr == 'p') && (*(optptr + 1) == 'o') &&
-					 (memcmp(optptr + 3,extp,TSTROFF(extpl - extp)) == 0) &&
+					 (memcmp(optptr + 3, extp, TSTROFF(extpl - extp)) == 0) &&
 					 (*(optptr + 3 + (extpl - extp)) == '=') ){
 					tstrcpy(cdest, (optptr + 3 + (extpl - extp) + 1) );
 					cdest += tstrlen(cdest);
@@ -1623,7 +1625,7 @@ int UnArc_ExecMain(const UN_DLL *uD,HWND hWnd,const TCHAR *Cmd,PPXAPPINFO *login
 			if ( *extpl == '<' ) break;
 			extp = extpl + 1;
 		}
-		memcpy(cdest,extp,TSTRSIZE(extp));
+		memcpy(cdest, extp, TSTRSIZE(extp));
 		Cmd = CmdBuf;
 	}
 
@@ -1648,26 +1650,26 @@ int UnArc_ExecMain(const UN_DLL *uD,HWND hWnd,const TCHAR *Cmd,PPXAPPINFO *login
 		if ( hUnarcChildWnd == NULL ){
 			MSG msg;
 			WNDCLASS UnarcTempClass = {
-				0,NULL,0,0,		// style～cbWndExtra
-				NULL,NULL,NULL,NULL,NULL,	// hInstance～lpszMenuName
+				0, NULL, 0, 0,		// style～cbWndExtra
+				NULL, NULL, NULL, NULL, NULL,	// hInstance～lpszMenuName
 				UnarcTempClassName			// lpszClassName
 			};
 
-			UnarcTempClass.hIcon = LoadIcon(DLLhInst,MAKEINTRESOURCE(Ic_FOP));
+			UnarcTempClass.hIcon = LoadIcon(DLLhInst, MAKEINTRESOURCE(Ic_FOP));
 			UnarcTempClass.lpfnWndProc = DefWindowProc;
 			UnarcTempClass.hInstance = DLLhInst;
 			RegisterClass(&UnarcTempClass);
 			if ( hUnarcParentWnd == NULL ){ // 仮の親
-				hUnarcParentWnd = CreateWindow(UnarcTempClassName,NilStr,
-						WS_POPUPWINDOW | WS_MINIMIZEBOX,0,0,0,0,
-						NULL,NULL,DLLhInst,NULL);
-				ShowWindow(hUnarcParentWnd,SW_SHOW);
+				hUnarcParentWnd = CreateWindow(UnarcTempClassName, NilStr,
+						WS_POPUPWINDOW | WS_MINIMIZEBOX, 0, 0, 0, 0,
+						NULL, NULL, DLLhInst, NULL);
+				ShowWindow(hUnarcParentWnd, SW_SHOW);
 			}
 			// 仮の子
-			hUnarcChildWnd = CreateWindow(UnarcTempClassName,NilStr,
-					WS_CHILD,0,0,0,0,hUnarcParentWnd,NULL,DLLhInst,NULL);
+			hUnarcChildWnd = CreateWindow(UnarcTempClassName, NilStr, WS_CHILD,
+					0, 0, 0, 0, hUnarcParentWnd, NULL, DLLhInst, NULL);
 
-			while ( PeekMessage(&msg,hUnarcChildWnd,0,0,PM_REMOVE) ){
+			while ( PeekMessage(&msg, hUnarcChildWnd, 0, 0, PM_REMOVE) ){
 				if ( msg.message == WM_QUIT ) break;
 //				TranslateMessage(&msg); // ダミーウィンドウなのでキー入力無し
 				DispatchMessage(&msg);
@@ -1686,7 +1688,7 @@ int UnArc_ExecMain(const UN_DLL *uD,HWND hWnd,const TCHAR *Cmd,PPXAPPINFO *login
 	}
 	#ifdef UNICODE
 		if ( (uD->UnarcW != NULL) && (uD->codepage != CP_ACP) ){
-			result = uD->UnarcW(hUnarcChildWnd,Cmd,log,TSIZEOF(log));
+			result = uD->UnarcW(hUnarcChildWnd, Cmd, log, TSIZEOF(log));
 			if ( result ){
 				if ( result == UNARC_USER_CANCEL ){
 					result = 0;
@@ -1698,12 +1700,12 @@ int UnArc_ExecMain(const UN_DLL *uD,HWND hWnd,const TCHAR *Cmd,PPXAPPINFO *login
 				}
 			}
 			if ( result && (log[0] == '\0') ){
-				wsprintf(log,L"APIw error : %x : %s",result,Cmd);
+				wsprintf(log, L"APIw error : %x : %s", result, Cmd);
 			}
 
 			if ( ts != NULL ) ts->ThreadName = oldname; // c4701ok
 			if ( (log[0] != '\0') && (CheckLogOutput(result) != 0) ){
-				SetLogBadCrText(loginfo,uD->DllName,log,result);
+				SetLogBadCrText(loginfo, uD->DllName, log, result);
 			}
 		}else{
 			UINT codepage;
@@ -1713,8 +1715,8 @@ int UnArc_ExecMain(const UN_DLL *uD,HWND hWnd,const TCHAR *Cmd,PPXAPPINFO *login
 			}else{
 				codepage = CP_UTF8;
 			}
-			WideCharToMultiByteU8( codepage,0,Cmd,-1,CmdA,CMDLINESIZE,NULL,NULL);
-			result = uD->Unarc(hUnarcChildWnd,CmdA,(char *)log,sizeof(log));
+			WideCharToMultiByteU8( codepage, 0, Cmd, -1, CmdA, CMDLINESIZE, NULL, NULL);
+			result = uD->Unarc(hUnarcChildWnd, CmdA, (char *)log, sizeof(log));
 			if ( result ){
 				if ( result == UNARC_USER_CANCEL ){
 					result = 0;
@@ -1728,16 +1730,16 @@ int UnArc_ExecMain(const UN_DLL *uD,HWND hWnd,const TCHAR *Cmd,PPXAPPINFO *login
 
 			if ( codepage == CP_UTF8 ) uD->SetUnicodeMode(FALSE);
 			if ( result && (log[0] == '\0') ){
-				wsprintfA((char *)log,"APIa error : %x : %s",result,CmdA);
+				wsprintfA((char *)log, "APIa error : %x : %s", result, CmdA);
 				codepage = CP_ACP;
 			}
 			if ( ts != NULL ) ts->ThreadName = oldname; // c4701ok
 			if ( (log[0] != '\0') && (CheckLogOutput(result) != 0) ){
-				SetLogBadCrTextA(loginfo,uD->DllName,(char *)log,result,codepage);
+				SetLogBadCrTextA(loginfo, uD->DllName, (char *)log, result, codepage);
 			}
 		}
 	#else
-		result = uD->Unarc(hUnarcChildWnd,Cmd,log,sizeof(log));
+		result = uD->Unarc(hUnarcChildWnd, Cmd, log, sizeof(log));
 		if ( result ){
 			if ( result == UNARC_USER_CANCEL ){
 				result = 0;
@@ -1749,18 +1751,18 @@ int UnArc_ExecMain(const UN_DLL *uD,HWND hWnd,const TCHAR *Cmd,PPXAPPINFO *login
 			}
 		}
 		if ( result && (log[0] == '\0') ){
-			wsprintf(log,"API error : %x : %s",result,Cmd);
+			wsprintf(log, "API error : %x : %s", result, Cmd);
 		}
 		if ( ts != NULL ) ts->ThreadName = oldname; // c4701ok
 		if ( (log[0] != '\0') && (CheckLogOutput(result) != 0) ){
-			SetLogBadCrText(loginfo,uD->DllName,log,result);
+			SetLogBadCrText(loginfo, uD->DllName, log, result);
 		}
 	#endif
 	if ( hCloseWnd != NULL ) DestroyWindow(*hCloseWnd);
 	return result;
 }
 
-int RunUnARCExec(PPXAPPINFO *loginfo,const void *dt_opt,TCHAR *param,const TCHAR *tmppath)
+int RunUnARCExec(PPXAPPINFO *loginfo, const void *dt_opt, TCHAR *param, const TCHAR *tmppath)
 {
 	HWND hOldFocusWnd;
 	int result;
@@ -1771,38 +1773,38 @@ int RunUnARCExec(PPXAPPINFO *loginfo,const void *dt_opt,TCHAR *param,const TCHAR
 	undll = undll_list + delta;
 	if ( (undll->hadd == NULL) && (LoadUnDLL(undll) == FALSE) ) return -1;
 
-	VFSArchiveSection(VFSAS_ENTER | VFSAS_UNDLL,NULL);
+	VFSArchiveSection(VFSAS_ENTER | VFSAS_UNDLL, NULL);
 	hOldFocusWnd = GetFocus();
 
-	result = UnArc_ExecMain(undll,loginfo->hWnd,param,loginfo);
+	result = UnArc_ExecMain(undll, loginfo->hWnd, param, loginfo);
 	SetFocus(hOldFocusWnd);
-	VFSArchiveSection(VFSAS_LEAVE | VFSAS_UNDLL,NULL);
+	VFSArchiveSection(VFSAS_LEAVE | VFSAS_UNDLL, NULL);
 	if ( tmppath[0] != '\0' ) DeleteFileL(tmppath);
 	return result;
 }
 
-VFSDLL void PPXAPI UnArc_Exec(PPXAPPINFO *info,const void *dt_opt,TCHAR *param,HANDLE hBatchfile,const TCHAR *tmppath,DWORD X_unbg,const TCHAR *chopdir)
+VFSDLL void PPXAPI UnArc_Exec(PPXAPPINFO *info, const void *dt_opt, TCHAR *param, HANDLE hBatchfile, const TCHAR *tmppath, DWORD X_unbg, const TCHAR *chopdir)
 {
 	if ( (hBatchfile != INVALID_HANDLE_VALUE) || X_unbg ){
-		const TCHAR *q,*adds;
+		const TCHAR *q, *adds;
 		const UN_DLL *undll;
-		TCHAR buf[CMDLINESIZE * 2],*p;
+		TCHAR buf[CMDLINESIZE * 2], *p;
 		int delta = (int)(DWORD_PTR)dt_opt - 1;
 
 		if ( (delta < 0) || (delta >= undll_items) ) return;
 		undll = undll_list + delta;
 
 		if ( hBatchfile == INVALID_HANDLE_VALUE ){
-			p = buf+wsprintf(buf,T("\"%s\\") T(PPTRAYEXE) T("\" /C "),DLLpath);
+			p = buf+wsprintf(buf, T("\"%s\\") T(PPTRAYEXE) T("\" /C "), DLLpath);
 		}else{
 			p = buf;
 		}
-		if ( chopdir != NULL ) p += wsprintf(p,T("*makedir \"%s\"%%:"),chopdir);
+		if ( chopdir != NULL ) p += wsprintf(p, T("*makedir \"%s\"%%:"), chopdir);
 		adds = (undll->flags & UNDLLFLAG_FIX_IME) ? fixime : NilStr;
-		p += wsprintf(p,T("%s%%u/%s,"),adds,undll->DllName);
+		p += wsprintf(p, T("%s%%u/%s,"), adds, undll->DllName);
 		#ifdef UNICODE
 		if ( undll->codepage != CP_ACP ){
-			p += wsprintf(p,(undll->codepage == CP_PPX_UCF2) ? T("!2") : T("!8"));
+			p += wsprintf(p, (undll->codepage == CP_PPX_UCF2) ? T("!2") : T("!8"));
 		}
 		#endif
 		for ( q = param ; *q ; ){	// '%' をエスケープしつつコピー
@@ -1811,10 +1813,10 @@ VFSDLL void PPXAPI UnArc_Exec(PPXAPPINFO *info,const void *dt_opt,TCHAR *param,H
 		}
 		*p = '\0';
 		if ( tmppath[0] != '\0' ){
-			p += wsprintf(p,T(NL) T("*delete \"%s\""),tmppath);
+			p += wsprintf(p, T(NL) T("*delete \"%s\""), tmppath);
 		}
 		if ( chopdir != NULL ){
-			wsprintf(p,T(NL) T("*chopdir \"%s\""),chopdir);
+			wsprintf(p, T(NL) T("*chopdir \"%s\""), chopdir);
 		}
 		if ( hBatchfile == INVALID_HANDLE_VALUE ){
 			STARTUPINFO si;
@@ -1828,27 +1830,27 @@ VFSDLL void PPXAPI UnArc_Exec(PPXAPPINFO *info,const void *dt_opt,TCHAR *param,H
 			si.cbReserved2	= 0;
 			si.lpReserved2	= NULL;
 
-			if ( IsTrue(CreateProcess(NULL,buf,NULL,NULL,FALSE,
+			if ( IsTrue(CreateProcess(NULL, buf, NULL, NULL, FALSE,
 					((X_unbg >= 2) ? IDLE_PRIORITY_CLASS : 0) |
-							CREATE_DEFAULT_ERROR_MODE,NULL,NULL,&si,&pi)) ){
+							CREATE_DEFAULT_ERROR_MODE, NULL, NULL, &si, &pi)) ){
 				CloseHandle(pi.hProcess);
 				CloseHandle(pi.hThread);
 				return;
 			}else{
-				PPErrorBox(info->hWnd,T("Unarc"),PPERROR_GETLASTERROR);
+				PPErrorBox(info->hWnd, T("Unarc"), PPERROR_GETLASTERROR);
 			}
 		}else{
 			DWORD temp;
 
-			WriteFile(hBatchfile,buf,TSTRLENGTH32(buf),&temp,NULL);
-			WriteFile(hBatchfile,T(NL),sizeof(TCHAR) * 2,&temp,NULL);
+			WriteFile(hBatchfile, buf, TSTRLENGTH32(buf), &temp, NULL);
+			WriteFile(hBatchfile, T(NL), sizeof(TCHAR) * 2, &temp, NULL);
 		}
 	}else{
-		RunUnARCExec(info,dt_opt,param,tmppath);
+		RunUnARCExec(info, dt_opt, param, tmppath);
 	}
 }
 
-const TCHAR *GetPackParams(const TCHAR *str,TCHAR *arcnamebuf,TCHAR **param,TCHAR **term)
+const TCHAR *GetPackParams(const TCHAR *str, TCHAR *arcnamebuf, TCHAR **param, TCHAR **term)
 {
 	TCHAR *dest = arcnamebuf;
 
@@ -1872,7 +1874,7 @@ const TCHAR *GetPackParams(const TCHAR *str,TCHAR *arcnamebuf,TCHAR **param,TCHA
 	return str;
 }
 
-void GetPackMenu(HMENU hMenuDest,ThSTRUCT *thMenuData,DWORD *PopupID)
+void GetPackMenu(HMENU hMenuDest, ThSTRUCT *thMenuData, DWORD *PopupID)
 {
 	HMENU hTypeMenu;
 	HMENU hOtherMenu;
@@ -1883,10 +1885,10 @@ void GetPackMenu(HMENU hMenuDest,ThSTRUCT *thMenuData,DWORD *PopupID)
 	TCHAR PackName[MAX_PATH];
 	TCHAR PackOption[MAX_PATH];
 	int i;
-	TCHAR *comment,*term;
+	TCHAR *comment, *term;
 	BOOL gmode;
 
-	ThGetString(&ProcessStringValue,T("Edit_PackMode"),parambuf,CMDLINESIZE);
+	ThGetString(&ProcessStringValue, T("Edit_PackMode"), parambuf, CMDLINESIZE);
 	gmode = (parambuf[0] == 'g');
 
 	hTypeMenu = CreatePopupMenu();
@@ -1894,11 +1896,11 @@ void GetPackMenu(HMENU hMenuDest,ThSTRUCT *thMenuData,DWORD *PopupID)
 		PackName[0] = '\0';
 		PackOption[0] = '\0';
 		if ( gmode ){
-			GetCustTable(StrCustOthers,T("PackName"),PackName,sizeof(PackName));
-			GetCustTable(StrCustOthers,T("PackOption"),PackOption,sizeof(PackOption));
+			GetCustTable(StrCustOthers, T("PackName"), PackName, sizeof(PackName));
+			GetCustTable(StrCustOthers, T("PackOption"), PackOption, sizeof(PackOption));
 		}
 		uD = undll_list;
-		for ( i = 0 ; i < undll_items ; i++,uD++ ){
+		for ( i = 0 ; i < undll_items ; i++, uD++ ){
 			const TCHAR *ptr;
 
 			if ( uD->flags & UNDLLFLAG_DISABLE_PACK ) continue;
@@ -1915,16 +1917,16 @@ void GetPackMenu(HMENU hMenuDest,ThSTRUCT *thMenuData,DWORD *PopupID)
 					if ( *(ptr + 1) == ':' ){
 						const TCHAR *param;
 
-						param = GetPackParams(ptr + 2,parambuf,&comment,&term);
+						param = GetPackParams(ptr + 2, parambuf, &comment, &term);
 						if ( param != NULL ){
 							TCHAR *p;
 
-							wsprintf(term,T(" - %s"),uD->DllName);
-							p = tstrchr(term,'.');
+							wsprintf(term, T(" - %s"), uD->DllName);
+							p = tstrchr(term, '.');
 							if ( p != NULL ) *p = '\0';
-							AppendMenuString(hTypeMenu,(*PopupID)++,parambuf);
-							wsprintf(parambuf,T("%%u%s,%s"),uD->DllName,param);
-							ThAddString(thMenuData,parambuf);
+							AppendMenuString(hTypeMenu, (*PopupID)++, parambuf);
+							wsprintf(parambuf, T("%%u%s,%s"), uD->DllName, param);
+							ThAddString(thMenuData, parambuf);
 						}
 					// オプション
 					}else if ( (*(ptr + 1) == 'o') && (*(ptr + 2) == ':') ){
@@ -1932,22 +1934,22 @@ void GetPackMenu(HMENU hMenuDest,ThSTRUCT *thMenuData,DWORD *PopupID)
 						int cmp;
 
 						comment = NULL;
-						param = (TCHAR *)GetPackParams(ptr + 3,parambuf,&comment,&term);
+						param = (TCHAR *)GetPackParams(ptr + 3, parambuf, &comment, &term);
 						if ( param != NULL ){
 							TCHAR *p;
 
 							if ( comment == NULL ){
-								tstrcpy(term + 1,uD->DllName);
-								p = tstrchr(term + 1,'.');
+								tstrcpy(term + 1, uD->DllName);
+								p = tstrchr(term + 1, '.');
 								if ( p != NULL ) *p = '\0';
-								cmp = tstrstr(PackName,term + 1) == NULL;
+								cmp = tstrstr(PackName, term + 1) == NULL;
 								p = parambuf;
 							}else{
 								*comment = '\0';
-								wsprintf(term + 1,T("%s - %s"),parambuf,uD->DllName);
-								p = tstrchr(term + 1,'.');
+								wsprintf(term + 1, T("%s - %s"), parambuf, uD->DllName);
+								p = tstrchr(term + 1, '.');
 								if ( p != NULL ) *p = '\0';
-								cmp = tstrcmp(PackName,term + 1);
+								cmp = tstrcmp(PackName, term + 1);
 								p = comment + 1;
 							}
 							if ( cmp == 0 ){
@@ -1955,14 +1957,14 @@ void GetPackMenu(HMENU hMenuDest,ThSTRUCT *thMenuData,DWORD *PopupID)
 
 
 								if ( gmode ){
-									strp = tstrstr(PackOption,p);
+									strp = tstrstr(PackOption, p);
 									if ( (strp != NULL) &&
 										 (*(strp + tstrlen(p)) == ',' ) ){
 										cmp = 1;
 									}
-									AppendMenuCheckString(hMenuDest,(*PopupID)++,p,cmp);
-									wsprintf(buf,T("!*togglecustword _others:PackOption,%s,"),p);
-									ThAddString(thMenuData,buf);
+									AppendMenuCheckString(hMenuDest, (*PopupID)++, p, cmp);
+									wsprintf(buf, T("!*togglecustword _others:PackOption,%s,"), p);
+									ThAddString(thMenuData, buf);
 								}
 							}
 						}
@@ -1972,49 +1974,49 @@ void GetPackMenu(HMENU hMenuDest,ThSTRUCT *thMenuData,DWORD *PopupID)
 			}
 		}
 	}
-	AppendMenuString(hTypeMenu,(*PopupID)++,StrPackZipFolderTitle);
-	ThAddString(thMenuData,StrPackZipFolderCommand);
+	AppendMenuString(hTypeMenu, (*PopupID)++, StrPackZipFolderTitle);
+	ThAddString(thMenuData, StrPackZipFolderCommand);
 
 	buf[0] = '0';
-	GetCustTable(StrCustOthers,T("PackIndiv"),buf,sizeof(buf));
-	AppendMenuCheckString(hMenuDest,(*PopupID)++,MES_PACI,buf[0] == '1');
-	wsprintf(buf,T("!*setcust _others:PackIndiv=%c"),buf[0] == '1' ? '0' : '1');
-	ThAddString(thMenuData,buf);
+	GetCustTable(StrCustOthers, T("PackIndiv"), buf, sizeof(buf));
+	AppendMenuCheckString(hMenuDest, (*PopupID)++, MES_PACI, buf[0] == '1');
+	wsprintf(buf, T("!*setcust _others:PackIndiv=%c"), buf[0] == '1' ? '0' : '1');
+	ThAddString(thMenuData, buf);
 
-	AppendMenu(hMenuDest,MF_SEPARATOR,0,NULL);
-	AppendMenu(hMenuDest,MF_EPOP,(UINT_PTR)hTypeMenu,MessageText(MES_PACT));
+	AppendMenu(hMenuDest, MF_SEPARATOR, 0, NULL);
+	AppendMenu(hMenuDest, MF_EPOP, (UINT_PTR)hTypeMenu, MessageText(MES_PACT));
 
 	hOtherMenu = CreatePopupMenu();
-	PP_AddMenu(NULL,NULL,hOtherMenu,PopupID,T("M_xpack"),thMenuData);
-	AppendMenu(hMenuDest,MF_EPOP,(UINT_PTR)hOtherMenu,MessageText(MES_PACO));
+	PP_AddMenu(NULL, NULL, hOtherMenu, PopupID, T("M_xpack"), thMenuData);
+	AppendMenu(hMenuDest, MF_EPOP, (UINT_PTR)hOtherMenu, MessageText(MES_PACO));
 }
 
-BOOL FindPackType(const TCHAR *dllname,TCHAR *arcname,TCHAR *arccommand)
+BOOL FindPackType(const TCHAR *dllname, TCHAR *arcname, TCHAR *arccommand)
 {
 	UN_DLL *uD;
 	int i;
 
 	uD = undll_list;
-	for ( i = 0 ; i < undll_items ; i++,uD++ ){
+	for ( i = 0 ; i < undll_items ; i++, uD++ ){
 		const TCHAR *ptr;
-		TCHAR *p;
+		TCHAR *dstp;
 
-		if ( tstricmp(uD->DllName,dllname) != 0 ) continue;
+		if ( tstricmp(uD->DllName, dllname) != 0 ) continue;
 
-		p = arcname + tstrlen(arcname);
-		*p++ = '=';
+		dstp = arcname + tstrlen(arcname);
+		*dstp++ = '=';
 
 		ptr = uD->params;
 		for (;;){
 			if ( *ptr == '\0' ) break;
-			if ( memcmp(ptr,arcname,TSTROFF(p - arcname)) == 0 ){
-				wsprintf(arccommand,T("%%u%s,%s"),dllname,ptr + (p - arcname));
-				*(p - 1) = '\0';
+			if ( memcmp(ptr, arcname, TSTROFF(dstp - arcname)) == 0 ){
+				wsprintf(arccommand, T("%%u%s,%s"), dllname, ptr + (dstp - arcname));
+				*(dstp - 1) = '\0';
 				return TRUE;
 			}
 			ptr += tstrlen(ptr) + 1;
 		}
-		*(p - 1) = '\0';
+		*(dstp - 1) = '\0';
 		break;
 	}
 	return FALSE;

@@ -155,6 +155,7 @@ PPXDLL BOOL PPXAPI InitBMP(HTBMP *hTbmp, const TCHAR *filename, DWORD size, int 
 		offset += 12;	// 16/32bit のときはビット割り当てがある
 	}
 	hTbmp->PaletteOffset = offset;
+#pragma warning(suppress: 6297) // color は 8以下で、DWORD を越えることがない
 	offset += palette ? palette * sizeof(RGBQUAD) :
 			((color <= 8) ? (DWORD)(1 << color) * sizeof(RGBQUAD) : 0);
 	if ( size < (offset + sizeof(BITMAPFILEHEADER)) ) goto error;

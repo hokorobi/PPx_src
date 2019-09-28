@@ -64,6 +64,7 @@ ppe
 edit
 file
 insert
+insertsel
 replace
 focus
 set
@@ -91,7 +92,7 @@ makedir
 makefile
 delete
 rename
-command
+keycommand
 emulatekey
 jumpentry
 commandhash
@@ -119,3 +120,6 @@ clearauth
 if
 nextitem
 return
+maxlength
+deletehistory
+deletecust

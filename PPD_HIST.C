@@ -169,19 +169,19 @@ PPXDLL void PPXAPI InitHistory(void)
 /*-----------------------------------------------------------------------------
 	指定されたジャンルの占有量をヒストリサイズの約半分に制限する
 -----------------------------------------------------------------------------*/
-void LimitHistory(WORD type)
+BOOL LimitHistory(WORD type, DWORD addsize)
 {
 	const char *ptr;
 	WORD w;
 	DWORD size = 0, maxsize;
 
-	maxsize = X_Hsize / 2;
+	maxsize = X_Hsize / 2 - addsize;
 	ptr = (const char *)HisP;
 	for ( ; ; ){
 		w = *(WORD *)ptr;
-		if ( w == 0 ) return;
+		if ( w == 0 ) return TRUE; // チェック完了
 		if ( *(WORD *)(ptr + 2) & type ){
-			if ( size > maxsize ){
+			if ( (size + w) > maxsize ){
 				DeleteHistory(type, (const TCHAR *)(ptr + 6));
 				// 再試行
 				ptr = (const char *)HisP;

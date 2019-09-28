@@ -370,6 +370,7 @@ DefineWinAPI(HRESULT, PropVariantClear, (PROPVARIANT *pvar));
 
 // Shell32.dll
 DefineWinAPI(HRESULT, SHGetPropertyStoreFromParsingName, (PCWSTR pszPath, IBindCtx *pbc, GETPROPERTYSTOREFLAGS flags, REFIID riid, void **ppv));
+DefineWinAPI(HRESULT, SHGetPropertyStoreFromIDList, (LPITEMIDLIST pidl, GETPROPERTYSTOREFLAGS flags, REFIID riid, void **ppv));
 
 // Propsys.dll
 HRESULT (WINAPI *DPSFormatForDisplayAlloc)(REFPROPERTYKEY key, REFPROPVARIANT propvar, PROPDESC_FORMAT_FLAGS pdff, PWSTR *ppszDisplay);
@@ -387,7 +388,10 @@ LOADWINAPISTRUCT PROPSAPIS[] = {
 
 BOOL InitPropSys(void)
 {
-	GETDLLPROC(GetModuleHandle(StrShell32DLL), SHGetPropertyStoreFromParsingName);
+	HMODULE hShell32 = GetModuleHandle(StrShell32DLL);
+
+	GETDLLPROC(hShell32, SHGetPropertyStoreFromParsingName);
+	GETDLLPROC(hShell32, SHGetPropertyStoreFromIDList);
 	if ( DSHGetPropertyStoreFromParsingName == NULL ) return FALSE;
 	if ( DPSFormatForDisplayAlloc == NULL ){
 		hPropsys = LoadWinAPI("PROPSYS.DLL", NULL, PROPSAPIS, LOADWINAPI_LOAD);
@@ -412,8 +416,17 @@ void VistaProperties(const TCHAR *filename, ThSTRUCT *text)
 		if ( InitPropSys() == FALSE ) return;
 	}
 
+	if ( *filename != '#' ){
 #pragma warning(suppress: 6011) // InitPropSys Ç≈ DSHGetPropertyStoreFromParsingName Ç™èâä˙âª
-	hr = DSHGetPropertyStoreFromParsingName(propfilename, NULL, GPS_BESTEFFORT, XIID_IPropertyStore, reinterpret_cast<void**>(&ps));
+		hr = DSHGetPropertyStoreFromParsingName(propfilename, NULL, GPS_BESTEFFORT, XIID_IPropertyStore, reinterpret_cast<void**>(&ps));
+	}else{
+		hr = E_FAIL;
+	}
+	if ( FAILED(hr) ){
+		LPITEMIDLIST pidl = PathToPidl(filename);
+		hr = DSHGetPropertyStoreFromIDList(pidl, GPS_BESTEFFORT, XIID_IPropertyStore, reinterpret_cast<void**>(&ps));
+		FreePIDL(pidl);
+	}
 
 	if ( SUCCEEDED(hr) ){
 		DWORD propcount;
@@ -770,7 +783,7 @@ HRESULT GetLink(HWND hWnd, const TCHAR *LinkFile, TCHAR *Original)
 					if ( FAILED(hres) || (Original[0] == '\0') ){
 						LPITEMIDLIST idl;
 
-						if ( SUCCEEDED(psl->GetIDList(&idl)) ){
+						if ( SUCCEEDED(psl->GetIDList(&idl)) && (idl != NULL) ){
 							LPSHELLFOLDER pSF;
 
 							SHGetDesktopFolder(&pSF);

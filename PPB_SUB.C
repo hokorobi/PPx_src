@@ -44,12 +44,16 @@ DWORD_PTR USECDECL PPbInfoFunc(PPXAPPINFO *ppb, DWORD cmdID, PPXAPPINFOUNION *up
 					((PPXCMD_PPBEXEC *)uptr)->flag);
 			return ExitCode;
 
+		case PPXCMDID_PPBINSERTSEL:
+			Replace(uptr->str, REPLACE_SELECT);
+			return NO_ERROR;
+
 		case PPXCMDID_PPBINSERT:
-			Replace(uptr->str, FALSE);
+			Replace(uptr->str, 0);
 			return NO_ERROR;
 
 		case PPXCMDID_PPBREPLACE:
-			Replace(uptr->str, TRUE);
+			Replace(uptr->str, REPLACE_ALL);
 			return NO_ERROR;
 
 		case PPXCMDID_PPBSELECTTEXT:
@@ -121,7 +125,7 @@ DWORD_PTR USECDECL PPbExecInfoFunc(PPXAPPINFO *ppb, DWORD cmdID, PPXAPPINFOUNION
 			TCHAR *param;
 
 			param = uptr->str + tstrlen(uptr->str) + 1;
-			if ( !tstrcmp(uptr->str, T("PAUSE")) ){
+			if ( tstrcmp(uptr->str, T("PAUSE")) == 0 ){
 				PauseCommand(param);
 				break;
 			}

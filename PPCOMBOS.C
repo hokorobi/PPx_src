@@ -372,7 +372,7 @@ void CreateJobArea(void)
 	tmp[1] = 200;
 	GetCustTable(T("XC_tree"), buf, &tmp, sizeof(tmp));
 	Combo.Joblist.JobAreaWidth = tmp[1];
-	PPxCommonCommand(Combo.hWnd, (WPARAM)&Combo.Joblist.hWnd, K_GETJOBWINDOW);
+	PPxCommonCommand(Combo.hWnd, (LPARAM)&Combo.Joblist.hWnd, K_GETJOBWINDOW);
 	if ( Combo.Joblist.hWnd == NULL ){
 		PPxCommonCommand(Combo.hWnd, 1, K_GETJOBWINDOW);
 	}
@@ -792,9 +792,27 @@ void PaneColorCommand(int baseindex, const TCHAR *param)
 	SetTabColor(baseindex);
 }
 
+TCHAR PaneNextParam(const TCHAR **param)
+{
+	TCHAR c;
+
+	c = SkipSpace(param);
+	if ( (c != ':') && (c != ',') ) return c;
+	(*param)++;
+	return SkipSpace(param);
+}
+
+void PaneCloseCommand(int targetpane, int baseindex, int mode, const TCHAR *param)
+{
+	BOOL locked;
+
+	locked = (PaneNextParam(&param) == 'a') ? TRUE : FALSE;
+	ClosePanes(Combo.show[targetpane].tab.hWnd, baseindex, mode, locked);
+}
+
 ERRORCODE PaneCommand(const TCHAR *paramptr, int targetbaseindex)
 {
-	TCHAR cmdname[MAX_PATH], *p, c;
+	TCHAR cmdname[MAX_PATH], *dst;
 	const TCHAR *param;
 	int baseindex, targetpane = -1;
 
@@ -815,14 +833,12 @@ ERRORCODE PaneCommand(const TCHAR *paramptr, int targetbaseindex)
 	}
 
 	SkipSpace(&paramptr);
-	p = cmdname;
+	dst = cmdname;
 	while ( Isalpha(*paramptr) ){
-		*p++ = upper(*paramptr++);
+		*dst++ = upper(*paramptr++);
 	}
-	*p = '\0';
-	c = *paramptr;
-	if ( (c == ':') || (c == ',')) paramptr++;
-	SkipSpace(&paramptr);
+	*dst = '\0';
+	PaneNextParam(&paramptr);
 	param = paramptr;
 	baseindex = GetPaneBaseIndexParam(&param, &targetpane, targetbaseindex);
 	if ( baseindex < 0 ) return ERROR_INVALID_DATA;
@@ -840,17 +856,13 @@ ERRORCODE PaneCommand(const TCHAR *paramptr, int targetbaseindex)
 			if ( showindex >= 0 ) SetFocus(Combo.show[showindex].tab.hWnd);
 		}
 	}else if ( !tstrcmp(cmdname, T("COLOR")) ){
-		c = SkipSpace(&param);
-		if ( (c == ':') || (c == ',')) param++;
-
+		PaneNextParam(&param);
 		PaneColorCommand(baseindex, param);
 	}else if ( !tstrcmp(cmdname, T("SELECT")) || !tstrcmp(cmdname, T("CHANGE"))){
 //		ChangeReason = T("CmdSel/Chg");
-		c = SkipSpace(&param);
-		if ( (c == ':') || (c == ',')){
+		if ( PaneNextParam(&param) != '\0' ){
 			int bi, tp = targetpane;
 
-			param++;
 			bi = GetPaneBaseIndexParam(&param, &tp, targetbaseindex);
 			if ( bi < 0 ) return ERROR_INVALID_DATA;
 			targetpane = GetComboShowIndex(Combo.base[bi].hWnd);
@@ -867,11 +879,7 @@ ERRORCODE PaneCommand(const TCHAR *paramptr, int targetbaseindex)
 		int offset;
 
 //		ChangeReason = T("CmdShift");
-		c = SkipSpace(&param);
-		if ( (c == ':') || (c == ',')){
-			param++;
-			SkipSpace(&param);
-		}
+		PaneNextParam(&param);
 		offset = GetIntNumber(&param);
 
 		if ( !Combo.Tabs || !tstrcmp(cmdname, T("SHIFT")) ){ // ŽÀ‘Ì‚Ì‚ÝƒVƒtƒg
@@ -922,9 +930,7 @@ ERRORCODE PaneCommand(const TCHAR *paramptr, int targetbaseindex)
 	}else if ( !tstrcmp(cmdname, T("LOCK")) ){
 		int mode;
 
-		c = SkipSpace(&param);
-		if ( (c == ':') || (c == ',')) param++;
-
+		PaneNextParam(&param);
 		mode = GetStringCommand(&param, T("OFF\0") T("ON\0"));
 		if ( Combo.base[baseindex].cinfo != NULL ){
 			if ( mode < 0 ) mode = !Combo.base[baseindex].cinfo->ChdirLock;
@@ -939,14 +945,14 @@ ERRORCODE PaneCommand(const TCHAR *paramptr, int targetbaseindex)
 	}else if ( !tstrcmp(cmdname, T("SWAPTAB")) ){
 		PostMessage(Combo.base[baseindex].hWnd, WM_PPXCOMMAND, K_raw | 'G', 0);
 	}else if ( !tstrcmp(cmdname, T("CLOSELEFT")) ){
-		ClosePanes(Combo.show[targetpane].tab.hWnd, baseindex, -1);
+		PaneCloseCommand(targetpane, baseindex, -1, param);
 	}else if ( !tstrcmp(cmdname, T("CLOSEPANE")) ){
-		ClosePanes(Combo.show[targetpane].tab.hWnd, baseindex, 0);
+		PaneCloseCommand(targetpane, baseindex, 0, param);
 	}else if ( !tstrcmp(cmdname, T("CLOSERIGHT")) ){
-		ClosePanes(Combo.show[targetpane].tab.hWnd, baseindex, 1);
+		PaneCloseCommand(targetpane, baseindex, 1, param);
 	}else if ( !tstrcmp(cmdname, T("CLOSEOTHER")) ){
-		ClosePanes(Combo.show[targetpane].tab.hWnd, baseindex, 1);
-		ClosePanes(Combo.show[targetpane].tab.hWnd, baseindex, -1);
+		PaneCloseCommand(targetpane, baseindex, 1, param);
+		PaneCloseCommand(targetpane, baseindex, -1, param);
 //	}else if ( !tstrcmp(cmdname, T("TABTEXT")) ){
 //	}else if ( !tstrcmp(cmdname, T("COLOR")) ){
 	}else if ( !tstrcmp(cmdname, T("NEWPANE")) ){
