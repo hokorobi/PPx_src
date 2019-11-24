@@ -57,16 +57,24 @@ typedef struct {
 
 void PPcDeleteFile(PPC_APPINFO *cinfo, DWORD *X_wdel);
 
+#if !NODLL
 IID XIID_IFileOperation = xIID_IFileOperation;
-CLSID XCLSID_IFileOperation = {0x3ad05575, 0x8857, 0x4850, {0x92, 0x77, 0x11, 0xb8, 0x5b, 0xdb, 0x8e, 0x09}};
+CLSID XCLSID_IFileOperation = xCLSID_IFileOperation;
+#else
+extern IID XIID_IFileOperation;
+extern CLSID XCLSID_IFileOperation;
+#endif
+
+#define FO__NEWFOLDER	5 // V‹Kì¬
+#ifndef SFOERROR_OK
+	#define SFOERROR_OK		0
+	#define SFOERROR_SHFO	1
+	#define SFOERROR_IFO	2
+	#define SFOERROR_BADNEW	3
+#endif
 
 DefineWinAPI(int, SHFileOperation, (LPSHFILEOPSTRUCT)) = NULL;
-#define FO__NEWFOLDER	5
 
-#define SFOERROR_OK		0
-#define SFOERROR_SHFO	1
-#define SFOERROR_IFO	2
-#define SFOERROR_BADNEW	3
 #define PPcEnumInfoFunc(func, str, work) ((work)->buffer = str, cinfo->info.Function(&cinfo->info, func, work))
 
 int SxFileOperation(PPC_APPINFO *cinfo, SHFILEOPSTRUCT *fileop)
@@ -289,7 +297,7 @@ ERRORCODE PPC_ExplorerCopy(PPC_APPINFO *cinfo, BOOL move)
 		ERRORCODE result;
 
 		result = GetLastError();
-		if ( result != ERROR_NOT_READY){
+		if ( result != ERROR_NOT_READY ){
 			if ( PMessageBox(cinfo->info.hWnd, MES_QCRD,
 						T("File operation warning"), MB_OKCANCEL) != IDOK ){
 				return ERROR_CANCELLED;
@@ -699,7 +707,9 @@ int RenameMain(PPC_APPINFO *cinfo, ENTRYCELL *cell, BOOL continuous)
 		result = tInputEx(&tinput);
 		if ( result <= 0 ) return result;
 
-		if (cinfo->RealPath[0] == '?'){
+		// SHN Œ`Ž®‚Å‚Ì–¼‘O•ÏX
+		// ¦ VFSDT_ZIPFOLDER ‚Æ‚©‚Í‘Î‰ž‚µ‚Ä‚¢‚È‚¢
+		if ( cinfo->RealPath[0] == '?' ){
 			LPITEMIDLIST idl, newidl;
 			LPSHELLFOLDER pSF;
 		#ifndef UNICODE
@@ -817,7 +827,7 @@ ERRORCODE PPC_Rename(PPC_APPINFO *cinfo, BOOL continuous)
 		result = RenameMain(cinfo, &CEL(cinfo->e.cellN), continuous);
 		// result ... -(K_c | 'R') Ø‘Ö / -1 Ž¸”s / 0 ’†Ž~ / 1 ¬Œ÷(OK) / IDB_PREV / IDB_NEXT
 		EndCellEdit(cinfo);
-		if ( result == -(K_c | 'R') ){
+		if ( result == -(int)(K_c | 'R') ){
 			continuous = !continuous;
 			continue;
 		}
@@ -928,7 +938,9 @@ ERRORCODE PPC_MakeDir(PPC_APPINFO *cinfo)
 	tinput.title	= MES_TMKD;
 	tinput.buff		= target;
 	tinput.size		= TSIZEOF(target);
-	tinput.flag		= TIEX_USEINFO | TIEX_SINGLEREF | TIEX_FIXFORPATH;
+	tinput.flag		= TIEX_USEINFO | TIEX_SINGLEREF | TIEX_FIXFORPATH | TIEX_INSTRSEL | TIEX_USESELECT;
+	tinput.firstC	= 0;
+	tinput.lastC	= EC_LAST;
 	tinput.info		= &cinfo->info;
 	if ( tInputEx(&tinput) <= 0 ){
 		return ERROR_CANCELLED;
@@ -1194,7 +1206,7 @@ ERRORCODE USEFASTCALL MakeEntryMain(PPC_APPINFO *cinfo, int type, TCHAR *name)
 		tinput.title	= MES_TMKF;
 		tinput.buff		= buf;
 		tinput.size		= VFPS;
-		tinput.flag		= TIEX_USESELECT | TIEX_USEINFO | TIEX_SINGLEREF | TIEX_FIXFORPATH;
+		tinput.flag		= TIEX_USESELECT | TIEX_USEINFO | TIEX_SINGLEREF | TIEX_FIXFORPATH | TIEX_INSTRSEL;
 		tinput.firstC	= 0;
 		tinput.lastC	= FindExtSeparator(name);
 		tinput.info		= &cinfo->info;

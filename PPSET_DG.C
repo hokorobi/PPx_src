@@ -68,6 +68,7 @@ INT_PTR CALLBACK SetTypeDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam
 					 ((XX_setupedPPx[0] != '\0') && (XX_setupedPPx[0] != '?'));
 			EnableWindow(GetDlgItem(hDlg, IDR_UPDATE), enablestate);
 			EnableWindow(GetDlgItem(hDlg, IDR_CHECKUPDATE), enablestate);
+			EnableWindow(GetDlgItem(hDlg, IDX_TESTVER), enablestate);
 			EnableWindow(GetDlgItem(hDlg, IDR_UNINST), enablestate);
 			CheckDlgButtons(hDlg, IDR_AUTOINST, IDR_UNINST, XX_setupmode);
 			break;

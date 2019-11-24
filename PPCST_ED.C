@@ -2,7 +2,6 @@
 	Paper Plane xUI	customizer	その他 シート - PPc 表示書式
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include <shlobj.h>
 #include "PPX.H"
 #include "VFS.H"
@@ -424,7 +423,7 @@ void InitDispFormat(HWND hDlg, const TCHAR *key)
 		}
 		if ( (formc == 'w') || (formc == 'W') ){
 			setflag(param, (formc == 'w') ? FIXFRAME : FIXLENGTH ) ;
-			param = param | (GetNumber(&src) << 16);
+			param = param | (GetDwordNumber(&src) << 16);
 			formc = *src++;
 		}
 
@@ -608,7 +607,7 @@ BOOL ModifyDispColumnFormat(HWND hDlg, HWND hCBwnd)
 	HRESULT ComInitResult;
 	#define MenuFirstID 1
 
-	index = SendDlgItemMessage(hDlg, IDL_DFOMAT, LB_GETCURSEL, 0, 0);
+	index = (int)SendDlgItemMessage(hDlg, IDL_DFOMAT, LB_GETCURSEL, 0, 0);
 	if ( index == LB_ERR ) return TRUE; // エラーなので無視させる
 
 	if ( dfitem[SendDlgItemMessage(hDlg, IDL_DFOMAT, LB_GETITEMDATA, index, 0) & PARAMMASK].param[0].type != DFP_COLUMN ){

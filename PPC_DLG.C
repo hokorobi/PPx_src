@@ -2,7 +2,6 @@
 	Paper Plane cUI								各種ダイアログボックス
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include "PPX.H"
 #include "VFS.H"
 #include "PPC_STRU.H"
@@ -485,8 +484,24 @@ DWORD USEFASTCALL GetFileMaskAttr(HWND hDlg)
 
 #define REALTIMEMASKLIMIT(cinfo) ((cinfo)->e.cellDataMax > (int)(OSver.dwMajorVersion * 3000 - 8000)) // Ver4:4000 5:7000 6:10000
 
-const DWORD HideMaskItem[] = {IDX_MASK_RTM, IDX_MASK_MODE, IDG_FOP_ATTR,
+const DWORD HideMaskItemList[] = {IDX_MASK_RTM, IDX_MASK_MODE, IDG_FOP_ATTR,
 		IDX_FOP_RONLY, IDX_FOP_SYSTEM, IDX_FOP_HIDE, IDX_FOP_ARC, IDX_MASK_DIR, 0};
+
+void HideMaskItem(HWND hDlg, FILEMASKDIALOGSTRUCT *PFS)
+{
+	const DWORD *item = HideMaskItemList;
+	int showstate = SW_HIDE;
+
+	if ( IsTrue(PFS->maskmode) ){ // ファイルマスク
+		item += 2;
+		if ( (PFS->mode == DSMD_TEMP) || (PFS->mode == DSMD_REGID) ){
+			showstate = SW_SHOWNOACTIVATE;
+		}
+	}
+	for ( ; *item != 0 ; item++ ){
+		ShowWindow(GetDlgItem(hDlg, *item), showstate);
+	}
+}
 
 INT_PTR CALLBACK FileMaskDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -503,7 +518,7 @@ INT_PTR CALLBACK FileMaskDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			SetWindowText(hDlg, MessageText((TCHAR *)PFS->title));
 
 			GetCustData(PFS->settingkey, &PFS->option, sizeof(PFS->option));
-			if ( PFS->tempmode && PFS->option.dirmask ){
+			if ( (PFS->mode == DSMD_TEMP) && PFS->option.dirmask ){
 				setflag(PFS->mask->attr, MASKEXTATTR_DIR);
 			}
 
@@ -514,14 +529,9 @@ INT_PTR CALLBACK FileMaskDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				SetAttibuteSettings(hDlg, PFS->mask->attr ^ BADATTR);
 				CheckDlgButton(hDlg, IDX_MASK_RTM, PFS->option.realtime);
 				EnableDlgWindow(hDlg, IDX_MASK_RTM, !REALTIMEMASKLIMIT(PFS->cinfo));
-				CheckDlgButton(hDlg, IDX_MASK_MODE, PFS->tempmode);
-			}else{ // ファイルマーク
-				const DWORD *item = HideMaskItem;
-
-				for ( ; *item != 0 ; item++ ){
-					ShowWindow(GetDlgItem(hDlg, *item), SW_HIDE);
-				}
+				SetMaskTarget(hDlg, PFS);
 			}
+			HideMaskItem(hDlg, PFS);
 
 			PFS->hEdWnd = PPxRegistExEdit(&PFS->cinfo->info,
 					GetDlgItem(hDlg, IDE_INPUT_LINE), TSIZEOF(PFS->mask->file),
@@ -583,7 +593,7 @@ INT_PTR CALLBACK FileMaskDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					break;
 
 				case IDX_MASK_DIR:
-					if ( PFS->tempmode == 0 ) break; // 保持ソートでは記憶しない
+					if ( PFS->mode != DSMD_TEMP ) break; // 保持ソートでは記憶しない
 					PFS->option.dirmask = IsDlgButtonChecked(hDlg, IDX_MASK_DIR);
 				// IDX_MASK_WORDMATCH/IDX_MASK_RTM へ
 				case IDX_MASK_WORDMATCH:
@@ -599,7 +609,10 @@ INT_PTR CALLBACK FileMaskDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 					break;
 
 				case IDX_MASK_MODE:
-					PFS->tempmode = IsDlgButtonChecked(hDlg, IDX_MASK_MODE);
+					if ( HIWORD(wParam) == BN_CLICKED ){
+						MaskTargetMenu(hDlg, (HWND)lParam, PFS);
+						HideMaskItem(hDlg, PFS);
+					}
 					break;
 
 				case IDQ_GETDIALOGID:

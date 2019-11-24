@@ -487,7 +487,7 @@ void USEFASTCALL DoOutOfRange(PPC_APPINFO *cinfo, int type, int offset)
 			PPC_UpDir(cinfo);
 			break;
 		case OUTTYPE_DRIVE:		// \[L]
-			PPC_DriveJump(cinfo);
+			PPC_DriveJump(cinfo, FALSE);
 			break;
 		case OUTTYPE_FDRIVE:		// ƒhƒ‰ƒCƒuˆÚ“®
 			JumpNextDrive(cinfo, offset > 0 ? -1 : 1);

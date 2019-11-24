@@ -3,14 +3,14 @@
 -----------------------------------------------------------------------------*/
 #define ONVFSDLL		// VFS.H の DLL export 指定
 #include "WINAPI.H"
-#include <windowsx.h>
 #include <shlobj.h>
+#include "WINOLE.H"
 #include "PPX.H"
-#include "PPCOMMON.RH"
-#include "PPD_DEF.H"
 #include "VFS.H"
+#include "PPD_DEF.H"
 #include "VFS_STRU.H"
 #include "VFS_FOP.H"
+#include "PPCOMMON.RH"
 #include "FATTIME.H"
 #pragma hdrstop
 
@@ -386,7 +386,7 @@ void CreateFWriteLogWindow(FOPSTRUCT *FS)
 	hWnd = FS->hEWnd = CreateWindow(EDITstr, NilStr, WS_CHILD | WS_VSCROLL |
 			ES_AUTOVSCROLL | ES_NOHIDESEL | ES_LEFT | ES_MULTILINE,
 			box.left, box.top, box.right, box.bottom, FS->hDlg,
-			(HMENU)IDE_FOP_LOG, DLLhInst, 0);
+			CHILDWNDID(IDE_FOP_LOG), DLLhInst, 0);
 	PPxRegistExEdit(NULL, hWnd, 0x100000, NULL, 0, 0, PPXEDIT_NOWORDBREAK);
 	SendMessage(hWnd, WM_SETFONT, SendMessage(FS->hDlg, WM_GETFONT, 0, 0), TRUE);
 	*FS->hLogWnd = hWnd;
@@ -461,7 +461,7 @@ void FopLog(FOPSTRUCT *FS, const TCHAR *src, const TCHAR *dst, enum foplogtypes 
 				wsprintf(buf, T("%s\t%s\r\n") STRLOGDEST T("\t%s\r\n"), loghead[type], src, dst);
 		}
 												// 内容を出力 -----------------
-		WriteFile(FS->hUndoLogFile, buf, TSTRLENGTH(buf), &size, NULL);
+		WriteFile(FS->hUndoLogFile, buf, TSTRLENGTH32(buf), &size, NULL);
 	}
 
 	if ( FS->opt.fop.flags & VFSFOP_OPTFLAG_LOGWINDOW ){
@@ -1210,17 +1210,17 @@ BOOL CountMain(FOPSTRUCT *FS, const TCHAR *current, const TCHAR *destdir)
 	GetCustData(T("X_cntt"), &X_cntt, sizeof X_cntt);
 	if ( X_cntt <= 0 ) return TRUE;
 
-	if ( (FS->opt.dtype != VFSDT_PATH) &&
-		 (FS->opt.dtype != VFSDT_DLIST) &&
-		 (FS->opt.dtype != VFSDT_SHN) &&
-		 (FS->opt.dtype != VFSDT_FATIMG) &&
-		 (FS->opt.dtype != VFSDT_CDIMG) &&
-		 (FS->opt.dtype != VFSDT_STREAM) ){
+	if ( (FS->opt.SrcDtype != VFSDT_PATH) &&
+		 (FS->opt.SrcDtype != VFSDT_DLIST) &&
+		 (FS->opt.SrcDtype != VFSDT_SHN) &&
+		 (FS->opt.SrcDtype != VFSDT_FATIMG) &&
+		 (FS->opt.SrcDtype != VFSDT_CDIMG) &&
+		 (FS->opt.SrcDtype != VFSDT_STREAM) ){
 		return TRUE;
 	}
 
 	if ( !(FS->opt.fop.flags & VFSFOP_OPTFLAG_NOFIRSTEXIST) &&
-		 (FS->opt.dtype == VFSDT_PATH) &&
+		 (FS->opt.SrcDtype == VFSDT_PATH) &&
 		 (destdir != NULL) &&
 		 !FS->opt.fop.sameSW ){
 		CatPath(dest, (TCHAR *)destdir, NilStr);
@@ -1239,7 +1239,7 @@ BOOL CountMain(FOPSTRUCT *FS, const TCHAR *current, const TCHAR *destdir)
 		HANDLE hFF;
 
 		if ( IsParentDirectory(p) ) continue;
-		if ( FS->opt.dtype == VFSDT_SHN ){
+		if ( FS->opt.SrcDtype == VFSDT_SHN ){
 			tstrcpy(src, p);
 		}else{
 			if ( VFSFullPath(src, (TCHAR *)p, current) == NULL ){
@@ -1303,6 +1303,7 @@ void ReleaseStartMutex(FOPSTRUCT *FS)
 
 void USEFASTCALL EndOperation(FOPSTRUCT *FS)
 {
+	if ( FS->ifo != NULL ) FreeIfo(FS);
 	DisplaySrcNameNow(FS); // 処理ファイル名が未表示なら表示
 	if ( FS->hUndoLogFile != NULL ) CloseHandle(FS->hUndoLogFile);
 	if ( FS->opt.fop.flags & VFSFOP_OPTFLAG_LOGWINDOW ){
@@ -1584,15 +1585,9 @@ BOOL FileImageOperation(FOPSTRUCT *FS, TCHAR *srcDIR, const TCHAR *dstDIR)
 	return TRUE;
 }
 
-
-VFSDLL BOOL PPXAPI PPxFileOperation(HWND hWnd, VFSFILEOPERATION *fileop)
+HRESULT InitFopClasses(void)
 {
-	FILEOPERATIONDLGBOXINITPARAMS fopip;
-	BOOL result;
 	WNDCLASS wcClass;
-	HRESULT ComInitResult;
-
-	fileop->hLogWnd = NULL;
 											// クラスを登録する
 	wcClass.style			= CS_PARENTDC;
 	wcClass.lpfnWndProc		= PPxStaticProc;
@@ -1601,7 +1596,7 @@ VFSDLL BOOL PPXAPI PPxFileOperation(HWND hWnd, VFSFILEOPERATION *fileop)
 	wcClass.hInstance		= DLLhInst;
 	wcClass.hIcon			= NULL;
 	wcClass.hCursor			= LoadCursor(NULL, IDC_ARROW);
-	wcClass.hbrBackground	= (HBRUSH)(COLOR_3DFACE + 1);
+	wcClass.hbrBackground	= WNDCLASSBRUSH(COLOR_3DFACE + 1);
 	wcClass.lpszMenuName	= NULL;
 	wcClass.lpszClassName	= T(PPXSTATICCLASS);
 	RegisterClass(&wcClass);
@@ -1613,21 +1608,33 @@ VFSDLL BOOL PPXAPI PPxFileOperation(HWND hWnd, VFSFILEOPERATION *fileop)
 //	wcClass.hInstance		= DLLhInst; // ↑と同じ
 	wcClass.hIcon			= LoadIcon(DLLhInst, MAKEINTRESOURCE(Ic_FOP));
 //	wcClass.hCursor			= LoadCursor(NULL, IDC_ARROW); // ↑と同じ
-//	wcClass.hbrBackground	= (HBRUSH)(COLOR_3DFACE + 1); // ↑と同じ
+//	wcClass.hbrBackground	= WNDCLASSBRUSH(COLOR_3DFACE + 1); // ↑と同じ
 //	wcClass.lpszMenuName	= NULL; // ↑と同じ
 	wcClass.lpszClassName	= T(PPFileOpWinClass);
 	RegisterClass(&wcClass);
 
 	GetCustData(T("X_flst"), &X_flst, sizeof(X_flst));
-	if ( X_flst[0] == 2 ){
-		ComInitResult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	if ( X_flst[0] == 2 ){ // OS 自動補完を使うときは初期化
+		return CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	}else{
+		return E_FAIL;
 	}
+}
+
+VFSDLL BOOL PPXAPI PPxFileOperation(HWND hWnd, VFSFILEOPERATION *fileop)
+{
+	FILEOPERATIONDLGBOXINITPARAMS fopip;
+	BOOL result;
+	HRESULT ComInitResult;
+
+	fileop->hLogWnd = NULL;
+	ComInitResult = InitFopClasses();
 
 	fopip.fileop = fileop;
 	fopip.FS = HeapAlloc(DLLheap, 0, sizeof(FOPSTRUCT));
 	if ( fopip.FS != NULL ){
-		result = (BOOL)PPxDialogBoxParam(DLLhInst, MAKEINTRESOURCE(IDD_FOP), hWnd,
-				FileOperationDlgBox, (LPARAM)&fopip);
+		result = (BOOL)PPxDialogBoxParam(DLLhInst, MAKEINTRESOURCE(IDD_FOP),
+				hWnd, FileOperationDlgBox, (LPARAM)&fopip);
 		// メモリ解放
 		if ( IsTrue(fopip.FS->opt.AllocFiles) && (fopip.FS->opt.files != NULL) ){
 			// ThFree(fopip.FS->opt.files) 相当
@@ -1649,7 +1656,7 @@ VFSDLL BOOL PPXAPI PPxFileOperation(HWND hWnd, VFSFILEOPERATION *fileop)
 	if ( fileop->flags & VFSFOP_FREEFILES ){
 		HeapFree(ProcHeap, 0, (LPVOID)fileop->files);
 	}
-	if ( (X_flst[0] == 2) && SUCCEEDED(ComInitResult) ) CoUninitialize();
+	if ( SUCCEEDED(ComInitResult) ) CoUninitialize();
 	return result;
 }
 
@@ -1825,6 +1832,8 @@ BOOL OperationStart(FOPSTRUCT *FS)
 	const TCHAR *fileptr;
 	HWND hDlg = FS->hDlg;
 
+	CheckAndInitIfo(FS);
+
 	FS->errorcount = 0;
 	memset(&FS->progs.info, 0, sizeof(FS->progs.info));
 	FS->flat = FS->opt.fop.flags & VFSFOP_OPTFLAG_FLATMODE;
@@ -1906,23 +1915,23 @@ BOOL OperationStart(FOPSTRUCT *FS)
 		}
 		FS->DelStat.flags |= (FS->opt.fop.flags & (3 << VFSFOP_OPTFLAG_SYMDEL_SHIFT)) >> (VFSFOP_OPTFLAG_SYMDEL_SHIFT - VFSDE_SYMDEL_SHIFT);
 	}
-	if ( FS->opt.dtype == VFSDT_UNKNOWN ){
-		VFSGetDriveType(FS->opt.files, &FS->opt.dtype, 0);
-		if ( FS->opt.dtype == VFSDT_UNKNOWN ){
-			VFSGetDriveType(FS->opt.source, &FS->opt.dtype, 0);
-		}else if ( FS->opt.dtype == VFSPT_RAWDISK ){
+	if ( FS->opt.SrcDtype == VFSDT_UNKNOWN ){
+		VFSGetDriveType(FS->opt.files, &FS->opt.SrcDtype, 0);
+		if ( FS->opt.SrcDtype == VFSDT_UNKNOWN ){
+			VFSGetDriveType(FS->opt.source, &FS->opt.SrcDtype, 0);
+		}else if ( FS->opt.SrcDtype == VFSPT_RAWDISK ){
 			tstrcpy(FS->opt.source, FS->opt.files);
 		}
-		if ( FS->opt.dtype == VFSPT_UNC ){
-			FS->opt.dtype = VFSDT_PATH;
-		}else if ( FS->opt.dtype < VFSDT_SHN ){
-			FS->opt.dtype = VFSDT_PATH;
+		if ( FS->opt.SrcDtype == VFSPT_UNC ){
+			FS->opt.SrcDtype = VFSDT_PATH;
+		}else if ( FS->opt.SrcDtype < VFSDT_SHN ){
+			FS->opt.SrcDtype = VFSDT_PATH;
 		}
 	}
 										// Window サイズ変更 ----------
 	SetWindowY(FS, WINY_STAT);
 										// コピー元のパス形成
-	if ( FS->opt.dtype != VFSDT_SHN ){
+	if ( FS->opt.SrcDtype != VFSDT_SHN ){
 		VFSFixPath(srcDIR, FS->opt.source, NULL, VFSFIX_SEPARATOR | VFSFIX_FULLPATH | VFSFIX_NOFIXEDGE);
 		srcdir = VFSGetDriveType(srcDIR, &srctype, NULL);
 		if ( srcdir == NULL ){
@@ -1952,7 +1961,20 @@ BOOL OperationStart(FOPSTRUCT *FS)
 		}
 	}
 	if ( !(FS->opt.fopflags & VFSFOP_AUTOSTART) ){
+		TCHAR *lastp = NULL;
+
+		// ヒストリ登録内容を必ず末尾「\」にする
+		if ( (dsttype == VFSPT_DRIVE) || (dsttype == VFSPT_UNC) ){
+			lastp = VFSFindLastEntry(dstDIR);
+			if ( *lastp == '\\' ) lastp++;
+			if ( *lastp != '\0' ){
+				lastp += tstrlen(lastp);
+				*lastp = '\\';
+				*(lastp + 1) = '\0';
+			}
+		}
 		WriteHistory(PPXH_DIR, dstDIR, 0, NULL);
+		if ( lastp != NULL ) *lastp = '\0';
 	}
 
 	SetWindowText(hDlg, dstDIR);
@@ -2038,7 +2060,12 @@ BOOL OperationStart(FOPSTRUCT *FS)
 			DWORD result;
 
 			result = GetLastError();
-			if ( result != ERROR_NOT_READY ){
+			// dstDIR が "\\.\Volume{…}" とかの場合、この状態になる
+			if ( (result == ERROR_INVALID_PARAMETER) && (dstDIR[0] == '\\') ){
+				result = NO_ERROR;
+			}
+
+			if ( (result != ERROR_NOT_READY) && (result != NO_ERROR) ){
 			// 実際は ERROR_PATH_NOT_FOUND が多いらしい…TT
 				TCHAR *p;
 
@@ -2117,26 +2144,45 @@ BOOL OperationStart(FOPSTRUCT *FS)
 	UpdateWindow(hDlg);
 
 							// (複写&削除)か移動かを判断
-	FS->opt.OnDriveMove = (FS->opt.fop.mode == FOPMODE_MOVE) &&
-					 ( ((srcdir - srcDIR) == (dstdir - dstDIR)) &&
-						!memcmp(srcDIR, dstDIR, TSTROFF(srcdir - srcDIR)) );
+	FS->opt.OnDriveMove =
+			(FS->opt.fop.mode == FOPMODE_MOVE) &&
+			( ((srcdir - srcDIR) == (dstdir - dstDIR)) &&
+					!memcmp(srcDIR, dstDIR, TSTROFF(srcdir - srcDIR)) );
 
-							// 名前変更に正規表現を使うか
-	if ( !(FS->opt.fop.filter & VFSFOP_FILTER_EXTRACTNAME) && tstrchr(FS->opt.rename, '/') ){
-		if ( FALSE == InitRegularExpressionReplace( // ※ FS->opt.rename 破壊
-				&FS->opt.rexps, FS->opt.rename, TRUE) ){
-			EndOperation(FS);
+	// 名前加工を行うかを確認する
+	FS->opt.UseNameFilter = 0;
+
+	if ( FS->opt.rename[0] != '\0' ){
+		setflag(FS->opt.UseNameFilter, NameFilter_Use | NameFilter_Rename);
+										// マクロ展開
+		if ( (FS->opt.rename[0] == RENAME_EXTRACTNAME) ||
+			 (FS->opt.fop.filter & VFSFOP_FILTER_EXTRACTNAME) ){
+			setflag(FS->opt.UseNameFilter, NameFilter_ExtractName);
+										// 名前変更に正規表現を使うか
+		}else if ( tstrchr(FS->opt.rename, '/') != NULL ){
+			if ( FALSE == InitRegularExpressionReplace( // ※ FS->opt.rename 破壊
+					&FS->opt.rexps, FS->opt.rename, TRUE) ){
+				EndOperation(FS);
 			return FALSE;
+			}
 		}
+	}
+	if ( IsTrue(FS->opt.fop.delspc) ||
+		 IsTrue(FS->opt.fop.sfn) ||
+		 (FS->opt.fop.chrcase != 0) ||
+		 (FS->opt.fop.filter & VFSFOP_FILTER_DELNUM) ){
+		setflag(FS->opt.UseNameFilter, NameFilter_Use);
 	}
 
 	FS->opt.burst = FS->opt.fop.useburst;
 
-	if ( (FS->opt.dtype == VFSDT_ZIPFOLDER) ||
-		 (FS->opt.dtype == VFSDT_LZHFOLDER) ||
-		 (FS->opt.dtype == VFSDT_CABFOLDER) ||
-		 (FS->opt.dtype == VFSDT_FATIMG)  || (FS->opt.dtype == VFSDT_CDIMG) ||
-		 (FS->opt.dtype == VFSDT_FATDISK) || (FS->opt.dtype == VFSDT_CDDISK) ){
+	if ( (FS->opt.SrcDtype == VFSDT_ZIPFOLDER) ||
+		 (FS->opt.SrcDtype == VFSDT_LZHFOLDER) ||
+		 (FS->opt.SrcDtype == VFSDT_CABFOLDER) ||
+		 (FS->opt.SrcDtype == VFSDT_FATIMG)  ||
+		 (FS->opt.SrcDtype == VFSDT_CDIMG) ||
+		 (FS->opt.SrcDtype == VFSDT_FATDISK) ||
+		 (FS->opt.SrcDtype == VFSDT_CDDISK) ){
 		ImgExtract(FS, srcDIR, dstDIR);
 		EndOperation(FS);
 		ReleaseStartMutex(FS);
@@ -2171,7 +2217,8 @@ BOOL OperationStart(FOPSTRUCT *FS)
 	FopLog(FS, srcDIR, dstDIR, LOG_DIR);
 
 	// srcDIR が書庫ファイルの時の展開処理
-	if ( (FS->opt.dtype != VFSDT_SHN) && (FS->opt.dtype != VFSDT_LFILE) ){
+	if ( (FS->opt.SrcDtype != VFSDT_SHN) &&
+		 (FS->opt.SrcDtype != VFSDT_LFILE) ){
 		DWORD srcdirattr;
 
 		srcdirattr = GetFileAttributesL(srcDIR);
@@ -2187,7 +2234,7 @@ BOOL OperationStart(FOPSTRUCT *FS)
 		 fileptr = fileptr + tstrlen(fileptr) + 1, FS->progs.info.mark++ ){
 
 		if ( IsParentDirectory(fileptr) ) continue;
-		if ( FS->opt.dtype == VFSDT_SHN ){
+		if ( FS->opt.SrcDtype == VFSDT_SHN ){
 			tstrcpy(srcPath, fileptr);
 		}else{
 			if ( VFSFullPath(srcPath, (TCHAR *)fileptr, srcDIR) == NULL ){
@@ -2250,7 +2297,7 @@ BOOL OperationStart(FOPSTRUCT *FS)
 			}
 			if ( attr & FILE_ATTRIBUTE_DIRECTORY ){
 				if ( !(FS->opt.fop.filter & VFSFOP_FILTER_NODIRFILTER) ){
-					if ( LFNfilter(&FS->opt, dstPath) != NO_ERROR ) break;
+					if ( LFNfilter(&FS->opt, dstPath) > ERROR_NO_MORE_FILES ) break;
 				}
 				if ( IsTrue(FS->flat) ) tstrcpy(dstPath, dstDIR);
 				TinyDisplayProgress(FS);

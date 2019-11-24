@@ -16,13 +16,13 @@
 	#ifdef _M_ARM64
 		#define BITSTRING "ARM64"
 	#else
-		#define BITSTRING "Win64"
+		#define BITSTRING "x64"
 	#endif
 #else
 	#ifdef _M_ARM
 		#define BITSTRING "ARM32"
 	#else
-		#define BITSTRING "Win32"
+		#define BITSTRING "x86"
 	#endif
 #endif
 
@@ -48,6 +48,7 @@
 #define WINTYPE_10_BUILD_RS4	17134 // 1803
 #define WINTYPE_10_BUILD_RS5	17763 // 1809 Server 2019 LTS / 2016
 #define WINTYPE_10_BUILD_19H1	18362 // 1903
+#define WINTYPE_10_BUILD_19H2	18363 // 1909
 
 #define KB		0x400		// 1KiB
 #define KBd		1000		// 1KB
@@ -237,8 +238,8 @@
 	#define tstrrchr	strrchrW
 	#define tstrstr	strstrW
 	#define tstrupr(str)	struprW(str)
-	#define TSTRSIZE(string)	ToSIZE32_T((tstrlen(string) + 1) * sizeof(TCHAR))
-	#define TSTRLENGTH(string)	ToSIZE32_T(tstrlen(string) * sizeof(TCHAR))
+	#define TSTRSIZE(string)	((tstrlen(string) + 1) * sizeof(TCHAR))
+	#define TSTRLENGTH(string)	(tstrlen(string) * sizeof(TCHAR))
 	#define TSTROFF(size)	((size) * sizeof(TCHAR))
 	#define TSIZEOF(size)	TSIZEOFW(size)
 	#define CF_TTEXT	CF_UNICODETEXT
@@ -349,6 +350,9 @@ typedef DWORD ERRORCODE;	// Win32API のエラーコード(GetLastError)
 #endif
 #define LPARAMtoPOINT(pos, lParam) {(pos).x=(int)(short)LOWORD(lParam);(pos).y=(int)(short)HIWORD(lParam);}
 #define GetMessagePosPoint(pos) {DWORD dpos = GetMessagePos();LPARAMtoPOINT(pos, dpos);}
+#define LOSHORTINT(lp) ((int)(short)LOWORD(lp))
+#define HISHORTINT(lp) ((int)(short)HIWORD(lp))
+#define CHILDWNDID(id) ((HMENU)(DWORD_PTR)(UINT)(id))
 
 #define Message(mes)	MessageBox(NULL, mes, NULL, MB_OK)
 #define MessageA(mes)	MessageBoxA(NULL, mes, NULL, MB_OK)
@@ -820,7 +824,6 @@ typedef struct {
 	#define FSCTL_DELETE_REPARSE_POINT	CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 43, METHOD_BUFFERED, FILE_SPECIAL_ACCESS)
 #endif
 
-#ifdef TOOLBARCLASSNAME
 //------------------------------------- ToolBar
 #ifndef TB_HITTEST
 #define TB_HITTEST (WM_USER + 69)
@@ -844,6 +847,7 @@ typedef struct {
 #define TB_GETMAXSIZE           (WM_USER + 83)
 #define TB_SETEXTENDEDSTYLE     (WM_USER + 84)
 
+#ifdef TOOLBARCLASSNAME
 #ifndef __GNUC__
 typedef struct tagNMTOOLBARA {
 	NMHDR	hdr;
@@ -875,8 +879,8 @@ typedef struct tagNMTOOLBARW {
 #define NMTOOLBAR   NMTOOLBARA
 #define LPNMTOOLBAR LPNMTOOLBARA
 #endif // UNICODE
-#endif // TBSTYLE_FLAT
 #endif // TOOLBARCLASSNAME
+#endif // TBSTYLE_FLAT
 
 #ifndef CCM_DPISCALE
 #define CCM_DPISCALE 0x200c
@@ -899,14 +903,70 @@ typedef XIExtractIcon * XLPEXTRACTICON;
 #define XLPEXTRACTICON LPEXTRACTICON
 #endif
 
-#if !defined(WM_GESTURENOTIFY) || defined(WINEGCC)
+// タッチ操作関係
+#if !defined(WM_GESTURENOTIFY)
 #define WM_GESTURE 0x0119
 #define WM_GESTURENOTIFY 0x011A
 #define WM_TOUCH 0x0240
+#endif
 
+#ifndef TOUCHEVENTF_MOVE
+#if !defined(WINEGCC) || (WINEGCC < 300) // Wine 3 は定数定義無しなのに構造体のみ定義されている
+DECLARE_HANDLE(HGESTUREINFO);
+typedef struct tagGESTUREINFO {
+	UINT cbSize;
+	DWORD dwFlags;
+	DWORD dwID;
+	HWND hwndTarget;
+	POINTS ptsLocation;
+	DWORD dwInstanceID;
+	DWORD dwSequenceID;
+	ULONGLONG ullArguments;
+	UINT cbExtraArgs;
+} GESTUREINFO, *PGESTUREINFO;
+typedef GESTUREINFO const * PCGESTUREINFO;
+
+typedef struct tagGESTURECONFIG {
+	DWORD dwID;
+	DWORD dwWant;
+	DWORD dwBlock;
+} GESTURECONFIG, *PGESTURECONFIG;
+
+DECLARE_HANDLE(HTOUCHINPUT);
+typedef struct tagTOUCHINPUT {
+	LONG x;
+	LONG y;
+	HANDLE hSource;
+	DWORD dwID;
+	DWORD dwFlags;
+	DWORD dwMask;
+	DWORD dwTime; // TOUCHINPUTMASKF_TIMEFROMSYSTEM
+	ULONG_PTR dwExtraInfo; // dwExtraInfo
+	DWORD cxContact; // 大きさ情報、TOUCHINPUTMASKF_CONTACTAREA
+	DWORD cyContact;
+} TOUCHINPUT, *PTOUCHINPUT;
+typedef TOUCHINPUT const * PCTOUCHINPUT;
+#endif
+#endif // TOUCHEVENTF_MOVE
+
+#ifndef GF_BEGIN
 #define GF_BEGIN   0x00000001
 #define GF_INERTIA 0x00000002
 #define GF_END     0x00000004
+
+#define TOUCHEVENTF_MOVE       0x01
+#define TOUCHEVENTF_DOWN       0x02
+#define TOUCHEVENTF_UP         0x04
+#define TOUCHEVENTF_INRANGE    0x08 // ホバー？
+#define TOUCHEVENTF_PRIMARY    0x10 // 1st
+#define TOUCHEVENTF_NOCOALESCE 0x20
+#define TOUCHEVENTF_PEN        0x40
+#define TOUCHEVENTF_PALM       0x80
+
+#define TOUCHINPUTMASKF_TIMEFROMSYSTEM 0x01 // dwTime
+#define TOUCHINPUTMASKF_EXTRAINFO      0x02 // dwExtraInfo
+#define TOUCHINPUTMASKF_CONTACTAREA    0x04 // cxContact, cyContact
+
 #define GID_BEGIN        1
 #define GID_END          2
 #define GID_ZOOM         3
@@ -924,49 +984,6 @@ typedef XIExtractIcon * XLPEXTRACTICON;
 #define GC_ROTATE                              0x01
 #define GC_TWOFINGERTAP                        0x01
 #define GC_PRESSANDTAP                         0x01
-
-typedef struct tagGESTUREINFO {
-	UINT cbSize;
-	DWORD dwFlags;
-	DWORD dwID;
-	HWND hwndTarget;
-	POINTS ptsLocation;
-	DWORD dwInstanceID;
-	DWORD dwSequenceID;
-	ULONGLONG ullArguments;
-	UINT cbExtraArgs;
-} GESTUREINFO, *PGESTUREINFO;
-typedef GESTUREINFO const * PCGESTUREINFO;
-
-DECLARE_HANDLE(HGESTUREINFO);
-
-#define TOUCHEVENTF_MOVE       0x01
-#define TOUCHEVENTF_DOWN       0x02
-#define TOUCHEVENTF_UP         0x04
-#define TOUCHEVENTF_INRANGE    0x08 // ホバー？
-#define TOUCHEVENTF_PRIMARY    0x10 // 1st
-#define TOUCHEVENTF_NOCOALESCE 0x20
-#define TOUCHEVENTF_PEN        0x40
-#define TOUCHEVENTF_PALM       0x80
-
-#define TOUCHINPUTMASKF_TIMEFROMSYSTEM 0x01 // dwTime
-#define TOUCHINPUTMASKF_EXTRAINFO      0x02 // dwExtraInfo
-#define TOUCHINPUTMASKF_CONTACTAREA    0x04 // cxContact, cyContact
-
-DECLARE_HANDLE(HTOUCHINPUT);
-typedef struct tagTOUCHINPUT {
-	LONG x;
-	LONG y;
-	HANDLE hSource;
-	DWORD dwID;
-	DWORD dwFlags;
-	DWORD dwMask;
-	DWORD dwTime; // TOUCHINPUTMASKF_TIMEFROMSYSTEM
-	ULONG_PTR dwExtraInfo; // dwExtraInfo
-	DWORD cxContact; // 大きさ情報、TOUCHINPUTMASKF_CONTACTAREA
-	DWORD cyContact;
-} TOUCHINPUT, *PTOUCHINPUT;
-typedef TOUCHINPUT const * PCTOUCHINPUT;
 #endif
 
 #ifndef SHCONTF_FASTITEMS
@@ -976,3 +993,4 @@ typedef TOUCHINPUT const * PCTOUCHINPUT;
 #ifndef IS_INTRESOURCE
 	#define IS_INTRESOURCE(_r) (((ULONG_PTR)(_r) >> 16) == 0)
 #endif
+#define WNDCLASSBRUSH(id) ((HBRUSH)(LONG_PTR)(id)) // WNCLASS のブラシに定数使う時用

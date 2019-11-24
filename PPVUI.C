@@ -2,7 +2,6 @@
 	Paper Plane viewUI											Main
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include <shlobj.h>
 #include "PPX.H"
 #include "VFS.H"
@@ -85,7 +84,7 @@ void GetSelectText(TCHAR *destptr)
 		ClipMem(&text, -1, -1);
 		src = text.p ? text.tm.p : NilStr;
 		dest = destptr;
-		maxptr = destptr + CMDLINESIZE / 2;
+		maxptr = destptr + CMDLINESIZE - 100;
 		while ( dest < maxptr ){
 			TCHAR c;
 
@@ -835,8 +834,7 @@ void CALLBACK DragProc(HWND hWnd, UINT msg, UINT_PTR id, DWORD work)
 			{
 				LPARAM lParam = TMAKELPARAM(pos.x, pos.y);
 				DxTransformPoint(DxDraw, &lParam);
-				pos.x = (short)LOWORD(lParam);
-				pos.y = (short)HIWORD(lParam);
+				LPARAMtoPOINT(pos, lParam);
 			}
 			#endif
 										// y 計算
@@ -1140,10 +1138,16 @@ void PPvMouseMove(HWND hWnd, MOUSESTATE *ms, LPARAM lParam)
 		return;
 	}
 	//---------------------------------- ウィンドウドラッグ(中ドラッグ)
-	if ( ms->PushButton == XV_DragWnd ){
-		SetWindowPos(hWnd, NULL,
-			winS.left + ms->MovedOffset.cx, winS.top + ms->MovedOffset.cy,
-			0, 0, SWP_NOSIZE | SWP_NOZORDER);
+	if ( ms->PushButton == XV_DragMov ){
+		if ( !(GetAsyncKeyState(VK_LBUTTON) & KEYSTATE_PUSH) &&
+			 !(GetAsyncKeyState(MBtoVK(XV_DragMov)) & KEYSTATE_PUSH) ){
+			PPxCancelMouseButton(ms);
+			ms->mode = MOUSEMODE_NONE;
+		}else{
+			SetWindowPos(hWnd, NULL,
+				winS.left + ms->MovedOffset.cx, winS.top + ms->MovedOffset.cy,
+				0, 0, SWP_NOSIZE | SWP_NOZORDER);
+		}
 		return;
 	}
 }
@@ -1259,7 +1263,7 @@ void PPvDownMouse(HWND hWnd, MOUSESTATE *ms, WPARAM wParam)
 		}
 
 		if ( (ms->mode == MOUSEMODE_PUSH) && (WinPos.show == SW_SHOWNORMAL) ){
-			ms->PushButton = XV_DragWnd;
+			ms->PushButton = XV_DragMov;
 		}
 		return;
 	}
@@ -1477,7 +1481,7 @@ void H_WheelMouse(PPV_APPINFO *vinfo, WPARAM wParam, LPARAM lParam)
 	POINT pos;
 
 	LPARAMtoPOINT(pos, lParam);
-	PPvMouseCommandPos(vinfo, &pos, ((short)HIWORD(wParam) < 0) ? T("H") : T("I"), pos.y);
+	PPvMouseCommandPos(vinfo, &pos, (HISHORTINT(wParam) < 0) ? T("H") : T("I"), pos.y);
 }
 
 LRESULT USEFASTCALL PPvWmCommand(HWND hWnd, WPARAM wParam, LPARAM lParam)
@@ -1815,8 +1819,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case WM_MOUSEACTIVATE:
-			if ( X_askp ){
-				if ( GetFocus() != hWnd ) return MA_ACTIVATEANDEAT;
+			if ( X_askp && (GetFocus() != hWnd) ){
+				PPxCancelMouseButton(&MouseStat);
+				return MA_ACTIVATEANDEAT;
 			}
 			if ( IsTrue(Embed) ) SetFocus(hWnd);
 			return DefWindowProc(hWnd, message, wParam, lParam);

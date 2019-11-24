@@ -2,7 +2,6 @@
 	Paper Plane xUI	customizer		テキスト形式ファイル操作シート
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include <shlobj.h>
 #include "PPX.H"
 #include "VFS.H"

@@ -2,7 +2,6 @@
 	Paper Plane vUI											～ ペースト処理 ～
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include <shlobj.h>
 #include "PPX.H"
 #include "VFS.H"

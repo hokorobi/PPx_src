@@ -35,7 +35,7 @@
 
 ・Visual C++
 
-	MAKEFILE内のUseBCCを 0 にすることで、CLを使って構築できます。
+	MAKEFILE 内の UseBCC を 0 にすることで、CLを使って構築できます。
 	以下の構成で確認しました。
 
 	Borland MAKE	Version 5.2
@@ -44,7 +44,7 @@
 	Microsoft Platform SDK for Windows Server 2003 SP1
 
 	また、添付 PPx.sln を使って Visual Studio 2008/2015 上でもビルドが
-	可能です。
+	可能です。Visual Studio 2017 以降は、VS2015 を使用してください。
 
 
 ・64bit
@@ -53,17 +53,6 @@
 
 	・Visual Studio 2008 + Borland MAKE の場合は、
 	「vcvarsall.bat amd64」を実行した後、Borland MAKE を実行します。
-
-	・以下の VC Tool Kit + Platform SDK 2003 の場合、SDK 内の
-	SetEnv.Cmd を「SetEnv.Cmd /XP64 /RETAIL」で実行した後、
-	makefile 内の VCTOOLKIT を 1 に設定した上で Borland MAKE を
-	実行します。
-
-	Borland MAKE	Version 5.2
-	Microsoft (R) C/C++ Optimizing Compiler
-		Version 14.00.40310.41 for AMD64
-	Microsoft Incremental Linker Version 8.00.40310.39
-	Microsoft Platform SDK for Windows Server 2003 SP1
 
 
 ・ARM
@@ -78,27 +67,23 @@
   </PropertyGroup>
 
 
-・MinGW
-
-	GNUmakefile を使って MinGW 上で make(mingw32-make) ができます。
-	古いMinGW(2005年頃)の場合、BCC の BRC32.EXE を併用する必要があります。
-
-
 ・Wine
 
-	ubuntu 16.04 上の Wine 1.6 の Winelib を使って部分的に Linux に
-	ネイティブ対応する PPc,PPv,PPb,PPcust が構築可能なのを確認しています。
+	Wine 1.6 on ubuntu 16.04、Wine 3.0 on ubuntu 18.04 の Winelib を
+	使って部分的に Linux にネイティブ対応する PPc, PPv, PPb, PPcust が
+	構築可能なのを確認しています。
 
 	※ Wine のヘッダ・ライブラリが存在する必要があります。
-	  (wine と wine-devがインストール済み:
-		sudo apt-get install wine wine-dev 若しくは make install-lib )
-	※ CPPファイルのコンパイルができないときはg++のインストールが必要です。
-	  ( sudo apt-get install g++ )
+	  ( wine と wine-devがインストール済み:
+	    sudo apt-get install wine wine-dev 若しくは make install-lib )
+	※ make や g++ が無いときは、 apt-get でインストールしてください。
+	  ( sudo apt-get install make g++ )
 	※ PPb で ncurses を使用しています。
 	  ( sudo apt-get install ncurses-dev )
+	※ Wine 1.6(3.0未満) のときは、 GNUmakefile 中の WineVer の値を変更
+	  してください。
 
 	尚、Wine 上での PPx の動作はまだ完全ではありません。
-	・32bit版(UNICODE,MultiBye)の開発をしています。64bit版は未検証です。
 	・PPb はターミナルからのログの取得ができません。仕様です。
 	・ディレクトリの更新をすると属性がおかしくなることがあります。
 	・窓間のフォーカス制御をおこなうことができないときは、
@@ -108,9 +93,6 @@
 	・文字コードは UTF-8 専用です。EUC,S-JIS 等の切り替え処理はありません。
 	・画像の表示は Windows 版と同様に Susie Plug-in が必要です。
 	・書庫操作は Windows 版と同様に 各種DLL / Susie Plug-in が必要です。
-	・各種ダイアログが表示されない場合、PPD_DLG.C 中の PPxDialogBoxParam
-	  内の #if 1 を #if 0 に変えてみてください。また、X_mled = 0 に
-	  して下さい。
 
 	Wine版は次のネイティブ処理を加えています。
 	・Zドライブが / に割り当ててあることを前提としており、Zドライブを
@@ -120,10 +102,16 @@
 	　・ネイティブ実行時は、実行内容中の「z:\～」は「/～」に変換する
 
 
+・MinGW
+
+	GNUmakefile を使って MinGW 上で make(mingw32-make) ができます。
+	古いMinGW(2005年頃)の場合、BCC の BRC32.EXE を併用する必要があります。
+
+
 ・その他
 
 	ソースは以下の処理系依存の部分があります。
-	・「'漢字'」形式の定数定義を行っている。
+	・「'漢'」形式の定数定義を行っている。
 	・リトルエンディアンを前提に処理している部分がある。
 	・C ソースで「//」形式のコメントアウトを行っている
 	・コメントアウトのネストを有効にしている。

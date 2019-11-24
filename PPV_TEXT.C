@@ -92,6 +92,7 @@ WORD NECCHAR[2][0xc0] = {
 0x4581, 0x4581, 0x4581, 0x4581, 0x4581, 0x4581, 0x4581, // '・', '・', '・', '・', '・', '・', '・',
 0x4581, 0x4581, 0x4581, // '・', '・', '・'
 }};
+#pragma warning(default:4245)
 
 #define SJIS1st(c) ((BYTE)(c & 0xff))
 #define SJIS2nd(c) ((BYTE)(c >> 8))
@@ -1792,17 +1793,21 @@ void CheckSearchAscii(TEXTCODEINFO *tci, const char *search, COLORREF color, int
 	size_t searchlen, addsize = 0;
 
 	for ( ;; ){
-		firstp = (BYTE *)stristrVA((char *)text, strlen((char *)text), search);
+		size_t textlen;
+
+		textlen = strlen((char *)text);
+		firstp = (BYTE *)stristrVA((char *)text, textlen, search);
 		if ( firstp == NULL ){
 			BYTE *tmpp, type;
 
-			tmpp = text + strlen((char *)text) + 1;
+			tmpp = text + textlen + 1;
 			if ( tmpp >= last ) break;
 			type = *tmpp;
-			if ( type == VCODE_FCOLOR ){
+			if ( (type == VCODE_FCOLOR) || (type == VCODE_BCOLOR) ){
 				text = tmpp + VCODE_FCOLOR_SIZE + sizeof(char);
 				continue;
-			}else if ( type == VCODE_COLOR ){
+			}
+			if ( type == VCODE_COLOR ){
 				text = tmpp + VCODE_COLOR_SIZE + sizeof(char);
 				if ( text >= last ) break;
 				if ( *(WORD *)(tmpp + 1) == SEARCHHILIGHT_COLORID ){
@@ -1812,6 +1817,7 @@ void CheckSearchAscii(TEXTCODEINFO *tci, const char *search, COLORREF color, int
 			}
 			break; // proof
 		}
+		// ハイライト対象発見
 		searchlen = strlen(search);
 
 		if ( (firstp + searchlen + 1) == last ){ // 末尾の特別処理
@@ -1914,7 +1920,7 @@ void CheckSearchUNICODE(TEXTCODEINFO *tci, const WCHAR *search, COLORREF color, 
 			tmpp = text + (strlenW((WCHAR *)text) + 1) * sizeof(WCHAR);
 			if ( tmpp >= last ) break;
 			type = *tmpp;
-			if ( type == VCODE_FCOLOR ){
+			if ( (type == VCODE_FCOLOR) || (type == VCODE_BCOLOR) ){
 				text = tmpp + VCODE_FCOLOR_SIZE + sizeof(WCHAR);
 				continue;
 			}else if ( type == VCODE_COLOR ){

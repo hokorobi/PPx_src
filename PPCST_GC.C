@@ -2,7 +2,6 @@
 	Paper Plane xUI	customizer									色シート
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include <shlobj.h>
 #include "PPX.H"
 #include "PPCUST.H"
@@ -65,6 +64,11 @@ const TCHAR *GCchar[] = {
 	T("明紫\0light magenta"), T("明白\0light white"),
 	T("黒(背景)\0black(back)"), T("赤\0red"), T("緑\0green"), T("青\0blue"),
 	T("黄\0yellow"), T("水\0cyan"), T("紫\0magenta"), T("暗白(初期色)\0white(default)"), NULL};
+const TCHAR *GCb_pals[] = {
+	T("黒(背景)\0black(back)"), T("青\0blue"), T("緑\0green"), T("水\0cyan"),
+	T("赤\0red"), T("紫\0magenta"), T("黄\0yellow"), T("暗白(初期色)\0white(default)"),
+	T("灰\0gray"), T("明青\0light blue"), T("明緑\0light green"), T("明水\0light cyan"),
+	T("明赤\0light red"), T("明紫\0light magenta"), T("明黄\0light yellow"), T("明白\0light white"), NULL};
 const TCHAR *GChili[] = {T("検索\0find"),
 	T("ハイライト1\0highlight1"), T("ハイライト2\0highlight2"),
 	T("ハイライト3\0highlight3"), T("ハイライト4\0highlight4"),
@@ -110,6 +114,7 @@ const LISTS GClist[] = {
 	{T("PPv ハイライト\0PPv highlight"),	T("CV_hili"),	GC_list | GC_haveItem, GChili, 9},
 	{T("PPb 編集時\0PPb edit line"),	T("CB_edit"),	GC_list | GC_haveItem | GC_ppbItem, GCbedit, 4},
 	{T("PPb 実行時\0PPv log"),	T("CB_com"),	GC_list | GC_haveItem | GC_ppbItem, GCCdisp, 2},
+	{T("PPb 色パレット(Vista以降)\0PPb palettes(Vista)"),	T("CB_pals"),	GC_list | GC_haveItem, GCb_pals, 16},
 	{NULL, NULL, 0, NULL, 0}
 };
 
@@ -122,10 +127,11 @@ const WCHAR stringExtInfo[] = L"拡張子(ﾜｲﾙﾄﾞｶｰﾄﾞ可)\0file extention";
 
 #define COLORLIST_WIDTH 6
 #define COLORLIST_HEIGHT 12
+#define COLORLIST_COLORS (COLORLIST_WIDTH * COLORLIST_HEIGHT)
 
 enum {
 //PPcの定義色
-	CL_back = (COLORLIST_WIDTH * COLORLIST_HEIGHT - 12), CL_mes, CL_info,
+	CL_back = (COLORLIST_COLORS - 12), CL_mes, CL_info,
 //Windowsの定義色
 	CL_windowtext, CL_window, CL_hilighttext, CL_hilight,
 	CL_btnface, CL_inactive,
@@ -139,7 +145,7 @@ enum {
 #define CL_withtext CL_user
 #define CL_last CL_auto
 
-COLORREF G_Colors[COLORLIST_WIDTH * COLORLIST_HEIGHT] = {
+COLORREF G_Colors[COLORLIST_COLORS] = {
 	C_BLACK, C_RED, C_GREEN, C_BLUE,
 	C_YELLOW, C_CYAN, C_MAGENTA, C_SBLUE,
 	C_MGREEN, 0x80ff80, C_CREAM, 0x202020,
@@ -219,7 +225,7 @@ void SetColorList(HWND hDlg, COLORREF c)
 	DWORD index;
 
 	index = SendDlgItemMessage(hDlg, IDL_GCOLOR, LB_GETCURSEL, 0, 0);
-	if ( index < (COLORLIST_WIDTH * COLORLIST_HEIGHT) ){
+	if ( index < COLORLIST_COLORS ){
 		G_Colors[CL_prev] = G_Colors[index];
 		InvalidateRect(GetDlgItem(hDlg, IDL_GCOLOR), NULL, FALSE);
 	}
@@ -377,7 +383,7 @@ void SelectColor(HWND hDlg, DWORD index)
 	COLORREF c;
 	TCHAR buf[0x4000];
 
-	if ( index >= (COLORLIST_WIDTH * COLORLIST_HEIGHT) ) return;
+	if ( index >= COLORLIST_COLORS ) return;
 	c = G_Colors[index];
 	switch( GClist[edit_gc].flags & GC_mask ){
 		case GC_single:
@@ -634,7 +640,7 @@ BOOL SelectUserColor(HWND hDlg)
 	DWORD index;
 
 	index = SendDlgItemMessage(hDlg, IDL_GCOLOR, LB_GETCURSEL, 0, 0);
-	if ( index < (COLORLIST_WIDTH * COLORLIST_HEIGHT) ){
+	if ( index < COLORLIST_COLORS ){
 		cc.rgbResult = G_Colors[index];
 	}
 	userColor[userColor_SEL] = G_Colors[CL_user];
@@ -978,7 +984,7 @@ void SelectHighlightColor(HWND hDlg, DWORD colorindex)
 	int index;
 	HWND hListWnd;
 
-	if ( colorindex >= (COLORLIST_WIDTH * COLORLIST_HEIGHT) ) return;
+	if ( colorindex >= COLORLIST_COLORS ) return;
 
 	hListWnd = GetDlgItem(hDlg, IDL_GCITEM);
 	index = (int)SendMessage(hListWnd, LB_GETCURSEL, 0, 0);

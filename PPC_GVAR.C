@@ -244,6 +244,8 @@ GVAR CRITICAL_SECTION SHGetFileInfoSection; // SHGetFileInfo のシングル化用
 
 GVAR void *FaultInfoPtr GPARAM(NULL);
 
+DLLGVAR DWORD ButtonMenuTick DLLGPARAM(0); // ボタンメニューの誤表示抑制用
+
 GVAR HANDLE hProcessHeap; // GetProcessHeap() の値
 
 GVAR MAINWINDOWSTRUCT MainWindows
@@ -543,6 +545,7 @@ GVAR int X_lddm[3]
 ;
 
 GVAR int XC_ifix GPARAM(0);
+GVAR int X_dsst[2] GPARAM2(DSMD_REGID, DSMD_TEMP);
 
 GVAR BOOL XC_fexc GPARAM(FALSE);
 GVAR int XC_cdc GPARAM(B3 | B4);

@@ -396,10 +396,10 @@ void WmPPcTipPos(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	DXDRAWSTRUCT *DxDraw;
 #endif
 
-	x = (short)LOWORD(wParam);
-	y = (short)HIWORD(wParam);
-	w = (short)LOWORD(lParam);
-	h = (short)HIWORD(lParam);
+	x = LOSHORTINT(wParam);
+	y = HISHORTINT(wParam);
+	w = LOSHORTINT(lParam);
+	h = HISHORTINT(lParam);
 
 	if ( message == WM_PPCPREVIEWPOS ){
 		TCHAR filepath[0x1000], execpath[0x2000];
@@ -424,7 +424,7 @@ void WmPPcTipPos(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			hTreeWnd = CreateWindowEx(0, Str_TreeClass, Str_TreeClass,
 				WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
 				0, 0, w, h,
-				hWnd, (HMENU)IDW_TIPTREE, hInst, 0);
+				hWnd, CHILDWNDID(IDW_TIPTREE), hInst, 0);
 			SendMessage(hTreeWnd, VTM_SETFLAG, (WPARAM)hWnd, (LPARAM)(VFSTREE_PATHNOTIFY));
 			wsprintf(execpath, T("\"%s\""), filepath);
 			SendMessage(hTreeWnd, VTM_TREECOMMAND, 0, (LPARAM)execpath);
@@ -713,8 +713,8 @@ void SetFileNameTipMain(PPC_APPINFO *cinfo, HDC hDC, const TCHAR *filep, int nwi
 			DWORD pos;
 
 			pos = GetMessagePos();
-			showpos->x = (SHORT)LOWORD(pos) - (wbox.right / 2);
-			if ( ((SHORT)HIWORD(pos) + 32) > showpos->y ){
+			showpos->x = LOSHORTINT(pos) - (wbox.right / 2);
+			if ( (HISHORTINT(pos) + 32) > showpos->y ){
 				showpos->y += 32; // マウスカーソルの大きさ分下げる
 			}
 		}
@@ -2386,7 +2386,7 @@ void USEFASTCALL SetTextOtherColor(DISPSTRUCT *disp)
 		tmpc = disp->cell->extC;
 	}
 	if ( tmpc != C_AUTO ){
-		if ( disp->cinfo->X_inag == INAG_UNFOCUS ){
+		if ( disp->cinfo->X_inag & INAG_GRAY ){
 			tmpc = GetGrayColorF(tmpc);
 		}
 		disp->DSetCellTextColor(CTC_DXP disp->hDC, tmpc);
@@ -2817,7 +2817,7 @@ void PaintFilename(DISPSTRUCT *disp, const BYTE *fmt, int Xe)
 		if ( tmpc != C_AUTO ){
 		#ifdef USEDIRECTX	// DirectX 時は、拡張子もグレー化対応させる。
 							// 通常時はパフォーマンス改善のため、変更しない
-			if ( cinfo->X_inag == INAG_UNFOCUS ) tmpc = GetGrayColorF(tmpc);
+			if ( cinfo->X_inag & INAG_GRAY ) tmpc = GetGrayColorF(tmpc);
 		#endif
 			disp->DSetCellTextColor(CTC_DXP disp->hDC, tmpc);
 		}
@@ -3087,7 +3087,7 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 		disp.IsCursor = FALSE;
 	}
 
-	if ( cinfo->X_inag == INAG_UNFOCUS ){
+	if ( cinfo->X_inag & INAG_GRAY ){
 		disp.fc = GetGrayColorF(disp.fc);
 		disp.bc = GetGrayColorB(disp.bc);
 	}
@@ -3100,7 +3100,7 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 	}
 										// マウスホバ－ハイライト ============
 	if ( (EI_No >= 0) && (cellno == cinfo->e.cellPoint) ){
-		if ( cinfo->e.cellPointType == PPCR_CELLTEXT ){
+		if ( cinfo->e.cellPointType >= PPCR_CELLMARK ){
 			COLORREF usecolor;
 
 			bkdraw = TRUE;
@@ -3601,9 +3601,9 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 				break;
 			}
 			case DE_string:{	// 一般文字列 -------------------------
-				SIZE32_T len;
+				size_t len;
 
-				len = tstrlen32((TCHAR *)fmt);
+				len = tstrlen((TCHAR *)fmt);
 				DxTextOutRel(disp.DxDraw, hDC, (TCHAR *)fmt, len);
 				fmt += TSTROFF(len + 1);
 
@@ -3874,23 +3874,34 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 			// エントリ末尾のクリック可能エリア表示
 	if ( X_stip[TIP_TAIL_WIDTH] /*&& ((cinfo->PopupPosType != PPT_FOCUS) || (cinfo->Tip.states & STIP_SHOWTAILAREA))*/ ){
 //		resetflag(cinfo->Tip.states, STIP_SHOWTAILAREA);
-		if ( (EI_No >= 0) && (cellno == cinfo->e.cellPoint) && (cinfo->MouseStat.mode != MOUSEMODE_DRAG) ){
+		if ( (EI_No >= 0) &&
+			 (((cellno == cinfo->e.cellPoint) && (cinfo->MouseStat.mode != MOUSEMODE_DRAG)) ||
+			  ((cinfo->LastInputType >= 2) && (cellno == cinfo->e.cellN))) ){
 			HBRUSH hB;
-//			COLORREF usecolor;
 			int w;
+			CELLRIGHTRANGES ranges;
 
-			tempbox.right = BaseBox->right - cinfo->fontX - cinfo->fontX / 2;
-			tempbox.left = tempbox.right - X_stip[TIP_TAIL_WIDTH] + cinfo->fontX / 2;
+			GetCellRightRanges(cinfo, &ranges);
+			tempbox.right = BaseBox->right - ranges.TailRightOffset;
+			if ( tempbox.right >= ranges.RightBorder ){
+				tempbox.right = ranges.RightBorder;
+			}
+			tempbox.left = tempbox.right - ranges.TailWidth;
+
 		#if 1 // 色固定
 			hB = CreateSolidBrush( C_eInfo[ECS_UDCSR] );
 			w = 1;
 		#else // 色混合
+		{
+			COLORREF usecolor;
+
 			usecolor = C_eInfo[ECS_UDCSR];
 			hB = CreateSolidBrush( usecolor,
 				RGB(GetPointColor(GetRValue(disp.bc), GetRValue(usecolor)),
 					GetPointColor(GetRValue(disp.bc), GetGValue(usecolor)),
 					GetPointColor(GetBValue(disp.bc), GetBValue(usecolor))));
 			w = (Check_Focusbox || Check_Box) ? XC_ulh : 1;
+		}
 		#endif
 			tempbox.top = BaseBox->top;
 			tempbox.bottom = BaseBox->top + w;

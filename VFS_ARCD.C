@@ -338,9 +338,6 @@ VFSDLL void PPXAPI VFSOff(void)
 		}
 		susie_items = 0;
 	}
-	// Ç¬Ç¢Ç≈Ç… ê≥ãKï\åª, migemo Ç‡âï˙Ç∑ÇÈ
-	FreeRMatch();
-	FreeMigemo();
 	FreePPxModule();
 }
 
@@ -1156,7 +1153,7 @@ int DoUnarc(PPXAPPINFO *ppxa, const TCHAR *DllName, HWND hWnd, const TCHAR *para
 		for ( i = 0 ; i < undll_items ; i++, uD++ ){
 			if ( tstricmp(uD->DllName, DllName) != 0 ) continue;
 
-			if ( UnArc_Extract(ppxa, (void *)(i + 1), UNARCEXTRACT_ALL, cmd, XEO_NOEDIT) != NO_ERROR ){
+			if ( UnArc_Extract(ppxa, (void *)(LONG_PTR)(i + 1), UNARCEXTRACT_ALL, cmd, XEO_NOEDIT) != NO_ERROR ){
 				VFSOff();
 				return 1;
 			}

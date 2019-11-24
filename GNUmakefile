@@ -4,6 +4,7 @@
 #set CLANG=C-SJIS
 #set LANG=ja_JP
 #=======================================
+WineVer = 300	# Wineのバージョン。1.62=162/3.00=300
 #MinGW	= 1	# Wine/MinGW の自動判別ができないときは、この行を有効にする
 OldMinGW	= 0	# 古いMinGW(リソースコンパイルに失敗する)なら1にする
 ifndef UseUnicode
@@ -43,9 +44,9 @@ NoDll	= 0
 else
 # Wine
 Copy	= cp
-Ccn	= winegcc -DWINEGCC -DNODLL=1
+Ccn	= winegcc -DWINEGCC=$(WineVer) -DNODLL=1
 cc	= @$(Ccn) $(WarnOpt) $(SimpleWarnOpt) $(UnicodeCopt) -mms-bitfields -finput-charset=CP932 -fexec-charset=CP932 -O2 -Os
-Rcn	= wrc -DWINEGCC -l0x11 --nostdinc -l0x11 -I. -I/usr/include/wine/windows -I/usr/local/include/wine/windows
+Rcn	= wrc -DWINEGCC=$(WineVer) -l0x11 --nostdinc -l0x11 -I. -I/usr/include/wine/windows -I/usr/local/include/wine/windows
 Nul	= /dev/null
 Delete	= rm
 NoDll	= 1

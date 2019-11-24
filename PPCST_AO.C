@@ -2,7 +2,6 @@
 	Paper Plane xUI	customizer									AddonÉVÅ[Ég
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include <shlobj.h>
 #include "PPX.H"
 #include "VFS.H"
@@ -26,7 +25,7 @@ void AddOnGetSusieExt(HWND hDlg)
 	const SUSIE_DLL *sudll;
 	char buf[VFPS];
 	int index = 2;
-	int offset = 0;
+	size_t offset = 0;
 
 	if ( (susiedll_list == NULL) || (SusieIndex < 0) || (SusieIndex >= susiedll_items) ){
 		return;
@@ -37,14 +36,14 @@ void AddOnGetSusieExt(HWND hDlg)
 	buf[0] = '\0';
 	if ( sudll->GetPluginInfo != NULL ){
 		for (;;){
-			if ( sudll->GetPluginInfo(index, buf + offset, sizeof(buf) - offset - 1) <= 0 ){
+			if ( sudll->GetPluginInfo(index, buf + offset, (int)sizeof(buf) - offset - 1) <= 0 ){
 				buf[offset] = '\0';
 				break;
 			}
 			buf[sizeof(buf) - 1] = '\0';
 			if ( buf[offset] == '\0' ) break;
 			if ( offset != 0 ) buf[offset - 1] = ';';
-			offset += strlen32(buf + offset);
+			offset += strlen(buf + offset);
 			if ( buf[offset - 1] == ';' ){
 				buf[offset - 1] = '\0';
 			}else{

@@ -88,10 +88,34 @@ typedef struct {
 }TMENU;
 
 extern int Select(TMENU *tmenu);
+extern void TconCommonCommand(int key);
+extern void MoveCursor(int newX, int key);
+extern size_t maxsize;
 
-extern CONSOLE_SCREEN_BUFFER_INFO screen;		// 現在の画面状態
+typedef struct {
+	ULONG cbSize;
+	COORD dwSize;
+	COORD dwCursorPosition;
+	WORD wAttributes;
+	SMALL_RECT srWindow;
+	COORD dwMaximumWindowSize;
+	WORD wPopupAttributes;
+	BOOL bFullscreenSupported;
+	COLORREF ColorTable[16];
+} xCONSOLE_SCREEN_BUFFER_INFOEX;
+
+typedef union {
+	struct {
+		ULONG reserved;
+		CONSOLE_SCREEN_BUFFER_INFO info;		// 現在の画面状態
+	} basic;
+	xCONSOLE_SCREEN_BUFFER_INFOEX info;
+} TSCREENINFO;
+
+extern TSCREENINFO screen;		// 現在の画面状態
 extern HANDLE hStdin, hStdout;
 extern CALLBACKMODULEENTRY KeyHookEntry;		// キー入力拡張モジュール
+extern void ConChangeFontSize(SHORT delta);
 
 #ifndef FROM_LEFT_1ST_BUTTON_PRESSED
 #define FROM_LEFT_1ST_BUTTON_PRESSED B0

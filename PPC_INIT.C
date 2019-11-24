@@ -267,7 +267,7 @@ BOOL CallPPc(PPCSTARTPARAM *psp, HWND hWnd) // WinMain 内から、使用中PPcへ送信
 		ThFree(&psp->th);
 	}
 	if ( IsTrue(psp->UseCmd) ){
-		((PPCSTARTPARAM *)th.bottom)->cmd = (const TCHAR *)th.top;
+		((PPCSTARTPARAM *)th.bottom)->cmd = (const TCHAR *)(LONG_PTR)th.top;
 		ThAddString(&th, psp->cmd);
 	}
 	if ( (hWnd == NULL) &&
@@ -742,7 +742,7 @@ BOOL RegisterID(PPC_APPINFO *cinfo, PPCSTARTPARAM *psp, BOOL *usepath)
 		MultiRegMode = PPXREGIST_NORMAL;
 		pane = PSPONE_PANE_DEFAULT;
 	}else{
-		DWORD size;
+		size_t size;
 		PSPONE *pspo;
 
 		pspo = psp->next;
@@ -813,13 +813,13 @@ BOOL RegisterID(PPC_APPINFO *cinfo, PPCSTARTPARAM *psp, BOOL *usepath)
 				SetWindowMinMax(hWnd, psp);
 				if ( cinfo->path[0] != '\0' ){
 					copydata.dwData = 0x200 + '=';
-					copydata.cbData = TSTRSIZE(cinfo->path);
+					copydata.cbData = TSTRSIZE32(cinfo->path);
 					copydata.lpData = cinfo->path;
 					SendMessage(hWnd, WM_COPYDATA, 0, (LPARAM)&copydata);
 				}
 				if ( cinfo->FirstCommand != NULL ){
 					copydata.dwData = 0x100 + 'H';
-					copydata.cbData = TSTRSIZE(psp->cmd);
+					copydata.cbData = TSTRSIZE32(psp->cmd);
 					copydata.lpData = (PVOID)psp->cmd;
 					SendMessage(hWnd, WM_COPYDATA, 0, (LPARAM)&copydata);
 					psp->AllocCmd = FALSE; // ここで使用したら自由に解放できる
@@ -925,7 +925,7 @@ void USEFASTCALL CreateScrollBar(PPC_APPINFO *cinfo)
 	// ※ ScrollBarHV を SBS_HORZ / SBS_VERT として使用
 	cinfo->hScrollTargetWnd = cinfo->hScrollBarWnd =
 		CreateWindowEx(0, T("SCROLLBAR"), NilStr, WS_CHILD | cinfo->ScrollBarHV,
-			0, 0, 10, 10, cinfo->info.hWnd, (HMENU)IDW_SCROLLBAR, hInst, NULL);
+			0, 0, 10, 10, cinfo->info.hWnd, CHILDWNDID(IDW_SCROLLBAR), hInst, NULL);
 	HideScrollBar(cinfo);
 }
 
@@ -941,7 +941,7 @@ void InitGuiControl(PPC_APPINFO *cinfo)
 				(OSver.dwMajorVersion >= 6) ?
 				WS_CHILD | WS_VISIBLE | CCS_NODIVIDER | HDS_BUTTONS | HDS_CHECKBOXES :
 				WS_CHILD | WS_VISIBLE | CCS_NODIVIDER | HDS_BUTTONS,
-				0, 0, 0, 0, cinfo->info.hWnd, (HMENU)IDW_HEADER, hInst, NULL);
+				0, 0, 0, 0, cinfo->info.hWnd, CHILDWNDID(IDW_HEADER), hInst, NULL);
 		if ( cinfo->hHeaderWnd != NULL ){
 			HD_LAYOUT hdrl;
 			RECT hdrbox;
@@ -1297,7 +1297,7 @@ void PPcLoadCust(PPC_APPINFO *cinfo)
 	DirString = MessageText(DefDirString);
 	DirStringLength = tstrlen32(DirString);
 	StrBusy = MessageText(DefStrBusy);
-	StrBusyLength = tstrlen(StrBusy);
+	StrBusyLength = tstrlen32(StrBusy);
 
 	LoadHiddenMenu(&cinfo->HiddenMenu, T("HM_ppc"), hProcessHeap, C_mes);
 
@@ -1620,10 +1620,11 @@ void InitPPcWindow(PPC_APPINFO *cinfo, BOOL usepath)
 		cinfo->hTrayWnd =
 				(HWND)SendMessage(cinfo->hTrayWnd, WM_PPXCOMMAND, KRN_getcwnd, 0);
 	}
-	if ( cinfo->X_inag ){
-		cinfo->X_inag = INAG_UNFOCUS;
+	if ( cinfo->X_inag != 0 ){
+		cinfo->X_inag = INAG_USEGRAY | INAG_GRAY | INAG_UNFOCUS;
 		cinfo->C_BackBrush = CreateSolidBrush(GetGrayColorB(C_back));
 	}else{
+		cinfo->X_inag = INAG_UNFOCUS;
 		cinfo->C_BackBrush = CreateSolidBrush(C_back);
 	}
 	SetLinebrush(cinfo, LINE_NORMAL);

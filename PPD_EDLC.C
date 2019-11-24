@@ -151,7 +151,7 @@ BOOL MakeCompleteList(HWND hWnd, PPxEDSTRUCT *PES)
 	SendMessage(PES->hWnd, WM_SETREDRAW, FALSE, 0);
 												// 編集文字列(全て)を取得
 	GetEditSel(PES->hWnd, buf, &cursor);
-	fmode = (PES->ED.cmdsearch & (CMDSEARCH_NOADDSEP | CMDSEARCH_FLOAT | CMDSEARCH_ROMA)) |
+	fmode = (PES->ED.cmdsearch & (CMDSEARCH_NOADDSEP | CMDSEARCH_FLOAT | CMDSEARCH_ROMA | CMDSEARCH_WILDCARD)) |
 			((PES->list.WhistID & PPXH_COMMAND) ?
 					CMDSEARCH_CURRENT : CMDSEARCH_OFF) |
 			((PES->flags & PPXEDIT_SINGLEREF) ? 0 : CMDSEARCH_MULTI) |
@@ -821,7 +821,7 @@ BOOL ListUpDown(HWND hWnd, PPxEDSTRUCT *PES, int offset, int repeat)
 // Combo box list のインクリメンタルサーチ
 void ListSearch(HWND hWnd, PPxEDSTRUCT *PES, int len)
 {
-	int index, limit, offset,nlen;
+	int index, limit, offset, nlen;
 	TCHAR text[0x1000];
 
 	if ( PES->list.ListWindow == LISTU_NOLIST ){
@@ -884,7 +884,7 @@ const TCHAR *CalcTargetWordWidth(const TCHAR *text, LPCTSTR *last)
 	return first;
 }
 #else
-#define SMODEPARAM(smode) ,smode
+#define SMODEPARAM(smode), smode
 const TCHAR *CalcTargetWordWidth(const TCHAR *text, LPCTSTR *last, int mode)
 {
 	TCHAR code;
@@ -1010,7 +1010,7 @@ void EnvironmentStringsSearch(LISTADDINFO *list, TCHAR *first, size_t firstlen, 
 	if ( p == NULL ) return;
 	for ( ; *p != '\0' ; p += tstrlen(p) + 1 ){
 		if ( *p == '=' ) continue;
-		if ( tstristr(p,name) != NULL ){
+		if ( tstristr(p, name) != NULL ){
 			dst = buf;
 			maxptr = buf + TSIZEOF(buf) - 10;
 
@@ -1055,6 +1055,55 @@ BOOL SearchRomaStringS(const TCHAR *text, TCHAR *textlast, const TCHAR *searchst
 	result = SearchRomaString(text, searchstr, ISEA_FLOAT, handles);
 	*textlast = backup;
 	return result;
+}
+
+void FreeExtraSearch(SEARCHPARAMS *spms)
+{
+	if ( spms->edmode & CMDSEARCH_ROMA ){
+		SearchRomaString(NULL, NULL, 0, &spms->romahandle);
+	}else if ( spms->edmode & CMDSEARCH_WILDCARD ){
+		FreeFN_REGEXP((FN_REGEXP *)spms->romahandle);
+		HeapFree(DLLheap, 0, (void *)spms->romahandle);
+	}
+}
+
+BOOL ExtraSearchString(const TCHAR *text, TCHAR *textlast, const TCHAR *searchstr, SEARCHPARAMS *spms)
+{
+	if ( ! (spms->edmode & (CMDSEARCH_ROMA | CMDSEARCH_WILDCARD) ) ) return FALSE;
+	if ( spms->edmode & CMDSEARCH_ROMA ){
+		if ( textlast != NULL ){
+			TCHAR backup;
+			BOOL result;
+
+			backup = *textlast;
+			*textlast = '\0';
+
+			result = SearchRomaString(text, searchstr, ISEA_FLOAT, &spms->romahandle);
+			*textlast = backup;
+			return result;
+		}else{
+			return SearchRomaString(text, searchstr, ISEA_FLOAT, &spms->romahandle);
+		}
+	}else{ // CMDSEARCH_WILDCARD
+		if ( spms->romahandle == 0 ){
+			spms->romahandle = (DWORD_PTR)HeapAlloc(DLLheap, 0, sizeof(FN_REGEXP));
+			MakeFN_REGEXP((FN_REGEXP *)spms->romahandle, searchstr);
+		}
+
+		if ( textlast != NULL ){
+			TCHAR backup;
+			BOOL result;
+
+			backup = *textlast;
+			*textlast = '\0';
+
+			result = FilenameRegularExpression(text, (FN_REGEXP *)spms->romahandle);
+			*textlast = backup;
+			return result;
+		}else{
+			return FilenameRegularExpression(text, (FN_REGEXP *)spms->romahandle);
+		}
+	}
 }
 
 BOOL CheckFillTimeout(LISTADDINFO *list, SEARCHPARAMS *spms)
@@ -1121,22 +1170,19 @@ void TextSearch(LISTADDINFO *list, FILLTEXTFILE *filltext, SEARCHPARAMS *spms SM
 	text = filltext->text;
 	while ( *text != '\0' ){
 		if ( (*text != ' ') && (*text != '\t') ){ // 行頭からのみ検索
-			checkfirst = CalcTargetWordWidth(text,(const TCHAR **) &checklast SMODEPARAM(smode));
+			checkfirst = CalcTargetWordWidth(text, (const TCHAR **) &checklast SMODEPARAM(smode));
 /*
 			{
 				char ab[2000];
 				memcpy(ab, checkfirst, checklast - checkfirst);
 				ab[checklast - checkfirst] = '\0';
-				XMessage(NULL,NULL, XM_DbgLOG, T("%s"), ab);
+				XMessage(NULL, NULL, XM_DbgLOG, T("%s"), ab);
 
 
 			}
 */
-			if ( (tmemimem(checkfirst, checklast, first, firstlen) != NULL)
-
-			 ||
-				 ((spms->edmode & CMDSEARCH_ROMA) &&
-				  SearchRomaStringS(checkfirst, checklast, first, &spms->romahandle))  ){
+			if ( (tmemimem(checkfirst, checklast, first, firstlen) != NULL) ||
+				 ExtraSearchString(checkfirst, checklast, first, spms) ){
 				if ( spms->second == NULL ){ // １つめのみは前方一致
 					// 一致したので一行取り出す
 					dest = buf;
@@ -1333,7 +1379,7 @@ void ModuleSearch(PPxEDSTRUCT *PES, LISTADDINFO *list, TCHAR *first, size_t firs
 	smca.list = list;
 	smca.PES = PES;
 	pmp.search = &msearch;
-	CallModule(&smca.info, PPXMEVENT_SEARCH, pmp,NULL);
+	CallModule(&smca.info, PPXMEVENT_SEARCH, pmp, NULL);
 	return;
 }
 
@@ -1379,7 +1425,7 @@ void AliasSearch(LISTADDINFO *list, SEARCHPARAMS *spms SMODEPARAM(smode))
 
 void AddCalcNumber(LISTADDINFO *list, TCHAR *first, size_t firstlen)
 {
-	TCHAR text[VFPS],result[VFPS + 16];
+	TCHAR text[VFPS], result[VFPS + 16];
 	int num;
 	const TCHAR *ptr;
 
@@ -1396,10 +1442,10 @@ void AddCalcNumber(LISTADDINFO *list, TCHAR *first, size_t firstlen)
 		if ( (c == ' ') || Isdigit(c) ) continue;
 		break;
 	}
-	wsprintf(result, T("%d ;=%s"),num, text);
+	wsprintf(result, T("%d ;=%s"), num, text);
 	SendMessage(list->hWnd, list->msg, (WPARAM)list->wParam, (LPARAM)result);
 	list->items++;
-	wsprintf(result, T("%x ;(16)=%s"),num, text);
+	wsprintf(result, T("%x ;(16)=%s"), num, text);
 	SendMessage(list->hWnd, list->msg, (WPARAM)list->wParam, (LPARAM)result);
 	list->items++;
 }
@@ -1472,7 +1518,7 @@ DWORD WINAPI KeyStepFillMain(KEYSTEPFILLMAIN_INFO *ksfinfo)
 	PES->ActiveListThreadID = ThreadID = GetCurrentThreadId();
 
 	if ( ksfinfo->hReadyEvent != NULL ){
-		THREADSTRUCT threadstruct = {T("FillList"), XTHREAD_EXITENABLE /*| XTHREAD_TERMENABLE*/,NULL, 0, 0};
+		THREADSTRUCT threadstruct = {T("FillList"), XTHREAD_EXITENABLE /*| XTHREAD_TERMENABLE*/, NULL, 0, 0};
 
 		PES->ListThreadCount++;
 		SetEvent(ksfinfo->hReadyEvent); // 待機完了 / ksfinfo 解放指示
@@ -1485,7 +1531,7 @@ DWORD WINAPI KeyStepFillMain(KEYSTEPFILLMAIN_INFO *ksfinfo)
 		mainlist.wParam = sublist.wParam = 0;
 	}
 	hWnd = PES->hWnd;
-	spms.edmode = PES->ED.cmdsearch & (CMDSEARCH_FLOAT | CMDSEARCH_ROMA);
+	spms.edmode = PES->ED.cmdsearch & (CMDSEARCH_FLOAT | CMDSEARCH_ROMA | CMDSEARCH_WILDCARD);
 	if ( X_flst[0] >= 5 ) spms.edmode |= CMDSEARCH_NOUNC;
 												// サイズチェック
 	line = linebuf;
@@ -1712,12 +1758,8 @@ DWORD WINAPI KeyStepFillMain(KEYSTEPFILLMAIN_INFO *ksfinfo)
 		}
 	}
 fin:
-	if ( spms.romahandle != 0 ){
-		SearchRomaString(NULL, NULL, 0, &spms.romahandle);
-	}
-	if ( spms2.romahandle != 0 ){
-		SearchRomaString(NULL, NULL, 0, &spms2.romahandle);
-	}
+	if ( spms.romahandle != 0 ) FreeExtraSearch(&spms);
+	if ( spms2.romahandle != 0 ) FreeExtraSearch(&spms2);
 fin2:
 	if ( PES->ActiveListThreadID == ThreadID ) PES->ActiveListThreadID = 0;
 	if ( line != linebuf ) HeapFree(DLLheap, 0, line);
@@ -1810,7 +1852,7 @@ void KeyStepFill(PPxEDSTRUCT *PES, BOOL histmode)
 	{
 		HANDLE hThread;
 
-		ksfinfo.hReadyEvent = CreateEvent(NULL, TRUE, FALSE,NULL);
+		ksfinfo.hReadyEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 		hThread = CreateThread(NULL, 0,
 				(LPTHREAD_START_ROUTINE)KeyStepFillMain,
 				&ksfinfo, 0, (DWORD *)&PES->ActiveListThreadID);

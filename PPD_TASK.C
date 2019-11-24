@@ -616,7 +616,7 @@ int PPcGetNo(int RegNo, int direction)
 			if ( !tstrcmp(Sm->P[j].ID, ID) ) break;
 		}
 	}else if ( direction >= 0 ){ // 増加方向
-		for ( i = 0 ; i < 26 ; i++ ){
+		for ( i = 0 ; i < X_MaxPPxID ; i++ ){
 			ID[2]++;
 			if ( ID[2] > 'Z' ) ID[2] = 'A';
 			for ( j = 0 ; j < X_Mtask ; j++ ){
@@ -627,7 +627,7 @@ int PPcGetNo(int RegNo, int direction)
 			}
 		}
 	}else{ // 減少方向
-		for ( i = 0 ; i < 26 ; i++ ){
+		for ( i = 0 ; i < X_MaxPPxID ; i++ ){
 			ID[2]--;
 			if ( ID[2] < 'A' ) ID[2] = 'Z';
 			for ( j = 0 ; j < X_Mtask ; j++ ){
@@ -648,9 +648,9 @@ int PPxRegistCombo(HWND hWnd, TCHAR *ID, int mode)
 
 	index = ID[2] - 'A'; // CB[A]
 
-	if ( (index < 0) || (index >= 26) ){
+	if ( (index < 0) || (index >= X_MaxComboID) ){
 		if ( mode != PPXREGIST_COMBO_IDASSIGN ) return 0;
-		for ( index = 1 ; index < (26 - 1) ; index++ ){
+		for ( index = 1 ; index < (X_MaxComboID - 1) ; index++ ){
 			if ( Sm->ppc.hComboWnd[index] == NULL ) break;
 			if ( IsWindow(Sm->ppc.hComboWnd[index]) == FALSE ){
 				Sm->ppc.hComboWnd[index] = NULL;
@@ -881,6 +881,7 @@ void bootPPV(HWND hWnd, const TCHAR *fname, int flags)
 /*-----------------------------------------------------------------------------
 	ファイルの内容を表示する
 -----------------------------------------------------------------------------*/
+#define RESERVE_HWND ((HWND)(LONG_PTR)-2)
 PPXDLL BOOL PPXAPI PPxView(HWND hWnd, const TCHAR *param, int flags)
 {
 	ShareX *FindP = NULL, *ReserveP = NULL;
@@ -895,7 +896,7 @@ PPXDLL BOOL PPXAPI PPxView(HWND hWnd, const TCHAR *param, int flags)
 				FindP = &Sm->P[i];
 				break;
 			}else{
-				if ( Sm->P[i].UsehWnd == (HWND)-2 ) continue;
+				if ( Sm->P[i].UsehWnd == RESERVE_HWND ) continue;
 			}
 
 			if ( Sm->P[i].UsehWnd == hWnd ){
@@ -906,7 +907,7 @@ PPXDLL BOOL PPXAPI PPxView(HWND hWnd, const TCHAR *param, int flags)
 			if ( ReserveP == NULL ){
 				ReserveP = &Sm->P[i];
 			}else{
-				if ( ReserveP->UsehWnd == (HWND)-2 ) ReserveP = &Sm->P[i];
+				if ( ReserveP->UsehWnd == RESERVE_HWND ) ReserveP = &Sm->P[i];
 			}
 		}
 	}
@@ -919,7 +920,7 @@ PPXDLL BOOL PPXAPI PPxView(HWND hWnd, const TCHAR *param, int flags)
 		tstrcpy((TCHAR *)Sm->view.param, param);
 
 		if ( (flags & (PPV_SYNCVIEW | PPV_BOOTID)) == (PPV_SYNCVIEW | PPV_BOOTID)){
-			FindP->UsehWnd = (HWND)-2;
+			FindP->UsehWnd = RESERVE_HWND;
 		}
 
 		FreePPx();
@@ -1003,20 +1004,7 @@ PPXDLL HWND PPXAPI PPxCombo(HWND hWnd)
 	return Sm->ppc.hComboWnd[0];
 }
 
-int CountPPc(void)
-{
-	int i;
-	int cnt = 0;
-
-	UsePPx();
-	for ( i = 0 ; i < X_Mtask ; i++ ){
-		if ( CheckPPcID(i) ) cnt++;
-	}
-	FreePPx();
-	return cnt;
-}
-
-int GetPPxListFromCombo(HMENU hPopupMenu, int mode, ThSTRUCT *th, TCHAR *ppclist, DWORD *useppclist, MENUITEMINFO *minfo)
+int GetPPxListFromCombo(HMENU hPopupMenu, int mode, ThSTRUCT *thMenuData, TCHAR *ppclist, DWORD *useppclist, MENUITEMINFO *minfo)
 {
 	TCHAR *listIDptr, *listPathPtr;
 	int item = 0;
@@ -1028,52 +1016,84 @@ int GetPPxListFromCombo(HMENU hPopupMenu, int mode, ThSTRUCT *th, TCHAR *ppclist
 	for ( ; *listIDptr != '\0'; ){
 		listPathPtr = listIDptr + tstrlen(listIDptr) + 1;
 		if ( *listIDptr == '\t' ){
-			AppendMenu(hPopupMenu, MF_SEPARATOR, 0, NULL);
+			if ( hPopupMenu ) AppendMenu(hPopupMenu, MF_SEPARATOR, 0, NULL);
 		}else{
 			setflag(*useppclist, 1 << (listIDptr[2] - 'A'));
-			if ( mode == GetPPcList_Path ){
-				if ( th != NULL ){
-					ThAddString(th, EscapeMacrochar(listPathPtr, minfo->dwTypeData));
+			if ( hPopupMenu != NULL ){
+				if ( mode == GetPPcList_Path ){
+					if ( thMenuData != NULL ){
+						ThAddString(thMenuData, EscapeMacrochar(listPathPtr, minfo->dwTypeData));
+					}
+					wsprintf(minfo->dwTypeData, T("%c&%s: %s"), *listIDptr, listIDptr + 2, listPathPtr);
+				}else{
+					wsprintf(minfo->dwTypeData, T("PPc %c&%s: %s"), *listIDptr, listIDptr + 2, listPathPtr);
 				}
-				wsprintf(minfo->dwTypeData, T("%c&%s: %s"), *listIDptr, listIDptr + 2, listPathPtr);
-			}else{
-				wsprintf(minfo->dwTypeData, T("PPc %c&%s: %s"), *listIDptr, listIDptr + 2, listPathPtr);
+				minfo->fMask = MIIM_STATE | MIIM_TYPE | MIIM_ID | MIIM_DATA;
+				minfo->dwItemData = 0;
+				InsertMenuItem(hPopupMenu, 0, FALSE, minfo);
+				++minfo->wID;
 			}
-			minfo->fMask = MIIM_STATE | MIIM_TYPE | MIIM_ID | MIIM_DATA;
-			minfo->dwItemData = 0;
-			InsertMenuItem(hPopupMenu, 0, FALSE, minfo);
-			++minfo->wID;
-
-			if ( th != NULL ){
+			if ( thMenuData != NULL ){
 				wsprintf(buf2, T("C_%s"), listIDptr + 2);
 				switch ( mode ){
+					case GetPPxList_IdList:
+						tstrcat(buf2, T(","));
+						ThCatString(thMenuData, buf2);
+						break;
 					case GetPPxList_Id:
-						ThAddString(th, buf2);
+						ThAddString(thMenuData, buf2);
 						break;
 					case GetPPxList_Select:
 						wsprintf(minfo->dwTypeData, T("*focus %s"), buf2);
-						ThAddString(th, minfo->dwTypeData);
+						ThAddString(thMenuData, minfo->dwTypeData);
 						break;
 				}
 			}
-
 			item++;
 		}
 		listIDptr = listPathPtr + tstrlen(listPathPtr) + 1;
 	}
 	HeapFree(DLLheap, 0, ppclist);
-	if ( mode != GetPPcList_Path ){
+	if ( (mode != GetPPcList_Path) && (hPopupMenu != NULL) ){
 		AppendMenu(hPopupMenu, MF_SEPARATOR, 0, NULL);
 	}
 	return item;
 }
+
+int GetPPxListFromCurrentCombo(HMENU hPopupMenu, int mode, ThSTRUCT *th, DWORD *useppclist, MENUITEMINFO *minfo)
+{
+	return GetPPxListFromCombo(hPopupMenu, mode, th, (TCHAR *)SendMessage(hProcessComboWnd, WM_PPXCOMMAND, KCW_ppclist, 0), useppclist, minfo);
+}
+
+int GetPPxListFromProcessCombo(HMENU hPopupMenu, int mode, ThSTRUCT *th, DWORD *useppclist, MENUITEMINFO *minfo, HWND hComboWnd)
+{
+	LRESULT lr;
+	TCHAR buf1[VFPS + 16], buf2[VFPS];
+	TCHAR *ppclist;
+	DWORD size;
+	ERRORCODE ec;
+
+	lr = SendMessage(hComboWnd, WM_PPXCOMMAND, TMAKEWPARAM(KCW_ppclist, 1), 0);
+	if ( lr == 0 ) return 0;
+
+	wsprintf(buf1, T("%%temp%%\\ppxl%d"), (int)lr);
+	ExpandEnvironmentStrings(buf1, buf2, TSIZEOF(buf2));
+
+	ppclist = NULL;
+	ec = LoadFileImage(buf2, 4, (char **)&ppclist, &size, LFI_ALWAYSLIMITLESS);
+	DeleteFile(buf2);
+	if ( ec != NO_ERROR ) return 0;
+
+	return GetPPxListFromCombo(hPopupMenu, mode, th, ppclist, useppclist, minfo);
+}
+
 /*
 	GetPPcList_Path なら "x&ID: path" 形式
 	他 mode なら "PPc x&ID: path" 又は "PPx ID: & " 形式
 */
 int GetPPxList(HMENU hPopupMenu, int mode, ThSTRUCT *th, DWORD *menuid)
 {
-	int i, minpos, pos, item = 0;
+	int i, minpos, pos, items = 0;
 	MENUITEMINFO minfo;
 	ShareX *sx;
 	TCHAR buf1[VFPS + 16], buf2[VFPS];
@@ -1085,37 +1105,25 @@ int GetPPxList(HMENU hPopupMenu, int mode, ThSTRUCT *th, DWORD *menuid)
 	minfo.dwTypeData = buf1;
 	minfo.wID = *menuid;
 
+	// 自己一体化窓列挙
 	if ( hProcessComboWnd != NULL ){
-		item += GetPPxListFromCombo(hPopupMenu, mode, th, (TCHAR *)SendMessage(hProcessComboWnd, WM_PPXCOMMAND, KCW_ppclist, 0), &useppclist, &minfo);
+		items += GetPPxListFromCurrentCombo(hPopupMenu, mode, th, &useppclist, &minfo);
 	}
 
-	for ( i = 0 ; i < 26 ; i++ ){
+	// 一体化窓列挙
+	for ( i = 0 ; i < X_MaxComboID ; i++ ){
 		HWND hComboWnd;
-		LRESULT lr;
-		TCHAR *ppclist = NULL;
-		DWORD size;
-		ERRORCODE ec;
 
 		hComboWnd = Sm->ppc.hComboWnd[i];
 		if ( (hComboWnd == NULL) || (hComboWnd == BADHWND) || (hComboWnd == hProcessComboWnd) ){
 			continue;
 		}
-
-		lr = SendMessage(hComboWnd, WM_PPXCOMMAND, TMAKEWPARAM(KCW_ppclist, 1), 0);
-		if ( lr == 0 ) continue;
-
-		wsprintf(buf1, T("%%temp%%\\ppxl%d"), (int)lr);
-		ExpandEnvironmentStrings(buf1, buf2, TSIZEOF(buf2));
-
-		ec = LoadFileImage(buf2, 4, (char **)&ppclist, &size, LFI_ALWAYSLIMITLESS);
-		DeleteFile(buf2);
-		if ( ec != NO_ERROR ) continue;
-
-		item += GetPPxListFromCombo(hPopupMenu, mode, th, ppclist, &useppclist, &minfo);
+		items += GetPPxListFromProcessCombo(hPopupMenu, mode, th, &useppclist, &minfo, hComboWnd);
 	}
 
 	minpos = GetMenuItemCount(hPopupMenu);
 
+	// 独立窓列挙
 	UsePPx();
 	sx = Sm->P;
 	for ( i = 0 ; i < X_Mtask ; i++, sx++ ){
@@ -1160,7 +1168,7 @@ int GetPPxList(HMENU hPopupMenu, int mode, ThSTRUCT *th, DWORD *menuid)
 					wsprintf(buf1, T("%s %c: & "), name, sx->ID[2]);
 				}
 			}
-			for ( pos = minpos ; pos < (minpos + item) ; pos++ ){ // 簡易ソート
+			for ( pos = minpos ; pos < (minpos + items) ; pos++ ){ // 簡易ソート
 				GetMenuString(hPopupMenu, pos, buf2, TSIZEOF(buf2), MF_BYPOSITION);
 				if ( tstrcmp(buf1, buf2) < 0 ) break;
 			}
@@ -1180,13 +1188,13 @@ int GetPPxList(HMENU hPopupMenu, int mode, ThSTRUCT *th, DWORD *menuid)
 			minfo.fMask = MIIM_STATE | MIIM_TYPE | MIIM_ID | MIIM_DATA;
 			InsertMenuItem(hPopupMenu, pos, TRUE, &minfo);
 			minfo.wID++;
-			item++;
+			items++;
 			continue;
 		}
 	}
 	FreePPx();
 	*menuid = minfo.wID;
-	return item;
+	return items;
 }
 
 //****************************************************************************
@@ -1244,10 +1252,7 @@ void JobListItemDraw(DRAWITEMSTRUCT *lpdis)
 			box.top = lpdis->rcItem.bottom - (height / 4);
 			box.bottom = lpdis->rcItem.bottom - 1;
 			box.right = lpdis->rcItem.left + (width * rate) / 100;
-
-			hB = CreateSolidBrush(GetSysColor(COLOR_HIGHLIGHT));
-			FillBox(lpdis->hDC, &box, hB);
-			DeleteObject(hB);
+			FillBox(lpdis->hDC, &box, GetHighlightBackBrush());
 			SetBkMode(lpdis->hDC, TRANSPARENT);
 		}
 
@@ -1348,7 +1353,7 @@ void JobListButtonUp(HWND hWnd, LPARAM lParam)
 	CallWindowProc(OldJobProc, hWnd, LB_GETITEMRECT, 0, (LPARAM)&box);
 	height = box.bottom - box.top;
 	if ( (height * SHOWJOBBUTTON_MINRATE) < (box.right - box.left) ){
-		int x = LOWORD(lParam);
+		int x = LOSHORTINT(lParam);
 
 		x -= box.right - (height * 1);
 		if ( x >= 0 ){
@@ -1576,7 +1581,7 @@ void InitJobList(HWND hMainWnd)
 	wcClass.hInstance		= DLLhInst;
 	wcClass.hIcon			= LoadIcon(DLLhInst, MAKEINTRESOURCE(Ic_FOP));
 	wcClass.hCursor			= LoadCursor(NULL, IDC_ARROW);
-	wcClass.hbrBackground	= (HBRUSH)(COLOR_WINDOW + 1);
+	wcClass.hbrBackground	= (HBRUSH)(LONG_PTR)(COLOR_WINDOW + 1);
 	wcClass.lpszMenuName	= NULL;
 	wcClass.lpszClassName	= T("Jobist");
 											// クラスを登録する
@@ -1615,8 +1620,9 @@ void InitJobList(HWND hMainWnd)
 		SendMessage(Sm->JobList.hWnd, WM_SETFONT, (WPARAM)
 			CreateFontIndirect(&cursfont.font), TMAKELPARAM(TRUE, 0));
 		if ( (hMainWnd != NULL) && (CJ_log[0] != C_AUTO) || (CJ_log[1] != C_AUTO) ){
-			if ( CJ_log[0] == C_AUTO) CJ_log[0] = GetSysColor(COLOR_WINDOWTEXT);
-			if ( CJ_log[1] == C_AUTO) CJ_log[1] = GetSysColor(COLOR_WINDOW);
+			InitSysColors();
+			if ( CJ_log[0] == C_AUTO) CJ_log[0] = C_WindowText;
+			if ( CJ_log[1] == C_AUTO) CJ_log[1] = C_WindowBack;
 			hJobBackBrush = CreateSolidBrush(CJ_log[1]);
 		}
 		SetWindowLongPtr(hParentWnd, GWLP_USERDATA, (LONG_PTR)hJobBackBrush);
@@ -1796,7 +1802,7 @@ BOOL SetJobTask(HWND hWnd, DWORD state)
 		if ( state & (JOBFLAG_REG | JOBFLAG_UNREG) ){
 			if ( state & JOBFLAG_UNREG ){ // 終了系
 				resetflag(jxp->state.dw, state);
-				if ( jxp->state.b.count == 0 ){ // 参照0なら削除
+				if ( !(state & (JOBFLAG_WAITEXEC | JOBFLAG_WAITJOB | JOBFLAG_PAUSE | JOBFLAG_ERROR)) && (jxp->state.b.count == 0) ){ // 参照0なら削除
 					FreePPx();
 					jxp->ThreadID = 0;
 					DeleteJobTaskMain(i);

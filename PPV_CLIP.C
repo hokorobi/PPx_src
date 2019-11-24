@@ -2,7 +2,6 @@
 	Paper Plane vUI		クリップ処理
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include "PPX.H"
 #include "VFS.H"
 #include "PPV_STRU.H"
@@ -91,7 +90,7 @@ int CalcHexX(int off)
 BOOL ClipHexMem(TMS_struct *text, int StartLine, int EndLine)
 {
 	char *bottom;
-	int	size, tsize;
+	int size, tsize;
 
 	if ( StartLine < 0 ){
 		bottom = (char *)vo_.file.image + VOsel.bottom.y.line * 16;
@@ -127,30 +126,36 @@ BOOL ClipMem(TMS_struct *text, int StartLine, int EndLine)
 	#endif
 	BYTE form[TEXTBUFSIZE], *p;
 	int off;
-	int bottom, top;
+	int first, last;
 	int XV_bctl3bk;
 	MAKETEXTINFO mti;
+	BOOL linemode;
 
-	if ( vo_.DModeType == DISPT_HEX ) return ClipHexMem(text, StartLine, EndLine);
+	if ( vo_.DModeType == DISPT_HEX ){
+		return ClipHexMem(text, StartLine, EndLine);
+	}
 
 	XV_bctl3bk = XV_bctl[2];
 	XV_bctl[2] = 0;
 
+	linemode = VOsel.linemode;
 	if ( StartLine >= 0 ){
-		bottom = StartLine;
-		top = EndLine;
+		linemode = TRUE;
+		first = StartLine;
+		last = EndLine;
 	}else if ( VOsel.select != FALSE ){
-		bottom = VOsel.bottom.y.line;
-		top = VOsel.top.y.line;
-	}else{
-		if ( VOsel.cursor != FALSE ){
-			bottom = VOsel.now.y.line;
-		}else{
-			bottom = VOi->offY;
+		first = VOsel.bottom.y.line;
+		last = VOsel.top.y.line;
+	}else{ // 選択無しのとき
+		linemode = TRUE;
+		if ( IsTrue(VOsel.cursor) ){ // カーソルあり
+			first = last = VOsel.now.y.line;
+		}else{ // カーソル無し
+			first = last = VOi->offY;
+			last = first + VO_sizeY - 1;
 		}
-		top = bottom + VO_sizeY - 1;
 	}
-	if ( top >= VOi->line ) top = VOi->line - 1;
+	if ( last >= VOi->line ) last = VOi->line - 1;
 
 	mti.destbuf = form;
 	mti.srcmax = vo_.file.image + vo_.file.UseSize;
@@ -158,7 +163,7 @@ BOOL ClipMem(TMS_struct *text, int StartLine, int EndLine)
 	mti.paintmode = FALSE;
 
 	TMS_reset(text);
-	for ( off = bottom ; off <= top ; off++ ){
+	for ( off = first ; off <= last ; off++ ){
 		int CharX;
 
 		VOi->MakeText(&mti, &VOi->ti[off]);
@@ -173,9 +178,9 @@ BOOL ClipMem(TMS_struct *text, int StartLine, int EndLine)
 				char *src;
 
 				src = (char *)p + 1;
-				copylength = length = strlen32(src);
-				if ( VOsel.linemode == FALSE ){
-					if ( off == top ){	// 末尾調節
+				copylength = length = (int)strlen(src);
+				if ( linemode == FALSE ){
+					if ( off == last ){	// 末尾調節
 						if ( (CharX + copylength) > VOsel.top.x.offset ){
 							copylength = VOsel.top.x.offset - CharX;
 							if ( copylength <= 0 ){
@@ -184,7 +189,7 @@ BOOL ClipMem(TMS_struct *text, int StartLine, int EndLine)
 						}
 						*(src + copylength) = '\0';
 					}
-					if ( off == bottom ){	// 先頭調節
+					if ( off == first ){	// 先頭調節
 						int len;
 
 						len = VOsel.bottom.x.offset - CharX;
@@ -215,9 +220,9 @@ BOOL ClipMem(TMS_struct *text, int StartLine, int EndLine)
 				WCHAR *src;
 
 				src = (WCHAR *)(p + 1);
-				copylength = length = strlenW32(src);
-				if ( VOsel.linemode == FALSE ){
-					if ( off == top ){	// 末尾調節
+				copylength = length = (int)strlenW(src);
+				if ( linemode == FALSE ){
+					if ( off == last ){	// 末尾調節
 						if ( (CharX + copylength) > VOsel.top.x.offset ){
 							copylength = VOsel.top.x.offset - CharX;
 							if ( copylength <= 0 ){
@@ -226,7 +231,7 @@ BOOL ClipMem(TMS_struct *text, int StartLine, int EndLine)
 						}
 						*(src + copylength) = '\0';
 					}
-					if ( off == bottom ){	// 先頭調節
+					if ( off == first ){	// 先頭調節
 						int len;
 
 						len = VOsel.bottom.x.offset - CharX;
@@ -263,11 +268,11 @@ BOOL ClipMem(TMS_struct *text, int StartLine, int EndLine)
 
 			case VCODE_TAB:				// Tab -------------------------------
 				p++;
-				if ( VOsel.linemode == FALSE ){
-					if ( off == top ){	// 末尾調節
+				if ( linemode == FALSE ){
+					if ( off == last ){	// 末尾調節
 						if ( CharX >= VOsel.top.x.offset ) break;
 					}
-					if ( off == bottom ){	// 先頭調節
+					if ( off == first ){	// 先頭調節
 						if ( CharX < VOsel.bottom.x.offset ){
 							CharX++;
 							break;

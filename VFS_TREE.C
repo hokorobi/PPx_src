@@ -12,6 +12,28 @@
 #include "VFS_STRU.H"
 #pragma hdrstop
 
+HBRUSH hEx3dfaceBrush = NULL;
+
+#ifndef TBSTYLE_CUSTOMERASE
+#define TBSTYLE_CUSTOMERASE 0x2000
+#define CDDS_PREERASE 0x00000003
+#define CDRF_SKIPDEFAULT 0x00000004
+#endif
+#ifndef NM_CUSTOMDRAW
+#define NM_CUSTOMDRAW (NM_FIRST-12)
+
+typedef struct
+{
+	NMHDR hdr;
+	DWORD dwDrawStage;
+	HDC hdc;
+	RECT rc;
+	DWORD_PTR dwItemSpec;
+	UINT uItemState;
+	LPARAM lItemlParam;
+} NMCUSTOMDRAW;
+#endif
+
 #define TreeCollapseCheck 0
 
 #define VTM_I_CHANGENOTIFY	(WM_APP + 501) // 更新通知用
@@ -660,6 +682,7 @@ void WMTreeCreate(HWND hWnd)
 	ThInit(&VTS->itemdata);
 	ThInit(&VTS->cmdwork);
 	SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)VTS);
+	InitSysColors();
 
 	VTS->hTViewWnd = CreateWindowEx(WS_EX_CLIENTEDGE, WC_TREEVIEW, NilStr,
 			GetTreeWindowStyle(VTS), 0, 0, 100, 100, hWnd, NULL, DLLhInst, NULL);
@@ -696,11 +719,11 @@ void SetPPcColor(HWND hTWnd)
 	if ( NO_ERROR != GetCustData(T("CC_tree"), &CC_tree, sizeof(CC_tree)) ){
 		return;
 	}
-	if ( CC_tree[0] == C_AUTO){
+	if ( CC_tree[0] == C_AUTO ){
 		if ( (CC_tree[1] == C_AUTO) && (FixColor == FALSE) ) return;
-		CC_tree[0] = GetSysColor(COLOR_WINDOWTEXT);
+		CC_tree[0] = C_WindowText;
 	}
-	if ( CC_tree[1] == C_AUTO) CC_tree[1] = GetSysColor(COLOR_WINDOW);
+	if ( CC_tree[1] == C_AUTO ) CC_tree[1] = C_WindowBack;
 	(void)TreeView_SetTextColor(hTWnd, CC_tree[0]);
 	(void)TreeView_SetBkColor(hTWnd, CC_tree[1]);
 	FixColor = TRUE;
@@ -1162,7 +1185,8 @@ void VfsTreeSetFlagFix(VFSTREESTRUCT *VTS)
 
 			VTS->hBarWnd = CreateToolBar(&VTS->cmdwork, VTS->vtinfo.hWnd, &ID,
 					T("B_tree"), DLLpath,
-					(VTS->flags & VFSTREE_PPC) ? 0 : TBSTYLE_WRAPABLE);
+					((hWndBackBrush != NULL) ? TBSTYLE_CUSTOMERASE : 0) |
+					((VTS->flags & VFSTREE_PPC) ? 0 : TBSTYLE_WRAPABLE)  );
 			if ( VTS->hBarWnd != NULL ){
 				RECT box;
 
@@ -2281,13 +2305,9 @@ void WmTreePaint(HWND hWnd)
 	BeginPaint(hWnd, &ps);
 	if ( ps.rcPaint.right > box.left ) ps.rcPaint.right = box.left;
 	if ( (ps.rcPaint.right - ps.rcPaint.left) > 0 ){
-		HBRUSH hBrsh;
-
-		hBrsh = CreateSolidBrush(GetSysColor(COLOR_3DFACE));
-		FillBox(ps.hdc, &ps.rcPaint, hBrsh);
-		DeleteObject(hBrsh);
+		FillBox(ps.hdc, &ps.rcPaint, Get3dFaceBrush());
 	}
-	DrawEdge(ps.hdc, &box, EDGE_RAISED, BF_RIGHT | BF_MIDDLE); // BF_LEFT はなし
+	DrawSeparateLine(ps.hdc, &box, BF_RIGHT | BF_MIDDLE); // BF_LEFT はなし
 	EndPaint(hWnd, &ps);
 }
 
@@ -2445,7 +2465,19 @@ LRESULT CALLBACK TreeProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		case WM_NOTIFY:
 			#define NHPTR ((NMHDR *)lParam)
+
 			switch ( NHPTR->code ){
+				case NM_CUSTOMDRAW:
+					if ( hWndBackBrush != NULL ){
+						NMCUSTOMDRAW *csd = (NMCUSTOMDRAW *)lParam;
+
+						if ( csd->dwDrawStage == CDDS_PREERASE ){
+							FillRect(csd->hdc, &csd->rc, hWndBackBrush);
+							return CDRF_SKIPDEFAULT;
+						}
+					}
+					return 0;
+
 				case TTN_NEEDTEXT:
 					SetToolBarTipText(VTS->hBarWnd, &VTS->cmdwork, NHPTR);
 					break;
@@ -2910,7 +2942,7 @@ BOOL InitTreeViewItems(VFSTREESTRUCT *VTS, const TCHAR *param)
 
 			VTS->hImage = DImageList_Create(TreeIconSize, TreeIconSize, 24/* | ILC_MASK*/, 32, 0);
 			bkcolor = (OSver.dwMajorVersion >= 5) ? TreeView_GetBkColor(hTWnd) : C_AUTO;
-			if ( bkcolor == C_AUTO ) bkcolor = GetSysColor(COLOR_WINDOW);
+			if ( bkcolor == C_AUTO ) bkcolor = C_WindowBack;
 			DImageList_SetBkColor(VTS->hImage, bkcolor);
 			hIcon = LoadDefaultDirTreeIcon();
 			DImageList_AddIcon(VTS->hImage, hIcon);

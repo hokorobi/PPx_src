@@ -187,7 +187,7 @@ void ComboTabExecute(PPC_APPINFO *cinfo, PPXAPPINFOUNION *uptr)
 {
 	HWND hTargetWnd;
 	COPYDATASTRUCT copydata;
-	PPC_APPINFO *ainfo = GetInfoTabInfo(cinfo, (int *)uptr->nums);
+	PPC_APPINFO *ainfo = GetInfoTabInfo(cinfo, uptr->inums);
 
 	if ( ainfo == NULL ) return;
 	hTargetWnd = ainfo->info.hWnd;
@@ -206,7 +206,7 @@ void ComboTabExecute(PPC_APPINFO *cinfo, PPXAPPINFOUNION *uptr)
 void ComboTabExtract(PPC_APPINFO *cinfo, PPXAPPINFOUNION *uptr)
 {
 	HWND hTargetWnd;
-	PPC_APPINFO *ainfo = GetInfoTabInfo(cinfo, (int *)uptr->nums);
+	PPC_APPINFO *ainfo = GetInfoTabInfo(cinfo, uptr->inums);
 
 	if ( ainfo == NULL ) return;
 	hTargetWnd = ainfo->info.hWnd;
@@ -233,12 +233,12 @@ void ComboTabIndexInfo(PPC_APPINFO *cinfo, PPXAPPINFOUNION *uptr)
 		uptr->nums[1] = (DWORD)-1;
 		return;
 	}
-	if ( ((int)uptr->nums[0] < 0) && ((int)uptr->nums[1] == -1) ){ // デフォルト値
+	if ( (uptr->inums[0] < 0) && (uptr->inums[1] == -1) ){ // デフォルト値
 		HWND hCWnd;
 
-		if ( (int)uptr->nums[0] == -1 ){
+		if ( uptr->inums[0] == -1 ){
 			hCWnd = cinfo->info.hWnd;
-		}else if ( (int)uptr->nums[0] == -2 ){ // フォーカス窓
+		}else if ( uptr->inums[0] == -2 ){ // フォーカス窓
 			hCWnd = hComboFocus;
 		}else { // 反対窓
 			hCWnd = (HWND)SendMessage(cinfo->hComboWnd, WM_PPXCOMMAND,
@@ -248,8 +248,8 @@ void ComboTabIndexInfo(PPC_APPINFO *cinfo, PPXAPPINFOUNION *uptr)
 		if ( showindex < 0 ){
 			int si;
 
-			uptr->nums[0] = (DWORD)-1;
-			uptr->nums[1] = (DWORD)-1;
+			uptr->inums[0] = -1;
+			uptr->inums[1] = -1;
 			if ( Combo.Tabs == 0 ) return;
 			for ( si = 0 ; si < Combo.ShowCount ; si++ ){
 				int tabindex = GetTabItemIndex(hCWnd, si);
@@ -295,7 +295,7 @@ void ComboTabIndexInfo(PPC_APPINFO *cinfo, PPXAPPINFOUNION *uptr)
 
 void ComboTabPaneInfo(PPC_APPINFO *cinfo, PPXAPPINFOUNION *uptr)
 {
-	int baseindex = GetInfoTabBaseIndex(cinfo, (int *)uptr->nums);
+	int baseindex = GetInfoTabBaseIndex(cinfo, uptr->inums);
 	int showindex;
 	int tabshow;
 
@@ -681,7 +681,7 @@ int GetDirSettingOption(PPC_APPINFO *cinfo, const TCHAR **param, int type, TCHAR
 		tstrcpy(path, cinfo->path);
 	}else if ( tstrcmp(buf, StrThisBranch) == 0 ){
 		mode = DSMD_THIS_BRANCH;
-		CatPath(path, cinfo->path, NilStr);
+		CatPath(path, cinfo->path, NilStr); // 末尾「\」付きにする
 	}else if ( tstrcmp(buf, StrRegID) == 0 ){
 		mode = DSMD_REGID;
 	}else if ( tstrcmp(buf, StrArchiveMode) == 0 ){
@@ -770,11 +770,11 @@ DWORD_PTR PPcAddExMenu(PPC_APPINFO *cinfo, ADDEXMENUINFO *addmenu)
 	if ( !tstrcmp(addmenu->exname, T("drivemenu")) ){
 		DWORD index = CRID_DRIVELIST;
 
-		MakeDriveJumpMenu(cinfo, addmenu->hMenu, &index, NULL);
+		MakeDriveJumpMenu(cinfo, addmenu->hMenu, &index, NULL, FALSE);
 		return PPXCMDID_ADDEXMENU;
 	}
 	if ( !tstrcmp(addmenu->exname, T("drivelist")) ){
-		MakeDriveJumpMenu(cinfo, addmenu->hMenu, addmenu->index, addmenu->TH);
+		MakeDriveJumpMenu(cinfo, addmenu->hMenu, addmenu->index, addmenu->TH, FALSE);
 		return PPXCMDID_ADDEXMENU;
 	}
 	if ( !tstrcmp(addmenu->exname, T("layoutmenu")) ){
@@ -1100,7 +1100,7 @@ void SetEntryImage(PPC_APPINFO *cinfo, const TCHAR *param)
 			HBITMAP hbmp;
 			HGDIOBJ hOldBmp;
 			HDC hDC;
-			int seplen;
+			size_t seplen;
 
 			memset(&bmiHeader, 0, sizeof(BITMAPINFOHEADER));
 			bmiHeader.biSize     = sizeof(BITMAPINFOHEADER);
@@ -1118,7 +1118,7 @@ void SetEntryImage(PPC_APPINFO *cinfo, const TCHAR *param)
 			SelectObject(hDC, hOldBmp);
 			DeleteDC(hDC);
 
-			seplen = tstrlen32(buf);
+			seplen = tstrlen(buf);
 			tstrcpy(buf + seplen, EntryImageThumbName);
 
 			SaveCacheFile(cinfo, buf, seplen, (BITMAPINFO *)&bmiHeader, lpBits);
@@ -2224,6 +2224,7 @@ ERRORCODE MaskEntryCommand(PPC_APPINFO *cinfo, const TCHAR *param, int mode)
 	TCHAR path[VFPS];
 	XC_MASK mask;
 
+	path[0] = '\0';
 	if ( SkipSpace(&param) == '-' ){
 		mode = GetDirSettingOption(cinfo, &param, ITEMSETTING_MASK, path);
 		if ( mode < 0 ) return ERROR_INVALID_PARAMETER;
@@ -2244,7 +2245,7 @@ ERRORCODE MaskEntryCommand(PPC_APPINFO *cinfo, const TCHAR *param, int mode)
 		if ( (mode == DSMD_NOMODE) || (mode == DSMD_REGID) ){
 			cinfo->mask.attr = 0;
 			tstrcpy(cinfo->mask.file, mask.file);
-			SetCustTable(T("XC_mask"), cinfo->RegCID+1,
+			SetCustTable(T("XC_mask"), cinfo->RegCID + 1,
 					&cinfo->mask, TSTRSIZE(cinfo->mask.file) + 4);
 		}else{ // DSMD_THIS_PATH, DSMD_THIS_BRANCH, DSMD_PATH_BRANCH, DSMD_ARCHIVE
 			SetNewXdir(path, LOADMASKSTR, mask.file);
@@ -2284,7 +2285,7 @@ void Cmd_GetComboTabName(PPC_APPINFO *cinfo, PPXAPPINFOUNION *uptr)
 	TC_ITEM tie;
 
 	ComboTabIndexInfo(cinfo, uptr);
-	if ( ((int)uptr->nums[0] < 0) || ((int)uptr->nums[1] < 0) ){
+	if ( (uptr->inums[0] < 0) || (uptr->inums[1] < 0) ){
 		uptr->str[0] = '\0';
 		return;
 	}
@@ -2314,7 +2315,7 @@ void Cmd_ComboIdCount(PPC_APPINFO *cinfo, PPXAPPINFOUNION *uptr)
 
 void Cmd_ComboWindowType(PPC_APPINFO *cinfo, PPXAPPINFOUNION *uptr)
 {
-	PPC_APPINFO *ainfo = GetInfoTabInfo(cinfo, (int *)uptr->nums);
+	PPC_APPINFO *ainfo = GetInfoTabInfo(cinfo, uptr->inums);
 	int r;
 	HWND hCWnd;
 
@@ -3170,7 +3171,11 @@ DWORD_PTR USECDECL PPcGetIInfo(PPC_APPINFO *cinfo, DWORD cmdID, PPXAPPINFOUNION 
 		case PPXCMDID_MENUONMENU:
 			PPcCRMenuOnMenu(cinfo, (PPCMENUINFO *)uptr);
 			break;
-
+#if 0
+		case 0x703:
+			PPC_DriveJump(cinfo, TRUE);
+			break;
+#endif
 		case PPXCMDID_REQUIREKEYHOOK:
 			cinfo->KeyHookEntry = FUNCCAST(CALLBACKMODULEENTRY, uptr);
 			break;
@@ -3225,28 +3230,28 @@ DWORD_PTR USECDECL PPcGetIInfo(PPC_APPINFO *cinfo, DWORD cmdID, PPXAPPINFOUNION 
 			break;
 
 		case PPXCMDID_TABTEXTCOLOR: {
-			int baseindex = GetInfoTabBaseIndex(cinfo, (int *)uptr->nums);
+			int baseindex = GetInfoTabBaseIndex(cinfo, uptr->inums);
 
 			uptr->nums[0] = (baseindex < 0) ? (DWORD)-1 : Combo.base[baseindex].tabtextcolor;
 			break;
 		}
 
 		case PPXCMDID_TABBACKCOLOR: {
-			int baseindex = GetInfoTabBaseIndex(cinfo, (int *)uptr->nums);
+			int baseindex = GetInfoTabBaseIndex(cinfo, uptr->inums);
 
 			uptr->nums[0] = (baseindex < 0) ? (DWORD)-1 : Combo.base[baseindex].tabbackcolor;
 			break;
 		}
 
 		case PPXCMDID_DIRLOCK: {
-			PPC_APPINFO *ainfo = GetInfoTabInfo(cinfo, (int *)uptr->nums);
+			PPC_APPINFO *ainfo = GetInfoTabInfo(cinfo, uptr->inums);
 
 			uptr->nums[0] = (ainfo != NULL) ? ainfo->ChdirLock : -1;
 			break;
 		}
 
 		case PPXCMDID_COMBOTABIDNAME: {
-			PPC_APPINFO *ainfo = GetInfoTabInfo(cinfo, (int *)uptr->nums);
+			PPC_APPINFO *ainfo = GetInfoTabInfo(cinfo, uptr->inums);
 
 			if ( ainfo == NULL ){
 				uptr->str[0] = '\0';
@@ -3265,7 +3270,7 @@ DWORD_PTR USECDECL PPcGetIInfo(PPC_APPINFO *cinfo, DWORD cmdID, PPXAPPINFOUNION 
 			break;
 
 		case PPXCMDID_SETCOMBOWNDTYPE: {
-			PPC_APPINFO *ainfo = GetInfoTabInfo(cinfo, (int *)uptr->nums);
+			PPC_APPINFO *ainfo = GetInfoTabInfo(cinfo, uptr->inums);
 
 			if ( ainfo == NULL ) break;
 			if ( (int)uptr->nums[0] >= 0 ){
@@ -3281,7 +3286,7 @@ DWORD_PTR USECDECL PPcGetIInfo(PPC_APPINFO *cinfo, DWORD cmdID, PPXAPPINFOUNION 
 //		case PPXCMDID_SETTABNAME:
 
 		case PPXCMDID_SETTABTEXTCOLOR: {
-			int baseindex = GetInfoTabBaseIndex(cinfo, (int *)uptr->nums);
+			int baseindex = GetInfoTabBaseIndex(cinfo, uptr->inums);
 
 			if ( baseindex < 0 ) break;
 			Combo.base[baseindex].tabtextcolor = uptr->nums[2];
@@ -3290,7 +3295,7 @@ DWORD_PTR USECDECL PPcGetIInfo(PPC_APPINFO *cinfo, DWORD cmdID, PPXAPPINFOUNION 
 		}
 
 		case PPXCMDID_SETTABBACKCOLOR: {
-			int baseindex = GetInfoTabBaseIndex(cinfo, (int *)uptr->nums);
+			int baseindex = GetInfoTabBaseIndex(cinfo, uptr->inums);
 
 			if ( baseindex < 0 ) break;
 			Combo.base[baseindex].tabbackcolor = uptr->nums[2];
@@ -3299,7 +3304,7 @@ DWORD_PTR USECDECL PPcGetIInfo(PPC_APPINFO *cinfo, DWORD cmdID, PPXAPPINFOUNION 
 		}
 
 		case PPXCMDID_SETDIRLOCK: {
-			PPC_APPINFO *ainfo = GetInfoTabInfo(cinfo, (int *)uptr->nums);
+			PPC_APPINFO *ainfo = GetInfoTabInfo(cinfo, uptr->inums);
 
 			if ( ainfo == NULL ) break;
 			if ( uptr->nums[2] > 1 ){

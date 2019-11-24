@@ -480,6 +480,7 @@ PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd, LPARAM lParam, WORD key)
 			}
 			CleanUpVFS();
 			CleanUpEdit();
+			FreeSysColors();
 			if ( hComctl32 != NULL ){
 				FreeLibrary(hComctl32);
 				hComctl32 = NULL;
@@ -506,11 +507,12 @@ PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd, LPARAM lParam, WORD key)
 		case K_Lcust:
 			if ( lParam != 0 ){
 				if ( CustTick != (DWORD)lParam ) break; // èdï°Ç»ÇÃÇ≈è»ó™
-				CustTick = lParam;
+				CustTick = (DWORD)lParam;
 			}else{
 				CustTick = GetTickCount();
 			}
 			CleanUpEdit();
+			FreeSysColors();
 			if ( (usertypes != INVALID_HANDLE_VALUE) && (usertypes != NULL) ){
 				HeapFree(DLLheap, 0, usertypes);
 				usertypes = INVALID_HANDLE_VALUE;

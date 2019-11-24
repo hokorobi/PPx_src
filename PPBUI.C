@@ -33,8 +33,8 @@ TCHAR RegCID[REGIDSIZE - 1] = T("BA");
 
 const TCHAR PPbMainThreadName[] = T("PPb main");
 const TCHAR PPbOptionError[] = T("Bad option\r\n");
-const TCHAR PPbMainTitle[] = T("PPbui Version ") T(FileProp_Version) T("(")
-		T(BITSTRING) T(",") T(CODETYPESTRING) T(") ") TCopyright T("\n");
+const TCHAR PPbMainTitle[] = T("PPbui V") T(FileProp_Version)
+		T("(") RUNENVSTRINGS T(") ") TCopyright T("\n");
 
 THREADSTRUCT threadstruct = {PPbMainThreadName, XTHREAD_ROOT, NULL, 0, 0};
 PPXAPPINFO ppbappinfo = {(PPXAPPINFOFUNCTION)PPbInfoFunc, T("PPb"), RegID, NULL};
@@ -219,8 +219,9 @@ int USECDECL main(void)
 			case TCI_RECV: {	// 外部からのコマンド実行、[4][5] 内容設定通知
 				*(DWORD *)RecvParam = ExitCode;
 				if ( ReceiveStrings(RegID, RecvParam) == 0 ){ // [6]内容受領
-					tFillChr(0, screen.dwCursorPosition.Y,
-						screen.dwSize.X - 1, screen.dwCursorPosition.Y, ' ');
+					tFillChr(0, screen.info.dwCursorPosition.Y,
+						screen.info.dwSize.X - 1,
+						screen.info.dwCursorPosition.Y, ' ');
 					CurrentPath = ExtPath;
 					PPbExecuteRecv(RecvParam); // [7]実行
 				}
@@ -232,7 +233,7 @@ int USECDECL main(void)
 					ResetEvent(hCommIdleEvent); // 受け付け無しに変更 [1]
 					tputstr(T("\n"));
 					WriteHistory(PPXH_COMMAND, Cparam, 0, NULL);
-					PPbExecuteInput(Cparam, tstrlen32(Cparam));
+					PPbExecuteInput(Cparam, tstrlen(Cparam));
 					Cparam[0] = '\0';
 				}
 				break;

@@ -2,7 +2,6 @@
 	Paper Plane cUI												main loop
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include <shlobj.h>
 #include <dbt.h>
 #include "PPX.H"
@@ -54,6 +53,17 @@ BOOL USEFASTCALL IsTouchMessage(void)
 
 	if ( (info & POINTTYPE_SIG_MASK) != POINTTYPE_TOUCH ) return FALSE;
 	return TRUE;
+}
+
+int USEFASTCALL GetPointType(void)
+{
+	LPARAM info = GetMessageExtraInfo();
+
+	if ( (info & POINTTYPE_SIG_MASK) != POINTTYPE_TOUCH ) return LIT_MOUSE;
+	if ( (info & POINTTYPE_TOUCH_MASK) == POINTTYPE_TOUCH_PEN ){
+		return LIT_PEN;
+	}
+	return LIT_TOUCH;
 }
 
 #pragma argsused
@@ -458,12 +468,12 @@ void DoMouseAction(PPC_APPINFO *cinfo, const TCHAR *button, LPARAM lParam)
 	area = GetItemTypeFromPoint(cinfo, &pos, NULL);
 
 	if ( cinfo->PushArea != area ) return;
-	PPcMouseCommand(cinfo, button, (const TCHAR *)area);
+	PPcMouseCommand(cinfo, button, (const TCHAR *)(LONG_PTR)area);
 }
 
 void H_WheelMouse(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 {
-	DoMouseAction(cinfo, ((short)HIWORD(wParam) < 0) ? T("H") : T("I"), lParam);
+	DoMouseAction(cinfo, (HISHORTINT(wParam) < 0) ? T("H") : T("I"), lParam);
 }
 
 void WheelMouse(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
@@ -561,7 +571,7 @@ LRESULT USEFASTCALL PPcMouseActive(HWND hWnd, PPC_APPINFO *cinfo, WPARAM wParam,
 		GetMessagePosPoint(pos);
 		ScreenToClient(hWnd, &pos);
 		areatype = GetItemTypeFromPoint(cinfo, &pos, &celln);
-		if ( ((areatype == PPCR_CELLTEXT) &&
+		if ( ((areatype >= PPCR_CELLTEXT) &&
 			  ( !(X_askp || (TouchMode & TOUCH_ACTIONWITHACTIVE)) ||
 				(celln == cinfo->e.cellN)) ) ||
 			 (areatype == PPCR_INFOICON) ){
@@ -574,7 +584,7 @@ LRESULT USEFASTCALL PPcMouseActive(HWND hWnd, PPC_APPINFO *cinfo, WPARAM wParam,
 
 	if ( X_askp || (TouchMode & TOUCH_ACTIONWITHACTIVE) ){ //要アクティブ化検出
 		// アクティブ化のみ
-		if ( GetFocus() == NULL ){
+		if ( (cinfo->X_inag & INAG_UNFOCUS) || (GetFocus() == NULL) ){
 			cinfo->MouseStat.PushButton = MOUSEBUTTON_CANCEL_DOUBLE; // DblClickを無効
 			// アクティブ時のクリック検出を無効にする
 			if ( (TouchMode & TOUCH_ACTIONWITHACTIVE) && !IsTouchMessage() ){
@@ -965,6 +975,7 @@ void USEFASTCALL WmCapturechanged(PPC_APPINFO *cinfo)
 	KillTimer(cinfo->info.hWnd, TIMERID_DRAGSCROLL);
 	if ( cinfo->MousePush == MOUSE_MARK ){
 		SetDDScroll(cinfo, NULL);
+		cinfo->DrawTargetFlags = DRAWT_ALL;
 		InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
 	}
 	if ( cinfo->MouseStat.mode != MOUSEMODE_NONE ){ // 意図しないReleaseCapture
@@ -1023,6 +1034,7 @@ void USEFASTCALL PPcScrollBar(PPC_APPINFO *cinfo, UINT message, WORD scrollcode)
 					cinfo->EntriesOffset.x = -(
 						(scri.nTrackPos - cinfo->cellWMin) * cinfo->cel.Size.cx / (cinfo->cel.Area.cy) );
 				}
+				cinfo->DrawTargetFlags = DRAWT_ALL;
 				InvalidateRect(cinfo->info.hWnd, NULL, TRUE);
 */
 				MoveWinOff(cinfo, (scri.nTrackPos + cinfo->cel.Area.cy / 2) /
@@ -1070,6 +1082,7 @@ void UpMouse(PPC_APPINFO *cinfo, int button, int oldmode, WPARAM wParam, LPARAM 
 			}
 		}
 		cinfo->EntriesOffset.x = cinfo->EntriesOffset.y = 0;
+		cinfo->DrawTargetFlags = DRAWT_ALL;
 		InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
 	}
 
@@ -1115,7 +1128,7 @@ void UpMouse(PPC_APPINFO *cinfo, int button, int oldmode, WPARAM wParam, LPARAM 
 		 (cinfo->MouseStat.PushTick > MOUSE_LONG_PUSH_TIME) ){ // 長押しチェック
 		click[1] = 'H';
 		click[2] = '\0';
-		if ( IsTrue(PPcMouseCommand(cinfo, click, (const TCHAR *)cinfo->PushArea)) ){
+		if ( IsTrue(PPcMouseCommand(cinfo, click, (const TCHAR *)(LONG_PTR)cinfo->PushArea)) ){
 			return;
 		}
 		click[1] = '\0';
@@ -1143,13 +1156,13 @@ void UpMouse(PPC_APPINFO *cinfo, int button, int oldmode, WPARAM wParam, LPARAM 
 			}
 		}
 		// ダブルクリック / タッチ時タップ解除
-		if ( PPcMouseCommand(cinfo, click, (const TCHAR *)cinfo->PushArea) == FALSE ){
+		if ( PPcMouseCommand(cinfo, click, (const TCHAR *)(LONG_PTR)cinfo->PushArea) == FALSE ){
 			if ( (TouchMode & TOUCH_DBLCLICKTOSINGLE) &&
 				 IsTouchMessage() &&
 				 (cinfo->PushArea == PPCR_CELLTEXT) &&
 				 (cinfo->e.cellN == cinfo->cellNbeforePush) ){ // タッチをダブルクリックに変換
-				PPcMouseCommand(cinfo, T("LD"), (const TCHAR *)cinfo->PushArea);
-			}else if ( cinfo->PushArea == PPCR_CELLTAIL ){
+				PPcMouseCommand(cinfo, T("LD"), (const TCHAR *)(LONG_PTR)cinfo->PushArea);
+			}else if ( (cinfo->PushArea == PPCR_CELLTAIL) && (GetShiftKey() == 0) ){
 				if ( (cinfo->e.cellPoint >= 0) && (cinfo->e.cellPoint < cinfo->e.cellIMax) ){
 					int mode = X_stip[TIP_TAIL_MODE];
 					if ( mode == 0 ) mode = stip_mode_preview;
@@ -1183,7 +1196,7 @@ void UpMouse(PPC_APPINFO *cinfo, int button, int oldmode, WPARAM wParam, LPARAM 
 			if ( ((1 << button) & XC_cdc) && DispMarkSize(cinfo) ) return;
 		}
 	}
-	PPcMouseCommand(cinfo, click, (const TCHAR *)cinfo->PushArea);
+	PPcMouseCommand(cinfo, click, (const TCHAR *)(LONG_PTR)cinfo->PushArea);
 }
 
 void WMMouseMove(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
@@ -1199,13 +1212,17 @@ void WMMouseMove(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 		if ( cinfo->MouseStat.mode != MOUSEMODE_DRAG ) return;
 	}else{
 		cinfo->oldmousemvpos = pos;
+
+		if ( X_askp && (cinfo->MousePush != MOUSE_DnDCHECK) &&
+			 ((cinfo->X_inag & INAG_UNFOCUS) || (GetFocus() == NULL)) ){
+			return;
+		}
+
 		posType = GetItemTypeFromPoint(cinfo, &pos, &itemNo);
 
 		if ( X_poshl != 0 ){ // マウスカーソル上のエントリ背景色変更
 //			setflag(cinfo->Tip.mode, STIP_SHOWTAILAREA);
-			if ( (posType == PPCR_CELLMARK) ||
-				 (posType == PPCR_CELLTEXT) ||
-				 (posType == PPCR_CELLTAIL) ){
+			if ( (posType >= PPCR_CELLMARK) ){
 				pn = itemNo;
 			}else{
 				pn = -1;
@@ -1255,7 +1272,7 @@ void WMMouseMove(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 			InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
 			break;
 
-		case MOUSE_LDDCHECK:				// D&D開始検知
+		case MOUSE_DnDCHECK:				// D&D開始検知
 			cinfo->MouseStat.mode = MOUSEMODE_NONE;
 			cinfo->MouseStat.PushButton = MOUSEBUTTON_CANCEL;
 
@@ -1267,9 +1284,16 @@ void WMMouseMove(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 
-		case MOUSE_MOVE: {				// 窓移動中
+		case MOUSE_WNDMOVE: {				// 窓移動中
 			RECT box, *b;
 			HWND hWnd;
+
+			if ( !(GetAsyncKeyState(VK_LBUTTON) & KEYSTATE_PUSH) &&
+				 !(GetAsyncKeyState(MBtoVK(XC_drag)) & KEYSTATE_PUSH) ){
+				PPxCancelMouseButton(&cinfo->MouseStat);
+				cinfo->MousePush = MOUSE_CANCEL;
+				break;
+			}
 
 			if ( cinfo->combo ){
 				b = &box;
@@ -1346,6 +1370,7 @@ void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo, WPARAM wParam)
 {
 	int area, itemno;
 
+	cinfo->LastInputType = GetPointType();
 	if ( cinfo->Tip.states & STIP_STATE_READYMASK ){
 		if ( (cinfo->Tip.hTipWnd == NULL) || (cinfo->Tip.X_stip_mode != stip_mode_preview) ){ //preview は DestroyWindow で ReleaseCapture が生じるので無視
 			 EndEntryTip(cinfo);
@@ -1355,6 +1380,7 @@ void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo, WPARAM wParam)
 	if ( cinfo->MouseStat.PushButton <= MOUSEBUTTON_CANCEL ){
 		if ( cinfo->MousePush != MOUSE_NONE ){
 			cinfo->MousePush = MOUSE_CANCEL;
+			cinfo->DrawTargetFlags = DRAWT_ALL;
 			InvalidateRect(cinfo->info.hWnd, NULL, TRUE);
 		}
 		return;
@@ -1377,8 +1403,7 @@ void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo, WPARAM wParam)
 	if ( cinfo->MouseStat.PushButton == MOUSEBUTTON_L ){
 		// Shift + Lclick : 直前のカーソル位置から範囲マーク ------------------
 		// 本当は、カーソルも移動した方がいい
-		if ( (wParam & MK_SHIFT) &&
-			 ((area == PPCR_CELLMARK) || (area == PPCR_CELLTEXT)) ){
+		if ( (wParam & MK_SHIFT) && (area >= PPCR_CELLMARK) ){
 			ENTRYINDEX cellold;
 			ENTRYINDEX i;
 			int mode;
@@ -1403,15 +1428,17 @@ void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo, WPARAM wParam)
 			return;
 		}
 		// Ctrl + Lclick : マーク & カーソル移動 ------------------------------
-		if ( (area == PPCR_CELLMARK) ||
+		if ( (area == PPCR_CELLMARK) || (area == PPCR_CELLTAIL) ||
 			 ((wParam & MK_CONTROL) &&
-				((area == PPCR_CELLTEXT) || (area == PPCR_INFOICON))) ){
+				((area >= PPCR_CELLTEXT) || (area == PPCR_INFOICON))) ){
 			cinfo->MousePush = MOUSE_MARKCHECK;
 			cinfo->MouseDragWMin = cinfo->cellWMin;
 
 			MoveCellCsr(cinfo, itemno - cinfo->e.cellN, NULL);
 			cinfo->MarkMask = MARKMASK_DIRFILE;
-			CellMark(cinfo, cinfo->e.cellN, MARK_REVERSE);
+			if ( area != PPCR_CELLTAIL ){
+				CellMark(cinfo, cinfo->e.cellN, MARK_REVERSE);
+			}
 			RefleshCell(cinfo, cinfo->e.cellN);
 			RefleshInfoBox(cinfo, DE_ATTR_ENTRY | DE_ATTR_MARK);
 			return;
@@ -1420,22 +1447,22 @@ void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo, WPARAM wParam)
 	if ( (cinfo->MouseStat.PushButton == XC_drag) ||
 		 (cinfo->MouseStat.PushButton == MOUSEBUTTON_W) ){
 		if ( (cinfo->MouseStat.PushButton == MOUSEBUTTON_W) &&
-			 ((cinfo->MousePush == MOUSE_MARK) || ((cinfo->MousePush == MOUSE_GESTURE) && (cinfo->MouseStat.gesture.count != 0))) ){
+			 ((cinfo->MousePush <= MOUSE_CANCEL) || (cinfo->MousePush == MOUSE_MARK) || ((cinfo->MousePush == MOUSE_GESTURE) && (cinfo->MouseStat.gesture.count != 0))) ){
 			PPxCancelMouseButton(&cinfo->MouseStat);
 			cinfo->MousePush = MOUSE_CANCEL;
+			cinfo->DrawTargetFlags = DRAWT_ALL;
 			InvalidateRect(cinfo->info.hWnd, NULL, TRUE);
 			return;
 		}
-		if ( cinfo->combo ? (ComboWinPos.show == SW_SHOWNORMAL) :
-				(cinfo->WinPos.show == SW_SHOWNORMAL) ){
-			cinfo->MousePush = MOUSE_MOVE;
+		if ( (cinfo->combo ? ComboWinPos.show : cinfo->WinPos.show) == SW_SHOWNORMAL ){
+			cinfo->MousePush = MOUSE_WNDMOVE;
 		}
 		return;
 	}
 										// Cell point -------------------------
 	if ( (cinfo->MouseStat.PushButton == MOUSEBUTTON_L) ||
 		 (cinfo->MouseStat.PushButton == MOUSEBUTTON_R) ){
-		if ( (area == PPCR_CELLTEXT) || (area == PPCR_INFOICON) ){
+		if ( (area >= PPCR_CELLTEXT) || (area == PPCR_INFOICON) ){
 			if ( XC_Gest && (wParam & MK_RBUTTON) &&
 					!((XC_Gest == 2) && (itemno == cinfo->e.cellN)) ){
 				cinfo->MousePush = MOUSE_GESTURE;
@@ -1446,7 +1473,7 @@ void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo, WPARAM wParam)
 				cinfo->MouseDragWMin = cinfo->cellWMin;
 				return;
 #else
-				cinfo->MousePush = MOUSE_LDDCHECK;
+				cinfo->MousePush = MOUSE_DnDCHECK;
 				MoveCellCsr(cinfo, itemno - cinfo->e.cellN, NULL);
 #endif
 			}
@@ -1502,7 +1529,7 @@ void WMDpiChanged(PPC_APPINFO *cinfo, WPARAM wParam, RECT *newpos)
 	}
 
 	WmWindowPosChanged(cinfo);
-	InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
+	Repaint(cinfo);
 }
 
 
@@ -1765,7 +1792,7 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 					ppcr = PPCR_INFOTEXT;
 				}
 			}
-			PPcMouseCommand(cinfo, cmd, (const TCHAR *)ppcr);
+			PPcMouseCommand(cinfo, cmd, (const TCHAR *)(LONG_PTR)ppcr);
 			break;
 		}
 
@@ -1855,14 +1882,18 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case KC_UNFOCUS:
-			if ( cinfo->X_inag && (GetFocus() != cinfo->info.hWnd) ){
-				cinfo->X_inag = INAG_UNFOCUS;
+			if ( (cinfo->X_inag & INAG_USEGRAY) && (GetFocus() != cinfo->info.hWnd) ){
+				setflag(cinfo->X_inag, INAG_GRAY | INAG_UNFOCUS);
 				DeleteObject(cinfo->C_BackBrush);
 				cinfo->C_BackBrush = CreateSolidBrush(GetGrayColorB(cinfo->BackColor));
 				ChangeSizeDxDraw(cinfo->DxDraw, GetGrayColorB(cinfo->BackColor));
+				cinfo->DrawTargetFlags = DRAWT_ALL;
 				InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
+				break;
+			}else{
+				setflag(cinfo->X_inag, INAG_UNFOCUS);
+				break;
 			}
-			break;
 
 		case KC_GETSITEHWND: {
 			int site;
@@ -2093,6 +2124,7 @@ BOOL WmChar(PPC_APPINFO *cinfo, WORD key, LPARAM lParam)
 	if ( key < 0x80 ){
 		cinfo->KeyRepeats = (int)lParam & B30;
 		cinfo->PopupPosType = PPT_FOCUS;
+		cinfo->LastInputType = LIT_KEYBOARD;
 
 		if ( cinfo->KeyHookEntry != NULL ){
 			if ( CallKeyHook(cinfo, FixCharKeycode(key)) != PPXMRESULT_SKIP ){
@@ -2220,8 +2252,8 @@ void USEFASTCALL PPcWmSetFocus(HWND hWnd, PPC_APPINFO *cinfo)
 {
 	DEBUGLOGC("WM_SETFOCUS start", 0);
 
-	if ( cinfo->X_inag ){
-		cinfo->X_inag = INAG_FOCUS;
+	resetflag(cinfo->X_inag, INAG_GRAY | INAG_UNFOCUS);
+	if ( cinfo->X_inag & INAG_USEGRAY ){
 		DeleteObject(cinfo->C_BackBrush);
 		cinfo->C_BackBrush = CreateSolidBrush(cinfo->BackColor);
 		ChangeSizeDxDraw(cinfo->DxDraw, cinfo->BackColor);
@@ -2242,7 +2274,10 @@ void USEFASTCALL PPcWmSetFocus(HWND hWnd, PPC_APPINFO *cinfo)
 
 	cinfo->Mpos = -1;
 	RefleshCell(cinfo, cinfo->e.cellN); // カーソルの色・キャレットの位置を元に戻す
-	InvalidateRect(hWnd, NULL, FALSE); // 残ったゴミを消去するため再描画
+	cinfo->DrawTargetFlags = DRAWT_ALL;
+	InvalidateRect(cinfo->info.hWnd, NULL, FALSE); // 残ったゴミを消去するため再描画
+	// ●一体化時に、１枚目の表示に失敗するようなので入れてみた 1.69+3
+	if ( cinfo->combo ) UpdateWindow(cinfo->info.hWnd);
 	if ( !(cinfo->swin & SWIN_BUSY) &&
 			 (cinfo->swin & SWIN_WACTIVE) && cinfo->NowJoint ){
 		HWND hPairWnd;
@@ -2465,6 +2500,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 #ifdef USEDIRECTX
 		case WM_ACTIVATE:
 			if ( LOWORD(wParam) != WA_INACTIVE ){
+				cinfo->DrawTargetFlags = DRAWT_ALL;
 				InvalidateRect(hWnd, NULL, TRUE);
 			}
 			return DefWindowProc(hWnd, message, wParam, lParam);
@@ -2511,6 +2547,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			StopPopMsg(cinfo, PMF_WAITKEY | PMF_FLASH);
 										// [ALT] は メニュー移行を禁止
 			cinfo->PopupPosType = PPT_FOCUS;
+			cinfo->LastInputType = LIT_KEYBOARD;
 			cinfo->KeyRepeats = (int)lParam & B30;
 
 			if ( cinfo->KeyHookEntry != NULL ){

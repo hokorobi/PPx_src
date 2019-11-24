@@ -370,9 +370,7 @@ BOOL CreatePPcDataObject(PPC_APPINFO *cinfo, PPcDataObject &pdo, const TCHAR *sr
 		CF_xSHELLIDLIST = ::RegisterClipboardFormat(CFSTR_SHELLIDLIST);
 										// ドラッグ対象を準備
 		pdo.CDataObject = new CImpIDataObject;
-		pdo.CDataObject->m_cinfo = cinfo;
-										// アーカイブモードの判定
-		pdo.CDataObject->m_arcmode = PPcUnpackForAction(cinfo, pdo.CDataObject->m_arctemp, UFA_PATH);
+		pdo.CDataObject->Init(cinfo);
 
 		stm.tymed = 0;		// Local仕様：GetData時に生成
 		fe.tymed = TYMED_HGLOBAL;

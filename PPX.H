@@ -42,15 +42,25 @@
 #define PPxWebPage "/slppx.html"
 
 #if !defined(USEDIRECTX) && !defined(USEDIRECTWRITE)
-  #define DRAWSTRING ""
+  #define DRAWTYPESTRING
 #else
   #ifdef USEDIRECTWRITE
-	#define DRAWSTRING "DirectWrite,"
+	#define DRAWTYPESTRING T("DirectWrite,")
   #else
-	#define DRAWSTRING "Direct9,"
+	#define DRAWTYPESTRING T("Direct9,")
   #endif
 #endif
 
+#ifdef WINEGCC
+	#define USEWINESTRING T("Wine,")
+#else
+	#define USEWINESTRING
+#endif
+
+// DirectWrite,x64,UNICODE
+#define RUNENVSTRINGS USEWINESTRING DRAWTYPESTRING T(BITSTRING) T(",") T(CODETYPESTRING)
+
+#define SKIPBUTTONMENUTIME 500 // ボタンメニューを２度押ししたときの無視時間
 // メモリ使用制限関連 =========================================================
 #ifndef _WIN64 // 32bit版の設定
 	// ファイルイメージのデフォルト読み込み限界、X_wsiz で変更可

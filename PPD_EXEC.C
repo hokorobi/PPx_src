@@ -3,7 +3,6 @@
 -----------------------------------------------------------------------------*/
 #define ONPPXDLL		// PPCOMMON.H の DLL 定義指定
 #include "WINAPI.H"
-#include <windowsx.h>
 #include "PPX.H"
 #include "VFS.H"
 #include "PPCOMMON.RH"
@@ -50,26 +49,26 @@ const TCHAR is1[] = T("Execute check");
 const TCHAR is2[] = T("%s is new Executive file.\n\n%s\n\nExecute this file?");
 
 // 指定時間以上経過すると表示するボックス -------------------------------------
-INT_PTR CALLBACK WaitPPBDlgBox(HWND hDlg,UINT iMsg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK WaitPPBDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch(iMsg){
 		case WM_INITDIALOG:
-			SetWindowLongPtr(hDlg,DWLP_USER,(LONG_PTR)lParam);
-			LocalizeDialogText(hDlg,IDD_WAITPPB);
+			SetWindowLongPtr(hDlg, DWLP_USER, (LONG_PTR)lParam);
+			LocalizeDialogText(hDlg, IDD_WAITPPB);
 			return FALSE;
 
 		case WM_CLOSE:
-			*(int *)GetWindowLongPtr(hDlg,DWLP_USER) = IDCANCEL;
+			*(int *)GetWindowLongPtr(hDlg, DWLP_USER) = IDCANCEL;
 			break;
 
 		case WM_COMMAND:
 			switch ( LOWORD(wParam) ){
 				case IDB_WAITPPB_NOPPB:
 				case IDB_WAITPPB_NEWPPB:
-					*(int *)GetWindowLongPtr(hDlg,DWLP_USER) = LOWORD(wParam);
+					*(int *)GetWindowLongPtr(hDlg, DWLP_USER) = LOWORD(wParam);
 					break;
 				case IDCANCEL:
-					WaitPPBDlgBox(hDlg,WM_CLOSE,0,0);
+					WaitPPBDlgBox(hDlg, WM_CLOSE, 0, 0);
 					break;
 			}
 			break;
@@ -83,30 +82,30 @@ INT_PTR CALLBACK WaitPPBDlgBox(HWND hDlg,UINT iMsg,WPARAM wParam,LPARAM lParam)
 /*-----------------------------------------------------------------------------
 	外部プロセスを起動する
 -----------------------------------------------------------------------------*/
-PPXDLL BOOL PPXAPI ComExec(HWND hOwner,const TCHAR *line,const TCHAR *path)
+PPXDLL BOOL PPXAPI ComExec(HWND hOwner, const TCHAR *line, const TCHAR *path)
 {
-	return ComExecEx(hOwner,line,path,NULL,0,NULL);
+	return ComExecEx(hOwner, line, path, NULL, 0, NULL);
 }
 
-int AllocPPb(HWND hOwner,const TCHAR *path,int flags)
+int AllocPPb(HWND hOwner, const TCHAR *path, int flags)
 {
 	HANDLE hE;
 	TCHAR buf[200];
 	int ID;
 
-	wsprintf(buf,T(PPBBOOTSYNC) T("%x"),hOwner);
-	hE = CreateEvent(NULL,TRUE,FALSE,buf);
-	wsprintf(buf,T("-IR%u"),hOwner);
-	if ( BootPPB(path,buf,flags) ){	// PPb の起動に失敗
+	wsprintf(buf, T(PPBBOOTSYNC) T("%x"), hOwner);
+	hE = CreateEvent(NULL, TRUE, FALSE, buf);
+	wsprintf(buf, T("-IR%u"), hOwner);
+	if ( BootPPB(path, buf, flags) ){	// PPb の起動に失敗
 		CloseHandle(hE);
 		return -1;
 	}else{							// PPb を割り当てるまで待つ
 		int loopcnt = (15*1000) / 500;
 
-		while ( WaitForSingleObject(hE,500) != WAIT_OBJECT_0 ){
+		while ( WaitForSingleObject(hE, 500) != WAIT_OBJECT_0 ){
 			MSG msg;
 
-			while (PeekMessage(&msg,NULL,0,0,PM_REMOVE)){
+			while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)){
 				if ( msg.message == WM_QUIT ) break;
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
@@ -115,19 +114,19 @@ int AllocPPb(HWND hOwner,const TCHAR *path,int flags)
 			if ( loopcnt ) continue;
 
 			CloseHandle(hE);
-			xmessage(XM_GrERRld,T("Use PPB error(boot timeout)"));
+			xmessage(XM_GrERRld, T("Use PPB error(boot timeout)"));
 			return -1;
 		}
 		CloseHandle(hE);
 		ID = UsePPb(hOwner);
-		if ( ID == -1 ) xmessage(XM_GrERRld,T("Use PPB error(share fault)"));
+		if ( ID == -1 ) xmessage(XM_GrERRld, T("Use PPB error(share fault)"));
 		return ID;
 	}
 }
 /*-----------------------------------------------------------------------------
 	外部プロセスを起動する
 -----------------------------------------------------------------------------*/
-PPXDLL ERRORCODE PPXAPI GetExecuteErrorReason(const TCHAR *filename,TCHAR *reason)
+PPXDLL ERRORCODE PPXAPI GetExecuteErrorReason(const TCHAR *filename, TCHAR *reason)
 {
 	ERRORCODE errcode;
 
@@ -136,26 +135,26 @@ PPXDLL ERRORCODE PPXAPI GetExecuteErrorReason(const TCHAR *filename,TCHAR *reaso
 		VFSFILETYPE type;
 
 		type.flags = VFSFT_TYPETEXT;
-		errcode = VFSGetFileType(filename,NULL,0,&type);
+		errcode = VFSGetFileType(filename, NULL, 0, &type);
 		if ( errcode != NO_ERROR ){
-			PPErrorMsg(reason,errcode);
+			PPErrorMsg(reason, errcode);
 		}else{
-			wsprintf(reason,MessageText(MES_EEFT),type.typetext);
+			wsprintf(reason, MessageText(MES_EEFT), type.typetext);
 		}
 	}else{
-		PPErrorMsg(reason,errcode);
+		PPErrorMsg(reason, errcode);
 	}
 	SetLastError(errcode);
 	return errcode;
 }
 
-void PPbLoadWaitTime(HWND hOwner,struct PPBWAITSTRUCT *pws)
+void PPbLoadWaitTime(HWND hOwner, struct PPBWAITSTRUCT *pws)
 {
 	MSG msg;
 
 	if ( pws->user == IDOK ){
 	//	pws->waittick = DEFAULTWAITPPBTIME;
-		GetCustData(T("X_wppb"),&pws->waittick,sizeof(DWORD));
+		GetCustData(T("X_wppb"), &pws->waittick, sizeof(DWORD));
 		if ( pws->waittick == (DWORD)-1 ){
 			pws->user = IDB_WAITPPB_NOPPB;
 		}else if ( pws->waittick == (DWORD)-2 ){
@@ -171,9 +170,9 @@ void PPbLoadWaitTime(HWND hOwner,struct PPBWAITSTRUCT *pws)
 	}
 	if ( pws->user != 0 ) return;
 
-	while ( PeekMessage(&msg,NULL,0,0,PM_REMOVE )){
+	while ( PeekMessage(&msg, NULL, 0, 0, PM_REMOVE )){
 		if ( msg.message == WM_QUIT ) break;
-		if ( (pws->hDlg == NULL) || (IsDialogMessage(pws->hDlg,&msg) == FALSE)){
+		if ( (pws->hDlg == NULL) || (IsDialogMessage(pws->hDlg, &msg) == FALSE)){
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
@@ -181,9 +180,10 @@ void PPbLoadWaitTime(HWND hOwner,struct PPBWAITSTRUCT *pws)
 				// GetTickCountオーバーフロー時は、即座に反応
 	if ( (GetTickCount() - pws->starttick) > pws->waittick ){
 		if ( (pws->hDlg == NULL) && !(pws->flags & XEO_WAITQUIET) ){
-			pws->hDlg = CreateDialogParam(DLLhInst,MAKEINTRESOURCE(IDD_WAITPPB),
-					hOwner,WaitPPBDlgBox,(LPARAM)&pws->user);
-			ShowWindow(pws->hDlg,SW_SHOWNOACTIVATE);
+			pws->hDlg = CreateDialogParam(DLLhInst,
+					MAKEINTRESOURCE(IDD_WAITPPB),
+					hOwner, WaitPPBDlgBox, (LPARAM)&pws->user);
+			ShowWindow(pws->hDlg, SW_SHOWNOACTIVATE);
 			if ( GetParent(hOwner) != NULL ) SetFocus(pws->hDlg);
 		}
 	}
@@ -196,17 +196,17 @@ BOOL PPbCheck(int ID)
 	TCHAR syncname[32];
 	DWORD result = WAIT_FAILED;
 
-	tstrcpy(syncname,SyncTag);
+	tstrcpy(syncname, SyncTag);
 	P = &Sm->P[ID];
 	UsePPx();
 	if ( (P->ID[0] == 'B') && (P->ID[1] == '_') ){
 		HANDLE hCommEvent2;
 
-		tstrcat(syncname,P->ID);			// PPb との通信手段を確保 ---------
-		tstrcat(syncname,T("R"));
-		hCommEvent2 = OpenEvent(EVENT_ALL_ACCESS,FALSE,syncname);
+		tstrcat(syncname, P->ID);			// PPb との通信手段を確保 ---------
+		tstrcat(syncname, T("R"));
+		hCommEvent2 = OpenEvent(EVENT_ALL_ACCESS, FALSE, syncname);
 		if (hCommEvent2 != NULL){
-			result = WaitForSingleObject(hCommEvent2,50);
+			result = WaitForSingleObject(hCommEvent2, 50);
 			CloseHandle(hCommEvent2);
 		}
 	}
@@ -214,10 +214,10 @@ BOOL PPbCheck(int ID)
 	return (result == WAIT_OBJECT_0);
 }
 
-BOOL ComExecPPb(HWND hOwner,const TCHAR *line,const TCHAR *path,int *useppb,int flags,int ID,DWORD *ExitCode)
+BOOL ComExecPPb(HWND hOwner, const TCHAR *line, const TCHAR *path, int *useppb, int flags, int ID, DWORD *ExitCode)
 {
 	TCHAR buf[PPbParamSize];
-	struct PPBWAITSTRUCT pws = { NULL,IDOK,0,DEFAULTWAITPPBTIME,0 };
+	struct PPBWAITSTRUCT pws = { NULL, IDOK, 0, DEFAULTWAITPPBTIME, 0 };
 	HWND hOldFocus;
 
 	if ( hOwner != NULL ) hOldFocus = GetFocus();
@@ -225,36 +225,36 @@ BOOL ComExecPPb(HWND hOwner,const TCHAR *line,const TCHAR *path,int *useppb,int 
 		ShareX *P;
 		TCHAR syncname[32];
 
-		tstrcpy(syncname,SyncTag);
+		tstrcpy(syncname, SyncTag);
 		P = &Sm->P[ID];
 		UsePPx();
 		if ( (P->ID[0] == 'B') && (P->ID[1] == '_') && (P->UsehWnd == hOwner)){
 			HANDLE hCommEvent2;
 
-			tstrcat(syncname,P->ID);		// PPB との通信手段を確保 ---------
-			tstrcat(syncname,T("R"));
+			tstrcat(syncname, P->ID);		// PPB との通信手段を確保 ---------
+			tstrcat(syncname, T("R"));
 			FreePPx();
-			hCommEvent2 = OpenEvent(EVENT_ALL_ACCESS,FALSE,syncname);
+			hCommEvent2 = OpenEvent(EVENT_ALL_ACCESS, FALSE, syncname);
 			if ( hCommEvent2 == NULL ){
-				xmessage(XM_FaERRd,T("PPB-Event destroyed"));
-				FreePPb(hOwner,ID);
+				xmessage(XM_FaERRd, T("PPB-Event destroyed"));
+				FreePPb(hOwner, ID);
 				goto error;
 			}
-			if ( hOwner != NULL ) EnableWindow(hOwner,FALSE);
+			if ( hOwner != NULL ) EnableWindow(hOwner, FALSE);
 			pws.flags = flags;
 			pws.starttick = GetTickCount();
 			for ( ; ; ){
 				DWORD result;
 
-				result = WaitForSingleObject(hCommEvent2,50);
+				result = WaitForSingleObject(hCommEvent2, 50);
 				if ( result == WAIT_OBJECT_0 ) break;
 				if ( result == WAIT_FAILED ){
-					xmessage(XM_FaERRd,T("PPB-Event destroyed"));
+					xmessage(XM_FaERRd, T("PPB-Event destroyed"));
 					CloseHandle(hCommEvent2);
-					FreePPb(hOwner,ID);
+					FreePPb(hOwner, ID);
 					return FALSE;
 				}
-				PPbLoadWaitTime(hOwner,&pws);
+				PPbLoadWaitTime(hOwner, &pws);
 				if ( pws.user ) break;
 			}
 			CloseHandle(hCommEvent2);
@@ -263,55 +263,55 @@ BOOL ComExecPPb(HWND hOwner,const TCHAR *line,const TCHAR *path,int *useppb,int 
 			ID = -1;
 		}
 	}else if ( ID == -1 ){	// PPb は全く起動していないのですぐに用意
-		ID = AllocPPb(hOwner,path,flags);
+		ID = AllocPPb(hOwner, path, flags);
 	}else{	// 任意PPbが空くまで待機
-		if ( hOwner != NULL ) EnableWindow(hOwner,FALSE);
+		if ( hOwner != NULL ) EnableWindow(hOwner, FALSE);
 		pws.flags = flags;
 		pws.starttick = GetTickCount();
 		for ( ; ; ){
-			FreePPb(hOwner,ID);
+			FreePPb(hOwner, ID);
 			ID = UsePPb(hOwner);
 			if ( ID >= 0 ){
 				if ( IsTrue(PPbCheck(ID)) ) break; // 確保成功
 			}
 			if ( ID == -1 ){	// PPb が存在しないので新規に用意
-				ID = AllocPPb(hOwner,path,flags);
+				ID = AllocPPb(hOwner, path, flags);
 				break;
 			}
 
-			PPbLoadWaitTime(hOwner,&pws);
+			PPbLoadWaitTime(hOwner, &pws);
 			if ( pws.user ) break;
 			Sleep(50);
 		}
 	}
 	if ( pws.hDlg != NULL ) DestroyWindow(pws.hDlg);
 	if ( hOwner != NULL ){
-		EnableWindow(hOwner,TRUE);
+		EnableWindow(hOwner, TRUE);
 		SetFocus(hOldFocus);
 	}
 	switch( pws.user ){
 		case IDCANCEL:
-			FreePPb(hOwner,ID);
+			FreePPb(hOwner, ID);
 			SetLastError(ERROR_CANCELLED);
 			return FALSE;
 		case IDB_WAITPPB_NEWPPB: {
-			int newID = AllocPPb(hOwner,path,flags);
-			FreePPb(hOwner,ID);
+			int newID = AllocPPb(hOwner, path, flags);
+			FreePPb(hOwner, ID);
 			ID = newID;
 			break;
 		}
 		case IDB_WAITPPB_NOPPB:
-			FreePPb(hOwner,ID);
+			FreePPb(hOwner, ID);
 			ID = -1;
 			break;
 	}
 					// PPb の起動に失敗 → 自前で
-	if ( ID == -1 ) return ComExecSelf(hOwner,line,path,flags,ExitCode);
+	if ( ID == -1 ) return ComExecSelf(hOwner, line, path, flags, ExitCode);
 
 										// PPb が確保できているなら PPb に送信
 	if ( path != NULL ){				// Path送信
-		wsprintf(buf,T(">L%s"),path);
-		SendPPB(hOwner,buf,ID);
+		wsprintf(buf, T(">L%s"), path);
+		SendPPB(hOwner, buf, ID);
 	}
 	if ( line != NULL ){				// パラメータ送信
 		TCHAR *p1;
@@ -323,11 +323,11 @@ BOOL ComExecPPb(HWND hOwner,const TCHAR *line,const TCHAR *path,int *useppb,int 
 		buf[1] = 'H';
 
 		p1 = buf + 2;
-		for ( bits = flags ; *opt ; bits >>= 1,opt++ ){
+		for ( bits = flags ; *opt ; bits >>= 1, opt++ ){
 			if ( bits & 1 ) *p1++ = *opt;
 		}
 		if ( hOwner != NULL ){
-			p1 += wsprintf(p1,T(";%u"),hOwner);
+			p1 += wsprintf(p1, T(";%u"), hOwner);
 		}
 		*p1++ = ',';
 
@@ -335,9 +335,9 @@ BOOL ComExecPPb(HWND hOwner,const TCHAR *line,const TCHAR *path,int *useppb,int 
 		if ( linelen > PPbMaxSendSize ){ // CMDLINESIZE 以上の長いときは分割送信
 			buf[1] = 'p';
 			do {
-				memcpy(p1,line,PPbMaxSendSize * sizeof(TCHAR));
+				memcpy(p1, line, PPbMaxSendSize * sizeof(TCHAR));
 				*(p1 + PPbMaxSendSize) = '\0';
-				SendPPB(hOwner,buf,ID);
+				SendPPB(hOwner, buf, ID);
 
 				line += PPbMaxSendSize;
 				linelen -= PPbMaxSendSize;
@@ -346,48 +346,48 @@ BOOL ComExecPPb(HWND hOwner,const TCHAR *line,const TCHAR *path,int *useppb,int 
 			buf[1] = 'P';
 		}
 
-		tstrcpy(p1,line);
-		SendPPB(hOwner,buf,ID);
+		tstrcpy(p1, line);
+		SendPPB(hOwner, buf, ID);
 
 		if ( flags & (XEO_WAITIDLE | XEO_SEQUENTIAL) ){
 			if ( ExitCode == NULL ){
-				SendPPB(hOwner,T(">"),ID);
+				SendPPB(hOwner, T(">"), ID);
 			}else{
-				*ExitCode = RecvPPBExitCode(hOwner,ID);
+				*ExitCode = RecvPPBExitCode(hOwner, ID);
 			}
 		}
 	}
 	if ( useppb != NULL ){
 		*useppb = ID;
 	}else{
-		FreePPb(hOwner,ID);
+		FreePPb(hOwner, ID);
 	}
 	return TRUE;
 error:
 	if ( pws.hDlg != NULL ) DestroyWindow(pws.hDlg);
-	if ( hOwner != NULL ) EnableWindow(hOwner,TRUE);
+	if ( hOwner != NULL ) EnableWindow(hOwner, TRUE);
 	return FALSE;
 }
 
-void PopupErrorCodeMessage(HWND hWnd,const TCHAR *title,ERRORCODE code)
+void PopupErrorCodeMessage(HWND hWnd, const TCHAR *title, ERRORCODE code)
 {
 	TCHAR buf[0x400];
 
-	PPErrorMsg(buf,code);
-	PopupErrorMessage(hWnd,title,buf);
+	PPErrorMsg(buf, code);
+	PopupErrorMessage(hWnd, title, buf);
 	SetLastError(code);
 }
 
-BOOL ComExecEx(HWND hOwner,const TCHAR *line,const TCHAR *path,int *useppb,int flags,DWORD *ExitCode)
+BOOL ComExecEx(HWND hOwner, const TCHAR *line, const TCHAR *path, int *useppb, int flags, DWORD *ExitCode)
 {
 	int ID = -1;
 		// 自前 or 自分がコンソール なら自前
 	if ( flags & (XEO_NOUSEPPB | XEO_CONSOLE) ){
 		if ( !(flags & XEO_NOPIPERDIR) &&
-			 (SearchPipe(line) || tstrchr(line,'<') || tstrchr(line,'>')) ){
-			setflag(flags,XEO_USECMD);
+			 (SearchPipe(line) || tstrchr(line, '<') || tstrchr(line, '>')) ){
+			setflag(flags, XEO_USECMD);
 		}
-		return ComExecSelf(hOwner,line,path,flags,ExitCode);
+		return ComExecSelf(hOwner, line, path, flags, ExitCode);
 	}
 	FixTask();
 	if ( useppb != NULL ) ID = *useppb;
@@ -400,19 +400,19 @@ BOOL ComExecEx(HWND hOwner,const TCHAR *line,const TCHAR *path,int *useppb,int f
 			const TCHAR *p;
 
 			p = line;
-			type = GetExecType(&p,NULL,path);
+			type = GetExecType(&p, NULL, path);
 			if ( (type == GTYPE_ERROR) &&
 				 (GetLastError() == ERROR_PATH_NOT_FOUND ) ){
-				PopupErrorCodeMessage(hOwner,T("Comexec"),ERROR_PATH_NOT_FOUND);
+				PopupErrorCodeMessage(hOwner, T("Comexec"), ERROR_PATH_NOT_FOUND);
 				return FALSE;
 			}
 			// Console/CMD 不要？→自前実行できるかも
 			if ( ((type == GTYPE_GUI) || (type == GTYPE_SHELLEXEC)) &&
 				  ( (flags & XEO_NOPIPERDIR) ||
-					!(SearchPipe(line) ||tstrchr(line,'<')|| tstrchr(line,'>'))) ){
+					!(SearchPipe(line) || tstrchr(line, '<') || tstrchr(line, '>'))) ){
 				// 順次実行不要か空きPPb無しなら、自前実行
 				if ( !(flags & XEO_SEQUENTIAL) || ((ID = UsePPb(hOwner)) < 0)){
-					return ComExecSelf(hOwner,line,path,flags,ExitCode);
+					return ComExecSelf(hOwner, line, path, flags, ExitCode);
 				}
 			}else{
 				ID = UsePPb(hOwner); // もし、空いている PPb があれば確保
@@ -420,11 +420,11 @@ BOOL ComExecEx(HWND hOwner,const TCHAR *line,const TCHAR *path,int *useppb,int f
 		}
 	}
 	// PPb 経由で実行する
-	return ComExecPPb(hOwner,line,path,useppb,flags,ID,ExitCode);
+	return ComExecPPb(hOwner, line, path, useppb, flags, ID, ExitCode);
 }
 
 // 指定時間以上経過すると表示するボックス -------------------------------------
-INT_PTR CALLBACK WaitDlgBox(HWND hDlg,UINT iMsg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK WaitDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch(iMsg){
 		case WM_INITDIALOG: {
@@ -432,28 +432,28 @@ INT_PTR CALLBACK WaitDlgBox(HWND hDlg,UINT iMsg,WPARAM wParam,LPARAM lParam)
 
 			wds->md.text = MessageText(STR_WAITOPERATION);
 			wds->md.style = MB_PPX_STARTCANCEL | MB_DEFBUTTON1 | MB_PPX_NOCENTER;
-			MessageBoxInitDialog(hDlg,&wds->md);
-			SetWindowLongPtr(hDlg,DWLP_USER,(LONG_PTR)&wds->user);
+			MessageBoxInitDialog(hDlg, &wds->md);
+			SetWindowLongPtr(hDlg, DWLP_USER, (LONG_PTR)&wds->user);
 			return FALSE;
 		}
 		case WM_CLOSE:
-			*(int *)GetWindowLongPtr(hDlg,DWLP_USER) = FALSE;
+			*(int *)GetWindowLongPtr(hDlg, DWLP_USER) = FALSE;
 			break;
 
 		case WM_COMMAND:
 			switch ( LOWORD(wParam) ){
 				case IDYES:
-					*(int *)GetWindowLongPtr(hDlg,DWLP_USER) = TRUE;
+					*(int *)GetWindowLongPtr(hDlg, DWLP_USER) = TRUE;
 					break;
 
 				case IDCANCEL:
-					WaitDlgBox(hDlg,WM_CLOSE,0,0);
+					WaitDlgBox(hDlg, WM_CLOSE, 0, 0);
 					break;
 
 				case IDM_CONTINUE:
-					WaitDlgBox(hDlg,WM_COMMAND,IDOK,0);
-					SetWindowLongPtr(hDlg,DWLP_MSGRESULT,(LONG_PTR)IDM_CONTINUE);
-					PostMessage(hDlg,WM_NULL,0,0); // メッセージループを回す
+					WaitDlgBox(hDlg, WM_COMMAND, IDOK, 0);
+					SetWindowLongPtr(hDlg, DWLP_MSGRESULT, (LONG_PTR)IDM_CONTINUE);
+					PostMessage(hDlg, WM_NULL, 0, 0); // メッセージループを回す
 					break;
 			}
 			break;
@@ -465,9 +465,9 @@ INT_PTR CALLBACK WaitDlgBox(HWND hDlg,UINT iMsg,WPARAM wParam,LPARAM lParam)
 }
 // 起動したプロセスの終了を待つ -----------------------------------------------
 // TRUE:正常に終了/強制的に次へ FALSE:中断
-BOOL WaitJobDialog(HWND hWnd,HANDLE handle,const TCHAR *title,DWORD flags)
+BOOL WaitJobDialog(HWND hWnd, HANDLE handle, const TCHAR *title, DWORD flags)
 {
-	DWORD result,timeout = NODIALOGTIME,tick;
+	DWORD result, timeout = NODIALOGTIME, tick;
 	HWND hDlg = NULL;
 	WAITDLGSTRUCT wds;
 
@@ -475,8 +475,8 @@ BOOL WaitJobDialog(HWND hWnd,HANDLE handle,const TCHAR *title,DWORD flags)
 	wds.user = -1;
 	for ( ; ; ){
 		if ( handle != NULL ){
-			result = MsgWaitForMultipleObjects(1,&handle,FALSE,
-					timeout,QS_ALLEVENTS | QS_SENDMESSAGE);
+			result = MsgWaitForMultipleObjects(1, &handle, FALSE,
+					timeout, QS_ALLEVENTS | QS_SENDMESSAGE);
 		}else{
 			if ( CheckJobWait(NULL) == FALSE ) break;
 			Sleep(20);
@@ -492,9 +492,9 @@ BOOL WaitJobDialog(HWND hWnd,HANDLE handle,const TCHAR *title,DWORD flags)
 				BOOL hide;
 
 				wds.md.title = (title != NULL) ? title : PPXJOBMUTEX;
-				hDlg = CreateDialogParam(DLLhInst,MAKEINTRESOURCE(IDD_NULLMIN),NULL,WaitDlgBox,(LPARAM)&wds);
+				hDlg = CreateDialogParam(DLLhInst, MAKEINTRESOURCE(IDD_NULLMIN), NULL, WaitDlgBox, (LPARAM)&wds);
 
-				if ( hWnd != NULL ) MoveCenterWindow(hDlg,hWnd);
+				if ( hWnd != NULL ) MoveCenterWindow(hDlg, hWnd);
 
 				hide = SetJobTask(hDlg,
 						flags ? JOBSTATE_WAITJOB : JOBSTATE_WAITEXEC);
@@ -508,7 +508,7 @@ BOOL WaitJobDialog(HWND hWnd,HANDLE handle,const TCHAR *title,DWORD flags)
 		}else if ( result == WAIT_OBJECT_0 + 1 ){ // Message
 			MSG msg;
 
-			while ( PeekMessage(&msg,NULL,0,0,PM_REMOVE) ){
+			while ( PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) ){
 				if ( msg.message == WM_QUIT ) break;
 				// 自ウィンドウのキー入力・マウス入力を無効化する
 				// ※ EnableWindow を使うと、フォーカス操作まで無効化されて、
@@ -521,7 +521,7 @@ BOOL WaitJobDialog(HWND hWnd,HANDLE handle,const TCHAR *title,DWORD flags)
 					continue;
 				}
 
-				if ( (hDlg == NULL) || (IsDialogMessage(hDlg,&msg) == FALSE) ){
+				if ( (hDlg == NULL) || (IsDialogMessage(hDlg, &msg) == FALSE) ){
 					TranslateMessage(&msg);
 					DispatchMessage(&msg);
 				}
@@ -532,7 +532,7 @@ BOOL WaitJobDialog(HWND hWnd,HANDLE handle,const TCHAR *title,DWORD flags)
 	}
 	if ( hDlg ){
 		DestroyWindow(hDlg);
-		SetJobTask(hDlg,flags ? JOBSTATE_FINWJOB : JOBSTATE_FINWEXEC);
+		SetJobTask(hDlg, flags ? JOBSTATE_FINWJOB : JOBSTATE_FINWEXEC);
 	}
 	if ( wds.user == -1 ) wds.user = TRUE;
 	return wds.user;
@@ -545,7 +545,7 @@ void DummyGetProcessID(HANDLE hProcess, DWORD *ExitCode)
 {
 	UnUsedParam(hProcess);
 
-	if ( ExitCode != NULL ) *ExitCode = -1;
+	if ( ExitCode != NULL ) *ExitCode = (DWORD)-1;
 }
 
 void GetProcessIDMain(HANDLE hProcess, DWORD *ExitCode)
@@ -572,7 +572,7 @@ BOOL CALLBACK FindProcessWindow(HWND hWnd, LPARAM lParam)
 */
 void InitGetProcessID(HANDLE hProcess, DWORD *ExitCode)
 {
-	DGetProcessId = GETDLLPROC(hKernel32,GetProcessId);
+	DGetProcessId = GETDLLPROC(hKernel32, GetProcessId);
 	if ( DGetProcessId == NULL ){
 		GetProcessIDx = DummyGetProcessID;
 	}else{
@@ -583,7 +583,7 @@ void InitGetProcessID(HANDLE hProcess, DWORD *ExitCode)
 	if ( (ExitCode != NULL) && (*ExitCode != 0xffffffff) ){
 		int i;
 		for ( i = 0 ; i < 10000 ; i+= 100 ){
-			if ( FALSE == EnumWindows(FindProcessWindow,(LPARAM)*ExitCode) ){
+			if ( FALSE == EnumWindows(FindProcessWindow, (LPARAM)*ExitCode) ){
 				break;
 			}
 			Sleep(100);
@@ -592,18 +592,18 @@ void InitGetProcessID(HANDLE hProcess, DWORD *ExitCode)
 */
 }
 
-BOOL ComExecSelfShell(HWND hOwner,const TCHAR *title,const TCHAR *exename,const TCHAR *param,const TCHAR *path,int flag,DWORD *ExitCode)
+BOOL ComExecSelfShell(HWND hOwner, const TCHAR *title, const TCHAR *exename, const TCHAR *param, const TCHAR *path, int flag, DWORD *ExitCode)
 {
 	HANDLE hProcess;
 	TCHAR reason[VFPS];
 
-	if ( NULL != (hProcess = PPxShellExecute(hOwner,NULL,exename,param,path,flag,reason)) ){
+	if ( NULL != (hProcess = PPxShellExecute(hOwner, NULL, exename, param, path, flag, reason)) ){
 		if ( flag & (XEO_WAITIDLE | XEO_SEQUENTIAL) ){
 			BOOL result = TRUE;
 
-			if ( flag & XEO_WAITIDLE ) WaitForInputIdle(hProcess,INFINITE);
+			if ( flag & XEO_WAITIDLE ) WaitForInputIdle(hProcess, INFINITE);
 			if ( flag & XEO_SEQUENTIAL ){
-				result = WaitJobDialog(hOwner,hProcess,title,flag & XEO_WAITQUIET);
+				result = WaitJobDialog(hOwner, hProcess, title, flag & XEO_WAITQUIET);
 				if ( ExitCode != NULL ){
 					*ExitCode = (DWORD)-1;
 					GetExitCodeProcess(hProcess, ExitCode);
@@ -616,16 +616,16 @@ BOOL ComExecSelfShell(HWND hOwner,const TCHAR *title,const TCHAR *exename,const 
 		}
 		return TRUE;
 	}
-	PopupErrorMessage(hOwner,T("ComExecSelf"),reason);
+	PopupErrorMessage(hOwner, T("ComExecSelf"), reason);
 	return FALSE;
 }
 
 #ifdef WINEGCC // system で実行
-int ComExecSystem(TCHAR *commandline,const TCHAR *CurrentDir)
+int ComExecSystem(TCHAR *commandline, const TCHAR *CurrentDir)
 {
 	char bufA[CMDLINESIZE];
 
-	TCHAR *src,*dst,OldCurrentDir[VFPS];
+	TCHAR *src, *dst, OldCurrentDir[VFPS];
 	char *chpath;
 	BOOL fixsep = FALSE;
 	int result;
@@ -649,11 +649,11 @@ int ComExecSystem(TCHAR *commandline,const TCHAR *CurrentDir)
 	}
 	*dst = '\0';
 
-	GetCurrentDirectory(TSIZEOF(OldCurrentDir),OldCurrentDir);
+	GetCurrentDirectory(TSIZEOF(OldCurrentDir), OldCurrentDir);
 #ifdef UNICODE
-	UnicodeToUtf8(CurrentDir,bufA,CMDLINESIZE);
+	UnicodeToUtf8(CurrentDir, bufA, CMDLINESIZE);
 
-	while ( (chpath = strchr(bufA,'\\')) != NULL ) *chpath = '/';
+	while ( (chpath = strchr(bufA, '\\')) != NULL ) *chpath = '/';
 	chpath = bufA;
 	if ( (*(chpath + 1) == ':') &&
 		( (*chpath == 'z') || (*chpath == 'Z') ) ){
@@ -661,22 +661,22 @@ int ComExecSystem(TCHAR *commandline,const TCHAR *CurrentDir)
 	}
 	chdir(chpath);
 	SetCurrentDirectory(CurrentDir);
-	if ( (UnicodeToUtf8(commandline,bufA,CMDLINESIZE) == 0) &&
+	if ( (UnicodeToUtf8(commandline, bufA, CMDLINESIZE) == 0) &&
 		 (GetLastError() == ERROR_INSUFFICIENT_BUFFER) ){ // バッファが小さい
 		int len;
 		char *bufptr;
 
-		len = UnicodeToUtf8(commandline,NULL,0);
+		len = UnicodeToUtf8(commandline, NULL, 0);
 		bufptr = malloc(len);
-		UnicodeToUtf8(commandline,bufptr,len);
+		UnicodeToUtf8(commandline, bufptr, len);
 		result = system(bufptr);
 		free(bufptr);
 	}else{
 		result = system(bufA);
 	}
 #else
-	strcpy(bufA,CurrentDir);
-	while ( (chpath = strchr(bufA,'\\')) != NULL ) *chpath = '/';
+	strcpy(bufA, CurrentDir);
+	while ( (chpath = strchr(bufA, '\\')) != NULL ) *chpath = '/';
 	chpath = bufA;
 	if ( (*(chpath + 1) == ':') &&
 		( (*chpath == 'z') || (*chpath == 'Z') ) ){
@@ -696,11 +696,11 @@ const TCHAR *FixCurrentDirPath(const TCHAR *path)
 	if ( (path != NULL) && (
 			(path[0] == '?') || !(
 				(Isalpha(path[0]) && (path[1] == ':')) ||
-				((path[0] == '\\') && (path[1] == '\\') && (tstrchr(path + 2,'\\') != NULL)) ||
+				((path[0] == '\\') && (path[1] == '\\') && (tstrchr(path + 2, '\\') != NULL)) ||
 				(path[0] == '/')
 			)
 		  ) ){
-		if ( TempPath[0] == '\0' ) GetTempPath(MAX_PATH,TempPath);
+		if ( TempPath[0] == '\0' ) GetTempPath(MAX_PATH, TempPath);
 		path = TempPath;
 	}
 	return path;
@@ -711,10 +711,10 @@ const TCHAR *FixCurrentDirPath(const TCHAR *path)
 /*-----------------------------------------------------------------------------
 	自前で外部プロセスを起動する
 -----------------------------------------------------------------------------*/
-BOOL ComExecSelf(HWND hOwner,const TCHAR *execarg,const TCHAR *path,int flags,DWORD *ExitCode)
+BOOL ComExecSelf(HWND hOwner, const TCHAR *execarg, const TCHAR *path, int flags, DWORD *ExitCode)
 {
-	TCHAR LineStaticBuf[CMDLINESIZE + MAX_PATH],*LineBuf = LineStaticBuf;
-	TCHAR *exeterm,*paramdest;
+	TCHAR LineStaticBuf[CMDLINESIZE + MAX_PATH], *LineBuf = LineStaticBuf;
+	TCHAR *exeterm, *paramdest;
 	size_t linelen;
 
 	PROCESS_INFORMATION pi;
@@ -726,23 +726,23 @@ BOOL ComExecSelf(HWND hOwner,const TCHAR *execarg,const TCHAR *path,int flags,DW
 
 	param = execarg;
 	while( (*param == ' ') || (*param == '\t') ) param++;
-	exetype = GetExecType(&param,LineStaticBuf,path);
+	exetype = GetExecType(&param, LineStaticBuf, path);
 
 	if ( exetype == GTYPE_SHELLEXEC ){	// ShellExecute で起動
-		return ComExecSelfShell(hOwner,execarg,LineStaticBuf,param,path,flags,ExitCode);
+		return ComExecSelfShell(hOwner, execarg, LineStaticBuf, param, path, flags, ExitCode);
 	}
-	if ( !(flags & XEO_NOSCANEXE) && (CheckExebin(LineStaticBuf,exetype) == FALSE) ){
+	if ( !(flags & XEO_NOSCANEXE) && (CheckExebin(LineStaticBuf, exetype) == FALSE) ){
 		return FALSE;
 	}
 									// LineStaticBuf で足りないならメモリ確保
 	linelen = tstrlen(LineStaticBuf) + tstrlen(param) + MAX_PATH;
 	if ( linelen > (CMDLINESIZE + MAX_PATH) ){
-		LineBuf = HeapAlloc(DLLheap,0,TSTROFF(linelen));
+		LineBuf = HeapAlloc(DLLheap, 0, TSTROFF(linelen));
 		if ( LineBuf == NULL ) return FALSE;
-		tstrcpy(LineBuf,LineStaticBuf);
+		tstrcpy(LineBuf, LineStaticBuf);
 	}
 	if ( (flags & XEO_CONSOLE) && (exetype == GTYPE_CONSOLE) ){
-		setflag(flags,XEO_SEQUENTIAL);
+		setflag(flags, XEO_SEQUENTIAL);
 	}
 
 	// unknown / data / cmd
@@ -751,34 +751,34 @@ BOOL ComExecSelf(HWND hOwner,const TCHAR *execarg,const TCHAR *path,int flags,DW
 		BOOL sepfix = FALSE;
 
 		// CMD 関連
-		if ( (LineBuf[0] == '\"') && (tstrchr(param,'\"') != NULL) ){
+		if ( (LineBuf[0] == '\"') && (tstrchr(param, '\"') != NULL) ){
 			sepfix = TRUE;
 		}
 		if ( tstrlen(param) > 8000 ){ // CMD の長さ制限
-			PPErrorMsg(LineStaticBuf,RPC_S_STRING_TOO_LONG);
-			PopupErrorMessage(hOwner,T("ComExecSelf"),LineStaticBuf);
+			PPErrorMsg(LineStaticBuf, RPC_S_STRING_TOO_LONG);
+			PopupErrorMessage(hOwner, T("ComExecSelf"), LineStaticBuf);
 			SetLastError(RPC_S_STRING_TOO_LONG);
 			result = FALSE;
 			goto fin;
 		}
 		// %COMSPEC% 取得
-		if ( GetEnvironmentVariable(ComSpecStr,LineBuf,MAX_PATH) == 0 ){
+		if ( GetEnvironmentVariable(ComSpecStr, LineBuf, MAX_PATH) == 0 ){
 			#ifdef UNICODE
-				tstrcpy(LineBuf,T("CMD.EXE"));
+				tstrcpy(LineBuf, T("CMD.EXE"));
 			#else
-				tstrcpy(LineBuf,T("COMMAND.COM"));
+				tstrcpy(LineBuf, T("COMMAND.COM"));
 			#endif // UNICODE
 		}
 		exeterm = paramdest = LineBuf + tstrlen(LineBuf);
-		tstrcpy(paramdest,T(" /C "));
+		tstrcpy(paramdest, T(" /C "));
 		paramdest += 4;
 		// cmd は「"file name.bat" param」は成功し、「"file name.bat" "param"」
 		// で失敗するので、「""file name.bat" "param"」に加工する
 		if ( IsTrue(sepfix) ) *paramdest++ = '\"';
 		param = execarg;
 	#else // WINEGCC // system で実行する
-		tstrcpy(LineBuf,execarg);
-		result = ComExecSystem(LineBuf,path);
+		tstrcpy(LineBuf, execarg);
+		result = ComExecSystem(LineBuf, path);
 		if ( ExitCode != NULL ) ExitCode = result;
 		result = (result == -1) ? FALSE : TRUE;
 		goto fin;
@@ -788,7 +788,7 @@ BOOL ComExecSelf(HWND hOwner,const TCHAR *execarg,const TCHAR *path,int flags,DW
 		if ( *param != ' ' ) *paramdest++ = ' ';
 	}
 
-	tstrcpy(paramdest,param);
+	tstrcpy(paramdest, param);
 											// 実行条件の指定
 	si.cb			= sizeof(si);
 	si.lpReserved	= NULL;
@@ -807,25 +807,25 @@ BOOL ComExecSelf(HWND hOwner,const TCHAR *execarg,const TCHAR *path,int flags,DW
 		if ( flags & XEO_HIDE ){
 			si.wShowWindow = SW_HIDE;
 			if ( !(flags & XEO_USECMD) ){ // リダイレクトするときは DETACHED 不可
-				setflag(createflags,DETACHED_PROCESS);
+				setflag(createflags, DETACHED_PROCESS);
 			}
 		}
 	}
-	if ( flags & XEO_LOW ) setflag(createflags,IDLE_PRIORITY_CLASS);
+	if ( flags & XEO_LOW ) setflag(createflags, IDLE_PRIORITY_CLASS);
 	result = TRUE;
 
 	if ( hOwner != NULL ){
-		SendMessage(hOwner,WM_PPXCOMMAND,K_SETPOPLINENOLOG,(LPARAM)T("execute..."));
+		SendMessage(hOwner, WM_PPXCOMMAND, K_SETPOPLINENOLOG, (LPARAM)T("execute..."));
 		UpdateWindow(hOwner);
 	}
 
 	path = FixCurrentDirPath(path);
-	if ( IsTrue(CreateProcess(NULL,LineBuf,NULL,NULL,FALSE,
-			createflags,NULL,path,&si,&pi)) ){
+	if ( IsTrue(CreateProcess(NULL, LineBuf, NULL, NULL, FALSE,
+			createflags, NULL, path, &si, &pi)) ){
 		CloseHandle(pi.hThread);
-		if ( flags & XEO_WAITIDLE ) WaitForInputIdle(pi.hProcess,INFINITE);
+		if ( flags & XEO_WAITIDLE ) WaitForInputIdle(pi.hProcess, INFINITE);
 		if ( flags & XEO_SEQUENTIAL ){
-			result = WaitJobDialog(hOwner,pi.hProcess,execarg,flags & XEO_WAITQUIET);
+			result = WaitJobDialog(hOwner, pi.hProcess, execarg, flags & XEO_WAITQUIET);
 			if ( ExitCode != NULL ){
 				*ExitCode = (DWORD)-1;
 				GetExitCodeProcess(pi.hProcess, ExitCode);
@@ -849,20 +849,20 @@ BOOL ComExecSelf(HWND hOwner,const TCHAR *execarg,const TCHAR *path,int flags,DW
 		if ( errorcode == ERROR_ELEVATION_REQUIRED ){ // UAC が必要
 			// ※但し、Vistaは一度このエラーが来ると互換性アシスタントがでて、
 			//   それ以降はエラーが出なくなる
-			result = ComExecSelfShell(hOwner,execarg,exefilename,param,path,flags,ExitCode);
+			result = ComExecSelfShell(hOwner, execarg, exefilename, param, path, flags, ExitCode);
 		}else{
-			errorcode = GetExecuteErrorReason(exefilename,LineStaticBuf);
-			PopupErrorMessage(hOwner,T("ComExecSelf"),LineStaticBuf);
+			errorcode = GetExecuteErrorReason(exefilename, LineStaticBuf);
+			PopupErrorMessage(hOwner, T("ComExecSelf"), LineStaticBuf);
 			SetLastError(errorcode);
 			result = FALSE;
 		}
 	}
 	if ( (hOwner != NULL) && IsTrue(result) ){
-		SendMessage(hOwner,WM_PPXCOMMAND,K_SETPOPLINENOLOG,0);
+		SendMessage(hOwner, WM_PPXCOMMAND, K_SETPOPLINENOLOG, 0);
 	}
 
 fin:
-	if ( LineBuf != LineStaticBuf ) HeapFree(DLLheap,0,LineBuf);
+	if ( LineBuf != LineStaticBuf ) HeapFree(DLLheap, 0, LineBuf);
 	return result;
 }
 /*-----------------------------------------------------------------------------
@@ -870,12 +870,12 @@ fin:
 	失敗したら NULL を返す
 	※HANDLE はXEO_WAITIDLE | XEO_SEQUENTIAL でなければ開放不要である
 -----------------------------------------------------------------------------*/
-PPXDLL HANDLE PPXAPI PPxShellExecute(HWND hwnd,LPCTSTR lpOperation,LPCTSTR lpFile,LPCTSTR lpParameters,LPCTSTR lpDirectory,int flag,TCHAR *ErrMsg)
+PPXDLL HANDLE PPXAPI PPxShellExecute(HWND hwnd, LPCTSTR lpOperation, LPCTSTR lpFile, LPCTSTR lpParameters, LPCTSTR lpDirectory, int flag, TCHAR *ErrMsg)
 {
 	SHELLEXECUTEINFO ExeInfo;
 
-	if ( !(flag & XEO_NOSCANEXE) && (CheckExebin(lpFile,-1) == FALSE) ){
-		SetLastError(PPErrorMsg(ErrMsg,ERROR_CANCELLED));
+	if ( !(flag & XEO_NOSCANEXE) && (CheckExebin(lpFile, -1) == FALSE) ){
+		SetLastError(PPErrorMsg(ErrMsg, ERROR_CANCELLED));
 		return NULL;
 	}
 
@@ -893,14 +893,14 @@ PPXDLL HANDLE PPXAPI PPxShellExecute(HWND hwnd,LPCTSTR lpOperation,LPCTSTR lpFil
 	if ( flag & XEO_HIDE ){
 		ExeInfo.nShow = SW_HIDE;
 //		if ( !(flag & XEO_USECMD) ){ // リダイレクトするときは DETACHED 不可
-//			setflag(createflag,DETACHED_PROCESS);
+//			setflag(createflag, DETACHED_PROCESS);
 //		}
-//		setflag(createflag,DETACHED_PROCESS);
+//		setflag(createflag, DETACHED_PROCESS);
 	}
-//	if ( flag & XEO_LOW ) setflag(createflag,IDLE_PRIORITY_CLASS);
+//	if ( flag & XEO_LOW ) setflag(createflag, IDLE_PRIORITY_CLASS);
 
 	if ( flag & (XEO_WAITIDLE | XEO_SEQUENTIAL) ){
-		setflag(ExeInfo.fMask,SEE_MASK_NOCLOSEPROCESS);
+		setflag(ExeInfo.fMask, SEE_MASK_NOCLOSEPROCESS);
 	}
 	if ( IsTrue(ShellExecuteEx(&ExeInfo)) ){
 		if ( (flag & (XEO_WAITIDLE | XEO_SEQUENTIAL)) &&
@@ -909,7 +909,7 @@ PPXDLL HANDLE PPXAPI PPxShellExecute(HWND hwnd,LPCTSTR lpOperation,LPCTSTR lpFil
 		}
 		return INVALID_HANDLE_VALUE;
 	}else{
-		GetExecuteErrorReason(lpFile,ErrMsg);
+		GetExecuteErrorReason(lpFile, ErrMsg);
 		return NULL;
 	}
 }
@@ -922,7 +922,7 @@ int GetE2(TCHAR *fname)
 
 	TCHAR appN[MAX_PATH];		// アプリケーションのキー
 	TCHAR defN[MAX_PATH];		// デフォルトのアクション
-	HKEY hExt,hAP;
+	HKEY hExt, hAP;
 	TCHAR *ext;
 	int type = GTYPE_SHELLEXEC; //GTYPE_DATA;
 
@@ -930,40 +930,40 @@ int GetE2(TCHAR *fname)
 	ext += FindExtSeparator(ext);
 
 										// 拡張子からキーを求める -------------
-	if (ERROR_SUCCESS != RegOpenKeyEx(HKEY_CLASSES_ROOT,ext,0,KEY_READ,&hExt)){
-		RegOpenKeyEx(HKEY_CLASSES_ROOT,WildCard_All,0,KEY_READ,&hExt);
+	if (ERROR_SUCCESS != RegOpenKeyEx(HKEY_CLASSES_ROOT, ext, 0, KEY_READ, &hExt)){
+		RegOpenKeyEx(HKEY_CLASSES_ROOT, WildCard_All, 0, KEY_READ, &hExt);
 	}
 	Bsize = sizeof appN;					// 拡張子の識別子
 	Rtyp = REG_SZ;
 	if ( ERROR_SUCCESS ==
-				RegQueryValueEx(hExt,NilStr,0,&Rtyp,(LPBYTE)appN,&Bsize) ){
-		tstrcat(appN,T("\\shell"));
+				RegQueryValueEx(hExt, NilStr, 0, &Rtyp, (LPBYTE)appN, &Bsize) ){
+		tstrcat(appN, T("\\shell"));
 										// アプリケーションのシェル -----------
 		if ( ERROR_SUCCESS ==
-				RegOpenKeyEx(HKEY_CLASSES_ROOT,appN,0,KEY_READ,&hAP)){
+				RegOpenKeyEx(HKEY_CLASSES_ROOT, appN, 0, KEY_READ, &hAP)){
 			Bsize = sizeof defN;
 			defN[0] = '\0';
-			RegQueryValueEx(hAP,NilStr,0,&Rtyp,(LPBYTE)defN,&Bsize);
-			if ( defN[0] == '\0' ) tstrcpy(defN,ShellVerb_open); // の指定が無い
+			RegQueryValueEx(hAP, NilStr, 0, &Rtyp, (LPBYTE)defN, &Bsize);
+			if ( defN[0] == '\0' ) tstrcpy(defN, ShellVerb_open); // の指定が無い
 
-			tstrcat(defN,T("\\command"));
-			if ( GetRegString(hAP,defN,NilStr,appN,sizeof(appN)) ){
-				TCHAR *p,*q = NULL;
+			tstrcat(defN, T("\\command"));
+			if ( GetRegString(hAP, defN, NilStr, appN, sizeof(appN)) ){
+				TCHAR *p, *q = NULL;
 
 				p = appN;
 				while( (*p == ' ') || (*p == '\t') ) p++;
 				if ( *p != '\0' ){
 					if ( *p == '\"' ){
 						p++;
-						q = tstrchr(p,'\"');
+						q = tstrchr(p, '\"');
 					}else{
-						q = tstrchr(p,' ');
-						if ( q == NULL ) q = tstrchr(p,'\t');
+						q = tstrchr(p, ' ');
+						if ( q == NULL ) q = tstrchr(p, '\t');
 					}
 				}
 				if ( q == NULL ) q = p + tstrlen(p);
 				*q = '\0';
-				if ( tstrcmp(p,T("%1")) ){
+				if ( tstrcmp(p, T("%1")) ){
 					type = GetExecTypeFileOnly(p);
 
 					if ( (type == GTYPE_SHELLEXEC) || (type == GTYPE_GUI) ){
@@ -971,7 +971,7 @@ int GetE2(TCHAR *fname)
 					}else{
 						type = GTYPE_DATA;		// CUI型
 					}
-				}else{	// 自分自身で実行可能→ COM,EXT,BAT,CMD の可能性
+				}else{	// 自分自身で実行可能→ COM, EXT, BAT, CMD の可能性
 					type = GTYPE_DATA;
 				}
 			}
@@ -992,14 +992,14 @@ int GetExecTypeFileOnly(TCHAR *name)
 	HANDLE hFile;						// 確認中のファイル
 	BYTE header[0x200];
 										// ファイルの先頭を取得する -----------
-	hFile = CreateFileL(name,GENERIC_READ,FILE_SHARE_WRITE | FILE_SHARE_READ,
-					NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
+	hFile = CreateFileL(name, GENERIC_READ, FILE_SHARE_WRITE | FILE_SHARE_READ,
+					NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if ( hFile != INVALID_HANDLE_VALUE ){
 		for ( ; ; ){
 			TCHAR *p;
 
 			if ( FALSE ==
-					ReadFile(hFile,header,sizeof(IMAGE_DOS_HEADER),&tmp,NULL)){
+					ReadFile(hFile, header, sizeof(IMAGE_DOS_HEADER), &tmp, NULL)){
 				type = GTYPE_SHELLEXEC; //GTYPE_ERROR;
 				break;	// 読み込み失敗
 			}
@@ -1010,9 +1010,9 @@ int GetExecTypeFileOnly(TCHAR *name)
 				break;
 			}
 							// 拡張子の確認
-			p = tstrrchr(name,'.');
+			p = tstrrchr(name, '.');
 			if ( p == NULL ) break;
-			if ( tstricmp(p + 1,T("COM")) && tstricmp(p + 1,T("EXE")) && tstricmp(p + 1,T("SCR")) ){
+			if ( tstricmp(p + 1, T("COM")) && tstricmp(p + 1, T("EXE")) && tstricmp(p + 1, T("SCR")) ){
 				break;
 			}
 
@@ -1020,10 +1020,10 @@ int GetExecTypeFileOnly(TCHAR *name)
 			tmp = ((IMAGE_DOS_HEADER *)header)->e_lfanew;	// 拡張ヘッダoffset
 														// DOS EXE
 			if ( !tmp ) break;
-			if ( SetFilePointer(hFile,tmp,NULL,FILE_BEGIN) != tmp ) break;
-			if ( ReadFile(hFile,header,0x60,&tmp,NULL) == FALSE ) break;
+			if ( SetFilePointer(hFile, tmp, NULL, FILE_BEGIN) != tmp ) break;
+			if ( ReadFile(hFile, header, 0x60, &tmp, NULL) == FALSE ) break;
 			if ( tmp < 0x60 ) break;
-							// NE header を確認				WIN16,OS/2
+							// NE header を確認				WIN16, OS/2
 			if (((IMAGE_OS2_HEADER *)header)->ne_magic == IMAGE_OS2_SIGNATURE){
 				type = GTYPE_GUI;
 				break;
@@ -1053,10 +1053,10 @@ int GetExecTypeFileOnly(TCHAR *name)
 /*-----------------------------------------------------------------------------
 	指定ディレクトリで拡張子を補完してプロセスを調べる
 -----------------------------------------------------------------------------*/
-int GetExecTypeDirOnly(TCHAR *name,int flag)
+int GetExecTypeDirOnly(TCHAR *name, int flag)
 {
 	int type;
-	TCHAR *p,*q,*n;
+	TCHAR *p, *q, *n;
 	TCHAR ext[2048];
 										// 素のままで調べる ===================
 	type = GetExecTypeFileOnly(name);
@@ -1065,14 +1065,14 @@ int GetExecTypeDirOnly(TCHAR *name,int flag)
 
 										// 拡張子を付加して検索 ===============
 	p = ext;
-	if ( GetEnvironmentVariable(PathextStr,ext,TSIZEOF(ext)) == 0 ){
+	if ( GetEnvironmentVariable(PathextStr, ext, TSIZEOF(ext)) == 0 ){
 		p = T(".COM;.EXE;.BAT");
 	}
 	n = name + tstrlen(name);
 	while( *p != '\0' ){
-		q = tstrchr(p,';');
+		q = tstrchr(p, ';');
 		if ( q == NULL ) q = p + tstrlen(p);
-		memcpy(n,p,TSTROFF(q - p));
+		memcpy(n, p, TSTROFF(q - p));
 		*(n + (q - p)) = '\0';
 		type = GetExecTypeFileOnly(name);
 		if ( type != GTYPE_ERROR ) return type;
@@ -1082,28 +1082,28 @@ int GetExecTypeDirOnly(TCHAR *name,int flag)
 	return GTYPE_ERROR;
 }
 
-void FileNameCopy(TCHAR *dest,TCHAR *src)
+void FileNameCopy(TCHAR *dest, TCHAR *src)
 {
 	if ( dest == NULL ) return;
-	if ( tstrchr(src,' ') != NULL ){
+	if ( tstrchr(src, ' ') != NULL ){
 		int len;
 
 		*dest++ = '\"';
 		len = tstrlen32(src);
-		memcpy(dest,src,TSTROFF(len));
+		memcpy(dest, src, TSTROFF(len));
 		*(dest + len) = '\"';
 		*(dest + len + 1) = '\0';
 	}else{
-		tstrcpy(dest,src);
+		tstrcpy(dest, src);
 	}
 }
 /*-----------------------------------------------------------------------------
 	ファイルの場所と種類を調べる & 実行名とパラメータを分離する
 	※fpath は「"」付で出力されることあり
 -----------------------------------------------------------------------------*/
-PPXDLL int PPXAPI GetExecType(LPCTSTR *name,TCHAR *fpath,const TCHAR *path)
+PPXDLL int PPXAPI GetExecType(LPCTSTR *name, TCHAR *fpath, const TCHAR *path)
 {
-	TCHAR fname[VFPS],envpath[1024],exepath[VFPS];
+	TCHAR fname[VFPS], envpath[1024], exepath[VFPS];
 	const TCHAR *p;
 	int flag = 0;
 	int type;
@@ -1116,7 +1116,7 @@ PPXDLL int PPXAPI GetExecType(LPCTSTR *name,TCHAR *fpath,const TCHAR *path)
 		if ( *p == '\0' ) goto generror;
 		if ( *p == '\"' ){
 			p++;
-			lastp = tstrchr(p,'\"');
+			lastp = tstrchr(p, '\"');
 		}else{
 			lastp = p;
 			while( (*lastp != '\0') && (*lastp != ' ') && (*lastp != '\t') ){
@@ -1125,7 +1125,7 @@ PPXDLL int PPXAPI GetExecType(LPCTSTR *name,TCHAR *fpath,const TCHAR *path)
 		}
 		if ( lastp == NULL ) lastp = p + tstrlen(p);
 		if ( (lastp - p) >= VFPS ) goto generror; // コマンドが長すぎ
-		memcpy(exepath,p,TSTROFF(lastp - p));
+		memcpy(exepath, p, TSTROFF(lastp - p));
 		*(exepath + (lastp - p)) = '\0';
 
 		*name = lastp;
@@ -1139,11 +1139,11 @@ PPXDLL int PPXAPI GetExecType(LPCTSTR *name,TCHAR *fpath,const TCHAR *path)
 				int size;
 
 				size = p - exepath;
-				if ( ((size == 3) && !memcmp(exepath,T("ftp"),TSTROFF(3))) ||
-					 ((size == 4) && !memcmp(exepath,T("http"),TSTROFF(4))) ||
-					 ((size == 5) && !memcmp(exepath,T("https"),TSTROFF(5))) ||
-					 ((size == 6) && !memcmp(exepath,T("mailto"),TSTROFF(6)))){
-					if ( fpath != NULL ) tstrcpy(fpath,exepath);
+				if ( ((size == 3) && !memcmp(exepath, T("ftp"), TSTROFF(3))) ||
+					 ((size == 4) && !memcmp(exepath, T("http"), TSTROFF(4))) ||
+					 ((size == 5) && !memcmp(exepath, T("https"), TSTROFF(5))) ||
+					 ((size == 6) && !memcmp(exepath, T("mailto"), TSTROFF(6)))){
+					if ( fpath != NULL ) tstrcpy(fpath, exepath);
 					return GTYPE_SHELLEXEC;
 				}
 				flag = (flag & ~ET_EXT) | ET_PATH;
@@ -1154,21 +1154,21 @@ PPXDLL int PPXAPI GetExecType(LPCTSTR *name,TCHAR *fpath,const TCHAR *path)
 			flag = (flag & ~ET_EXT) | ET_PATH;
 			continue;
 		}
-		if ( *p == '.') setflag(flag,ET_EXT);
+		if ( *p == '.') setflag(flag, ET_EXT);
 #ifndef UNICODE
 		if ( IskanjiA(*p) && (*(p+1)) ) p++;
 #endif
 	}
 										// カレントディレクトリで検索 =========
 	if ( flag & ET_PATH ){
-		VFSFixPath(fname,exepath,path,VFSFIX_SEPARATOR | VFSFIX_FULLPATH |
+		VFSFixPath(fname, exepath, path, VFSFIX_SEPARATOR | VFSFIX_FULLPATH |
 				VFSFIX_REALPATH | VFSFIX_NOFIXEDGE);
 	}else{
-		VFSFullPath(fname,exepath,path);
+		VFSFullPath(fname, exepath, path);
 	}
-	type = GetExecTypeDirOnly(fname,flag);
+	type = GetExecTypeDirOnly(fname, flag);
 	if ( type != GTYPE_ERROR ){
-		FileNameCopy(fpath,fname);
+		FileNameCopy(fpath, fname);
 		return type;
 	}
 	if ( flag & ET_PATH ){
@@ -1176,69 +1176,69 @@ PPXDLL int PPXAPI GetExecType(LPCTSTR *name,TCHAR *fpath,const TCHAR *path)
 		goto error; // path 指定ありならここで終わり
 	}
 										// PPxディレクトリで検索 =========
-	CatPath(fname,DLLpath,exepath);
-	type = GetExecTypeDirOnly(fname,flag);
+	CatPath(fname, DLLpath, exepath);
+	type = GetExecTypeDirOnly(fname, flag);
 	if ( type != GTYPE_ERROR ){
-		FileNameCopy(fpath,fname);
+		FileNameCopy(fpath, fname);
 		return type;
 	}
 	{									// 環境変数 path で検索 ===============
-		const TCHAR *envptr,*sep;
+		const TCHAR *envptr, *sep;
 		TCHAR *envbuf = NULL;
 		DWORD envlen;
 
 		envptr = envpath;
-		envlen = GetEnvironmentVariable(StrPath,envpath,TSIZEOF(envpath));
+		envlen = GetEnvironmentVariable(StrPath, envpath, TSIZEOF(envpath));
 		if ( envlen == 0 ) goto generror;
 		if ( envlen >= (TSIZEOF(envpath) - 16) ){
-			envbuf = HeapAlloc(DLLheap,0,TSTROFF(envlen + 16));
+			envbuf = HeapAlloc(DLLheap, 0, TSTROFF(envlen + 16));
 			if ( envbuf == NULL ) goto generror;
-			GetEnvironmentVariable(StrPath,envbuf,envlen + 16);
+			GetEnvironmentVariable(StrPath, envbuf, envlen + 16);
 			envptr = envbuf;
 		}
 
 		while ( *envptr != '\0' ){
-			sep = tstrchr(envptr,';');
+			sep = tstrchr(envptr, ';');
 			if ( sep == NULL ) sep = envptr + tstrlen(envptr);
-			memcpy(fname,envptr,TSTROFF(sep - envptr));
+			memcpy(fname, envptr, TSTROFF(sep - envptr));
 			*(fname + (sep - envptr)) = '\0';
-			CatPath(NULL,fname,exepath);
-			type = GetExecTypeDirOnly(fname,flag);
+			CatPath(NULL, fname, exepath);
+			type = GetExecTypeDirOnly(fname, flag);
 			if ( type != GTYPE_ERROR ){
-				FileNameCopy(fpath,fname);
-				if ( envbuf != NULL ) HeapFree(DLLheap,0,envbuf);
+				FileNameCopy(fpath, fname);
+				if ( envbuf != NULL ) HeapFree(DLLheap, 0, envbuf);
 				return type;
 			}
 			envptr = sep;
 			if ( *envptr != '\0' ) envptr++;
 		}
-		if ( envbuf != NULL ) HeapFree(DLLheap,0,envbuf);
+		if ( envbuf != NULL ) HeapFree(DLLheap, 0, envbuf);
 	}
 										// レジストリ App Paths で検索 ========
 							// ※本当は%path%よりも前だが、あえてこの位置で検索
-	wsprintf(envpath,AppPathKey,exepath);
+	wsprintf(envpath, AppPathKey, exepath);
 	fname[0] = '\0';
-	if ( (GetRegString(HKEY_CURRENT_USER,envpath,NilStr,fname,TSIZEOF(fname)) == FALSE) &&
-		 (GetRegString(HKEY_LOCAL_MACHINE,envpath,NilStr,fname,TSIZEOF(fname)) == FALSE)
+	if ( (GetRegString(HKEY_CURRENT_USER, envpath, NilStr, fname, TSIZEOF(fname)) == FALSE) &&
+		 (GetRegString(HKEY_LOCAL_MACHINE, envpath, NilStr, fname, TSIZEOF(fname)) == FALSE)
 
 	 ){
 		if ( !(flag & ET_EXT) ){
-			tstrcat(envpath,T(".exe"));
-			if ( GetRegString(HKEY_CURRENT_USER,envpath,NilStr,fname,TSIZEOF(fname)) == FALSE ){
-				GetRegString(HKEY_LOCAL_MACHINE,envpath,NilStr,fname,TSIZEOF(fname));
+			tstrcat(envpath, T(".exe"));
+			if ( GetRegString(HKEY_CURRENT_USER, envpath, NilStr, fname, TSIZEOF(fname)) == FALSE ){
+				GetRegString(HKEY_LOCAL_MACHINE, envpath, NilStr, fname, TSIZEOF(fname));
 			}
 		}
 	}
 	if ( fname[0] != '\0' ){
 		type = GetExecTypeFileOnly(fname);
 		if ( type != GTYPE_ERROR ){
-			FileNameCopy(fpath,fname);
+			FileNameCopy(fpath, fname);
 			return type;
 		}
 	}
 
 	if ( flag & ET_EXT ){ // 拡張子有りなら、cmdで実行するコマンドでない
-		if ( fpath != NULL ) tstrcpy(fpath,exepath);
+		if ( fpath != NULL ) tstrcpy(fpath, exepath);
 		return GTYPE_SHELLEXEC;
 	}
 generror:
@@ -1257,23 +1257,23 @@ DWORD GetExeCrc(const TCHAR *path)
 
 	crc = 0;
 
-	hFile = CreateFileL(path,GENERIC_READ,FILE_SHARE_READ,NULL,
-							OPEN_EXISTING,FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+	hFile = CreateFileL(path, GENERIC_READ, FILE_SHARE_READ, NULL,
+							OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if ( hFile == INVALID_HANDLE_VALUE ) return 0;
 
-	if ( IsTrue(ReadFile(hFile,bin,sizeof bin,&fsize,NULL)) ){
-		crc = crc32(bin,fsize,0);
+	if ( IsTrue(ReadFile(hFile, bin, sizeof bin, &fsize, NULL)) ){
+		crc = crc32(bin, fsize, 0);
 	}
 	CloseHandle(hFile);
 	return crc;
 }
 
-BOOL CheckExecs(const TCHAR *file,DWORD *crcs,DWORD crc)
+BOOL CheckExecs(const TCHAR *file, DWORD *crcs, DWORD crc)
 {
 	DWORD i;
 
-	memset(crcs,0,(MAXSTORE + 1) * sizeof(DWORD));
-	GetCustTable( T("_Execs"),file,crcs,(MAXSTORE + 1)*sizeof(DWORD));
+	memset(crcs, 0, (MAXSTORE + 1) * sizeof(DWORD));
+	GetCustTable( T("_Execs"), file, crcs, (MAXSTORE + 1)*sizeof(DWORD));
 	if ( crcs[0] == 0 ) return FALSE;
 	if ( crcs[0] >= MAXSTORE ) crcs[0] = MAXSTORE;
 	i = crcs[0];
@@ -1285,11 +1285,11 @@ BOOL CheckExecs(const TCHAR *file,DWORD *crcs,DWORD crc)
 	return FALSE;
 }
 
-DWORD_PTR USECDECL CebInfo(CHECKEXEBININFO *CIS,DWORD cmdID,PPXAPPINFOUNION *uptr)
+DWORD_PTR USECDECL CebInfo(CHECKEXEBININFO *CIS, DWORD cmdID, PPXAPPINFOUNION *uptr)
 {
 	switch(cmdID){
 		case 'C':
-			tstrcpy(uptr->enums.buffer,CIS->name);
+			tstrcpy(uptr->enums.buffer, CIS->name);
 			break;
 		default:
 			if ( cmdID <= PPXCMDID_FILL ) *uptr->enums.buffer = '\0';
@@ -1298,37 +1298,37 @@ DWORD_PTR USECDECL CebInfo(CHECKEXEBININFO *CIS,DWORD cmdID,PPXAPPINFOUNION *upt
 	return 1;
 }
 
-PPXDLL BOOL PPXAPI CheckExebin(const TCHAR *path,int type)
+PPXDLL BOOL PPXAPI CheckExebin(const TCHAR *path, int type)
 {
-	TCHAR file[VFPS],buf[VFPS * 2],info[0x600],*inf;
+	TCHAR file[VFPS], buf[VFPS * 2], info[0x600], *inf;
 	const TCHAR *p;
-	DWORD crc,crcs[MAXSTORE + 1];
+	DWORD crc, crcs[MAXSTORE + 1];
 
 	if ( X_execs < 0 ){
 		X_execs = 0;
-		GetCustData( T("X_execs"),&X_execs,sizeof(X_execs));
+		GetCustData( T("X_execs"), &X_execs, sizeof(X_execs));
 	}
 	if ( X_execs == 0 ) return TRUE;
 
-	VFSFixPath(buf,(TCHAR *)path,NULL,(*path == '\"') ?
+	VFSFixPath(buf, (TCHAR *)path, NULL, (*path == '\"') ?
 		(VFSFIX_SEPARATOR | VFSFIX_FULLPATH | VFSFIX_REALPATH) :
 		(VFSFIX_SEPARATOR | VFSFIX_FULLPATH | VFSFIX_REALPATH | VFSFIX_NOFIXEDGE) );
 	if ( type < 0 ){
 		p = buf;
-		type = GetExecType(&p,NULL,NULL);
+		type = GetExecType(&p, NULL, NULL);
 	}
 	if ( (type != GTYPE_GUI) && (type != GTYPE_CONSOLE) ) return TRUE;
 
-	tstrcpy(file,FindLastEntryPoint(buf));
+	tstrcpy(file, FindLastEntryPoint(buf));
 
 	crc = GetExeCrc(buf);
-	if ( FALSE == CheckExecs(file,crcs,crc) ){
+	if ( FALSE == CheckExecs(file, crcs, crc) ){
 		VFSFILETYPE vft;
 		ERRORCODE err;
 		TCHAR cmd[CMDLINESIZE];
 
 		cmd[0] = '\0';
-		GetCustData( T("X_execx"),&cmd,sizeof(cmd));
+		GetCustData( T("X_execx"), &cmd, sizeof(cmd));
 		if ( cmd[0] ){
 			CHECKEXEBININFO cebinfo;
 
@@ -1336,37 +1336,37 @@ PPXDLL BOOL PPXAPI CheckExebin(const TCHAR *path,int type)
 			cebinfo.info.Name = T("check");
 			cebinfo.info.RegID = NilStr;
 			cebinfo.name = buf;
-			PP_ExtractMacro(NULL,(PPXAPPINFO *)&cebinfo,NULL,cmd,NULL,XEO_NOSCANEXE);
+			PP_ExtractMacro(NULL, (PPXAPPINFO *)&cebinfo, NULL, cmd, NULL, XEO_NOSCANEXE);
 		}
 
 		vft.flags = VFSFT_TYPE | VFSFT_TYPETEXT | VFSFT_EXT | VFSFT_INFO;
-		err = VFSGetFileType(buf,NULL,0,&vft);
+		err = VFSGetFileType(buf, NULL, 0, &vft);
 		if ( err != NO_ERROR ){
 			inf = T("Unknown File Type");
 		}else{
 			TCHAR *pp;
 
-			pp = info + wsprintf(info,T("%s:\n"),vft.typetext);
+			pp = info + wsprintf(info, T("%s:\n"), vft.typetext);
 			if ( vft.info != NULL ){
 				if ( tstrlen(vft.info) > 0x400 ){
-					tstrcpy(pp,T("*info too large*"));
+					tstrcpy(pp, T("*info too large*"));
 				}else{
-					tstrcpy(pp,vft.info);
+					tstrcpy(pp, vft.info);
 				}
-				HeapFree(ProcHeap,0,vft.info);
+				HeapFree(ProcHeap, 0, vft.info);
 			}
 			inf = info;
 		}
-		wsprintf(buf,is2,path,inf);
+		wsprintf(buf, is2, path, inf);
 		if ( PMessageBox(NULL, buf, is1,
 				MB_ICONQUESTION | MB_DEFBUTTON2 | MB_OKCANCEL) == IDOK ){
 			if ( crcs[0] == MAXSTORE ){
-				memmove(&crcs[1],&crcs[2],(MAXSTORE - 1) * sizeof(DWORD));
+				memmove(&crcs[1], &crcs[2], (MAXSTORE - 1) * sizeof(DWORD));
 			}else{
 				crcs[0]++;
 			}
 			crcs[crcs[0]] = crc;
-			SetCustTable( T("_Execs"),file,crcs,(crcs[0] + 1) * sizeof(DWORD));
+			SetCustTable( T("_Execs"), file, crcs, (crcs[0] + 1) * sizeof(DWORD));
 		}else{
 			return FALSE;
 		}

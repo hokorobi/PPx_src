@@ -3,9 +3,10 @@
 -----------------------------------------------------------------------------*/
 #define ONVFSDLL		// VFS.H ‚Ì DLL export Žw’è
 #include "WINAPI.H"
+#include "WINOLE.H"
 #include "PPX.H"
-#include "PPD_DEF.H"
 #include "VFS.H"
+#include "PPD_DEF.H"
 #include "VFS_STRU.H"
 #include "VFS_FOP.H"
 #include "FATTIME.H"
@@ -353,6 +354,12 @@ ERRORCODE DlgCopyFile(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD srcattr
 		p += FindExtSeparator(p);
 		tstrcpy(p, StrShortcutExt);
 	}
+
+	if ( FS->ifo != NULL ){
+		CopyFileWithIfo(FS, src, dst);
+		return NO_ERROR;
+	}
+
 	// ˆÚ“®‚ðŽŽ‚Ý‚é -----------------------------------------------------------
 	while ( CheckSaveDrive(opt, src, dst) && (opt->fop.divide_num == 0) ){
 		ERRORCODE tryresult;

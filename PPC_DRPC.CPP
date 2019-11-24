@@ -23,7 +23,7 @@
 #include "PPCOMBO.H"
 #pragma hdrstop
 
-UINT comboscrolltimerID = 0;
+UINT_PTR comboscrolltimerID = 0;
 /*
 int comboscrollcount;
 POINT oldcombopos;

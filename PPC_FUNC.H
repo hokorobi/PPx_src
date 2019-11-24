@@ -105,8 +105,10 @@ extern ERRORCODE PPXAPI PPcCommand(PPC_APPINFO *cinfo, WORD key);
 extern void PPc_SetTreeFlags(HWND hParentWnd, HWND hTreeWnd);
 extern void FixRootEntryCursor(PPC_APPINFO *cinfo);
 extern void PPC_AllMark(PPC_APPINFO *cinfo);
-extern ERRORCODE PPC_DriveJump(PPC_APPINFO *cinfo);
+extern ERRORCODE PPC_DriveJump(PPC_APPINFO *cinfo, BOOL advanced);
 extern ERRORCODE PPC_FindMark(PPC_APPINFO *cinfo, const TCHAR *defmask, int mode);
+extern void SetMaskTarget(HWND hDlg, FILEMASKDIALOGSTRUCT *PFS);
+extern void MaskTargetMenu(HWND hDlg, HWND hButtonWnd, FILEMASKDIALOGSTRUCT *PFS);
 extern void SortMenuCheck(HMENU hMenu, const TCHAR *str, int indexmax, XC_SORT *xc, int descending_sort);
 extern void SaveSortSetting(PPC_APPINFO *cinfo, int mode, const TCHAR *path, XC_SORT *xc);
 extern HMENU AddPPcSortMenu(PPC_APPINFO *cinfo, HMENU hMenu, ThSTRUCT *PopupTbl, DWORD *mmmode, DWORD *sid, DWORD sortmode);
@@ -185,7 +187,7 @@ extern void PPcSaveWindowPosition(PPC_APPINFO *cinfo);
 extern void PPcMoveWindowSavedPosition(PPC_APPINFO *cinfo);
 extern void PPcSystemMenu(PPC_APPINFO *cinfo);
 extern BOOL PPcSHContextMenu(PPC_APPINFO *cinfo, const TCHAR *dir, const TCHAR *cmd);
-extern HMENU MakeDriveJumpMenu(PPC_APPINFO *cinfo, HMENU hPopupMenu, DWORD *index, ThSTRUCT *TH);
+extern HMENU MakeDriveJumpMenu(PPC_APPINFO *cinfo, HMENU hPopupMenu, DWORD *index, ThSTRUCT *TH, BOOL advanced);
 extern void FixCellDisplayFormat(PPC_APPINFO *cinfo);
 extern BOOL USEFASTCALL FocusAddressBars(HWND hSingleWnd, PPXDOCKS *docks);
 extern void USEFASTCALL UnpackExec(PPC_APPINFO *cinfo, const TCHAR *param);
@@ -393,6 +395,7 @@ extern void GetIDLSub(TCHAR *path, LPSHELLFOLDER pSF, LPITEMIDLIST pSHidl);
 
 //------------------------------------------------------------------ ppc_main.c
 extern BOOL USEFASTCALL IsTouchMessage(void);
+extern int USEFASTCALL GetPointType(void);
 extern void ReuseFix(PPCSTARTPARAM *psp);
 extern void WmWindowPosChanged(PPC_APPINFO *cinfo);
 extern int WINAPI PPcMain(PPCSTARTPARAM *psp);
@@ -455,6 +458,16 @@ extern HWND USEFASTCALL GetJoinWnd(PPC_APPINFO *cinfo);
 #define PPCR_CELLTEXT	0x22	//ENT  cell cell	セル、テキスト部分
 #define PPCR_CELLTAIL	0x23	//TAIL  cell tail	セル、右端(ボタン用)
 extern int GetItemTypeFromPoint(PPC_APPINFO *cinfo, POINT *pos, ENTRYINDEX *ItemNo);
+
+typedef struct {
+	int TouchWidth; // タッチ検出のための最小幅
+	int RightBorder; // ここより右は、常に空欄扱いにする・Tailの右端
+	int TailRightOffset;
+	int TailWidth;
+} CELLRIGHTRANGES;
+
+extern void GetCellRightRanges(PPC_APPINFO *cinfo, CELLRIGHTRANGES *ranges);
+
 extern void IOX_win(PPC_APPINFO *cinfo, BOOL save);
 
 extern DWORD_PTR USECDECL PPcGetIInfo(PPC_APPINFO *cinfo, DWORD cmdID, PPXAPPINFOUNION *uptr);
@@ -581,6 +594,8 @@ extern TCHAR *GetColumnExtTextInfo(PPC_APPINFO *cinfo, int cellcolumn, TCHAR *ds
 extern void VistaProperties(const TCHAR *filename, ThSTRUCT *text);
 extern void PPcEnterTabletMode(PPC_APPINFO *cinfo);
 extern void GetVistaFileProps(PPC_APPINFO *cinfo, TCHAR *dest, int len, ENTRYCELL *cell);
+extern void EndButtonMenu(void);
+extern BOOL IsShowButtonMenu(void);
 
 //------------------------------------------------------------------ ppc_subt.c
 extern DWORD WINAPI SubThread(LPDWORD lpdwParam);

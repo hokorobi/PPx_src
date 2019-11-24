@@ -75,18 +75,18 @@ typedef struct {
 
 //----------------------------------------------------------------- migemo 定義
 typedef struct _migemo{int dummy;} migemo;
-#if !defined(_WIN64) && USETASM32
-	extern migemo *(USECDECL * migemo_open)(const char *dict);
-	extern void (_cdecl * migemo_close)(migemo *object);
-	extern char *(_cdecl * migemo_query)(migemo *object, const char *query);
-	extern void (_cdecl * migemo_release)(migemo *object, char *string);
+#if !defined(_WIN64) && USETASM32 // 旧版・新版共用
+	extern migemo *(__stdcall * migemo_open)(const char *dict);
+	extern void (__stdcall * migemo_close)(migemo *object);
+	extern char *(__stdcall * migemo_query)(migemo *object, const char *query);
+	extern void (__stdcall * migemo_release)(migemo *object, char *string);
 
 	extern migemo * migemo_open_fix(const char *dict);
-#else
-	migemo *(USECDECL * migemo_open)(const char *dict) = NULL;
-	void (USECDECL * migemo_close)(migemo *object);
-	char *(USECDECL * migemo_query)(migemo *object, const char *query);
-	void (USECDECL * migemo_release)(migemo *object, char *string);
+#else // 新版
+	migemo *(__stdcall * migemo_open)(const char *dict) = NULL;
+	void (__stdcall * migemo_close)(migemo *object);
+	char *(__stdcall * migemo_query)(migemo *object, const char *query);
+	void (__stdcall * migemo_release)(migemo *object, char *string);
 
 	#define migemo_open_fix migemo_open
 #endif
@@ -386,6 +386,7 @@ loaderror:
 #define MIGEMO_READY 2
 #define MIGEMO_LOAD_ERROR 3
 volatile int LoadMigemo = MIGEMO_FREE;
+volatile LONG Migemo_Query_count;
 
 void WaitMigemoLoad(void)
 {
@@ -401,6 +402,14 @@ void FreeMigemo(void)
 {
 	if ( LoadMigemo == MIGEMO_LOADING ) WaitMigemoLoad();
 	if ( hMigemoDLL == NULL ) return;
+	if ( Migemo_Query_count != 0 ){
+		int waitcount = 1000 / 50;
+
+		while ( Migemo_Query_count != 0 ){
+			Sleep(50);
+			if ( --waitcount == 0 ) break; // 強制待機終了
+		}
+	}
 	LoadMigemo = MIGEMO_LOADING;
 	if ( migemodic != NULL ){
 		migemo_close(migemodic);
@@ -410,8 +419,6 @@ void FreeMigemo(void)
 	hMigemoDLL = NULL;
 	LoadMigemo = MIGEMO_FREE;
 }
-
-volatile LONG Migemo_Query_count;
 
 BOOL InitMigemo(void)
 {
@@ -577,18 +584,18 @@ PPXDLL BOOL PPXAPI SearchRomaString(const TCHAR *text, const TCHAR *searchstr, D
 				query = NULL;
 				break;
 			}
-			if ( query != NULL ){
-				querysize = strlen32(query);
-			}else{
+			if ( query == NULL ){
 				if ( IsTrue(usesave) ) FreePPx();
 				return FALSE;
 			}
+			querysize = strlen32(query);
 			if ( IsTrue(usesave) && (querysize > 0) && (querysize < 0xff00) ){
 				if ( LimitHistory(PPXH_ROMASTR, querysize) ){
 					WriteHistory(PPXH_ROMASTR, searchstr, (WORD)(querysize + 1), query);
 				}
 			}
 		}
+		if ( IsTrue(usesave) ) FreePPx();
 													// RegExp を準備
 		if ( RMatch != EX_IREGEXP ){ // BRegExp
 			if ( RMatch == EX_BREGONIG ){
@@ -610,7 +617,7 @@ PPXDLL BOOL PPXAPI SearchRomaString(const TCHAR *text, const TCHAR *searchstr, D
 				*p++ = '/';
 				if ( !(mode & ISEA_FLOAT) ) *p++ = '^';
 				#ifdef UNICODE
-					wcscpy(p + MultiByteToWideChar(migemocodepage, migemocodeflags, query, -1, p, querylen) - 1, L"/i");
+					strcpyW(p + MultiByteToWideChar(migemocodepage, migemocodeflags, query, -1, p, (int)querylen) - 1, L"/i");
 				#else
 					strcpy(p, query);
 					strcpy(p + querylen, "/ki");
@@ -647,7 +654,7 @@ PPXDLL BOOL PPXAPI SearchRomaString(const TCHAR *text, const TCHAR *searchstr, D
 				querylen = MultiByteToWideChar(migemocodepage, migemocodeflags, query, -1, NULL, 0);
 				widep = (WCHAR *)HeapAlloc(DLLheap, 0, (querylen + 2) * sizeof(WCHAR));
 				if ( widep == NULL ) return FALSE;
-				MultiByteToWideChar(migemocodepage, migemocodeflags, query, -1, widep, querylen);
+				MultiByteToWideChar(migemocodepage, migemocodeflags, query, -1, widep, (int)querylen);
 				pattern = CreateBstring(widep);
 				HeapFree(DLLheap, 0, widep);
 			}
@@ -660,7 +667,6 @@ PPXDLL BOOL PPXAPI SearchRomaString(const TCHAR *text, const TCHAR *searchstr, D
 			DSysFreeString(pattern);
 		}
 		if ( usehist == FALSE ) migemo_release(migemodic, query);
-		if ( IsTrue(usesave) ) FreePPx();
 	}
 													// 検索
 	if ( *text == '\0' ) return FALSE; // 空文字列
@@ -1727,14 +1733,12 @@ PPXDLL DWORD PPXAPI MakeFN_REGEXP(FN_REGEXP *fn, const TCHAR *src)
 				// ※ファイル名部分と拡張子部分をまとめて算出し、'\0'*2分を付加
 				if ( CheckExsmem(&exm,
 						sizeof(EXS_DATA) + // ヘッダサイズ
-						TSTROFF(namebufdest - mfs.name) + extrasize + // 文字列長
+						TSTROFF32(namebufdest - mfs.name) + extrasize + // 文字列長
 									// ファイル名部
-						TSTROFF(1 + 1) + // 文字列Nil + 文字列群の末尾
+						TSTROFF32(1 + 1) + // 文字列Nil + 文字列群の末尾
 									// 拡張子部
-						TSTROFF(1 + 1) // 文字列Nil + 文字列群の末尾
+						TSTROFF32(1 + 1) // 文字列Nil + 文字列群の末尾
 					 ) == FALSE ){
-
-
 					goto error;
 				}
 										// 解析 -------------------------------
@@ -2316,6 +2320,9 @@ int CheckExtMode(EXSMEM *exm, MAKEFNSTRUCT *mfs)
 				GETPARAMFLAGSSTRUCT gpfs;
 
 				GetParamFlags(&gpfs, (const TCHAR **)&mfs->param, inclabel);
+				if ( gpfs.value & REGEXPF_PATHMASK ){
+					setflag(gpfs.value, REGEXPF_REQ_ATTR);
+				}
 				mfs->flags = (mfs->flags & ~(REGEXPF_PATHMASK | REGEXPF_NOEXT | REGEXPF_SILENTERROR | REGEXPF_WORDMATCH)) | gpfs.value;
 
 				// REGEXPF_NOEXT フラグがなければ、保存不要

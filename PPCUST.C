@@ -197,7 +197,7 @@ int CustDump(const TCHAR *filename)
 			}
 		#ifdef UNICODE
 		}else{
-			WriteConsole(hFile, ptr, wcslen(ptr), &size, NULL);
+			WriteConsole(hFile, ptr, strlenW(ptr), &size, NULL);
 		}
 		#endif
 		CloseHandle(hFile);
@@ -336,7 +336,7 @@ int HistDump(const TCHAR *cmdptr, const TCHAR *filename)
 			FreePPx();
 			#ifdef UNICODE
 			if ( handletype == FILE_TYPE_CHAR ){
-				WriteConsole(hFile, buf, wcslen(buf), &size, NULL);
+				WriteConsole(hFile, buf, strlenW(buf), &size, NULL);
 			}else if ( codepage != 0 ){
 				char bufA[0x10010];
 

@@ -3,7 +3,6 @@
 -----------------------------------------------------------------------------*/
 #define ONVFSDLL		// VFS.H ‚Ì DLL export Žw’è
 #include "WINAPI.H"
-#include <windowsx.h>
 #include "PPX.H"
 #include "PPD_DEF.H"
 #include "VFS.H"

@@ -786,7 +786,7 @@ DWORD CompareHashFromClipBoard(PPC_APPINFO *cinfo, int comparemode)
 {
 	TCHAR ClipBoardText[0x800], *ptr, *hashtop;
 	HGLOBAL hG;
-	LONG_PTR size = 0;
+	size_t size = 0;
 	int match;
 	DWORD oldhashlen = 0;
 

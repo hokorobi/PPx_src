@@ -3,7 +3,6 @@
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
 #define ONPPXDLL		// PPCOMMON.H の DLL 定義指定
-#include <windowsx.h>
 #include "PPX.H"
 #include "VFS.H"
 #include "PPD_DEF.H"
@@ -12,7 +11,7 @@
 #pragma hdrstop
 
 int X_calc = -1;
-DWORD X_esel[3] = {1,1,1};
+DWORD X_esel[3] = {1, 1, 1};
 const TCHAR StrContinuousMenu[] = MES_TREC;
 const TCHAR StrK_lied[] = T("K_lied");
 const TCHAR StrK_edit[] = T("K_edit");
@@ -29,43 +28,55 @@ void ExecPreCommand(TINPUTSTRUCT *ts)
 
 	if ( !(ts->tinput->flag & TIEX_EXECPRECMD) ) return;
 	buf[0] = '\0';
-	ThGetString(ts->tinput->StringVariable,T("Input_FirstCmd"),buf,CMDLINESIZE);
+	ThGetString(ts->tinput->StringVariable, T("Input_FirstCmd"), buf, CMDLINESIZE);
 	if ( buf[0] != '\0' ){
-		EditExtractMacro((PPxEDSTRUCT *)GetProp(ts->hEdWnd,PPxED),buf,NULL,0);
+		EditExtractMacro((PPxEDSTRUCT *)GetProp(ts->hEdWnd, PPxED), buf, NULL, 0);
 	}
 }
 
-void TinputExtractMacro(TINPUTSTRUCT *ts,const TCHAR *param/*,TCHAR *extract,int flags*/)
+void TinputExtractMacro(TINPUTSTRUCT *ts, const TCHAR *param/*, TCHAR *extract, int flags*/)
 {
-//	EditExtractMacro((PPxEDSTRUCT *)GetProp(ts->hEdWnd,PPxED),param,extract,flags);
-	EditExtractMacro((PPxEDSTRUCT *)GetProp(ts->hEdWnd,PPxED),param,NULL,0);
+//	EditExtractMacro((PPxEDSTRUCT *)GetProp(ts->hEdWnd, PPxED), param, extract, flags);
+	EditExtractMacro((PPxEDSTRUCT *)GetProp(ts->hEdWnd, PPxED), param, NULL, 0);
 }
 
-void FixInputbox(HWND hDlg,HWND hEdWnd,TINPUT *tinput)
+void ExtPosFix(const TCHAR *filename, int *pos)
+{
+	TCHAR *entryptr, *ptr;
+	int extoffset;
+
+	entryptr = FindLastEntryPoint(filename);
+	extoffset = FindExtSeparator(entryptr);
+	ptr = entryptr + extoffset;
+	if ( (*pos == -3) && (*ptr == '.') ) ptr++;
+	*pos = ptr - filename;
+}
+
+void FixInputbox(HWND hDlg, HWND hEdWnd, TINPUT *tinput)
 {
 	HWND hRefWnd, hTreeWnd = NULL;
 	RECT ncbox, clientbox, refbox;
 	int editwidth, editheight, dpi;
 	PPxEDSTRUCT *PES;
 
-	PES = (PPxEDSTRUCT *)GetProp(hEdWnd,PPxED);
+	PES = (PPxEDSTRUCT *)GetProp(hEdWnd, PPxED);
 	if ( (PES != NULL) && (PES->hTreeWnd != NULL) && (PES->flags & PPXEDIT_JOINTTREE) ){
 		hTreeWnd = PES->hTreeWnd;
 	}
 
-	GetWindowRect(hEdWnd,&ncbox);
-	GetClientRect(hEdWnd,&clientbox);
+	GetWindowRect(hEdWnd, &ncbox);
+	GetClientRect(hEdWnd, &clientbox);
 	dpi = GetMonitorDPI(hDlg);
 
-	hRefWnd = GetDlgItem(hDlg,IDB_REF);
-	GetWindowRect(hRefWnd,&refbox);
+	hRefWnd = GetDlgItem(hDlg, IDB_REF);
+	GetWindowRect(hRefWnd, &refbox);
 	refbox.bottom -= refbox.top;
 	refbox.top -= ncbox.top;
 	refbox.right -= refbox.left;
 	ncbox.bottom -= ncbox.top;
 	editheight = ncbox.bottom;
 
-	GetClientRect(hDlg,&clientbox);
+	GetClientRect(hDlg, &clientbox);
 	editwidth = clientbox.right;
 
 	if ( !(tinput->flag & (TIEX_USEREFLINE | TIEX_USEOPTBTN)) ){
@@ -93,16 +104,16 @@ void FixInputbox(HWND hDlg,HWND hEdWnd,TINPUT *tinput)
 	if ( (TouchMode & TOUCH_LARGEWIDTH) &&
 		!(tinput->flag & (TIEX_USEREFLINE | TIEX_USEOPTBTN)) ){
 		// タッチ用ボタン(ボタンは右)
-		SetWindowPos(GetDlgItem(hDlg,IDOK), NULL,
+		SetWindowPos(GetDlgItem(hDlg, IDOK), NULL,
 				editwidth, refbox.top,
 				refbox.right, refbox.bottom,
 				SWP_NOACTIVATE | SWP_NOREDRAW | SWP_NOZORDER);
-		SetWindowText(GetDlgItem(hDlg,IDCANCEL), T("×"));
-		SetWindowPos(GetDlgItem(hDlg,IDCANCEL), NULL,
+		SetWindowText(GetDlgItem(hDlg, IDCANCEL), T("×"));
+		SetWindowPos(GetDlgItem(hDlg, IDCANCEL), NULL,
 				editwidth + refbox.right, refbox.top,
 				refbox.bottom, refbox.bottom,
 				SWP_NOACTIVATE | SWP_NOREDRAW | SWP_NOZORDER);
-		SetWindowPos(hRefWnd,NULL,
+		SetWindowPos(hRefWnd, NULL,
 				editwidth + refbox.right + refbox.bottom, refbox.top,
 				0, refbox.bottom,
 				SWP_NOACTIVATE | SWP_NOREDRAW | SWP_NOZORDER);
@@ -119,11 +130,11 @@ void FixInputbox(HWND hDlg,HWND hEdWnd,TINPUT *tinput)
 		if ( tinput->flag & (TIEX_USEREFLINE | TIEX_USEOPTBTN) ){ // ボタンは下
 			if ( tinput->flag & TIEX_USEREFLINE ){
 				RECT reflinebox;
-				HWND hEref = GetDlgItem(hDlg,IDE_INPUT_REF);
+				HWND hEref = GetDlgItem(hDlg, IDE_INPUT_REF);
 
-				GetWindowRect(hEref,&reflinebox);
+				GetWindowRect(hEref, &reflinebox);
 				reflinebox.bottom -= reflinebox.top;
-				SetWindowPos(hEref, NULL, 0,0, buttonleft,reflinebox.bottom,
+				SetWindowPos(hEref, NULL, 0, 0, buttonleft, reflinebox.bottom,
 					SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOREDRAW | SWP_NOZORDER);
 				refbox.top += reflinebox.bottom;
 			}
@@ -131,14 +142,14 @@ void FixInputbox(HWND hDlg,HWND hEdWnd,TINPUT *tinput)
 			ncbox.bottom = refbox.top + refbox.bottom + 4; // ツリーY 修正
 		}
 									// ボタンの位置修正
-		SetWindowPos(GetDlgItem(hDlg,IDOK), NULL,
-				buttonleft, refbox.top, 0,0,
+		SetWindowPos(GetDlgItem(hDlg, IDOK), NULL,
+				buttonleft, refbox.top, 0, 0,
 				SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOREDRAW | SWP_NOZORDER);
-		SetWindowPos(GetDlgItem(hDlg,IDCANCEL),NULL,
-				buttonleft + refbox.right,refbox.top, 0,0,
+		SetWindowPos(GetDlgItem(hDlg, IDCANCEL), NULL,
+				buttonleft + refbox.right, refbox.top, 0, 0,
 				SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOREDRAW | SWP_NOZORDER);
-		SetWindowPos(hRefWnd,NULL,
-				buttonleft + refbox.right * 2,refbox.top, 0,0,
+		SetWindowPos(hRefWnd, NULL,
+				buttonleft + refbox.right * 2, refbox.top, 0, 0,
 				SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOREDRAW | SWP_NOZORDER);
 	}
 
@@ -147,20 +158,20 @@ void FixInputbox(HWND hDlg,HWND hEdWnd,TINPUT *tinput)
 
 		treeheight = (clientbox.bottom - clientbox.top) - ncbox.bottom;
 		if ( treeheight < 8 ) treeheight = 8;
-		SetWindowPos(hTreeWnd, NULL, 0,0,
+		SetWindowPos(hTreeWnd, NULL, 0, 0,
 				clientbox.right - clientbox.left, treeheight,
 				SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOREDRAW | SWP_NOZORDER);
 	}
 	// EditBox の大きさ修正(複数行の時は、ここでDlgの変更が起きることがあり、
 	// コントロールの再配置の考慮を不要にするため、最後に修正が必要)
-	SetWindowPos(hEdWnd, NULL, 0,0, editwidth, editheight,
+	SetWindowPos(hEdWnd, NULL, 0, 0, editwidth, editheight,
 			SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOREDRAW | SWP_NOZORDER);
 	InvalidateRect(hDlg, NULL, TRUE);
 }
 
-int tInputSeparateExt(HWND hDlg,TCHAR *text)
+int tInputSeparateExt(HWND hDlg, TCHAR *text)
 {
-	TCHAR *entryptr,*ptr;
+	TCHAR *entryptr, *ptr;
 	int extoffset;
 
 	entryptr = FindLastEntryPoint(text);
@@ -168,24 +179,24 @@ int tInputSeparateExt(HWND hDlg,TCHAR *text)
 
 	ptr = entryptr + extoffset;
 	if ( *ptr == '.' ){
-		SetDlgItemText(hDlg,IDE_INPUT_EXT,ptr + 1);
+		SetDlgItemText(hDlg, IDE_INPUT_EXT, ptr + 1);
 		*ptr = '\0';
-		SetDlgItemText(hDlg,IDE_INPUT_LINE,text);
+		SetDlgItemText(hDlg, IDE_INPUT_LINE, text);
 	}
 	return extoffset;
 }
 
-void tInputConnectExt(HWND hDlg,TCHAR *text,int size,BOOL savehist)
+void tInputConnectExt(HWND hDlg, TCHAR *text, int size, BOOL savehist)
 {
 	TCHAR *ptr;
 	DWORD nsize = tstrlen32(text);
 
 	ptr = text + nsize;
 	*(ptr + 1) = '\0';
-	GetDlgItemText(hDlg,IDE_INPUT_EXT,ptr + 1,size - nsize - 1);
+	GetDlgItemText(hDlg, IDE_INPUT_EXT, ptr + 1, size - nsize - 1);
 	if ( *(ptr + 1) != '\0' ){
 		*ptr = '.';
-		if ( savehist ) WriteHistory(PPXH_GENERAL,ptr + 1,0,NULL);
+		if ( savehist ) WriteHistory(PPXH_GENERAL, ptr + 1, 0, NULL);
 	}
 }
 
@@ -226,7 +237,7 @@ void USEFASTCALL tInputInitDialog(HWND hDlg, TINPUTSTRUCT *ts)
 		PP_AddMenu(tinput->info, hDlg, hMenu, &id, T("M_edit"), &ts->ThMenu);
 		SetMenu(hDlg, hMenu);
 		GetWindowRect(hDlg, &box);
-		SetWindowPos(hDlg, NULL, 0,0,
+		SetWindowPos(hDlg, NULL, 0, 0,
 				box.right - box.left,
 				box.bottom - box.top + GetSystemMetrics(SM_CYMENU),
 				SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOREDRAW | SWP_NOZORDER);
@@ -277,7 +288,7 @@ void USEFASTCALL tInputInitDialog(HWND hDlg, TINPUTSTRUCT *ts)
 			ncbox.right -= ncbox.left - 1;
 		}
 
-		SetWindowPos(hDlg, NULL, 0,0, ncbox.right,ncbox.bottom - ncbox.top,
+		SetWindowPos(hDlg, NULL, 0, 0, ncbox.right, ncbox.bottom - ncbox.top,
 				SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOREDRAW | SWP_NOZORDER);
 
 		SendMessage(ts->hEdWnd, EM_GETSEL, (WPARAM)&wParam, (LPARAM)&lParam);
@@ -314,14 +325,14 @@ void USEFASTCALL tInputInitDialog(HWND hDlg, TINPUTSTRUCT *ts)
 		ShowDlgWindow(hDlg, IDE_INPUT_EXT, !X_esel[2]);
 
 		PPxRegistExEdit(tinput->info,
-				GetDlgItem(hDlg,IDE_INPUT_EXT),
+				GetDlgItem(hDlg, IDE_INPUT_EXT),
 				MAX_PATH, NULL, PPXH_GENERAL, PPXH_GENERAL | PPXH_FILENAME,
 				PPXEDIT_USEALT | PPXEDIT_JOINTTREE | PPXEDIT_SINGLEREF);
 
 		entryptr = FindLastEntryPoint(tinput->buff);
 		if ( !(tinput->flag & TIEX_REFEXT) ){ // 拡張子無し
-			ShowDlgWindow(hDlg, IDB_INPUT_EXT,FALSE);
-			ShowDlgWindow(hDlg, IDE_INPUT_EXT,FALSE);
+			ShowDlgWindow(hDlg, IDB_INPUT_EXT, FALSE);
+			ShowDlgWindow(hDlg, IDE_INPUT_EXT, FALSE);
 			extoffset = tstrlen32(entryptr);
 		}else if ( X_esel[2] == 0 ){ // 拡張子分離
 			extoffset = tInputSeparateExt(hDlg, tinput->buff);
@@ -367,7 +378,7 @@ void USEFASTCALL tInputInitDialog(HWND hDlg, TINPUTSTRUCT *ts)
 					itemcount++;
 				}
 			}
-			if ( itemcount > 0 ) ShowWindow(PES->list.hWnd,SW_SHOWNA);
+			if ( itemcount > 0 ) ShowWindow(PES->list.hWnd, SW_SHOWNA);
 #if 0
 			{
 			/*
@@ -379,7 +390,7 @@ void USEFASTCALL tInputInitDialog(HWND hDlg, TINPUTSTRUCT *ts)
 				FreeFN_REGEXP(&fn);
 				if ( mov ){
 					RXPREPLACESTRING *rexps;
-					if ( IsTrue(InitRegularExpressionReplace(&rexps,keyword,FALSE)) ){
+					if ( IsTrue(InitRegularExpressionReplace(&rexps, keyword, FALSE)) ){
 						RegularExpressionReplace(rexps, line;
 						FreeRegularExpressionReplace(rexps);
 					}
@@ -387,7 +398,7 @@ void USEFASTCALL tInputInitDialog(HWND hDlg, TINPUTSTRUCT *ts)
 			*/
 			/*
 				RXPREPLACESTRING *rexps;
-				if ( IsTrue(InitRegularExpressionReplace(&rexps, param,FALSE)) ){
+				if ( IsTrue(InitRegularExpressionReplace(&rexps, param, FALSE)) ){
 					RegularExpressionReplace(rexps, line);
 					FreeRegularExpressionReplace(rexps);
 					SendMessage(mainlist.hWnd, mainlist.msg, (WPARAM)mainlist.wParam, (LPARAM)line);
@@ -403,6 +414,9 @@ void USEFASTCALL tInputInitDialog(HWND hDlg, TINPUTSTRUCT *ts)
 											// 範囲選択
 	if ( (tinput->flag & TIEX_USESELECT) &&
 		 ( !(tinput->flag & TIEX_INSTRSEL) || (SearchPipe(tinput->buff) == NULL) ) ){
+
+		if ( tinput->firstC < -1 ) ExtPosFix(tinput->buff, &tinput->firstC);
+		if ( tinput->lastC < -1 ) ExtPosFix(tinput->buff, &tinput->lastC);
 
 #ifndef UNICODE
 		if ( xpbug < 0 ){ // PPxRegistExEdit 内で初期化済み
@@ -422,21 +436,19 @@ void USEFASTCALL tInputInitDialog(HWND hDlg, TINPUTSTRUCT *ts)
 		if ( X_rtree == 1) X_rtree = !tinput->buff[0];
 		if ( X_rtree ) setflag(tinput->flag, TIEX_REFMODE);
 
-		if ( tinput->buff[0] && (CountPPc() > 2) ){
-			if ( GetCustDword(T("X_rclst"),0) ){
-				PostMessage(ts->hEdWnd, WM_PPXCOMMAND, K_raw | K_s | K_c | 'L',0);
-			}
+		if ( (tinput->buff[0] != '\0') && (GetCustDword(T("X_rclst"), 0) > 0) ){
+			PostMessage(ts->hEdWnd, WM_PPXCOMMAND, K_raw | K_s | K_c | '3', 0);
 		}
 	}
 
 	if ( tinput->flag & TIEX_REFMODE ){
-		PostMessage(ts->hEdWnd,WM_PPXCOMMAND, K_raw | K_s | K_c | 'I',0);
+		PostMessage(ts->hEdWnd, WM_PPXCOMMAND, K_raw | K_s | K_c | 'I', 0);
 	}
 	if ( tinput->flag & TIEX_TOP ) ForceSetForegroundWindow(hDlg);
 
 	if ( IsExistCustTable(StrK_lied, T("FIRSTEVENT")) &&
 		!IsExistCustTable(StrK_edit, T("FIRSTEVENT")) ){
-		PostMessage(ts->hEdWnd,WM_PPXCOMMAND, K_E_FIRST, 0);
+		PostMessage(ts->hEdWnd, WM_PPXCOMMAND, K_E_FIRST, 0);
 	}
 	if ( tinput->flag & TIEX_EXECPRECMD ){
 		PostMessage(hDlg, WM_COMMAND, TMAKEWPARAM(KE_execprecmd, 1), 0);
@@ -494,7 +506,7 @@ void tInputContinuousMenu(HWND hDlg, LPARAM lParam)
 		LPARAMtoPOINT(pos, lParam);
 	}
 	AppendMenuString(hPopupMenu, 1, StrContinuousMenu);
-	index = TrackPopupMenu(hPopupMenu, TPM_TDEFAULT, pos.x,pos.y, 0, hDlg, NULL);
+	index = TrackPopupMenu(hPopupMenu, TPM_TDEFAULT, pos.x, pos.y, 0, hDlg, NULL);
 	DestroyMenu(hPopupMenu);
 	if ( index == 1 ) EndDialog(hDlg, -(K_c | 'R'));
 }
@@ -594,7 +606,7 @@ INT_PTR CALLBACK tInputMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 
 		case WM_CONTEXTMENU:
 			if ( (GetDlgCtrlID((HWND)wParam) == IDOK) || (GetDlgCtrlID((HWND)wParam) == IDCANCEL) ){
-				SendMessage(ts->hEdWnd,WM_PPXCOMMAND, K_raw | K_s | K_c | 'I', 0);
+				SendMessage(ts->hEdWnd, WM_PPXCOMMAND, K_raw | K_s | K_c | 'I', 0);
 			}else if ( ts->tinput->flag & TIEX_USEPNBTN ){
 				tInputContinuousMenu(hDlg, lParam);
 			}
@@ -639,7 +651,7 @@ INT_PTR CALLBACK tInputMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 						ptr = GetMenuDataString(&ts->ThMenu,
 								LOWORD(wParam) - IDW_MENU);
 						if ( *ptr != '\0' ){
-							TinputExtractMacro(ts, ptr/*,NULL,0*/);
+							TinputExtractMacro(ts, ptr/*, NULL, 0*/);
 						}
 					}
 				}
@@ -650,25 +662,25 @@ INT_PTR CALLBACK tInputMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 					break;
 
 				case IDOK:
-					SaveInputText(hDlg,ts,1);
+					SaveInputText(hDlg, ts, 1);
 					break;
 
 				case IDB_PREV:
 				case IDB_NEXT:
-					SaveInputText( hDlg,ts,LOWORD(wParam) );
+					SaveInputText( hDlg, ts, LOWORD(wParam) );
 					break;
 
 				case IDCANCEL:
-					EndDialog(hDlg,0);
+					EndDialog(hDlg, 0);
 					break;
 
 				case IDB_REF:
 					SendMessage(ts->hEdWnd,
-							WM_PPXCOMMAND,K_raw | K_s | K_c | 'I',0);
+							WM_PPXCOMMAND, K_raw | K_s | K_c | 'I', 0);
 					break;
 
 				case IDB_INPUT_EXT:
-					ChangeExtEditMode(hDlg,(HWND)lParam);
+					ChangeExtEditMode(hDlg, (HWND)lParam);
 					break;
 
 				case IDE_INPUT_LINE:
@@ -684,7 +696,7 @@ INT_PTR CALLBACK tInputMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 
 				case IDB_INPUT_OPT:
 					TinputExtractMacro(ts,
-							T("*execute %s,\"Edit_OptionCmd\"")/*,NULL,0*/);
+							T("*execute %s,\"Edit_OptionCmd\"")/*, NULL, 0*/);
 					break;
 			}
 			break;
@@ -745,7 +757,7 @@ PPXDLL int PPXAPI tInputEx(TINPUT *tinput)
 		setflag(tinput->flag, TIEX_LINE_MULTI);
 
 		dlgptr = (WORD *)dialog;
-		dlgmax = dlgptr + ((HeapSize(ProcHeap,0,dlgptr) - sizeof(DLGTEMPLATE) - sizeof(DLGITEMTEMPLATE)) / sizeof(WORD));
+		dlgmax = dlgptr + ((HeapSize(ProcHeap, 0, dlgptr) - sizeof(DLGTEMPLATE) - sizeof(DLGITEMTEMPLATE)) / sizeof(WORD));
 		for ( ; dlgptr < dlgmax ; dlgptr++ ){ // IDE_INPUT_LINE を検索、修正
 			if ( (((DLGITEMTEMPLATE *)dlgptr)->style == IDE_INPUT_LINE_STYLE) &&
 				 (((DLGITEMTEMPLATE *)dlgptr)->id == IDE_INPUT_LINE) ){
@@ -777,7 +789,7 @@ void ClosePPeTreeWindow(PPxEDSTRUCT *PES)
 		GetWindowRect(hParent, &parentbox);
 		GetWindowRect(PES->hTreeWnd, &treebox);
 		DestroyWindow(PES->hTreeWnd);
-		SetWindowPos(hParent,NULL,0,0,
+		SetWindowPos(hParent, NULL, 0, 0,
 				parentbox.right - parentbox.left,
 				parentbox.bottom - parentbox.top - (treebox.bottom - treebox.top),
 				SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER);
@@ -827,7 +839,7 @@ void PPeTreeWindow(PPxEDSTRUCT *PES)
 			box.top -= diff;
 			box.bottom -= diff;
 
-			SetWindowPos(hParent, NULL, box.left, box.top, 0,0,
+			SetWindowPos(hParent, NULL, box.left, box.top, 0, 0,
 					SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOZORDER);
 		}
 		// 高さを減らして画面内に納める
@@ -838,7 +850,7 @@ void PPeTreeWindow(PPxEDSTRUCT *PES)
 	}
 
 	if ( PES->flags & PPXEDIT_JOINTTREE ){
-		SetWindowPos(hParent, NULL, 0,0,
+		SetWindowPos(hParent, NULL, 0, 0,
 				box.right - box.left, box.bottom - box.top + expand_height,
 				SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER);
 
@@ -846,7 +858,7 @@ void PPeTreeWindow(PPxEDSTRUCT *PES)
 
 		PES->hTreeWnd = CreateWindow(TreeClassStr, MessageText(MES_TSDR),
 				WS_CHILD | WS_VISIBLE | WS_TABSTOP,
-				0,box.bottom - (int)expand_height,
+				0, box.bottom - (int)expand_height,
 				box.right - box.left, (int)expand_height, hParent, NULL, NULL, 0);
 	}else{
 		PES->hTreeWnd = CreateWindow(TreeClassStr, MessageText(MES_TSDR),

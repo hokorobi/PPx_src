@@ -3,7 +3,6 @@
 -----------------------------------------------------------------------------*/
 #pragma setlocale("Japanese")
 #include "WINAPI.H"
-#include <windowsx.h>
 #include <shlobj.h>
 #include "PPX.H"
 #include "VFS.H"
@@ -359,12 +358,26 @@ const TCHAR InsertMacroExt_Helpstr[] = T("\tヘルプ\0\thelp");
 
 const WCHAR StrCommentInfo[] = L"コメント\0comment";
 
+#if !NODLL
+DWORD ButtonMenuTick = 0;
+#else
+extern DWORD ButtonMenuTick;
+#endif
 int TrackButtonMenu(HWND hDlg, UINT ctrlID, HMENU hPopMenu)
 {
 	RECT box;
+	int index;
+
+	if ( (GetTickCount() - ButtonMenuTick) < SKIPBUTTONMENUTIME ){
+		ButtonMenuTick = 0;
+		return 0;
+	}
 
 	GetWindowRect(GetDlgItem(hDlg, ctrlID), &box);
-	return TrackPopupMenu(hPopMenu, TPM_TDEFAULT, box.left, box.bottom, 0, hDlg, NULL);
+	index = TrackPopupMenu(hPopMenu, TPM_TDEFAULT, box.left, box.bottom, 0, hDlg, NULL);
+
+	ButtonMenuTick = (GetAsyncKeyState(VK_LBUTTON) & KEYSTATE_PUSH) ? GetTickCount() : 0;
+	return index;
 }
 
 
@@ -1976,7 +1989,7 @@ void SelectedType(HWND hDlg, TABLEINFO *tinfo)
 void EnumTypeList(HWND hDlg, TABLEINFO *tinfo)
 {
 	int count, size;
-	TCHAR name[MAX_PATH];
+	TCHAR name[MAX_PATH], typekey;
 	TCHAR mask[MAX_PATH], *sepptr;
 	struct LABELTEXT *list;
 	HWND hLVTypeWnd = tinfo->hLVTypeWnd;
@@ -1991,6 +2004,7 @@ void EnumTypeList(HWND hDlg, TABLEINFO *tinfo)
 	lvi.iItem = 0;
 	lvi.iSubItem = 0;
 
+	typekey = tinfo->key;
 	mask[0] = '\0';
 	GetDlgItemText(hDlg, IDC_TB_TYPEMASK, mask, TSIZEOF(mask));
 	sepptr = tstrchr(mask, ';');
@@ -2000,6 +2014,7 @@ void EnumTypeList(HWND hDlg, TABLEINFO *tinfo)
 		sepptr = mask;
 	}
 	MakeFN_REGEXP(&fn, sepptr);
+	if ( sepptr[0] == 'S' ) typekey = 'S';
 
 	SendMessage(hLVTypeWnd, WM_SETREDRAW, FALSE, 0);
 	SendMessage(hLVTypeWnd, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LVS_EX_FULLROWSELECT | LVS_EX_LABELTIP);
@@ -2013,7 +2028,7 @@ void EnumTypeList(HWND hDlg, TABLEINFO *tinfo)
 		size = EnumCustData(count, name, NULL, 0);
 		if ( 0 > size ) break;
 
-		if ( CheckTypeName(tinfo->key, name) == FALSE ) continue;
+		if ( CheckTypeName(typekey, name) == FALSE ) continue;
 		if ( !FilenameRegularExpression(name, &fn) ) continue;
 
 		for ( list = TypeLists ; list->name ; list++ ){
@@ -2024,14 +2039,16 @@ void EnumTypeList(HWND hDlg, TABLEINFO *tinfo)
 		}
 		ListView_InsertItem(hLVTypeWnd, &lvi);
 	}
-	FreeFN_REGEXP(&fn);
 											// 未使用を検索
 	for ( list = TypeLists ; list->name ; list++ ){
-		if ( CheckTypeName(tinfo->key, list->name) == FALSE ) continue;
+		if ( CheckTypeName(typekey, list->name) == FALSE ) continue;
 		if ( IsExistCustData(list->name) ) continue;
+		if ( !FilenameRegularExpression(list->name, &fn) ) continue;
+
 		wsprintf(name, T("%s /%s"), GetCText(list->text), list->name);
 		ListView_InsertItem(hLVTypeWnd, &lvi);
 	}
+	FreeFN_REGEXP(&fn);
 	SendMessage(hLVTypeWnd, LVM_SETCOLUMNWIDTH, 0, LVSCW_AUTOSIZE);
 	SendMessage(hLVTypeWnd, WM_SETREDRAW, TRUE, 0);
 }
@@ -2100,10 +2117,12 @@ void AddItem(HWND hDlg, TABLEINFO *tinfo, DWORD mode)
 	if ( *typename == '\0' ) return;
 	if ( *itemname == '\0' ) return;
 
-	if ( CheckTypeName(tinfo->key, typename) == FALSE ){
+	if ( (CheckTypeName(tinfo->key, typename) == FALSE) &&
+		 ((tinfo->key != 'M') || (CheckTypeName('S', typename) == FALSE)) ){
 		typebuf[0] = tinfo->key;
 		typebuf[1] = '_';
 		typename = typebuf;
+		SetDlgItemText(hDlg, IDE_EXTYPE, typename);
 	}
 	hLVAlcWnd = tinfo->hLVAlcWnd;
 	index = TListView_GetFocusedItem(hLVAlcWnd);
@@ -2647,6 +2666,7 @@ void InitTablePage(HWND hDlg, TABLEINFO *tinfo)
 		for ( MaskList = MenuMaskList; *MaskList != NULL; MaskList++ ){
 			SendDlgItemMessage(hDlg, IDC_TB_TYPEMASK, CB_ADDSTRING, 0, (LPARAM)GetCText(*MaskList) );
 		}
+		SendDlgItemMessage(hDlg, IDC_TB_TYPEMASK, CB_SETCURSEL, 0, 0);
 	}
 
 	SetKeyGroup(hDlg);
@@ -2799,7 +2819,8 @@ INT_PTR CALLBACK TablePage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam, TA
 					break;
 
 				case IDC_TB_TYPEMASK:
-					if ( (HIWORD(wParam) == CBN_SELCHANGE) || (HIWORD(wParam) == CBN_EDITUPDATE) ){
+					if ( (HIWORD(wParam) == CBN_SELCHANGE) ||
+						 (HIWORD(wParam) == CBN_EDITUPDATE) ){
 						PostMessage(hDlg, WM_COMMAND, ID_COMMAND_ENUMTYPE, 0);
 					}
 					break;

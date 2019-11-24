@@ -40,7 +40,7 @@ typedef struct {			// カスタマイズ内容(X_fopt)
 	int		same;			// 同名ファイルの対処方法 FOPSAME_ 関連
 							// Name Filter ------------------------------------
 	int		chrcase;		// 1:大文字化 2:小文字化
-	int		sfn;			// B0=1:8.3	// B1=1:全半正規化?
+	int		sfn;			// 1:8.3
 	int		delspc;			// !0:空白削除
 	DWORD	filter;			// VFSFOP_FILTER_
 							// Attributes -------------------------------------
@@ -114,6 +114,7 @@ enum { // mode の内容
 #define VFSFOP_OPTFLAG_SYMDEL_FILE	B23	// シンボリックリンク内ファイルを削除
 
 #define VFSFOP_OPTFLAG_WAIT_CLOSE	B24	// 移動時使用終了を待つ
+#define VFSFOP_OPTFLAG_IFILEOP		B25	// IFileOperation を使用する
 
 //#define VFSFOP_OPTFLAG_DELDELAY		// 未 Delaymode
 //#define VFSFOP_OPTFLAG_SUBSTREAM		// 未 サブストリームも必ず処理
@@ -159,16 +160,27 @@ struct _ProgressWndInfo {
 	int nowper;
 };
 
+#define RENAME_NUMBERING '\\'
+#define RENAME_EXTRACTNAME ':'
+#define RENAME_REGEXP '/'
+
 struct FopOption {
 	TCHAR source[VFPS];
 	const TCHAR *files;
+	HWND hReturnWnd;
+	BYTE *CopyBuf;	// コピー用バッファ
+	TCHAR *compcmd; // 正常完了時のコマンド
+	RXPREPLACESTRING *rexps; // 名前変更用正規表現
+
 	BOOL AllocFiles; // files を内部で生成した
-	int dtype;
+	#define NameFilter_Use B0
+	#define NameFilter_Rename B1
+	#define NameFilter_ExtractName B2
+	int UseNameFilter; // 名前加工の有無
+	int SrcDtype; // files １つ目のドライブ種別
 	DWORD fopflags; // VFSFILEOPERATION の VFSFOP_
 
-	HWND hReturnWnd;
-
-	VFSFOP_OPTIONS fop;
+	VFSFOP_OPTIONS fop; // 設定原本
 	TCHAR action[MAXACTIONNAME];	// Action Name
 	TCHAR rename[MAX_PATH];	// Rename
 	TCHAR renum[12];	// S.num
@@ -176,11 +188,8 @@ struct FopOption {
 	int burst;		// バーストモードなら真
 	DWORD erroraction;		// エラー時の対処方法
 	DWORD errorretrycount;	// エラー時の再試行回数
-	BYTE *CopyBuf;	// コピー用バッファ
 	DWORD CopyBufSize;
-	RXPREPLACESTRING *rexps; // 名前変更用正規表現
 	SECURITY_INFORMATION security;
-	TCHAR *compcmd;
 };
 
 enum foptab { // 現在タブ FOPTAB_ ※-1は未設定
@@ -226,6 +235,7 @@ typedef struct tagFOPSTRUCT{
 	int EnableSetting, EnableSameSetting; // グレーにするコントロールの状態
 	FN_REGEXP maskFn; // ファイル名マスク
 	DWORD maskFnFlags;
+	xIFileOperation *ifo;
 } FOPSTRUCT;
 
 typedef struct {
@@ -306,6 +316,9 @@ extern BOOL USEFASTCALL CheckSaveDrive(struct FopOption *opt, _In_ const TCHAR *
 extern BOOL Fop_ShellNameSpace(FOPSTRUCT *FS, const TCHAR *srcDIR, const TCHAR *dstDIR);
 extern ERRORCODE RenameDestFile(FOPSTRUCT *FS, const TCHAR *dst, BOOL addOldStr);
 
+TypedefWinAPI(HRESULT, SHCreateItemFromParsingName, (PCWSTR, IBindCtx *, REFIID, void **));
+extern ValueWinAPI(SHCreateItemFromParsingName);
+
 //----------------------------------------------------------------- vfs_ocd.c
 extern ERRORCODE DlgCopyDir(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD srcatr);
 
@@ -363,3 +376,13 @@ typedef struct {
 } FILENAMEINFOSTRUCT;
 extern DWORD_PTR USECDECL FilenameInfoFunc(FILENAMEINFOSTRUCT *linfo, DWORD cmdID, PPXAPPINFOUNION *uptr);
 
+//---------------------------------------------------------------- vfs_shnp.cpp
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern void CheckAndInitIfo(FOPSTRUCT *FS);
+extern BOOL CopyFileWithIfo(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst);
+extern void FreeIfo(FOPSTRUCT *FS);
+#ifdef __cplusplus
+}
+#endif

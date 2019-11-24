@@ -344,7 +344,7 @@ const TCHAR EDITMENU_MODIFYstring[] = MES_MEMD;
 const TCHAR EDITMENU_DETAILstring[] = MES_MEDT;
 
 // メニュー編集を行う
-void NullPopupMenuEdit(HWND hWnd, HMENU hMenu, DWORD index, int flags)
+LRESULT NullPopupMenuEdit(HWND hWnd, HMENU hMenu, DWORD index, int flags)
 {
 	HMENU hCMenu;
 	PPXMENUINFO *xminfo;
@@ -358,15 +358,21 @@ void NullPopupMenuEdit(HWND hWnd, HMENU hMenu, DWORD index, int flags)
 
 										// xminfo を取得
 	xminfo = GetPPxMenuInfo(&hMenu);
-	if ( xminfo == NULL ) return;
+	if ( xminfo == NULL ) return 0;
 										// custname を取得
 	if ( xminfo->commandID != 0 ){
+/*
+		if ( xminfo->commandID == 0x703 ){
+			return 0x2fffe;
+		}
+*/
 		xminfo->index = index;
 		xminfo->hMenu = hMenu;
 		PPxInfoFunc(xminfo->info, xminfo->commandID, xminfo);
-		return;
+		return 0;
 	}
 	ptr = (TCHAR *)xminfo->th.bottom;
+	if ( ptr == NULL ) return 0;
 	maxptr = (TCHAR *)ThLast(&xminfo->th);
 
 	for ( ; ; ){
@@ -380,7 +386,7 @@ void NullPopupMenuEdit(HWND hWnd, HMENU hMenu, DWORD index, int flags)
 		}
 		ptr += tstrlen(ptr) + 1;
 	}
-	if ( custname == NULL ) return;
+	if ( custname == NULL ) return 0;
 										// subname を取得・確認
 	keyname[0] = '\0';
 	// ※下位階層のメニューもこれで取得できる
@@ -495,6 +501,7 @@ void NullPopupMenuEdit(HWND hWnd, HMENU hMenu, DWORD index, int flags)
 			break;
 		}
 	}
+	return 0;
 }
 
 
@@ -506,11 +513,8 @@ LRESULT CALLBACK NullPopupMenuProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 				PPXMENUINFO *xminfo;
 										// xminfo を取得
 				xminfo = GetPPxMenuInfo((HMENU *)&lParam);
-				if ( xminfo != NULL ){
-					NullPopupMenuEdit(hWnd,
-							(HMENU)lParam, xminfo->index, MF_BYCOMMAND);
-				}
-				return 0;
+				if ( xminfo == NULL ) return 0;
+				return NullPopupMenuEdit(hWnd, (HMENU)lParam, xminfo->index, MF_BYCOMMAND);
 			}
 			return GetCustDword(T("X_menu"), 1) ? 0x10000 : 0;
 
@@ -529,10 +533,8 @@ LRESULT CALLBACK NullPopupMenuProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 			DWORD index;
 
 			index = GetMenuItemID((HMENU)lParam, (int)wParam);
-			if ( index != MAX32 ){
-				NullPopupMenuEdit(hWnd, (HMENU)lParam, index, MF_BYPOSITION);
-			}
-			return 0;
+			if ( index == MAX32 ) return 0;
+			return NullPopupMenuEdit(hWnd, (HMENU)lParam, index, MF_BYPOSITION);
 		}
 
 		case WM_APP: { // メニューを表示開始する
@@ -583,27 +585,25 @@ int TTrackPopupMenu(EXECSTRUCT *Z, HMENU hMenu, PPXMENUINFO *xminfo)
 		}
 		result = TrackPopupMenu(hMenu, flags, nps.pos.x, nps.pos.y, 0, hWnd, NULL);
 		if ( (xminfo == NULL) || (xminfo->Command == NULL) ) return result;
-		goto execute;
+	}else{ // ウィンドウがないとメニューが表示できないので、仮ウィンドウを用意して表示
+		nps.hMenu = hMenu;
+
+		nullpopupClass.hCursor   = LoadCursor(NULL, IDC_ARROW);
+		nullpopupClass.hInstance = DLLhInst;
+		RegisterClass(&nullpopupClass);
+		hNullWnd = CreateWindow(NULLPOPUPCLASSNAME, NULLPOPUPCLASSNAME,
+				0, 0, 0, 0, 0, hWnd, NULL, DLLhInst, (LPVOID)&nps);
+		SetForegroundWindow(hNullWnd);
+		while ( IsWindow(hNullWnd) ){
+			MSG msg;
+
+			if( (int)GetMessage(&msg, NULL, 0, 0) <= 0 ) break;
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+		if ( (xminfo == NULL) || (xminfo->Command == NULL) ) return nps.result;
 	}
 
-	// ウィンドウがないとメニューが表示できないので、仮ウィンドウを用意して表示
-	nps.hMenu = hMenu;
-
-	nullpopupClass.hCursor   = LoadCursor(NULL, IDC_ARROW);
-	nullpopupClass.hInstance = DLLhInst;
-	RegisterClass(&nullpopupClass);
-	hNullWnd = CreateWindow(NULLPOPUPCLASSNAME, NULLPOPUPCLASSNAME,
-			0, 0, 0, 0, 0, hWnd, NULL, DLLhInst, (LPVOID)&nps);
-	SetForegroundWindow(hNullWnd);
-	while ( IsWindow(hNullWnd) ){
-		MSG msg;
-
-		if( (int)GetMessage(&msg, NULL, 0, 0) <= 0 ) break;
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-	}
-	if ( (xminfo == NULL) || (xminfo->Command == NULL) ) return nps.result;
-execute:
 	PP_ExtractMacro(xminfo->info->hWnd, xminfo->info, NULL, xminfo->Command, NULL, 0);
 	HeapFree(ProcHeap, 0, xminfo->Command);
 	return 0;
@@ -722,7 +722,7 @@ BOOL MenuCommand(EXECSTRUCT *Z, TCHAR *menuname, const TCHAR *def, int menuflag)
 		}
 	}
 
-	if ( menuname[1] == ':' ){
+	if ( menuname[1] == ':' ){ // %M:M_xxxx / %M:?xxx
 		setflag(menuflag, MENUFLAG_NOEXTACT);
 		menuname += (menuname[2] == '?') ? 1 : 2;
 	}

@@ -27,19 +27,19 @@ typedef struct impaddrinfo {
 
 // Winsock --------------------------
 
-int (WINAPI *Drecv)(SOCKET s,char FAR * buf,int len,int flags);
-int (WINAPI *Dsend)(SOCKET s,const char FAR * buf,int len,int flags);
-int (WINAPI *DWSAStartup)(WORD wVersionRequested,LPWSADATA lpWSAData);
-SOCKET (WINAPI *Dsocket)(int af,int type,int protocol);
+int (WINAPI *Drecv)(SOCKET s, char FAR * buf, int len, int flags);
+int (WINAPI *Dsend)(SOCKET s, const char FAR * buf, int len, int flags);
+int (WINAPI *DWSAStartup)(WORD wVersionRequested, LPWSADATA lpWSAData);
+SOCKET (WINAPI *Dsocket)(int af, int type, int protocol);
 unsigned long (WINAPI *Dinet_addr)(const char FAR * cp);
 struct hostent FAR *(WINAPI *Dgethostbyname)(const char FAR * name);
-//struct servent FAR *(PASCAL FAR *Dgetservbyname)(const char FAR * name,const char FAR * proto);
-int (WINAPI *Dconnect)(SOCKET s,const struct sockaddr FAR * name,int namelen);
+//struct servent FAR *(PASCAL FAR *Dgetservbyname)(const char FAR * name, const char FAR * proto);
+int (WINAPI *Dconnect)(SOCKET s, const struct sockaddr FAR * name, int namelen);
 int (WINAPI *Dclosesocket)(SOCKET s);
 int (WINAPI *DWSACleanup)(void);
 u_short (WINAPI *Dhtons)(u_short hostshort);
 int (WINAPI *DWSAGetLastError)(void);
-int (WINAPI *Dshutdown)(SOCKET s,int how);
+int (WINAPI *Dshutdown)(SOCKET s, int how);
 
 #ifdef UNICODE
 	#define GETADDRINFONAME "getaddrinfo"
@@ -51,9 +51,9 @@ int (WINAPI *Dshutdown)(SOCKET s,int how);
 	#define FREEADDRINFONAME "freeaddrinfo"
 #endif
 
-//DefineWinAPI(int,getaddrinfo,(CTCHAR *pNodeName,CTCHAR *pServiceName,const impADDRINFO *pHints,impADDRINFO **ppResult));
-DefineWinAPI(int,getaddrinfo,(const char *pNodeName,const char *pServiceName,const impADDRINFO *pHints,impADDRINFO **ppResult));
-DefineWinAPI(void,freeaddrinfo,(impADDRINFO *pAddrInfo));
+//DefineWinAPI(int, getaddrinfo, (CTCHAR *pNodeName, CTCHAR *pServiceName, const impADDRINFO *pHints, impADDRINFO **ppResult));
+DefineWinAPI(int, getaddrinfo, (const char *pNodeName, const char *pServiceName, const impADDRINFO *pHints, impADDRINFO **ppResult));
+DefineWinAPI(void, freeaddrinfo, (impADDRINFO *pAddrInfo));
 
 LOADWINAPISTRUCT WINSOCKDLL[] = {
 	LOADWINAPI1(WSAStartup),
@@ -69,30 +69,30 @@ LOADWINAPISTRUCT WINSOCKDLL[] = {
 	LOADWINAPI1(htons),
 	LOADWINAPI1(WSAGetLastError),
 	LOADWINAPI1(shutdown),
-	{NULL,NULL}
+	{NULL, NULL}
 };
 
 // SSL -------------------------
-#define DefineCdeclAPI(retvar,name,param) typedef retvar (CDECL *imp ## name) param; imp ## name D ## name
+#define DefineCdeclAPI(retvar, name, param) typedef retvar (CDECL *imp ## name) param; imp ## name D ## name
 
 typedef void SSL;
 typedef void SSL_CTX;
 typedef void SSL_METHOD;
 
-DefineCdeclAPI(SSL_CTX *,SSL_CTX_new,(SSL_METHOD *meth));
-DefineCdeclAPI(void,SSL_CTX_free,(SSL_CTX *));
-DefineCdeclAPI(int,SSL_set_fd,(SSL *s,int fd));
-DefineCdeclAPI(void,SSL_load_error_strings,(void));
-DefineCdeclAPI(SSL *,SSL_new,(SSL_CTX *ctx));
-DefineCdeclAPI(void,SSL_free,(SSL *ssl));
-DefineCdeclAPI(int,SSL_connect,(SSL *ssl));
-DefineCdeclAPI(int,SSL_read,(SSL *ssl,void *buf,int num));
-DefineCdeclAPI(int,SSL_peek,(SSL *ssl,void *buf,int num));
-DefineCdeclAPI(int,SSL_write,(SSL *ssl,const void *buf,int num));
-DefineCdeclAPI(long,SSL_CTX_ctrl,(SSL_CTX *ctx,int cmd, long larg, void *parg));
-DefineCdeclAPI(SSL_METHOD *,SSLv23_client_method,(void));
-DefineCdeclAPI(int,SSL_shutdown,(SSL *s));
-DefineCdeclAPI(int,SSL_library_init,(void));
+DefineCdeclAPI(SSL_CTX *, SSL_CTX_new, (SSL_METHOD *meth));
+DefineCdeclAPI(void, SSL_CTX_free, (SSL_CTX *));
+DefineCdeclAPI(int, SSL_set_fd, (SSL *s, int fd));
+DefineCdeclAPI(void, SSL_load_error_strings, (void));
+DefineCdeclAPI(SSL *, SSL_new, (SSL_CTX *ctx));
+DefineCdeclAPI(void, SSL_free, (SSL *ssl));
+DefineCdeclAPI(int, SSL_connect, (SSL *ssl));
+DefineCdeclAPI(int, SSL_read, (SSL *ssl, void *buf, int num));
+DefineCdeclAPI(int, SSL_peek, (SSL *ssl, void *buf, int num));
+DefineCdeclAPI(int, SSL_write, (SSL *ssl, const void *buf, int num));
+DefineCdeclAPI(long, SSL_CTX_ctrl, (SSL_CTX *ctx, int cmd, long larg, void *parg));
+DefineCdeclAPI(SSL_METHOD *, SSLv23_client_method, (void));
+DefineCdeclAPI(int, SSL_shutdown, (SSL *s));
+DefineCdeclAPI(int, SSL_library_init, (void));
 
 LOADWINAPISTRUCT SSLEAY32DLL[] = {
 	LOADWINAPI1(SSL_CTX_new),
@@ -109,12 +109,12 @@ LOADWINAPISTRUCT SSLEAY32DLL[] = {
 	LOADWINAPI1(SSLv23_client_method),
 	LOADWINAPI1(SSL_shutdown),
 	LOADWINAPI1(SSL_library_init),
-	{NULL,NULL}
+	{NULL, NULL}
 };
 
 #define SSL_CTRL_MODE 33
 #define SSL_MODE_AUTO_RETRY 0x00000004L
-#define DSSL_CTX_set_mode(ctx,op) DSSL_CTX_ctrl((ctx),SSL_CTRL_MODE,(op),NULL)
+#define DSSL_CTX_set_mode(ctx, op) DSSL_CTX_ctrl((ctx), SSL_CTRL_MODE, (op), NULL)
 
 // -------------------------
 typedef struct {
@@ -129,53 +129,53 @@ const char DefAgent[] = "PaperPlaneXUI/" FileCfg_Version;
 const char HttpResult[] = "=Result=\r\n";
 const char SSLerrorstr[] = "\r\n\r\nSocks error\r\n";
 
-void SockErrorMsg(ThSTRUCT *th,ERRORCODE code,HMODULE hModule)
+void SockErrorMsg(ThSTRUCT *th, ERRORCODE code, HMODULE hModule)
 {
 	char buf[MAX_BUF];
 	char *p;
 
-	strcpy(buf,"\r\n\r\nError:");
+	strcpy(buf, "\r\n\r\nError:");
 	FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_FROM_HMODULE |
-			FORMAT_MESSAGE_IGNORE_INSERTS,hModule,code,
-			MAKELANGID(LANG_NEUTRAL,SUBLANG_SYS_DEFAULT),buf + 10,VFPS,NULL);
+			FORMAT_MESSAGE_IGNORE_INSERTS, hModule, code,
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_SYS_DEFAULT), buf + 10, VFPS, NULL);
 	for ( p = buf + 10 ; *p ; p++ ) if ( (BYTE)*p < ' ' ) *p = ' ';
-	if ( strlen(buf) < 13 ) wsprintfA(buf + 10,"Unknown(%d)",code);
-	ThCatStringA(th,buf);
+	if ( strlen(buf) < 13 ) wsprintfA(buf + 10, "Unknown(%d)", code);
+	ThCatStringA(th, buf);
 	return;
 }
 
 int GetProxySetting(char *proxyserver)
 {
-	HKEY	HK;
-	DWORD	t,s;
+	HKEY HK;
+	DWORD t, s;
 
-	DWORD enable = 0,port = 80;
-	char servers[0x800],*p,*q;
+	DWORD enable = 0, port = 80;
+	char servers[0x800], *p, *q;
 
-	if ( RegOpenKeyEx(HKEY_CURRENT_USER,RegProxy,0,KEY_READ,&HK)
+	if ( RegOpenKeyEx(HKEY_CURRENT_USER, RegProxy, 0, KEY_READ, &HK)
 													!= ERROR_SUCCESS ){
 		return 0;
 	}
 	s = sizeof(DWORD);
-	RegQueryValueExA(HK,ProxyEnable,NULL,&t,(LPBYTE)&enable,&s);
+	RegQueryValueExA(HK, ProxyEnable, NULL, &t, (LPBYTE)&enable, &s);
 	servers[0] = '\0';
 	s = sizeof(servers);
-	RegQueryValueExA(HK,ProxyServer,NULL,&t,(LPBYTE)servers,&s);
+	RegQueryValueExA(HK, ProxyServer, NULL, &t, (LPBYTE)servers, &s);
 	RegCloseKey(HK);
 
 	if (!enable) return 0;
 
-	p = strstr(servers,"http=");
+	p = strstr(servers, "http=");
 	if ( p != NULL ){
 		p += 5;
 	}else{
-		p = strchr(servers,'=');
+		p = strchr(servers, '=');
 		if ( p != NULL ) return 0;
 		p = servers;
 	}
-	q = strchr(p,':');
+	q = strchr(p, ':');
 	if ( q == NULL ){
-		q = strchr(p,';');
+		q = strchr(p, ';');
 		if ( q != NULL ) *q = '\0';
 	}else{
 		*q++= '\0';
@@ -184,12 +184,12 @@ int GetProxySetting(char *proxyserver)
 			port = (DWORD)(port * 10 + (BYTE)(*q++ - (BYTE)'0'));
 		}
 	}
-	strcpy(proxyserver,p);
+	strcpy(proxyserver, p);
 	return port;
 }
 
 //１行送信（改行は、内で付加される）
-int wsPuts(SSOCKET *ssock,char *str)
+int wsPuts(SSOCKET *ssock, char *str)
 {
 	char *p;
 	int n;
@@ -199,9 +199,9 @@ int wsPuts(SSOCKET *ssock,char *str)
 	len = strlen32(p);
 	while(len){
 		if ( ssock->ssl == NULL ){
-			n = Dsend(ssock->sock,p,len,0);
+			n = Dsend(ssock->sock, p, len, 0);
 		}else{
-			n = DSSL_write(ssock->ssl,p,len);
+			n = DSSL_write(ssock->ssl, p, len);
 		}
 		if ( n == 0 ) return FALSE;
 		if ( n == SOCKET_ERROR ){
@@ -219,9 +219,9 @@ int wsPuts(SSOCKET *ssock,char *str)
 	len = 2;
 	while(len){
 		if ( ssock->ssl == NULL ){
-			n = Dsend(ssock->sock,p,len,0);
+			n = Dsend(ssock->sock, p, len, 0);
 		}else{
-			n = DSSL_write(ssock->ssl,p,len);
+			n = DSSL_write(ssock->ssl, p, len);
 		}
 		if ( n == 0 ) return FALSE;
 		if ( n == SOCKET_ERROR ){
@@ -238,13 +238,13 @@ int wsPuts(SSOCKET *ssock,char *str)
 	return NO_ERROR;
 }
 
-VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr,ThSTRUCT *th)
+VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr, ThSTRUCT *th)
 {
 	HANDLE hWSOCK32;
 	HANDLE hSsleay32 = NULL;
 
 	SSOCKET ssock;
-	impADDRINFO ai_default,*adr_info = NULL,*useadr;
+	impADDRINFO ai_default, *adr_info = NULL, *useadr;
 	WSADATA wsad;
 	SSL_CTX *ctx;
 
@@ -260,14 +260,14 @@ VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr,ThSTRUCT *th)
 
 	int cache = 0;
 	int errorcode;
-	int getport = 0,connectport = 80;
+	int getport = 0, connectport = 80;
 	#ifdef UNICODE
 	TCHAR	bufW[VFPS];
 	#endif
 	HWND hFocusWnd;
 	DWORD tickcount;
 
-	char *getdir,*urldir;
+	char *getdir, *urldir;
 
 #ifdef _WIN64
 	#define reqwsver 0x202 // 必ず2.2
@@ -277,18 +277,18 @@ VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr,ThSTRUCT *th)
 
 	ThInit(th);
 #ifdef UNICODE
-	hWSOCK32 = LoadWinAPI("WS2_32.dll",NULL,WINSOCKDLL,LOADWINAPI_LOAD_ERRMSG);
+	hWSOCK32 = LoadWinAPI("WS2_32.dll", NULL, WINSOCKDLL, LOADWINAPI_LOAD_ERRMSG);
 #else
 	hWSOCK32 = LoadWinAPI((OSver.dwMajorVersion >= 5) ?
-		"WS2_32.dll" : "WSOCK32.DLL", NULL,WINSOCKDLL,LOADWINAPI_LOAD_ERRMSG);
+		"WS2_32.dll" : "WSOCK32.DLL", NULL, WINSOCKDLL, LOADWINAPI_LOAD_ERRMSG);
 #endif
 	if ( hWSOCK32 == NULL ) return FALSE;
-	Dgetaddrinfo = (impgetaddrinfo)GetProcAddress(hWSOCK32,GETADDRINFONAME);
-	Dfreeaddrinfo = (impfreeaddrinfo)GetProcAddress(hWSOCK32,FREEADDRINFONAME);
+	Dgetaddrinfo = (impgetaddrinfo)GetProcAddress(hWSOCK32, GETADDRINFONAME);
+	Dfreeaddrinfo = (impfreeaddrinfo)GetProcAddress(hWSOCK32, FREEADDRINFONAME);
 
 	if ( urladr[4] == 's' ){ // https://
 		if ( hSsleay32 == NULL ){
-			hSsleay32 = LoadWinAPI("SSLEAY32.DLL",NULL,SSLEAY32DLL,LOADWINAPI_LOAD_ERRMSG);
+			hSsleay32 = LoadWinAPI("SSLEAY32.DLL", NULL, SSLEAY32DLL, LOADWINAPI_LOAD_ERRMSG);
 			if ( hSsleay32 == NULL ){
 				FreeLibrary(hWSOCK32);
 				return FALSE;
@@ -297,10 +297,10 @@ VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr,ThSTRUCT *th)
 			DSSL_library_init();
 			DSSL_load_error_strings();
 		}
-		//	RAND_seed(seed,sizeof(seed) - 1);
+		//	RAND_seed(seed, sizeof(seed) - 1);
 		//	SSLeay_add_ssl_algorithms();
 		ctx = DSSL_CTX_new(DSSLv23_client_method());
-		DSSL_CTX_set_mode(ctx,SSL_MODE_AUTO_RETRY);
+		DSSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
 	}
 
 
@@ -311,7 +311,7 @@ VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr,ThSTRUCT *th)
 		reqwsver = 0x101; // 2000以前は1.1
 	}
 #endif
-	if ( DWSAStartup(reqwsver,&wsad) != 0 ) return FALSE;
+	if ( DWSAStartup(reqwsver, &wsad) != 0 ) return FALSE;
 
 	AuthorizationBuf[0] = '\0';
 	hFocusWnd = GetFocus();
@@ -319,32 +319,32 @@ VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr,ThSTRUCT *th)
 	{
 		char domain[MAX_PATH];
 		TCHAR portbuf[32];
-		char *q,*r;
+		char *q, *r;
 												// コード変換 -----------------
 		#ifdef UNICODE
-			UnicodeToAnsi(urladr,url,sizeof(url));
+			UnicodeToAnsi(urladr, url, sizeof(url));
 		#else
-			strcpy(url,urladr);
+			strcpy(url, urladr);
 		#endif
 		q = url;
 		for ( ; ; ){
-			r = strchr(q,'&');
+			r = strchr(q, '&');
 			if ( r == NULL ) break;
 			q = r + 1;
-			if ( !memcmp( q,"amp;",4) ){
-				memmove( q,q + 4,strlen(q) - 3);
+			if ( !memcmp( q, "amp;", 4) ){
+				memmove( q, q + 4, strlen(q) - 3);
 			}
 		}
 /*
 		q = url;
 		for ( ; ; ){
-			r = strchr(q,'%');
+			r = strchr(q, '%');
 			if ( r == NULL ) break;
 			q = r + 1;
 			if ( IsxdigitA(*q) && IsxdigitA(*(q + 1)) ){
 				*r = (BYTE)(GetHexCharA(&q) * 16);
 				*r |= (BYTE)GetHexCharA(&q);
-				memmove( r + 1,q,strlen(q) + 1);
+				memmove( r + 1, q, strlen(q) + 1);
 				q = r + 1;
 			}
 		}
@@ -352,17 +352,17 @@ VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr,ThSTRUCT *th)
 												// ドメイン部分を切り出し -----
 		getdir = url + sizeof("http://") - 1;
 		if ( url[4] == 's' ) getdir++;
-		urldir = strchr(getdir,'/');
+		urldir = strchr(getdir, '/');
 		if ( urldir == NULL ){
 			urldir = getdir + strlen(getdir);
-			strcpy(urldir,"/index.html");
+			strcpy(urldir, "/index.html");
 		}
-		memcpy(host,getdir,urldir - getdir);
+		memcpy(host, getdir, urldir - getdir);
 		*(host + (urldir - getdir)) = '\0';
 		{										// ポートの指定 ---------------
 			char *pt;
 
-			pt = strchr(host,':');
+			pt = strchr(host, ':');
 			if ( pt != NULL ){
 				*pt++ = '\0';
 #ifdef UNICODE
@@ -375,7 +375,7 @@ VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr,ThSTRUCT *th)
 //			addr_in.sin_port = Dhtons((WORD)port);	//ポートの指定
 			#if 0
 				struct servent *service;
-				service = Dgetservbyname("http","tcp");
+				service = Dgetservbyname("http", "tcp");
 				if ( service ){
 					addr_in.sin_port = service->s_port;
 				}else{
@@ -386,11 +386,11 @@ VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr,ThSTRUCT *th)
 
 		#ifdef UNICODE
 			bufW[0] = '\0';
-			GetCustData(T("V_proxy"),&bufW,sizeof(bufW));
-			UnicodeToAnsi(bufW,domain,sizeof(domain));
+			GetCustData(T("V_proxy"), &bufW, sizeof(bufW));
+			UnicodeToAnsi(bufW, domain, sizeof(domain));
 		#else
 			domain[0] = '\0';
-			GetCustData(T("V_proxy"),&domain,sizeof(domain));
+			GetCustData(T("V_proxy"), &domain, sizeof(domain));
 		#endif
 
 		if ( domain[0] == '\0' ){
@@ -398,10 +398,10 @@ VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr,ThSTRUCT *th)
 		}
 		if ( domain[0] != '\0' ){
 			getdir = url;
-			ThCatStringA(th,"Domain(proxy):");
+			ThCatStringA(th, "Domain(proxy):");
 
 			portbuf[0] = '\0';
-			GetCustData(T("V_http"),&portbuf,sizeof(portbuf));
+			GetCustData(T("V_http"), &portbuf, sizeof(portbuf));
 			if ( portbuf[0] != '\0' ){
 				const TCHAR *tp;
 
@@ -410,20 +410,20 @@ VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr,ThSTRUCT *th)
 			}
 		}else{
 			connectport = getport;
-			strcpy(domain,host);
+			strcpy(domain, host);
 			getdir = urldir;
-			ThCatStringA(th,"Domain:");
+			ThCatStringA(th, "Domain:");
 		}
-		ThCatStringA(th,domain);
-		ThCatStringA(th,"\r\n");
+		ThCatStringA(th, domain);
+		ThCatStringA(th, "\r\n");
 
 		if ( hFocusWnd != NULL ){
-			if ( SendMessage(hFocusWnd,WM_PPXCOMMAND,K_SETPOPLINENOLOG,
+			if ( SendMessage(hFocusWnd, WM_PPXCOMMAND, K_SETPOPLINENOLOG,
 					(LPARAM)T("Resolving")) != 1 ){
 				hFocusWnd = NULL;
 			}
 		}
-		memset(&ai_default,0,sizeof(ai_default));
+		memset(&ai_default, 0, sizeof(ai_default));
 		ai_default.ai_socktype = SOCK_STREAM;
 		ssock.ssl = NULL;
 		ssock.sock = INVALID_SOCKET;
@@ -446,14 +446,14 @@ VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr,ThSTRUCT *th)
 			}
 			if ( ip != INADDR_NONE ){
 				addr_in.sin_addr.s_addr = ip;
-				ssock.sock = Dsocket(PF_INET,SOCK_STREAM,0);
+				ssock.sock = Dsocket(PF_INET, SOCK_STREAM, 0);
 			}
 		}else{ // IPv6対応版
-			wsprintfA(buf,"%d",connectport);
+			wsprintfA(buf, "%d", connectport);
 			ai_default.ai_family = PF_UNSPEC;
-			if ( Dgetaddrinfo(domain,buf,&ai_default,&adr_info) == 0 ){
+			if ( Dgetaddrinfo(domain, buf, &ai_default, &adr_info) == 0 ){
 				for ( useadr = adr_info ; useadr != NULL ; useadr = useadr->ai_next ){
-					ssock.sock = Dsocket(useadr->ai_family,useadr->ai_socktype,useadr->ai_protocol);
+					ssock.sock = Dsocket(useadr->ai_family, useadr->ai_socktype, useadr->ai_protocol);
 					if ( ssock.sock != INVALID_SOCKET ) break;
 				}
 			}
@@ -463,10 +463,10 @@ VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr,ThSTRUCT *th)
 	AgentBuf[0] = '\0';
 	#ifdef UNICODE
 	bufW[0] = '\0';
-	GetCustData(T("V_httpa"),&bufW,sizeof(bufW));
-	UnicodeToAnsi(bufW,AgentBuf,sizeof(AgentBuf));
+	GetCustData(T("V_httpa"), &bufW, sizeof(bufW));
+	UnicodeToAnsi(bufW, AgentBuf, sizeof(AgentBuf));
 	#else
-	GetCustData(T("V_httpa"),&AgentBuf,sizeof(AgentBuf));
+	GetCustData(T("V_httpa"), &AgentBuf, sizeof(AgentBuf));
 	#endif
 	if ( AgentBuf[0] != '\0' ) Agent = AgentBuf;
 
@@ -475,38 +475,38 @@ VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr,ThSTRUCT *th)
 		int retry = 3;
 
 		if ( hFocusWnd != NULL ){
-			SendMessage(hFocusWnd,WM_PPXCOMMAND,
-					K_SETPOPLINENOLOG,(LPARAM)T("Connecting"));
+			SendMessage(hFocusWnd, WM_PPXCOMMAND,
+					K_SETPOPLINENOLOG, (LPARAM)T("Connecting"));
 		}
 													//接続
-		if ( Dconnect(ssock.sock,useadr->ai_addr,useadr->ai_addrlen) ) break;
+		if ( Dconnect(ssock.sock, useadr->ai_addr, useadr->ai_addrlen) ) break;
 		if ( hSsleay32 != NULL ){
 			if ( getdir == url ){ // proxy
 				int getlen;
-				wsprintfA(buf,"CONNECT %s:%d HTTP/1.0\r\n",host,getport);
-				ThCatStringA(th,buf);
-				errorcode = wsPuts(&ssock,buf);
+				wsprintfA(buf, "CONNECT %s:%d HTTP/1.0\r\n", host, getport);
+				ThCatStringA(th, buf);
+				errorcode = wsPuts(&ssock, buf);
 				if ( errorcode != NO_ERROR ){
-					SockErrorMsg(th,errorcode,hWSOCK32);
+					SockErrorMsg(th, errorcode, hWSOCK32);
 					break;
 				}
-				getlen = Drecv(ssock.sock,buf,sizeof(buf) - 1,0);
+				getlen = Drecv(ssock.sock, buf, sizeof(buf) - 1, 0);
 				if ( getlen < 0 ) break;
 				buf[getlen] = '\0';
-				ThCatStringA(th,buf);
-				if ( strstr(buf," 200") == NULL ) break; // 200 以外は失敗
+				ThCatStringA(th, buf);
+				if ( strstr(buf, " 200") == NULL ) break; // 200 以外は失敗
 				if ( th->top > 2 ) th->top -= 2;
 				getdir = urldir;
 			}
 			ssock.ssl = DSSL_new(ctx);
-			DSSL_set_fd(ssock.ssl,(int)ssock.sock);	// 注意!x64! ssock.sock で警告
+			DSSL_set_fd(ssock.ssl, (int)ssock.sock);	// 注意!x64! ssock.sock で警告
 			if ( DSSL_connect(ssock.ssl) != 1 ){
-				ThCatStringA(th,SSLerrorstr);
+				ThCatStringA(th, SSLerrorstr);
 				break;
 			}
 		}
 
-		GetCustData(T("V_httpc"),&cache,sizeof(cache));
+		GetCustData(T("V_httpc"), &cache, sizeof(cache));
 
 		wsprintfA(buf,
 			"GET %s HTTP/1.0\r\n"
@@ -519,21 +519,21 @@ VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr,ThSTRUCT *th)
 //			"Referer: \r\n"
 //			"From: tester@hogehoge\r\n"
 			"Host: %s\r\n"
-			,getdir,Agent,host);
+			, getdir, Agent, host);
 		if ( cache != 0 ){
-			strcat(buf,"Pragma: no-cache\r\nCache-Control: no-cache\r\n");
+			strcat(buf, "Pragma: no-cache\r\nCache-Control: no-cache\r\n");
 		}
-		errorcode = wsPuts(&ssock,buf);
+		errorcode = wsPuts(&ssock, buf);
 		if ( errorcode != NO_ERROR ){
-			SockErrorMsg(th,errorcode,hWSOCK32);
+			SockErrorMsg(th, errorcode, hWSOCK32);
 			break;
 		}
-		ThCatStringA(th,buf);
-		ThCatStringA(th,HttpResult);
+		ThCatStringA(th, buf);
+		ThCatStringA(th, HttpResult);
 //		resultoffset = th->top;
 
 		if ( hFocusWnd != NULL ){
-			SendMessage(hFocusWnd,WM_PPXCOMMAND,K_SETPOPLINENOLOG,(LPARAM)T("Reading"));
+			SendMessage(hFocusWnd, WM_PPXCOMMAND, K_SETPOPLINENOLOG, (LPARAM)T("Reading"));
 			tickcount = GetTickCount();
 		}
 		for ( ; ; ){
@@ -544,13 +544,13 @@ VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr,ThSTRUCT *th)
 			}else{
 				getlen = MAX_BUF;
 			}
-			ThSize(th,getlen);
+			ThSize(th, getlen);
 			if ( ssock.ssl == NULL ){
 				getlen = Drecv(ssock.sock,
-						th->bottom + th->top,th->size - th->top - 1,0);
+						th->bottom + th->top, th->size - th->top - 1, 0);
 			}else{
 				getlen = DSSL_read(ssock.ssl,
-						th->bottom + th->top,th->size - th->top - 1);
+						th->bottom + th->top, th->size - th->top - 1);
 			}
 			*(th->bottom + th->top + getlen) = '\0';
 
@@ -562,7 +562,7 @@ VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr,ThSTRUCT *th)
 
 				wsaerrorcode = DWSAGetLastError();
 				if ( wsaerrorcode == NO_ERROR ) continue;
-				SockErrorMsg(th,wsaerrorcode,hWSOCK32);
+				SockErrorMsg(th, wsaerrorcode, hWSOCK32);
 				break;
 			}
 
@@ -578,28 +578,28 @@ VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr,ThSTRUCT *th)
 						#define buft buf
 					#endif
 					tickcount = newtickcount;
-					wsprintf(buft,T("Reading %d"),th->top);
-					SendMessage(hFocusWnd,WM_PPXCOMMAND,K_SETPOPLINENOLOG,(LPARAM)buft);
+					wsprintf(buft, T("Reading %d"), th->top);
+					SendMessage(hFocusWnd, WM_PPXCOMMAND, K_SETPOPLINENOLOG, (LPARAM)buft);
 				}
 			}
 		}
 
-		ThAppend(th,"",1);
+		ThAppend(th, "", 1);
 		if ( ssock.ssl != NULL ){
 			DSSL_shutdown(ssock.ssl);
 			DSSL_free(ssock.ssl);
 			DSSL_CTX_free(ctx);
 		}
-		Dshutdown(ssock.sock,0);	// recv を無効に
+		Dshutdown(ssock.sock, 0);	// recv を無効に
 /*
 		{
 			char *p;
 
 			p = th->bottom + resultoffset;
-			p = strchr(p,' ');
+			p = strchr(p, ' ');
 			if ( p != NULL ){
 				p++;
-				if ( !memcmp(p,"401",3) ){
+				if ( !memcmp(p, "401", 3) ){
 				// Authorization: Basic base64==
 				}
 			}
@@ -609,7 +609,7 @@ VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr,ThSTRUCT *th)
 	}
 
 	if ( hFocusWnd != NULL ){
-		SendMessage(hFocusWnd,WM_PPXCOMMAND,K_SETPOPLINENOLOG,(LPARAM)NULL);
+		SendMessage(hFocusWnd, WM_PPXCOMMAND, K_SETPOPLINENOLOG, (LPARAM)NULL);
 	}
 
 	Dclosesocket(ssock.sock);
@@ -619,11 +619,11 @@ VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr,ThSTRUCT *th)
 	return TRUE;
 }
 
-BOOL MakeWebListSub(ThSTRUCT *th,char *p,char *name)
+BOOL MakeWebListSub(ThSTRUCT *th, char *p, char *name)
 {
-	char *q,buf[MAX_PATH];
+	char *q, buf[MAX_PATH];
 
-	while ( (p = strstr(p,name)) != NULL ){
+	while ( (p = strstr(p, name)) != NULL ){
 		p += strlen(name);
 
 		while ( (*p == ' ') || (*p == '\t') ) p++;
@@ -635,35 +635,37 @@ BOOL MakeWebListSub(ThSTRUCT *th,char *p,char *name)
 			while ( (BYTE)*q > ' ' ) q++;
 		}else{
 			p++;
-			q = strchr(p,'\"');
+			q = strchr(p, '\"');
 			if ( !q ) continue;
 		}
 		if ( (DWORD)(q - p) >= MAX_PATH ) continue;
-		if ( (DWORD)(q - p) == 0 ) continue;
-		memcpy(buf,p,q - p);
-		buf[q - p] = 0;
+		if ( (DWORD)(q - p) == '\0' ) continue;
+		if ( *p == '#' ) continue; // アンカーはリスト不要
+		memcpy(buf, p, q - p);
+		buf[q - p] = '\0';
 		p = q;
 
+		// 重複チェック
 		q = th->bottom;
 		while ( (DWORD)(q - th->bottom) < th->top ){
-			if ( strcmp(q,buf) == 0 ) break;
+			if ( strcmp(q, buf) == 0 ) break;
 			q += strlen(q) + 1;
 		}
 		if ( (DWORD)(q - th->bottom) >= th->top ){
 			#ifdef UNICODE
 				TCHAR nameA[MAX_PATH];
 
-				AnsiToUnicode(buf,nameA,MAX_PATH);
-				ThAddString(th,nameA);
+				AnsiToUnicode(buf, nameA, MAX_PATH);
+				ThAddString(th, nameA);
 			#else
-				ThAddString(th,buf);
+				ThAddString(th, buf);
 			#endif
 		}
 	}
 	return TRUE;
 }
 
-ERRORCODE MakeWebList(FF_MC *mc,const TCHAR *filename,BOOL file)
+ERRORCODE MakeWebList(FF_MC *mc, const TCHAR *filename, BOOL file)
 {
 	ThSTRUCT th;
 	char *bottom;
@@ -677,12 +679,12 @@ ERRORCODE MakeWebList(FF_MC *mc,const TCHAR *filename,BOOL file)
 		char *p;
 		char statusF;
 
-		ThAddString(&mc->dirs,T(":"));
+		ThAddString(&mc->dirs, T(":"));
 
-		if ( GetImageByHttp(filename,&th) == FALSE ) return ERROR_READ_FAULT;
+		if ( GetImageByHttp(filename, &th) == FALSE ) return ERROR_READ_FAULT;
 		bottom = (char *)th.bottom;
 		// ステータスを取得する
-		p = strstr(bottom,HttpResult);
+		p = strstr(bottom, HttpResult);
 		if ( p != NULL ){
 			p += sizeof(HttpResult) - 1;
 			for (;;){
@@ -709,7 +711,7 @@ ERRORCODE MakeWebList(FF_MC *mc,const TCHAR *filename,BOOL file)
 			if ( IsdigitA(statusF) ){
 				char *plf;
 
-				plf = strchr(p,'\r');
+				plf = strchr(p, '\r');
 				if ( plf != NULL ) *plf = '\0';
 				if ( strlen(p) > 200 ) *(p + 200) = '\0';
 
@@ -717,40 +719,40 @@ ERRORCODE MakeWebList(FF_MC *mc,const TCHAR *filename,BOOL file)
 				{
 					TCHAR nameA[MAX_PATH];
 
-					AnsiToUnicode(p,nameA,MAX_PATH);
-					ThAddString(&mc->files,nameA);
+					AnsiToUnicode(p, nameA, MAX_PATH);
+					ThAddString(&mc->files, nameA);
 				}
 				#else
-					ThAddString(&mc->files,p);
+					ThAddString(&mc->files, p);
 				#endif
 			}else{
-				ThAddString(&mc->files,T("HTTP unknown error"));
+				ThAddString(&mc->files, T("HTTP unknown error"));
 			}
 			bottom = NULL;
 		}else{
-			p = strstr(bottom,"\r\n\r\n");
+			p = strstr(bottom, "\r\n\r\n");
 			if ( p && *(p + 4) ){
 				bottom = p + 4;
 			}
 		}
 	}else{
 		bottom = NULL;
-		if ( LoadFileImage(filename,0x40,&bottom,NULL,NULL) ){
+		if ( LoadFileImage(filename, 0x40, &bottom, NULL, NULL) ){
 			return GetLastError();
 		}
 
-		ThAddString(&mc->dirs,T("."));
-		ThAddString(&mc->dirs,T(".."));
+		ThAddString(&mc->dirs, T("."));
+		ThAddString(&mc->dirs, T(".."));
 	}
 	if ( bottom != NULL ){
-		MakeWebListSub(&mc->dirs,bottom,"HREF");
-		MakeWebListSub(&mc->dirs,bottom,"href");
-		MakeWebListSub(&mc->files,bottom,"SRC");
-		MakeWebListSub(&mc->files,bottom,"src");
+		MakeWebListSub(&mc->dirs, bottom, "HREF");
+		MakeWebListSub(&mc->dirs, bottom, "href");
+		MakeWebListSub(&mc->files, bottom, "SRC");
+		MakeWebListSub(&mc->files, bottom, "src");
 	}
-	ThAddString(&mc->dirs,NilStr);
-	ThAddString(&mc->files,NilStr);
+	ThAddString(&mc->dirs, NilStr);
+	ThAddString(&mc->files, NilStr);
 
-	if ( file ) HeapFree(DLLheap,0,bottom);
+	if ( file ) HeapFree(DLLheap, 0, bottom);
 	return NO_ERROR;
 }

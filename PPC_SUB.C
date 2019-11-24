@@ -207,6 +207,34 @@ ENTRYCELL *EnumMarkCell(PPC_APPINFO *cinfo, int *work)
 	return &CELdata(cell);
 }
 
+void GetCellRightRanges(PPC_APPINFO *cinfo, CELLRIGHTRANGES *ranges)
+{
+	int RightEnd;
+	ranges->TouchWidth = 0;
+
+	//==== 右側反応端を決定
+	if ( TouchMode & TOUCH_LARGEWIDTH ){
+		ranges->TouchWidth = cinfo->FontDPI;
+		if ( ranges->TouchWidth != 0 ){
+			ranges->TouchWidth = (ranges->TouchWidth * 120) >> 8; // 12.0mm ( 120 / 254 ) の近似値
+			// iOS:7mm Android:9mm(7-10mm)
+		}
+	}
+//	if ( RightEnd > cinfo->wnd.Area.cx ) RightEnd = cinfo->wnd.Area.cx;
+	ranges->RightBorder = cinfo->fontX;
+	RightEnd = cinfo->BoxEntries.right;
+	if ( (RightEnd - cinfo->BoxEntries.left) > (cinfo->fontX * 16) ){
+		ranges->RightBorder *= 2;
+		if ( ranges->RightBorder < ranges->TouchWidth ){
+			ranges->RightBorder = ranges->TouchWidth;
+		}
+	}
+	ranges->RightBorder = RightEnd - ranges->RightBorder;
+	// 右側反応端からのTail位置を決定
+	ranges->TailRightOffset = cinfo->fontX + (cinfo->fontX / 2);
+	ranges->TailWidth = X_stip[TIP_TAIL_WIDTH];
+}
+
 // クライアント座標から、項目の種類を求める -----------------------------------
 int GetItemTypeFromPoint(PPC_APPINFO *cinfo, POINT *pos, ENTRYINDEX *ItemNo)
 {
@@ -232,7 +260,7 @@ int GetItemTypeFromPoint(PPC_APPINFO *cinfo, POINT *pos, ENTRYINDEX *ItemNo)
 
 			x = (x - (cinfo->BoxInfo.left + cinfo->iconR)) / cinfo->fontX;
 			items = (cinfo->HiddenMenu.item + 1) >> 1;
-			if ( (x < (5 * items - 1)) && !((TouchMode & TOUCH_DISABLEHIDDENMENU) /*&& IsTouchMessage()*/ )){	// Self Popup Menu
+			if ( (x < (5 * items - 1)) && !((TouchMode & TOUCH_DISABLEHIDDENMENU) )){	// Self Popup Menu
 				rc = PPCR_MENU;
 				cell = (x / 5) + ((y - (cinfo->BoxInfo.bottom - (cinfo->fontY * 2))) / cinfo->fontY) * items;
 				if ( cell < -1 ) return PPCR_INFOTEXT;
@@ -267,45 +295,30 @@ int GetItemTypeFromPoint(PPC_APPINFO *cinfo, POINT *pos, ENTRYINDEX *ItemNo)
 		if ( x < 0 ) {
 			rc = PPCR_UNKNOWN;
 		}else if ( y < cinfo->cel.Area.cy ){
-			int TouchWidth = 0;
-			BOOL RightBorder;
-			int RightBorderWidth;
+			CELLRIGHTRANGES ranges;
 
-			//==== 右側反応端を決定
-			if ( TouchMode & TOUCH_LARGEWIDTH ){
-				TouchWidth = cinfo->FontDPI;
-				if ( TouchWidth != 0 ){
-					TouchWidth = (TouchWidth * 120) >> 8; // 12.0mm ( 120 / 254 ) の近似値
-					// iOS:7mm Android:9mm(7-10mm)
-				}
-			}
+			GetCellRightRanges(cinfo, &ranges);
 			rc = PPCR_CELLBLANK;
-
-			RightBorderWidth = cinfo->fontX;
-			if ( (cinfo->BoxEntries.right - cinfo->BoxEntries.left) > (cinfo->fontX * 16) ){
-				RightBorderWidth *= 2;
-				if ( RightBorderWidth < TouchWidth ){
-					RightBorderWidth = TouchWidth;
-				}
-			}
-			RightBorder = pos->x >= (cinfo->BoxEntries.right - RightBorderWidth);
-
 			//==== 検知対象 cell を決定
 			cell = cinfo->cellWMin + y +
 					(x / cinfo->cel.Size.cx) * cinfo->cel.Area.cy;
 			x = x % cinfo->cel.Size.cx;
 			// 右端は、セルの範囲であっても空欄扱いにする
-			if ( (x > (cinfo->fontX * 3)) && RightBorder ){
+			if ( (x > (cinfo->fontX * 3)) && (pos->x >= ranges.RightBorder) ){
 				if ( ItemNo != NULL ) *ItemNo = -1;
 				return PPCR_CELLBLANK;
 			}
 #if FREEPOSMODE
-			if ( (cell < cinfo->e.cellIMax) && (cell >= cinfo->cellWMin) && (CEL(cell).pos.x == NOFREEPOS) )
+	#define FREEPOSCONDITION(cell) && (CEL(cell).pos.x == NOFREEPOS)
 #else
-			if ( (cell < cinfo->e.cellIMax) && (cell >= cinfo->cellWMin) )
+	#define FREEPOSCONDITION(cell)
 #endif
-			{
-				if ( (x > (cinfo->cel.Size.cx - cinfo->fontX - (int)X_stip[TIP_TAIL_WIDTH])) && (x < (cinfo->cel.Size.cx - cinfo->fontX - 3)) ){
+			if ( (cell < cinfo->e.cellIMax) && (cell >= cinfo->cellWMin) FREEPOSCONDITION(cell) ){
+				int TailRight = cinfo->cel.Size.cx - ranges.TailRightOffset;
+				if ( TailRight >= ranges.RightBorder ){
+					TailRight = ranges.RightBorder;
+				}
+				if ( (x > (TailRight - ranges.TailWidth)) && (x < TailRight) ){
 					rc = PPCR_CELLTAIL;
 				}else if ( (DWORD)x < cinfo->CellNameWidth ){ // マーク部分の判定
 					BYTE *fmtp;
@@ -339,7 +352,7 @@ int GetItemTypeFromPoint(PPC_APPINFO *cinfo, POINT *pos, ENTRYINDEX *ItemNo)
 					}else{
 						markX = cinfo->fontX + MARKOVERX;
 					}
-					if ( markX < TouchWidth ) markX = TouchWidth;
+					if ( markX < ranges.TouchWidth ) markX = ranges.TouchWidth;
 
 					if ( x < markX ){
 						rc = PPCR_CELLMARK;
@@ -364,7 +377,7 @@ int GetItemTypeFromPoint(PPC_APPINFO *cinfo, POINT *pos, ENTRYINDEX *ItemNo)
 									namewidth = (CEL(cell).ext + 1) * cinfo->fontX + MARKOVERX;
 								}
 								if ( namewidth < (cinfo->fontX * 2) ) namewidth = (cinfo->fontX * 2);
-								if ( namewidth < TouchWidth ) namewidth = TouchWidth;
+								if ( namewidth < ranges.TouchWidth ) namewidth = ranges.TouchWidth;
 								if ( x < namewidth ) rc = PPCR_CELLTEXT;
 							}else{
 								rc = PPCR_CELLTEXT;
@@ -2007,7 +2020,7 @@ void SaveClipboardData(HGLOBAL hGlobal, UINT cpdtype, PPC_APPINFO *cinfo)
 		SetPopMsg(cinfo, POPMSG_MSG, T("Save error"));
 		return;
 	}
-	size = GlobalSize(hGlobal);
+	size = (DWORD)GlobalSize(hGlobal);
 
 	MakeClipboardDataName(cpdtype, type, dumpdata, size);
 	ExistCheck(name, cinfo->RealPath, type);
@@ -2715,5 +2728,18 @@ void tstrreplace(TCHAR *text, const TCHAR *targetword, const TCHAR *replaceword)
 		text = p + rlen;
 	}
 }
+
+BOOL IsShowButtonMenu(void)
+{
+	if ( (GetTickCount() - ButtonMenuTick) >= SKIPBUTTONMENUTIME ) return TRUE;
+	ButtonMenuTick = 0;
+	return FALSE;
+}
+
+void EndButtonMenu(void)
+{
+	ButtonMenuTick = (GetAsyncKeyState(VK_LBUTTON) & KEYSTATE_PUSH) ? GetTickCount() : 0;
+}
+
 #endif
 

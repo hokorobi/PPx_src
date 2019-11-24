@@ -3,7 +3,6 @@
 -----------------------------------------------------------------------------*/
 #define ONPPXDLL // PPCOMMON.H ‚Ì DLL ’è‹`Žw’è
 #include "WINAPI.H"
-#include <windowsx.h>
 #include "PPX.H"
 #include "VFS.H"
 #include "TMEM.H"

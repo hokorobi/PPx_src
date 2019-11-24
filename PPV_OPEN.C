@@ -615,9 +615,10 @@ HILIGHTKEYWORD *LoadDefaultHighlight(ThSTRUCT *mem, const TCHAR *filename, const
 		size = sizeof(HILIGHTKEYWORD) + sizeW +((sizeA + 1) & 0xfffe);
 		ThSize(mem, size);
 		hks = (HILIGHTKEYWORD *)ThLast(mem);
-		hks->color = color;
-		hks->next = (HILIGHTKEYWORD *)(BYTE *)size;
+		hks->next = (HILIGHTKEYWORD *)(LONG_PTR)size;
 		hks->ascii = (const char *)(size_t)(sizeW);
+		hks->wide = 0;
+		hks->color = color;
 		hks->extend = extend;
 		memcpy((char *)(hks + 1) + sizeW, strA, sizeA);
 		memcpy((char *)(hks + 1), strW, sizeW);
@@ -683,9 +684,10 @@ void LoadHighlight(VFSFILETYPE *vft)
 		size = sizeof(HILIGHTKEYWORD) + sizeW +((sizeA + 1) & 0xfffe);
 		ThSize(&mem, size);
 		hks = (HILIGHTKEYWORD *)ThLast(&mem);
-		hks->color = color;
-		hks->next = (HILIGHTKEYWORD *)(BYTE *)size;
+		hks->next = (HILIGHTKEYWORD *)(LONG_PTR)size;
 		hks->ascii = (const char *)(size_t)(sizeW);
+		hks->wide = 0;
+		hks->color = color;
 		hks->extend = HILIGHTKEYWORD_R;
 		memcpy((char *)(hks + 1) + sizeW, strA, sizeA);
 		memcpy((char *)(hks + 1), strW, sizeW);
@@ -2773,18 +2775,19 @@ int getdelta(DWORD d1, DWORD d2)
 		(dabs((int)(d1 & 0xff00) - (int)(d2 & 0xff00)) >> 8) +
 		dabs((int)(d1 & 0xff) - (int)(d2 & 0xff));
 }
+enum {
+	TMODE_NONE = 0,
+	TMODE_GIF_2X, // 2値 bit shift 有り
+	TMODE_GIF_4,
+	TMODE_GIF_8_2C, // 8bit / 2bit上書き
+	TMODE_GIF_4to8, // 8bit に 4bitを合成
+	TMODE_PNG_8,
+	TMODE_PNG_24,
+	TMODE_PNG_32,
 
-#define TMODE_NONE		0
-#define TMODE_GIF_2X	1
-#define TMODE_GIF_4		2
-#define TMODE_GIF_8		3
-#define TMODE_PNG_8		4
-#define TMODE_PNG_24	5
-#define TMODE_PNG_32	6
-
-#define TMODE_GIFMODE	16
-#define TMODE_PNGMODE	17
-
+	TMODE_GIFMODE = 16,
+	TMODE_PNGMODE
+};
 #define BitSizeMacro(bits) (((bits) + 7) / 8)
 #define BitPosMacro(bits) ((bits) / 8)
 
@@ -2993,7 +2996,8 @@ void ChangePage(int delta)
 		PreFrameInfo.offset = gpage.dispoffset;
 
 		// 色深度が違う場合は加工できない
-		if ( vo_.bitmap.info->biBitCount != NewBMPinfo->bmiHeader.biBitCount ){
+		if ( (vo_.bitmap.info->biBitCount != NewBMPinfo->bmiHeader.biBitCount) &&
+			 !((tmode == TMODE_GIFMODE) && (vo_.bitmap.info->biBitCount == 8)) ){
 			// 透明指定有りか大きさが異なっている
 			if ( (gpage.trans >= 0) ||
 			  (vo_.bitmap.rawsize.cx != newsize.cx) || (vo_.bitmap.rawsize.cy != newsize.cy) ){
@@ -3002,7 +3006,8 @@ void ChangePage(int delta)
 		}
 
 		if ( gpage.page &&
-			(vo_.bitmap.info->biBitCount == NewBMPinfo->bmiHeader.biBitCount) &&
+			((vo_.bitmap.info->biBitCount == NewBMPinfo->bmiHeader.biBitCount)||
+			((tmode == TMODE_GIFMODE) && (vo_.bitmap.info->biBitCount == 8))) &&
 			// 大きさが収まっている
 			(vo_.bitmap.rawsize.cy >= (gpage.dispoffset.y + newsize.cy)) &&
 			(vo_.bitmap.rawsize.cx >= (gpage.dispoffset.x + newsize.cx)) &&
@@ -3026,17 +3031,18 @@ void ChangePage(int delta)
 					(size_t)(1 << NewBMPinfo->bmiHeader.biBitCount) * sizeof(DWORD) ) ){
 					paletteFix = TRUE;
 					if ( tmode == TMODE_GIFMODE ){ // 新しいパレットインデックスを旧パレットインデックスに変換する表を作成
-						int ni, oi, cols;
+						int ni, oi, newcols, oldcols;
 
-						cols = 1 << NewBMPinfo->bmiHeader.biBitCount;
-						for ( ni = 0 ; ni < cols ; ni++ ){
+						oldcols = 1 << vo_.bitmap.info->biBitCount;
+						newcols = 1 << NewBMPinfo->bmiHeader.biBitCount;
+						for ( ni = 0 ; ni < newcols ; ni++ ){
 							DWORD oldindex, newpald;
 							int paldelta;
 
 							paldelta = 0xfffff;
-							oldindex = cols - 1;
+							oldindex = oldcols - 1;
 							newpald = newpal[ni];
-							for ( oi = 0 ; oi < cols ; oi++ ){
+							for ( oi = 0 ; oi < oldcols ; oi++ ){
 								int chkdelta;
 
 								chkdelta = getdelta(newpald, oldpal[oi]);
@@ -3059,10 +3065,15 @@ void ChangePage(int delta)
 					if ( (vo_.bitmap.info->biBitCount == 1) &&
 						 (gpage.dispoffset.x & 7) ){
 						tmode = TMODE_GIF_2X;
+					}else if ( vo_.bitmap.info->biBitCount == 4 ){
+						tmode = TMODE_GIF_4;
+					}else if ( (vo_.bitmap.info->biBitCount == 8) &&
+						(NewBMPinfo->bmiHeader.biBitCount == 4) ){
+						tmode = TMODE_GIF_4to8;
 					}else{
-						tmode = (vo_.bitmap.info->biBitCount == 4) ?
-								TMODE_GIF_4 : TMODE_GIF_8;
+						tmode = TMODE_GIF_8_2C;
 					}
+					nosupport = FALSE;
 				}else if ( tmode == TMODE_PNGMODE ){
 					if ( vo_.bitmap.info->biBitCount == 8 ){
 						tmode = TMODE_PNG_8;
@@ -3089,9 +3100,9 @@ void ChangePage(int delta)
 				}
 			}
 
-			srcwidth = DwordBitSize(newsize.cx * vo_.bitmap.info->biBitCount);
+			srcwidth = DwordBitSize(newsize.cx * NewBMPinfo->bmiHeader.biBitCount);
 			dstwidth = DwordBitSize(vo_.bitmap.rawsize.cx * vo_.bitmap.info->biBitCount);
-			dstoffset = BitPosMacro(gpage.dispoffset.x * NewBMPinfo->bmiHeader.biBitCount);
+			dstoffset = BitPosMacro(gpage.dispoffset.x * vo_.bitmap.info->biBitCount);
 			copywidth = BitSizeMacro(newsize.cx * NewBMPinfo->bmiHeader.biBitCount);
 
 			for ( h = 1 ; h <= newsize.cy ; h++ ){
@@ -3117,58 +3128,50 @@ void ChangePage(int delta)
 						}
 						continue;
 					}
-					case TMODE_GIF_4:
+					case TMODE_GIF_4: {
+						int skip_i;
+
+						skip_i = (newsize.cx & 1) ? 1 : 0;
 						if ( gpage.dispoffset.x & 1 ){ // 4bit 列が不一致
-							int skip_i;
-
-							nosupport = FALSE;
-							skip_i = (newsize.cx & 1) ? 1 : 0;
-
 							for ( i = copywidth ; i ; i--, src++, dst++ ){
-								BYTE srcdot;
+								BYTE srcdots;
 
-								srcdot = *src;
-								if ( ((srcdot >> 4) != gpage.trans) &&
+								srcdots = *src;
+								if ( ((srcdots >> 4) != gpage.trans) &&
 									 (i > skip_i) ){
 									*dst = (BYTE)((*dst & 0xf0) |
 											(paletteFix ?
-											 fixpals[srcdot >> 4] : (srcdot >> 4)) );
+											 fixpals[srcdots >> 4] : (srcdots >> 4)) );
 								}
-								if ( (srcdot & 0xf) != gpage.trans ){
+								if ( (srcdots & 0xf) != gpage.trans ){
 									*(dst + 1) = (BYTE)((*(dst + 1) & 0xf) |
 											(paletteFix ?
-											 (fixpals[srcdot & 0xf] << 4) : (srcdot << 4)) );
+											 (fixpals[srcdots & 0xf] << 4) : (srcdots << 4)) );
 								}
 							}
 						}else{	// 4bit 列が一致
-							int skip_i;
-
-							skip_i = (newsize.cx & 1) ? 1 : 0;
-
 							for ( i = copywidth ; i ; i--, src++, dst++ ){
-								BYTE srcdot, destdot;
+								BYTE srcdots, destdots, dot;
 
-								srcdot = *src;
-								destdot = *dst;
+								srcdots = *src;
+								destdots = *dst;
 
-								if ( ((srcdot & 0xf) != gpage.trans) &&
-									 (i > skip_i) ){
-									destdot = (BYTE)((destdot & 0xf0) |
-											(paletteFix ?
-											 fixpals[srcdot & 0xf] : (srcdot & 0xf)) );
+								dot = (BYTE)(srcdots & 0xf);
+								if ( (dot != gpage.trans) && (i > skip_i) ){
+									destdots = (BYTE)((destdots & 0xf0) |
+											(paletteFix ? fixpals[dot] : dot) );
 								}
-
-								if ( (srcdot >> 4) != gpage.trans ){
-									destdot = (BYTE)((destdot & 0xf) |
-											(paletteFix ?
-											 (fixpals[srcdot >> 4] << 4) : (srcdot & 0xf0)) );
+								dot = (BYTE)(srcdots >> 4);
+								if ( dot != gpage.trans ){
+									destdots = (BYTE)((destdots & 0xf) |
+											(paletteFix ? (fixpals[dot] << 4) : (dot << 4)) );
 								}
-								*dst = destdot;
+								*dst = destdots;
 							}
 						}
 						continue;
-
-					case TMODE_GIF_8:
+					}
+					case TMODE_GIF_8_2C:
 						for ( i = copywidth ; i ; i--, src++, dst++ ){
 							if ( *src != trans ){
 								if ( IsTrue(paletteFix) ){
@@ -3180,6 +3183,41 @@ void ChangePage(int delta)
 						}
 						continue;
 
+					case TMODE_GIF_4to8: {
+						int skip_i;
+
+						skip_i = (newsize.cx & 1) ? 1 : 0;
+						if ( gpage.dispoffset.x & 1 ){ // 4bit 列が不一致
+							for ( i = copywidth ; i ; i--, src++, dst+=2 ){
+								BYTE srcdots, dot;
+
+								srcdots = *src;
+								dot = (BYTE)(srcdots >> 4);
+								if ( (dot != gpage.trans) && (i > skip_i) ){
+									*dst = paletteFix ? fixpals[dot] : dot;
+								}
+								dot = (BYTE)(srcdots & 0xf);
+								if ( dot != gpage.trans ){
+									*(dst + 1) = paletteFix ? fixpals[dot] : dot;
+								}
+							}
+						}else{	// 4bit 列が一致
+							for ( i = copywidth ; i ; i--, src++, dst+=2 ){
+								BYTE srcdots, dot;
+
+								srcdots = *src;
+								dot = (BYTE)(srcdots & 0xf);
+								if ( (dot != gpage.trans) && (i > skip_i) ){
+									*dst = paletteFix ? fixpals[dot] : dot;
+								}
+								dot = (BYTE)(srcdots & 0x4);
+								if ( dot != gpage.trans ){
+									*(dst + 1) = paletteFix ? fixpals[dot] : dot;
+								}
+							}
+						}
+						continue;
+					}
 					case TMODE_PNG_8:
 						for ( i = copywidth ; i ; i--, src++, dst++ ){
 							if ( newpal[*src] >= 0x60000000 ) *dst = *src;

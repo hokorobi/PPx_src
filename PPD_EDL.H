@@ -120,7 +120,7 @@ typedef struct {
 	ECURSOR	cursor, cursororg;	// ‘I‘ð”ÍˆÍ
 } TEXTSEL;
 
-enum { TEXTSEL_ALL = 0, TEXTSEL_CHAR = 1, TEXTSEL_BACK, TEXTSEL_WORD, TEXTSEL_BEFORE, TEXTSEL_AFTER };
+enum { TEXTSEL_ALL = 0, TEXTSEL_CHAR = 1, TEXTSEL_BACK, TEXTSEL_WORD, TEXTSEL_BEFORE, TEXTSEL_AFTER, TEXTSEL_BEFOREWORD };
 
 //--------------------------------------------------------------- PPD_EDL.C
 extern int xpbug;
@@ -141,7 +141,7 @@ typedef struct {
 	int crcode;
 	int tabwidth;
 } EDITMODESTRUCT;
-#define EDITMODESTRUCT_DEFAULT 0,-1,-1
+#define EDITMODESTRUCT_DEFAULT 0, -1, -1
 
 extern void PPeSetTab(PPxEDSTRUCT *PES, int usetab);
 extern BOOL EditModeParam(EDITMODESTRUCT *ems, const TCHAR *param, const TCHAR *more);

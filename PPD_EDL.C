@@ -4,7 +4,6 @@
 #pragma setlocale("Japanese")
 #define ONPPXDLL		// PPCOMMON.H の DLL 定義指定
 #include "WINAPI.H"
-#include <windowsx.h>
 #include <stddef.h>
 #include <string.h>
 #include <shlobj.h>
@@ -29,6 +28,216 @@ ERRORCODE PPedCommand(PPxEDSTRUCT *PES, PPECOMMANDPARAM *param);
 ERRORCODE PPedExtCommand(PPxEDSTRUCT *PES, PPECOMMANDPARAM *param, const TCHAR *command);
 const TCHAR FINDMSGSTRINGstr[] = FINDMSGSTRING;
 UINT ReplaceDialogMessage = 0xff77ff77;
+
+// 文字オフセットがカーソルであるかを判定。※フォーカスが無いときは失敗する
+BOOL IsEditCursorPos(HWND hWnd, DWORD coff)
+{
+	POINT pos;
+	DWORD coffset;
+
+	GetCaretPos(&pos); // DPI仮想化未対応
+	coffset = (DWORD)SendMessage(hWnd, EM_CHARFROMPOS, 0, TMAKELPARAM(pos.x, pos.y));
+	if ( LOWORD(coffset) != LOWORD(coff) ) return FALSE; // x下位が一致しない
+	if ( HIWORD(coff) == 0 ) return TRUE; // x下位だけで判定確定
+
+	// y下位が一致(EM_LINEFROMCHAR が1余分にある時もある)
+	return (DWORD)(LOWORD(SendMessage(hWnd, EM_LINEFROMCHAR, coff,0)) - HIWORD(coffset)) <= 1;
+#if 0
+	POINT pos;
+	DWORD wpos;
+
+	GetCaretPos(&pos);
+	wpos = SendMessage(hWnd, EM_POSFROMCHAR, (WPARAM)coff, 0);
+
+	return (LOWORD(pos.x) == LOWORD(wpos)) && (LOWORD(pos.y) == HIWORD(wpos));
+#endif
+}
+
+BOOL IsCursorLeftSel(HWND hWnd, int *inums)
+{
+	SendMessage(hWnd, EM_GETSEL, (WPARAM)&inums[4], (LPARAM)&inums[5]);
+	if ( inums[4] == inums[5] ) return TRUE; // 選択無し
+	switch (inums[3]){ // カーソル位置による
+		case 1: // 左
+			return TRUE;
+		case 2: // 右
+			return FALSE;
+		case 3: // 移動方向による 左に移動なら左
+			return inums[1] <= 0;
+		default: // case 0: カーソル位置
+			return IsEditCursorPos(hWnd, (DWORD)inums[4]);
+	}
+}
+
+// Y 移動量に相当する文字オフセットを求める
+int CursorYMove(HWND hWnd, int deltaY, int nowW)
+{
+	int nowY, newY;
+	if ( deltaY == 0 ) return 0;
+	nowY = (nowW != 0) ? (int)SendMessage(hWnd, EM_LINEFROMCHAR, (WPARAM)nowW, 0) : 0;
+	newY = nowY + deltaY;
+	if ( newY < 0 ) newY = 0;
+	return	(int)SendMessage(hWnd, EM_LINEINDEX, (WPARAM)newY, 0) -
+			((nowW != 0) ? (int)SendMessage(hWnd, EM_LINEINDEX, (WPARAM)nowY, 0) : 0);
+}
+
+int FixCursorXmove(HWND hWnd, int start, int offset)
+{
+	HLOCAL hEd;
+	int nowpos = start;
+	BOOL uselocalheap = FALSE;
+	const WCHAR *EditText = NULL;
+
+	hEd = (HLOCAL)SendMessage(hWnd, EM_GETHANDLE, 0, 0);
+	if ( hEd != NULL ){
+		EditText = LocalLock(hEd);
+		if ( EditText != NULL ) uselocalheap = TRUE;
+	}
+	if ( EditText == NULL ){
+		DWORD len;
+
+		len = GetWindowTextLength(hWnd);
+		EditText = HeapAlloc(DLLheap, 0, TSTROFF(len + 1));
+		GetWindowText(hWnd, (TCHAR *)EditText, len + 1);
+	}
+	if ( EditText == NULL ){
+		nowpos += offset;
+		if ( nowpos < 0 ) nowpos = 0;
+#ifndef UNICODE
+	}else if ( (uselocalheap == FALSE) || (xpbug >= 0) ){ // ANSI版
+		if ( xpbug ) CaretFixToA((const char *)EditText, (DWORD *)&nowpos);
+		if ( offset >= 0 ){ // 正
+			for (;offset > 0;){
+				BYTE c;
+
+				c = (BYTE)*((char *)EditText + nowpos);
+				if ( c == '\0' ) break;
+				if ( c == '\r' ){
+					nowpos++;
+					continue;
+				}
+				if ( IskanjiA(c) ){
+					nowpos++;
+					c = (BYTE)*((char *)EditText + nowpos);
+					if ( c == '\0' ) break;
+				}
+				nowpos++;
+				offset--;
+			}
+		}else for (;offset < 0;){ // 負
+			BYTE c;
+
+			if ( nowpos == 0 ) break;
+			if ( nowpos > 1 ){
+				c = (BYTE)*((char *)EditText + nowpos - 2);
+				if ( c == '\r' ){
+					nowpos--;
+					continue;
+				}
+				if ( IskanjiA(c) ){
+					nowpos--;
+				}
+			}
+			nowpos--;
+			offset++;
+		}
+		if ( xpbug ) CaretFixToW((const char *)EditText, (DWORD *)&nowpos);
+#endif
+	// UNICODE 版
+	}else if ( offset >= 0 ){ // 正
+		for (;offset > 0;){
+			WCHAR c, c2;
+
+			c = *(EditText + nowpos);
+			if ( c == '\0' ) break;
+			c2 = *(EditText + nowpos + 1);
+			if ( (c == '\r') || // CR
+				 ((c >= 0xd800) && (c < 0xdc00)) || // サロゲートペア1
+				 ((c >= 0x180b) && (c <= 0x180d)) || // FVS
+				 ((c >= 0xfe00) && (c <= 0xfe0f)) || // VS1-VS16
+				// U+E0100?U+E01EF // VS17-VS256
+//				 ((c2 >= 0x93a) && (c2 <= 0x94f)) || //
+				 ((c2 >= 0x300) && (c2 <= 0x36f))  // ダイアクリティカル
+				){
+				nowpos++;
+				continue;
+			}
+			nowpos++;
+			offset--;
+		}
+	}else for (;offset < 0;){ // 負
+		WCHAR c, c2;
+
+		if ( nowpos == 0 ) break;
+		if ( nowpos > 1 ){
+			c = *(EditText + nowpos - 2);
+			c2 = *(EditText + nowpos - 1);
+			if ( (c == '\r') || // CR
+				((c >= 0xd800) && (c < 0xdc00)) || // サロゲートペア
+				((c >= 0x180b) && (c <= 0x180d)) || // FVS
+				((c >= 0xfe00) && (c <= 0xfe0f)) || // VS1-VS16
+				// U+E0100?U+E01EF // VS17-VS256
+//				 ((c2 >= 0x93a) && (c2 <= 0x94f)) || //
+				 ((c2 >= 0x300) && (c2 <= 0x36f))  // ダイアクリティカル
+				){
+				nowpos--;
+				continue;
+			}
+		}
+		nowpos--;
+		offset++;
+	}
+	if ( uselocalheap != FALSE ){
+		LocalUnlock(hEd);
+	}else if ( EditText != NULL ){
+		HeapFree(DLLheap, 0, (void *)EditText);
+	}
+	return nowpos;
+}
+
+// *cursor
+// -1:相対(x,y,t),-2:相対+選択(x,y,t),-3:絶対(x,y),-4:絶対(x,y,x2,y2)
+DWORD_PTR EditCursorCommand(PPxEDSTRUCT *PES, PPXAPPINFOUNION *uptr)
+{
+	switch ( uptr->inums[0] ){
+		case -1: {
+			int curindex;
+
+			curindex = IsCursorLeftSel(PES->hWnd, uptr->inums) ? 4 : 5;
+			uptr->inums[1] = FixCursorXmove(PES->hWnd, uptr->inums[curindex],
+					uptr->inums[1] + CursorYMove(PES->hWnd, uptr->inums[2], uptr->inums[curindex]));
+			if ( uptr->inums[1] == uptr->inums[curindex] ) break;
+			SendMessage(PES->hWnd, EM_SETSEL, (WPARAM)uptr->inums[1], (LPARAM)uptr->inums[1]);
+			break;
+		}
+		case -2: {
+			int curindex;
+
+			curindex = IsCursorLeftSel(PES->hWnd, uptr->inums) ? 4 : 5;
+
+			uptr->inums[curindex] = FixCursorXmove(PES->hWnd, uptr->inums[curindex],
+					uptr->inums[1] + CursorYMove(PES->hWnd, uptr->inums[2], uptr->inums[curindex]));
+			SendMessage(PES->hWnd, EM_SETSEL, (WPARAM)uptr->nums[curindex ^ 1 /* 4/5 → 5/4 */], (LPARAM)uptr->nums[curindex]);
+			break;
+		}
+		case -3: {
+			int w;
+
+			w = uptr->nums[1] + CursorYMove(PES->hWnd, uptr->inums[2], 0);
+			SendMessage(PES->hWnd, EM_SETSEL, (WPARAM)w, (LPARAM)w);
+			break;
+		}
+		case -4:
+			SendMessage(PES->hWnd, EM_SETSEL,
+				(WPARAM)(uptr->nums[1] + CursorYMove(PES->hWnd, uptr->inums[2], 0)),
+				(LPARAM)(uptr->nums[3] + CursorYMove(PES->hWnd, uptr->inums[4], 0)));
+			break;
+
+		default:
+			return PPxInfoFunc(PES->info, PPXCMDID_MOVECSR, uptr);
+	}
+	return 1;
+}
 
 void ListHScrollMain(HWND hListWnd, int dest)
 {
@@ -112,7 +321,9 @@ void PPeReplaceStrCommand(PPxEDSTRUCT *PES, FINDREPLACE *freplace)
 		}
 		SendMessage(PES->hWnd, WM_SETREDRAW, TRUE, 0);
 		InvalidateRect(PES->hWnd, NULL, FALSE);
-		PostMessage((HWND)freplace->lCustData, WM_CLOSE, 0, 0);
+		if ( freplace->lCustData != 0 ){
+			PostMessage((HWND)freplace->lCustData, WM_CLOSE, 0, 0);
+		}
 	}
 }
 
@@ -750,6 +961,67 @@ void USEFASTCALL PPeConvertZenHanMain(PPxEDSTRUCT *PES, HWND hWnd, int mode)
 	SendMessage(hWnd, EM_SETSEL, ts.cursororg.start, ts.cursororg.end);
 }
 
+// *find
+void PPeFind(PPxEDSTRUCT *PES, const TCHAR *param)
+{
+	DWORD replaceFlags = 0;
+	TCHAR *more;
+	TCHAR buf[CMDLINESIZE];
+	UTCHAR code;
+	int dist = EDITDIST_NEXT;
+
+	if ( PES->findrep == NULL ){
+		if ( InitPPeFindReplace(PES) == FALSE ) return;
+	}
+	while( '\0' != (code = GetOptionParameter(&param, buf, &more)) ){
+		if ( code == '-' ){
+			if ( !tstrcmp( buf + 1, T("REPLACE")) ){
+				tstrlimcpy(PES->findrep->replacetext, more, VFPS);
+				if ( replaceFlags == 0 ) replaceFlags = FR_REPLACE;
+				continue;
+			}
+			if ( !tstrcmp( buf + 1, T("ALL")) ){
+				replaceFlags = FR_REPLACEALL;
+				continue;
+			}
+			/*
+			if ( !tstrcmp( buf + 1, T("FORWARD")) ){
+				dist = EDITDIST_NEXT;
+				continue;
+			}
+			*/
+			if ( !tstrcmp( buf + 1, T("BACK")) ){
+				dist = EDITDIST_BACK;
+				continue;
+			}
+			if ( !tstrcmp( buf + 1, T("DIALOG")) ){
+				dist = EDITDIST_DIALOG;
+				continue;
+			}
+		}else{
+			tstrlimcpy(PES->findrep->findtext, buf, VFPS);
+		}
+	}
+	if ( replaceFlags == 0 ){
+		SearchStr(PES, dist);
+	}else{
+		if ( dist == EDITDIST_DIALOG ){
+			PPeReplaceStr(PES);
+		}else{
+			FINDREPLACE freplace;
+
+			freplace.hwndOwner = PES->hWnd;
+			freplace.Flags = FR_DOWN | FR_HIDEMATCHCASE | FR_HIDEWHOLEWORD | replaceFlags;
+			freplace.lpstrFindWhat = PES->findrep->findtext;
+			freplace.lpstrReplaceWith = PES->findrep->replacetext;
+//			freplace.wFindWhatLen = VFPS;
+//			freplace.wReplaceWithLen = VFPS;
+			freplace.lCustData = 0;
+			PPeReplaceStrCommand(PES, &freplace);
+		}
+	}
+}
+
 // *completelist
 void EditCompleteListCommand(PPxEDSTRUCT *PES, const TCHAR *param)
 {
@@ -917,6 +1189,23 @@ void GetCursorLocate(PPxEDSTRUCT *PES, DWORD *start, DWORD *end)
 	if ( end != NULL ) *end = cursor.end;
 }
 
+ERRORCODE EditKeyCommand(PPxEDSTRUCT *PES, DWORD key)
+{
+	PPECOMMANDPARAM param;
+	ERRORCODE result;
+
+	param.key = (WORD)(DWORD)key;
+	param.repeat = 0;
+
+	result = PPedCommand(PES, &param);
+	if ( (result == ERROR_INVALID_FUNCTION) &&
+		 ((key & (K_v | K_ex | K_internal)) == K_v) ) { // 未実行の仮想キー？
+		CallWindowProc(PES->hOldED, PES->hWnd, WM_KEYDOWN, key & 0xff, 0);
+		CallWindowProc(PES->hOldED, PES->hWnd, WM_KEYUP, key & 0xff, B30);
+	}
+	return result;
+}
+
 // 一行編集時に使用する
 DWORD_PTR USECDECL EditInfoFunc(PPXAPPINFO *info, DWORD cmdID, PPXAPPINFOUNION *uptr)
 {
@@ -924,15 +1213,9 @@ DWORD_PTR USECDECL EditInfoFunc(PPXAPPINFO *info, DWORD cmdID, PPXAPPINFOUNION *
 
 	PES = ((EDITMODULEINFOSTRUCT *)info)->PES;
 	switch (cmdID){
-		case PPXCMDID_PPXCOMMAD: {
-			PPECOMMANDPARAM param;
-
-			param.key = uptr->key;
-			param.repeat = 0;
-
-			PPedCommand(PES, &param);
+		case PPXCMDID_PPXCOMMAD:
+			EditKeyCommand(PES, uptr->key);
 			return 0;
-		}
 
 		case PPXCMDID_REQUIREKEYHOOK:
 			PES->KeyHookEntry = FUNCCAST(CALLBACKMODULEENTRY, uptr);
@@ -993,12 +1276,15 @@ DWORD_PTR USECDECL EditInfoFunc(PPXAPPINFO *info, DWORD cmdID, PPXAPPINFOUNION *
 					case 'L':
 						return (uptr->str[1] == 'S') ? (DWORD_PTR)PES->list.hSubWnd : (DWORD_PTR)PES->list.hWnd;
 					case 'P':
-						return PPxInfoFunc(PES->info, PPXCMDID_GETREQHWND, uptr->str + 1);
+						return PPxInfoFunc(PES->info, PPXCMDID_GETREQHWND, (TCHAR *)(uptr->str + 1) );
 					case 'T':
 						return (DWORD_PTR)PES->hTreeWnd;
 				}
 			}
 			return 0;
+
+		case PPXCMDID_MOVECSR:	// *cursor
+			return EditCursorCommand(PES, uptr);
 
 		case PPXCMDID_COMMAND:{
 			const TCHAR *param = uptr->str + tstrlen(uptr->str) + 1;
@@ -1038,6 +1324,10 @@ DWORD_PTR USECDECL EditInfoFunc(PPXAPPINFO *info, DWORD cmdID, PPXAPPINFOUNION *
 				if ( (c == 'z') || (c == '1') ) mode = 1;
 				if ( (c == 'h') || (c == '0') ) mode = 0;
 				PPeConvertZenHanMain(PES, PES->hWnd, mode);
+				break;
+			}
+			if ( !tstrcmp(uptr->str, T("FIND")) ){
+				PPeFind(PES, param);
 				break;
 			}
 			// default へ
@@ -1215,34 +1505,45 @@ int USEFASTCALL PPeSaveAsFile(PPxEDSTRUCT *PES)
 	return 0;
 }
 
-int USEFASTCALL PPePPcList(PPxEDSTRUCT *PES)
+int USEFASTCALL PPePPcListMain(PPxEDSTRUCT *PES, int mincount)
 {
 	HMENU hMenu;
-	int id;
+	int count, id;
 	DWORD id2 = 1;
-	POINT pos;
+	RECT box;
 	TCHAR path[VFPS + 8];
 
 	hMenu = CreatePopupMenu();
-	GetPPxList(hMenu, GetPPcList_Path, NULL, &id2);
+	count = GetPPxList(hMenu, GetPPcList_Path, NULL, &id2);
+	if ( count >= mincount ){
+		GetWindowRect(PES->hWnd, &box);
+		id = TrackPopupMenu(hMenu, TPM_TDEFAULT, box.left, box.bottom, 0, PES->hWnd, NULL);
+		if ( id ){
+			TCHAR *sep;
 
-	GetPPePopupPositon(PES, &pos);
-	id = TrackPopupMenu(hMenu, TPM_TDEFAULT, pos.x, pos.y, 0, PES->hWnd, NULL);
-	if ( id ){
-		TCHAR *sep;
-
-		path[0] = '\0';
-		GetMenuString(hMenu, id, path, TSIZEOF(path), MF_BYCOMMAND);
-		if ( PES->flags & PPXEDIT_SINGLEREF ){
-			SendMessage(PES->hWnd, EM_SETSEL, 0, EC_LAST);
-		}
-		sep = tstrchr(path, ':'); // "&A: path"
-		if ( sep != NULL ){
-			SendMessage(PES->hWnd, EM_REPLACESEL, 0, (LPARAM)(sep + 2));
+			path[0] = '\0';
+			GetMenuString(hMenu, id, path, TSIZEOF(path), MF_BYCOMMAND);
+			if ( PES->flags & PPXEDIT_SINGLEREF ){
+				SendMessage(PES->hWnd, EM_SETSEL, 0, EC_LAST);
+			}
+			sep = tstrchr(path, ':'); // "&A: path"
+			if ( sep != NULL ){
+				SendMessage(PES->hWnd, EM_REPLACESEL, 0, (LPARAM)(sep + 2));
+			}
 		}
 	}
 	DestroyMenu(hMenu);
 	return 0;
+}
+
+int USEFASTCALL PPePPcList(PPxEDSTRUCT *PES)
+{
+	return PPePPcListMain(PES, 1);
+}
+
+int USEFASTCALL PPePPcListMin3(PPxEDSTRUCT *PES)
+{
+	return PPePPcListMain(PES, 3);
 }
 
 			// ESC-A
@@ -1285,7 +1586,7 @@ int USEFASTCALL PPeFillMain(PPxEDSTRUCT *PES, HWND hWnd)
 	TCHAR buf[0x800];
 	DWORD mode;
 
-	mode = PES->ED.cmdsearch & (CMDSEARCH_FLOAT | CMDSEARCH_ROMA);
+	mode = PES->ED.cmdsearch & (CMDSEARCH_FLOAT | CMDSEARCH_ROMA | CMDSEARCH_WILDCARD);
 												// サイズチェック
 	buf[0] = '\0';
 	if ( (DWORD)SendMessage(hWnd, WM_GETTEXT, TSIZEOF(buf), (LPARAM)&buf) >=
@@ -1402,6 +1703,8 @@ int USEFASTCALL PPeTab(PPxEDSTRUCT *PES)
 			if ( X_flst[0] == 0 ) X_flst[0] = 1;
 		}else if ( mode == 4 ){
 			setflag(PES->ED.cmdsearch, CMDSEARCH_ROMA);
+		}else if ( mode == 5 ){
+			setflag(PES->ED.cmdsearch, CMDSEARCH_WILDCARD);
 		}
 	}else{
 		resetflag(PES->ED.cmdsearch, CMDSEARCH_FLOAT);
@@ -1428,10 +1731,23 @@ int USEFASTCALL PPeDeleteBackLine(PPxEDSTRUCT *PES)
 {
 	return DeleteSub(PES, TEXTSEL_BEFORE, VK_BACK);
 }
+int USEFASTCALL PPeDeleteBackWord(PPxEDSTRUCT *PES)
+{
+	TEXTSEL ts;
+
+	if ( SelectEditStrings(PES, &ts, TEXTSEL_BEFOREWORD) == FALSE ) return 1;
+	PushTextStack((TCHAR)0, ts.word);
+	CallWindowProc(PES->hOldED, PES->hWnd, EM_REPLACESEL, 0, (LPARAM)NilStr);
+	return 0;
+}
 
 int USEFASTCALL PPeDeleteAfterLine(PPxEDSTRUCT *PES)
 {
 	return DeleteSub(PES, TEXTSEL_AFTER, VK_DELETE);
+}
+int USEFASTCALL PPeDeleteAfterWord(PPxEDSTRUCT *PES)
+{
+	return DeleteSub(PES, TEXTSEL_WORD, VK_DELETE);
 }
 
 int USEFASTCALL PPeDelete(PPxEDSTRUCT *PES)
@@ -1488,7 +1804,7 @@ int USEFASTCALL PPeGetFileName(PPxEDSTRUCT *PES)
 		DWORD wP, lP;
 
 		SendMessage(hWnd, EM_GETSEL, (WPARAM)&wP, (LPARAM)&lP);
-		if ( tstrchr(buf, ' ') != NULL ){
+		if ( tstrchr(buf, ' ') != NULL ){ // 空白があるので、「"|"」の|に挿入
 			SendMessage(hWnd, EM_REPLACESEL, 0, (LPARAM)T("\"\""));
 			SendMessage(hWnd, EM_SETSEL, wP + 1, wP + 1);
 			PostMessage(hWnd, WM_KEYDOWN, VK_RIGHT, 0);
@@ -1694,32 +2010,15 @@ int USEFASTCALL PPeGetFullPath(PPxEDSTRUCT *PES)
 
 int USEFASTCALL PPeUnSelect(PPxEDSTRUCT *PES)
 {
-	DWORD lPos, rPos, nPos, tPos;
+	DWORD lPos, rPos;
 	HWND hWnd = PES->hWnd;
-	BYTE states[256];
-	int oldshift;
 
 	SendMessage(hWnd, EM_GETSEL, (WPARAM)&lPos, (LPARAM)&rPos);
 	if ( lPos == rPos ) return 0; // 選択していない
-	SendMessage(hWnd, WM_SETREDRAW, FALSE, 0);
 
-	oldshift = GetAsyncKeyState(VK_SHIFT);
-	if ( !(oldshift & KEYSTATE_PUSH) ){
-		GetKeyboardState(states);
-		states[VK_SHIFT] |= B7;
-		SetKeyboardState(states);
-	}
-	CallWindowProc(PES->hOldED, hWnd, WM_KEYDOWN, VK_RIGHT, 0); // →で選択のどちらの端が変わるかを調べる
-	if ( !(oldshift & KEYSTATE_PUSH) ){
-		states[VK_SHIFT] &= (BYTE)~B7;
-		SetKeyboardState(states);
-	}
-
-	SendMessage(hWnd, EM_GETSEL, (WPARAM)&nPos, (LPARAM)&tPos);
-	if ( nPos > lPos ){ // 左側が動いた→カーソルは左
+	if ( IsEditCursorPos(hWnd, lPos) ){ // 左がカーソル？
 		rPos = lPos;
-	} // そうでなければカーソルは右
-	SendMessage(hWnd, WM_SETREDRAW, TRUE, 0);
+	}
 	SendMessage(hWnd, EM_SETSEL, (WPARAM)rPos, (LPARAM)rPos);
 	return 0;
 }
@@ -1741,6 +2040,7 @@ const KEYCOMMANDS ppecommands[] = {
 
 	{K_s | K_c | 'F',	PPeGetFileName},
 	{K_s | K_c | 'L',	PPePPcList},
+	{K_s | K_c | '3',	PPePPcListMin3},
 
 	{KE_ea,				PPeAppendFile},
 	{KE_ei,				PPeInsertFile},
@@ -1763,10 +2063,11 @@ const KEYCOMMANDS ppecommands[] = {
 
 	{K_bs,				PPeBackSpace},
 	{K_del,				PPeDelete},
-	{K_c | K_del,		PPeDeleteAfterLine},
+	{K_c | K_del,		PPeDeleteAfterWord},
 	{K_s | K_del,		PPeDeleteAfterLine},
 	{K_s | K_bs,		PPeDeleteBackLine},
-	{K_c | 0x7f,		PPeDeleteBackLine},
+	{K_c | 0x7f,		PPeDeleteBackWord},
+//	{K_c | K_bs,		PPeDeleteBackWord}, // WM_CHAR で 0x7f が出力
 	{K_c | 'Y',			PPeDeleteLine},
 
 	{K_c | 'P',			PPeGetFullPath},
@@ -2617,7 +2918,7 @@ LRESULT CALLBACK EDsHell(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 					WM_MOUSEWHEEL, wParam, lParam);
 			}
 			if ( !( PES->flags & PPXEDIT_TEXTEDIT ) ){
-				if ( (short)HIWORD(wParam) >= 0 ){
+				if ( HISHORTINT(wParam) >= 0 ){
 					cparam.key = K_up;
 				}else{
 					cparam.key = K_dw;
@@ -2656,7 +2957,7 @@ LRESULT CALLBACK EDsHell(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 
 		case WM_LBUTTONUP:
 			if ( PES->FloatBar.hWnd == NULL ){
-				InitFloatBar(PES, (int)(short)LOWORD(lParam));
+				InitFloatBar(PES, LOSHORTINT(lParam));
 			}
 			break;
 
@@ -2778,7 +3079,7 @@ LRESULT CALLBACK EDsHell(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case WM_VSCROLL:
 			if ( PES->flags & PPXEDIT_TEXTEDIT ) break;
 			SetFocus(hWnd);
-			switch ( GET_WM_HSCROLL_CODE(wParam, lParam) ){
+			switch ( LOWORD(wParam) ){
 				case SB_LINEUP:
 					if ( X_flst[0] >= 4 ){
 						if ( PES->list.ListWindow != LISTU_NOLIST ){
@@ -2954,20 +3255,9 @@ LRESULT EdPPxWmCommand(PPxEDSTRUCT *PES, HWND hWnd, WPARAM wParam, LPARAM lParam
 			CloseUpperList(PES);
 			break;
 
-		default: {
-			PPECOMMANDPARAM param;
-			ERRORCODE result;
-
-			param.key = (WORD)wParam;
-			param.repeat = 0;
+		default:
 			PES->mousepos = FALSE;
-			result = PPedCommand(PES, &param);
-			if ( (result == ERROR_INVALID_FUNCTION) && ((wParam & (K_v | K_ex | K_internal)) == K_v) ) { // 未実行の仮想キー？
-				CallWindowProc(PES->hOldED, hWnd, WM_KEYDOWN, wParam & 0xff, 0);
-				CallWindowProc(PES->hOldED, hWnd, WM_KEYUP, wParam & 0xff, B30);
-			}
-			return result;
-		}
+			return EditKeyCommand(PES, (DWORD)wParam);
 	}
 	return MAX32;
 }
@@ -3227,6 +3517,7 @@ PPXDLL HWND PPXAPI PPxRegistExEdit(PPXAPPINFO *info, HWND hEditWnd, int maxlen, 
 //		PES->findstring[0] = '\0';
 		PES->ED.hF = NULL;
 		if ( X_ltab == 4 ) PES->ED.cmdsearch = CMDSEARCH_ROMA;
+		if ( X_ltab == 5 ) PES->ED.cmdsearch = CMDSEARCH_WILDCARD;
 	}	// PES != NULL ... 登録済み→設定の変更のみ行う
 
 										// プロージャを設定 -------------------

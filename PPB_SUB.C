@@ -27,11 +27,60 @@ const TCHAR ShellOptions[] = T(XEO_STRINGS);
 //---------------------------------- PPCOMMON との通信
 PPXAPPINFO ppbexecinfo = {(PPXAPPINFOFUNCTION)PPbExecInfoFunc, T("PPb"), RegID, NULL};
 
+int GetAbsX(int pos)
+{
+	int newX = 0;
+
+	while ( pos > 0 ){
+		#ifdef UNICODE
+			if ( ((size_t)newX < maxsize) && *(EditText + newX) ) newX++;
+		#else
+			if ((size_t)newX < maxsize) newX += Chrlen(*(EditText + newX));
+		#endif
+		pos--;
+	}
+	return newX;
+}
+// *cursor
+// -1:相対(x,y,t),-2:相対+選択(x,y,t),-3:絶対(x,y),-4:絶対(x,y,x2,y2)
+DWORD_PTR PPbCursorCommand(PPXAPPINFOUNION *uptr)
+{
+	switch ( uptr->inums[0] ){
+		case -1:
+		case -2: {
+			int key = (uptr->inums[0] == -1) ? 0 : K_s;
+			if ( uptr->inums[1] >= 0 ){
+				key |= K_raw | K_ri;
+			}else{
+				uptr->inums[1] = -uptr->inums[1];
+				key |= K_raw | K_lf;
+			}
+			while ( uptr->inums[1] > 0 ){
+				TconCommonCommand( key );
+				uptr->inums[1]--;
+			}
+			break;
+		}
+
+		case -3:
+			MoveCursor(GetAbsX(uptr->inums[1]), 0);
+			break;
+
+		case -4: {
+			MoveCursor(GetAbsX(uptr->inums[1]), 0);
+			MoveCursor(GetAbsX(uptr->inums[(uptr->inums[4] != 0) ? 4 : 3]), K_s);
+			break;
+		}
+	}
+	return 1;
+}
+
 // 一行編集時に使用する
 #pragma argsused
 DWORD_PTR USECDECL PPbInfoFunc(PPXAPPINFO *ppb, DWORD cmdID, PPXAPPINFOUNION *uptr)
 {
 	UnUsedParam(ppb);
+
 	switch(cmdID){
 		case '1':
 			tstrcpy(uptr->enums.buffer, EditPath);
@@ -66,7 +115,7 @@ DWORD_PTR USECDECL PPbInfoFunc(PPXAPPINFO *ppb, DWORD cmdID, PPXAPPINFOUNION *up
 			return NO_ERROR;
 
 		case PPXCMDID_PPXCOMMAD:
-			CommonCommand(uptr->key);
+			TconCommonCommand(uptr->key);
 			break;
 
 		case PPXCMDID_COMMAND:{
@@ -89,6 +138,9 @@ DWORD_PTR USECDECL PPbInfoFunc(PPXAPPINFO *ppb, DWORD cmdID, PPXAPPINFOUNION *up
 			tputstr(T("\r"));
 			tputstr(uptr->str);
 			break;
+
+		case PPXCMDID_MOVECSR:	// *cursor
+			return PPbCursorCommand(uptr);
 
 //		case PPXCMDID_POPUPPOS:
 //			break;
@@ -421,7 +473,7 @@ void PauseCommand(const TCHAR *message)
 /*-----------------------------------------------------------------------------
 	コマンドラインを解析する
 -----------------------------------------------------------------------------*/
-void PPbExecuteInput(TCHAR *param, DWORD size)
+void PPbExecuteInput(TCHAR *param, size_t size)
 {
 	TCHAR *ptr, *next;
 	int i;
@@ -484,6 +536,7 @@ void PPbExecuteInput(TCHAR *param, DWORD size)
 		PP_ExtractMacro(hMainWnd, &ppbexecinfo, NULL, ptr, NULL, XEO_CONSOLE);
 		GetCurrentDirectory(VFPS - 1, CurrentPath);
 		ptr = next;
+		tputstr(T("\n"));
 	}
 }
 
@@ -562,7 +615,7 @@ int ExecCommand(const TCHAR *ptr)
 				GetCustData(T("CB_com"), &atr, sizeof(atr));
 				SetConsoleTextAttribute(hStdout, atr);
 				tputstr(ptr);
-				SetConsoleTextAttribute(hStdout, screen.wAttributes);
+				SetConsoleTextAttribute(hStdout, screen.info.wAttributes);
 				tputstr(T("\n"));
 			}
 

@@ -2,7 +2,6 @@
 	Paper Plane cUI			Combo Window Sub
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include <commctrl.h>
 #include "PPX.H"
 #include "VFS.H"
@@ -348,7 +347,7 @@ void CreateReportArea(void)
 			ES_LEFT | ES_MULTILINE | ES_WANTRETURN,
 			0, Combo.Report.box.y,
 			ComboSize.cx, Combo.BottomAreaHeight,
-			Combo.hWnd, (HMENU)IDW_REPORTLOG, hInst, 0);
+			Combo.hWnd, CHILDWNDID(IDW_REPORTLOG), hInst, 0);
 												// EditBox の拡張 -------------
 	SendMessage(Combo.Report.hWnd, WM_SETFONT, (WPARAM)Combo.Font.handle, 0);
 	PPxRegistExEdit(NULL, Combo.Report.hWnd, 0x100000, NULL, 0, 0,
@@ -397,7 +396,7 @@ void CreateLeftArea(DWORD mode, const TCHAR *initpath)
 	Combo.hTreeWnd = CreateWindow(Str_TreeClass, Str_TreeClass,
 			WS_VISIBLE | WS_CHILD, 0, InfoBottom, Combo.LeftAreaWidth,
 			Combo.Panes.box.bottom - InfoBottom - splitwide,
-			Combo.hWnd, (HMENU)IDW_COMMONTREE, hInst, 0);
+			Combo.hWnd, CHILDWNDID(IDW_COMMONTREE), hInst, 0);
 	PPc_SetTreeFlags(Combo.hWnd, Combo.hTreeWnd);
 	SendMessage(Combo.hTreeWnd, VTM_INITTREE, 0,
 			(LPARAM)((pts.name[0] != '\0') ? pts.name : initpath) );
@@ -421,7 +420,7 @@ void CreateAddressBar(void)
 	InitEditColor();
 	Combo.hAddressWnd = CreateWindowEx(WS_EX_CLIENTEDGE, T("EDIT"), NilStr,
 			WS_CHILD | WS_VSCROLL | ES_AUTOHSCROLL | ES_NOHIDESEL | ES_LEFT,
-			-10, -10, 10, 10, Combo.hWnd, (HMENU)IDW_ADDRESS, hInst, 0);
+			-10, -10, 10, 10, Combo.hWnd, CHILDWNDID(IDW_ADDRESS), hInst, 0);
 												// EditBox の拡張 -------------
 	SendMessage(Combo.hAddressWnd, WM_SETFONT, (WPARAM)Combo.Font.handle, 0);
 	PPxRegistExEdit(NULL, Combo.hAddressWnd, CMDLINESIZE,
@@ -507,7 +506,7 @@ HWND InitCombo(PPCSTARTPARAM *psp)
 
 		Combo.Panes.hWnd = CreateWindowEx(0, PPCOMBOWinFrameClass, NilStr,
 				WS_CHILD | WS_CLIPSIBLINGS | WS_HSCROLL | WS_VISIBLE,
-				0, 0, 300, 300, Combo.hWnd, (HMENU)ComboFrameID, hInst, NULL);
+				0, 0, 300, 300, Combo.hWnd, CHILDWNDID(ComboFrameID), hInst, NULL);
 	}
 
 	ID = ComboCommandIDFirst;
@@ -810,6 +809,7 @@ void PaneCloseCommand(int targetpane, int baseindex, int mode, const TCHAR *para
 	ClosePanes(Combo.show[targetpane].tab.hWnd, baseindex, mode, locked);
 }
 
+// WmComboCommand から呼び出される
 ERRORCODE PaneCommand(const TCHAR *paramptr, int targetbaseindex)
 {
 	TCHAR cmdname[MAX_PATH], *dst;
@@ -956,9 +956,11 @@ ERRORCODE PaneCommand(const TCHAR *paramptr, int targetbaseindex)
 //	}else if ( !tstrcmp(cmdname, T("TABTEXT")) ){
 //	}else if ( !tstrcmp(cmdname, T("COLOR")) ){
 	}else if ( !tstrcmp(cmdname, T("NEWPANE")) ){
+		ReplyMessage(NO_ERROR); // ここで返事をしておかないと、CreateNewTabParam 内実行中(新しい窓登録時？)に、呼び出し元の SendMessage がエラー終了してしまうことがある
 		SkipSpace(&param);
 		NewPane(baseindex, param);
 	}else if ( !tstrcmp(cmdname, T("NEWTAB")) ){
+		ReplyMessage(NO_ERROR); // ここで返事をしておかないと、CreateNewTabParam 内実行中(新しい窓登録時？)に、呼び出し元の SendMessage がエラー終了してしまうことがある
 		CreateNewTabParam(targetpane, baseindex, param);
 	}else if ( !tstrcmp(cmdname, T("SHOWTABBAR")) ){
 		if ( Combo.Tabs == 0 ){

@@ -2,7 +2,6 @@
 	Paper Plane cUI											Combo Window
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include <commctrl.h>
 #include <dbt.h>
 #include "PPX.H"
@@ -699,7 +698,7 @@ void SortComboWindows(int fixshowindex)
 				JobBox.height = Combo.BottomAreaHeight - splitwide;
 				JobBox.y = ComboSize.cy - BottomDockHeight - JobBox.height;
 			}
-			// C4701ok **1 で初期化済み
+			#pragma warning(suppress: 4701) // C4701ok **1 で初期化済み
 			hdWins = DeferWindowPos(hdWins, Combo.Joblist.hWnd, NULL,
 					JobBox.x, JobBox.y, JobBox.width, JobBox.height,
 					SWP_NOACTIVATE | SWP_NOZORDER);
@@ -1609,7 +1608,7 @@ void KCW_FocusFix(HWND hWnd, HWND hTargetWnd)
 	CheckComboTable(T("KCW_FocusFix1"));
 }
 
-LRESULT KCW_combonextppc(HWND hWnd, HWND hTargetWnd, short mode)
+LRESULT KCW_combonextppc(HWND hWnd, HWND hTargetWnd, int mode)
 {
 	int baseindex, si;
 
@@ -1623,7 +1622,7 @@ LRESULT KCW_combonextppc(HWND hWnd, HWND hTargetWnd, short mode)
 	}else{		// 基準指定有り
 		baseindex = GetComboBaseIndex(hTargetWnd);
 		if ( baseindex < 0 ) return 0;
-		baseindex = baseindex + (short)mode;
+		baseindex = baseindex + mode;
 		if ( baseindex < 0 ) baseindex = Combo.BaseCount - 1;
 		if ( baseindex >= Combo.BaseCount ) baseindex = 0;
 	}
@@ -2092,7 +2091,7 @@ LRESULT WmComboCommand(HWND hWnd, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case KCW_nextppc:
-			return KCW_combonextppc(hWnd, (HWND)lParam, (short)HIWORD(wParam));
+			return KCW_combonextppc(hWnd, (HWND)lParam, HISHORTINT(wParam));
 
 		case KCW_getpath: {
 			int baseindex;
@@ -2144,7 +2143,7 @@ LRESULT WmComboCommand(HWND hWnd, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case KCW_panecommand:
-			return (LRESULT)PaneCommand((const TCHAR *)lParam, (int)(short)HIWORD(wParam));
+			return (LRESULT)PaneCommand((const TCHAR *)lParam, HISHORTINT(wParam));
 
 		case KCW_eject:
 			EjectPane(lParam);
@@ -2269,8 +2268,8 @@ LRESULT WmComboCommand(HWND hWnd, WPARAM wParam, LPARAM lParam)
 
 		case KCW_closealltabs:
 		case KCW_closetabs: {
-			int first = (short)LOWORD(lParam);
-			int last = (short)HIWORD(lParam);
+			int first = LOSHORTINT(lParam);
+			int last = HISHORTINT(lParam);
 			int pane = HIWORD(wParam);
 			HWND hTabWnd;
 
@@ -2392,7 +2391,7 @@ void DrawPaneArea(DRAWCOMBOSTRUCT *dcs)
 			drawbox.right = drawbox.left + splitwide;
 			drawbox.top = box->top;
 			drawbox.bottom = box->bottom;
-			DrawEdge(dcs->ps.hdc, &drawbox, EDGE_RAISED, BF_LEFT | BF_RIGHT | BF_MIDDLE);
+			DrawSeparateLine(dcs->ps.hdc, &drawbox, BF_LEFT | BF_RIGHT | BF_MIDDLE);
 		}
 	}else{						// 縦整列
 		int showindex;
@@ -2405,7 +2404,7 @@ void DrawPaneArea(DRAWCOMBOSTRUCT *dcs)
 			drawbox.right = box->right;
 			drawbox.top = box->bottom;
 			drawbox.bottom = drawbox.top + splitwide;
-			DrawEdge(dcs->ps.hdc, &drawbox, EDGE_RAISED, BF_TOP | BF_BOTTOM | BF_MIDDLE);
+			DrawSeparateLine(dcs->ps.hdc, &drawbox, BF_TOP | BF_BOTTOM | BF_MIDDLE);
 		}
 	}
 }
@@ -2467,7 +2466,7 @@ void WmComboPaint(HWND hWnd)
 		drawbox.right = Combo.LeftAreaWidth;
 		drawbox.top = Combo.TopAreaHeight;
 		drawbox.bottom = Combo.Report.box.y - splitwide;
-		DrawEdge(dcs.ps.hdc, &drawbox, EDGE_RAISED, BF_LEFT | BF_RIGHT | BF_MIDDLE);
+		DrawSeparateLine(dcs.ps.hdc, &drawbox, BF_LEFT | BF_RIGHT | BF_MIDDLE);
 	}
 	if ( ((Combo.Report.hWnd != NULL) || (Combo.Joblist.hWnd != NULL)) &&
 		 (dcs.ps.rcPaint.bottom > (Combo.Report.box.y - splitwide)) ){ // ペインより下側の仕切り線
@@ -2475,13 +2474,13 @@ void WmComboPaint(HWND hWnd)
 		drawbox.bottom = Combo.Report.box.y;
 		drawbox.left = dcs.ps.rcPaint.left;
 		drawbox.right = dcs.ps.rcPaint.right;
-		DrawEdge(dcs.ps.hdc, &drawbox, EDGE_RAISED, BF_TOP | BF_BOTTOM | BF_MIDDLE);
+		DrawSeparateLine(dcs.ps.hdc, &drawbox, BF_TOP | BF_BOTTOM | BF_MIDDLE);
 		if ( Combo.Joblist.hWnd != NULL ){ // ログ・ジョブリスト間の仕切り線
 			drawbox.left = Combo.Report.box.x + Combo.Report.box.width;
 			drawbox.right = drawbox.left + splitwide;
 			drawbox.top = drawbox.bottom;
 			drawbox.bottom = drawbox.top + Combo.Report.box.height;
-			DrawEdge(dcs.ps.hdc, &drawbox, EDGE_RAISED, BF_LEFT | BF_RIGHT | BF_MIDDLE);
+			DrawSeparateLine(dcs.ps.hdc, &drawbox, BF_LEFT | BF_RIGHT | BF_MIDDLE);
 		}
 	}
 
@@ -2749,7 +2748,7 @@ LRESULT CALLBACK ComboProcMain(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 			return DefWindowProc(hWnd, message, wParam, lParam);
 
 		case WM_DRAWITEM:
-			if ( wParam == IDW_TABCONTROL) DrawTab((DRAWITEMSTRUCT *)lParam);
+			if ( wParam == IDW_TABCONTROL ) DrawTab((DRAWITEMSTRUCT *)lParam);
 			return 1;
 
 		case WM_INITMENU:

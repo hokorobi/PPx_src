@@ -557,7 +557,7 @@ BOOL ExtendCustomizeArea(size_t size)
 		newsize = CustSizeFromCustP;
 	}
 	// 仮カスタマイズ領域を作成
-	tmpcust = HeapAlloc(DLLheap, 0, newsize);
+	tmpcust = HeapAlloc(DLLheap, 0, (newsize > X_Csize) ? newsize : X_Csize);
 	if ( tmpcust == NULL ) return FALSE;
 	CustSizeFromCustP = newsize;
 	memcpy(tmpcust, (BYTE *)SM_cust.ptr, X_Csize);

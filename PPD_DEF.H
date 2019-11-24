@@ -10,6 +10,8 @@ extern "C" {
 
 #define X_Mtask		32			// PPx の管理可能な動作数
 #define X_MaxJob	32			// PPx の管理可能なJob動作数
+#define X_MaxComboID	26		// ComboID の数(A-Z)
+#define X_MaxPPxID	26			// PPxID の数(A-Z)
 
 #ifndef UNICODE
 	#define HistoryID	"TH1"	// ヒストリファイルの ID
@@ -52,6 +54,7 @@ typedef struct  {	// PPx Main Window 管理構造体
 #define JOBFLAG_NAMEMASK	0x7f // JobX.state B0-6:実行コマンド
 #define JOBFLAG_STATEMASK	0xff80 // JobX.state B7-15:ステータス
 #define JOBFLAG_CHANGESTATE	B7 // STATE変更のみ、回数確認しない
+// flags
 #define JOBFLAG_ENABLEWAIT	B8 // Job待機が必要な処理
 #define JOBFLAG_ENABLEHIDE	B9 // 隠すことが可能。JobList廃棄時に表示の必要有り
 #define JOBFLAG_WAITEXEC	B10
@@ -65,14 +68,14 @@ typedef struct  {	// PPx Main Window 管理構造体
 #define JOBSTATE_STARTJOB	(JOBFLAG_REG | JOBFLAG_ENABLEWAIT) // 1Job(待機が必要な処理)の開始
 #define JOBSTATE_WAITEXEC	(JOBFLAG_REG | JOBFLAG_WAITEXEC) // Process終了待機中
 #define JOBSTATE_WAITJOB	(JOBFLAG_REG | JOBFLAG_WAITJOB) // Job実行待機中
-#define JOBSTATE_PAUSE		(JOBFLAG_REG | JOBFLAG_PAUSE) // 一時停止
+#define JOBSTATE_PAUSE		(JOBFLAG_REG | JOBFLAG_PAUSE | JOBFLAG_CHANGESTATE) // 一時停止
 #define JOBSTATE_ERROR		(JOBFLAG_REG | JOBFLAG_ERROR) // エラー発生中
 // 登録解除系
 #define JOBSTATE_UNREGIST	(JOBFLAG_UNREG | JOBSTATE_REGIST) // 実行スレッドの登録解除
 #define JOBSTATE_ENDJOB		(JOBFLAG_UNREG | JOBSTATE_STARTJOB) // 1Jobの終了
 #define JOBSTATE_FINWEXEC	(JOBFLAG_UNREG | JOBSTATE_WAITEXEC) // 待機完了
 #define JOBSTATE_FINWJOB	(JOBFLAG_UNREG | JOBSTATE_WAITJOB) // 待機完了
-#define JOBSTATE_UNPAUSE	(JOBFLAG_UNREG | JOBSTATE_PAUSE) // 再開
+#define JOBSTATE_UNPAUSE	(JOBFLAG_UNREG | JOBSTATE_PAUSE | JOBFLAG_CHANGESTATE) // 再開
 #define JOBSTATE_DEERROR	(JOBFLAG_UNREG | JOBSTATE_ERROR) // エラー発生中
 // 経過
 #define JOBSTATE_SETRATE	(0) // (cmd)進捗の通知(B0-B7:%)
@@ -96,7 +99,7 @@ typedef struct {	// PPv 通信用
 } PPvShareX;
 
 typedef struct {	// PPc 管理用
-	HWND hComboWnd[26];	// Combo window
+	HWND hComboWnd[X_MaxComboID];	// Combo window
 	HWND hLastFocusWnd;
 	int PrevFocusID;	// LastFocusIDの一つ前
 	int LastFocusID;	// 最後にフォーカス移動したPPc
@@ -173,16 +176,28 @@ extern ENUMCUSTCACHESTRUCT enumcustcache;
 #define CmdFuncMaxLen	64	// *commane / %*function の名称最大値 + 1
 
 // Z->status
-#define ST_PATHFIX		B0	// 次の編集はパス補完が必要
-#define ST_SDIRREF		B1	// サブディレクトリを参照している
-#define ST_CHKSDIRREF	B2	// ST_SDIRREF の判定を済ませている
-#define ST_NOREAD		B3	// ディレクトリを読まない
-#define ST_MULTIPARAM	B4	// %:か、行末に達するまで実行を避ける
-#define ST_USECACHE		B5	// 編集キャッシュを使用(%$x)
-#define ST_USETREE		B6	// 部分編集のRefはツリー形式
-#define ST_EXECLOOP		B7	// 繰り返し実行中
-#define ST_EDITHIST		B8	// 一行編集のヒストリ指定有り
-#define ST_LONGRESULT	B9	// Z->LongResultLen の値が有効
+#define ST_EXECLOOP		B0	// %Orによる２回目以降のコマンドライン実行中(%Q用)
+#define ST_NO_NEXTENUM	B1	// 次のコマンドライン実行判定は既にした
+#define ST_LOOPEND		B2	// 列挙対象はもう無い
+
+#define ST_LONGRESULT	B3	// Z->LongResultLen の値が有効
+#define ST_ESCAPE_Q		B4	// " を "" に置換する
+
+// 部分編集( %!, %E, %} )の挙動調整、１文のみ有効
+#define ST_PATHFIX		B5	// 部分編集はパスなので補完やVFSFixPathが必要
+#define ST_USECACHE		B6	// 部分編集でキャッシュを使用(%$x)
+#define ST_EDITHIST		B7	// 部分編集のヒストリ指定有り(options.hist_xxx)
+
+// ディレクトリ時展開( %S )の判定用、コマンドライン内で有効、%Or 無効
+#define ST_SDIRREF		B8	// サブディレクトリを参照しているので、%S で展開
+#define ST_CHKSDIRREF	B9	// ST_SDIRREF の判定を済ませている
+
+#define ST_MASK_FIRSTCMDLINE (ST_EXECLOOP) // コマンドライン解釈開始時に維持するフラグ
+
+//●1.69時に不要チェック
+//#define ST_MULTIPARAM	B4	// %:か、行末に達するまで実行を避ける
+//#define ST_USETREE	B6	// 部分編集のRefはツリー形式
+//#define ST_NOREAD		B3	// ディレクトリを読まない
 
 typedef struct tagOLDSRCSTRUCT {	// 入れ子解析時に使用する
 	const TCHAR *src;
@@ -192,11 +207,20 @@ typedef struct tagOLDSRCSTRUCT {	// 入れ子解析時に使用する
 #define TINPUT_EDIT_OPTIONS_use_refline B0
 #define TINPUT_EDIT_OPTIONS_use_optionbutton B1
 #define TINPUT_EDIT_OPTIONS_use_refext B2
+#define TINPUT_EDIT_OPTIONS_UI_mask (B0 | B1 | B2)
+#define TINPUT_EDIT_OPTIONS_single_param B3
 typedef struct {
 	WORD hist_readflags;
 	BYTE hist_writetype;
 	BYTE flags;
 } TINPUT_EDIT_OPTIONS;
+
+#define TIEX_Z_HIST_SETTINGED B31 // Tinput のヒストリ設定が済んでいる
+
+typedef struct {
+	BOOL quotation;			// 関数モジュールのパラメータが " を使用中
+	DWORD off; // 関数の開始位置byte ※ 0:未使用 1-:開始位置 + 1
+} EXECFUNC;
 
 typedef struct {
 	HWND hWnd;				// オーナーのウィンドウハンドル
@@ -204,11 +228,12 @@ typedef struct {
 	POINT *posptr;			// メニュー表示に使用する座標
 	const TCHAR *src;		// 解析先頭
 	TCHAR *dst;				// 展開位置
+	TCHAR *extract;			// 展開先
 
 	ThSTRUCT ExtendDst;		// 展開内容の拡張保存領域
 	ThSTRUCT StringVariable;	// 文字列変数領域
 
-	PPXCMDENUMSTRUCT IInfo;
+	PPXCMDENUMSTRUCT EnumInfo;
 	OLDSRCSTRUCT *oldsrc;
 	ThSTRUCT ExpandCache;	// %M 展開内容の繰り返し実行用キャッシュ
 							// 1ststr:キャッシュ項目
@@ -221,12 +246,9 @@ typedef struct {
 	DWORD LongResultLen;	// dst の最大値 ( ST_LONGRESULT 有効時 )
 	int status;				// 状態保存フラグ (上記ST_ を使用)
 	int useppb;				// 専有している PPB の ID
-	int flag;				// 各種フラグ XEO_????
+	int flags;				// 各種フラグ XEO_????
 
-	struct {
-		BOOL quotation;			// 関数モジュールのパラメータが " を使用中
-		DWORD off; // 関数の開始位置byte ※ 0:未使用 1-:開始位置 + 1
-	} func;
+	EXECFUNC func;
 
 	struct {	// 編集関連
 		int EdPartStart;		// %{ の位置
@@ -305,12 +327,12 @@ extern const TCHAR *ZGetTitleName(EXECSTRUCT *Z);
 extern BOOL ZTinput(EXECSTRUCT *Z, TINPUT *tinput);
 extern void GetValue(EXECSTRUCT *Z, DWORD cmdID, TCHAR *dest);
 extern void ZStringVariable(EXECSTRUCT *Z, const TCHAR **src, int mode);
-extern BOOL StoreLongParam(EXECSTRUCT *Z,DWORD addlen);
+extern BOOL StoreLongParam(EXECSTRUCT *Z, DWORD addlen);
 extern DWORD USEFASTCALL GetLongParamMaxLen(EXECSTRUCT *Z);
 
 extern const TCHAR HistType[];
 extern const TCHAR Title_ValueName[];
-extern void USEFASTCALL UserCommand(EXECSTRUCT *Z, const TCHAR *args, const TCHAR *cmdline, TCHAR *dest);
+extern void UserCommand(EXECSTRUCT *Z, const TCHAR *cmdname, const TCHAR *args, const TCHAR *cmdline, TCHAR *dest);
 extern DWORD GetCacheHash(EXECSTRUCT *Z);
 
 #define StringVariable_command	0
@@ -329,6 +351,8 @@ extern void GetLfGetParam(const TCHAR **param, TCHAR *dest, DWORD destlength);
 
 //------------------------------------------------------------------ ppd_code.c
 extern INT_PTR GetDigitNumber(const TCHAR **ptr);
+#define GetDigitNumber32(ptr) ((int)GetDigitNumber(ptr))
+#define GetDigitNumber32u(ptr) ((DWORD)GetDigitNumber(ptr))
 extern INT_PTR USEFASTCALL GetHexNumber(const TCHAR **ptr);
 extern int USEFASTCALL GetHexChar(TCHAR **p);
 extern TCHAR USEFASTCALL upper(TCHAR c);
@@ -438,7 +462,6 @@ extern void ReloadMessageText(void);
 extern int CommandModule(EXECSTRUCT *Z, const TCHAR *ptr);
 extern void ExecuteFunction(EXECSTRUCT *Z);
 extern void FreePPxModule(void);
-extern void NestedFunction(EXECSTRUCT *Z);
 extern UTCHAR ZFixParameter(TCHAR **commandline);
 
 //------------------------------------------------------------------ ppd_menu.c
@@ -454,8 +477,8 @@ extern void MakeRootMenu(ThSTRUCT *thMenuData, HMENU hRootMenu, const TCHAR *Cus
 extern const TCHAR * USEFASTCALL GetMenuDataString(ThSTRUCT *thMenuData, int index);
 
 //------------------------------------------------------------------ ppd_ppe.c
-#define PPE_TEXT_OPENNEW ((const TCHAR *)1)
-#define PPE_TEXT_CMDMODE ((const TCHAR *)2)
+#define PPE_TEXT_OPENNEW ((const TCHAR *)(DWORD_PTR)1)
+#define PPE_TEXT_CMDMODE ((const TCHAR *)(DWORD_PTR)2)
 typedef struct {
 	const TCHAR *dummy;
 	const TCHAR *param;
@@ -507,7 +530,7 @@ extern UINT VTypeToCPlist[VTypeToCPlist_max];
 #define K_mouse K_internal // マウスによる操作(メニュー位置判定用)
 extern void GetPopMenuPos(HWND hWnd, POINT *pos, WORD key);
 extern HMODULE LoadSystemWinAPI(DWORD dllID, LOADWINAPISTRUCT *apis);
-extern int GetNowTime(TCHAR *text,int mode);
+extern int GetNowTime(TCHAR *text, int mode);
 extern BOOL PPRecvExecuteByWMCopyData(PPXAPPINFO *info, COPYDATASTRUCT *copydata);
 extern BOOL PPWmCopyData(PPXAPPINFO *info, COPYDATASTRUCT *copydata);
 
@@ -515,7 +538,6 @@ extern BOOL PPWmCopyData(PPXAPPINFO *info, COPYDATASTRUCT *copydata);
 extern void FixTask(void);
 extern int SearchPPx(TCHAR *ID);
 extern HWND PPxGetWindow(const TCHAR *refid, int d);
-extern int CountPPc(void);
 extern BOOL USEFASTCALL CheckPPcID(int no);
 extern BOOL BootPPB(const TCHAR *path, const TCHAR *line, int flags);
 extern int UsePPb(HWND hOwner);
@@ -535,8 +557,12 @@ extern void USEFASTCALL ClosePPxOne(HWND hWnd);
 #define GetPPcList_Path 1	// Pathをitem/thMenuDataから取得
 #define GetPPxList_Select 2	// *focusコマンドをthMenuDataから取得
 #define GetPPxList_Id 3		// idをthMenuDataから取得
-extern int GetPPxList(HMENU hPopupMenu, int mode, ThSTRUCT *th, DWORD *menuid);
+#define GetPPxList_IdList 4	// 「id,」をthMenuDataから取得
+extern int GetPPxList(HMENU hPopupMenu, int mode, ThSTRUCT *thMenuData, DWORD *menuid);
+extern int GetPPxListFromProcessCombo(HMENU hPopupMenu, int mode, ThSTRUCT *th, DWORD *useppclist, MENUITEMINFO *minfo, HWND hComboWnd);
+extern int GetPPxListFromCurrentCombo(HMENU hPopupMenu, int mode, ThSTRUCT *th, DWORD *useppclist, MENUITEMINFO *minfo);
 ExternWinAPI(BOOL, SetDllDirectory, (LPCTSTR lpPathName));
+
 
 //------------------------------------------------------------------ ppd_ui.c
 #define PPXFLASH_STOP -1
@@ -568,6 +594,17 @@ extern BOOL PPxDialogHelp(HWND hDlg);
 extern void FillBox(HDC hDC, const RECT *box, HBRUSH hbr);
 extern void PlayWave(const TCHAR *name);
 extern BOOL OpenClipboard2(HWND hWnd);
+
+extern HBRUSH Get3dShadowBrush(void);
+extern HBRUSH Get3dFaceBrush(void);
+extern HBRUSH Get3dHighlightBrush(void);
+extern HBRUSH GetHighlightBackBrush(void);
+extern HBRUSH GetGrayBackBrush(void);
+extern void InitSysColors_main(void);
+#define InitSysColors() {if (C_3dFace == C_AUTO) InitSysColors_main();}
+extern void FreeSysColors(void);
+
+
 
 //------------------------------------------------------------------ ppd_wild.c
 extern void FreeRMatch(void);

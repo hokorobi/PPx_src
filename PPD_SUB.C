@@ -1176,7 +1176,7 @@ int FixTextImage(const char *src, DWORD memsize, TCHAR **dest, int usecp)
 				if ( memcmp(src, UCF2BEHEADER, UCF2HEADERSIZE) == 0 ){
 					src += UCF2HEADERSIZE;
 				}
-				size = wcslen32((WCHAR *)src) + 1;
+				size = strlenW((WCHAR *)src) + 1;
 				tmpimage = HeapAlloc(DLLheap, 0, size * sizeof(WCHAR));
 				if ( tmpimage != NULL ){ // バイトオーダ変換
 					udest = (WCHAR *)tmpimage;
@@ -1458,7 +1458,7 @@ PPXDLL BOOL PPXAPI MakeTempEntry(DWORD bufsize, TCHAR *tempath, DWORD attribute)
 
 	if ( attribute & FILE_ATTRIBUTE_COMPRESSED ){
 		resetflag(attribute, FILE_ATTRIBUTE_COMPRESSED);
-		if ( (NO_ERROR == GetCustTable(T("_others"), T("ExtractTemp"), tempath, MAX_PATH)) ||
+		if ( (NO_ERROR == GetCustTable(StrCustOthers, T("ExtractTemp"), tempath, MAX_PATH)) ||
 			(GetEnvironmentVariable(StrTempExtractPath, tempath, MAX_PATH) != 0) ){
 			CatPath(NULL, tempath, NilStr);
 		}
@@ -2154,7 +2154,7 @@ LRESULT SendUTextMessage_U(HWND hWnd, UINT uMsg, WPARAM wParam, const TCHAR *tex
 {
 	TCHAR buf[0x1000];
 
-	if ( !((DWORD)text & 1) ){
+	if ( !((DWORD)(DWORD_PTR)text & 1) ){
 		return SendMessage(hWnd, uMsg, wParam, (LPARAM)text);
 	}else {  // アライメントがずれている
 		strcpyW(buf, text);
@@ -2177,7 +2177,7 @@ void GetPopMenuPos(HWND hWnd, POINT *pos, WORD key)
 	}
 }
 
-int GetNowTime(TCHAR *text,int mode)
+int GetNowTime(TCHAR *text, int mode)
 {
 	SYSTEMTIME nowTime;
 

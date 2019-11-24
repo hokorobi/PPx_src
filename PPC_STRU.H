@@ -439,10 +439,10 @@ enum {
 	MOUSE_NONE,			// マウス操作：なし
 	MOUSE_CANCEL,		// 押下中(キャンセル)
 	MOUSE_PUSH,			// 押下中(何もしない)
-	MOUSE_LDDCHECK,		// 左クリックOLE2 D&D 開始検知中
-	MOUSE_RDDCHECK,		// 右クリックOLE2 D&D 開始検知中
-	MOUSE_MOVECHECK,	// 窓移動開始検知中
-	MOUSE_MOVE,			// 窓移動中
+	MOUSE_DnDCHECK,		// 左・右クリックOLE2 D&D 開始検知中
+//	MOUSE_RDDCHECK,		// 右クリックOLE2 D&D 開始検知中
+//	MOUSE_MOVECHECK,	// 窓移動開始検知中
+	MOUSE_WNDMOVE,		// 窓移動中
 	MOUSE_MARKCHECK,	// マーク開始検知中
 	MOUSE_MARK,			// マーク中
 //	MOUSE_GESTURECHECK,	// ジェスチャー開始検知中
@@ -535,8 +535,9 @@ typedef struct {
 #define FDW_REQUESTED	4	// 表示更新要求を既に行った
 
 // X_inag
-#define INAG_FOCUS		1
-#define INAG_UNFOCUS	2
+#define INAG_USEGRAY	B0
+#define INAG_GRAY		B1
+#define INAG_UNFOCUS	B2
 
 typedef struct tagFREEPOSPOINT {
 	DWORD index; // 該当entry
@@ -645,6 +646,15 @@ typedef struct tagPPC_APPINFO {
 	// TCHAR RegSubID[REGEXTIDSIZE]; // C_x / C_Zyz 形式
 	TCHAR RegSubCID[REGEXTIDSIZE];	 // Cx / CZyzz 形式
 	HWND hHeaderWnd;			// 一覧のカラムヘッダ
+	#define LIT_UNKNOWN		0
+	#define LIT_KEYBOARD	1
+	#define LIT_MOUSE		2
+	#define LIT_TOUCH		3
+	#define LIT_PEN			4
+	#define LIT_POINTUI_MIN	LIT_MOUSE
+	#define LIT_DIRECTPOINTUI_MIN	LIT_TOUCH
+
+	int LastInputType;
 	int PopupPosType;			// メニューなどを表示するとき使う座標の種類
 								//  (TKEY.H の PPT_ )
 	POINT PopupPos;		// メニューなどを表示するとき使う座標
@@ -823,7 +833,7 @@ typedef struct tagPPC_APPINFO {
 	ENTRYINDEX	cellNbeforePush;	// クリック前のcellNの値
 
 	int			DDpagemode, DDpage;
-	UINT		ddtimer_id;
+	UINT_PTR	ddtimer_id;
 
 	HIDDENMENUS	HiddenMenu;
 	int			swin;			//	b5:B4=1のとき、=0:大きさ =1:大きさ+位置
@@ -921,11 +931,11 @@ typedef struct {
 	XC_MASK *mask;
 	const TCHAR *filename;	// 開始時にカーソルがあったエントリのファイル名
 	const TCHAR *settingkey;
+	const TCHAR *path;
 	HWND hEdWnd;
 	BOOL maskmode;
-	int tempmode;	// 0:Holdmask(\F) 1:Temporarilymask(F)
+	int mode;	// DSMD_
 	WildCardOptions option;
-//	BOOL		comment;	// TRUE:コメントを対象にする
 } FILEMASKDIALOGSTRUCT;
 
 typedef struct {
@@ -1020,12 +1030,6 @@ extern HRESULT (STDAPICALLTYPE *DGetActiveObject)(REFCLSID rclsid, void * pvRese
 
 ExternWinAPI(HRESULT, DwmIsCompositionEnabled, (BOOL *pfEnabled));
 ExternWinAPI(void, NotifyWinEvent, (DWORD event, HWND hwnd, LONG idObject, LONG idChild));
-
-typedef struct tagGESTURECONFIG {
-	DWORD dwID;
-	DWORD dwWant;
-	DWORD dwBlock;
-} GESTURECONFIG, *PGESTURECONFIG;
 
 ExternWinAPI(BOOL, SetGestureConfig, (HWND hwnd, DWORD dwReserved, UINT cIDs, PGESTURECONFIG pGestureConfig, UINT cbSize));
 ExternWinAPI(BOOL, GetGestureInfo, (HGESTUREINFO hGestureInfo, PGESTUREINFO pGestureInfo));

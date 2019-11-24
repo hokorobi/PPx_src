@@ -16,7 +16,7 @@
 #define LOWSETTINGMEM_MB 384	// 低スペック用設定にするメモリ
 								// (MB,指定値以下は低スペック設定になる)
 
-#ifdef UNICODE			// PPSETUP は、現在 MultiByte のみなので、細工する
+#ifdef UNICODE
 	#define XNAME	"PPW"
 	#ifdef _WIN64
 		#define COMMONDLL "PPLIB64W.DLL"

@@ -408,7 +408,7 @@ GVAR int XV_drag[4]
 #endif
 ;
 #define XV_DragScr XV_drag[0]
-#define XV_DragWnd XV_drag[2]
+#define XV_DragMov XV_drag[2]
 #define XV_DragSel XV_drag[1]
 #define XV_DragGes XV_drag[3]
 GVAR BOOL X_vzs GPARAM(TRUE);

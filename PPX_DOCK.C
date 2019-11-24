@@ -2,7 +2,6 @@
 	Paper Plane cUI			Combo Window ReBar
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include <commctrl.h>
 #include <dbt.h>
 #include "PPX.H"
@@ -492,6 +491,7 @@ void DrawAddressButton(HDC hDC, RECT *box)
 		SetBkMode(hDC, TRANSPARENT);
 		if ( Combo.Font.size.cy > ADDRBMP_SIZE ) hOldFont = SelectObject(hDC, Combo.Font.handle);
 		TextOutW(hDC, box->left, box->top, (const WCHAR *)&AllowStr, 1);
+		#pragma warning(suppress: 4701) // 同条件の２行前で初期化
 		if ( Combo.Font.size.cy > ADDRBMP_SIZE ) SelectObject(hDC, hOldFont);
 		SetBkMode(hDC, OPAQUE);
 		SetTextColor(hDC, oldc);
@@ -761,7 +761,7 @@ void DriveBarNotify(PPXDOCK *dock, NMHDR *nmh)
 			if ( FALSE != GetDriveBarPath(((LPNMTOOLBAR)nmh)->iItem, buf) ){
 				POINT pos;
 
-				GetCursorPos(&pos);
+				GetMessagePosPoint(pos);
 				VFSSHContextMenu(nmh->hwndFrom, &pos, NULL, buf, NULL);
 			}else{
 				DockModifyMenu(NULL, dock, NULL);
@@ -1034,7 +1034,7 @@ BOOL CreateDockModuleBar(PPXDOCK *dock, UINT style, int cx, const TCHAR *exename
 
 	hWnd = CreateWindowEx(WS_EX_TOOLWINDOW | WS_EX_ACCEPTFILES,
 			DockModuleWinClass, NULL, WS_CHILD | WS_VISIBLE, 0, 0,
-			minsize.x, minsize.y, dock->hWnd, (HMENU)IDW_DOCKMODULE, hInst, dock);
+			minsize.x, minsize.y, dock->hWnd, CHILDWNDID(IDW_DOCKMODULE), hInst, dock);
 	ShowWindow(hWnd, SW_SHOW);
 
 	si.cb			= sizeof(si);
@@ -1144,7 +1144,7 @@ void CreateDockPPcInfoBar(PPXDOCK *dock, UINT style, int cx)
 	dock->hInfoWnd = hInfoWnd =
 		CreateWindowEx(WS_EX_TOOLWINDOW | WS_EX_ACCEPTFILES,
 			DockInfoWinClass, NULL, WS_CHILD | WS_VISIBLE,
-			0, 0, 100, 10, dock->hWnd, (HMENU)IDW_DOCKPPCINFO, hInst, dock);
+			0, 0, 100, 10, dock->hWnd, CHILDWNDID(IDW_DOCKPPCINFO), hInst, dock);
 
 	rbi.cbSize = sizeof(REBARBANDINFO);
 	rbi.fMask = RBBIM_STYLE | RBBIM_CHILD | RBBIM_CHILDSIZE | RBBIM_SIZE | RBBIM_ID;
@@ -1186,7 +1186,7 @@ void CreateDockPPcStatusBar(PPXDOCK *dock, UINT style, int cx)
 	dock->hStatusWnd = hWnd =
 		CreateWindowEx(WS_EX_TOOLWINDOW | WS_EX_ACCEPTFILES,
 			DockStatusWinClass, NULL, WS_CHILD | WS_VISIBLE,
-			0, 0, 100, 10, dock->hWnd, (HMENU)IDW_DOCKPPCSTATUS, hInst, dock);
+			0, 0, 100, 10, dock->hWnd, CHILDWNDID(IDW_DOCKPPCSTATUS), hInst, dock);
 
 	rbi.cbSize = sizeof(REBARBANDINFO);
 	rbi.fMask = RBBIM_STYLE | RBBIM_CHILD | RBBIM_CHILDSIZE | RBBIM_SIZE | RBBIM_ID;
@@ -1219,7 +1219,7 @@ void CreateDockLogBar(PPXDOCK *dock, UINT style, int cx)
 			T("EDIT"), NilStr,
 			WS_CHILD | WS_VSCROLL | ES_AUTOVSCROLL | ES_NOHIDESEL |
 			ES_LEFT | ES_MULTILINE | ES_WANTRETURN,	// ウインドウの形式
-			0, 0, 100, 200, dock->hWnd, (HMENU)IDW_REPORTLOG, hInst, 0);
+			0, 0, 100, 200, dock->hWnd, CHILDWNDID(IDW_REPORTLOG), hInst, 0);
 												// EditBox の拡張 -------------
 	SendMessage(hWnd, WM_SETFONT, (WPARAM)dock->font.h, 0);
 	PPxRegistExEdit(NULL, hWnd, 0x100000, NULL, 0, 0, PPXEDIT_USEALT | PPXEDIT_TABCOMP | PPXEDIT_NOWORDBREAK);
@@ -1285,7 +1285,7 @@ void CreateDockAddressBar(PPXDOCK *dock, UINT style, int cx)
 
 	hWnd = CreateWindowEx(WS_EX_TOOLWINDOW | WS_EX_ACCEPTFILES,
 			DockAddressWinClass, NULL, WS_CHILD | WS_VISIBLE,
-			0, 0, 100, rbi.cxMinChild, dock->hWnd, (HMENU)IDW_ADDRESS, hInst, dock);
+			0, 0, 100, rbi.cxMinChild, dock->hWnd, CHILDWNDID(IDW_ADDRESS), hInst, dock);
 
 	rbi.cbSize = sizeof(REBARBANDINFO);
 	rbi.fMask = RBBIM_STYLE | RBBIM_CHILD | RBBIM_CHILDSIZE | RBBIM_SIZE | RBBIM_ID;
@@ -1376,7 +1376,7 @@ void CreateDockDriveBar(PPXDOCK *dock, UINT style, int cx)
 	tstyle = CCS_NODIVIDER | WS_CHILD | WS_VISIBLE | CCS_NOPARENTALIGN | TBSTYLE_FLAT | TBSTYLE_TOOLTIPS | TBSTYLE_LIST;
 	hToolBarWnd = CreateWindowEx(0, TOOLBARCLASSNAME, NULL, tstyle,
 			0, 0, DriveBarIconSize, DriveBarIconSize,
-			dock->hWnd, (HMENU)IDW_DRIVEBAR, hInst, NULL);
+			dock->hWnd, CHILDWNDID(IDW_DRIVEBAR), hInst, NULL);
 	if ( hToolBarWnd == NULL ) return;
 
 	if ( X_dss & DSS_COMCTRL ) SendMessage(hToolBarWnd, CCM_DPISCALE, TRUE, 0);
@@ -1436,7 +1436,7 @@ void CreateDockInputBar(PPXDOCK *dock, UINT style, int cx, const TCHAR *name)
 	hWnd = CreateWindowEx(WS_EX_TOOLWINDOW | WS_EX_ACCEPTFILES,
 			DockInputWinClass, NULL, WS_CHILD | WS_VISIBLE,
 			0, 0, 100, rbi.cxMinChild, dock->hWnd,
-			(HMENU)IDW_DOCKINPUT, hInst, ri);
+			CHILDWNDID(IDW_DOCKINPUT), hInst, ri);
 
 	rbi.cbSize = sizeof(REBARBANDINFO);
 	rbi.fMask = RBBIM_STYLE | RBBIM_CHILD | RBBIM_CHILDSIZE | RBBIM_SIZE | RBBIM_ID;
@@ -1507,7 +1507,7 @@ void InitDock(HWND hWnd, PPXDOCK *dock, BOOL forcecreate)
 			// WS_CLIPSIBLINGS | WS_CLIPCHILDREN |
 			RBS_BANDBORDERS | CCS_NORESIZE | CCS_NODIVIDER |
 			RBS_VARHEIGHT | RBS_DBLCLKTOGGLE /*| CCS_BOTTOM*/,
-			0, 0, 0, 0, hWnd, (HMENU)IDW_REBAR, hInst, NULL);
+			0, 0, 0, 0, hWnd, CHILDWNDID(IDW_REBAR), hInst, NULL);
 	if ( dock->hWnd == NULL ) return; // 作成できなかった／未対応
 
 	if ( X_dss & DSS_COMCTRL ) SendMessage(dock->hWnd, CCM_DPISCALE, TRUE, 0);
@@ -1909,7 +1909,7 @@ void DockModifyMenu(HWND hWnd, PPXDOCK *dock, POINT *menupos)
 	if ( menupos != NULL ){
 		dock->cinfo->PopupPos = *menupos;
 	}else{
-		GetCursorPos(&dock->cinfo->PopupPos);
+		GetMessagePosPoint(dock->cinfo->PopupPos);
 	}
 	if ( hWnd == NULL ){
 		PostMessage(dock->cinfo->info.hWnd, WM_PPXCOMMAND, K_layout, 0);
@@ -2255,7 +2255,7 @@ BOOL ToolBarDirectoryButtonRClick(HWND hParentWnd, NMHDR *nmh, ThSTRUCT *th)
 				p += 3;
 				GetLineParam((const TCHAR **)&p, path);
 				PP_ExtractMacro(hParentWnd, NULL, NULL, path, path, 0);
-				GetCursorPos(&pos);
+				GetMessagePosPoint(pos);
 				VFSSHContextMenu(hParentWnd, &pos, NULL, path, NULL);
 				return TRUE;
 			}

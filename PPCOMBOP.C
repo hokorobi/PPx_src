@@ -2,7 +2,6 @@
 	Paper Plane cUI			Combo Window TabBar / pane control
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include <commctrl.h>
 #include "PPX.H"
 #include "VFS.H"
@@ -600,7 +599,7 @@ void NewTabBar(void)
 	}
 	hTabWnd = CreateWindowEx(0, WC_TABCONTROL, NilStr, style, -10, -10,
 			10, 10, Combo.hWnd /* Combo.Panes.hWnd */,
-			(HMENU)IDW_TABCONTROL, hInst, NULL);
+			CHILDWNDID(IDW_TABCONTROL), hInst, NULL);
 	if ( hTabWnd == NULL ) return;
 	Combo.show[tabpane].tab.hWnd = hTabWnd;
 	// Å´TCS_EX_REGISTERDROP ÇÕêeÇ≈DropèàóùÇ∑ÇÈÇΩÇﬂïsóv

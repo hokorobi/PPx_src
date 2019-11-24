@@ -20,13 +20,13 @@ const TCHAR *Xtype[] = {T("?"), T("X"), T("Y"), T("Z")};
 
 typedef struct {
 	const TCHAR *label;
-	BYTE sortlow,sorthigh;
+	BYTE sortlow, sorthigh;
 } TIME2HEADERSTRUCT;
 
 TIME2HEADERSTRUCT Time2Header[] = {
-	{ MES_HDRC, 4,12 },
-	{ MES_HDRE, 5,13 },
-	{ hdrstrings_eng_date, 3,11 },
+	{ MES_HDRC, 4, 12 },
+	{ MES_HDRE, 5, 13 },
+	{ hdrstrings_eng_date, 3, 11 },
 };
 
 // マウス操作の解析・実行 -----------------------------------------------------
@@ -78,9 +78,9 @@ HWND GetParentWnd(HWND hWnd)
 }
 
 // 非クライアント領域の判別 ---------------------------------------------------
-LRESULT PPcNCMouseCommand(PPC_APPINFO *cinfo,UINT message,WPARAM wParam,LPARAM lParam)
+LRESULT PPcNCMouseCommand(PPC_APPINFO *cinfo, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	const TCHAR *click,*type;
+	const TCHAR *click, *type;
 
 	switch( LOWORD(wParam) ){
 		case HTBOTTOM:
@@ -124,7 +124,7 @@ LRESULT PPcNCMouseCommand(PPC_APPINFO *cinfo,UINT message,WPARAM wParam,LPARAM l
 			break;
 
 		default:
-			return DefWindowProc(GetParentWnd(cinfo->info.hWnd),message,wParam,lParam);
+			return DefWindowProc(GetParentWnd(cinfo->info.hWnd), message, wParam, lParam);
 	}
 
 	switch ( message ){
@@ -161,18 +161,19 @@ LRESULT PPcNCMouseCommand(PPC_APPINFO *cinfo,UINT message,WPARAM wParam,LPARAM l
 			click = T("L");
 			break;
 	}
+	cinfo->LastInputType = GetPointType();
 	cinfo->PopupPosType = PPT_MOUSE;
-	if ( !PPcMouseCommand(cinfo,click,type) ){
-		return DefWindowProc(GetParentWnd(cinfo->info.hWnd),message,wParam,lParam);
+	if ( !PPcMouseCommand(cinfo, click, type) ){
+		return DefWindowProc(GetParentWnd(cinfo->info.hWnd), message, wParam, lParam);
 	}
 	return 0;
 }
 
 // 窓の大きさを調整 -----------------------------------------------------------
-void FixWindowSize(PPC_APPINFO *cinfo,int offsetx,int offsety)
+void FixWindowSize(PPC_APPINFO *cinfo, int offsetx, int offsety)
 {
-	int width,height;
-	int widthFix,heightFix;	// 補正分
+	int width, height;
+	int widthFix, heightFix;	// 補正分
 
 	widthFix = cinfo->wnd.NCArea.cx - cinfo->wnd.Area.cx +	// 枠分
 			cinfo->BoxEntries.left - cinfo->fontX;	// 位置補正
@@ -187,7 +188,7 @@ void FixWindowSize(PPC_APPINFO *cinfo,int offsetx,int offsety)
 			widthFix += cinfo->ScrollBarSize;
 		}
 	}else if ( !(cinfo->X_win & XWIN_HIDESCROLL) &&
-		!(GetWindowLongPtr(cinfo->info.hWnd,GWL_STYLE) &
+		!(GetWindowLongPtr(cinfo->info.hWnd, GWL_STYLE) &
 				(WS_HSCROLL | WS_VSCROLL)) ){
 		if ( cinfo->ScrollBarHV == SB_HORZ ){
 			heightFix += GetSystemMetrics(SM_CYHSCROLL) % cinfo->cel.Size.cy;
@@ -212,20 +213,20 @@ void FixWindowSize(PPC_APPINFO *cinfo,int offsetx,int offsety)
 				if ( offsetx <= 0 ) offsetx += 1;
 			}
 		}
-		width = max(1,cinfo->cel.Area.cx + offsetx) * cinfo->cel.Size.cx
+		width = max(1, cinfo->cel.Area.cx + offsetx) * cinfo->cel.Size.cx
 				+ widthFix;
 	}
 	height = (cinfo->cel.Area.cy + offsety) * cinfo->cel.Size.cy + // cellArea分
 			heightFix;
 
 	if ( (width >= 16) && (height >= 8) ){
-		SetWindowPos(cinfo->info.hWnd,NULL,0,0,width,height,
+		SetWindowPos(cinfo->info.hWnd, NULL, 0, 0, width, height,
 				SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER);
 	}
 	InitCli(cinfo);
 }
 
-BOOL CalcJoinRate(int site,int mode,LONG *thispos,LONG *thissize,LONG *pairpos,LONG *pairsize,int offset,int mintype)
+BOOL CalcJoinRate(int site, int mode, LONG *thispos, LONG *thissize, LONG *pairpos, LONG *pairsize, int offset, int mintype)
 {
 	int minvalue;
 
@@ -249,7 +250,7 @@ BOOL CalcJoinRate(int site,int mode,LONG *thispos,LONG *thissize,LONG *pairpos,L
 	return TRUE;
 }
 
-void FixPaneSize(PPC_APPINFO *cinfo,int offsetx,int offsety,int mode)
+void FixPaneSize(PPC_APPINFO *cinfo, int offsetx, int offsety, int mode)
 {
 	if ( mode == FPS_RATE ){
 		if ( (offsetx < 0) || (offsetx >= 100 ) ) return;
@@ -262,14 +263,14 @@ void FixPaneSize(PPC_APPINFO *cinfo,int offsetx,int offsety,int mode)
 		rs.offsetx = offsetx;
 		rs.offsety = offsety;
 		rs.mode = mode;
-		SendMessage(cinfo->hComboWnd,WM_PPXCOMMAND,KCW_reqsize,(LPARAM)&rs);
+		SendMessage(cinfo->hComboWnd, WM_PPXCOMMAND, KCW_reqsize, (LPARAM)&rs);
 		return;
 	}
 
 	if ( (cinfo->swin & (SWIN_WBOOT | SWIN_FIXACTIVE)) && CheckReady(cinfo) ){
 		HWND hPairWnd;
 		HDWP hDWP;
-		RECT thisbox,pairbox;
+		RECT thisbox, pairbox;
 		int site;
 
 		hPairWnd = GetJoinWnd(cinfo);
@@ -277,7 +278,7 @@ void FixPaneSize(PPC_APPINFO *cinfo,int offsetx,int offsety,int mode)
 		if ( cinfo->swin & SWIN_PILEJOIN ) return;// 重ねるときは処理しない
 
 		thisbox = cinfo->wnd.NCRect;
-		GetWindowRect(hPairWnd,&pairbox);
+		GetWindowRect(hPairWnd, &pairbox);
 
 		thisbox.right -= thisbox.left;
 		thisbox.bottom -= thisbox.top;
@@ -294,26 +295,28 @@ void FixPaneSize(PPC_APPINFO *cinfo,int offsetx,int offsety,int mode)
 				offsety = offsetx;
 			}
 			if ( mode != FPS_RATE ) offsety *= cinfo->fontY;
-			if ( FALSE == CalcJoinRate(site,mode,
-					&thisbox.top,&thisbox.bottom,
-					&pairbox.top,&pairbox.bottom,offsety,SM_CYMIN) ){
+			if ( FALSE == CalcJoinRate(site, mode,
+					&thisbox.top, &thisbox.bottom,
+					&pairbox.top, &pairbox.bottom, offsety, SM_CYMIN) ){
 				return;
 			}
 		}else{				// 左
 			if ( (mode == FPS_KEYBOARD) && offsety ) return;
 			if ( mode != FPS_RATE ) offsetx *= cinfo->fontX;
-			if ( FALSE == CalcJoinRate(site,mode,
-					&thisbox.left,&thisbox.right,
-					&pairbox.left,&pairbox.right,offsetx,SM_CXMIN) ){
+			if ( FALSE == CalcJoinRate(site, mode,
+					&thisbox.left, &thisbox.right,
+					&pairbox.left, &pairbox.right, offsetx, SM_CXMIN) ){
 				return;
 			}
 		}
 
 		hDWP = BeginDeferWindowPos(2);
-		hDWP = DeferWindowPos(hDWP,cinfo->info.hWnd,0,thisbox.left,thisbox.top,
-				thisbox.right,thisbox.bottom,SWP_NOACTIVATE | SWP_NOZORDER);
-		hDWP = DeferWindowPos(hDWP,hPairWnd,0,pairbox.left,pairbox.top,
-				pairbox.right,pairbox.bottom,SWP_NOACTIVATE | SWP_NOZORDER);
+		hDWP = DeferWindowPos(hDWP, cinfo->info.hWnd, 0,
+				thisbox.left, thisbox.top, thisbox.right, thisbox.bottom,
+				SWP_NOACTIVATE | SWP_NOZORDER);
+		hDWP = DeferWindowPos(hDWP, hPairWnd, 0,
+				pairbox.left, pairbox.top, pairbox.right, pairbox.bottom,
+				SWP_NOACTIVATE | SWP_NOZORDER);
 		if ( hDWP != NULL ) EndDeferWindowPos(hDWP);
 	}
 }
@@ -358,23 +361,23 @@ int GetTime2Len(char *format)
 	}
 }
 
-int SortFmt(PPC_APPINFO *cinfo,char up,char down)
+int SortFmt(PPC_APPINFO *cinfo, char up, char down)
 {
-	int i,fmt = 0;
+	int i, fmt = 0;
 	char *mode;
 
-	for ( i = 0,mode = cinfo->sort_nowmode.dat ; i < 3 ; i++,mode++ ){
+	for ( i = 0, mode = cinfo->sort_nowmode.dat ; i < 3 ; i++, mode++ ){
 		if ( *mode == down ){
-			setflag(fmt,HDF_SORTDOWN);
+			setflag(fmt, HDF_SORTDOWN);
 			break;
 		}else if ( *mode == up ){
-			setflag(fmt,HDF_SORTUP);
+			setflag(fmt, HDF_SORTUP);
 			break;
 		}
 	}
 	return fmt;
 }
-#define HEADERLPARAM(fmt,low,high) TMAKELPARAM(low + (high << 8),fmt - cinfo->celF.fmt)
+#define HEADERLPARAM(fmt, low, high) TMAKELPARAM(low + (high << 8), fmt - cinfo->celF.fmt)
 void FixHeader(PPC_APPINFO *cinfo)
 {
 	HD_ITEM hdri;
@@ -385,7 +388,7 @@ void FixHeader(PPC_APPINFO *cinfo)
 	BOOL UseCheckBox = OSver.dwMajorVersion >= 6;
 
 								// 削除
-	while ( SendMessage(cinfo->hHeaderWnd,HDM_DELETEITEM,0,0) );
+	while ( SendMessage(cinfo->hHeaderWnd, HDM_DELETEITEM, 0, 0) );
 
 	fmt = cinfo->celF.fmt;
 	while( *fmt ){
@@ -397,27 +400,27 @@ void FixHeader(PPC_APPINFO *cinfo)
 		switch( *fmt ){
 			case DE_IMAGE:	// 画像
 				hdri.cxy = width * *(fmt + 1);
-				hdri.fmt = SortFmt(cinfo,6,14);
-				hdri.lParam = HEADERLPARAM(fmt,6,14);
+				hdri.fmt = SortFmt(cinfo, 6, 14);
+				hdri.lParam = HEADERLPARAM(fmt, 6, 14);
 				break;
 
 			case DE_CHECK:		// チェック
 			case DE_CHECKBOX:	// チェックボックス
 			case DE_ICON:	// アイコン
 				hdri.cxy = width * 2;
-				hdri.fmt = SortFmt(cinfo,6,14);
-				hdri.lParam = HEADERLPARAM(fmt,6,14);
+				hdri.fmt = SortFmt(cinfo, 6, 14);
+				hdri.lParam = HEADERLPARAM(fmt, 6, 14);
 				break;
 
 			case DE_ICON2:	// アイコン2
 				hdri.cxy = *(fmt + 1) + ICONBLANK;
-				hdri.fmt = SortFmt(cinfo,6,14);
-				hdri.lParam = HEADERLPARAM(fmt,6,14);
+				hdri.fmt = SortFmt(cinfo, 6, 14);
+				hdri.lParam = HEADERLPARAM(fmt, 6, 14);
 				break;
 
 			case DE_MARK:	// マーク
-				hdri.fmt = SortFmt(cinfo,6,14);
-				hdri.lParam = HEADERLPARAM(fmt,6,14);
+				hdri.fmt = SortFmt(cinfo, 6, 14);
+				hdri.lParam = HEADERLPARAM(fmt, 6, 14);
 				// DE_sepline へ
 			case DE_sepline: // 区切り線
 				hdri.cxy = width;
@@ -441,15 +444,15 @@ void FixHeader(PPC_APPINFO *cinfo)
 				if ( w >= 0xff ) w = 0;
 				hdri.cxy = width * (*(fmt + 1) + w);
 				hdri.pszText = HDR_FILENAME;
-				hdri.fmt = SortFmt(cinfo,0,8);
-				hdri.lParam = HEADERLPARAM(fmt,0,8);
+				hdri.fmt = SortFmt(cinfo, 0, 8);
+				hdri.lParam = HEADERLPARAM(fmt, 0, 8);
 				break;
 			}
 			case DE_SIZE1:
 				hdri.cxy = width * 7;
 				hdri.pszText = HDR_SIZE;
-				hdri.fmt = SortFmt(cinfo,2,10);
-				hdri.lParam = HEADERLPARAM(fmt,2,10);
+				hdri.fmt = SortFmt(cinfo, 2, 10);
+				hdri.lParam = HEADERLPARAM(fmt, 2, 10);
 				break;
 
 			case DE_SIZE2:
@@ -457,15 +460,15 @@ void FixHeader(PPC_APPINFO *cinfo)
 			case DE_SIZE4:
 				hdri.cxy = width * *(fmt + 1);
 				hdri.pszText = HDR_SIZE;
-				hdri.fmt = SortFmt(cinfo,2,10);
-				hdri.lParam = HEADERLPARAM(fmt,2,10);
+				hdri.fmt = SortFmt(cinfo, 2, 10);
+				hdri.lParam = HEADERLPARAM(fmt, 2, 10);
 				break;
 
 			case DE_ATTR1:
 				hdri.cxy = width * *(fmt + 1);
 				hdri.pszText = HDR_ATTR;
-				hdri.fmt = SortFmt(cinfo,16,16);
-				hdri.lParam = HEADERLPARAM(fmt,16,16);
+				hdri.fmt = SortFmt(cinfo, 16, 16);
+				hdri.lParam = HEADERLPARAM(fmt, 16, 16);
 				break;
 
 			case DE_itemname:
@@ -480,18 +483,18 @@ void FixHeader(PPC_APPINFO *cinfo)
 					HDC hDC = GetDC(cinfo->info.hWnd);
 					SIZE boxsize;
 					HGDIOBJ hOldFont;
-					hOldFont = SelectObject(hDC,cinfo->hBoxFont);
+					hOldFont = SelectObject(hDC, cinfo->hBoxFont);
 
-					GetTextExtentPoint32(hDC,T("00-00-00 00:00:00.000"),
-							*(fmt + 1),&boxsize);
+					GetTextExtentPoint32(hDC, T("00-00-00 00:00:00.000"),
+							*(fmt + 1), &boxsize);
 					hdri.cxy = boxsize.cx;
-					SelectObject(hDC,hOldFont);	// フォント
-					ReleaseDC(cinfo->info.hWnd,hDC);
+					SelectObject(hDC, hOldFont);	// フォント
+					ReleaseDC(cinfo->info.hWnd, hDC);
 				}
 
 				hdri.pszText = HDR_DATE;
-				hdri.fmt = SortFmt(cinfo,3,11);
-				hdri.lParam = HEADERLPARAM(fmt,3,11);
+				hdri.fmt = SortFmt(cinfo, 3, 11);
+				hdri.lParam = HEADERLPARAM(fmt, 3, 11);
 				break;
 
 			case DE_TIME2: {
@@ -503,8 +506,8 @@ void FixHeader(PPC_APPINFO *cinfo)
 				hdrs = &Time2Header[timetype];
 				hdri.cxy = width * GetTime2Len((char *)fmt + 2);
 				hdri.pszText = (TCHAR *)MessageText(hdrs->label);
-				hdri.fmt = SortFmt(cinfo,hdrs->sortlow,hdrs->sorthigh);
-				hdri.lParam = HEADERLPARAM(fmt,hdrs->sortlow,hdrs->sorthigh);
+				hdri.fmt = SortFmt(cinfo, hdrs->sortlow, hdrs->sorthigh);
+				hdri.lParam = HEADERLPARAM(fmt, hdrs->sortlow, hdrs->sorthigh);
 				break;
 			}
 			case DE_COLUMN:
@@ -529,13 +532,13 @@ void FixHeader(PPC_APPINFO *cinfo)
 
 				if ( cinfo->sort_columnindex == (DWORD)itemindex ){
 					if ( cinfo->sort_nowmode.dat[0] == SORT_COLUMN_UP ){
-						setflag(hdri.fmt,HDF_SORTUP);
+						setflag(hdri.fmt, HDF_SORTUP);
 					}else if ( cinfo->sort_nowmode.dat[0] == SORT_COLUMN_DOWN){
-						setflag(hdri.fmt,HDF_SORTDOWN);
+						setflag(hdri.fmt, HDF_SORTDOWN);
 					}
 				}
 				hdri.lParam =
-					TMAKELPARAM( (0x8000 | itemindex),fmt - cinfo->celF.fmt);
+					TMAKELPARAM( (0x8000 | itemindex), fmt - cinfo->celF.fmt);
 				break;
 			}
 
@@ -553,12 +556,12 @@ void FixHeader(PPC_APPINFO *cinfo)
 		fmt += GetDispFormatSkip(fmt);
 		if ( hdri.cxy ){
 			if ( UseCheckBox && (hdri.cxy > (width * 4)) ){
-				setflag(hdri.fmt,HDF_CHECKBOX);
-				if ( cinfo->e.markC ) setflag(hdri.fmt,HDF_CHECKED);
+				setflag(hdri.fmt, HDF_CHECKBOX);
+				if ( cinfo->e.markC ) setflag(hdri.fmt, HDF_CHECKED);
 				UseCheckBox = FALSE;
 			}
 			SendMessage(cinfo->hHeaderWnd,
-					HDM_INSERTITEM,index++,(LPARAM)&hdri);
+					HDM_INSERTITEM, index++, (LPARAM)&hdri);
 		}
 	}
 }
@@ -601,7 +604,7 @@ void CalcClickWidth(PPC_APPINFO *cinfo)
 			case DE_LFN_EXT:
 			case DE_SFN_EXT:
 			{
-				int filew,extw;
+				int filew, extw;
 
 				filew = *(fmt + 1);
 				extw = *(fmt + 2);
@@ -635,7 +638,7 @@ void CalcClickWidth(PPC_APPINFO *cinfo)
 				break;
 
 //			default: // 未使用
-//				XMessage(NULL,NULL,XM_DbgDIA,T("%x %d"),fmt,*fmt);
+//				XMessage(NULL, NULL, XM_DbgDIA, T("%x %d"), fmt, *fmt);
 		}
 		{
 			int skipsize;
@@ -648,7 +651,7 @@ void CalcClickWidth(PPC_APPINFO *cinfo)
 }
 
 // windowwidth の桁数に応じて DE_WIDEW の調整を行う(ステータス行、情報行用)
-void FixInfoWideW(XC_CFMT *cfmt,int windowwidthLen)
+void FixInfoWideW(XC_CFMT *cfmt, int windowwidthLen)
 {
 	BYTE *fmt;
 
@@ -672,7 +675,7 @@ void FixInfoWideW(XC_CFMT *cfmt,int windowwidthLen)
 }
 
 // 窓枠内に収まるようにエントリ表示の桁数を調整する
-void FixEntryWideW(PPC_APPINFO *cinfo,int fixPix,int clientPix)
+void FixEntryWideW(PPC_APPINFO *cinfo, int fixPix, int clientPix)
 {
 	BYTE *fmt;
 	int tmpfontX = cinfo->fontX;
@@ -711,7 +714,7 @@ void FixEntryWideW(PPC_APPINFO *cinfo,int fixPix,int clientPix)
 	if ( cinfo->hHeaderWnd != NULL ) FixHeader(cinfo);
 }
 
-void SetScrollBar(PPC_APPINFO *cinfo,int mode)
+void SetScrollBar(PPC_APPINFO *cinfo, int mode)
 {
 	SCROLLINFO sinfo;
 										// スクロールバー設定 -----------------
@@ -760,7 +763,7 @@ void SetScrollBar(PPC_APPINFO *cinfo,int mode)
 		}else{
 			bar = cinfo->ScrollBarHV;
 		}
-		SetScrollInfo(cinfo->hScrollTargetWnd,bar,&sinfo,TRUE);
+		SetScrollInfo(cinfo->hScrollTargetWnd, bar, &sinfo, TRUE);
 	}
 }
 
@@ -803,7 +806,7 @@ void InitCli(PPC_APPINFO *cinfo)
 			? cinfo->BoxStatus.top :
 			cinfo->BoxStatus.top + cinfo->fontY * cinfo->stat.height;
 	if ( cinfo->stat.attr & DE_ATTR_WIDEW ){
-		FixInfoWideW(&cinfo->stat,(cinfo->BoxStatus.right - cinfo->BoxStatus.left) / tmpfontX + 1);
+		FixInfoWideW(&cinfo->stat, (cinfo->BoxStatus.right - cinfo->BoxStatus.left) / tmpfontX + 1);
 	}
 	// 情報行
 	cinfo->BoxInfo.left		= 0;
@@ -823,10 +826,10 @@ void InitCli(PPC_APPINFO *cinfo)
 		cinfo->BoxInfo.bottom = cinfo->BoxInfo.top + height;
 
 		if ( cinfo->inf1.attr & DE_ATTR_WIDEW ){
-			FixInfoWideW(&cinfo->inf1,(cinfo->BoxInfo.right - cinfo->BoxInfo.left - cinfo->iconR) / tmpfontX + 1);
+			FixInfoWideW(&cinfo->inf1, (cinfo->BoxInfo.right - cinfo->BoxInfo.left - cinfo->iconR) / tmpfontX + 1);
 		}
 		if ( cinfo->inf2.attr & DE_ATTR_WIDEW ){
-			FixInfoWideW(&cinfo->inf2,(cinfo->BoxInfo.right - cinfo->BoxInfo.left - cinfo->iconR) / tmpfontX + 1);
+			FixInfoWideW(&cinfo->inf2, (cinfo->BoxInfo.right - cinfo->BoxInfo.left - cinfo->iconR) / tmpfontX + 1);
 		}
 	}
 	// エントリ行など
@@ -866,7 +869,7 @@ void InitCli(PPC_APPINFO *cinfo)
 		HDC hDC = GetDC(cinfo->info.hWnd);
 		HGDIOBJ hOldFont;
 
-		hOldFont = SelectObject(hDC,cinfo->hBoxFont);
+		hOldFont = SelectObject(hDC, cinfo->hBoxFont);
 		fmt = cinfo->celF.fmt;
 		for ( ;; ){
 			BYTE fmtdata;
@@ -876,15 +879,15 @@ void InitCli(PPC_APPINFO *cinfo)
 			if ( fmtdata == DE_TIME1 ){
 				BYTE timelen = *(fmt + 1);
 
-				GetTextExtentPoint32(hDC,T("00-00-00 00:00:00.000"),
-						timelen,&boxsize);
+				GetTextExtentPoint32(hDC, T("00-00-00 00:00:00.000"),
+						timelen, &boxsize);
 				fixX = boxsize.cx - (tmpfontX * timelen);
 				cinfo->cel.Size.cx += fixX;
 			}
 			fmt += GetDispFormatSkip(fmt);
 		}
-		SelectObject(hDC,hOldFont);	// フォント
-		ReleaseDC(cinfo->info.hWnd,hDC);
+		SelectObject(hDC, hOldFont);	// フォント
+		ReleaseDC(cinfo->info.hWnd, hDC);
 	}
 
 	{ // cinfo->cel.Size.cy を決定
@@ -902,7 +905,7 @@ void InitCli(PPC_APPINFO *cinfo)
 			cinfo->cel.Size.cy = cinfo->fontY * fmt[2];
 #endif
 		}else if ( *fmt == DE_ICON2 ){ // アイコン2 の幅補正
-			int iconLen,iconFix;
+			int iconLen, iconFix;
 
 			iconsize = fmt[1];
 			if ( cinfo->X_textmag != 100 ){
@@ -946,13 +949,13 @@ void InitCli(PPC_APPINFO *cinfo)
 				cinfo->BoxEntries.top + cinfo->cel.Size.cy * y;
 		if ( y != cinfo->cel.Area.cy ){
 			cinfo->cel.Area.cy = cinfo->cel.VArea.cy = y;
-			InvalidateRect(cinfo->info.hWnd,NULL,FALSE);
+			InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
 		}
 	}
 										// クリック反応幅を決定 ---------------
 	cinfo->CellNameWidth = cinfo->cel.Size.cx - tmpfontX - 3;
 	if ( XC_limc ) CalcClickWidth(cinfo);
-	SetScrollBar(cinfo,XC_page);
+	SetScrollBar(cinfo, XC_page);
 }
 
 // アクティブになった窓の位置関係や大きさを調節する ---------------------------
@@ -970,9 +973,9 @@ void FixTwinWindow(PPC_APPINFO *cinfo)
 	Oldswin = cinfo->swin;
 					// フォーカスを次回起動時/アクティブ位置調整のために保存
 	if ( cinfo->RegID[2] & 1 ){
-		resetflag(cinfo->swin,SWIN_BFOCUES);
+		resetflag(cinfo->swin, SWIN_BFOCUES);
 	}else{
-		setflag(cinfo->swin,SWIN_BFOCUES);
+		setflag(cinfo->swin, SWIN_BFOCUES);
 	}
 	if ( Oldswin == cinfo->swin ) return;	// 前からアクティブなら何もしない
 	SendX_win(cinfo);
@@ -987,10 +990,10 @@ void FixTwinWindow(PPC_APPINFO *cinfo)
 		if ( !((flag == 0) || (flag == (PAIRBIT | SWIN_BFOCUES))) ){ // 入替有
 			owp.length = sizeof(owp);
 			wp.length = sizeof(wp);
-			GetWindowPlacement(cinfo->info.hWnd,&wp);
-			GetWindowPlacement(PairHWnd,&owp);
-			GetWindowRect(cinfo->info.hWnd,&wp.rcNormalPosition);
-			GetWindowRect(PairHWnd,&owp.rcNormalPosition);
+			GetWindowPlacement(cinfo->info.hWnd, &wp);
+			GetWindowPlacement(PairHWnd, &owp);
+			GetWindowRect(cinfo->info.hWnd, &wp.rcNormalPosition);
+			GetWindowRect(PairHWnd, &owp.rcNormalPosition);
 
 			if ( (owp.showCmd == SW_SHOWNORMAL) &&
 				  (wp.showCmd == SW_SHOWNORMAL) ){
@@ -1006,14 +1009,14 @@ void FixTwinWindow(PPC_APPINFO *cinfo)
 					SendX_win(cinfo);
 					hdWins = BeginDeferWindowPos(2);
 					// 自分の大きさを変更
-					hdWins = DeferWindowPos(hdWins,cinfo->info.hWnd,NULL,
+					hdWins = DeferWindowPos(hdWins, cinfo->info.hWnd, NULL,
 							owp.rcNormalPosition.left,
 							owp.rcNormalPosition.top,
 							owp.rcNormalPosition.right,
 							owp.rcNormalPosition.bottom,
 							SWP_NOACTIVATE | SWP_NOZORDER);
 					// 相手の大きさを変更
-					hdWins = DeferWindowPos(hdWins,PairHWnd,NULL,
+					hdWins = DeferWindowPos(hdWins, PairHWnd, NULL,
 							wp.rcNormalPosition.left,
 							wp.rcNormalPosition.top,
 							wp.rcNormalPosition.right,
@@ -1055,14 +1058,14 @@ void FixTwinWindow(PPC_APPINFO *cinfo)
 
 					hdWins = BeginDeferWindowPos(2);
 						// 自分の大きさを変更
-					hdWins = DeferWindowPos(hdWins,cinfo->info.hWnd,NULL,
+					hdWins = DeferWindowPos(hdWins, cinfo->info.hWnd, NULL,
 							wp.rcNormalPosition.left,
 							wp.rcNormalPosition.top,
 							owp.rcNormalPosition.right,
 							owp.rcNormalPosition.bottom,
 							SWP_NOACTIVATE | SWP_NOZORDER);
 					// 相手の大きさを変更
-					hdWins = DeferWindowPos(hdWins,PairHWnd,NULL,
+					hdWins = DeferWindowPos(hdWins, PairHWnd, NULL,
 							owp.rcNormalPosition.left,
 							owp.rcNormalPosition.top,
 							wp.rcNormalPosition.right,
@@ -1078,9 +1081,9 @@ void BootPairPPc(PPC_APPINFO *cinfo)
 {
 	TCHAR param[] = T("/bootid:A");
 
-	if ( PPcGetWindow(cinfo->RegNo,CGETW_PAIR) != NULL ) return;
+	if ( PPcGetWindow(cinfo->RegNo, CGETW_PAIR) != NULL ) return;
 	param[8] = (TCHAR)(((cinfo->RegID[2] - 1) ^ 1) + 1);
-	PPCui(cinfo->info.hWnd,param);
+	PPCui(cinfo->info.hWnd, param);
 }
 
 /*-----------------------------------------------------------------------------
@@ -1096,41 +1099,41 @@ void JoinWindow(PPC_APPINFO *cinfo)
 	if ( cinfo->combo || !CheckReady(cinfo)) return;
 	PairHWnd = GetJoinWnd(cinfo);
 	if ( PairHWnd != NULL ){				// 反対窓が存在する→連結処理 -----
-		PostMessage(PairHWnd,WM_PPXCOMMAND,KC_DoJW,(LPARAM)cinfo->info.hWnd);
+		PostMessage(PairHWnd, WM_PPXCOMMAND, KC_DoJW, (LPARAM)cinfo->info.hWnd);
 	}
 }
 
 #if !NODLL
-DefineWinAPI(HRESULT,DwmGetWindowAttribute,(HWND,DWORD,PVOID,DWORD)) = NULL;
+DefineWinAPI(HRESULT, DwmGetWindowAttribute, (HWND, DWORD, PVOID, DWORD)) = NULL;
 #else
-ExternWinAPI(HRESULT,DwmGetWindowAttribute,(HWND,DWORD,PVOID,DWORD));
+ExternWinAPI(HRESULT, DwmGetWindowAttribute, (HWND, DWORD, PVOID, DWORD));
 #endif
 
 #ifndef DWMWA_EXTENDED_FRAME_BOUNDS
   #define DWMWA_EXTENDED_FRAME_BOUNDS 9
 #endif
 
-void JointWindowMain(PPC_APPINFO *cinfo,HWND PairHWnd)
+void JointWindowMain(PPC_APPINFO *cinfo, HWND PairHWnd)
 {
-	WINDOWPLACEMENT nwp,owp;
-	int fixX = 0,fixY = 0;
+	WINDOWPLACEMENT nwp, owp;
+	int fixX = 0, fixY = 0;
 
 	nwp.length = sizeof(nwp);
 	owp.length = sizeof(owp);
-	GetWindowPlacement(cinfo->info.hWnd,&nwp);
-	GetWindowPlacement(PairHWnd,&owp);
-	GetWindowRect(cinfo->info.hWnd,&nwp.rcNormalPosition);
+	GetWindowPlacement(cinfo->info.hWnd, &nwp);
+	GetWindowPlacement(PairHWnd, &owp);
+	GetWindowRect(cinfo->info.hWnd, &nwp.rcNormalPosition);
 
 	if ( DDwmGetWindowAttribute == NULL ){
 		if ( hDwmapi != NULL ){
-			GETDLLPROC(hDwmapi,DwmGetWindowAttribute);
+			GETDLLPROC(hDwmapi, DwmGetWindowAttribute);
 		}
 		if ( DDwmGetWindowAttribute == NULL ){
 			DDwmGetWindowAttribute = INVALID_VALUE(impDwmGetWindowAttribute);
 		}
 	}
 	if ( (DDwmGetWindowAttribute != INVALID_VALUE(impDwmGetWindowAttribute)) &&
-		SUCCEEDED(DDwmGetWindowAttribute(cinfo->info.hWnd,DWMWA_EXTENDED_FRAME_BOUNDS,&owp.rcNormalPosition,sizeof(RECT))) ){
+		SUCCEEDED(DDwmGetWindowAttribute(cinfo->info.hWnd, DWMWA_EXTENDED_FRAME_BOUNDS, &owp.rcNormalPosition, sizeof(RECT))) ){
 		if ( owp.rcNormalPosition.left > nwp.rcNormalPosition.left ){ // 実体の枠がウィンドウの枠より小さい（Windows10）
 			fixX = (nwp.rcNormalPosition.left - owp.rcNormalPosition.left) +
 				  -(nwp.rcNormalPosition.right - owp.rcNormalPosition.right);
@@ -1139,23 +1142,23 @@ void JointWindowMain(PPC_APPINFO *cinfo,HWND PairHWnd)
 		}
 	}
 
-	GetWindowRect(PairHWnd,&owp.rcNormalPosition);
+	GetWindowRect(PairHWnd, &owp.rcNormalPosition);
 
 											// 最小化状態等を一致させる -------
 	if ( !(cinfo->swin & SWIN_BUSY) && (nwp.showCmd != owp.showCmd) ){
-		setflag(cinfo->swin,SWIN_BUSY);
-		IOX_win(cinfo,TRUE);
-		ShowWindow(cinfo->info.hWnd,owp.showCmd);
-		GetWindowPlacement(cinfo->info.hWnd,&nwp);
-		GetWindowRect(cinfo->info.hWnd,&nwp.rcNormalPosition);
-		resetflag(cinfo->swin,SWIN_BUSY);
-		IOX_win(cinfo,TRUE);
+		setflag(cinfo->swin, SWIN_BUSY);
+		IOX_win(cinfo, TRUE);
+		ShowWindow(cinfo->info.hWnd, owp.showCmd);
+		GetWindowPlacement(cinfo->info.hWnd, &nwp);
+		GetWindowRect(cinfo->info.hWnd, &nwp.rcNormalPosition);
+		resetflag(cinfo->swin, SWIN_BUSY);
+		IOX_win(cinfo, TRUE);
 		SetForegroundWindow( PairHWnd );
 	}
 											// 位置情報の作成(通常表示なら) ---
 	if ( owp.showCmd == SW_SHOWNORMAL ){
 		RECT NewRect;
-		int width,height,update = 0;
+		int width, height, update = 0;
 
 		NewRect.right = nwp.rcNormalPosition.right -
 						nwp.rcNormalPosition.left;
@@ -1212,8 +1215,8 @@ void JointWindowMain(PPC_APPINFO *cinfo,HWND PairHWnd)
 			 (NewRect.top  != nwp.rcNormalPosition.top) ||
 			 update){
 
-			MoveWindow(cinfo->info.hWnd,NewRect.left ,NewRect.top,
-								NewRect.right,NewRect.bottom,TRUE);
+			MoveWindow(cinfo->info.hWnd, NewRect.left , NewRect.top,
+								NewRect.right, NewRect.bottom, TRUE);
 		}
 	}
 }
@@ -1238,10 +1241,10 @@ void FixCellWideV(PPC_APPINFO *cinfo)
 		int MaxPix = 0;
 
 		hDC = GetDC(cinfo->info.hWnd);
-		hOldFont = SelectObject(hDC,cinfo->hBoxFont);
+		hOldFont = SelectObject(hDC, cinfo->hBoxFont);
 												//拡張子はファイル名と一体
 		if ( cinfo->celF.fmt[cinfo->celF.fmt[3] + 1] == 0xff ){
-			for ( i = cinfo->e.cellIMax ; i ; i--,tbl++ ){
+			for ( i = cinfo->e.cellIMax ; i ; i--, tbl++ ){
 				int fulllen;
 
 				cell = &CELdata(*tbl);
@@ -1252,7 +1255,7 @@ void FixCellWideV(PPC_APPINFO *cinfo)
 				if ( MaxPix < textsize.cx ) MaxPix = textsize.cx;
 			}
 		}else{
-			for ( i = cinfo->e.cellIMax ; i ; i--,tbl++ ){
+			for ( i = cinfo->e.cellIMax ; i ; i--, tbl++ ){
 				cell = &CELdata(*tbl);
 				if ( MaxNameLength < cell->ext ) MaxNameLength = cell->ext;
 
@@ -1260,15 +1263,15 @@ void FixCellWideV(PPC_APPINFO *cinfo)
 				if ( MaxPix < textsize.cx ) MaxPix = textsize.cx;
 			}
 		}
-		SelectObject(hDC,hOldFont);
-		ReleaseDC(cinfo->info.hWnd,hDC);
+		SelectObject(hDC, hOldFont);
+		ReleaseDC(cinfo->info.hWnd, hDC);
 		MaxPix = (MaxPix + cinfo->fontX - 1) / cinfo->fontX; // pix→桁変換
 		if ( MaxNameLength < MaxPix ) MaxNameLength = MaxPix;
 	#ifndef UNICODE
 	}else{
 												//拡張子はファイル名と一体
 		if ( cinfo->celF.fmt[cinfo->celF.fmt[3] + 1] == 0xff ){
-			for ( i = cinfo->e.cellIMax ; i ; i--,tbl++ ){
+			for ( i = cinfo->e.cellIMax ; i ; i--, tbl++ ){
 				int fulllen;
 
 				cell = &CELdata(*tbl);
@@ -1276,7 +1279,7 @@ void FixCellWideV(PPC_APPINFO *cinfo)
 				if ( MaxNameLength < fulllen ) MaxNameLength = fulllen;
 			}
 		}else{
-			for ( i = cinfo->e.cellIMax ; i ; i--,tbl++ ){
+			for ( i = cinfo->e.cellIMax ; i ; i--, tbl++ ){
 				cell = &CELdata(*tbl);
 				if ( MaxNameLength < cell->ext ) MaxNameLength = cell->ext;
 			}

@@ -2,7 +2,6 @@
 	Paper Plane file extension fixer
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include "PPX.H"
 #include "VFS.H"
 #pragma hdrstop

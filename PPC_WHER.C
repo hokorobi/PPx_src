@@ -2,7 +2,6 @@
 	Paper Plane cUI												Where is
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include "PPX.H"
 #include "VFS.H"
 #include "PPC_STRU.H"
@@ -94,6 +93,7 @@ void ExWhereMenu(WHEREDIALOG *pws, HWND hDlg, HWND hButtonWnd)
 	const TCHAR **menus;
 	RECT box;
 
+	if ( IsShowButtonMenu() == FALSE ) return;
 	hMenu = CreatePopupMenu();
 	menus = ExWhereMenuList;
 	for ( type = WDEXM_UNKNOWN ; type <= WDEXM_COMMENT ; type++, menus++ ){
@@ -106,8 +106,9 @@ void ExWhereMenu(WHEREDIALOG *pws, HWND hDlg, HWND hButtonWnd)
 	AppendMenuString(hMenu, WDEXM_MODULE, ExWhereMenuList[WDEXM_MODULE - 1]);
 
 	GetWindowRect(hButtonWnd, &box);
-	type = TrackPopupMenu(hMenu, TPM_TDEFAULT, box.left, box.bottom, 0, hDlg,NULL);
+	type = TrackPopupMenu(hMenu, TPM_TDEFAULT, box.left, box.bottom, 0, hDlg, NULL);
 	DestroyMenu(hMenu);
+	EndButtonMenu();
 
 	if ( type > WDEXM_UNKNOWN ){
 		if ( type >= CM_EXT ){
@@ -121,51 +122,54 @@ void ExWhereMenu(WHEREDIALOG *pws, HWND hDlg, HWND hButtonWnd)
 
 void ButtonHelpMenu(PPC_APPINFO *cinfo, HWND hDlg, HWND hButtonWnd, UINT editID, int type)
 {
-	HMENU hMenu;
-	int id = 1;
-	RECT box;
-	POINT pos;
-	const TCHAR **menustr, ***menulists, **menulist, *usermenu;
-	TCHAR param[CMDLINESIZE];
-	ERRORCODE result = ERROR_INVALID_FUNCTION;
+	if ( IsShowButtonMenu() ){
+		HMENU hMenu;
+		int id = 1;
+		RECT box;
+		POINT pos;
+		const TCHAR **menustr, ***menulists, **menulist, *usermenu;
+		TCHAR param[CMDLINESIZE];
+		ERRORCODE result = ERROR_INVALID_FUNCTION;
 
-	GetWindowRect(hButtonWnd, &box);
-	pos.x = box.left;
-	pos.y = box.bottom;
+		GetWindowRect(hButtonWnd, &box);
+		pos.x = box.left;
+		pos.y = box.bottom;
 
-	if ( type != 0 ){
-		usermenu = T("%M_mask");
-		menulists = InsertMacroMenuMask;
-	}else{
-		usermenu = T("%M_wsrc");
-		menulists = InsertMacroMenuSource;
-	}
-	if ( IsExistCustData(usermenu + 1) ){
-		result = PP_ExtractMacro(hDlg, &cinfo->info, &pos, usermenu, param, 0);
-		if ( result == ERROR_CANCELLED ) return;
-	}
-	if ( result != NO_ERROR ){
-		param[0] = '\0';
-		menulist = menulists[(LOWORD(GetUserDefaultLCID()) == LCID_JAPANESE) ? 1 : 0];
-
-		hMenu = CreatePopupMenu();
-		for ( menustr = menulist ; *menustr != NULL ; menustr++ ){
-			AppendMenuString(hMenu, id++, *menustr);
-		}
-		id = TrackPopupMenu(hMenu, TPM_TDEFAULT, box.left, box.bottom, 0, hDlg,NULL);
-		DestroyMenu(hMenu);
-		if ( id ){
-			TCHAR *p;
-			tstrcpy(param, menulist[id - 1]);
-			p = tstrchr(param, '\t');
-			if ( p != NULL ) *p = '\0';
-		}
-	}
-	if ( param[0] != '\0' ){
-		if ( type >= 0 ){
-			SendDlgItemMessage(hDlg, editID, EM_REPLACESEL, 0, (LPARAM)param);
+		if ( type != 0 ){
+			usermenu = T("%M_mask");
+			menulists = InsertMacroMenuMask;
 		}else{
-			SetDlgItemText(hDlg, editID, param);
+			usermenu = T("%M_wsrc");
+			menulists = InsertMacroMenuSource;
+		}
+		if ( IsExistCustData(usermenu + 1) ){
+			result = PP_ExtractMacro(hDlg, &cinfo->info, &pos, usermenu, param, 0);
+			if ( result == ERROR_CANCELLED ) return;
+		}
+		if ( result != NO_ERROR ){
+			param[0] = '\0';
+			menulist = menulists[(LOWORD(GetUserDefaultLCID()) == LCID_JAPANESE) ? 1 : 0];
+
+			hMenu = CreatePopupMenu();
+			for ( menustr = menulist ; *menustr != NULL ; menustr++ ){
+				AppendMenuString(hMenu, id++, *menustr);
+			}
+			id = TrackPopupMenu(hMenu, TPM_TDEFAULT, box.left, box.bottom, 0, hDlg, NULL);
+			DestroyMenu(hMenu);
+			EndButtonMenu();
+			if ( id ){
+				TCHAR *p;
+				tstrcpy(param, menulist[id - 1]);
+				p = tstrchr(param, '\t');
+				if ( p != NULL ) *p = '\0';
+			}
+		}
+		if ( param[0] != '\0' ){
+			if ( type >= 0 ){
+				SendDlgItemMessage(hDlg, editID, EM_REPLACESEL, 0, (LPARAM)param);
+			}else{
+				SetDlgItemText(hDlg, editID, param);
+			}
 		}
 	}
 	SetFocus(GetDlgItem(hDlg, editID));
@@ -192,7 +196,7 @@ BOOL ColumnMatch(WHEREDIALOG *pws, const TCHAR *name, WIN32_FIND_DATA *ff, WHERE
 	TIPMATCHSTRUCT tms;
 
 	tms.keyword = str;
-	ExtGetData(&pws->thEcdata, pws->indexEc,name, ff->dwFileAttributes, (GETINFOTIPCALLBACK)TipMatchCallback, (void *)&tms);
+	ExtGetData(&pws->thEcdata, pws->indexEc, name, ff->dwFileAttributes, (GETINFOTIPCALLBACK)TipMatchCallback, (void *)&tms);
 	return tms.result;
 }
 
@@ -201,7 +205,7 @@ BOOL FileMatch(const TCHAR *name, WHERESTRING *sm)
 	TCHAR *image, *text;
 	BOOL result;
 
-	if ( NOERROR != LoadTextImage(name, &image, &text,NULL) ){
+	if ( NOERROR != LoadTextImage(name, &image, &text, NULL) ){
 		return FALSE;
 	}
 	result = CheckStringMatch(text, sm);
@@ -248,13 +252,13 @@ ERRORCODE wjobinfo(WHEREDIALOG *pws, TCHAR *dir)
 	if ( --pws->pausecount ) return NO_ERROR;
 	pws->pausecount = PAUSECOUNT;
 
-	while ( PeekMessage(&msg,NULL, 0, 0, PM_REMOVE) ){
+	while ( PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) ){
 		if ( msg.message == WM_QUIT ) break;
 		if ( X_MultiThread || (msg.hwnd == pws->hWnd) ){
 			if ( (msg.message == WM_RBUTTONUP) ||
 				 ((msg.message == WM_KEYDOWN) &&
 				 (((int)msg.wParam == VK_ESCAPE)||((int)msg.wParam == VK_PAUSE)))){
-				if ( PMessageBox(pws->hWnd,NULL, dir, MB_QYES) == IDOK ){
+				if ( PMessageBox(pws->hWnd, NULL, dir, MB_QYES) == IDOK ){
 					return ERROR_CANCELLED;
 				}
 			}
@@ -350,7 +354,7 @@ void GetMaskTextFromEdit(HWND hDlg, UINT control, TCHAR *text, DWORD wordmatch)
 		memmove((BYTE *)(text) + SIZEOFTSTR(StrWordMatchWildCard), text, TSTRSIZE(text));
 		memcpy(text, StrWordMatchWildCard, SIZEOFTSTR(StrWordMatchWildCard));
 	}
-	WriteHistory(PPXH_MASK, text, 0,NULL);
+	WriteHistory(PPXH_MASK, text, 0, NULL);
 }
 
 void OkWhereDialog(HWND hDlg, WHEREDIALOG *PWS)
@@ -362,12 +366,12 @@ void OkWhereDialog(HWND hDlg, WHEREDIALOG *PWS)
 	SetCustData(StrXC_rmsk, &option, sizeof(option));
 
 	GetDlgItemText(hDlg, IDC_WHERE_SRC, PWS->src, TSIZEOF(PWS->src));
-	WriteHistory(PPXH_DIR, PWS->src, 0,NULL);
+	WriteHistory(PPXH_DIR, PWS->src, 0, NULL);
 
 	GetMaskTextFromEdit(hDlg, IDC_WHERE_F1, PWS->file1, option.wordmatch);
 	GetMaskTextFromEdit(hDlg, IDC_WHERE_F2, PWS->file2, option.wordmatch);
 	GetDlgItemText(hDlg, IDC_WHERE_STR, PWS->str.string, TSIZEOF(PWS->str.string));
-	WriteHistory(PPXH_SEARCH, PWS->str.string, 0,NULL);
+	WriteHistory(PPXH_SEARCH, PWS->str.string, 0, NULL);
 
 	PWS->marks = IsDlgButtonChecked(hDlg, IDX_WHERE_MARK);
 	PWS->dir = IsDlgButtonChecked(hDlg, IDX_WHERE_DIR);
@@ -455,7 +459,7 @@ void WriteFF(HANDLE hFile, WIN32_FIND_DATA *ff, const TCHAR *name)
 	dest = buf;
 	*dest++ = T('\"');
 	len = TSTRLENGTH32(name);
-	memcpy(dest,name, len);
+	memcpy(dest, name, len);
 	dest += len / sizeof(TCHAR);
 
 	dest += wsprintf(dest, ListFileFormatStr,
@@ -470,27 +474,27 @@ void WriteFF(HANDLE hFile, WIN32_FIND_DATA *ff, const TCHAR *name)
 
 	*dest ++ = '\r';
 	*dest ++ = '\n';
-	WriteFile(hFile, buf, TSTROFF32(dest - buf), &tmp,NULL);
+	WriteFile(hFile, buf, TSTROFF32(dest - buf), &tmp, NULL);
 }
 
 void CheckText(WHEREDIALOG *Pws, HANDLE hFile, const TCHAR *name, WIN32_FIND_DATA *ff)
 {
 	if ( Pws->exmode >= WDEXM_TIPTEXT ){
 		if ( Pws->exmode == WDEXM_COLUMNMIN ){
-			if ( IsTrue(ColumnMatch(Pws,name, ff, &Pws->str)) ){
+			if ( IsTrue(ColumnMatch(Pws, name, ff, &Pws->str)) ){
 				Pws->hitcount++;
-				WriteFF(hFile, ff,name + Pws->baselen);
+				WriteFF(hFile, ff, name + Pws->baselen);
 			}
 		}else if ( IsTrue(TipMatch(name, &Pws->str)) ){
 			Pws->hitcount++;
-			WriteFF(hFile, ff,name + Pws->baselen);
+			WriteFF(hFile, ff, name + Pws->baselen);
 		}
 	}else{
 		if ( !ff->nFileSizeHigh &&
 			 (ff->nFileSizeLow < Pws->imgsize) &&
 			 IsTrue(FileMatch(name, &Pws->str)) ){
 			Pws->hitcount++;
-			WriteFF(hFile, ff,name + Pws->baselen);
+			WriteFF(hFile, ff, name + Pws->baselen);
 		}
 	}
 }
@@ -526,7 +530,7 @@ ERRORCODE WhereIsDirComment(TCHAR *dir, WHEREDIALOG *pws, HANDLE hFile)
 					if ( hFF != INVALID_HANDLE_VALUE ){
 						FindClose(hFF);
 						pws->hitcount++;
-						WriteFF(hFile, &ff,name + pws->baselen);
+						WriteFF(hFile, &ff, name + pws->baselen);
 					}
 				}
 			}
@@ -548,7 +552,7 @@ ERRORCODE WhereIsDirComment(TCHAR *dir, WHEREDIALOG *pws, HANDLE hFile)
 				goto end;
 			}
 		}
-		if ( (result = wjobinfo(pws,name)) != NO_ERROR ){
+		if ( (result = wjobinfo(pws, name)) != NO_ERROR ){
 			goto end;
 		}
 	}while( IsTrue(FindNextFile(hFF, &ff)) );
@@ -583,7 +587,7 @@ ERRORCODE WhereIsDir(const TCHAR *dir, WHEREDIALOG *pws, HANDLE hFile)
 			if (pws->dir || !(ff.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)){
 				if ( !(ff.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) &&
 						pws->str.string[0] ){
-					CheckText(pws, hFile,name, &ff);
+					CheckText(pws, hFile, name, &ff);
 				}else{
 					pws->hitcount++;
 
@@ -592,7 +596,7 @@ ERRORCODE WhereIsDir(const TCHAR *dir, WHEREDIALOG *pws, HANDLE hFile)
 						if ( *p == '\\' ) p++;
 						WriteFF(hFile, &ff, p);
 					}else{
-						WriteFF(hFile, &ff,name + pws->baselen);
+						WriteFF(hFile, &ff, name + pws->baselen);
 					}
 				}
 			}
@@ -603,7 +607,7 @@ ERRORCODE WhereIsDir(const TCHAR *dir, WHEREDIALOG *pws, HANDLE hFile)
 				goto end;
 			}
 		}
-		if ( (result = wjobinfo(pws,name)) != NO_ERROR ){
+		if ( (result = wjobinfo(pws, name)) != NO_ERROR ){
 			goto end;
 		}
 	}while( IsTrue(FindNextFile(hFF, &ff)) );
@@ -637,10 +641,10 @@ ERRORCODE WhereIsDirEx(TCHAR *dir, WHEREDIALOG *pws, HANDLE hFile)
 			if (pws->dir || !(ff.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)){
 				if ( !(ff.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) &&
 														pws->str.string[0] ){
-					CheckText(pws, hFile,name, &ff);
+					CheckText(pws, hFile, name, &ff);
 				}else{
 					pws->hitcount++;
-					WriteFF(hFile, &ff,name + pws->baselen);
+					WriteFF(hFile, &ff, name + pws->baselen);
 				}
 			}
 		}
@@ -657,7 +661,7 @@ ERRORCODE WhereIsDirEx(TCHAR *dir, WHEREDIALOG *pws, HANDLE hFile)
 				goto end;
 			}
 		}
-		if ( (result = wjobinfo(pws,name)) != NO_ERROR ){
+		if ( (result = wjobinfo(pws, name)) != NO_ERROR ){
 			goto end;
 		}
 	}while( IsTrue(VFSFindNext(hFF, &ff)) );
@@ -675,7 +679,7 @@ DWORD_PTR USECDECL SearchReportModuleFunction(WHEREISAPPINFO *winfo, DWORD cmdID
 
 	if ( cmdID == PPXCMDID_REPORTSEARCH_FDATA ){
 		name = ((WIN32_FIND_DATA *)uptr)->cFileName;
-		WriteFF(winfo->hFile, (WIN32_FIND_DATA *)uptr,name);
+		WriteFF(winfo->hFile, (WIN32_FIND_DATA *)uptr, name);
 	}else if ( (cmdID == PPXCMDID_REPORTSEARCH) ||
 		 (cmdID == PPXCMDID_REPORTSEARCH_FILE) ||
 		 (cmdID == PPXCMDID_REPORTSEARCH_DIRECTORY) ){
@@ -686,13 +690,13 @@ DWORD_PTR USECDECL SearchReportModuleFunction(WHEREISAPPINFO *winfo, DWORD cmdID
 				(cmdID == PPXCMDID_REPORTSEARCH_DIRECTORY) ?
 					FILE_ATTRIBUTE_DIRECTORY : 0);
 		}
-		WriteFile(winfo->hFile, buf, TSTROFF(len), &tmp,NULL);
+		WriteFile(winfo->hFile, buf, TSTROFF(len), &tmp, NULL);
 		name = uptr->str;
 	}else{
 		return winfo->cinfo->info.Function((PPXAPPINFO *)winfo->cinfo, cmdID, uptr);
 	}
 	winfo->pws->hitcount++;
-	return (wjobinfo(winfo->pws,name) == NO_ERROR) ? 1 : 2;
+	return (wjobinfo(winfo->pws, name) == NO_ERROR) ? 1 : 2;
 }
 
 const TCHAR * USEFASTCALL GetSWstr(BOOL state)
@@ -712,7 +716,7 @@ ERRORCODE WhereIsMain(PPC_APPINFO *cinfo, WHEREDIALOG *Pws)
 	Pws->hitcount = 0;
 	Pws->hWnd = cinfo->info.hWnd;
 	Pws->OldTime = GetTickCount();
-	Pws->imgsize = GetCustXDword(T("X_wsiz"),NULL, IMAGESIZELIMIT);
+	Pws->imgsize = GetCustXDword(T("X_wsiz"), NULL, IMAGESIZELIMIT);
 	Pws->cinfo = cinfo;
 	Pws->baselen = 0;
 
@@ -725,15 +729,15 @@ ERRORCODE WhereIsMain(PPC_APPINFO *cinfo, WHEREDIALOG *Pws)
 		MakeTempEntry(TSIZEOF(templistfile), templistfile, FILE_ATTRIBUTE_NORMAL);
 	}
 	hFile = CreateFileL(templistfile, GENERIC_WRITE, 0,
-			NULL, CREATE_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+			NULL, CREATE_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if ( hFile == INVALID_HANDLE_VALUE ) return GetLastError();
-	WriteFile(hFile, ListFileHeaderStr, ListFileHeaderStrLen, &tmp,NULL);
+	WriteFile(hFile, ListFileHeaderStr, ListFileHeaderStrLen, &tmp, NULL);
 
 	VFSFixPath(temp, Pws->src, cinfo->path, fixflags);
 	if ( GetFileAttributesL(temp) != BADATTR ){
-		WriteFile(hFile, BHEADER, SIZEOFTSTR(BHEADER), &tmp,NULL);
-		WriteFile(hFile, temp, TSTRLENGTH32(temp), &tmp,NULL);
-		WriteFile(hFile, BTHEADER, SIZEOFTSTR(BTHEADER), &tmp,NULL);
+		WriteFile(hFile, BHEADER, SIZEOFTSTR(BHEADER), &tmp, NULL);
+		WriteFile(hFile, temp, TSTRLENGTH32(temp), &tmp, NULL);
+		WriteFile(hFile, BTHEADER, SIZEOFTSTR(BTHEADER), &tmp, NULL);
 	}
 
 	tmp = wsprintf(temp, T(";Search=-type:%d -marked:%s -dir:%s -subdir:%s -vfs:%s -path:\"%s\" -mask:\"%s\" -mask2:\"%s\" -text:\"%s\"\r\n"),
@@ -742,11 +746,11 @@ ERRORCODE WhereIsMain(PPC_APPINFO *cinfo, WHEREDIALOG *Pws)
 		GetSWstr(Pws->sdir), GetSWstr(Pws->vfs),
 		Pws->src, Pws->file1, Pws->file2, Pws->str.string
 	);
-	WriteFile(hFile, temp, TSTROFF(tmp), &tmp,NULL);
+	WriteFile(hFile, temp, TSTROFF(tmp), &tmp, NULL);
 
 	if ( Pws->exmode == WDEXM_MODULE ){
 		PPXMSEARCHSTRUCT msearch;
-		WHEREISAPPINFO winfo = {{(PPXAPPINFOFUNCTION)SearchReportModuleFunction, T("Where is"),NilStr,NULL},NULL,NULL,NULL};
+		WHEREISAPPINFO winfo = {{(PPXAPPINFOFUNCTION)SearchReportModuleFunction, T("Where is"), NilStr, NULL}, NULL, NULL, NULL};
 		PPXMODULEPARAM pmp;
 
 		#ifndef UNICODE
@@ -765,7 +769,7 @@ ERRORCODE WhereIsMain(PPC_APPINFO *cinfo, WHEREDIALOG *Pws)
 		winfo.pws = Pws;
 		pmp.search = &msearch;
 		cinfo->Ref++;
-		CallModule(&winfo.info, PPXMEVENT_SEARCH, pmp,NULL);
+		CallModule(&winfo.info, PPXMEVENT_SEARCH, pmp, NULL);
 		if ( --cinfo->Ref <= 0 ){
 			RequestDestroyFlag = 1;
 			PostThreadMessage(GetCurrentThreadId(), WM_NULL, 0, 0);
@@ -844,11 +848,11 @@ ERRORCODE WhereIsMain(PPC_APPINFO *cinfo, WHEREDIALOG *Pws)
 	StopPopMsg(cinfo, PMF_DISPLAYMASK);
 
 	if ( Pws->thEcdata.bottom != NULL ){
-		GetColumnExtMenu(&Pws->thEcdata,NULL,NULL, 0); // thEcdata ‰ð•ú
+		GetColumnExtMenu(&Pws->thEcdata, NULL, NULL, 0); // thEcdata ‰ð•ú
 	}
 	if ( Pws->exmode == WDEXM_COLUMNMIN ) Pws->exmode = WDEXM_UNKNOWN;
 	if ( IsTrue(Pws->readlistfile) ){
-		PPcChangeDirectory(cinfo, templistfile,RENTRY_READ);
+		PPcChangeDirectory(cinfo, templistfile, RENTRY_READ);
 		if ( cinfo->e.Dtype.BasePath[0] != '\0' ){
 			tstrcpy(cinfo->OrgPath, cinfo->e.Dtype.BasePath);
 		}

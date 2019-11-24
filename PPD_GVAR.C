@@ -17,6 +17,7 @@
 GVAR int X_pmc[4] GPARAM({X_pmc_defvalue});
 
 GVAR int TouchMode GPARAM(0);
+GVAR DWORD ButtonMenuTick GPARAM(0); // ボタンメニューの誤表示抑制用
 
 GVAR const TCHAR NilStr[1] GPARAM(T(""));
 GVAR TCHAR NilStrNC[1] GPARAM(T(""));
@@ -258,6 +259,27 @@ GVAR ValueWinAPI(OpenThread) GPARAM(INVALID_VALUE(impOpenThread));
 GVAR ValueWinAPI(AddVectoredExceptionHandler) GPARAM(NULL);
 GVAR ValueWinAPI(RemoveVectoredExceptionHandler) GPARAM(NULL);
 #endif
+//---------------------------------------------------------------------
+// 窓
+GVAR COLORREF C_3dHighlight GPARAM(C_AUTO); // COLOR_BTNHIGHLIGHT
+GVAR COLORREF C_3dFace GPARAM(C_AUTO); // COLOR_BTNFACE
+GVAR COLORREF C_3dShadow GPARAM(C_AUTO); // COLOR_BTNSHADOW
+// 文字
+GVAR COLORREF C_WindowText GPARAM(C_AUTO); // COLOR_WINDOWTEXT
+GVAR COLORREF C_HighlightText GPARAM(C_AUTO); // COLOR_HIGHLIGHTTEXT
+// 背景
+GVAR COLORREF C_WindowBack GPARAM(C_AUTO); // COLOR_WINDOW
+GVAR COLORREF C_HighlightBack GPARAM(C_AUTO); // COLOR_HIGHLIGHT
+GVAR COLORREF C_GrayState GPARAM(C_AUTO); // COLOR_GRAYTEXT 非アクティブ時の文字・背景
+
+GVAR HBRUSH h3dHighlight GPARAM(NULL); // 左・上
+GVAR HBRUSH h3dFace GPARAM(NULL); // 中央
+GVAR HBRUSH h3dShadow GPARAM(NULL); // 右
+GVAR HBRUSH hHighlightBack GPARAM(NULL);
+GVAR HBRUSH hGrayBack GPARAM(NULL);
+
+GVAR HBRUSH hWndBackBrush GPARAM(NULL);
+
 //--------------------------------------------------------------------- COM定義
 // RegExp
 extern IID XCLSID_RegExp;

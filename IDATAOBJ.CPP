@@ -25,6 +25,13 @@ CImpIDataObject::~CImpIDataObject()
 {
 	if(m_cRefCount != 0) xmessage(XM_FaERRd, T("~CImpIDataObject"));
 }
+//------------------------------------- 初期化
+void CImpIDataObject::Init(PPC_APPINFO *cinfo)
+{
+	m_cinfo = cinfo;
+										// アーカイブモードの判定
+	m_arcmode = PPcUnpackForAction(cinfo, m_arctemp, UFA_PATH);
+}
 
 //------------------------------------- 定型部分 ------------------------------
 STDMETHODIMP CImpIDataObject::QueryInterface(REFIID refiid, void ** ppv)

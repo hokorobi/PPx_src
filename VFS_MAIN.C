@@ -188,7 +188,7 @@ VFSDLL int PPXAPI VFSGetDibDelay(const TCHAR *filename, void *image, DWORD sizeL
 		if ( SpiName != NULL ){
 			#ifdef UNICODE
 				*(strstr(TempFnameA, "::")) = '\0';
-				wcscpy(TempFnameW, filename);
+				strcpyW(TempFnameW, filename);
 				TempFnameW[SpiName - filename] = '\0';
 				filename = TempFnameW;
 			#else

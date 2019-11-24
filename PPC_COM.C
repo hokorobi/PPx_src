@@ -103,10 +103,10 @@ case K_c | 'E':
 	break;
 //----------------------------------------------- Find
 case 'F':
-	return MaskEntry(cinfo, DSMD_TEMP, NULL, NULL);
+	return MaskEntry(cinfo, X_dsst[1], NULL, NULL);
 //----------------------------------------------- wildcard
 case K_s | 'F':
-	return MaskEntry(cinfo, DSMD_REGID, NULL, NULL);
+	return MaskEntry(cinfo, DSMD_NOMODE, NULL, NULL);
 //----------------------------------------------- File find
 case K_c | 'F':
 case K_F3:
@@ -156,7 +156,7 @@ case K_c | 'G':
 	return LogBarDisk(cinfo);
 //----------------------------------------------- Logdrive
 case K_s | 'L':
-	return PPC_DriveJump(cinfo);
+	return PPC_DriveJump(cinfo, FALSE);
 //----------------------------------------------- Redraw
 #ifdef USEDIRECTX
 case K_v | VK_SCROLL:
@@ -541,9 +541,8 @@ case K_Lcust: // ※ WM_PPXCOMMAND は、WmPPxCommand で処理する
 //----------------------------------------------- About
 case K_about:
 	SetPopMsg(cinfo, POPMSG_MSG, T(" Paper Plane cUI Version ")
-			T(FileProp_Version) T("(") T(__DATE__) T(",")
-			T(DRAWSTRING) T(BITSTRING) T(",")
-			T(CODETYPESTRING) T(") (c)TORO "));
+			T(FileProp_Version)
+			T("(") T(__DATE__) T(",") RUNENVSTRINGS T(") (c)TORO "));
 	break;
 //----------------------------------------------- cinfo->swin の更新通信
 case KC_Join:

@@ -60,9 +60,9 @@ TCHAR StrLinkJump[] = T("link");
 #if 0
 UINT cfUntrustedDragDrop;
 const IID IID_IInternetSecurityManager =
-{0x79eac9ee,0xbaf9,0x11ce,{0x8c,0x82,0x00,0xaa,0x00,0x4b,0xa9,0x0b}};
+{0x79eac9ee, 0xbaf9, 0x11ce,{0x8c, 0x82, 0x00, 0xaa, 0x00, 0x4b, 0xa9, 0x0b}};
 const CLSID CLSID_InternetSecurityManager =
-{0x7b8a2d94,0x0ac9,0x11d1,{0x89,0x6c,0x00,0xc0,0x4f,0xb6,0xbf,0xc4}};
+{0x7b8a2d94, 0x0ac9, 0x11d1,{0x89, 0x6c, 0x00, 0xc0, 0x4f, 0xb6, 0xbf, 0xc4}};
 typedef void IInternetSecurityMgrSite;
 class IInternetSecurityManager : public IUnknown
 {
@@ -1223,9 +1223,9 @@ BOOL CDropTarget::DropDDFormat(LPDATAOBJECT pDataObj, POINTL *pt, DWORD pdwEffec
 
 				while ( *sDrop ){
 					TCHAR *space;
-					DWORD len;
+					size_t len;
 
-					len = tstrlen32(sDrop);
+					len = tstrlen(sDrop);
 					if ( (p + len + 4) > (buf + TSIZEOF(buf)) ){
 						XMessage(mCinfo->info.hWnd, NULL, XM_GrERRld, T("parameter too many"));
 						break;

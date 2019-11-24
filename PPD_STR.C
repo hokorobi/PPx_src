@@ -27,10 +27,10 @@ const WCHAR ZHtbl[] = L"。「」、・ヲァィゥェォャュョッーアイウエオカキクケコサシ
 #endif
 
 // 1bytes 文字 → 2bytes 文字変換 ---------------------------------------------
-PPXDLL TCHAR * PPXAPI Strsd(TCHAR *dststr,const TCHAR *srcstr)
+PPXDLL TCHAR * PPXAPI Strsd(TCHAR *dststr, const TCHAR *srcstr)
 {
 	const UTCHAR *src;
-	UTCHAR *dst,code;
+	UTCHAR *dst, code;
 
 	src = (const UTCHAR *)srcstr;
 	dst = (UTCHAR *)dststr;
@@ -111,7 +111,7 @@ PPXDLL TCHAR * PPXAPI Strsd(TCHAR *dststr,const TCHAR *srcstr)
 }
 
 // 2bytes 文字 → 1bytes 文字変換 ---------------------------------------------
-PPXDLL TCHAR * PPXAPI Strds(TCHAR *dststr,const TCHAR *srcstr)
+PPXDLL TCHAR * PPXAPI Strds(TCHAR *dststr, const TCHAR *srcstr)
 {
 	const UTCHAR *src;
 	UTCHAR *dst;
@@ -150,7 +150,7 @@ PPXDLL TCHAR * PPXAPI Strds(TCHAR *dststr,const TCHAR *srcstr)
 		}
 
 		if ( (*src >= L'゛') && (*src <= L'ヴ') ){
-			WCHAR c,off;
+			WCHAR c, off;
 			const WCHAR *p;
 
 			if ( *src == L'ヴ' ){
@@ -182,7 +182,7 @@ PPXDLL TCHAR * PPXAPI Strds(TCHAR *dststr,const TCHAR *srcstr)
 		}
 		#else
 		const BYTE *p;
-		BYTE c1,c2;
+		BYTE c1, c2;
 
 		if ( IskanjiA(*src) ){
 			if ( (*src >= 0x81) && (*src <= 0x83) ){
@@ -231,7 +231,7 @@ next:
 // 漢字対応小文字化 -----------------------------------------------------------
 PPXDLL TCHAR * PPXAPI Strlwr(TCHAR *str)
 {
-	TCHAR *ptr,type;
+	TCHAR *ptr, type;
 
 	for ( ptr = str ; *ptr ; ptr++){
 	#ifdef UNICODE
@@ -266,7 +266,7 @@ PPXDLL TCHAR * PPXAPI Strlwr(TCHAR *str)
 // 漢字対応大文字化 -----------------------------------------------------------
 PPXDLL TCHAR * PPXAPI Strupr(TCHAR *str)
 {
-	TCHAR *ptr,type;
+	TCHAR *ptr, type;
 
 	for ( ptr = str ; *ptr ; ptr++){
 	#ifdef UNICODE
@@ -302,7 +302,7 @@ PPXDLL TCHAR * PPXAPI Strupr(TCHAR *str)
 /*-----------------------------
 １文字前の全角／半角の判断(UNICODE版はサロゲートを無視して、マクロで 1 を返す)
 -----------------------------*/
-int bchrlen(char *str,int off)
+int bchrlen(char *str, int off)
 {
 	int size = 0;
 	char *max_str;
@@ -353,9 +353,9 @@ TCHAR *SkipSpaceAndFix(TCHAR *p)
 	return p;
 }
 
-TCHAR *tstristr(const TCHAR *target,const TCHAR *findstr)
+TCHAR *tstristr(const TCHAR *target, const TCHAR *findstr)
 {
-	size_t len,flen;
+	size_t len, flen;
 	const TCHAR *p, *maxptr;
 
 	flen = tstrlen(findstr);
@@ -367,7 +367,7 @@ TCHAR *tstristr(const TCHAR *target,const TCHAR *findstr)
 #else
 	for ( p = target ; p <= maxptr ; p += Chrlen(*p) ){
 #endif
-		if ( !tstrnicmp(p,findstr,flen) ){
+		if ( !tstrnicmp(p, findstr, flen) ){
 			return (TCHAR *)p;
 		}
 	}
@@ -375,7 +375,7 @@ TCHAR *tstristr(const TCHAR *target,const TCHAR *findstr)
 }
 
 #ifdef WINEGCC
-WCHAR *strchrW(const WCHAR *text,WCHAR findchar)
+WCHAR *strchrW(const WCHAR *text, WCHAR findchar)
 {
 	const WCHAR *ptr;
 
@@ -387,7 +387,7 @@ WCHAR *strchrW(const WCHAR *text,WCHAR findchar)
 	return NULL;
 }
 
-WCHAR *strrchrW(const WCHAR *text,WCHAR findchar)
+WCHAR *strrchrW(const WCHAR *text, WCHAR findchar)
 {
 	const WCHAR *ptr;
 
@@ -399,9 +399,9 @@ WCHAR *strrchrW(const WCHAR *text,WCHAR findchar)
 	return NULL;
 }
 
-WCHAR *strstrW(const WCHAR *text1,const WCHAR *text2)
+WCHAR *strstrW(const WCHAR *text1, const WCHAR *text2)
 {
-	size_t len1,len2;
+	size_t len1, len2;
 	const WCHAR *ptr;
 
 	len1 = strlenW(text1);
@@ -410,7 +410,7 @@ WCHAR *strstrW(const WCHAR *text1,const WCHAR *text2)
 	len1 -= (len2 - 1);
 	ptr = text1;
 	while ( len1 ){
-		if ( memcmp(ptr,text2,len2 * sizeof(WCHAR)) == 0 ) return (WCHAR *)ptr;
+		if ( memcmp(ptr, text2, len2 * sizeof(WCHAR)) == 0 ) return (WCHAR *)ptr;
 		ptr++;
 		len1--;
 	}
@@ -418,65 +418,59 @@ WCHAR *strstrW(const WCHAR *text1,const WCHAR *text2)
 }
 #endif
 
-char *strlimcpy(char *deststr,const char *srcstr,size_t maxlength)
+char *strlimcpy(char *deststr, const char *srcstr, size_t maxlength)
 {
-	size_t len;
+	char code;
+	const char *srcmax;
 
-	len = strlen(srcstr);
-	if ( len >= maxlength ){
-		char *last;
-
-		memcpy(deststr,srcstr,maxlength - 1);
-		last = deststr + (maxlength - 1);
-		*last = '\0';
-		return last;
-	}else{
-		memcpy(deststr,srcstr,len + 1);
-		return deststr + len;
+	srcmax = srcstr + maxlength - 1;
+	while( srcstr < srcmax ){
+		code = *srcstr++;
+		if ( code == '\0' ) break;
+		*deststr++ = code;
 	}
+	*deststr = '\0';
+	return deststr;
 }
 #ifdef UNICODE
-WCHAR *wcslimcpy(WCHAR *deststr,const WCHAR *srcstr,size_t maxlength)
+WCHAR *wcslimcpy(WCHAR *deststr, const WCHAR *srcstr, size_t maxlength)
 {
-	size_t len;
+	WCHAR code;
+	const WCHAR *srcmax;
 
-	len = strlenW(srcstr);
-	if ( len >= maxlength ){
-		WCHAR *last;
-
-		memcpy(deststr,srcstr,(maxlength - 1) * sizeof(WCHAR));
-		last = deststr + (maxlength - 1);
-		*last = '\0';
-		return last;
-	}else{
-		memcpy(deststr,srcstr,(len + 1) * sizeof(WCHAR));
-		return deststr + len;
+	srcmax = srcstr + maxlength - 1;
+	while( srcstr < srcmax ){
+		code = *srcstr++;
+		if ( code == '\0' ) break;
+		*deststr++ = code;
 	}
+	*deststr = '\0';
+	return deststr;
 }
 #endif
 
-void tstrreplace(TCHAR *text,const TCHAR *targetword,const TCHAR *replaceword)
+void tstrreplace(TCHAR *text, const TCHAR *targetword, const TCHAR *replaceword)
 {
 	TCHAR *p;
 
-	while ( (p = tstrstr(text,targetword)) != NULL ){
+	while ( (p = tstrstr(text, targetword)) != NULL ){
 		int tlen = tstrlen32(targetword);
 		int rlen = tstrlen32(replaceword);
 
-		if ( tlen != rlen ) memmove(p + rlen,p + tlen,TSTRSIZE(p + tlen));
-		memcpy(p,replaceword,TSTROFF(rlen));
+		if ( tlen != rlen ) memmove(p + rlen, p + tlen, TSTRSIZE(p + tlen));
+		memcpy(p, replaceword, TSTROFF(rlen));
 		text = p + rlen;
 	}
 }
 
-const TCHAR *EscapeMacrochar(const TCHAR *string,TCHAR *buf)
+const TCHAR *EscapeMacrochar(const TCHAR *string, TCHAR *buf)
 {
 	const TCHAR *src;
 
-	src = tstrchr(string,'%');
+	src = tstrchr(string, '%');
 	if ( src == NULL ) return string;
-	tstrcpy(buf,string);
-	tstrreplace(buf,T("%"),T("%%"));
+	tstrcpy(buf, string);
+	tstrreplace(buf, T("%"), T("%%"));
 	return buf;
 }
 

@@ -45,7 +45,9 @@ Function の cmdID 割当て：記載がない限り、戻り値が 0 なら未実装
 	置き換え	'0'→DLLのpath	'1'→カレントディレクトリ
 				'F', 'X', 'T', 'R', 'Y', 't', 'L' → '1'と'C'から生成
 */
-#define PPxInfoFunc(info, func, uptr) (info)->Function(info, func, uptr)
+#define PPxInfoFunc(info, func, uptr) (info)->Function(info, func, (void *)uptr)
+#define PPxInfoFunc32i(info, func, uptr) (int)(info)->Function(info, func, (void *)uptr)
+#define PPxInfoFunc32u(info, func, uptr) (DWORD)(info)->Function(info, func, (void *)uptr)
 #define PPxEnumInfoFunc(info, func, str, work) ((work)->buffer = str, PPxInfoFunc(info, func, work))
 
 /* 0x0000～PPXCMDID_FILL:	PPXCMDENUMSTRUCT を使用したやりとり用。
@@ -331,6 +333,7 @@ typedef union {
 	WORD key;
 	DWORD num;
 	DWORD nums[1];
+	int inums[1];
 	DWORD_PTR dptrs[1];
 	FILETIME ftime;
 	COLORREF color;
@@ -343,6 +346,7 @@ typedef union {
 	WORD key;
 	DWORD num;
 	DWORD nums[1];
+	int inums[1];
 	DWORD_PTR dptrs[1];
 	FILETIME ftime;
 	COLORREF color;
@@ -708,6 +712,7 @@ extern PPXDLL HWND PPXAPI PPxRegistExEdit(PPXAPPINFO *info, HWND hED, int maxlen
 #define CMDSEARCH_FLOAT		B12	// 部分一致検索
 #define CMDSEARCH_NOUNC		B13	// UNCは検索しない
 #define CMDSEARCH_ROMA		B14	// ローマ字検索(要 romahandle = 0 に初期化)
+#define CMDSEARCH_WILDCARD	B15	// 検索(要 romahandle = 0 に初期化)
 // B16 以降は内部で使用する
 
 typedef struct {	// 編集処理共通構造体
@@ -1197,7 +1202,7 @@ extern PPXDLL HWND PPXAPI GetPPxhWndFromID(PPXAPPINFO *ppxa, const TCHAR **src, 
 #define PPXREGIST_SEARCH_LIVEID	-100 // Reuse に使えるIDを探す
 #define PPXREGIST_SEARCH_LIVEID_MAX -10
 
-#define PPXREGIST_DUMMYHWND	(HWND)-2	// hWnd が未確定のときに使用する
+#define PPXREGIST_DUMMYHWND ((HWND)(LONG_PTR)-2) // hWnd が未確定のときに使用する
 extern PPXDLL int PPXAPI PPxRegist(HWND hWnd, TCHAR *ID, int mode);
 extern PPXDLL void PPXAPI PPxPostMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern PPXDLL void PPXAPI PPxSendMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -1312,6 +1317,9 @@ extern PPXDLL void PPXAPI LoadToolBarBitmap(HWND hWnd, const TCHAR *bmpname, TBA
 extern PPXDLL BOOL PPXAPI SetToolBarTipText(HWND hToolbarWnd, ThSTRUCT *thCmd, NMHDR *nmh);
 extern PPXDLL TCHAR * PPXAPI GetToolBarCmd(HWND hToolbarWnd, ThSTRUCT *thCmd, UINT ID);
 #define CloseToolBar(hWnd) DestroyWindow(hWnd)
+
+// DrawEdge 相当
+extern PPXDLL void PPXAPI DrawSeparateLine(HDC hDC, const RECT *box, UINT flags);
 
 //========================================================= 各種PPxのための処理
 extern PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd, LPARAM lParam, WORD key);

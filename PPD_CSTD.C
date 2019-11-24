@@ -350,6 +350,7 @@ T(";\t   | ||||+--B2:1=あらかじめ２枚起動")TNL
 T(";\t   | |||||+-B1:1=反対窓の高さ／幅を現在窓の大きさに")TNL
 T(";\t   |++|||||+B0:窓の連結を           0=しない 1=する")},
 {T("XC_sort"),	fT | fSort,"=d1,d1,d2,B6/4,B26/4",	T("\t; 保持ソート \\[S]")},
+{T("X_dsst"),	0,"=d4,d4",	T("\t; ソート・マスク・表示の対象 1:一時 2:このパス 3:このパス以降 4:窓別")},
 {T("XC_tree"),	fT+fSort,"=D4,D4,S",	T("\t; ツリー窓の状態,幅,表示種類 \\[T]")},
 {T("XC_mask"),	fT+fSort,"=B5/2,D2,S",	T("\t; 表示する属性とファイル名 \\[F]")},
 {T("XC_rmsk"),	fNoRelo,"=D4,D4,D4",	T("\t; [F]/\\[F]でRealtimeMask,DirMask,部分一致を使用 0:しない 1:する")},
@@ -714,6 +715,7 @@ T(";==========================================================================")
 {T("F_ctrl"),fSwarn,"=d4,d4,d4,d4,d4,D1,D1,D1,D1,D1,D1,D1,D1,S32,d4",T("\t; タブ・ヘッダ等")},
 {T("F_fix"),fSwarn,"=d4,d4,d4,d4,d4,D1,D1,D1,D1,D1,D1,D1,D1,S32,d4",T("\t; PPv固定ピッチ")},
 {T("F_unfix"),fSwarn,"=d4,d4,d4,d4,d4,D1,D1,D1,D1,D1,D1,D1,D1,S32,d4",T("\t; PPvプロポーショナル")},
+{T("F_con"),fSwarn,"=d4,d4,d4,d4,d4,D1,D1,D1,D1,D1,D1,D1,D1,S32,d4",T("\t; PPb(Vista以降)")},
 // 色 -------------------------------------------------------------------------
 {NilStr,0,NULL,
 T(";==========================================================================")TNL
@@ -762,9 +764,10 @@ T("; }")},
 {NilStr,0,NULL,
 T(";\t 文字色/エスケープシーケンス(ESC[m)の色割り当て")TNL
 T("; 灰,明赤,明緑,明青,明黄,明水,明紫,明白, 黒(背景),赤,緑,青,黄,水,紫,暗白(通常)")},
-{T("CV_char"), 0,"=C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C",NOCOMMENT},
+{T("CV_char"), 0,"=C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C", NOCOMMENT},
 {NilStr,0,NULL,
-T(";** PPb 関連 --------")TNL
+T(";** PPb 関連 --------")},
+{T("CB_pals"), 0,"=C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C", T("\t; Vista以降、各色のパレット") TNL
 T("; CONSOLE系(CB_xxx)のエイリアス（これら複数を\"+\"か\"|\"で連結できる）")TNL
 T(";\t_BLA   _BLU   _RED   _MAG   _GRE    _CYA   _BRO   _WHI")TNL
 T(";\t_DBLA  _DBLU  _DRED  _DMAG  _DGRE   _DCYA  _DBRO  _DWHI")TNL
@@ -808,7 +811,7 @@ T(";・内部指定用(通常は変更する必要無し)")TNL
 T(";==========================================================================")},
 {T("_Setup"),	fT | fNoRelo,"=S",		T("\t; セットアップ情報")},
 {T("_Path"),	fT | fNoRelo,"=S",		T("\t; 起動時のディレクトリ")},
-{T("_others"),	fT | fB | fNoRelo,"=M",		T("\t; その他設定")},
+{StrCustOthers,	fT | fB | fNoRelo,"=M",		T("\t; その他設定")},
 {T("_WinPos"),	fT | fSort | fNoRelo,"=d4,d4,d4,d4,D2",
 							T("\t; ウィンドウの表示位置 XB,YB,XT,YT,Show")},
 {T("_IDpwd"),	fT | fB | fHide | fNoRelo,"=S",	T("\t; FTP,ネットワークのID,password")},
@@ -844,3 +847,4 @@ T(";--------------------------------------------------------------------------")
 // M_auxname,M_auxdir,M_drives
 // XC_inf ← ツールバーの表示
 // X_PATH (MAX_PATHの誤パース)
+// V_A (PPv IDの誤検出)

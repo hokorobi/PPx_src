@@ -2,7 +2,6 @@
 	Paper Plane vUI													Å` Init Å`
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include "PPX.H"
 #include "VFS.H"
 #include "PPVUI.RH"

@@ -2,7 +2,6 @@
 	Paper Plane xUI	customizer	その他 シート
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include <shlobj.h>
 #include "PPX.H"
 #include "VFS.H"
@@ -62,7 +61,7 @@ const struct EtcLabelsStruct EtcLabels[] = {
 	{T("その他設定\0Other configs"), T("_others"), T("(&I) 項目名=内容\0&(&I) Item name = value"), ETC_TEXT},
 	{T("ユーザコマンド\0User command"), T("_Command"), T("(&I) コマンド名=内容(%*arg(n))\0&(&I) command name = value(%*arg(n)"), ETC_TEXT},
 	{T("ユーザデータ\0User data"), T("_User"), T("(&I) 項目名=内容\0&(&I) Item name = value"), ETC_TEXT},
-	{T("書庫DLL\0Archive DLL"), T("P_arc"), T("(&I)一覧の順番で優先使用される。※削除のみ可\0&Item list"), ETC_NOPARAM},
+	{T("書庫DLL\0Archive DLL"), T("P_arc"), T("(&I)一覧の順番で優先使用される。※優先順変更と削除のみ可\0&Item list for priority and delete"), ETC_NOPARAM},
 	{T("表示パス\0Path"), T("_Path"), T("ID(&I) = パス・タブ配置\0&ID = path/layout"), ETC_TEXT},
 	{T("表示開始位置\0Window position"), T("_WinPos"), T("(&I) (座標) 大きさ _:&&[ALT]用 CJDLG:[J]用 ※削除のみ可\0&I"), ETC_WINPOS},
 	{T("確認済実行ファイル\0Checked applications"), T("_Execs"), T("(&I) 最新の先頭CRC32 ※おまけの設定が必要。削除のみ可\0&I"), ETC_EXECS},
@@ -190,7 +189,7 @@ void InitEtcTree(HWND hDlg)
 	tvins.hParent = hHisRoot;
 	for ( hl = HistLabels ; hl->name != NULL ; hl++ ){
 		tvi.pszText = (TCHAR *)GetCText(hl->name);
-		tvi.cchTextMax = tstrlen(tvi.pszText);
+		tvi.cchTextMax = tstrlen32(tvi.pszText);
 		TreeInsertItemValue(tvins) = tvi;
 		SendMessage(hEtcTreeWnd, TVM_INSERTITEM,
 				0, (LPARAM)(LPTV_INSERTSTRUCT)&tvins);
@@ -266,8 +265,8 @@ void tstrreplace(TCHAR *text, const TCHAR *targetword, const TCHAR *replaceword)
 	TCHAR *p;
 
 	while ( (p = tstrstr(text, targetword)) != NULL ){
-		int tlen = tstrlen32(targetword);
-		int rlen = tstrlen32(replaceword);
+		size_t tlen = tstrlen(targetword);
+		size_t rlen = tstrlen(replaceword);
 
 		if ( tlen != rlen ) memmove(p + rlen, p + tlen, TSTRSIZE(p + tlen));
 		memcpy(p, replaceword, TSTROFF(rlen));
@@ -285,7 +284,6 @@ void CustNameEscape(TCHAR *label)
 void EnumEtcItem(HWND hDlg)
 {
 	int count = 0;
-	int size;
 	HWND hListWnd;
 	TCHAR label[CMDLINESIZE * 2], data[CMDLINESIZE * 2];
 	const TCHAR *key;
@@ -310,19 +308,21 @@ void EnumEtcItem(HWND hDlg)
 		SendMessage(hListWnd, LB_ADDSTRING, 0, (LPARAM)data);
 	}else for ( ;; ){
 		TCHAR *dest, *src;
+		int csize;
+		size_t len;
 
-		size = EnumCustTable(count, key, label, data, sizeof(data));
-		if ( 0 > size ) break;
+		csize = EnumCustTable(count, key, label, data, sizeof(data));
+		if ( 0 > csize ) break;
 
 		if ( EtcEditFormat == ETC_CELLDISP ){		// MC_celS
 			FormatCellDispSample(data, label, 0);
 		}else{
-			if ( EtcEditFormat ) FormatEtcItem(data, size, EtcEditFormat);
+			if ( EtcEditFormat ) FormatEtcItem(data, csize, EtcEditFormat);
 		}
 		// ～ = ～ 形式に加工
-		size = tstrlen32(label);
-		dest = label + size;
-		while ( size++ < 10 ) *dest++ = ' ';
+		len = tstrlen(label);
+		dest = label + len;
+		while ( len++ < 10 ) *dest++ = ' ';
 		*dest++ = ' ';
 		*dest++ = '=';
 		*dest++ = ' ';

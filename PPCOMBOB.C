@@ -2,7 +2,6 @@
 	Paper Plane cUI			Combo Window ToolBar
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include <commctrl.h>
 #include "PPX.H"
 #include "VFS.H"

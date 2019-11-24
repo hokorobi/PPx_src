@@ -1317,34 +1317,70 @@ BOOL IsParentDirectory(const TCHAR *path)
 	return IsParentDir(path);
 }
 
+DWORD PPXAPI GetSelAttr(const TCHAR *name)
+{
+	TCHAR buf[VFPS];
+
+#ifdef UNICODE
+	tstrcpy(buf, name);
+	tstrreplace(buf, T("|"), NilStr);
+#else
+	{
+		char type, *dest;
+
+		dest = buf;
+		for ( ;; ){
+			type = *name++;
+			if ( type == '\0' ) break;
+			if ( type == '|' ) continue;
+			*dest++ = type;
+			if ( Iskanji(type) ) *dest++ = *name++;
+		}
+		*dest = '\0';
+	}
+#endif
+	return GetFileAttributesL(buf);
+}
+
 VFSDLL BOOL PPXAPI GetUniqueEntryName(TCHAR *src)
 {
 	TCHAR name[VFPS], ext[VFPS];
 	int addnum = 0;
 	int mulnum = 1;
 	int maxtry = 10000;	// 最大試行数
-	TCHAR *p;
+	TCHAR *ptr;
+	DWORD (PPXAPI * GetAttr)(const TCHAR *name);
 
-	if ( GetFileAttributesL(src) == BADATTR ) return TRUE;
+	GetAttr = (SearchPipe(src) == NULL) ? GetFileAttributesL : GetSelAttr;
+	if ( GetAttr(src) == BADATTR ) return TRUE;
 	if ( tstrlen(src) >= (VFPS - 5) ) return TRUE; // 名前の変更保証ができない
 						// 拡張子を隔離 -----------------------
 	tstrcpy(name, src);
-	p = VFSFindLastEntry(name);
-	p += FindExtSeparator(p);
-	tstrcpy(ext, p);
-	*p = '\0';
+	ptr = VFSFindLastEntry(name);
+	ptr += FindExtSeparator(ptr);
+
+#ifdef UNICODE
+	while ( (ptr > name) && (*(ptr - 1) == '|') ) ptr--;
+#else
+	// 漢字判定は簡易
+	while ( (ptr > (name + 1) ) && (*(ptr - 1) == '|') && !Iskanji(*(ptr - 2)) ){
+		ptr--;
+	}
+#endif
+	tstrcpy(ext, ptr);
+	*ptr = '\0';
 						// 以前の番号を抽出 -------------------
-	for ( ; name < p ; mulnum *= 10 ){
-		p--;
-		if ( *p == '-' ){
-			*p = '\0';
+	for ( ; name < ptr ; mulnum *= 10 ){
+		ptr--;
+		if ( *ptr == '-' ){
+			*ptr = '\0';
 			break;
 		}
-		if ( !Isdigit(*p) ){
+		if ( !Isdigit(*ptr) ){
 			addnum = 0;
 			break;
 		}
-		addnum += ((int)*p - '0') * mulnum;
+		addnum += ((int)*ptr - '0') * mulnum;
 	}
 						// 空きを捜す -------------------------
 	do{
@@ -1356,7 +1392,7 @@ VFSDLL BOOL PPXAPI GetUniqueEntryName(TCHAR *src)
 		addnum++;
 		maxtry--;
 		if ( maxtry == 0 ) return FALSE;
-	}while( GetFileAttributesL(src) != BADATTR );
+	}while( GetAttr(src) != BADATTR );
 	return TRUE;
 }
 

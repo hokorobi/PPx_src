@@ -166,8 +166,8 @@ BOOL CreateDxDraw(DXDRAWSTRUCT **DxDrawPtr, HWND hWnd)
 	DxDraw->DefaultTransform = D2D1::Matrix3x2F::Identity();
 	DxDraw->HitPointTransform = D2D1::Matrix3x2F::Identity();
 //	DxDraw->BMPTransform = D2D1::Matrix3x2F::Identity();
-	wcscpy(DxDraw->fontName, L"‚l‚r ƒSƒVƒbƒN");
-	wcscpy(DxDraw->fontNameSub, L"‚l‚r ‚oƒSƒVƒbƒN");
+	strcpyW(DxDraw->fontName, L"‚l‚r ƒSƒVƒbƒN");
+	strcpyW(DxDraw->fontNameSub, L"‚l‚r ‚oƒSƒVƒbƒN");
 	DxDraw->fontH = 12.0f;
 	DxDraw->BkMode = OPAQUE;
 
@@ -903,7 +903,7 @@ void DxDrawText(DXDRAWSTRUCT *DxDraw, HDC hDC, const TCHAR *str, int len, RECT *
 		#define DRAWLEN len
 		#define DRAWSTR str
 
-		if ( len == -1 ) len = wcslen32(str);
+		if ( len == -1 ) len = strlenW(str);
 	#else
 		WCHAR DRAWSTR[0x200];
 		int DRAWLEN = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, str, len, DRAWSTR, TSIZEOFW(DRAWSTR) );

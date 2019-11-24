@@ -49,18 +49,19 @@ extern HRESULT PPcCopyToDropTarget(IDataObject *DataObject, IDropTarget *DropTar
 }
 class CImpIDataObject: public IDataObject{
 	private:
-		long	m_cRefCount;
-		int		m_cFormatsAvailable;
+		long m_cRefCount;
+		int m_cFormatsAvailable;
 		FORMATETC m_strFormatEtc[MAX_NUM_FORMAT];
 		STGMEDIUM m_strStgMedium[MAX_NUM_FORMAT];
+
+		PPC_APPINFO *m_cinfo;
+		int m_arcmode;
+		TCHAR m_arctemp[VFPS];
 
 	public:
 		CImpIDataObject();
 		~CImpIDataObject();
 
-		PPC_APPINFO *m_cinfo;
-		int m_arcmode;
-		TCHAR m_arctemp[VFPS];
 										// IUnknown members -------------------
 		STDMETHOD(QueryInterface)(REFIID riid, void **ppvObj);
 		STDMETHOD_(ULONG, AddRef)(void);
@@ -79,6 +80,8 @@ class CImpIDataObject: public IDataObject{
 							LPADVISESINK pAdvSink, DWORD *pdwConnection);
 		STDMETHOD(DUnadvise)(DWORD dwConnection);
 		STDMETHOD(EnumDAdvise)(LPENUMSTATDATA *ppenumAdvise);
+										// PPx's ----------------
+		void Init(PPC_APPINFO *cinfo);
 };
 //-----------------------------------------------------------------------------
 class CEnumFormatEtc : public IEnumFORMATETC{

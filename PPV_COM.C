@@ -2,7 +2,6 @@
 	Paper Plane vUI												Å` command Å`
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include <shlobj.h>
 #include "PPXVER.H"
 #include "PPX.H"
@@ -626,7 +625,9 @@ case K_a | K_space:
 	DynamicMenu.Sysmenu = TRUE;
 	PostMessage(hWnd, WM_SYSCOMMAND, SC_KEYMENU, TMAKELPARAM(0, 0));
 	// ÉÅÉjÉÖÅ[Çï\é¶Ç≥ÇπÇÈÉLÅ[Çó\ÇﬂëóêM
-	PP_ExtractMacro(hWnd, &vinfo->info, NULL, T("%k\"&down"), NULL, 0);
+	PP_ExtractMacro(hWnd, &vinfo->info, NULL,
+			(PopupPosType == PPT_FOCUS) ? T("%k\"&down") : T("%k\"down"),
+			NULL, 0);
 	break;
 //----------------------------------------------- Context Menu
 case K_apps:
@@ -642,9 +643,8 @@ case (K_c | K_s | K_F10):
 //----------------------------------------------- About
 case K_about:
 	SetPopMsg(POPMSG_MSG, T(" Paper Plane vUI Version ")
-			T(FileProp_Version) T("(") T(__DATE__) T(",")
-			T(DRAWSTRING) T(BITSTRING) T(",")
-			T(CODETYPESTRING) T(") (c)TORO "));
+			T(FileProp_Version)
+			T("(") T(__DATE__) T(",") RUNENVSTRINGS T(") (c)TORO "));
 	break;
 //----------------------------------------------- Open
 case KV_Load:
@@ -656,7 +656,7 @@ case K_a | K_home:	// &[home]
 	break;
 //-----------------------------------------------
 case K_a | K_s | K_home:	// &\[home]
-	wsprintf(buf, T("%s_"),RegCID);
+	wsprintf(buf, T("%s_"), RegCID);
 	SetCustTable(T("_WinPos"), buf, &WinPos, sizeof(WinPos));
 	SetPopMsg(POPMSG_MSG, MES_SAVP);
 	break;
@@ -701,7 +701,7 @@ case K_Lcust:
 		ReleaseDC(vinfo->info.hWnd, hDC);
 	}
 	UnloadWallpaper(&BackScreen);
-	LoadWallpaper(&BackScreen, hWnd,RegCID);
+	LoadWallpaper(&BackScreen, hWnd, RegCID);
 	FullDraw = X_fles | BackScreen.X_WallpaperType;
 	if ( BackScreen.X_WallpaperType ) X_scrm = 0;
 	InitGui();
@@ -711,7 +711,7 @@ case K_Lcust:
 //----------------------------------------------- Print setup
 case K_c | 'U':
 	GetCustData(T("X_prts"), &PrintInfo.X_prts, sizeof(PrintInfo.X_prts));
-	wsprintf(buf,T("%d,%d,%d,%d, %d"),
+	wsprintf(buf, T("%d,%d,%d,%d, %d"),
 			PrintInfo.X_prts.margin.left, PrintInfo.X_prts.margin.top,
 			PrintInfo.X_prts.margin.right, PrintInfo.X_prts.margin.bottom,
 			PrintInfo.X_prts.imagedivision);
@@ -721,7 +721,7 @@ case K_c | 'U':
 		const TCHAR *p = buf;
 		int values;
 		for ( values = 5 ; values ; values--, value++ ){
-			*value = GetNumber(&p);
+			*value = GetIntNumber(&p);
 			if ( SkipSpace(&p) != ',' ) break;
 			p++;
 		}

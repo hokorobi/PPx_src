@@ -3,7 +3,6 @@
 -----------------------------------------------------------------------------*/
 #define ONPPXDLL		// PPCOMMON.H ÇÃ DLL íËã`éwíË
 #include "WINAPI.H"
-#include <windowsx.h>
 #include "PPX.H"
 #include "VFS.H"
 #pragma hdrstop
@@ -156,8 +155,8 @@ PPXDLL BOOL PPXAPI InitBMP(HTBMP *hTbmp, const TCHAR *filename, DWORD size, int 
 	}
 	hTbmp->PaletteOffset = offset;
 #pragma warning(suppress: 6297) // color ÇÕ 8à»â∫Ç≈ÅADWORD ÇâzÇ¶ÇÈÇ±Ç∆Ç™Ç»Ç¢
-	offset += palette ? palette * sizeof(RGBQUAD) :
-			((color <= 8) ? (DWORD)(1 << color) * sizeof(RGBQUAD) : 0);
+	offset += palette ? palette * (DWORD)sizeof(RGBQUAD) :
+			((color <= 8) ? (DWORD)(1 << color) * (DWORD)sizeof(RGBQUAD) : 0);
 	if ( size < (offset + sizeof(BITMAPFILEHEADER)) ) goto error;
 
 	if ( hTbmp->bits == NULL ){

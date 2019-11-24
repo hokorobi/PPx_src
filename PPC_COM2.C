@@ -16,6 +16,7 @@
 #define DSET_SEPARATOR 1
 
 const TCHAR Str_X_dlf[] = T("X_dlf");
+const TCHAR Str_X_dsst[] = T("X_dsst");
 
 const TCHAR StrDsetCancel[] = MES_DSCA;
 const TCHAR StrDsetForce[] = MES_DSFO;
@@ -83,6 +84,11 @@ const struct PopStringList DispDiroptStringList[] = {
 {0, NULL},
 };
 
+const TCHAR *dsmd_list[] = {
+	StrDsetTemporality, StrDsetThisPath, StrDsetThisBranch, StrDsetForce,
+	StrDsetListfile, NilStr, StrDsetArchive
+};
+
 enum {
 	CM_RENAME = 1, CM_CRC32, CM_MD5, CM_SHA1, CM_SHA224, CM_SHA256,
 	CM_FTYPE, CM_HARDLINKS,
@@ -92,6 +98,7 @@ enum {
 
 	CM_MEMOEX0
 };
+
 const TCHAR *CommentsMenu[] = {
 	MES_TCME,
 	MES_TC32,
@@ -729,7 +736,10 @@ HMENU AddPPcSortMenu(PPC_APPINFO *cinfo, HMENU hMenu, ThSTRUCT *PopupTbl, DWORD 
 
 	setpath[0] = '\t';
 	newmmmode = FindSortSetting(cinfo, setpath + 1);
-	if ( newmmmode == CRID_SORT_NOMODE ) newmmmode = CRID_SORT_REGID;
+	if ( newmmmode == CRID_SORT_NOMODE ){
+		GetCustData(Str_X_dsst, &X_dsst, sizeof(X_dsst));
+		newmmmode = X_dsst[0] + CRID_SORTEX;
+	}
 	settab = AppendMenuPopString(hMenu, SortPopStringList);
 	if ( newmmmode != CRID_SORT_PATH_BRANCH ){
 		setpath[1] = '*';
@@ -748,14 +758,14 @@ HMENU AddPPcSortMenu(PPC_APPINFO *cinfo, HMENU hMenu, ThSTRUCT *PopupTbl, DWORD 
 		AppendMenuString(hMenu, CRID_SORT_ARCHIVE, setpath);
 	}
 
-	if ( sortmode ){ // \[S] 保持設定が有効なら強制設定にする
+	if ( sortmode != 0 ){ // \[S] 保持設定が有効なら強制設定にする
 		if ( sortmode >= CRID_SORTEX ){
 			newmmmode = sortmode;
 		} else if ( cinfo->XC_sort.mode.dat[0] >= 0 ){
 			newmmmode = CRID_SORT_REGID;
 		}
 	} else{		// [S] 一時設定
-		newmmmode = CRID_SORT_TEMP;
+		newmmmode = X_dsst[1] + CRID_SORTEX;
 	}
 	CheckMenuRadioItem(hMenu, CRID_SORT_TEMP, CRID_SORT_MODELAST - 1, newmmmode, MF_BYCOMMAND);
 	if ( mmmode != NULL ){
@@ -987,7 +997,7 @@ ERRORCODE MarkEntry(PPC_APPINFO *cinfo, const TCHAR *wildcard, int mode)
 // ファイルマーク
 ERRORCODE PPC_FindMark(PPC_APPINFO *cinfo, const TCHAR *defmask, int mode)
 {
-	FILEMASKDIALOGSTRUCT pfs = {NULL, NULL, NULL, NULL, T("XC_rmrk"), NULL, FALSE, 0, {1, 0, 0}};
+	FILEMASKDIALOGSTRUCT pfs = {NULL, NULL, NULL, NULL, T("XC_rmrk"), NULL, NULL, FALSE, 0, {1, 0, 0}};
 	XC_MASK mask;
 	int result;
 
@@ -1006,7 +1016,7 @@ ERRORCODE PPC_FindMark(PPC_APPINFO *cinfo, const TCHAR *defmask, int mode)
 		pfs.title = mode ? MES_TFMK : MES_TFUM;
 		pfs.mask = &mask;
 		pfs.filename = CEL(cinfo->e.cellN).f.cFileName;
-		pfs.tempmode = mode;
+		pfs.mode = mode;
 		pfs.cinfo = cinfo;
 		result = (int)PPxDialogBoxParam(hInst, MAKEINTRESOURCE(IDD_MASK),
 			cinfo->info.hWnd, FileMaskDialog, (LPARAM)&pfs);
@@ -1086,7 +1096,7 @@ void PPC_Tree(PPC_APPINFO *cinfo, int mode)
 		WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
 		0, cinfo->BoxEntries.top - cinfo->HeaderHeight, cinfo->TreeX,
 		cinfo->BoxEntries.bottom - cinfo->BoxEntries.top + cinfo->HeaderHeight,
-		cinfo->info.hWnd, (HMENU)IDW_PPCTREE, hInst, 0);
+		cinfo->info.hWnd, CHILDWNDID(IDW_PPCTREE), hInst, 0);
 
 	PPc_SetTreeFlags(cinfo->info.hWnd, cinfo->hTreeWnd);
 	SendMessage(cinfo->hTreeWnd, VTM_INITTREE, 0,
@@ -1147,7 +1157,7 @@ ERRORCODE PPC_PathJump(PPC_APPINFO *cinfo)
 }
 //-----------------------------------------------------------------------------
 // ドライブジャンプ
-HMENU MakeDriveJumpMenu(PPC_APPINFO *cinfo, HMENU hPopupMenu, DWORD *index, ThSTRUCT *TH)
+HMENU MakeDriveJumpMenu(PPC_APPINFO *cinfo, HMENU hPopupMenu, DWORD *index, ThSTRUCT *TH, BOOL advanced)
 {
 	TCHAR buf[VFPS], rpath[VFPS];
 	DWORD drv;
@@ -1162,6 +1172,7 @@ HMENU MakeDriveJumpMenu(PPC_APPINFO *cinfo, HMENU hPopupMenu, DWORD *index, ThST
 	if ( hPopupMenu == NULL ) hPopupMenu = CreatePopupMenu();
 	drv = GetLogicalDrives();
 	GetCustData(Str_X_dlf, &X_dlf, sizeof(X_dlf));
+	if ( advanced ) setflag(X_dlf[1], XDLF_DISPFREE);
 	for ( i = 0; i < 26; i++ ){
 		wsprintf(buf, T("Network\\%c"), (TCHAR)(i + 'A'));
 		rpath[0] = '\0';
@@ -1237,7 +1248,7 @@ void USEFASTCALL PPC_DriveJumpMain(PPC_APPINFO *cinfo, TCHAR *menubuf)
 	}
 }
 
-ERRORCODE PPC_DriveJump(PPC_APPINFO *cinfo)
+ERRORCODE PPC_DriveJump(PPC_APPINFO *cinfo, BOOL advanced)
 {
 	HMENU hMenu;
 	int i;
@@ -1245,8 +1256,28 @@ ERRORCODE PPC_DriveJump(PPC_APPINFO *cinfo)
 
 	DWORD index = CRID_DRIVELIST;
 
-	hMenu = MakeDriveJumpMenu(cinfo, NULL, &index, NULL);
+	hMenu = MakeDriveJumpMenu(cinfo, NULL, &index, NULL, advanced);
+#if 0
+{
+	PPXMENUINFO xminfo;
+	POINT pos;
+	BOOL popmode;
+
+	xminfo.info = &cinfo->info;
+	xminfo.hMenu = hMenu;
+	xminfo.commandID = 0x703;
+	ThInit(&xminfo.th); // 未使用だけど初期化はしておく
+	GetPopupPosition(cinfo, &pos);
+	popmode = (advanced == FALSE) ? PPxSetMenuInfo(hMenu, &xminfo) : FALSE;
+
+	i = TrackPopupMenu(hMenu,
+		popmode ? TPM_LEFTALIGN | TPM_RETURNCMD | TPM_RECURSE : TPM_TDEFAULT,
+		pos.x, pos.y, 0, cinfo->info.hWnd, NULL);
+	if ( i == 0xfffe ) return PPC_DriveJump(cinfo, TRUE);
+}
+#else
 	i = PPcTrackPopupMenu(cinfo, hMenu);
+#endif
 	if ( i >= CRID_DRIVELIST ){
 		GetMenuString(hMenu, i, buf, TSIZEOF(buf), MF_BYCOMMAND);
 		DestroyMenu(hMenu);
@@ -2155,33 +2186,47 @@ void SyncFileInfo(PPC_APPINFO *cinfo)
 	}
 }
 
+typedef struct {
+	LOADSETTINGS ls;
+	int mode;
+	TCHAR *itemptr;
+	TCHAR *findpath;
+	TCHAR *finditem;
+} FDSOS;
+
+void FindDirSettingOne(FDSOS *fds, const TCHAR *path, int findmode)
+{
+	fds->itemptr[0] = '\0';
+	LoadSettingMain(&fds->ls, path);
+	if ( fds->itemptr[0] != '\0' ){
+		tstrcpy(fds->findpath, path);
+		tstrcpy(fds->finditem, fds->itemptr);
+		fds->mode = findmode;
+	}
+}
+
 int FindDirSetting(PPC_APPINFO *cinfo, int type, TCHAR *findpath, TCHAR *finditem)
 {
+	FDSOS fds;
 	TCHAR path[VFPS], *p;
-	LOADSETTINGS ls;
-	int mode = DSMD_NOMODE;
-	TCHAR *itemptr;
 
+	fds.mode = DSMD_NOMODE;
+	fds.findpath = findpath;
+	fds.finditem = finditem;
 	switch ( type ){
 		case ITEMSETTING_MASK:
-			itemptr = ls.mask;
+			fds.itemptr = fds.ls.mask;
 			break;
 		case ITEMSETTING_CMD:
-			itemptr = ls.cmd;
+			fds.itemptr = fds.ls.cmd;
 			break;
 		default: /* case ITEMSETTING_DISP: */
-			itemptr = ls.disp;
+			fds.itemptr = fds.ls.disp;
 			break;
 	}
 
 	// 全指定
-	itemptr[0] = '\0';
-	LoadSettingMain(&ls, T("*"));
-	if ( itemptr[0] ){
-		tstrcpy(findpath, T("*"));
-		tstrcpy(finditem, itemptr);
-		mode = DSMD_PATH_BRANCH;
-	}
+	FindDirSettingOne(&fds, T("*"), DSMD_PATH_BRANCH);
 
 	// ドライブ限定
 	tstrcpy(path, cinfo->path);
@@ -2192,13 +2237,7 @@ int FindDirSetting(PPC_APPINFO *cinfo, int type, TCHAR *findpath, TCHAR *findite
 		if ( *p == '\\' ) p++;
 		backup = *p;
 		*p = '\0';
-		itemptr[0] = '\0';
-		LoadSettingMain(&ls, path);
-		if ( itemptr[0] ){
-			tstrcpy(findpath, path);
-			tstrcpy(finditem, itemptr);
-			mode = DSMD_PATH_BRANCH;
-		}
+		FindDirSettingOne(&fds, path, DSMD_PATH_BRANCH);
 		*p = backup;
 	} else{
 		p = path;
@@ -2213,13 +2252,8 @@ int FindDirSetting(PPC_APPINFO *cinfo, int type, TCHAR *findpath, TCHAR *findite
 			p = q + 1;
 			backup = *p;
 			*p = '\0';
-			itemptr[0] = '\0';
-			LoadSettingMain(&ls, path);
-			if ( itemptr[0] ){
-				tstrcpy(findpath, path);
-				tstrcpy(finditem, itemptr);
-				mode = DSMD_PATH_BRANCH;
-			}
+
+			FindDirSettingOne(&fds, path, DSMD_PATH_BRANCH);
 			*p = backup;
 		}
 		// 最終層の更に下層指定
@@ -2227,22 +2261,11 @@ int FindDirSetting(PPC_APPINFO *cinfo, int type, TCHAR *findpath, TCHAR *findite
 		*p = '\\';
 		*(p + 1) = '\0';
 
-		itemptr[0] = '\0';
-		LoadSettingMain(&ls, path);
-		if ( itemptr[0] ){
-			tstrcpy(findpath, path);
-			tstrcpy(finditem, itemptr);
-			mode = DSMD_THIS_BRANCH;
-		}
+		FindDirSettingOne(&fds, path, DSMD_THIS_BRANCH);
+
 		// 最終層
 		*p = '\0';
-		itemptr[0] = '\0';
-		LoadSettingMain(&ls, path);
-		if ( itemptr[0] ){
-			tstrcpy(findpath, path);
-			tstrcpy(finditem, itemptr);
-			mode = DSMD_THIS_PATH;
-		}
+		FindDirSettingOne(&fds, path, DSMD_THIS_PATH);
 	}
 
 	// Archive
@@ -2251,25 +2274,14 @@ int FindDirSetting(PPC_APPINFO *cinfo, int type, TCHAR *findpath, TCHAR *findite
 		(cinfo->e.Dtype.mode == VFSDT_CABFOLDER) ||
 		(cinfo->e.Dtype.mode == VFSDT_LZHFOLDER) ||
 		(cinfo->e.Dtype.mode == VFSDT_ZIPFOLDER) ){
-		itemptr[0] = '\0';
-		LoadSettingMain(&ls, StrArchiveMode);
-		if ( itemptr[0] ){
-			tstrcpy(findpath, StrArchiveMode);
-			tstrcpy(finditem, itemptr);
-			mode = DSMD_ARCHIVE;
-		}
+		FindDirSettingOne(&fds, StrArchiveMode, DSMD_ARCHIVE);
 	}
+
 	// Listfile
 	if ( cinfo->e.Dtype.mode == VFSDT_LFILE ){
-		itemptr[0] = '\0';
-		LoadSettingMain(&ls, StrListfileMode);
-		if ( itemptr[0] ){
-			tstrcpy(findpath, StrListfileMode);
-			tstrcpy(finditem, itemptr);
-			mode = DSMD_LISTFILE;
-		}
+		FindDirSettingOne(&fds, StrListfileMode, DSMD_LISTFILE);
 	}
-	return mode;
+	return fds.mode;
 }
 
 BOOL IsSameDispFormat(XC_CFMT *cfmt, BYTE *targetformat, size_t fmtsize)
@@ -2324,7 +2336,10 @@ void AddPPcCellDisplayMenu(PPC_APPINFO *cinfo, HMENU hMenu, int *rmode, DWORD *r
 	}
 
 	mode = FindDirSetting(cinfo, ITEMSETTING_DISP, path, sname) + CRID_VIEWFORMATEX;
-	if ( mode == CRID_VIEWFORMAT_NOMODE ) mode = CRID_VIEWFORMAT_REGID;
+	if ( mode == CRID_VIEWFORMAT_NOMODE ){
+		GetCustData(Str_X_dsst, &X_dsst, sizeof(X_dsst));
+		mode = X_dsst[0] + CRID_VIEWFORMATEX;
+	}
 
 	AppendMenuPopString(hMenu, DispPopStringList1);
 	if ( !found ) AppendMenuString(hMenu, CRID_VIEWFORMAT_SAVE, StrDsetSave);
@@ -2892,38 +2907,174 @@ BOOL MaskEntryMain(PPC_APPINFO *cinfo, XC_MASK *maskorg, const TCHAR *filename)
 
 ERRORCODE MaskEntry(PPC_APPINFO *cinfo, int mode, const TCHAR *defmask, const TCHAR *path)
 {
-	FILEMASKDIALOGSTRUCT pfs = {NULL, MES_TFEM, NULL, NULL, StrXC_rmsk, NULL, TRUE, 0, {1, 0, 0}};
+	FILEMASKDIALOGSTRUCT pfs = {NULL, MES_TFEM, NULL, NULL, StrXC_rmsk, NULL, NULL, TRUE, 0, {1, 0, 0}};
 	XC_MASK mask;
 	int result;
+	TCHAR maskpath[VFPS], maskitem[VFPS];
 
 	mask.attr = 0;
 	mask.file[0] = '\0';
 	pfs.mask = &mask;
-	if ( mode != DSMD_TEMP ) *pfs.mask = cinfo->mask; // Holdmask(\F)
+	if ( mode != DSMD_TEMP ){
+		*pfs.mask = cinfo->mask; // Holdmask(\F)
+		if ( mode == DSMD_NOMODE ){
+			mode = FindDirSetting(cinfo, ITEMSETTING_MASK, maskpath, maskitem);
+			path = maskpath;
+			if ( mode == DSMD_NOMODE ){
+				GetCustData(Str_X_dsst, &X_dsst, sizeof(X_dsst));
+				mode = X_dsst[0];
+			}
+		}
+	}
 	if ( defmask != NULL ) tstrcpy(mask.file, defmask);
 
 	pfs.filename = CEL(cinfo->e.cellN).f.cFileName;
-	pfs.tempmode = (mode == DSMD_TEMP);
+	pfs.mode = mode;
+	pfs.path = path;
 	pfs.cinfo = cinfo;
 	result = (int)PPxDialogBoxParam(hInst, MAKEINTRESOURCE(IDD_MASK),
 		cinfo->info.hWnd, FileMaskDialog, (LPARAM)&pfs);
 	if ( result <= 0 ) return ERROR_CANCELLED;
-	if ( pfs.tempmode ){ // Temporarilymask(F)
+
+	if ( pfs.mode == DSMD_TEMP ){ // Temporarilymask(F)
 		if ( MaskEntryMain(cinfo, &mask, pfs.filename) == FALSE ){
 			return ERROR_INVALID_PARAMETER;
 		}
 	} else{		 // Holdmask(\F)
-		if ( (mode == DSMD_NOMODE) || (mode == DSMD_REGID) ){
+		if ( (pfs.mode == DSMD_NOMODE) || (pfs.mode == DSMD_REGID) ){
 			cinfo->mask = *pfs.mask;
 			SetCustTable(T("XC_mask"), cinfo->RegCID + 1,
 				&cinfo->mask, TSTRSIZE(cinfo->mask.file) + 4);
-		} else{ // DSMD_THIS_PATH, DSMD_THIS_BRANCH, DSMD_PATH_BRANCH, DSMD_ARCHIVE
+		} else{ // DSMD_NOMODE, DSMD_TEMP, DSMD_REGID 以外
+			if ( (path == NULL) || (*path == '\0') ){
+				switch ( pfs.mode ){
+					case DSMD_THIS_PATH:
+						path = cinfo->path;
+						break;
+					case DSMD_LISTFILE:
+						path = StrListfileMode;
+						break;
+					case DSMD_ARCHIVE:
+						path = StrArchiveMode;
+						break;
+//					case DSMD_THIS_BRANCH:
+//					case DSMD_PATH_BRANCH:
+					default:
+						CatPath(maskpath, cinfo->path, NilStr);
+						path = maskpath;
+						break;
+				}
+			}
 			SetNewXdir(path, LOADMASKSTR, pfs.mask->file);
 		}
 		tstrcpy(cinfo->Jfname, pfs.filename);
 		read_entry(cinfo, RENTRY_JUMPNAME | RENTRY_SAVEOFF);
 	}
 	return NO_ERROR;
+}
+
+void SetMaskTarget(HWND hDlg, FILEMASKDIALOGSTRUCT *PFS)
+{
+	TCHAR buf[CMDLINESIZE];
+	const TCHAR *typename = NilStr;
+
+	if ( (PFS->mode >= DSMD_TEMP) && (PFS->mode <= DSMD_ARCHIVE) ){
+		if ( PFS->mode == DSMD_PATH_BRANCH ){
+			typename = PFS->path;
+			if ( (typename == NULL) || (*typename == '\0') ) typename = T("*");
+		}else{
+			typename = MessageText(dsmd_list[PFS->mode - DSMD_TEMP]);
+		}
+	}
+	wsprintf(buf, T("%s %s"), MessageText(MES_FBAC), typename);
+	SetDlgItemText(hDlg, IDX_MASK_MODE, buf);
+}
+
+void MaskTargetMenu(HWND hDlg, HWND hButtonWnd, FILEMASKDIALOGSTRUCT *PFS)
+{
+	RECT box;
+	HMENU hMenu;
+	int index;
+	TCHAR setpath[VFPS];
+	BOOL settab;
+
+	if ( IsShowButtonMenu() == FALSE ) return;
+
+	GetWindowRect(hButtonWnd, &box);
+	hMenu = CreatePopupMenu();
+
+	setpath[0] = '\t';
+	setpath[1] = '\0';
+	settab = AppendMenuPopString(hMenu, SortPopStringList + 1);
+
+	if ( PFS->cinfo->e.Dtype.mode == VFSDT_LFILE ){
+		AppendMenuString(hMenu, CRID_SORT_LISTFILE, StrDsetListfile);
+	}
+	if ( (PFS->cinfo->e.Dtype.mode == VFSDT_UN) ||
+		(PFS->cinfo->e.Dtype.mode == VFSDT_SUSIE) ||
+		(PFS->cinfo->e.Dtype.mode == VFSDT_CABFOLDER) ||
+		(PFS->cinfo->e.Dtype.mode == VFSDT_LZHFOLDER) ||
+		(PFS->cinfo->e.Dtype.mode == VFSDT_ZIPFOLDER) ){
+		tstrcpy(settab ? setpath + 1 : setpath, MessageText(StrDsetArchive));
+		AppendMenuString(hMenu, CRID_SORT_ARCHIVE, setpath);
+	}
+
+	if ( (PFS->mode == DSMD_PATH_BRANCH) && (PFS->path != NULL) ){
+		tstrcpy(setpath + 1, PFS->path);
+	}else{
+		setpath[1] = '*';
+		setpath[2] = '\0';
+	}
+	AppendMenuString(hMenu, (CRID_SORTEX + DSMD_PATH_BRANCH), settab ? setpath : setpath + 1);
+
+	CheckMenuRadioItem(hMenu, CRID_SORT_TEMP, CRID_SORT_LISTFILE, PFS->mode + CRID_SORTEX, MF_BYCOMMAND);
+
+	index = TrackPopupMenu(hMenu, TPM_TDEFAULT, box.left, box.bottom, 0, hDlg, NULL);
+	DestroyMenu(hMenu);
+	EndButtonMenu();
+	if ( index ){
+		index -= CRID_SORTEX;
+		if ( PFS->mode != index ){
+			LOADSETTINGS ls;
+			TCHAR *path = NULL, pathbuf[VFPS];
+
+			PFS->mode = index;
+			ls.mask[0] = '\0';
+			switch ( index ){
+				case DSMD_THIS_PATH:
+					LoadSettingMain(&ls, PFS->cinfo->path);
+					path = ls.mask;
+					break;
+
+				case DSMD_THIS_BRANCH:
+					CatPath(pathbuf, PFS->cinfo->path, NilStr);
+					LoadSettingMain(&ls, pathbuf);
+					path = ls.mask;
+					break;
+
+				case DSMD_REGID:
+					path = PFS->cinfo->mask.file;
+					break;
+
+				case DSMD_LISTFILE:
+					LoadSettingMain(&ls, StrListfileMode);
+					path = ls.mask;
+					break;
+
+				case DSMD_ARCHIVE:
+					LoadSettingMain(&ls, StrArchiveMode);
+					path = ls.mask;
+					break;
+
+				case DSMD_PATH_BRANCH:
+					LoadSettingMain(&ls, setpath + 1);
+					path = ls.mask;
+					break;
+			}
+			if ( path != NULL ) SetDlgItemText(hDlg, IDE_INPUT_LINE, path);
+		}
+	}
+	SetMaskTarget(hDlg, PFS);
 }
 
 void SwapWindow(PPC_APPINFO *cinfo)
@@ -3500,7 +3651,9 @@ void PPcSystemMenu(PPC_APPINFO *cinfo)
 		WM_SYSCOMMAND, SC_KEYMENU, TMAKELPARAM(0, 0));
 
 	// メニューを表示させるキーを予め送信
-	PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, T("%k\"down"), NULL, 0);
+	PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL,
+			(cinfo->PopupPosType == PPT_FOCUS) ? T("%k\"&down") : T("%k\"down"),
+			NULL, 0);
 }
 
 HWND GetMWbase(PPC_APPINFO *cinfo, TCHAR *buf)
@@ -3588,8 +3741,7 @@ void PPcReloadCustomize(PPC_APPINFO *cinfo, LPARAM idparam)
 	if ( cinfo->hTreeWnd != NULL ){
 		PPc_SetTreeFlags(cinfo->info.hWnd, cinfo->hTreeWnd);
 	}
-	if ( cinfo->X_inag &&
-		(PPcGetWindow(0, CGETW_GETFOCUS) != cinfo->info.hWnd) ){
+	if ( PPcGetWindow(0, CGETW_GETFOCUS) != cinfo->info.hWnd ){
 		WmPPxCommand(cinfo, KC_UNFOCUS, 0);
 	}
 

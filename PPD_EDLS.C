@@ -1,9 +1,8 @@
 /*-----------------------------------------------------------------------------
 	Paper Plane xUI	 commom library						拡張エディット
 -----------------------------------------------------------------------------*/
-#include "WINAPI.H"
 #define ONPPXDLL		// PPCOMMON.H の DLL 定義指定
-#include <windowsx.h>
+#include "WINAPI.H"
 #include "PPX.H"
 #include "VFS.H"
 #include "VFS_STRU.H"
@@ -246,7 +245,6 @@ BOOL SearchFileInedInit(ESTRUCT *ED, TCHAR *str, WIN32_FIND_DATA *ff)
 	tstrcpy(ED->Fword, word);
 									// 検索文字列からパスを分離
 	ED->FnameP = FindLastEntryPoint(ED->Fname);
-//	if ( ED->cmdsearch & CMDSEARCH_ROMA ) ED->romahandle = 0;
 	return TRUE;
 }
 
@@ -258,6 +256,10 @@ void ClearSearchFileIned(ESTRUCT *ED)
 	}
 	if ( (ED->cmdsearch & CMDSEARCH_ROMA) && (ED->romahandle != 0) ){
 		SearchRomaString(NULL, NULL, 0, &ED->romahandle);
+	}
+	if ( (ED->cmdsearch & CMDSEARCH_WILDCARD) && (ED->romahandle != 0) ){
+		FreeFN_REGEXP((FN_REGEXP *)ED->romahandle);
+		HeapFree(DLLheap, 0, (void *)ED->romahandle);
 	}
 }
 
@@ -305,7 +307,8 @@ TCHAR *SearchFileInedMain(ESTRUCT *ED, TCHAR *str, int mode)
 		}
 		if ( ED->hF == NULL ){					// 新規検索
 			ED->cmdsearch = mode & ~CMDSEARCHI_FINDFIRST;
-			if ( SearchFileInedInit(ED, str, &ff) == FALSE ) goto searchfail; //C4701ok
+			#pragma warning(suppress: 4701) // ff は out 専用
+			if ( SearchFileInedInit(ED, str, &ff) == FALSE ) goto searchfail;
 			setflag(mode, CMDSEARCHI_FINDFIRST);
 		}
 						// ファイル列挙に成功したため、内容一致を調べる -------
@@ -313,7 +316,7 @@ TCHAR *SearchFileInedMain(ESTRUCT *ED, TCHAR *str, int mode)
 			if ( !(ff.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ) continue; //C4701ok
 		}
 		// 部分/roma一致
-		if ( ED->cmdsearch & (CMDSEARCH_FLOAT | CMDSEARCH_ROMA) ){
+		if ( ED->cmdsearch & (CMDSEARCH_FLOAT | CMDSEARCH_ROMA | CMDSEARCH_WILDCARD) ){
 			if ( ED->cmdsearch & CMDSEARCH_ROMA ){
 				if ( SearchRomaString(ff.cFileName, ED->Fword, ISEA_FLOAT, &ED->romahandle) == FALSE ){
 					continue;
@@ -526,6 +529,13 @@ BOOL USEFASTCALL SelectEditStringsS(PPxEDSTRUCT *PES, TEXTSEL *ts, int mode)
 			case TEXTSEL_AFTER:	// カーソルより後ろ
 				end += tstrlen(end);
 				break;
+			case TEXTSEL_BEFOREWORD:	// Word
+				if ( (ts->text < top) && ((UTCHAR)*(top - 1) > ' ') ){
+					while( (ts->text < top) && ((UTCHAR)*(top - 1) > ' ') ) top--;
+				}else{
+					while( (ts->text < top) && ((UTCHAR)*(top - 1) <= ' ') ) top--;
+				}
+				break;
 //			case TEXTSEL_ALL:	// 全選択
 		}
 		*end = 0;
@@ -657,6 +667,13 @@ BOOL USEFASTCALL SelectEditStringsM(PPxEDSTRUCT *PES, TEXTSEL *ts, int mode)
 				while ( *end ){
 					if ( *end == '\r' ) break;
 					end++;
+				}
+				break;
+			case TEXTSEL_BEFOREWORD:	// Word
+				if ( (ts->text < top) && ((UTCHAR)*(top - 1) > ' ') ){
+					while( (ts->text < top) && ((UTCHAR)*(top - 1) > ' ') ) top--;
+				}else{
+					while( (ts->text < top) && ((UTCHAR)*(top - 1) <= ' ') ) top--;
 				}
 				break;
 //			case TEXTSEL_ALL:	// 全選択

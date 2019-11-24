@@ -602,7 +602,7 @@ ERRORCODE DoSusie_part(PPC_APPINFO *cinfo, const TCHAR *destpath)
 
 	InitEnumMarkCell(cinfo, &work);
 	while ( (cell = EnumMarkCell(cinfo, &work)) != NULL ){
-		int namelen;
+		size_t namelen;
 		#ifdef UNICODE
 			char cellname[VFPS];
 
@@ -615,7 +615,7 @@ ERRORCODE DoSusie_part(PPC_APPINFO *cinfo, const TCHAR *destpath)
 		if ( cell->f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY){
 			if ( cinfo->UseArcPathMask == ARCPATHMASK_OFF ) continue;
 		}
-		namelen = strlen32(cellname);
+		namelen = strlen(cellname);
 
 		for ( fi = fiorg ; (fi < fimax) && (fi->method[0] != 0) ; fi++ ){ // åüçı
 			char nameA[VFPS];

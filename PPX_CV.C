@@ -216,8 +216,10 @@ int PPxDownMouseButton(MOUSESTATE *ms, HWND hWnd, WPARAM wParam, LPARAM lParam)
 			PPxCancelMouseButton(ms);
 			return MOUSEBUTTON_CANCEL;
 		}
-		ms->PushButton = MOUSEBUTTON_W;
-		ms->mode = MOUSEMODE_PUSH;
+		if ( ms->PushButton != MOUSEBUTTON_CANCEL ){
+			ms->PushButton = MOUSEBUTTON_W;
+			ms->mode = MOUSEMODE_PUSH;
+		}
 	}else{	// ‰Ÿ‚µ‚Ä‚¢‚éƒ{ƒ^ƒ“‚Í‚P‚Â‚Ì‚Ý¨V‹K
 		int x = GetSystemMetrics(SM_CXDRAG);
 		int y = GetSystemMetrics(SM_CYDRAG);
@@ -304,7 +306,7 @@ int PPxWheelMouse(MOUSESTATE *ms, HWND hWnd, WPARAM wParam, LPARAM lParam)
 			return 0;
 		}
 	}
-	now = (short)HIWORD(wParam);
+	now = HISHORTINT(wParam);
 	if ( (ms->WheelDelta ^ now) & B31 ){
 		ms->WheelDelta = 0; // Overflow
 	}

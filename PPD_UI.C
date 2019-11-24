@@ -175,8 +175,10 @@ BOOL PPxFlashWindow(HWND hWnd, int mode)
 		HMODULE hUser32;
 
 		hUser32 = GetModuleHandleA(User32DLL);
+		#pragma warning(disable:4245) // User32.dll は常に読み込み済み
 		GETDLLPROC(hUser32, FlashWindow);
 		GETDLLPROC(hUser32, FlashWindowEx);
+		#pragma warning(default:4245)
 	}
 	if ( mode == PPXFLASH_STOP ){
 		DFlashWindow(hWnd, FALSE);
@@ -541,29 +543,43 @@ PPXDLL void PPXAPI MoveWindowByKey(HWND hWnd, int offx, int offy)
 
 PPXDLL void PPXAPI PPxHelp(HWND hWnd, UINT command, DWORD_PTR data)
 {
-	TCHAR path[VFPS], temp[VFPS], *p;
+	TCHAR path[VFPS], temp[VFPS];
 	DWORD attr;
 
 	if ( (data == 0) && (command != HELP_FINDER) ) return;
 	if ( data == MAX16 ) return;
 	if ( data == MAX32 ) return;
 
+	// _others:winhelp が示す Winhelp32.exe を直接使用
+	temp[0] = '\0';
+	GetCustTable(StrCustOthers, T("winhelp"), temp, sizeof(temp));
+	if ( temp[0] != '\0' ){
+		if ( command == HELP_KEY ){
+			wsprintf(path, T("-k%s %s\\%s"), data, DLLpath, T(WINHELPFILE));
+		}else{
+			wsprintf(path, T("%s\\%s"), DLLpath, T(WINHELPFILE));
+		}
+		if ( NULL != PPxShellExecute(hWnd, NULL, temp, path, NilStr, 0, path) ){
+			return;
+		}
+	}
 	CatPath(path, DLLpath,
 		(WinType >= WINTYPE_VISTA) ? T(HTMLHELPFILE) : T(WINHELPFILE));
 	if ( (attr = GetFileAttributesL(path)) == BADATTR ){
 		tstrcpy(path, T(TOROsWEB) T(HTMLHELPPAGE));
 	}
+	// html help を開く
 	if ( (WinType >= WINTYPE_VISTA) || (attr == BADATTR) ){
 		HANDLE result;
+		TCHAR *tail;
 
-		p = path + tstrlen(path);
+		tail = path + tstrlen(path);
 		if ( (command == HELP_CONTEXT) || (command == HELP_CONTEXTPOPUP) ){
-			wsprintf(p, T("#%d"), (int)data);
+			wsprintf(tail, T("#%d"), (int)data);
 		}else if ( command == HELP_KEY ){
-			wsprintf(p, T("#%s"), data);
-		}else{
+			wsprintf(tail, T("#%s"), data);
+		}else if ( attr == BADATTR ){
 			tstrcpy(path, T(TOROsWEB) T(HTMLHELPINDEX));
-			attr = BADATTR;
 		}
 		if ( attr != BADATTR ){
 			wsprintf(temp, T("file://%s"), path);
@@ -577,7 +593,7 @@ PPXDLL void PPXAPI PPxHelp(HWND hWnd, UINT command, DWORD_PTR data)
 			result = PPxShellExecute(hWnd, NULL, temp, path, NilStr, 0, path);
 		}
 		if ( result == NULL ) PopupErrorMessage(hWnd, NULL, path);
-	}else{
+	}else{ // ppx.hlp を開く
 		WinHelp(hWnd, path, command, data);
 	}
 }
@@ -592,12 +608,30 @@ BOOL PPxDialogHelp(HWND hDlg)
 	return TRUE;
 }
 
+void DrawDialogBack(HWND hDlg, HDC hDC)
+{
+	RECT box;
+
+	GetClientRect(hDlg, &box);
+	FillRect(hDC, &box, hWndBackBrush);
+}
+
 #pragma argsused
 PPXDLL BOOL PPXAPI PPxDialogHelper(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	UnUsedParam(wParam); UnUsedParam(lParam);
 
-	switch(message){
+	switch (message){
+		case WM_ERASEBKGND:
+			if ( hWndBackBrush == NULL ) return FALSE;
+			DrawDialogBack(hDlg, (HDC)wParam);
+			return TRUE;
+/*
+		case WM_CTLCOLORDLG:
+			if ( hWndBackBrush == NULL ) return FALSE;
+			SetWindowLongPtr(hDlg, DWLP_MSGRESULT, (DWORD_PTR)hWndBackBrush);
+			return TRUE;
+*/
 		case WM_DESTROY:
 			SetIMEDefaultStatus(hDlg);
 			return FALSE;
@@ -800,7 +834,7 @@ BOOL MessageBoxInitDialog(HWND hDlg, MESSAGEDATA *md)
 
 		hWnd = CreateWindowEx(WS_EX_NOPARENTNOTIFY, STATICstr, NilStr,
 				SS_ICON | WS_CHILD | WS_VISIBLE, TextAreaLeft, spaceH,
-				IconSize, IconSize, hDlg, (HMENU)20, DLLhInst, 0);
+				IconSize, IconSize, hDlg, CHILDWNDID(20), DLLhInst, 0);
 		if ( hWnd != NULL ){
 			SendMessage(hWnd, WM_SETFONT, (WPARAM)md->hDlgFont, 0);
 			SendMessage(hWnd, STM_SETICON, (WPARAM)LoadImage(NULL,
@@ -817,7 +851,7 @@ BOOL MessageBoxInitDialog(HWND hDlg, MESSAGEDATA *md)
 		hWnd = CreateWindowEx(WS_EX_NOPARENTNOTIFY, STATICstr, md->text,
 				SS_LEFT | SS_NOPREFIX | WS_CHILD | WS_VISIBLE | SS_EDITCONTROL,
 				TextAreaLeft + IconWidth, (TextHeight - msgbox.bottom) / 2,
-				msgbox.right, msgbox.bottom, hDlg, (HMENU)0xffff, DLLhInst, 0);
+				msgbox.right, msgbox.bottom, hDlg, CHILDWNDID(0xffff), DLLhInst, 0);
 		if ( hWnd != NULL ) SendMessage(hWnd, WM_SETFONT, (WPARAM)md->hDlgFont, 0);
 	}
 	if ( md->style & (MB_PPX_EXMSGBOX | MB_PPX_ALLCHECKBOX) ){
@@ -833,7 +867,7 @@ BOOL MessageBoxInitDialog(HWND hDlg, MESSAGEDATA *md)
 					BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP,
 					TextAreaLeft + IconWidth / 2, TextHeight,
 					tempbox.right + spaceH * 2, tempbox.bottom,
-					hDlg, (HMENU)IDX_QDALL, DLLhInst, 0);
+					hDlg, CHILDWNDID(IDX_QDALL), DLLhInst, 0);
 			if ( hWnd != NULL ){
 				SendMessage(hWnd, WM_SETFONT, (WPARAM)md->hDlgFont, 0);
 					TextHeight += tempbox.bottom + spaceH;
@@ -863,7 +897,7 @@ BOOL MessageBoxInitDialog(HWND hDlg, MESSAGEDATA *md)
 			hWnd = CreateWindowEx(WS_EX_NOPARENTNOTIFY, BUTTONstr,
 					MessageText(mi->text), bstyle,
 					left, TextHeight, ButtonWidth, ButtonHeight, hDlg,
-					(HMENU)mi->ID, DLLhInst, 0);
+					(HMENU)(LONG_PTR)(int)mi->ID, DLLhInst, 0);
 			if ( hWnd != NULL ){
 				SendMessage(hWnd, WM_SETFONT, (WPARAM)md->hDlgFont, 0);
 				if ( focus == 0 ) SetFocus(hWnd);
@@ -1212,7 +1246,7 @@ PPXDLL HWND PPXAPI CreateToolBar(ThSTRUCT *thCmd, HWND hParentWnd, UINT *ID, con
 	style |= WS_CHILD | CCS_NOPARENTALIGN | TBSTYLE_FLAT | TBSTYLE_TOOLTIPS;
 	if ( textindex ) setflag(style, TBSTYLE_LIST);	// テキスト表示に必要
 	hTBWnd = CreateWindowEx(0, TOOLBARCLASSNAME, NULL, style,
-		0, 0, 0, 0, hParentWnd, (HMENU)IDW_GENTOOLBAR, GetModuleHandle(NULL), NULL);
+		0, 0, 0, 0, hParentWnd, CHILDWNDID(IDW_GENTOOLBAR), GetModuleHandle(NULL), NULL);
 	if ( hTBWnd != NULL ){
 //		if ( X_dss & DSS_COMCTRL ) SendMessage(hTBWnd, CCM_DPISCALE, TRUE, 0);
 
@@ -1378,3 +1412,115 @@ PPXDLL int PPXAPI GetAccessApplications(const TCHAR *checkpath, TCHAR *text)
 	return infocount;
 }
 
+void InitSysColors_main(void)
+{
+	C_3dHighlight = GetSysColor(COLOR_BTNHIGHLIGHT);
+	C_3dFace = GetSysColor(COLOR_BTNFACE);
+	C_3dShadow = GetSysColor(COLOR_BTNSHADOW);
+	C_WindowText = GetSysColor(COLOR_WINDOWTEXT);
+	C_WindowBack = GetSysColor(COLOR_WINDOW);
+	C_HighlightText = GetSysColor(COLOR_HIGHLIGHTTEXT);
+	C_HighlightBack = GetSysColor(COLOR_HIGHLIGHT);
+	C_GrayState = GetSysColor(COLOR_GRAYTEXT);
+#if 0
+	hWndBackBrush = Get3dShadowBrush(); //Get3dFaceBrush
+#endif
+}
+
+void FreeSysColors(void)
+{
+	if ( h3dHighlight != NULL ){
+		DeleteObject(h3dHighlight);
+		h3dHighlight = NULL;
+	}
+	if ( h3dFace != NULL ){
+		DeleteObject(h3dFace);
+		h3dFace = NULL;
+	}
+	if ( h3dShadow != NULL ){
+		DeleteObject(h3dShadow);
+		h3dShadow = NULL;
+	}
+	if ( hHighlightBack != NULL ){
+		DeleteObject(hHighlightBack);
+		hHighlightBack = NULL;
+	}
+	if ( hGrayBack != NULL ){
+		DeleteObject(hGrayBack);
+		hGrayBack = NULL;
+	}
+#if 0
+	if ( hWndBackBrush != NULL ){
+		DeleteObject(hWndBackBrush);
+		hWndBackBrush = NULL;
+	}
+#endif
+	C_3dFace = C_AUTO;
+}
+
+HBRUSH Get3dHighlightBrush(void)
+{
+	if ( h3dHighlight != NULL ) return h3dHighlight;
+	if ( C_3dFace == C_AUTO ) InitSysColors_main();
+	h3dHighlight = CreateSolidBrush(C_3dHighlight);
+	return h3dHighlight;
+}
+
+HBRUSH Get3dFaceBrush(void)
+{
+	if ( h3dFace != NULL ) return h3dFace;
+	if ( C_3dFace == C_AUTO ) InitSysColors_main();
+	h3dFace = CreateSolidBrush(C_3dFace);
+	return h3dFace;
+}
+
+HBRUSH Get3dShadowBrush(void)
+{
+	if ( h3dShadow != NULL ) return h3dShadow;
+	if ( C_3dFace == C_AUTO ) InitSysColors_main();
+	h3dShadow = CreateSolidBrush(C_3dShadow);
+	return h3dShadow;
+}
+
+HBRUSH GetHighlightBackBrush(void)
+{
+	if ( hHighlightBack != NULL ) return hHighlightBack;
+	if ( C_3dFace == C_AUTO ) InitSysColors_main();
+	hHighlightBack = CreateSolidBrush(C_HighlightBack);
+	return hHighlightBack;
+}
+
+HBRUSH GetGrayBackBrush(void)
+{
+	if ( hGrayBack != NULL ) return hGrayBack;
+	if ( C_3dFace == C_AUTO ) InitSysColors_main();
+	hGrayBack = CreateSolidBrush(C_GrayState);
+	return hGrayBack;
+}
+
+// 常に EDGE_RAISED
+PPXDLL void PPXAPI DrawSeparateLine(HDC hDC, const RECT *box, UINT flags)
+{
+	RECT facebox, edgebox;
+
+	edgebox = facebox = *box;
+	if ( flags & BF_TOP ){
+		edgebox.bottom = facebox.top = edgebox.top + 1;
+		FillRect(hDC, &edgebox, Get3dHighlightBrush());
+		edgebox.bottom = box->bottom;
+	}
+	if ( (flags & BF_BOTTOM) && ((facebox.bottom - facebox.top) >= 3) ){
+		edgebox.top = facebox.bottom = edgebox.bottom - 1;
+		FillRect(hDC, &edgebox, Get3dShadowBrush());
+	}
+	if ( flags & BF_LEFT ){
+		edgebox.right = facebox.left = edgebox.left + 1;
+		FillRect(hDC, &edgebox, Get3dHighlightBrush());
+		edgebox.right = box->right;
+	}
+	if ( (flags & BF_RIGHT) && ((facebox.right - facebox.left) >= 3) ){
+		edgebox.left = facebox.right = edgebox.right - 1;
+		FillRect(hDC, &edgebox, Get3dShadowBrush());
+	}
+	FillRect(hDC, &facebox, Get3dFaceBrush());
+}

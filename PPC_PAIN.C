@@ -883,6 +883,9 @@ void Repaint(PPC_APPINFO *cinfo)
 	cinfo->DrawTargetFlags = DRAWT_ALL;
 	InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
 	if ( cinfo->combo ){
+		// œˆê‘Ì‰»Žž‚ÉA‚P–‡–Ú‚Ì•\Ž¦‚ÉŽ¸”s‚·‚é‚æ‚¤‚È‚Ì‚Å“ü‚ê‚Ä‚Ý‚½ 1.69+3
+		UpdateWindow(cinfo->info.hWnd);
+
 		PostMessage(cinfo->hComboWnd, WM_PPXCOMMAND, KCW_drawinfo, 0);
 		PostMessage(cinfo->hComboWnd, WM_PPXCOMMAND, KCW_drawstatus, 0);
 	}

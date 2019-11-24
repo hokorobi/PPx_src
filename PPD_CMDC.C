@@ -43,9 +43,12 @@ struct PACKINFO {
 #ifndef BCRYPT_SHA1_ALGORITHM
 #define BCRYPT_MD5_ALGORITHM  L"MD5"
 #define BCRYPT_SHA1_ALGORITHM L"SHA1"
-#define BCRYPT_ECDSA_P256_ALGORITHM L"ECDSA_P256"
 #define BCRYPT_OBJECT_LENGTH L"ObjectLength"
 #define BCRYPT_HASH_LENGTH L"HashDigestLength"
+#endif
+
+#ifndef BCRYPT_ECCPUBLIC_BLOB
+#define BCRYPT_ECDSA_P256_ALGORITHM L"ECDSA_P256"
 #define BCRYPT_ECCPUBLIC_BLOB L"ECCPUBLICBLOB"
 #endif
 
@@ -248,6 +251,7 @@ void GetWindowHashList(HMENU hMenuDest, DWORD *PopupID)
 #endif
 typedef struct {
 	PPXAPPINFO info, *parent;
+	const TCHAR *cmdname;
 	const TCHAR *arg;
 } USERCOMMANDSTRUCT;
 
@@ -260,17 +264,17 @@ DWORD_PTR USECDECL UserCommandInfo(USERCOMMANDSTRUCT *info, DWORD cmdID, PPXAPPI
 				int index;
 
 				ptr = uptr->funcparam.optparam;
-				index = GetDigitNumber(&ptr);
+				index = GetDigitNumber32(&ptr);
 				if ( index <= 0 ){
-					if ( index == 0 ){ // arg(0)
-						ptr = info->arg;
-						GetCommandParameter(&ptr, uptr->funcparam.dest, CMDLINESIZE);
+					if ( index == 0 ){ // arg(0) コマンド名
+						tstrcpy( uptr->funcparam.dest,
+								(info->cmdname != NULL) ? info->cmdname : info->arg);
 					}else{
 						*uptr->funcparam.dest = '\0';
 					}
 				}else{ // arg(1...)
 					ptr = info->arg;
-					ptr += tstrlen(ptr) + 1;
+					if ( info->cmdname == NULL ) ptr += tstrlen(ptr) + 1;
 					for (;;){
 						GetCommandParameter(&ptr, uptr->funcparam.dest, CMDLINESIZE);
 						if ( --index == 0 ) break;
@@ -287,15 +291,17 @@ DWORD_PTR USECDECL UserCommandInfo(USERCOMMANDSTRUCT *info, DWORD cmdID, PPXAPPI
 	}
 }
 
-void USEFASTCALL UserCommand(EXECSTRUCT *Z, const TCHAR *args, const TCHAR *cmdline, TCHAR *dest)
+void UserCommand(EXECSTRUCT *Z, const TCHAR *cmdname, const TCHAR *args, const TCHAR *cmdline, TCHAR *dest)
 {
 	USERCOMMANDSTRUCT ucs;
 
 	ucs.info = *Z->Info;
 	ucs.info.Function = (PPXAPPINFOFUNCTION)UserCommandInfo;
 	ucs.parent = Z->Info;
+	ucs.cmdname = cmdname;
 	ucs.arg = args;
-	Z->result = PP_ExtractMacro(ucs.info.hWnd, &ucs.info, NULL, cmdline, dest, XEO_EXTRACTEXEC);
+	Z->result = PP_ExtractMacro(ucs.info.hWnd, &ucs.info, NULL, cmdline, dest,
+			(dest == NULL) ? XEO_EXTRACTEXEC : XEO_EXTRACTEXEC | XEO_EXTRACTLONG);
 	if ( Z->result == ERROR_CONTINUE ) Z->result = NO_ERROR;
 }
 
@@ -304,9 +310,9 @@ void USEFASTCALL ExecOnConsole(EXECSTRUCT *Z, const TCHAR *param)
 	PPXCMD_PPBEXEC ppbe;
 
 	ppbe.name = param;
-	ppbe.flag = Z->flag;
+	ppbe.flag = Z->flags;
 	ppbe.path = Z->curdir; // CID_FILE_EXEC - ZSetCurrentDir で取得済み
-	Z->ExitCode = PPxInfoFunc(Z->Info, PPXCMDID_PPBEXEC, &ppbe);
+	Z->ExitCode = (DWORD)PPxInfoFunc(Z->Info, PPXCMDID_PPBEXEC, &ppbe);
 }
 
 TCHAR * USEFASTCALL ZGetFilePathParam(EXECSTRUCT *Z, const TCHAR **ptr, TCHAR *path)
@@ -322,16 +328,16 @@ void ZapMain(EXECSTRUCT *Z, const TCHAR *command, const TCHAR *exepath, const TC
 	HANDLE hProcess;
 
 	if ( NULL != (hProcess = PPxShellExecute(Z->hWnd, command, exepath,
-			param, path, Z->flag, msg)) ){
-		if ( Z->flag & XEO_WAITIDLE ){
+			param, path, Z->flags, msg)) ){
+		if ( Z->flags & XEO_WAITIDLE ){
 			WaitForInputIdle(hProcess, 30*60*1000);
 		}
-		if ( Z->flag & XEO_SEQUENTIAL ){
+		if ( Z->flags & XEO_SEQUENTIAL ){
 			if( WaitJobDialog(Z->hWnd, hProcess, exepath, 0) == FALSE){
 				Z->result = ERROR_CANCELLED;
 			}
 		}
-		if ( Z->flag & (XEO_WAITIDLE | XEO_SEQUENTIAL) ){
+		if ( Z->flags & (XEO_WAITIDLE | XEO_SEQUENTIAL) ){
 			CloseHandle(hProcess);
 		}
 	}else{
@@ -363,7 +369,7 @@ void ComZExecPPx(EXECSTRUCT *Z, const TCHAR *ppxname, const TCHAR *param)
 	}
 
 	wsprintf(buf, T("\"%s\\%s\" %s"), DLLpath, ppxname, param);
-	ComExecSelf(Z->hWnd, buf, path, Z->flag, &Z->ExitCode);
+	ComExecSelf(Z->hWnd, buf, path, Z->flags, &Z->ExitCode);
 }
 
 int USECDECL SureDialog(const TCHAR *message)
@@ -747,7 +753,7 @@ void CmdFocusPPx(EXECSTRUCT *Z, const TCHAR *paramptr) // *focus
 			return;
 		}
 		if ( NextParameter(&paramptr) == FALSE ) return;
-		if ( ComExecEx(Z->hWnd, paramptr, GetZCurDir(Z), &Z->useppb, Z->flag, &Z->ExitCode) == FALSE){
+		if ( ComExecEx(Z->hWnd, paramptr, GetZCurDir(Z), &Z->useppb, Z->flags, &Z->ExitCode) == FALSE){
 			Z->result = ERROR_CANCELLED;
 		}
 		return;
@@ -950,7 +956,7 @@ void CmdSetArchiveCP(EXECSTRUCT *Z, const TCHAR *param)
 {
 	TCHAR buf[0x40];
 
-	UnDllCodepage = GetNumber(&param);
+	UnDllCodepage = GetDigitNumber32(&param);
 	if ( UnDllCodepage >= 0xffff ) UnDllCodepage = CP_ACP;
 	if ( UnDllCodepage == CP_ACP ){
 		tstrcpy(buf, T("Codepage:default"));
@@ -1155,24 +1161,34 @@ void CmdCheckUpdate(EXECSTRUCT *Z, const TCHAR *param)
 	if ( bottom != NULL ){
 		MessageBoxA(Z->hWnd, bottom + 2, NULL, MB_ICONINFORMATION | MB_OK);
 	}
-	bottom = strstr(th.bottom, "\r\n\r\n");
-	if ( (bottom == NULL) || (*(bottom + 4) != '#') ){
+	bottom = strstr(th.bottom, "\r\n\r\n#");
+	if ( bottom == NULL ){
 		msg = CheckUpdateErrorMsg;
-	}else if ( (*(bottom + 5) == '+') || (force != NULL) ){ // 正式版の更新有り
-		CmdCheckUpdateFile(Z, bottom + 6, param);
-		msg = NULL;
-	}
-	#if VersionP // 試験公開版は、常に試験公開版の更新チェックをする
-		else
-	#else // 正式版は、'p' 指定があるときのみ更新チェック
-		else if ( tstrchr(param, 'p') != NULL )
-	#endif
-	{
-		bottom = strstr(bottom + 5, "\r\n");
-		if ( (bottom != NULL) && (*(bottom + 2) == '#') &&
-			 ((*(bottom + 3) == '+') || (force != NULL)) ){ // 試験公開版更新有
-			CmdCheckUpdateFile(Z, bottom + 4, param);
+	}else{ // チェック可能
+		const TCHAR *pluscheck;
+		const char *plusbottom;
+
+		pluscheck = tstrchr(param, 'p');
+		plusbottom = strstr(bottom + 5, "\r\n#");
+		if ( (*(bottom + 5) == '+') || // 正式版の更新有り
+					// 強制更新有り→
+					//  試験公開版指定なしか、指定あり時に試験版がない
+			 ((force != NULL) && ((pluscheck == NULL) || (plusbottom == NULL)))
+			 ){
+			CmdCheckUpdateFile(Z, bottom + 6, param);
 			msg = NULL;
+		}
+		#if VersionP // 試験公開版は、常に試験公開版の更新チェックをする
+		else
+		#else // 正式版は、'p' 指定があるときのみ更新チェック
+		else if ( pluscheck != NULL )
+		#endif
+		{
+			if ( (plusbottom != NULL) &&
+				 ((*(plusbottom + 3) == '+') || (force != NULL)) ){ // 試験公開版更新有
+				CmdCheckUpdateFile(Z, plusbottom + 4, param);
+				msg = NULL;
+			}
 		}
 	}
 	ThFree(&th);
@@ -1313,7 +1329,7 @@ void CmdDeleteHistory(const TCHAR *param)
 
 	NextParameter(&param);
 	if ( Isdigit(*param) ){
-		int index = GetNumber(&param);
+		int index = GetDigitNumber32(&param);
 		const TCHAR *hptr;
 
 		UsePPx();
@@ -1401,16 +1417,16 @@ void CmdLaunch(EXECSTRUCT *Z, const TCHAR *param)
 		curdir = exepath;
 		if ( *curdir == '\"' ) curdir++; // 末尾の \" は２行前で削除済み
 	}
-	if ( Z->flag & XEO_CONSOLE ){
+	if ( Z->flags & XEO_CONSOLE ){
 		PPXCMD_PPBEXEC ppbe;
 
 		ppbe.name = param;
-		ppbe.flag = Z->flag;
+		ppbe.flag = Z->flags;
 		ppbe.path = curdir;
-		Z->ExitCode = PPxInfoFunc(Z->Info, PPXCMDID_PPBEXEC, &ppbe);
+		Z->ExitCode = PPxInfoFunc32u(Z->Info, PPXCMDID_PPBEXEC, &ppbe);
 		return;
 	}
-	if ( ComExecEx(Z->hWnd, param, curdir, &Z->useppb, Z->flag, &Z->ExitCode) == FALSE ){
+	if ( ComExecEx(Z->hWnd, param, curdir, &Z->useppb, Z->flags, &Z->ExitCode) == FALSE ){
 		Z->result = ERROR_CANCELLED;
 	}
 }
@@ -1549,7 +1565,7 @@ void CmdPack(EXECSTRUCT *Z, const TCHAR *param)
 		pp = tstrrchr(buf, '.');
 		if ( pp != NULL ) *pp = '\0';
 		wsprintf(packtype, T("%s %s - %s"), tpac, packname + 2, buf);
-		wsprintf(packname, T("*string ,Edit_PackCmd=%%M$&M?packlist %%: *string i,Edit_PackName=%%s\"Menu_Index\" %%: *string i,Edit_PackCmd=%%s\"Edit_PackCmd\" %: *setcaption %s %%s\"Menu_Index\""), tpac);
+		wsprintf(packname, T("*string ,Edit_PackCmd=%%M&M:?packlist %%: *string i,Edit_PackName=%%s\"Menu_Index\" %%: *string i,Edit_PackCmd=%%s\"Edit_PackCmd\" %: *setcaption %s %%s\"Menu_Index\""), tpac);
 		ThSetString(VarTH, T("Edit_OptionCmd"), packname);
 
 		if ( FALSE == CmdPack_Edit(Z, &pinfo, VarTH, packtype, packcmd) ) return;
@@ -1566,7 +1582,7 @@ void CmdPack(EXECSTRUCT *Z, const TCHAR *param)
 		ThSetString(&ProcessStringValue, T("Edit_PackMode"), T("g"));
 		tpac = MessageText(MES_TPAC);
 		wsprintf(packtype, T("%s %s"), tpac, packname);
-		wsprintf(packname, T("*string ,Edit_PackCmd=%%M$&M?packlist %%: *setcust _others:PackName=%%s\"Menu_Index\" %%: *setcust _others:PackCmd=%%s\"Edit_PackCmd\" %%: *setcaption %s %%s\"Menu_Index\""), tpac);
+		wsprintf(packname, T("*string ,Edit_PackCmd=%%M&M:?packlist %%: *setcust _others:PackName=%%s\"Menu_Index\" %%: *setcust _others:PackCmd=%%s\"Edit_PackCmd\" %%: *setcaption %s %%s\"Menu_Index\""), tpac);
 		ThSetString(VarTH, T("Edit_OptionCmd"), packname);
 
 		if ( FALSE == CmdPack_Edit(Z, &pinfo, VarTH, packtype, packcmd) ) return;
@@ -1657,7 +1673,7 @@ void CmdPack(EXECSTRUCT *Z, const TCHAR *param)
 		for ( ; ; ){
 			GetValue(Z, 'C', buf);
 			if ( buf[0] == '\0' ) break;
-			PPxEnumInfoFunc(Z->Info, PPXCMDID_ENUMATTR, (TCHAR *)&pinfo.attr, &Z->IInfo);
+			PPxEnumInfoFunc(Z->Info, PPXCMDID_ENUMATTR, (TCHAR *)&pinfo.attr, &Z->EnumInfo);
 			tstrcpy(pathLast, buf);
 			if ( pinfo.attr & FILE_ATTRIBUTE_DIRECTORY ){
 				lp = pathLast + tstrlen(pathLast);
@@ -1669,7 +1685,7 @@ void CmdPack(EXECSTRUCT *Z, const TCHAR *param)
 			ThSize(&th, CMDLINESIZE);
 			ThCatString(&th, T("%u/"));
 			PP_ExtractMacro(Z->hWnd, &pinfo.info, NULL, packcmd, (TCHAR *)ThLast(&th), XEO_NOEDIT);
-			if ( PPxEnumInfoFunc(Z->Info, PPXCMDID_NEXTENUM, buf, &Z->IInfo) == 0 ){
+			if ( PPxEnumInfoFunc(Z->Info, PPXCMDID_NEXTENUM, buf, &Z->EnumInfo) == 0 ){
 				break;
 			}
 			th.top += TSTRLENGTH32((TCHAR *)ThLast(&th));
@@ -1689,7 +1705,7 @@ void CmdNextItem(EXECSTRUCT *Z, const TCHAR *param) // *nextitem
 
 	if ( *param != '\0' ) CalcString(&param, &skipcount);
 	while ( skipcount > 0 ){
-		if ( PPxEnumInfoFunc(Z->Info, PPXCMDID_NEXTENUM, buf, &Z->IInfo) == 0 ){
+		if ( PPxEnumInfoFunc(Z->Info, PPXCMDID_NEXTENUM, buf, &Z->EnumInfo) == 0 ){
 			XMessage(Z->hWnd, NULL, XM_GrERRld, T("empty next item"));
 			Z->result = ERROR_INVALID_PARAMETER;
 			break;
@@ -1770,7 +1786,7 @@ void CmdIfMatch(EXECSTRUCT *Z, const TCHAR *param)
 		WIN32_FIND_DATA ff;
 
 		if ( (param != defparam) ||
-			 (PPxEnumInfoFunc(Z->Info, PPXCMDID_ENUMFINDDATA, (TCHAR *)&ff, &Z->IInfo) == 0) ){
+			 (PPxEnumInfoFunc(Z->Info, PPXCMDID_ENUMFINDDATA, (TCHAR *)&ff, &Z->EnumInfo) == 0) ){
 			HANDLE hFF;
 
 			VFSFixPath(wildcard, (TCHAR *)param, GetZCurDir(Z), VFSFIX_FULLPATH);
@@ -1952,7 +1968,7 @@ void CmdDeleteCust(const TCHAR *param)
 		if ( first != '\"' ) return;
 		name[0] = '\0';
 	}else if ( Isdigit(*param) ){ // key,index
-		index = GetNumber(&param);
+		index = GetDigitNumber32(&param);
 		if ( index < 0 ) return;
 	}else if( *param == '\"' ){ // key,"name"
 		GetCommandParameter(&param, name, TSIZEOF(name));
@@ -1992,7 +2008,7 @@ void CmdAlias(EXECSTRUCT *Z, TCHAR *param)
 				const TCHAR *newsrc;
 
 				newsrc = GetMenuDataString(&xminfo.th, menupos - 1);
-				PP_ExtractMacro(Z->hWnd, Z->Info, Z->posptr, newsrc, NULL, Z->flag);
+				PP_ExtractMacro(Z->hWnd, Z->Info, Z->posptr, newsrc, NULL, Z->flags);
 			}else{
 				Z->result = ERROR_CANCELLED;
 			}
@@ -2010,7 +2026,7 @@ void CmdAlias(EXECSTRUCT *Z, TCHAR *param)
 void CmdPPbSet(EXECSTRUCT *Z, const TCHAR *param, const TCHAR *data)
 {
 	TCHAR fixbuf[CMDLINESIZE * 2], *butptr = fixbuf, *allocbuf;
-	int len;
+	size_t len;
 
 	len = tstrlen(param) + 16;
 	if ( data != NULL ) len += tstrlen(data);
@@ -2024,7 +2040,7 @@ void CmdPPbSet(EXECSTRUCT *Z, const TCHAR *param, const TCHAR *data)
 	tstrcpy(butptr + 6, param);
 	tstrcat(butptr + 6, T("="));
 	if ( data != NULL ) tstrcat(butptr + 6, data);
-	ComExecEx(Z->hWnd, butptr, GetZCurDir(Z), &Z->useppb, Z->flag, &Z->ExitCode);
+	ComExecEx(Z->hWnd, butptr, GetZCurDir(Z), &Z->useppb, Z->flags, &Z->ExitCode);
 
 	if ( butptr != fixbuf ) HeapFree(DLLheap, 0, allocbuf);
 }
@@ -2081,8 +2097,8 @@ void CmdSet(EXECSTRUCT *Z, TCHAR *param)
 					if ( SetEnvironmentVariable(param, bufptr) == FALSE ){
 						PPErrorBox(Z->hWnd, NULL, PPERROR_GETLASTERROR);
 					}
-					if ( ((Z->flag & XEO_USEPPB) || (Z->useppb != -1)) &&
-						 !(Z->flag & (XEO_NOUSEPPB | XEO_CONSOLE | XEO_USECMD)) ){
+					if ( ((Z->flags & XEO_USEPPB) || (Z->useppb != -1)) &&
+						 !(Z->flags & (XEO_NOUSEPPB | XEO_CONSOLE | XEO_USECMD)) ){
 						CmdPPbSet(Z, param, bufptr);
 					}
 					if ( allocbuf != NULL ) HeapFree(DLLheap, 0, allocbuf);
@@ -2093,8 +2109,8 @@ void CmdSet(EXECSTRUCT *Z, TCHAR *param)
 		if ( SetEnvironmentVariable(param, data) == FALSE ){
 			PPErrorBox(Z->hWnd, NULL, PPERROR_GETLASTERROR);
 		}
-		if ( ((Z->flag & XEO_USEPPB) || (Z->useppb != -1)) &&
-			 !(Z->flag & (XEO_NOUSEPPB | XEO_CONSOLE | XEO_USECMD)) ){
+		if ( ((Z->flags & XEO_USEPPB) || (Z->useppb != -1)) &&
+			 !(Z->flags & (XEO_NOUSEPPB | XEO_CONSOLE | XEO_USECMD)) ){
 			CmdPPbSet(Z, param, data);
 		}
 		if ( allocbuf != NULL ) HeapFree(DLLheap, 0, allocbuf);
@@ -2115,23 +2131,24 @@ void CmdSet(EXECSTRUCT *Z, TCHAR *param)
 	}
 }
 
-void USEFASTCALL CmdCursor(EXECSTRUCT *Z, const TCHAR *param)
+void USEFASTCALL CmdCursor(EXECSTRUCT *Z, const TCHAR *param) // *cursor
 {
 	TCHAR numbuf[100];
-	const TCHAR *ww;
 	int ibuf[10], *ip;
 
 	ip = ibuf;
 	memset(ibuf, 0, sizeof(ibuf));
-	numbuf[0] = '\0';
-	GetCommandParameter(&param, numbuf, TSIZEOF(numbuf));
-	while( numbuf[0] ){
+	for (;;){
+		const TCHAR *ww;
+
+		numbuf[0] = '\0';
+		GetCommandParameter(&param, numbuf, TSIZEOF(numbuf));
+		if ( numbuf[0] == '\0' ) break;
+
 		ww = numbuf;
 		*ip++ = GetIntNumber(&ww);
 		if ( *param != ',' ) break;
 		param++;
-		numbuf[0] = '\0';
-		GetCommandParameter(&param, numbuf, TSIZEOF(numbuf));
 	}
 	PPxInfoFunc(Z->Info, PPXCMDID_MOVECSR, &ibuf);
 }
@@ -2157,6 +2174,7 @@ void USEFASTCALL CmdPPeEdit(EXECSTRUCT *Z, const TCHAR *param)
 	}
 }
 
+// %I / %Q
 void USEFASTCALL CmdMessageBox(EXECSTRUCT *Z, TCHAR *param)
 {
 	DWORD style = MB_ICONINFORMATION;
@@ -2175,7 +2193,7 @@ void USEFASTCALL CmdMessageBox(EXECSTRUCT *Z, TCHAR *param)
 	}
 	src = param;
 //	ZFixParameter(&param);
-	GetLfGetParam((const TCHAR **)&param, param, tstrlen(param) + 1 );
+	GetLfGetParam((const TCHAR **)&param, param, tstrlen32(param) + 1 );
 	if ( IDOK != PMessageBox(Z->hWnd, src, ZGetTitleName(Z), style) ){
 		Z->result = ERROR_CANCELLED;
 	}
@@ -2221,9 +2239,9 @@ void USEFASTCALL CmdKeyCommand(EXECSTRUCT *Z, const TCHAR *param) // %K
 		if ( hWnd == NULL ){ // 自分自身で実行
 			ERRORCODE result;
 
-			result = PPxInfoFunc(Z->Info, PPXCMDID_PPXCOMMAD, &key);
+			result = PPxInfoFunc32u(Z->Info, PPXCMDID_PPXCOMMAD, &key);
 			if ( result > 1 ){ // NO_ERROR, ERROR_INVALID_FUNCTION 以外
-				if ( (result == ERROR_CANCELLED) || !(Z->flag & XEO_IGNOREERR) ){
+				if ( (result == ERROR_CANCELLED) || !(Z->flags & XEO_IGNOREERR) ){
 					Z->result = result;
 					break;
 				}
@@ -2247,7 +2265,7 @@ void CmdPPv(EXECSTRUCT *Z, const TCHAR *paramptr, TCHAR *param) // %v
 
 		pcmdf.source = T("VCDN");
 		pcmdf.dest[0] = '\0';
-		Get_F_MacroData(Z->Info, &pcmdf, &Z->IInfo);
+		Get_F_MacroData(Z->Info, &pcmdf, &Z->EnumInfo);
 		PPxView(Z->hWnd, pcmdf.dest, 0);
 	}
 }
@@ -2375,7 +2393,7 @@ void ZExec(EXECSTRUCT *Z)
 	TCHAR olddir[VFPS];
 
 	olddir[0] = '\0';
-	resetflag(Z->status, ST_MULTIPARAM);
+//	resetflag(Z->status, ST_MULTIPARAM);
 	param = lp = Z->DstBuf;
 	if ( Z->ExtendDst.top != 0 ){
 		ThCatString(&Z->ExtendDst, Z->DstBuf);
@@ -2385,7 +2403,7 @@ void ZExec(EXECSTRUCT *Z)
 	}else{
 		lp += tstrlen(lp);
 	}
-	while( lp > param ){ // 末尾の空白を除去
+	while ( lp > param ){ // 末尾の空白を除去
 		lp--;
 		if ( *lp != ' ' ) break;
 		*lp = '\0';
@@ -2403,12 +2421,12 @@ void ZExec(EXECSTRUCT *Z)
 		case CID_FILE_EXEC:				// 外部プロセスを実行
 			if ( *param == '\0' ) break;
 			ZSetCurrentDir(Z, olddir);
-			if ( Z->flag & XEO_CONSOLE ){
+			if ( Z->flags & XEO_CONSOLE ){
 				ExecOnConsole(Z, param);
 				break;
 			}
 			// Z->curdir ... ZSetCurrentDir で取得済み
-			if ( ComExecEx(Z->hWnd, param, Z->curdir, &Z->useppb, Z->flag, &Z->ExitCode) == FALSE ){
+			if ( ComExecEx(Z->hWnd, param, Z->curdir, &Z->useppb, Z->flags, &Z->ExitCode) == FALSE ){
 				Z->result = GetLastError();
 				if ( Z->result == NO_ERROR ) Z->result = ERROR_PATH_NOT_FOUND;
 			}
@@ -2494,8 +2512,8 @@ void ZExec(EXECSTRUCT *Z)
 		case CID_INSERT:
 		case CID_INSERTSEL:
 			GetCommandParameter((const TCHAR **)&param, linebuf, TSIZEOF(linebuf));
-			if ( Z->flag & XEO_CONSOLE ){
-				Z->result = PPxInfoFunc(Z->Info,
+			if ( Z->flags & XEO_CONSOLE ){
+				Z->result = PPxInfoFunc32u(Z->Info,
 						(Z->command == CID_INSERT) ? PPXCMDID_PPBINSERT : PPXCMDID_PPBINSERTSEL,
 						 linebuf);
 			}else{
@@ -2507,8 +2525,8 @@ void ZExec(EXECSTRUCT *Z)
 										// *replace
 		case CID_REPLACE:
 			GetCommandParameter((const TCHAR **)&param, linebuf, TSIZEOF(linebuf));
-			if ( Z->flag & XEO_CONSOLE ){
-				Z->result = PPxInfoFunc(Z->Info, PPXCMDID_PPBREPLACE, linebuf);
+			if ( Z->flags & XEO_CONSOLE ){
+				Z->result = PPxInfoFunc32u(Z->Info, PPXCMDID_PPBREPLACE, linebuf);
 			}else{
 				SendMessage(Z->hWnd, WM_PPXCOMMAND, KE_replace, (LPARAM)linebuf);
 			}
@@ -2745,7 +2763,7 @@ void ZExec(EXECSTRUCT *Z)
 			break;
 										// *trimmark
 		case CID_TRIMMARK:
-			PPxEnumInfoFunc(Z->Info, PPXCMDID_TRIMENUM, Z->DstBuf, &Z->IInfo);
+			PPxEnumInfoFunc(Z->Info, PPXCMDID_TRIMENUM, Z->DstBuf, &Z->EnumInfo);
 			break;
 										// *cpu
 		case CID_CPU:
@@ -2757,14 +2775,14 @@ void ZExec(EXECSTRUCT *Z)
 			break;
 										// *return
 		case CID_RETURN:
-			tstrcpy(Z->dst, param);
+			GetCommandParameter((const TCHAR **)&param, Z->DstBuf, CMDLINESIZE);
 			Z->result = ERROR_CONTINUE;
-			Z->dst += tstrlen(Z->dst);
+			Z->dst = Z->DstBuf + tstrlen(Z->dst);
 			Z->src += tstrlen(Z->src);
 			break;
 										// *maxlength
 		case CID_MAXLENGTH:
-			Z->LongResultLen = GetDigitNumber((const TCHAR **)&param);
+			Z->LongResultLen = GetDigitNumber32u((const TCHAR **)&param);
 			setflag(Z->status, ST_LONGRESULT);
 			break;
 										// *jumpentry
@@ -2803,7 +2821,7 @@ void ZExec(EXECSTRUCT *Z)
 				ERRORCODE result;
 
 				// 各PPx固有機能
-				if ( 0 != (result = PPxInfoFunc(Z->Info, PPXCMDID_COMMAND, (void *)param)) ){
+				if ( NO_ERROR != (result = PPxInfoFunc32u(Z->Info, PPXCMDID_COMMAND, (void *)param)) ){
 					Z->result = result ^ 1;
 					break;
 				}
@@ -2823,22 +2841,21 @@ void ZExec(EXECSTRUCT *Z)
 					XMessage(Z->hWnd, NULL, XM_GrERRld, MES_EUXC, param);
 					Z->result = ERROR_BAD_COMMAND;
 					break;
-				}else{
-					if ( linebuf[CMDLINESIZE - 1] != '\0' ){
-						TCHAR *longbuf;
-						int size = GetCustTableSize(StrUserCommand, param);
+				}else if ( linebuf[CMDLINESIZE - 1] != '\0' ){
+					TCHAR *longbuf;
+					int size = GetCustTableSize(StrUserCommand, param);
 
-						longbuf = HeapAlloc(DLLheap, 0, size);
-						if ( longbuf == NULL ){
-							Z->result = RPC_S_STRING_TOO_LONG;
-							break;
-						}
-						GetCustTable(StrUserCommand, param, longbuf, size);
-						UserCommand(Z, param, longbuf, NULL);
-						HeapFree(DLLheap, 0, longbuf);
-					}else{
-						UserCommand(Z, param, linebuf, NULL);
+					longbuf = HeapAlloc(DLLheap, 0, size);
+					if ( longbuf == NULL ){
+						Z->result = RPC_S_STRING_TOO_LONG;
+						break;
 					}
+					GetCustTable(StrUserCommand, param, longbuf, size);
+					UserCommand(Z, NULL, param, longbuf, NULL);
+					HeapFree(DLLheap, 0, longbuf);
+					break;
+				}else{
+					UserCommand(Z, NULL, param, linebuf, NULL);
 					break;
 				}
 			}

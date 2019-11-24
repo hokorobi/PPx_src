@@ -625,7 +625,7 @@ void CrMenu(PPC_APPINFO *cinfo, BOOL ShowMenu)
 	CRMENUSTACKCHECK *CrmCheck; // スタック異常等の検出用
 
 	CrmCheck = (CRMENUSTACKCHECK *)PPxCommonExtCommand(KC_GETCRCHECK, 0);
-	if ( CrmCheck == (CRMENUSTACKCHECK *)ERROR_INVALID_FUNCTION ){
+	if ( CrmCheck == (CRMENUSTACKCHECK *)(LONG_PTR)ERROR_INVALID_FUNCTION ){
 		CrmCheck = &DummyCrmCheck;
 	}
 /*

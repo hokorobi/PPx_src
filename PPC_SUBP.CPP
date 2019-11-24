@@ -638,7 +638,7 @@ void GetVistaFileProps(PPC_APPINFO *cinfo, TCHAR *dest, int len, ENTRYCELL *cell
 						#endif
 						CoTaskMemFree(pszPropertyLabel);
 						tstrlimcpy(dest, buf, len);
-						nlen = tstrlen(dest);
+						nlen = tstrlen32(dest);
 						dest += nlen;
 						len -= nlen;
 					}
@@ -1940,7 +1940,7 @@ void Debug_DispIID(const TCHAR *mes, REFIID riid)
 	wsprintfW(pathW, L"Interface\\%s", iidstring);
 	CoTaskMemFree(iidstring);
 #ifdef UNICODE
-	wcscpy(path, pathW);
+	strcpyW(path, pathW);
 #else
 	UnicodeToAnsi(pathW, path, MAX_PATH);
 #endif

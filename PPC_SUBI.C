@@ -4,7 +4,6 @@
 	celltmp は、コピー済み(スレッドセーフ)の ENTRYCELL
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include <commctrl.h>
 #include <shlobj.h>
 #include "WINOLE.H"

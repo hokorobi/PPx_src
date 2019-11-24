@@ -3,7 +3,6 @@
 -----------------------------------------------------------------------------*/
 #define ONVFSDLL		// VFS.H ‚Ì DLL export Žw’è
 #include "WINAPI.H"
-#include <windowsx.h>
 #include "TOROWIN.H"
 #include "FATTIME.H"
 #pragma hdrstop

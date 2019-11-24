@@ -2,7 +2,6 @@
 	Paper Plane vUI										～ コードページ切替 ～
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include "PPX.H"
 #include "PPVUI.RH"
 #include "PPV_STRU.H"
@@ -20,7 +19,7 @@ typedef struct {
 	TCHAR CodePageName[MAX_PATH];
 } impCPINFOEX;
 
-DefineWinAPI(BOOL,GetCPInfoEx,(UINT CodePage,DWORD dwFlags,impCPINFOEX *lpCPInfoEx)) = INVALID_VALUE(impGetCPInfoEx);
+DefineWinAPI(BOOL, GetCPInfoEx, (UINT CodePage, DWORD dwFlags, impCPINFOEX *lpCPInfoEx)) = INVALID_VALUE(impGetCPInfoEx);
 
 typedef struct {
 	DWORD cp;
@@ -207,7 +206,7 @@ const CPTBLSTRUCT cptbl[] = {
 #endif
 	{CP_UTF7,	T("UTF-7")},
 	{CP_UTF8,	T("UTF-8")},
-	{0xffff,NULL}
+	{0xffff, NULL}
 };
 
 const TCHAR StrDefault[] = MES_DEFA;
@@ -219,7 +218,7 @@ int CodePageIndex;
 
 BOOL CALLBACK EnumCodePageProc(TCHAR *str)
 {
-	TCHAR buf[VFPS],buf2[VFPS];
+	TCHAR buf[VFPS], buf2[VFPS];
 	const TCHAR *p;
 	DWORD cp;
 	impCPINFOEX ciex;
@@ -227,12 +226,12 @@ BOOL CALLBACK EnumCodePageProc(TCHAR *str)
 
 	p = str;
 	cp = (LCID)GetNumber(&p);
-	wsprintf(buf,T("%05d - "),cp);
+	wsprintf(buf, T("%05d - "), cp);
 
 	if ( DGetCPInfoEx == INVALID_VALUE(impGetCPInfoEx) ){
-		GETDLLPROCT(GetModuleHandle(StrKernel32DLL),GetCPInfoEx);
+		GETDLLPROCT(GetModuleHandle(StrKernel32DLL), GetCPInfoEx);
 	}
-	if ( (DGetCPInfoEx != NULL) && (FALSE != DGetCPInfoEx(cp,0,&ciex)) ){
+	if ( (DGetCPInfoEx != NULL) && (FALSE != DGetCPInfoEx(cp, 0, &ciex)) ){
 		p = ciex.CodePageName;
 		while ( Isdigit(*p) ) p++;
 		while ( *p == ' ' ) p++;
@@ -251,11 +250,11 @@ BOOL CALLBACK EnumCodePageProc(TCHAR *str)
 			ct++;
 		}
 	}
-	tstrcpy(buf + 5 + 3,p);
+	tstrcpy(buf + 5 + 3, p);
 
-	hListWnd = GetDlgItem(hCodePageWnd,IDL_PT_LIST);
+	hListWnd = GetDlgItem(hCodePageWnd, IDL_PT_LIST);
 	{
-		int midindex,minindex,maxindex;
+		int midindex, minindex, maxindex;
 
 		minindex = midindex = 1;
 		maxindex = CodePageIndex - 1;
@@ -269,66 +268,66 @@ BOOL CALLBACK EnumCodePageProc(TCHAR *str)
 
 			midindex = (maxindex + minindex) / 2;
 
-			SendMessage(hListWnd,LB_GETTEXT,(WPARAM)midindex,(LPARAM)buf2);
-			if ( tstrcmp(buf,buf2) > 0 ){
+			SendMessage(hListWnd, LB_GETTEXT, (WPARAM)midindex, (LPARAM)buf2);
+			if ( tstrcmp(buf, buf2) > 0 ){
 				minindex = midindex + 1;
 			}else{
 				maxindex = midindex;
 			}
 		}
 
-		SendMessage(hListWnd,LB_SETITEMDATA,
-			SendMessage(hListWnd,LB_INSERTSTRING,(WPARAM)midindex,(LPARAM)buf)
-			,(LPARAM)cp);
+		SendMessage(hListWnd, LB_SETITEMDATA,
+			SendMessage(hListWnd, LB_INSERTSTRING, (WPARAM)midindex, (LPARAM)buf)
+			, (LPARAM)cp);
 	}
 
 	CodePageIndex++;
 	return TRUE;
 }
 
-INT_PTR CALLBACK GetCodePageDialog(HWND hDlg,UINT iMsg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK GetCodePageDialog(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch(iMsg){
 		case WM_INITDIALOG: {
 			hCodePageWnd = hDlg;
 			CodePageIndex = 0;
 
-			SetWindowLongPtr(hDlg,DWLP_USER,(LONG_PTR)lParam);
-			SetWindowText(hDlg,MessageText(StrSelCP));
-			SendDlgItemMessage(hCodePageWnd,IDL_PT_LIST,LB_ADDSTRING,0,
+			SetWindowLongPtr(hDlg, DWLP_USER, (LONG_PTR)lParam);
+			SetWindowText(hDlg, MessageText(StrSelCP));
+			SendDlgItemMessage(hCodePageWnd, IDL_PT_LIST, LB_ADDSTRING, 0,
 					(LPARAM)MessageText(StrDefault));
 			SendDlgItemMessage(hCodePageWnd,
-					IDL_PT_LIST,LB_SETITEMDATA,(WPARAM)CodePageIndex++,0);
+					IDL_PT_LIST, LB_SETITEMDATA, (WPARAM)CodePageIndex++, 0);
 
-			EnumSystemCodePages(EnumCodePageProc,CP_INSTALLED);
-			SendDlgItemMessage(hDlg,IDL_PT_LIST,LB_SETCURSEL,0,0);
-			PostMessage(hDlg,WM_COMMAND,TMAKELPARAM(IDL_PT_LIST,LBN_SELCHANGE),0);
+			EnumSystemCodePages(EnumCodePageProc, CP_INSTALLED);
+			SendDlgItemMessage(hDlg, IDL_PT_LIST, LB_SETCURSEL, 0, 0);
+			PostMessage(hDlg, WM_COMMAND, TMAKELPARAM(IDL_PT_LIST, LBN_SELCHANGE), 0);
 			return TRUE;
 		}
 		case WM_COMMAND:
 			switch ( LOWORD(wParam) ){
 				case IDOK:
-					EndDialog(hDlg,1);
+					EndDialog(hDlg, 1);
 					break;
 				case IDCANCEL:
-					EndDialog(hDlg,0);
+					EndDialog(hDlg, 0);
 					break;
 				case IDL_PT_LIST:
 					if ( HIWORD(wParam) == LBN_SELCHANGE ){
 						LRESULT type;
 
-						type = SendMessage((HWND)lParam,LB_GETCURSEL,0,0);
+						type = SendMessage((HWND)lParam, LB_GETCURSEL, 0, 0);
 						if ( type == LB_ERR ) break;
-						*(UINT *)GetWindowLongPtr(hDlg,DWLP_USER) =
+						*(UINT *)GetWindowLongPtr(hDlg, DWLP_USER) =
 								SendMessage((HWND)lParam,
-											LB_GETITEMDATA,(WPARAM)type,0);
+											LB_GETITEMDATA, (WPARAM)type, 0);
 					}
 					break;
 			}
 			break;
 
 		case WM_CLOSE:
-			EndDialog(hDlg,0);
+			EndDialog(hDlg, 0);
 			break;
 
 	}
@@ -339,8 +338,8 @@ DWORD GetCodePageType(HWND hWnd)
 {
 	DWORD result = MAX32;
 
-	if ( PPxDialogBoxParam(hInst,MAKEINTRESOURCE(IDD_PASTETYPE),
-			hWnd,GetCodePageDialog,(LPARAM)&result) > 0 ){
+	if ( PPxDialogBoxParam(hInst, MAKEINTRESOURCE(IDD_PASTETYPE),
+			hWnd, GetCodePageDialog, (LPARAM)&result) > 0 ){
 		return result;
 	}else{
 		return MAX32;

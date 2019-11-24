@@ -25,64 +25,64 @@ typedef struct {	// エイリアス ---------------------------------------------
 								色エイリアス
 -----------------------------------------------------------------------------*/
 LABEL ConColor[] = {
-	{T("_BLA")	,0},
-	{T("_BLU")	,FOREGROUND_BLUE  | FOREGROUND_INTENSITY},
-	{T("_RED")	,FOREGROUND_RED   | FOREGROUND_INTENSITY},
-	{T("_MAG")	,FOREGROUND_BLUE  | FOREGROUND_RED | FOREGROUND_INTENSITY},
+	{T("_BLA"), 0},
+	{T("_BLU"), FOREGROUND_BLUE  | FOREGROUND_INTENSITY},
+	{T("_RED"), FOREGROUND_RED   | FOREGROUND_INTENSITY},
+	{T("_MAG"), FOREGROUND_BLUE  | FOREGROUND_RED | FOREGROUND_INTENSITY},
 
-	{T("_GRE")	,FOREGROUND_GREEN | FOREGROUND_INTENSITY},
-	{T("_CYA")	,FOREGROUND_BLUE  | FOREGROUND_GREEN | FOREGROUND_INTENSITY},
-	{T("_BRO")	,FOREGROUND_RED   | FOREGROUND_GREEN | FOREGROUND_INTENSITY},
-	{T("_WHI")	,FOREGROUND_BLUE  | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY},
+	{T("_GRE"), FOREGROUND_GREEN | FOREGROUND_INTENSITY},
+	{T("_CYA"), FOREGROUND_BLUE  | FOREGROUND_GREEN | FOREGROUND_INTENSITY},
+	{T("_BRO"), FOREGROUND_RED   | FOREGROUND_GREEN | FOREGROUND_INTENSITY},
+	{T("_WHI"), FOREGROUND_BLUE  | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY},
 
-	{T("_DBLA")	,FOREGROUND_INTENSITY},
-	{T("_DBLU")	,FOREGROUND_BLUE},
-	{T("_DRED")	,FOREGROUND_RED},
-	{T("_DMAG")	,FOREGROUND_BLUE  | FOREGROUND_RED},
+	{T("_DBLA"), FOREGROUND_INTENSITY},
+	{T("_DBLU"), FOREGROUND_BLUE},
+	{T("_DRED"), FOREGROUND_RED},
+	{T("_DMAG"), FOREGROUND_BLUE  | FOREGROUND_RED},
 
-	{T("_DGRE")	,FOREGROUND_GREEN},
-	{T("_DCYA")	,FOREGROUND_BLUE  | FOREGROUND_GREEN},
-	{T("_DBRO")	,FOREGROUND_RED   | FOREGROUND_GREEN},
-	{T("_DWHI")	,FOREGROUND_BLUE  | FOREGROUND_GREEN | FOREGROUND_RED},
+	{T("_DGRE"), FOREGROUND_GREEN},
+	{T("_DCYA"), FOREGROUND_BLUE  | FOREGROUND_GREEN},
+	{T("_DBRO"), FOREGROUND_RED   | FOREGROUND_GREEN},
+	{T("_DWHI"), FOREGROUND_BLUE  | FOREGROUND_GREEN | FOREGROUND_RED},
 
-	{T("R_BLA")	,0},
-	{T("R_BLU")	,BACKGROUND_BLUE  | BACKGROUND_INTENSITY},
-	{T("R_RED")	,BACKGROUND_RED   | BACKGROUND_INTENSITY},
-	{T("R_MAG")	,BACKGROUND_BLUE  | BACKGROUND_RED | BACKGROUND_INTENSITY},
+	{T("R_BLA"), 0},
+	{T("R_BLU"), BACKGROUND_BLUE  | BACKGROUND_INTENSITY},
+	{T("R_RED"), BACKGROUND_RED   | BACKGROUND_INTENSITY},
+	{T("R_MAG"), BACKGROUND_BLUE  | BACKGROUND_RED | BACKGROUND_INTENSITY},
 
-	{T("R_GRE")	,BACKGROUND_GREEN | BACKGROUND_INTENSITY},
-	{T("R_CYA")	,BACKGROUND_BLUE  | BACKGROUND_GREEN | BACKGROUND_INTENSITY},
-	{T("R_BRO")	,BACKGROUND_RED   | BACKGROUND_GREEN | BACKGROUND_INTENSITY},
-	{T("R_WHI")	,BACKGROUND_BLUE  | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY},
+	{T("R_GRE"), BACKGROUND_GREEN | BACKGROUND_INTENSITY},
+	{T("R_CYA"), BACKGROUND_BLUE  | BACKGROUND_GREEN | BACKGROUND_INTENSITY},
+	{T("R_BRO"), BACKGROUND_RED   | BACKGROUND_GREEN | BACKGROUND_INTENSITY},
+	{T("R_WHI"), BACKGROUND_BLUE  | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY},
 
-	{T("R_DBLA") ,BACKGROUND_INTENSITY},
-	{T("R_DBLU") ,BACKGROUND_BLUE},
-	{T("R_DRED") ,BACKGROUND_RED},
-	{T("R_DMAG") ,BACKGROUND_BLUE  | BACKGROUND_RED},
+	{T("R_DBLA"), BACKGROUND_INTENSITY},
+	{T("R_DBLU"), BACKGROUND_BLUE},
+	{T("R_DRED"), BACKGROUND_RED},
+	{T("R_DMAG"), BACKGROUND_BLUE  | BACKGROUND_RED},
 
-	{T("R_DGRE") ,BACKGROUND_GREEN},
-	{T("R_DCYA") ,BACKGROUND_BLUE  | BACKGROUND_GREEN},
-	{T("R_DBRO") ,BACKGROUND_RED   | BACKGROUND_GREEN},
-	{T("R_DWHI") ,BACKGROUND_BLUE  | BACKGROUND_GREEN | BACKGROUND_RED},
+	{T("R_DGRE"), BACKGROUND_GREEN},
+	{T("R_DCYA"), BACKGROUND_BLUE  | BACKGROUND_GREEN},
+	{T("R_DBRO"), BACKGROUND_RED   | BACKGROUND_GREEN},
+	{T("R_DWHI"), BACKGROUND_BLUE  | BACKGROUND_GREEN | BACKGROUND_RED},
 
-	{T("_TL")	,0x0400},	// 上線
-	{T("_LL")	,0x0800},	// 左線
-	{T("_RL")	,0x1000},	// 右線
-	{T("_UL")	,0x8000},	// 下線
+	{T("_TL"), 0x0400},	// 上線
+	{T("_LL"), 0x0800},	// 左線
+	{T("_RL"), 0x1000},	// 右線
+	{T("_UL"), 0x8000},	// 下線
 };
 #define concolor_s 36
 
 // ユーザ定義が可能な項目
-CLABEL usermenu	= {NULL,f_MENU | fNoRelo,"=M",NilStr};	// メニュー
-CLABEL userext	= {NULL,f_EXT ,"/X",NilStr};	// ファイル判別
-CLABEL userlang	= {NULL,f_MES ,"=s",NilStr};	// メッセージ
-CLABEL userbar	= {NULL,f_TBAR,",d4x",NilStr};	// ツールバー
-CLABEL userkey	= {NULL,f_KEY ,"/X",NilStr};	// キー割当て
-CLABEL usersettings	= {NULL,fT ,"=s",NilStr};	// 任意設定
+CLABEL usermenu	= {NULL, f_MENU | fNoRelo, "=M", NilStr};	// メニュー
+CLABEL userext	= {NULL, f_EXT,  "/X", NilStr};	// ファイル判別
+CLABEL userlang	= {NULL, f_MES,  "=s", NilStr};	// メッセージ
+CLABEL userbar	= {NULL, f_TBAR, ",d4x", NilStr};	// ツールバー
+CLABEL userkey	= {NULL, f_KEY,  "/X", NilStr};	// キー割当て
+CLABEL usersettings	= {NULL, fT, "=s", NilStr};	// 任意設定
 
 typedef struct {
-	ThSTRUCT UsersIndex,UsersNames;
-	DWORD *UsersIndexMin,*UsersIndexMax;
+	ThSTRUCT UsersIndex, UsersNames;
+	DWORD *UsersIndexMin, *UsersIndexMax;
 } USERCUSTNAMES;
 
 // Smes の空き容量の調整 ------------------------------------------------------
@@ -90,13 +90,13 @@ void CheckSmes(_Inout_ PPCUSTSTRUCT *PCS)
 {
 	if ( PCS->Smes >= PCS->SmesLim ){
 		TCHAR *newptr;
-		DWORD size;
+		size_t size;
 
 		size = TSTROFF(PCS->SmesLim - PCS->SmesBuf);
 		size += ThNextAllocSizeM(size);
-		newptr = HeapReAlloc(ProcHeap,0,PCS->SmesBuf,size + ALLOCRESERVE);
+		newptr = HeapReAlloc(ProcHeap, 0, PCS->SmesBuf, size + ALLOCRESERVE);
 		if ( newptr == NULL ){
-			xmessage(XM_FaERRd,T("Custmize Memory error"));
+			xmessage(XM_FaERRd, T("Custmize Memory error"));
 			PCS->Smes = PCS->SmesBuf; // とりあえずあふれないようにしておく
 			return;
 		}
@@ -107,41 +107,41 @@ void CheckSmes(_Inout_ PPCUSTSTRUCT *PCS)
 }
 
 // Smes にエラーを書き込む ----------------------------------------------------
-TCHAR *GetNoSepMessage(BYTE *p,TCHAR code)
+TCHAR *GetNoSepMessage(BYTE *p, TCHAR code)
 {
-	wsprintf((TCHAR *)p,MessageText(MES_ENSP),code);
+	wsprintf((TCHAR *)p, MessageText(MES_ENSP), code);
 	return (TCHAR *)p;
 }
 
-void ErrorMes(PPCUSTSTRUCT *PCS,const TCHAR *mes)
+void ErrorMes(PPCUSTSTRUCT *PCS, const TCHAR *mes)
 {
-	PCS->Smes += wsprintf(PCS->Smes,T("%s(%4d): %s")TNL,
-			MessageText(MES_LGER),PCS->Dnum,MessageText(mes));
+	PCS->Smes += wsprintf(PCS->Smes, T("%s(%4d): %s")TNL,
+			MessageText(MES_LGER), PCS->Dnum, MessageText(mes));
 }
-void WarningMes(PPCUSTSTRUCT *PCS,const TCHAR *mes)
+void WarningMes(PPCUSTSTRUCT *PCS, const TCHAR *mes)
 {
-	PCS->Smes += wsprintf(PCS->Smes,T("%s(%4d): %s")TNL,
-			MessageText(MES_LGWA),PCS->Dnum,MessageText(mes));
+	PCS->Smes += wsprintf(PCS->Smes, T("%s(%4d): %s")TNL,
+			MessageText(MES_LGWA), PCS->Dnum, MessageText(mes));
 }
 
-void ErrorItemMes(PPCUSTSTRUCT *PCS,const TCHAR *mes,const TCHAR *kword,const TCHAR *sname)
+void ErrorItemMes(PPCUSTSTRUCT *PCS, const TCHAR *mes, const TCHAR *kword, const TCHAR *sname)
 {
 	if ( sname == NULL ){
-		PCS->Smes += wsprintf(PCS->Smes,T("%s(%4d): %s - %s")TNL,
-				MessageText(MES_LGER),PCS->Dnum,kword,MessageText(mes));
+		PCS->Smes += wsprintf(PCS->Smes, T("%s(%4d): %s - %s")TNL,
+				MessageText(MES_LGER), PCS->Dnum, kword, MessageText(mes));
 	}else{
-		PCS->Smes += wsprintf(PCS->Smes,T("%s(%4d): %s:%s - %s")TNL,
-				MessageText(MES_LGER),PCS->Dnum,kword,sname,MessageText(mes));
+		PCS->Smes += wsprintf(PCS->Smes, T("%s(%4d): %s:%s - %s")TNL,
+				MessageText(MES_LGER), PCS->Dnum, kword, sname, MessageText(mes));
 	}
 }
-void WarningItemMes(PPCUSTSTRUCT *PCS,const TCHAR *mes,const TCHAR *kword,const TCHAR *sname)
+void WarningItemMes(PPCUSTSTRUCT *PCS, const TCHAR *mes, const TCHAR *kword, const TCHAR *sname)
 {
 	if ( sname == NULL ){
-		PCS->Smes += wsprintf(PCS->Smes,T("%s(%4d): %s - %s")TNL,
-				MessageText(MES_LGWA),PCS->Dnum,kword,MessageText(mes));
+		PCS->Smes += wsprintf(PCS->Smes, T("%s(%4d): %s - %s")TNL,
+				MessageText(MES_LGWA), PCS->Dnum, kword, MessageText(mes));
 	}else{
-		PCS->Smes += wsprintf(PCS->Smes,T("%s(%4d): %s:%s - %s")TNL,
-				MessageText(MES_LGWA),PCS->Dnum,kword,sname,MessageText(mes));
+		PCS->Smes += wsprintf(PCS->Smes, T("%s(%4d): %s:%s - %s")TNL,
+				MessageText(MES_LGWA), PCS->Dnum, kword, sname, MessageText(mes));
 	}
 }
 //================================================================ カスタマイズ
@@ -159,32 +159,32 @@ PPXDLL int PPXAPI CheckRegistKey(const TCHAR *src, TCHAR *dest, const TCHAR *cus
 		 (*(custid + 1) == 'V') ){
 		// ' '/\' 'は SPACE/\SPACE に変換
 		if ( (key == ' ') || (key == (K_s | ' ')) ){
-			setflag(key,K_v);
+			setflag(key, K_v);
 		}
 	}else{
 		// EDITCONTROL系+PPbでSPACE/\SPACEは ' '/\' ' に変換
 		if ( ((key == K_space) || (key == (K_s | K_space))) &&
-			 (!tstrcmp(custid,T("K_edit")) || !tstrcmp(custid,T("K_lied")) || !tstrcmp(custid,T("K_ppe")) || !tstrcmp(custid,T("KB_edit"))) ){
-			resetflag(key,K_v);
+			 (!tstrcmp(custid, T("K_edit")) || !tstrcmp(custid, T("K_lied")) || !tstrcmp(custid, T("K_ppe")) || !tstrcmp(custid, T("KB_edit"))) ){
+			resetflag(key, K_v);
 		}
 	}
 
 	if ( IsupperA(key) && (key & K_c) && !(key & (K_a | K_internal)) ){ // Ctrl+英字 は、K_v 不要
-		resetflag(key,K_v);
+		resetflag(key, K_v);
 	}
 
 	// ^J ^\J 等は 仮想キーコードに変換(^Enter が ^J も出力するため)KB_edit除く
 	// ^ScrollLock で ^C になるが、これはチェック省略中
 	if ( ((key & ~(K_s | K_e)) == (K_c | 'J')) &&
 		 (*(custid + 1) != 'B') ){
-		setflag(key,K_v);
+		setflag(key, K_v);
 	}
 
-	PutKeyCode(dest,key);
+	PutKeyCode(dest, key);
 
 	// EDITCONTROL系でK_edit で \Enter, ^Enter は機能しないので警告
 	if ( ((key == (K_s | K_cr)) || (key == (K_c | K_cr))) &&
-		 (!tstrcmp(custid,T("K_edit")) || !tstrcmp(custid,T("K_lied")) || !tstrcmp(custid,T("K_ppe"))) ){
+		 (!tstrcmp(custid, T("K_edit")) || !tstrcmp(custid, T("K_lied")) || !tstrcmp(custid, T("K_ppe"))) ){
 		return CHECKREGISTKEY_WARNKEY;
 	}
 	// 数字キーは、Shift→記号 Ctrl→仮想キー になるので警告する
@@ -204,7 +204,7 @@ PPXDLL int PPXAPI CheckRegistKey(const TCHAR *src, TCHAR *dest, const TCHAR *cus
 -----------------------------------------------------------------------------*/
 _Ret_notnull_ TCHAR *GetConfigLine(_Inout_ PPCUSTSTRUCT *PCS,_Inout_ TCHAR **mem,_In_ TCHAR *max)
 {
-	TCHAR *p,*bottom;
+	TCHAR *p, *bottom;
 
 	bottom = p = *mem;
 	while ( p < max ){
@@ -246,7 +246,7 @@ _Ret_notnull_ TCHAR *GetConfigLine(_Inout_ PPCUSTSTRUCT *PCS,_Inout_ TCHAR **mem
 	return bottom;
 }
 // 行末空白を除去２ -----------------------------------------------------------
-void DeleteEndspace(TCHAR *min,TCHAR *max)
+void DeleteEndspace(TCHAR *min, TCHAR *max)
 {
 	for( ; min < max ; max-- ){
 		if ( (*(max-1) == ' ') || (*(max-1) == '\t') ) continue;
@@ -257,9 +257,9 @@ void DeleteEndspace(TCHAR *min,TCHAR *max)
 /*
 	「?<>0.00|」をチェックする。0:「?」ではない 正:該当 負:あったが対象外
 */
-int CheckPrecode(const TCHAR *ptr,TCHAR command,TCHAR **keyword,const TCHAR *CVer)
+int CheckPrecode(const TCHAR *ptr, TCHAR command, TCHAR **keyword, const TCHAR *CVer)
 {
-	TCHAR *p,*q,ver[64];
+	TCHAR *p, *q, ver[64];
 	int ab = 0;
 										// 先頭が command か？
 	if ( (*ptr != command) &&
@@ -268,7 +268,7 @@ int CheckPrecode(const TCHAR *ptr,TCHAR command,TCHAR **keyword,const TCHAR *CVe
 	}
 	ptr++;
 										// 末尾が '|' か？
-	p = tstrchr(ptr,'|');
+	p = tstrchr(ptr, '|');
 	if ( p == NULL ) return 0;
 	if ( keyword != NULL ) *keyword = p + 1;
 										// 符号チェック
@@ -287,10 +287,10 @@ int CheckPrecode(const TCHAR *ptr,TCHAR command,TCHAR **keyword,const TCHAR *CVe
 	*q = 0;
 										// バージョンチェック
 	if ( !ver[0] ) return 1;	// Ver 指定無し→無条件に該当
-	return (tstrcmp(ver,CVer) ^ ab) | 1;
+	return (tstrcmp(ver, CVer) ^ ab) | 1;
 }
 
-BYTE GetNumberWith(const TCHAR **line,BYTE def,DWORD maxnum)
+BYTE GetNumberWith(const TCHAR **line, BYTE def, DWORD maxnum)
 {
 	if ( Isdigit(**line) ){
 		DWORD num;
@@ -309,7 +309,7 @@ BYTE GetNumberWith(const TCHAR **line,BYTE def,DWORD maxnum)
 	TRUE	:正常終了/中止の必要が無いエラー
 	FALSE	:中止する必要があるエラー
 -----------------------------------------------------------------------------*/
-BOOL CSline(PPCUSTSTRUCT *PCS,const TCHAR *kword,TCHAR *sname,TCHAR *line,WORD flags,const char *fmt,TCHAR **mem,TCHAR *max)
+BOOL CSline(PPCUSTSTRUCT *PCS, const TCHAR *kword, TCHAR *sname, TCHAR *line, WORD flags, const char *fmt, TCHAR **mem, TCHAR *max)
 {
 	BYTE bin[0x10000];	// 格納する内容の形成場所
 	BYTE *destp;		// 格納内容の末尾
@@ -319,17 +319,17 @@ BOOL CSline(PPCUSTSTRUCT *PCS,const TCHAR *kword,TCHAR *sname,TCHAR *line,WORD f
 		TCHAR *sep;
 		int vercmp;
 
-		vercmp = CheckPrecode(sname,'-',&sname,PCS->CVer);
+		vercmp = CheckPrecode(sname, '-', &sname, PCS->CVer);
 		if ( vercmp < 0 ) return TRUE;	// 該当しない
 							// kword から「x|」を削除
-		sep = tstrchr(kword,'|');
+		sep = tstrchr(kword, '|');
 		if ( sep != NULL ) kword = sep + 1;
 
 		if ( vercmp > 0 ){
-			if ( IsExistCustTable(kword,sname) ){
-				PCS->Smes += wsprintf(PCS->Smes,T("%s: %s:%s")TNL,
-						MessageText(MES_LGDE),kword,sname);
-				DeleteCustTable(kword,sname,0);
+			if ( IsExistCustTable(kword, sname) ){
+				PCS->Smes += wsprintf(PCS->Smes, T("%s: %s:%s")TNL,
+						MessageText(MES_LGDE), kword, sname);
+				DeleteCustTable(kword, sname, 0);
 				PCS->reloadflag &= flags;
 			}
 			return TRUE;
@@ -337,12 +337,12 @@ BOOL CSline(PPCUSTSTRUCT *PCS,const TCHAR *kword,TCHAR *sname,TCHAR *line,WORD f
 	}else{ // 単純
 		int vercmp;
 
-		vercmp = CheckPrecode(kword,'-',&sname,PCS->CVer);
+		vercmp = CheckPrecode(kword, '-', &sname, PCS->CVer);
 		if ( vercmp < 0 ) return TRUE;	// 該当しない
 		if ( vercmp > 0 ){
 			if ( IsExistCustData(kword) ){
-				PCS->Smes += wsprintf(PCS->Smes,T("%s: %s")TNL,
-						MessageText(MES_LGDE),kword);
+				PCS->Smes += wsprintf(PCS->Smes, T("%s: %s")TNL,
+						MessageText(MES_LGDE), kword);
 				DeleteCustData(kword);
 				PCS->reloadflag &= flags;
 			}
@@ -352,7 +352,7 @@ BOOL CSline(PPCUSTSTRUCT *PCS,const TCHAR *kword,TCHAR *sname,TCHAR *line,WORD f
 
 	if ( flags & fOld ){
 		if ( sname == NULL ){
-			PCS->Smes += wsprintf(PCS->Smes,T("Readonly item:%s")TNL,kword);
+			PCS->Smes += wsprintf(PCS->Smes, T("Readonly item:%s")TNL, kword);
 		}
 		return TRUE;
 	}
@@ -372,13 +372,13 @@ BOOL CSline(PPCUSTSTRUCT *PCS,const TCHAR *kword,TCHAR *sname,TCHAR *line,WORD f
 //--------------------------------------------------------- Dump
 	if ( *fmt == '\0' ){
 		while( *line != '\0' ){
-			int high,low;
+			int high, low;
 
 			high = GetHexChar(&line);
 			if ( high < 0 ) break;
 			low = GetHexChar(&line);
 			if ( low < 0 ){
-				ErrorMes(PCS,T("Hex string"));
+				ErrorMes(PCS, T("Hex string"));
 				return TRUE;
 			}
 			*destp++ = (BYTE)((high << 4) + low);
@@ -389,14 +389,14 @@ BOOL CSline(PPCUSTSTRUCT *PCS,const TCHAR *kword,TCHAR *sname,TCHAR *line,WORD f
 //=============================================================================
 // C:色 -----------------------------------------------------------------------
 case 'C':
-	*(COLORREF *)destp = CS_color(&line,flags);
+	*(COLORREF *)destp = CS_color(&line, flags);
 	destp += sizeof(COLORREF);
 	break;
 
 // c:色/console ---------------------------------------------------------------
 case 'c':{
-	TCHAR buf[100],*pt,*dst,data;
-	int i,c = 0;
+	TCHAR buf[100], *pt, *dst, data;
+	int i, c = 0;
 
 	for ( ; ; ){
 										// キーワードを抽出
@@ -406,7 +406,7 @@ case 'c':{
 		*dst = 0;
 										// 定義済み識別子を判別
 		for ( i = 0 ; i < concolor_s ; i++ ){
-			if ( !tstrcmp(buf,ConColor[i].str) ){
+			if ( !tstrcmp(buf, ConColor[i].str) ){
 				line = pt - 1;
 				c |= ConColor[i].num;
 				break;
@@ -438,14 +438,14 @@ case 'd':
 	destp += *fmt++ - '0';
 	SkipSPC(line);
 	if ( (*fmt == ',') && (*line != ',') && ((UTCHAR)*line >= ' ') ){
-		ErrorItemMes(PCS,GetNoSepMessage(destp,','),kword,sname);
+		ErrorItemMes(PCS, GetNoSepMessage(destp, ','), kword, sname);
 		return TRUE;
 	}
 	break;
 
 // E:(PPC)エントリ表示 --------------------------------------------------------
 case 'E':
-	if ( CS_ppcdisp(PCS,&line,&destp) == FALSE ){
+	if ( CS_ppcdisp(PCS, &line, &destp) == FALSE ){
 		return TRUE;
 	}
 	break;
@@ -454,8 +454,8 @@ case 'E':
 case 's':
 case 'S': {
 	int binlen;
-	TCHAR *sep,mode;
-	int destlen,linelen;
+	TCHAR *sep, mode;
+	int destlen, linelen;
 
 	mode = *(fmt - 1);
 	if ( *fmt == 'D' ){
@@ -470,23 +470,23 @@ case 'S': {
 		binlen = GetNumberA(&fmt);
 	}
 	if ( *fmt == ',' ){					// この文字列のあとにも書式がある？
-		sep = tstrchr(line,',');
+		sep = tstrchr(line, ',');
 		if ( sep != NULL ) linelen = sep - line;
 	}
 	if ( binlen != 0 ){					// 長さ指定があるなら大きさ確認
 		if ( binlen <= linelen ){
-			ErrorItemMes(PCS,MES_EFLW,kword,sname);
+			ErrorItemMes(PCS, MES_EFLW, kword, sname);
 			return TRUE;
 		}
 		destlen = binlen;
 	}else{
 		destlen = linelen + 1;
 	}
-	tstrcpy((TCHAR *)destp,line);
+	tstrcpy((TCHAR *)destp, line);
 	*(TCHAR *)((TCHAR *)destp + linelen) = '\0';
 
 	if ( mode == 'D' ){
-		tstrreplace( (TCHAR *)destp,T("\""),NilStr);
+		tstrreplace( (TCHAR *)destp, T("\""), NilStr);
 		if ( (*line == '%') && (*(line + 1) == '0') ){
 			int dellen = 2;
 
@@ -496,14 +496,14 @@ case 'S': {
 				dellen = 4;
 			}
 			destlen -= dellen;
-			memmove( destp , (TCHAR *)((TCHAR *)line + dellen),destlen * sizeof(TCHAR) );
-			WarningItemMes(PCS,T("Replace %0 to relative path"),kword,sname);
+			memmove( destp , (TCHAR *)((TCHAR *)line + dellen), destlen * sizeof(TCHAR) );
+			WarningItemMes(PCS, T("Replace %0 to relative path"), kword, sname);
 		}
-		if ( tstrchr( (TCHAR *)destp,'%') != NULL ){
-			WarningItemMes(PCS,T("Macro character not support"),kword,sname);
+		if ( tstrchr( (TCHAR *)destp, '%') != NULL ){
+			WarningItemMes(PCS, T("Macro character not support"), kword, sname);
 		}
 	}else if ( mode == 's' ){
-		TCHAR *src,*dest;
+		TCHAR *src, *dest;
 
 		destlen = 1;
 		dest = (TCHAR *)destp;
@@ -547,12 +547,12 @@ case 'm':
 
 		len = tstrlen32(line);
 		size = TSTROFF(len + 1);
-		memcpy(destp,line,size);
+		memcpy(destp, line, size);
 		destp += size;
 		line += len;
 
 		if ( (**mem != ' ') && (**mem != '\t') ) break; // 字下げがないので終
-		line = GetConfigLine(PCS,mem,max);
+		line = GetConfigLine(PCS, mem, max);
 		if ( *line == '\0' ) break;
 		#ifdef UNICODE
 			*(destp - 2) = (BYTE)((*(fmt - 1) == 'M') ? '\n' : '\0');
@@ -580,7 +580,7 @@ case 'k': {
 		if ( !*line ) break;
 		i = GetKeyCode((const TCHAR **)&line);
 		if ( i < 0 ){
-			ErrorItemMes(PCS,MES_EKFT,kword,sname);
+			ErrorItemMes(PCS, MES_EKFT, kword, sname);
 			return TRUE;
 		}
 		*(WORD *)destp = (WORD)i;
@@ -592,7 +592,7 @@ case 'k': {
 		if ( (i == (K_c | K_s | K_F10)) || (i == (K_tab)) ){
 			*(WORD *)(destp - 2) = (WORD)(i | K_raw);
 		}else{ // キー割当ての時は、再エイリアスの警告を行う
-			if ( kword[0] == 'K' ) WarningItemMes(PCS,MES_WNOA,kword,sname);
+			if ( kword[0] == 'K' ) WarningItemMes(PCS, MES_WNOA, kword, sname);
 		}
 	}
 	*(WORD *)destp = 0;
@@ -607,7 +607,7 @@ case 'K': {
 	if ( !*line ) break;
 	i = GetKeyCode((const TCHAR **)&line);
 	if ( i < 0 ){
-		ErrorItemMes(PCS,MES_EKFT,kword,sname);
+		ErrorItemMes(PCS, MES_EKFT, kword, sname);
 		return TRUE;
 	}
 	*(WORD *)destp = (WORD)i;
@@ -637,24 +637,24 @@ case 'V': {
 	TCHAR *n;
 	int i;
 										// バージョンを抽出 -------------------
-	n = tstrchr(line,',');
+	n = tstrchr(line, ',');
 	if ( n == NULL ) n = line + tstrlen(line);
 	i = n - line;
-	memcpy(destp,line,TSTROFF(i));
+	memcpy(destp, line, TSTROFF(i));
 	destp += i * sizeof(TCHAR);
 	*((TCHAR *)destp) = '\0';
 	destp += sizeof(TCHAR);
 	PCS->Smes += wsprintf(PCS->Smes,
-			T("File version : %s")TNL,destp - TSTROFF(i + 1));
+			T("File version : %s")TNL, destp - TSTROFF(i + 1));
 										// コメント/格納チェック --------------
 	if ( *n == ',' ) n++;
 	if ( *n == '?' ){
 		n++;
-		wsprintf(PCS->Smes,T("File comment : %s") TNL
-							T("Include this file?"),n);
+		wsprintf(PCS->Smes, T("File comment : %s") TNL
+							T("Include this file?"), n);
 		if (PCS->Sure(PCS->Smes) != IDYES) return FALSE;
 	}else if ( *n ){
-		PCS->Smes += wsprintf(PCS->Smes,T("File comment : %s")TNL,n);
+		PCS->Smes += wsprintf(PCS->Smes, T("File comment : %s")TNL, n);
 	}
 	break;
 }
@@ -665,7 +665,7 @@ default:
 	line = SkipSpaceAndFix(line);
 	if ( *line != *(fmt - 1) ){
 		if ( (*(fmt - 1) != *fmt) && !(flags & fSwarn) ){
-			WarningItemMes(PCS,GetNoSepMessage(destp,*(fmt-1)),kword,sname);
+			WarningItemMes(PCS, GetNoSepMessage(destp, *(fmt-1)), kword, sname);
 		}
 		fmt = Nilfmt;
 		break;
@@ -678,43 +678,43 @@ default:
 		}
 	}
 	if ( sname != NULL ){	// 配列内の項目を保存する--------------------------
-		TCHAR newSname[VFPS],sn;
+		TCHAR newSname[VFPS], sn;
 		int pre;
 		sn = *sname;
 												// 項目の強制追加(update時のみ)
-		pre = CheckPrecode(sname,'+',&sname,PCS->CVer);
+		pre = CheckPrecode(sname, '+', &sname, PCS->CVer);
 				// (update) && (無条件登録でない) → 条件別処理
 		if ( (PCS->Xmode == PPXCUSTMODE_UPDATE) && !PCS->XupdateTbl ){
 			if ( pre < 0 ) return TRUE;	// 該当バージョンでないため、更新しない
 			if ( pre == 0 ) return TRUE; // "+|" でない→登録せず
 										 // "+|" →状況メッセージありで登録
-			if ( IsExistCustTable(kword,sname) ){
+			if ( IsExistCustTable(kword, sname) ){
 				if ( sn == '?' ) return TRUE; // "?|" は上書きしない
-				PCS->Smes += wsprintf(PCS->Smes,T("%s: %s:%s")TNL,
-						MessageText(MES_LGOW),kword,sname);
+				PCS->Smes += wsprintf(PCS->Smes, T("%s: %s:%s")TNL,
+						MessageText(MES_LGOW), kword, sname);
 			}else{
-				PCS->Smes += wsprintf(PCS->Smes,T("%s: %s:%s")TNL,
-						MessageText(MES_LGCR),kword,sname);
+				PCS->Smes += wsprintf(PCS->Smes, T("%s: %s:%s")TNL,
+						MessageText(MES_LGCR), kword, sname);
 			}
 		}
 		if ( flags & fU ) tstrupr(sname);	// 大文字化
 		if ( flags & fK ){					// キーコードの正規化 -------------
-			switch ( CheckRegistKey(sname,newSname,kword) ){
+			switch ( CheckRegistKey(sname, newSname, kword) ){
 				case CHECKREGISTKEY_BADNAME:
-					ErrorMes(PCS,MES_EKFT);
+					ErrorMes(PCS, MES_EKFT);
 					return TRUE;
 				case CHECKREGISTKEY_WARNKEY:
-					WarningItemMes(PCS,MES_WKSI,kword,sname);
+					WarningItemMes(PCS, MES_WKSI, kword, sname);
 					break;
 				case CHECKREGISTKEY_RELOADKEY:
-					resetflag(PCS->reloadflag,fNoRelo); // カスタマイズ読み込みが必要
+					resetflag(PCS->reloadflag, fNoRelo); // カスタマイズ読み込みが必要
 					break;
 				// default:
 			}
 			sname = newSname;
 		}else if ( flags & fHMenu ){		// メニュー用に加工 ---------------
 			sname[4] = '\0';
-			wsprintf(newSname,T("%-4s"),sname);
+			wsprintf(newSname, T("%-4s"), sname);
 			sname = newSname;
 		}else if ( flags & fW ){ // ワイルドカード検出
 			TCHAR *sp;
@@ -724,9 +724,9 @@ default:
 				if ( *sp == ':' ) sp++;
 				for ( ; *sp ; sp++ ){
 					if ( (*sp >= '!') && (*sp <='?') ){
-						if ( tstrchr(DetectWildcardLetter,*sp) != NULL ){
+						if ( tstrchr(DetectWildcardLetter, *sp) != NULL ){
 							newSname[0] = '/';
-							tstrcpy(newSname + 1,sname);
+							tstrcpy(newSname + 1, sname);
 							sname = newSname;
 							break;
 						}
@@ -738,9 +738,9 @@ default:
 		if ( (flags & fA) &&
 			 ( ((sname[0] == '-') && (sname[1] == '-')) ||
 			   ((sname[0] == '|') && (sname[1] == '|'))) ){
-			InsertCustTable(kword,sname,0x7fffffff,bin,destp - bin);
+			InsertCustTable(kword, sname, 0x7fffffff, bin, destp - bin);
 		}else{
-			if ( NO_ERROR != SetCustTable(kword,sname,bin,destp - bin) ){
+			if ( NO_ERROR != SetCustTable(kword, sname, bin, destp - bin) ){
 				goto noareaerror;
 			}
 		}
@@ -757,9 +757,9 @@ default:
 				size = GetCustDataSize(kword);
 				if ( size >= 0 ){
 					if ( (destp - bin) > size ){ // 項目が少ない
-						PCS->Smes += wsprintf(PCS->Smes,T("%s: %s")TNL,
-								MessageText(MES_LGAP),kword);
-						GetCustData(kword,bin,sizeof(bin));
+						PCS->Smes += wsprintf(PCS->Smes, T("%s: %s")TNL,
+								MessageText(MES_LGAP), kword);
+						GetCustData(kword, bin, sizeof(bin));
 					}else{ // 項目数に問題ない
 						return TRUE;
 					}
@@ -767,30 +767,30 @@ default:
 			}
 		}else{
 															// 項目の強制追加
-			pre = CheckPrecode(kword,'+',(TCHAR **)&kword,PCS->CVer);
+			pre = CheckPrecode(kword, '+', (TCHAR **)&kword, PCS->CVer);
 			if ( PCS->Xmode == PPXCUSTMODE_UPDATE ){	// update
 				if ( pre < 0 ) return TRUE;	// 該当バージョンでないため、未更新
 				if ( pre > 0 ){
 					if ( sn == '?' ) return TRUE; // "?|" は上書きしない
 					if ( IsExistCustData(kword) ){
 						// 上書き
-						PCS->Smes += wsprintf(PCS->Smes,T("%s: %s")TNL,
-								MessageText(MES_LGOW),kword);
+						PCS->Smes += wsprintf(PCS->Smes, T("%s: %s")TNL,
+								MessageText(MES_LGOW), kword);
 					}
 				}else{	// "+|" なし	／ 既に項目があるなら保存しない
 					if ( IsExistCustData(kword) ) return TRUE;
 					// 新規
-					PCS->Smes += wsprintf(PCS->Smes,T("%s: %s")TNL,
-							MessageText(MES_LGCR),kword);
+					PCS->Smes += wsprintf(PCS->Smes, T("%s: %s")TNL,
+							MessageText(MES_LGCR), kword);
 				}
 			}
 		}
-		if ( NO_ERROR != SetCustData(kword,bin,destp - bin) ) goto noareaerror;
+		if ( NO_ERROR != SetCustData(kword, bin, destp - bin) ) goto noareaerror;
 	}
 	PCS->reloadflag &= flags;
 	return TRUE;
 noareaerror:
-	ErrorMes(PCS,MES_ECFL);
+	ErrorMes(PCS, MES_ECFL);
 	return FALSE;
 }
 /*-----------------------------------------------------------------------------
@@ -806,23 +806,23 @@ int CSitem(PPCUSTSTRUCT *PCS,
 {
 	if ( !(clbl->flag & fT) ){		// 単純 -----------------------------------
 		if ( *clbl->fmt != sepC){
-			ErrorItemMes(PCS,MES_ESEP,kword,NULL);
+			ErrorItemMes(PCS, MES_ESEP, kword, NULL);
 			return TRUE;
 		}
-		return CSline(PCS,kword,NULL,ptr,clbl->flag,clbl->fmt,mem,max);
+		return CSline(PCS, kword, NULL, ptr, clbl->flag, clbl->fmt, mem, max);
 	}else{							// 配列 -----------------------------------
 		if ( sepC != '=' ){
-			ErrorItemMes(PCS,MES_ESEP,kword,NULL);
+			ErrorItemMes(PCS, MES_ESEP, kword, NULL);
 			return TRUE;
 		}
 		ptr = SkipSpaceAndFix(ptr);
 		if ( *ptr++ != '{' ){
-			ErrorItemMes(PCS,MES_EBRK,kword,NULL);
+			ErrorItemMes(PCS, MES_EBRK, kword, NULL);
 			return TRUE;
 		}
 
 		if ( clbl->flag & fOld ){
-			PCS->Smes += wsprintf(PCS->Smes,T("Readonly item:%s")TNL,kword);
+			PCS->Smes += wsprintf(PCS->Smes, T("Readonly item:%s")TNL, kword);
 		}else{
 			TCHAR *p;
 
@@ -830,16 +830,16 @@ int CSitem(PPCUSTSTRUCT *PCS,
 				int pre;
 
 				p = kword;
-				pre = CheckPrecode(kword,'+',&p,PCS->CVer);
+				pre = CheckPrecode(kword, '+', &p, PCS->CVer);
 				if ( !IsExistCustData(p) ){	// 配列自体を新規作成
 					PCS->XupdateTbl = 1;
-					PCS->Smes += wsprintf(PCS->Smes,T("%s: %s")TNL,
-							MessageText(MES_LGCR),p);
+					PCS->Smes += wsprintf(PCS->Smes, T("%s: %s")TNL,
+							MessageText(MES_LGCR), p);
 				}else{
 					if ( pre > 0 ){
 						PCS->XupdateTbl = 1;
-						PCS->Smes += wsprintf(PCS->Smes,T("%s: %s")TNL,
-								MessageText(MES_LGOW),p);
+						PCS->Smes += wsprintf(PCS->Smes, T("%s: %s")TNL,
+								MessageText(MES_LGOW), p);
 					}else{
 						PCS->XupdateTbl = 0;
 					}
@@ -849,14 +849,14 @@ int CSitem(PPCUSTSTRUCT *PCS,
 				DeleteCustData(kword); // 初期化
 				p = ptr;
 				while ( (*p == ' ') || (*p == '\t') ) p++;
-				if ( ((UTCHAR)*p > ' ') && (tstrcmp(DefCommentStr + 1,p) != 0) ){
+				if ( ((UTCHAR)*p > ' ') && (tstrcmp(DefCommentStr + 1, p) != 0) ){
 					int len;
 
 					len = tstrlen32(ptr);
 					if ( len >= MAX_PATH ) len = MAX_PATH - 1;
-					SetCustTable(T("#Comment"),kword,ptr,TSTROFF(len + 1));
+					SetCustTable(T("#Comment"), kword, ptr, TSTROFF(len + 1));
 				}else if ( *clbl->comment == '\0' ){
-					DeleteCustTable(T("#Comment"),kword,0);
+					DeleteCustTable(T("#Comment"), kword, 0);
 				}
 			}
 		}
@@ -864,7 +864,7 @@ int CSitem(PPCUSTSTRUCT *PCS,
 			TCHAR *p;
 			TCHAR kwordbuf[0x80];
 
-			p = GetConfigLine(PCS,mem,max);
+			p = GetConfigLine(PCS, mem, max);
 			if ( *p == '\0' ) continue;
 			if ( *p == '}' ) break;
 												// セパレータの識別 ----------
@@ -873,7 +873,7 @@ int CSitem(PPCUSTSTRUCT *PCS,
 				if ( *ptr == '\'' ){
 					ptr++;
 					if ( !*ptr ) break;
-					ptr = tstrchr(ptr + 1,'\'');
+					ptr = tstrchr(ptr + 1, '\'');
 					if ( ptr == NULL ) break;
 				}else if ( *clbl->fmt != '/' ){	// 通常のセパレータ
 					if ( *ptr == *clbl->fmt ) break;
@@ -884,24 +884,24 @@ int CSitem(PPCUSTSTRUCT *PCS,
 				ptr++;
 			}
 			if ( (ptr == NULL) || (*ptr == '\0') ){
-				ErrorMes(PCS,MES_ESEP);
+				ErrorMes(PCS, MES_ESEP);
 				continue;
 			}
 												// 解析 ----------------------
 			if ( *clbl->fmt == '/' ){
 				if ( (size_t)(ptr - p) > (TSIZEOF(kwordbuf) - 2) ){
-					ErrorMes(PCS,MES_ESEP);
+					ErrorMes(PCS, MES_ESEP);
 					continue;
 				}
-				memcpy(kwordbuf,p,TSTROFF(ptr - p));
-				DeleteEndspace(kwordbuf,kwordbuf + (ptr - p));
+				memcpy(kwordbuf, p, TSTROFF(ptr - p));
+				DeleteEndspace(kwordbuf, kwordbuf + (ptr - p));
 				p = kwordbuf;
 			}else{
-				DeleteEndspace(p,ptr);
+				DeleteEndspace(p, ptr);
 			}
 			if ( *clbl->fmt != '/' ) ptr++;
-			DeleteEndspace(ptr,ptr + tstrlen(ptr));
-			if ( !CSline(PCS,kword,p,ptr,clbl->flag,clbl->fmt,mem,max) ){
+			DeleteEndspace(ptr, ptr + tstrlen(ptr));
+			if ( !CSline(PCS, kword, p, ptr, clbl->flag, clbl->fmt, mem, max) ){
 				return FALSE;
 			}
 		}
@@ -912,84 +912,84 @@ int CSitem(PPCUSTSTRUCT *PCS,
 /*-----------------------------------------------------------------------------
 	カスタマイズ(格納)本体
 -----------------------------------------------------------------------------*/
-PPXDLL int PPXAPI PPcustCStore(TCHAR *mem,TCHAR *memmax,int appendmode,TCHAR **log,int (USECDECL * Sure)(const TCHAR *message))
+PPXDLL int PPXAPI PPcustCStore(TCHAR *mem, TCHAR *memmax, int appendmode, TCHAR **log, int (USECDECL * Sure)(const TCHAR *message))
 {
 	PPCUSTSTRUCT PCS;
-	TCHAR *kword,*ck;				// 項目名
-	TCHAR *p,sepC;
+	TCHAR *kword, *ck;				// 項目名
+	TCHAR *p, sepC;
 	const CLABEL *clbl;
 	BOOL result = TRUE;
 
-	PCS.Smes = PCS.SmesBuf = HeapAlloc(ProcHeap,0,FIRSTSTORESIZE +ALLOCRESERVE);
+	PCS.Smes = PCS.SmesBuf = HeapAlloc(ProcHeap, 0, FIRSTSTORESIZE +ALLOCRESERVE);
 	PCS.SmesLim = PCS.Smes + FIRSTSTORESIZE / sizeof(TCHAR);
 	PCS.Dnum = 0;
 	PCS.Xmode = appendmode;
 	PCS.Sure = Sure;
 	PCS.reloadflag = fNoRelo | fReSta;
 
-	tstrcpy(PCS.CVer,T("0.00"));
-	GetCustData(T("PPxCFG"),&PCS.CVer,sizeof(PCS.CVer));
+	tstrcpy(PCS.CVer, T("0.00"));
+	GetCustData(T("PPxCFG"), &PCS.CVer, sizeof(PCS.CVer));
 
 										// 解析処理 ---------------------------
 	while( (mem < memmax) && result ){
 		int pre;
 		TCHAR *ne;
 										// Keyword の抽出 ----------
-		kword = GetConfigLine(&PCS,&mem,memmax);
+		kword = GetConfigLine(&PCS, &mem, memmax);
 		if ( *kword == '\0' ) continue;
-		p = tstrchr(kword,'=');
-		if ( p == NULL ) p = tstrrchr(kword,':');
+		p = tstrchr(kword, '=');
+		if ( p == NULL ) p = tstrrchr(kword, ':');
 		if ( (p == NULL) || (p == kword) ){
-			ErrorMes(&PCS,MES_EKNF);
+			ErrorMes(&PCS, MES_EKNF);
 			continue;
 		}
-		DeleteEndspace(kword,p);
+		DeleteEndspace(kword, p);
 		sepC = *p++;
-		DeleteEndspace(p,p + tstrlen(p));
+		DeleteEndspace(p, p + tstrlen(p));
 										// Keyword の解析 ----------
 		ck = kword;
 
-		CheckPrecode(ck,'+',&ck,NilStr);	// '+'はここでは無視
+		CheckPrecode(ck, '+', &ck, NilStr);	// '+'はここでは無視
 		clbl = Ctbl;
 		while( clbl->name != NULL ){
-			if ( tstricmp(ck,clbl->name) == 0 ){
-				result = CSitem(&PCS,clbl,sepC,kword,p,&mem,memmax);
+			if ( tstricmp(ck, clbl->name) == 0 ){
+				result = CSitem(&PCS, clbl, sepC, kword, p, &mem, memmax);
 				break;
 			}
 			clbl++;
 		}
 		if ( clbl->name == NULL ){	// 特殊な Keyword の解析 ==============
 			if ( sepC == ':' ){			// dump 形式 ----------------
-				result = CSline(&PCS,kword,NULL,p,clbl->flag,clbl->fmt,&mem,memmax);
+				result = CSline(&PCS, kword, NULL, p, clbl->flag, clbl->fmt, &mem, memmax);
 										// ユーザ定義メニュー --------
 			}else if ( (ck[0] == 'M') && (ck[1] == '_') ){
-				result = CSitem(&PCS,&usermenu,sepC,kword,p,&mem,memmax);
+				result = CSitem(&PCS, &usermenu, sepC, kword, p, &mem, memmax);
 										// ユーザ定義拡張子判別 --------
 			}else if ( (ck[0] == 'E') && (ck[1] == '_') ){
-				result = CSitem(&PCS,&userext,sepC,kword,p,&mem,memmax);
+				result = CSitem(&PCS, &userext, sepC, kword, p, &mem, memmax);
 										// メッセージ --------
-			}else if ( (tstrlen(ck) == 7) && !memcmp(ck,T("Mes"),TSTROFF(3)) ){
-				result = CSitem(&PCS,&userlang,sepC,kword,p,&mem,memmax);
+			}else if ( (tstrlen(ck) == 7) && !memcmp(ck, T("Mes"), TSTROFF(3)) ){
+				result = CSitem(&PCS, &userlang, sepC, kword, p, &mem, memmax);
 										// ユーザ定義ツールバー --------
 			}else if ( (ck[0] == 'B') && (ck[1] == '_') ){
-				result = CSitem(&PCS,&userbar,sepC,kword,p,&mem,memmax);
+				result = CSitem(&PCS, &userbar, sepC, kword, p, &mem, memmax);
 										// ユーザ定義キー割当て --------
 			}else if ( (ck[0] == 'K') && (ck[1] == '_') ){
-				result = CSitem(&PCS,&userkey,sepC,kword,p,&mem,memmax);
+				result = CSitem(&PCS, &userkey, sepC, kword, p, &mem, memmax);
 										// 任意設定 --------
 			}else if ( (ck[0] == 'S') && (ck[1] == '_') ){
-				result = CSitem(&PCS,&usersettings,sepC,kword,p,&mem,memmax);
+				result = CSitem(&PCS, &usersettings, sepC, kword, p, &mem, memmax);
 										// 削除 ------------------------
 			}else{
 											// update時は古いバージョンが対象
-				pre = CheckPrecode(kword,'-',&ne,PCS.CVer);
+				pre = CheckPrecode(kword, '-', &ne, PCS.CVer);
 				if ( pre < 0 ) continue;
 
 				if ( pre > 0 ){
 					kword = ne;
 					if ( IsExistCustData(kword) ){
-						PCS.Smes += wsprintf(PCS.Smes,T("%s: %s")TNL,
-								MessageText(MES_LGDE),kword);
+						PCS.Smes += wsprintf(PCS.Smes, T("%s: %s")TNL,
+								MessageText(MES_LGDE), kword);
 						DeleteCustData(kword);
 					}
 				}else{						// 不明の形式 ----------------
@@ -997,27 +997,27 @@ PPXDLL int PPXAPI PPcustCStore(TCHAR *mem,TCHAR *memmax,int appendmode,TCHAR **l
 						p = SkipSpaceAndFix(p);
 						if ( *p++ == '{' ){
 							while ( mem < memmax ){
-								p = GetConfigLine(&PCS,&mem,memmax);
+								p = GetConfigLine(&PCS, &mem, memmax);
 								if ( *p == '\0' ) continue;
 								if ( *p == '}' ) break;
 							}
 						}
-						ErrorMes(&PCS,MES_EUKW);
+						ErrorMes(&PCS, MES_EUKW);
 					}else{
-						ErrorMes(&PCS,MES_ESEP);
+						ErrorMes(&PCS, MES_ESEP);
 					}
 				}
 			}
 		}
 	}
-	PCS.Smes += wsprintf(PCS.Smes,TNL);
+	PCS.Smes += wsprintf(PCS.Smes, TNL);
 	if ( log != NULL ) *log = PCS.SmesBuf;
 	return result ? (PCS.reloadflag | 1) : 0;
 }
 /*-----------------------------------------------------------------------------
 	カスタマイズ(書き出し)出力部
 -----------------------------------------------------------------------------*/
-void CDsub(PPCUSTSTRUCT *PCS,const TCHAR *name,BYTE *bin,int size,WORD flag,const char *fmt)
+void CDsub(PPCUSTSTRUCT *PCS, const TCHAR *name, BYTE *bin, int size, WORD flag, const char *fmt)
 {
 	BYTE *binend;
 											// キーワード/セパレータ表示
@@ -1029,22 +1029,22 @@ void CDsub(PPCUSTSTRUCT *PCS,const TCHAR *name,BYTE *bin,int size,WORD flag,cons
 		case ':': {
 			int i;
 
-			PCS->Smes += wsprintf(PCS->Smes,T("%s\t:"),name);
+			PCS->Smes += wsprintf(PCS->Smes, T("%s\t:"), name);
 			for ( i = 0 ; i < size ; i++ ){
-				PCS->Smes += wsprintf(PCS->Smes,T("%02x"),bin[i]);
+				PCS->Smes += wsprintf(PCS->Smes, T("%02x"), bin[i]);
 			}
 			return;
 		}
 		default:
 /*
 			if ( flag & fC ){
-				PCS->Smes += wsprintf(PCS->Smes,T("%s\t%c"),name,*fmt);
+				PCS->Smes += wsprintf(PCS->Smes, T("%s\t%c"), name, *fmt);
 			}else{
 */
 				if ( flag & fW ){ // ワイルドカード有
 					if ( *name == '/') name++;
 				}
-				PCS->Smes += wsprintf(PCS->Smes,T("%s\t%c "),name,*fmt);
+				PCS->Smes += wsprintf(PCS->Smes, T("%s\t%c "), name, *fmt);
 //			}
 	}
 	fmt++;
@@ -1055,20 +1055,20 @@ void CDsub(PPCUSTSTRUCT *PCS,const TCHAR *name,BYTE *bin,int size,WORD flag,cons
 		switch( *fmt++ ){
 			// C:色 -----------------------------------------------------------
 			case 'C':
-				PCS->Smes += CD_color(PCS->Smes,*(COLORREF *)bin,flag);
+				PCS->Smes += CD_color(PCS->Smes, *(COLORREF *)bin, flag);
 				bin += sizeof(COLORREF);
 				break;
 
 			// C:色 -----------------------------------------------------------
 			case 'c': {
-				int c,i;
+				int c, i;
 
 				c = (int)(*(WORD *)bin);
 				bin += 2;
 											// 前景色 -------------------
 				for ( i = 0 ; i <= 15 ; i++ ){
 					if ( (c & 0x0f) == ConColor[i].num ){
-						PCS->Smes += wsprintf(PCS->Smes,ConColor[i].str);
+						PCS->Smes += wsprintf(PCS->Smes, ConColor[i].str);
 						break;
 					}
 				}
@@ -1076,7 +1076,7 @@ void CDsub(PPCUSTSTRUCT *PCS,const TCHAR *name,BYTE *bin,int size,WORD flag,cons
 				for ( i = 16 ; i <= 31 ; i++ ){
 					if ( (c & 0xf0) == ConColor[i].num ){
 						PCS->Smes +=
-							wsprintf(PCS->Smes,T("+%s"),ConColor[i].str);
+							wsprintf(PCS->Smes, T("+%s"), ConColor[i].str);
 						break;
 					}
 				}
@@ -1084,14 +1084,14 @@ void CDsub(PPCUSTSTRUCT *PCS,const TCHAR *name,BYTE *bin,int size,WORD flag,cons
 				for ( i = 32 ; i <= 35 ; i++ ){
 					if ( c & ConColor[i].num ){
 						PCS->Smes +=
-							wsprintf(PCS->Smes,T("+%s"),ConColor[i].str);
+							wsprintf(PCS->Smes, T("+%s"), ConColor[i].str);
 					}
 				}
 				break;
 			}
 			// B:2進表示-------------------------------------------------------
 			case 'B': {
-				int bits,i;
+				int bits, i;
 				DWORD data;
 
 				bits = GetNumberA(&fmt);
@@ -1111,15 +1111,15 @@ void CDsub(PPCUSTSTRUCT *PCS,const TCHAR *name,BYTE *bin,int size,WORD flag,cons
 			case 'D':
 				switch(*fmt++){
 					case '1':
-						PCS->Smes += wsprintf(PCS->Smes,T("%u"),*(BYTE *)bin);
+						PCS->Smes += wsprintf(PCS->Smes, T("%u"), *(BYTE *)bin);
 						bin++;
 						break;
 					case '2':
-						PCS->Smes += wsprintf(PCS->Smes,T("%u"),*(WORD *)bin);
+						PCS->Smes += wsprintf(PCS->Smes, T("%u"), *(WORD *)bin);
 						bin += 2;
 						break;
 					case '4':
-						PCS->Smes += wsprintf(PCS->Smes,T("%u"),*(DWORD *)bin);
+						PCS->Smes += wsprintf(PCS->Smes, T("%u"), *(DWORD *)bin);
 						bin += 4;
 						break;
 				}
@@ -1128,22 +1128,22 @@ void CDsub(PPCUSTSTRUCT *PCS,const TCHAR *name,BYTE *bin,int size,WORD flag,cons
 			case 'd':
 				switch(*fmt++){
 					case '1':
-						PCS->Smes += wsprintf(PCS->Smes,T("%d"),*(char *)bin);
+						PCS->Smes += wsprintf(PCS->Smes, T("%d"), *(char *)bin);
 						bin++;
 						break;
 					case '2':
-						PCS->Smes += wsprintf(PCS->Smes,T("%d"),*(short *)bin);
+						PCS->Smes += wsprintf(PCS->Smes, T("%d"), *(short *)bin);
 						bin += 2;
 						break;
 					case '4':
-						PCS->Smes += wsprintf(PCS->Smes,T("%d"),*(long *)bin);
+						PCS->Smes += wsprintf(PCS->Smes, T("%d"), *(long *)bin);
 						bin += 4;
 						break;
 				}
 				break;
 			// E:(PPC)エントリ表示---------------------------------------------
 			case 'E':
-				CD_ppcdisp(PCS,&bin,binend);
+				CD_ppcdisp(PCS, &bin, binend);
 				break;
 
 			// V:ID/Version ---------------------------------------------------
@@ -1155,7 +1155,7 @@ void CDsub(PPCUSTSTRUCT *PCS,const TCHAR *name,BYTE *bin,int size,WORD flag,cons
 
 				if ( *fmt == 'D' ) fmt++;
 				if ( Isdigit(*fmt) ) binlen = GetNumberA(&fmt);
-				last = tstrlimcpy(PCS->Smes,(TCHAR *)bin,ALLOCRESERVE);
+				last = tstrlimcpy(PCS->Smes, (TCHAR *)bin, ALLOCRESERVE);
 				bin += binlen ? TSTROFF(binlen) : TSTROFF(last - PCS->Smes + 1);
 				PCS->Smes = last;
 				break;
@@ -1180,32 +1180,32 @@ void CDsub(PPCUSTSTRUCT *PCS,const TCHAR *name,BYTE *bin,int size,WORD flag,cons
 				break;
 
 			case 'M': {
-				TCHAR *nl,*bp,*last;
+				TCHAR *nl, *bp, *last;
 
 				fmt = Nilfmt;
 				bp = (TCHAR *)bin;
-				while( (nl = tstrchr(bp,'\n')) != NULL ){
+				while( (nl = tstrchr(bp, '\n')) != NULL ){
 					*nl = '\0';
-					PCS->Smes += wsprintf(PCS->Smes,T("%s") TNL T("\t"),bp);
+					PCS->Smes += wsprintf(PCS->Smes, T("%s") TNL T("\t"), bp);
 					bp = nl + 1;
 				}
-				last = tstrlimcpy(PCS->Smes,bp,ALLOCRESERVE);
+				last = tstrlimcpy(PCS->Smes, bp, ALLOCRESERVE);
 				bin = (BYTE *)(TCHAR *)(bp + (last - PCS->Smes) + 1);
 				PCS->Smes = last;
 				break;
 			}
 
 			case 'm': {
-				TCHAR *bp,*last;
+				TCHAR *bp, *last;
 
 				fmt = Nilfmt;
 				bp = (TCHAR *)bin;
 				for (;;){
-					last = tstrlimcpy(PCS->Smes,bp,ALLOCRESERVE);
+					last = tstrlimcpy(PCS->Smes, bp, ALLOCRESERVE);
 					bp += (last - PCS->Smes) + 1;
 					PCS->Smes = last;
 					if ( *bp == '\0' ) break;
-					PCS->Smes += wsprintf(PCS->Smes,TNL T("\t"));
+					PCS->Smes += wsprintf(PCS->Smes, TNL T("\t"));
 				}
 				bin = (BYTE *)(TCHAR *)(bp + 1);
 				break;
@@ -1216,8 +1216,8 @@ void CDsub(PPCUSTSTRUCT *PCS,const TCHAR *name,BYTE *bin,int size,WORD flag,cons
 					while ( bin < binend ){
 						TCHAR buf[100];
 
-						PutKeyCode(buf,*(WORD *)bin);
-						PCS->Smes += wsprintf(PCS->Smes,buf);
+						PutKeyCode(buf, *(WORD *)bin);
+						PCS->Smes += wsprintf(PCS->Smes, buf);
 						bin += 2;
 						if( *(WORD *)bin == 0 ) break;
 						*PCS->Smes++ = ' ';
@@ -1227,7 +1227,7 @@ void CDsub(PPCUSTSTRUCT *PCS,const TCHAR *name,BYTE *bin,int size,WORD flag,cons
 				break;
 			// K:key ----------------------------------------------------------
 			case 'K':
-				PutKeyCode(PCS->Smes,*(WORD *)bin);
+				PutKeyCode(PCS->Smes, *(WORD *)bin);
 				PCS->Smes += tstrlen(PCS->Smes);
 				bin += 2;
 				break;
@@ -1239,24 +1239,24 @@ void CDsub(PPCUSTSTRUCT *PCS,const TCHAR *name,BYTE *bin,int size,WORD flag,cons
 
 				if ( *bin == EXTCMD_CMD ){
 					bin += TSTROFF(1);
-					PCS->Smes += wsprintf(PCS->Smes,T("%s\t,"),name);
+					PCS->Smes += wsprintf(PCS->Smes, T("%s\t,"), name);
 					fmt = "M";
 					continue;
 				}else{
 					if ( *bin == EXTCMD_KEY ) bin += TSTROFF(1);
-					PCS->Smes += wsprintf(PCS->Smes,T("%s\t= "),name);
+					PCS->Smes += wsprintf(PCS->Smes, T("%s\t= "), name);
 					fmt = "k";
 					continue;
 				}
 			case 'x':
 				if ( *bin == EXTCMD_CMD ){
 					bin += TSTROFF(1);
-					PCS->Smes += wsprintf(PCS->Smes,T(" , "));
+					PCS->Smes += wsprintf(PCS->Smes, T(" , "));
 					fmt = "S";
 					continue;
 				}else{
 					if ( *bin == EXTCMD_KEY ) bin += TSTROFF(1);
-					PCS->Smes += wsprintf(PCS->Smes,T(" = "));
+					PCS->Smes += wsprintf(PCS->Smes, T(" = "));
 					fmt = "k";
 					continue;
 				}
@@ -1272,7 +1272,7 @@ void CDsub(PPCUSTSTRUCT *PCS,const TCHAR *name,BYTE *bin,int size,WORD flag,cons
 /*-----------------------------------------------------------------------------
 	カスタマイズ(書き出し)項目処理
 -----------------------------------------------------------------------------*/
-void CDitem(PPCUSTSTRUCT *PCS,const CLABEL *clbl)
+void CDitem(PPCUSTSTRUCT *PCS, const CLABEL *clbl)
 {
 	TCHAR sname[VFPS];
 	BYTE bin[MAXCUSTDATA];
@@ -1284,44 +1284,44 @@ void CDitem(PPCUSTSTRUCT *PCS,const CLABEL *clbl)
 
 		if ( !(clbl->flag & fT) ){		// 単純
 			PCS->Smes += wsprintf(PCS->Smes,
-					T("%s\t= %s")TNL,clbl->name,clbl->comment);
+					T("%s\t= %s")TNL, clbl->name, clbl->comment);
 		}else{							// 配列
 			sname[0] = '\0';
-			GetCustTable(T("#Comment"),clbl->name,sname,TSTROFF(MAX_PATH));
+			GetCustTable(T("#Comment"), clbl->name, sname, TSTROFF(MAX_PATH));
 			sname[MAX_PATH - 1] = '\0';
 			if ( (sname[0] == '\0') && (*clbl->comment == '\0') ){
-				tstrcpy(sname,DefCommentStr);
+				tstrcpy(sname, DefCommentStr);
 			}
-			PCS->Smes += wsprintf(PCS->Smes,T("%s\t= {%s%s") TNL T("}")TNL,
-					clbl->name,sname,clbl->comment);
+			PCS->Smes += wsprintf(PCS->Smes, T("%s\t= {%s%s") TNL T("}")TNL,
+					clbl->name, sname, clbl->comment);
 		}
 	}else{											// 登録済み -------
 		if ( clbl->flag & fInternal ) return;	 // 書き出さない
 		if ( !(clbl->flag & fT) ){		// 単純
-			GetCustData(clbl->name,bin,sizeof(bin));
-			CDsub(PCS,clbl->name,bin,size,clbl->flag,clbl->fmt);
-			PCS->Smes += wsprintf(PCS->Smes,T("%s"),clbl->comment);
-			PCS->Smes += wsprintf(PCS->Smes,TNL);
+			GetCustData(clbl->name, bin, sizeof(bin));
+			CDsub(PCS, clbl->name, bin, size, clbl->flag, clbl->fmt);
+			PCS->Smes += wsprintf(PCS->Smes, T("%s"), clbl->comment);
+			PCS->Smes += wsprintf(PCS->Smes, TNL);
 		}else{							// 配列
 			int scnt;
 
 			scnt = 0;
 			sname[0] = '\0';
-			GetCustTable(T("#Comment"),clbl->name,sname,TSTROFF(MAX_PATH));
+			GetCustTable(T("#Comment"), clbl->name, sname, TSTROFF(MAX_PATH));
 			sname[MAX_PATH - 1] = '\0';
 			if ( (sname[0] == '\0') && (*clbl->comment == '\0') ){
-				tstrcpy(sname,DefCommentStr);
+				tstrcpy(sname, DefCommentStr);
 			}
-			PCS->Smes += wsprintf(PCS->Smes,T("%s\t= {%s%s")TNL,
-									clbl->name,sname,clbl->comment);
+			PCS->Smes += wsprintf(PCS->Smes, T("%s\t= {%s%s")TNL,
+									clbl->name, sname, clbl->comment);
 			for ( ; ; ){
-				size = EnumCustTable(scnt,clbl->name,sname,bin,sizeof(bin));
+				size = EnumCustTable(scnt, clbl->name, sname, bin, sizeof(bin));
 				if ( 0 > size ) break;
-				CDsub(PCS,sname,bin,size,clbl->flag,clbl->fmt);
-				PCS->Smes += wsprintf(PCS->Smes,TNL);
+				CDsub(PCS, sname, bin, size, clbl->flag, clbl->fmt);
+				PCS->Smes += wsprintf(PCS->Smes, TNL);
 				scnt++;
 			}
-			PCS->Smes += wsprintf(PCS->Smes,T("}")TNL);
+			PCS->Smes += wsprintf(PCS->Smes, T("}")TNL);
 		}
 	}
 }
@@ -1341,8 +1341,8 @@ void MakeUserCustNames(USERCUSTNAMES *ucndata)
 	ThInit(&ucn->UsersNames);
 
 	for ( ; ; ){
-		if ( EnumCustData(count++,name,bin,0) < 0 ) break;
-		if ( memcmp(name,T("Mes"),TSTROFF(3)) &&
+		if ( EnumCustData(count++, name, bin, 0) < 0 ) break;
+		if ( memcmp(name, T("Mes"), TSTROFF(3)) &&
 			((name[1] != '_') ||
 			 !((name[0] == 'M') || (name[0] == 'E') || (name[0] == 'S') ||
 			   (name[0] == 'B') || (name[0] == 'K')) ) ){
@@ -1350,18 +1350,18 @@ void MakeUserCustNames(USERCUSTNAMES *ucndata)
 		}
 		lbl = Ctbl;
 		while( lbl->name ){
-			if ( !tstricmp(name,lbl->name) ) break;
+			if ( !tstricmp(name, lbl->name) ) break;
 			lbl++;
 		}
 		if ( lbl->name == NULL ){
 			DWORD offset;
 			DWORD *index;
-			DWORD mini,maxi,midi,indexmax;
+			DWORD mini, maxi, midi, indexmax;
 
 			offset = ucn->UsersNames.top;
-			ThAddString(&ucn->UsersNames,name);
-			ThAppend(&ucn->UsersIndex,&offset,sizeof(offset));
-			index = POINTERCAST(DWORD *,ucn->UsersIndex.bottom);
+			ThAddString(&ucn->UsersNames, name);
+			ThAppend(&ucn->UsersIndex, &offset, sizeof(offset));
+			index = POINTERCAST(DWORD *, ucn->UsersIndex.bottom);
 
 			mini = midi = 0;
 			maxi = indexmax = (ucn->UsersIndex.top / sizeof(DWORD)) - 1;
@@ -1384,21 +1384,21 @@ void MakeUserCustNames(USERCUSTNAMES *ucndata)
 			}
 			if ( midi < indexmax ){
 				index += midi;
-				memmove(index + 1,index,(indexmax - midi) * sizeof(DWORD));
+				memmove(index + 1, index, (indexmax - midi) * sizeof(DWORD));
 				*index = offset;
 			}
 		}
 	}
-	ucn->UsersIndexMin = POINTERCAST(DWORD *,ucn->UsersIndex.bottom);
+	ucn->UsersIndexMin = POINTERCAST(DWORD *, ucn->UsersIndex.bottom);
 	ucn->UsersIndexMax = ucn->UsersIndexMin + (ucn->UsersIndex.top / sizeof(DWORD));
 /*
 		{
-			DWORD usercount,*index;
+			DWORD usercount, *index;
 			usercount = ucn->UsersIndex.top / sizeof(DWORD);
-			index = POINTERCAST(DWORD *,ucn->UsersIndex.bottom);
-			XMessage(NULL,NULL,XM_DbgLOG,T("count %d"),usercount);
+			index = POINTERCAST(DWORD *, ucn->UsersIndex.bottom);
+			XMessage(NULL, NULL, XM_DbgLOG, T("count %d"), usercount);
 			while ( usercount-- ){
-				XMessage(NULL,NULL,XM_DbgLOG,T("X: %s"),(TCHAR *)(BYTE *)(ucn->UsersNames.bottom + *index));
+				XMessage(NULL, NULL, XM_DbgLOG, T("X: %s"), (TCHAR *)(BYTE *)(ucn->UsersNames.bottom + *index));
 				index++;
 
 			}
@@ -1409,10 +1409,10 @@ void MakeUserCustNames(USERCUSTNAMES *ucndata)
 /*-----------------------------------------------------------------------------
 	カスタマイズ(書き出し)本体
 -----------------------------------------------------------------------------*/
-void DumpUserCusts(PPCUSTSTRUCT *PCS,USERCUSTNAMES *ucndata,CLABEL *clb,const TCHAR *chars)
+void DumpUserCusts(PPCUSTSTRUCT *PCS, USERCUSTNAMES *ucndata, CLABEL *clb, const TCHAR *chars)
 {
 	DWORD *index;
-	TCHAR *name,char1,char2;
+	TCHAR *name, char1, char2;
 	USERCUSTNAMES *ucn;
 
 	char1 = chars[0];
@@ -1422,7 +1422,7 @@ void DumpUserCusts(PPCUSTSTRUCT *PCS,USERCUSTNAMES *ucndata,CLABEL *clb,const TC
 		name = (TCHAR *)(BYTE *)(ucn->UsersNames.bottom + *index);
 		if ( (name[0] != char1) || (name[1] != char2) ) continue;
 		clb->name = name;
-		CDitem(PCS,clb);
+		CDitem(PCS, clb);
 	}
 }
 
@@ -1431,11 +1431,11 @@ PPXDLL TCHAR * PPXAPI PPcustCDump(void)
 	PPCUSTSTRUCT PCS;
 	BYTE bin[MAXCUSTDATA];
 	const CLABEL *clbl;
-	int count,size;
+	int count, size;
 	TCHAR name[VFPS];
 	USERCUSTNAMES ucn;
 
-	PCS.Smes = PCS.SmesBuf = HeapAlloc(ProcHeap,0,FIRSTDUMPSIZE + ALLOCRESERVE);
+	PCS.Smes = PCS.SmesBuf = HeapAlloc(ProcHeap, 0, FIRSTDUMPSIZE + ALLOCRESERVE);
 	PCS.SmesLim = PCS.Smes + FIRSTDUMPSIZE / sizeof(TCHAR);
 	PCS.Dnum = 0;
 	PCS.Xmode = -1;
@@ -1449,44 +1449,44 @@ PPXDLL TCHAR * PPXAPI PPcustCDump(void)
 		switch ( *clbl->name ){
 			case 0:						// Comment ----------------------------
 				CheckSmes(&PCS);
-				tstrcpy(PCS.Smes,clbl->comment);
+				tstrcpy(PCS.Smes, clbl->comment);
 				PCS.Smes += tstrlen(PCS.Smes);
-				PCS.Smes += wsprintf(PCS.Smes,TNL);
+				PCS.Smes += wsprintf(PCS.Smes, TNL);
 				break;
 
 			case 1:						// ユーザメニュー ---------------------
-				DumpUserCusts(&PCS,&ucn,&usermenu,T("M_"));
+				DumpUserCusts(&PCS, &ucn, &usermenu, T("M_"));
 				break;
 
 			case 2:						// ユーザファイル判別 -----------------
-				DumpUserCusts(&PCS,&ucn,&userext,T("E_"));
+				DumpUserCusts(&PCS, &ucn, &userext, T("E_"));
 				break;
 
 			case 3:						// 不明言語 ---------------------------
-				DumpUserCusts(&PCS,&ucn,&userlang,T("Me"));
+				DumpUserCusts(&PCS, &ucn, &userlang, T("Me"));
 				break;
 
 			case 4:						// ツールバー -----------------
-				DumpUserCusts(&PCS,&ucn,&userbar,T("B_"));
+				DumpUserCusts(&PCS, &ucn, &userbar, T("B_"));
 				break;
 
 			case 5:						// キー割当て -----------------
-				DumpUserCusts(&PCS,&ucn,&userkey,T("K_"));
+				DumpUserCusts(&PCS, &ucn, &userkey, T("K_"));
 				break;
 
 			case 6:						// 任意設定 -----------------
-				DumpUserCusts(&PCS,&ucn,&usersettings,T("S_"));
+				DumpUserCusts(&PCS, &ucn, &usersettings, T("S_"));
 				break;
 
 			default:					// 本体 -------------------------------
-				if ( clbl->flag & fSort ) SortCustTable(clbl->name,NULL);
-				CDitem(&PCS,clbl);
+				if ( clbl->flag & fSort ) SortCustTable(clbl->name, NULL);
+				CDitem(&PCS, clbl);
 		}
 		clbl++;
 	}
 //--------------------------------------------------------- 未定義内容の出力
 	for( count = 0 ; ; count++ ){
-		size = EnumCustData(count,name,bin,sizeof(bin));
+		size = EnumCustData(count, name, bin, sizeof(bin));
 		if ( 0 > size ) break;
 
 		if ( name[1] == '_' ){
@@ -1494,26 +1494,26 @@ PPXDLL TCHAR * PPXAPI PPcustCDump(void)
 				continue;
 			}
 		}
-		if ( !memcmp(name,T("Mes"),TSTROFF(3)) ) continue;
+		if ( !memcmp(name, T("Mes"), TSTROFF(3)) ) continue;
 
 		clbl = Ctbl;
 		while( clbl->name ){
-			if ( !tstricmp(name,clbl->name) ) break;
+			if ( !tstricmp(name, clbl->name) ) break;
 			clbl++;
 		}
 		if ( clbl->name == NULL ){
-			CDsub(&PCS,name,bin,size,clbl->flag,clbl->fmt);
-			PCS.Smes += wsprintf(PCS.Smes,TNL);
+			CDsub(&PCS, name, bin, size, clbl->flag, clbl->fmt);
+			PCS.Smes += wsprintf(PCS.Smes, TNL);
 		}
 	}
 	return PCS.SmesBuf;
 }
 
-TCHAR PPcustCDumpText(const TCHAR *str,const TCHAR *sub,TCHAR *result)
+TCHAR PPcustCDumpText(const TCHAR *str, const TCHAR *sub, TCHAR *result)
 {
 	PPCUSTSTRUCT PCS;
 	BYTE bin[MAXCUSTDATA];
-	TCHAR cdata[CMDLINESIZE + ALLOCRESERVE],*fp;
+	TCHAR cdata[CMDLINESIZE + ALLOCRESERVE], *fp;
 	const CLABEL *clbl;
 	int size;
 	TCHAR separator = '\0';
@@ -1527,21 +1527,22 @@ TCHAR PPcustCDumpText(const TCHAR *str,const TCHAR *sub,TCHAR *result)
 	cdata[0] = '\0';
 
 	if ( sub != NULL ){
-		if ( ((str[0] == 'M') && (str[1] == '_')) || // ユーザメニュー --------
-			  !memcmp(str,T("Mes"),TSTROFF(3)) ){ // 不明言語 -----------
+		// ユーザメニュー / ユーザリスト / 不明言語 -------
+		if ( (((str[0] == 'M') || (str[0] == 'S')) && (str[1] == '_')) ||
+			  !memcmp(str, T("Mes"), TSTROFF(3)) ){
 			fmt = "=s";
-		}else if ( (str[0] == 'K') && (str[1] == '_') ){ // ユーザキー割当て
+		// ユーザキー割当て / ユーザファイル判別
+		}else if ( ((str[0] == 'K') || (str[0] == 'E')) && (str[1] == '_') ){
 			fmt = "/X";
-		}else if ( (str[0] == 'E') && (str[1] == '_') ){ // ユーザファイル判別
-			fmt = "/X";
-		}else if ( (str[0] == 'B') && (str[1] == '_') ){ // ツールバー -------
-			fmt = ",d4x";
+		// ツールバー
+		}else if ( (str[0] == 'B') && (str[1] == '_') ){
+			fmt = ", d4x";
 		}
 	}
 	if ( fmt == NULL ){ // 定義済み
 		clbl = Ctbl;
 		while ( clbl->name != NULL ){
-			if ( !tstricmp(clbl->name,str) ){
+			if ( !tstricmp(clbl->name, str) ){
 				if ( (clbl->flag & fT) ? (sub != NULL) : (sub == NULL) ){
 					fmt = clbl->fmt;
 					flag = clbl->flag;
@@ -1554,17 +1555,17 @@ TCHAR PPcustCDumpText(const TCHAR *str,const TCHAR *sub,TCHAR *result)
 	if ( fmt != NULL ){
 		if ( sub == NULL ){		// 単純
 			size = GetCustDataSize(str);
-			GetCustData(str,bin,sizeof(bin));
+			GetCustData(str, bin, sizeof(bin));
 		}else{					// 配列
-			size = GetCustTableSize(str,sub);
-			GetCustTable(str,sub,bin,sizeof(bin));
+			size = GetCustTableSize(str, sub);
+			GetCustTable(str, sub, bin, sizeof(bin));
 		}
-		CDsub(&PCS,NilStr,bin,size,flag,fmt);
+		CDsub(&PCS, NilStr, bin, size, flag, fmt);
 	}
 	fp = cdata;
 	if ( *fp == '\t' ) fp++;
 	if ( (*fp == '=') || (*fp == ',') ) separator = *fp++;
 	if ( *fp == ' ' ) fp++;
-	tstrlimcpy(result,fp,CMDLINESIZE);
+	tstrlimcpy(result, fp, CMDLINESIZE);
 	return separator;
 }

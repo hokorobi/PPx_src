@@ -3,54 +3,53 @@
 -----------------------------------------------------------------------------*/
 #define ONPPXDLL		// PPCOMMON.H の DLL 定義指定
 #include "WINAPI.H"
-#include <windowsx.h>
 #include "PPX.H"
 #include "PPD_DEF.H"
 #pragma hdrstop
 
 const TCHAR *ClassAtomString[] = {
-	BUTTONstr,EDITstr,STATICstr,LISTBOXstr,SCROLLBARstr,COMBOBOXstr
+	BUTTONstr, EDITstr, STATICstr, LISTBOXstr, SCROLLBARstr, COMBOBOXstr
 };
 
-LPDLGTEMPLATE GetDialogTemplate(HWND hParentWnd,HANDLE hinst,LPCTSTR lpszTemplate)
+LPDLGTEMPLATE GetDialogTemplate(HWND hParentWnd, HANDLE hinst, LPCTSTR lpszTemplate)
 {
 	BYTE *dialog;
 	HRSRC hRc;
-	DWORD dialogsize,fontlength;
+	DWORD dialogsize, fontlength;
 	int i;
-	BYTE *dp,*dpitem;
+	BYTE *dp, *dpitem;
 	WCHAR fontdata[LF_FACESIZE + 1];
-	UINT monitordpi,gdidpi;
+	UINT monitordpi, gdidpi;
 									// フォント情報の作成
 	LOGFONTWITHDPI BoxFont;
 
 	monitordpi = GetMonitorDPI(hParentWnd);
-	GetPPxFont(PPXFONT_F_dlg,monitordpi,&BoxFont);
+	GetPPxFont(PPXFONT_F_dlg, monitordpi, &BoxFont);
 
 	// fontlength : lfFaceName の文字列長(\0含む) + word(fontsize)
 #ifdef UNICODE
-	fontlength = (wcslen(BoxFont.font.lfFaceName) + 2) * sizeof(WCHAR);
-	memcpy(&fontdata[1],BoxFont.font.lfFaceName,fontlength - sizeof(WCHAR));
+	fontlength = (strlenW(BoxFont.font.lfFaceName) + 2) * sizeof(WCHAR);
+	memcpy(&fontdata[1], BoxFont.font.lfFaceName, fontlength - sizeof(WCHAR));
 #else
-	fontlength = (MultiByteToWideChar(CP_ACP,MB_PRECOMPOSED,
-			BoxFont.font.lfFaceName,-1,&fontdata[1],
-			sizeof(fontdata) / sizeof(WCHAR) - 2) + 1) * sizeof(WCHAR);
+	fontlength = (MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED,
+		BoxFont.font.lfFaceName, -1, &fontdata[1],
+		sizeof(fontdata) / sizeof(WCHAR) - 2) + 1) * sizeof(WCHAR);
 #endif
 									// テンプレートの読み込み
-	hRc = FindResource(hinst,lpszTemplate,RT_DIALOG);
+	hRc = FindResource(hinst, lpszTemplate, RT_DIALOG);
 	if ( hRc == NULL ) return NULL;
-	dialogsize = SizeofResource(hinst,hRc);
-	dialog = HeapAlloc(ProcHeap,0,dialogsize + fontlength + sizeof(WORD));
-	memcpy(dialog,LockResource(LoadResource(hinst,hRc)),dialogsize);
+	dialogsize = SizeofResource(hinst, hRc);
+	dialog = HeapAlloc(ProcHeap, 0, dialogsize + fontlength + sizeof(WORD));
+	memcpy(dialog, LockResource(LoadResource(hinst, hRc)), dialogsize);
 
 									// メニュー、クラス名、タイトル名を飛ばす
 	dp = dialog + (sizeof(DWORD) * 2 + sizeof(WORD) * 5); // DLGTEMPLATE 相当
 
 	if ( (X_dss & DSS_DIALOGREDUCE) &&
 		 !((hinst == DLLhInst) &&
-		   ((lpszTemplate == MAKEINTRESOURCE(IDD_INPUT)) ||
-		 	(lpszTemplate == MAKEINTRESOURCE(IDD_INPUT_OPT)) ||
-		 	(lpszTemplate == MAKEINTRESOURCE(IDD_INPUTREF)) )) ){
+		 ((lpszTemplate == MAKEINTRESOURCE(IDD_INPUT)) ||
+			 (lpszTemplate == MAKEINTRESOURCE(IDD_INPUT_OPT)) ||
+			 (lpszTemplate == MAKEINTRESOURCE(IDD_INPUTREF)))) ){
 
 		int DlgWidth = *(WORD *)(dialog + sizeof(DWORD) * 2 + sizeof(WORD) * 3);
 		int DlgHeight = *(WORD *)(dialog + sizeof(DWORD) * 2 + sizeof(WORD) * 4);
@@ -59,17 +58,17 @@ LPDLGTEMPLATE GetDialogTemplate(HWND hParentWnd,HANDLE hinst,LPCTSTR lpszTemplat
 		int minHeight = (PPX_FONT_MIN_PT * monitordpi) / DEFAULT_WIN_DPI; // 約8pt
 
 		heightPt = BoxFont.font.lfHeight >= 0 ? BoxFont.font.lfHeight : -BoxFont.font.lfHeight;
-		GetDesktopRect(hParentWnd,&deskbox);
+		GetDesktopRect(hParentWnd, &deskbox);
 
-		#define DLGBASE_W 7 // 少し小さめにしている
-		#define DLGBASE_H 8
+#define DLGBASE_W 7 // 少し小さめにしている
+#define DLGBASE_H 8
 		gdidpi = GetGDIdpi(NULL);
 		// Pt 変換
 		deskbox.right = ((deskbox.right - deskbox.left) * DEFAULT_DTP_DPI) / DEFAULT_WIN_DPI;
 		deskbox.bottom = ((deskbox.bottom - deskbox.top) * DEFAULT_DTP_DPI) / DEFAULT_WIN_DPI;
 
 		if ( ((OSver.dwMajorVersion > 10) ||
-			 ((OSver.dwMajorVersion == 10) && (OSver.dwBuildNumber >= WINTYPE_10_BUILD_RS2) )) &&
+			((OSver.dwMajorVersion == 10) && (OSver.dwBuildNumber >= WINTYPE_10_BUILD_RS2))) &&
 			((monitordpi == gdidpi) && (gdidpi != DEFAULT_WIN_DPI)) ){ // Win10 RS2 以降は、既に補正がかかっているので、其の分調整
 			deskbox.right = deskbox.right * DEFAULT_WIN_DPI / gdidpi;
 			deskbox.bottom = deskbox.bottom * DEFAULT_WIN_DPI / gdidpi;
@@ -91,17 +90,17 @@ LPDLGTEMPLATE GetDialogTemplate(HWND hParentWnd,HANDLE hinst,LPCTSTR lpszTemplat
 	// フォントサイズ(pixelでなく、Pt)
 	fontdata[0] = (WCHAR)BoxFont.font.lfHeight;
 
-	for ( i = 0 ; i < 3 ; i++ ){
+	for ( i = 0; i < 3; i++ ){
 		WORD id;
 
 		id = *(WORD *)dp;
 		if ( id == 0 ){			// なし
 			dp += sizeof(WORD);
-		}else if ( id == 0 ){	// ATOM
+		} else if ( id == 0 ){	// ATOM
 			dp += sizeof(WORD) * 2;
-		}else {
+		} else {
 			dp += sizeof(WORD);
-			while( *dp ) dp += sizeof(WORD);
+			while ( *dp ) dp += sizeof(WORD);
 			dp += sizeof(WORD);
 		}
 	}
@@ -109,7 +108,7 @@ LPDLGTEMPLATE GetDialogTemplate(HWND hParentWnd,HANDLE hinst,LPCTSTR lpszTemplat
 									// 既定のフォントがあれば飛ばす
 	if ( ((DLGTEMPLATE *)dialog)->style & DS_SETFONT ){
 		dpitem += sizeof(WORD);
-		while( *dpitem ) dpitem += sizeof(WORD);
+		while ( *dpitem ) dpitem += sizeof(WORD);
 		dpitem += sizeof(WORD);
 	}
 								// dword 補正1
@@ -117,14 +116,14 @@ LPDLGTEMPLATE GetDialogTemplate(HWND hParentWnd,HANDLE hinst,LPCTSTR lpszTemplat
 								// dword 補正2
 	if ( (ALIGNMENT_BITS(dp) + fontlength) & 3 ) fontlength += sizeof(WORD);
 									// テンプレートの修正
-	setflag(((DLGTEMPLATE *)dialog)->style,DS_SETFONT);
-	memmove(dp + fontlength,dpitem,dialogsize - (dpitem - dialog));
-	memcpy(dp,fontdata,fontlength);
+	setflag(((DLGTEMPLATE *)dialog)->style, DS_SETFONT);
+	memmove(dp + fontlength, dpitem, dialogsize - (dpitem - dialog));
+	memcpy(dp, fontdata, fontlength);
 
 	return (LPDLGTEMPLATE)dialog;
 }
 
-PPXDLL INT_PTR PPXAPI PPxDialogBoxParam(HANDLE hinst,const TCHAR *lpszTemplate,HWND hwndOwner,DLGPROC dlgprc,LPARAM lParamInit)
+PPXDLL INT_PTR PPXAPI PPxDialogBoxParam(HANDLE hinst, const TCHAR *lpszTemplate, HWND hwndOwner, DLGPROC dlgprc, LPARAM lParamInit)
 {
 #if 1
 	LPDLGTEMPLATE dialog;
@@ -150,7 +149,7 @@ PPXDLL INT_PTR PPXAPI PPxDialogBoxParam(HANDLE hinst,const TCHAR *lpszTemplate,H
 #ifdef UNICODE
 const TCHAR *GetDialogTemplateText(BYTE **dpitem)
 #else
-const TCHAR *GetDialogTemplateText(BYTE **dpitem,char *text)
+const TCHAR *GetDialogTemplateText(BYTE **dpitem, char *text)
 #endif
 {
 	if ( *((WORD *)*dpitem) == 0xffff ){ // atom
@@ -162,23 +161,23 @@ const TCHAR *GetDialogTemplateText(BYTE **dpitem,char *text)
 			return ClassAtomString[atom - 0x80];
 		}
 		return (const TCHAR *)(DWORD_PTR)atom;
-	}else{
-		#ifdef UNICODE
-			WCHAR *text;
-			DWORD size;
+	} else{
+#ifdef UNICODE
+		WCHAR *text;
+		DWORD size;
 
-			text = (WCHAR *)*dpitem;
-			size = strlenW(text) + 1;
-			*dpitem += sizeof(WORD) * size;
-		#else
-			WCHAR *resulttextW;
-			DWORD size;
+		text = (WCHAR *)*dpitem;
+		size = strlenW(text) + 1;
+		*dpitem += sizeof(WORD) * size;
+#else
+		WCHAR *resulttextW;
+		DWORD size;
 
-			resulttextW = (WCHAR *)*dpitem;
-			size = strlenW(resulttextW) + 1;
-			*dpitem += sizeof(WORD) * size;
-			if ( text != NULL ) UnicodeToAnsi(resulttextW,text,MAX_PATH);
-		#endif
+		resulttextW = (WCHAR *)*dpitem;
+		size = strlenW(resulttextW) + 1;
+		*dpitem += sizeof(WORD) * size;
+		if ( text != NULL ) UnicodeToAnsi(resulttextW, text, MAX_PATH);
+#endif
 		return text;
 	}
 }
@@ -188,44 +187,45 @@ const TCHAR * USEFASTCALL GetCaptionText(int id)
 	TCHAR name[8];
 
 	if ( id < 0 ) return NULL;
-	wsprintf(name,T("%04X"),id);
+	wsprintf(name, T("%04X"), id);
 	return SearchMessageText(name);
 }
 
 // hParentWnd で指定したウィンドウに lpszTemplate のコントロール群を貼り付ける
-HWND *CreateDialogWindow(HANDLE hinst,LPCTSTR lpszTemplate,HWND hParentWnd)
+HWND *CreateDialogWindow(HANDLE hinst, LPCTSTR lpszTemplate, HWND hParentWnd)
 {
 	HRSRC hrDialog;
 	DWORD controls;
 	BYTE *dialog;
-	BYTE *dp,*dpitem;
+	BYTE *dp, *dpitem;
 	DLGITEMTEMPLATE *dtp;
 	RECT box;
 	int i;
 	HFONT hFont;
-	HWND *hCtrlWnds,*hCtrlWndDst;
+	HWND *hCtrlWnds, *hCtrlWndDst;
 
-	hFont = (HFONT)SendMessage(hParentWnd,WM_GETFONT,0,0);
-	hrDialog = FindResource(hinst,lpszTemplate,RT_DIALOG);
+	hFont = (HFONT)SendMessage(hParentWnd, WM_GETFONT, 0, 0);
+	hrDialog = FindResource(hinst, lpszTemplate, RT_DIALOG);
 
-	dialog = LockResource(LoadResource(hinst,hrDialog));
+	dialog = LockResource(LoadResource(hinst, hrDialog));
 
 	controls = ((DLGTEMPLATE *)dialog)->cdit;
-	hCtrlWnds = hCtrlWndDst = HeapAlloc(DLLheap,0,(controls + 1)* sizeof(HWND));
+	hCtrlWnds = hCtrlWndDst = HeapAlloc(DLLheap, 0, (controls + 1) * sizeof(HWND));
+	if ( hCtrlWnds == NULL ) return NULL;
 
 	dp = dialog + (sizeof(DWORD) * 2 + sizeof(WORD) * 5); // DLGTEMPLATE 相当
 									// メニュー、クラス名、タイトル名を飛ばす
-	for ( i = 0 ; i < 3 ; i++ ){
+	for ( i = 0; i < 3; i++ ){
 		WORD id;
 
 		id = *(WORD *)dp;
 		if ( id == 0 ){			// なし
 			dp += sizeof(WORD);
-		}else if ( id == 0 ){	// ATOM
+		} else if ( id == 0 ){	// ATOM
 			dp += sizeof(WORD) * 2;
-		}else {
+		} else {
 			dp += sizeof(WORD);
-			while( *dp ) dp += sizeof(WORD);
+			while ( *dp ) dp += sizeof(WORD);
 			dp += sizeof(WORD);
 		}
 	}
@@ -328,8 +328,9 @@ void PaintPPxStatic(HWND hWnd)
 		baseW = rect.right;
 		GetClientRect(hWnd, &rect);
 		rect.left += 2;
-		SetTextColor(ps.hdc, GetSysColor(COLOR_WINDOWTEXT));
-		SetBkColor(ps.hdc, GetSysColor(COLOR_3DFACE));
+		InitSysColors();
+		SetTextColor(ps.hdc, C_WindowText);
+		SetBkColor(ps.hdc, C_3dFace);
 		hOldFont = SelectObject(ps.hdc,
 				(HFONT)GetWindowLongPtr(hWnd, GWLP_USERDATA));
 
@@ -339,7 +340,7 @@ void PaintPPxStatic(HWND hWnd)
 		format = buf;
 		while ( format < maxptr ){
 			SIZE ssize;
-			int strlength;
+			size_t strlength;
 
 			first = format;
 			while ( format < maxptr ){
@@ -371,13 +372,13 @@ void PaintPPxStatic(HWND hWnd)
 			}
 			switch ( *format ){
 				case PXSC_NORMAL: {				// 通常
-					SetTextColor(ps.hdc, GetSysColor(COLOR_WINDOWTEXT));
-					SetBkColor(ps.hdc, GetSysColor(COLOR_3DFACE));
+					SetTextColor(ps.hdc, C_WindowText);
+					SetBkColor(ps.hdc, C_3dFace);
 					break;
 				}
 				case PXSC_HILIGHT: {
-					SetTextColor(ps.hdc, GetSysColor(COLOR_HIGHLIGHTTEXT));
-					SetBkColor(ps.hdc, GetSysColor(COLOR_HIGHLIGHT));
+					SetTextColor(ps.hdc, C_HighlightText);
+					SetBkColor(ps.hdc, C_HighlightBack);
 					break;
 				}
 				case '\n':			// 改行
@@ -413,7 +414,7 @@ x1| x10|x1|…|x2|…|x1|
 					box.top = rect.top + (baseW + (baseW / 2));
 					box.bottom = min(rect.bottom, Draw.y + baseH) - baseW;
 
-					hB = CreateSolidBrush(GetSysColor((count <= 10) ? COLOR_HIGHLIGHT : COLOR_GRAYTEXT ));
+					hB = (count <= 10) ? GetHighlightBackBrush() : GetGrayBackBrush();
 														// 最後直前まで
 					box.left  = Draw.x + baseW;
 					box.right = Draw.x + baseW * PAR_BLOCKSPACING;
@@ -429,14 +430,12 @@ x1| x10|x1|…|x2|…|x1|
 														// 最後
 					box.right = box.left + ((par - i) * baseW);
 					FillBox(ps.hdc, &box,hB);
-					DeleteObject(hB);
 													// 空白 -------------------
-					hB = CreateSolidBrush(GetSysColor(COLOR_3DFACE));
-
 					box.top = rect.top;
 					box.bottom += baseW;
 					box.left = box.right;
 					box.right = Draw.x + baseW * PAR_WIDTH;
+					hB = Get3dFaceBrush();
 					FillBox(ps.hdc, &box, hB);
 
 					drawbar = (int)GetWindowLongPtr(hWnd, 0);
@@ -446,14 +445,13 @@ x1| x10|x1|…|x2|…|x1|
 						box.right = drawbar + baseW;
 						FillBox(ps.hdc, &box, hB);
 					}
-					DeleteObject(hB);
 											// 処理中バー -----------
 					if ( (count >= 0) && (count <= 10) ){
-						hB = CreateSolidBrush(GetSysColor(COLOR_WINDOWTEXT));
+						hB = CreateSolidBrush(C_WindowText);
 						box.left = Draw.x + ( count * PAR_BLOCKSPACING + PAR_BLOCKSPACING ) * baseW;
 						if ( count >= 4 ) box.left += baseW;
 						box.right = box.left + baseW;
-						FillBox(ps.hdc, &box,hB);
+						FillBox(ps.hdc, &box, hB);
 						DeleteObject(hB);
 						SetWindowLongPtr(hWnd, 0, (LONG_PTR)box.left);
 					}

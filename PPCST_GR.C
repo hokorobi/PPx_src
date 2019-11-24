@@ -2,7 +2,6 @@
 	Paper Plane xUI	customizer								全般シート
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include <shlobj.h>
 #include "PPX.H"
 #include "VFS.H"
@@ -23,7 +22,7 @@ typedef enum {
 	ITEM_DWORD,	// DWORD(num)			d
 	ITEM_WORD,	// WORD(num)			w
 	ITEM_BYTE,	// byte(num)			b
-	ITEM_STRING,// 文字列(str)			s
+	ITEM_STRING, // 文字列(str)			s
 	ITEM_KEY,	// キー(num)
 	ITEM_FONT,	// フォント(font)
 	ITEM_RESERVED	// その他
@@ -47,7 +46,7 @@ typedef enum {
 } ITEMOPTION;
 
 typedef struct {
-	DWORD def,data,truedata,falsedata,mask,size;
+	DWORD def, data, truedata, falsedata, mask, size;
 } INTITEM;
 #define IITEM_VALUE MAX32
 
@@ -77,9 +76,9 @@ typedef struct {
 
 
 LOGFONT DefaultFont = {							// フォント構造体
-	0,0,						// Width,Height
-	0,0,FW_NORMAL,				// Escapement,Orientation,Weight
-	FALSE,FALSE,FALSE,			// Italic,Underline,StrikeOut
+	0, 0,						// Width, Height
+	0, 0, FW_NORMAL,				// Escapement, Orientation, Weight
+	FALSE, FALSE, FALSE,			// Italic, Underline, StrikeOut
 	SHIFTJIS_CHARSET,			// CharSet
 	OUT_DEFAULT_PRECIS,			// OutPrecision
 	CLIP_DEFAULT_PRECIS,		// ClipPrecision
@@ -91,16 +90,16 @@ const TCHAR DefaultFaceName[] = T("(未設定)\0(blank)");
 
 const TCHAR EDIT[] = T("EDIT");
 const TCHAR BUTTON[] = T("BUTTON");
-WNDPROC OldFindBoxProc,OldIndexTreeProc,OldItemTreeProc;
+WNDPROC OldFindBoxProc, OldIndexTreeProc, OldItemTreeProc;
 
-const TCHAR *CustomList,*CustomItemList;
+const TCHAR *CustomList, *CustomItemList;
 int CustomItemListOffset;
 
 #define FLOAT_WIDTH 150
 #define FLOAT_HEIGHT 22
 #define FLOAT_BUTTONWIDTH 50
-HWND hEditWnd,hButtonWnd,hSpinWnd;		// フローティングコントロール
-HWND hIndexTreeWnd,hItemTreeWnd;	// 左ペイン,右ペイン
+HWND hEditWnd, hButtonWnd, hSpinWnd;		// フローティングコントロール
+HWND hIndexTreeWnd, hItemTreeWnd;	// 左ペイン,右ペイン
 HTREEITEM hedititem;
 int useedit = 0;
 int useeditmodify = 0;
@@ -137,15 +136,15 @@ typedef enum {
 } LABELICONS;
 
 #define TreeImageCharCount 9
-const WCHAR TreeImageChars[TreeImageCharCount] = {L' ',L'・',0x2610,0x2611,0x25cb,0x25ce,0x270e,0x229e,0x229f};
+const WCHAR TreeImageChars[TreeImageCharCount] = {L' ', L'・', 0x2610, 0x2611, 0x25cb, 0x25ce, 0x270e, 0x229e, 0x229f};
 
 void SearchPPcHotKey(ITEMSTRUCT *item)
 {
 	int count = 0;
-	TCHAR keyword[CMDLINESIZE],param[CMDLINESIZE];
+	TCHAR keyword[CMDLINESIZE], param[CMDLINESIZE];
 
-	while( EnumCustTable(count,TrayHotKeyCust,keyword,param,sizeof(param)) >= 0 ){
-		if ( !tstrcmp(param,TrayHotKeyPPcCustParam) ){
+	while( EnumCustTable(count, TrayHotKeyCust, keyword, param, sizeof(param)) >= 0 ){
+		if ( !tstrcmp(param, TrayHotKeyPPcCustParam) ){
 			const TCHAR *ptr;
 
 			ptr = keyword;
@@ -162,12 +161,12 @@ void SetPPcHotKey(ITEMSTRUCT *item)
 	TCHAR keyword[CMDLINESIZE];
 
 	if ( item->d.num.def != 0 ){
-		PutKeyCode(keyword,item->d.num.def);
-		DeleteCustTable(TrayHotKeyCust,keyword,0);
+		PutKeyCode(keyword, item->d.num.def);
+		DeleteCustTable(TrayHotKeyCust, keyword, 0);
 	}
 	if ( item->d.num.data != 0 ){
-		PutKeyCode(keyword,item->d.num.data);
-		SetCustTable(TrayHotKeyCust,keyword,TrayHotKeyPPcCustParam,sizeof(TrayHotKeyPPcCustParam));
+		PutKeyCode(keyword, item->d.num.data);
+		SetCustTable(TrayHotKeyCust, keyword, TrayHotKeyPPcCustParam, sizeof(TrayHotKeyPPcCustParam));
 	}
 }
 
@@ -185,7 +184,7 @@ const TCHAR *SearchList(int line)
 	return p;
 }
 
-void GetCustItemType(ITEMSTRUCT *item,TCHAR **line)
+void GetCustItemType(ITEMSTRUCT *item, TCHAR **line)
 {
 	item->d.num.size = 4;
 	switch ( *((*line)++) ){
@@ -212,50 +211,50 @@ void GetCustItemType(ITEMSTRUCT *item,TCHAR **line)
 	}
 }
 
-void GetData(ITEMSTRUCT *item,void *data,DWORD size)
+void GetData(ITEMSTRUCT *item, void *data, DWORD size)
 {
 	TCHAR work[CMDLINESIZE * 2];
 
-	memset((char *)work + item->offset,0,size);
+	memset((char *)work + item->offset, 0, size);
 	if ( item->subname == NULL ){
 		if ( GetCustDataSize(item->keyname) <= (int)item->offset ) return;
-		if ( NO_ERROR != GetCustData(item->keyname,work,sizeof work) ) return;
+		if ( NO_ERROR != GetCustData(item->keyname, work, sizeof work) ) return;
 	}else{
-		if ( GetCustTableSize(item->keyname,item->subname) <= (int)item->offset){
+		if ( GetCustTableSize(item->keyname, item->subname) <= (int)item->offset){
 			return;
 		}
-		if ( NO_ERROR != GetCustTable(item->keyname,item->subname,work,sizeof work) ){
+		if ( NO_ERROR != GetCustTable(item->keyname, item->subname, work, sizeof work) ){
 			return;
 		}
 	}
-	memcpy(data,(char *)work + item->offset,size);
+	memcpy(data, (char *)work + item->offset, size);
 }
 
-void SetData(ITEMSTRUCT *item,void *data,DWORD size)
+void SetData(ITEMSTRUCT *item, void *data, DWORD size)
 {
 	TCHAR work[CMDLINESIZE * 2];
 	int datasize;
 
-	memset(work,0,sizeof work);
+	memset(work, 0, sizeof work);
 	if ( item->subname == NULL ){
 		datasize = GetCustDataSize(item->keyname);
-		GetCustData(item->keyname,work,sizeof work);
+		GetCustData(item->keyname, work, sizeof work);
 	}else{
-		datasize = GetCustTableSize(item->keyname,item->subname);
-		GetCustTable(item->keyname,item->subname,work,sizeof work);
+		datasize = GetCustTableSize(item->keyname, item->subname);
+		GetCustTable(item->keyname, item->subname, work, sizeof work);
 	}
-	memcpy((char *)work + item->offset,data,size);
+	memcpy((char *)work + item->offset, data, size);
 	if ( (datasize == -1) || ((DWORD)datasize < (item->offset + size)) ){
 		datasize = item->offset + size;
 	}
 	if ( item->subname == NULL ){
-		SetCustData(item->keyname,work,datasize);
+		SetCustData(item->keyname, work, datasize);
 	}else{
-		SetCustTable(item->keyname,item->subname,work,datasize);
+		SetCustTable(item->keyname, item->subname, work, datasize);
 	}
 }
 
-void GetCustItemData(ITEMSTRUCT *item,TCHAR **line)
+void GetCustItemData(ITEMSTRUCT *item, TCHAR **line)
 {
 	switch ( item->itemtype ){
 		case ITEM_INT:
@@ -265,7 +264,7 @@ void GetCustItemData(ITEMSTRUCT *item,TCHAR **line)
 			TCHAR *p;
 
 			item->d.num.truedata = GetNumber((const TCHAR **)line);
-			p = tstrchr(*line,'/');
+			p = tstrchr(*line, '/');
 			if ( p != NULL ){
 				p++;
 				item->d.num.def = GetNumber((const TCHAR **)&p);
@@ -274,21 +273,21 @@ void GetCustItemData(ITEMSTRUCT *item,TCHAR **line)
 				item->d.num.def = 0;
 			}
 			item->d.num.data = item->d.num.def;
-			GetData(item,&item->d.num.data,item->d.num.size);
+			GetData(item, &item->d.num.data, item->d.num.size);
 			break;
 		}
 		case ITEM_STRING:
-			tstrcpy(item->d.str.setdata,*line);
+			tstrcpy(item->d.str.setdata, *line);
 			item->d.str.data[0] = '\0';
-			GetData(item,&item->d.str.data,sizeof(item->d.str.data));
+			GetData(item, &item->d.str.data, sizeof(item->d.str.data));
 			break;
 	}
 }
 
-void GetCustItem(ITEMSTRUCT *item,const TCHAR *line,BOOL getdata)
+void GetCustItem(ITEMSTRUCT *item, const TCHAR *line, BOOL getdata)
 {
-	TCHAR *itemname,*param;
-	TCHAR *key,*subkey,*offset;
+	TCHAR *itemname, *param;
+	TCHAR *key, *subkey, *offset;
 
 	item->itemtype = ITEM_LABEL;
 	item->option = ITEMOPTION_NONE;
@@ -310,37 +309,37 @@ void GetCustItem(ITEMSTRUCT *item,const TCHAR *line,BOOL getdata)
 			item->layer++;
 		}
 	}
-	param = tstrchr(line,'\x1');
+	param = tstrchr(line, '\x1');
 	if ( param != NULL ){ // ２カ国語記載有り
 		if ( UseLcid == LCID_PPXDEF ){
-			tstrcpy(item->itemname,param + 1);
+			tstrcpy(item->itemname, param + 1);
 			itemname = item->itemname;
 		}else{
-			tstrcpy(item->itemname,line);
+			tstrcpy(item->itemname, line);
 			itemname = item->itemname + (param - line);
 			*itemname++ = '\0';
 		}
 	}else{
-		tstrcpy(item->itemname,line);
+		tstrcpy(item->itemname, line);
 		itemname = item->itemname;
 	}
 									// 情報の確認
-	key = tstrchr(itemname,':');
+	key = tstrchr(itemname, ':');
 	if ( key == NULL ) return; // なし
 									// keyname 取得
 	*key++ = '\0';
-	param = tstrchr(key,'=');
+	param = tstrchr(key, '=');
 	if ( param == NULL ) return;
 	*param++ = '\0';
 	item->keyname = key;
 									// offset 取得
-	offset = tstrchr(key,'+');
+	offset = tstrchr(key, '+');
 	if ( offset != NULL ){
 		*offset++ = '\0';
 		item->offset = GetNumber((const TCHAR **)&offset);
 	}
 									// subname 取得
-	subkey = tstrchr(key,':');
+	subkey = tstrchr(key, ':');
 	if ( subkey == NULL ){
 		item->subname = NULL;
 	}else{
@@ -357,18 +356,18 @@ void GetCustItem(ITEMSTRUCT *item,const TCHAR *line,BOOL getdata)
 		case '?':
 			item->edittype = EDIT_CHECK;
 			item->itemtype = ITEM_DWORD;
-			GetCustItemType(item,&param);
+			GetCustItemType(item, &param);
 			if ( *param == 'B' ){
 				param++;
 				item->d.num.mask = 0;
 			}else{
 				item->d.num.mask = IITEM_VALUE;
 			}
-			GetCustItemData(item,&param);
+			GetCustItemData(item, &param);
 			if ( item->itemtype == ITEM_STRING ){
 				TCHAR *sepp;
 
-				sepp = tstrchr(param,':');
+				sepp = tstrchr(param, ':');
 				if ( sepp != NULL ){
 					*(item->d.str.setdata + (sepp - param)) = '\0';
 					param = sepp;
@@ -393,33 +392,33 @@ void GetCustItem(ITEMSTRUCT *item,const TCHAR *line,BOOL getdata)
 		case '@':
 			item->edittype = EDIT_RADIO;
 			item->itemtype = ITEM_DWORD;
-			GetCustItemType(item,&param);
-			GetCustItemData(item,&param);
+			GetCustItemType(item, &param);
+			GetCustItemData(item, &param);
 			break;
 		case '<':
 			item->edittype = EDIT_EDIT;
 			item->itemtype = ITEM_STRING;
-			GetCustItemType(item,&param);
-			GetCustItemData(item,&param);
+			GetCustItemType(item, &param);
+			GetCustItemData(item, &param);
 			break;
 		case 'K':
 			item->edittype = EDIT_KEY;
 			item->itemtype = ITEM_KEY;
 			item->d.num.data = 0;
-			GetData(item,&item->d.num.data,sizeof(WORD));
+			GetData(item, &item->d.num.data, sizeof(WORD));
 			break;
 		case 'N':
 			item->edittype = EDIT_FILE;
 			item->itemtype = ITEM_STRING;
-			GetCustItemType(item,&param);
-			GetCustItemData(item,&param);
+			GetCustItemType(item, &param);
+			GetCustItemData(item, &param);
 			if ( *param == 'D' ) item->option = ITEMOPTION_NOMACROSTR;
 			break;
 		case 'P':
 			item->edittype = EDIT_DIR;
 			item->itemtype = ITEM_STRING;
-			GetCustItemType(item,&param);
-			GetCustItemData(item,&param);
+			GetCustItemType(item, &param);
+			GetCustItemData(item, &param);
 			if ( *param == 'D' ) item->option = ITEMOPTION_NOMACROSTR;
 			break;
 		case 'F':
@@ -427,8 +426,8 @@ void GetCustItem(ITEMSTRUCT *item,const TCHAR *line,BOOL getdata)
 			item->itemtype = ITEM_FONT;
 			item->d.fontdata.font = DefaultFont;
 			item->d.fontdata.dpi = 0;
-			tstrcpy(item->d.fontdata.font.lfFaceName,GetCText(DefaultFaceName));
-			GetData(item,&item->d.fontdata,sizeof(item->d.fontdata));
+			tstrcpy(item->d.fontdata.font.lfFaceName, GetCText(DefaultFaceName));
+			GetData(item, &item->d.fontdata, sizeof(item->d.fontdata));
 			break;
 		case 'c':
 			item->edittype = EDIT_ppchotkey;
@@ -440,44 +439,44 @@ void GetCustItem(ITEMSTRUCT *item,const TCHAR *line,BOOL getdata)
 	}
 }
 
-void MakeEditText(TCHAR *dest,ITEMSTRUCT *item)
+void MakeEditText(TCHAR *dest, ITEMSTRUCT *item)
 {
 	switch ( item->itemtype ){
 		case ITEM_INT:
-			wsprintf(dest,T("%d"),item->d.num.data);
+			wsprintf(dest, T("%d"), item->d.num.data);
 			break;
 		case ITEM_DWORD:
 		case ITEM_WORD:
 		case ITEM_BYTE:
-			wsprintf(dest,T("%u"),item->d.num.data);
+			wsprintf(dest, T("%u"), item->d.num.data);
 			break;
 		case ITEM_STRING:
-			tstrcpy(dest,item->d.str.data);
+			tstrcpy(dest, item->d.str.data);
 			break;
 		case ITEM_KEY:
 			if ( item->d.num.data ){
-				MakeKeyDetailText(item->d.num.data,dest,FALSE);
+				MakeKeyDetailText(item->d.num.data, dest, FALSE);
 			}else{
 				dest[0] = '\0';
 			}
 			break;
 		case ITEM_FONT: {
-			int pix,pt;
+			int pix, pt;
 
 			pix = item->d.fontdata.font.lfHeight;
 			if ( pix == 0 ){
-				tstrcpy(dest,item->d.fontdata.font.lfFaceName);
+				tstrcpy(dest, item->d.fontdata.font.lfFaceName);
 			}else{
-				if ( tstrcmp(item->keyname,T("F_dlg")) == 0 ){
+				if ( tstrcmp(item->keyname, T("F_dlg")) == 0 ){
 					pix = (item->d.fontdata.font.lfHeight * DEFAULT_WIN_DPI) / DEFAULT_DTP_DPI;
 					pt = item->d.fontdata.font.lfHeight;
 				}else{
 					pix = item->d.fontdata.font.lfHeight;
 					pt = (item->d.fontdata.font.lfHeight * DEFAULT_DTP_DPI) / DEFAULT_WIN_DPI;
 				}
-				wsprintf(dest,T("%s,%dpt(%d)"),
+				wsprintf(dest, T("%s, %dpt(%d)"),
 						item->d.fontdata.font.lfFaceName,
-						(pt >= 0) ? pt : -pt,pix);
+						(pt >= 0) ? pt : -pt, pix);
 			}
 			break;
 		}
@@ -487,15 +486,15 @@ void MakeEditText(TCHAR *dest,ITEMSTRUCT *item)
 	}
 }
 
-int MakeDisplayText(TCHAR *dest,ITEMSTRUCT *item,TV_ITEM *tvi)
+int MakeDisplayText(TCHAR *dest, ITEMSTRUCT *item, TV_ITEM *tvi)
 {
 	LABELICONS state = ICON_LABEL;
-	TCHAR *foot = NULL,footbuf[0x1000],destbuf[0x1000];
+	TCHAR *foot = NULL, footbuf[0x1000], destbuf[0x1000];
 
 	switch(item->edittype){
 		case EDIT_CHECK:
 			if ( item->itemtype == ITEM_STRING ){ // 文字列変更
-				state = !tstrcmp(item->d.str.data,item->d.str.setdata) ?
+				state = !tstrcmp(item->d.str.data, item->d.str.setdata) ?
 					ICON_CHECKON : ICON_CHECKOFF;
 			}else if ( item->d.num.mask == IITEM_VALUE ){	// 値変更
 				state = (item->d.num.data == item->d.num.falsedata) ?
@@ -520,7 +519,7 @@ int MakeDisplayText(TCHAR *dest,ITEMSTRUCT *item,TV_ITEM *tvi)
 							ICON_RADIOON : ICON_RADIOOFF;
 					break;
 				case ITEM_STRING:
-					state = !tstrcmp(item->d.str.data,item->d.str.setdata) ?
+					state = !tstrcmp(item->d.str.data, item->d.str.setdata) ?
 							ICON_RADIOON : ICON_RADIOOFF;
 					break;
 //				default:
@@ -535,15 +534,15 @@ int MakeDisplayText(TCHAR *dest,ITEMSTRUCT *item,TV_ITEM *tvi)
 			state = ICON_BUTTON;
 			if ( IsTrue(item->edit) ) break;
 			foot = footbuf;
-			MakeEditText(destbuf,item);
-			wsprintf(footbuf,T(" [ %s ]"),destbuf);
+			MakeEditText(destbuf, item);
+			wsprintf(footbuf, T(" [ %s ]"), destbuf);
 			break;
 //		default:
 	}
-	tstrcpy(dest,item->itemname);
-	if ( foot != NULL ) tstrcat(dest,foot);
+	tstrcpy(dest, item->itemname);
+	if ( foot != NULL ) tstrcat(dest, foot);
 	tvi->iImage = tvi->iSelectedImage = state;
-	setflag(tvi->mask,TVIF_IMAGE | TVIF_SELECTEDIMAGE);
+	setflag(tvi->mask, TVIF_IMAGE | TVIF_SELECTEDIMAGE);
 	return state;
 }
 
@@ -554,8 +553,8 @@ void LoadListTree(BOOL itemtree)
 	HTREEITEM hParent[maxlayer + 1]; // 0:Root 1:分類 2:項目 3:選択肢
 	HTREEITEM hFirst = NULL;
 	int linecount = 1;
-	const TCHAR *line,*lines;
-	int layer,oldlayer = maxlayer;
+	const TCHAR *line, *lines;
+	int layer, oldlayer = maxlayer;
 
 	hParent[0] = TVI_ROOT; // 右ツリーの時はこちらが root
 	hParent[1] = TVI_ROOT; // 左ツリーの時はこちらが root
@@ -563,13 +562,13 @@ void LoadListTree(BOOL itemtree)
 		hTwnd = hItemTreeWnd;
 		lines = CustomItemList;
 		linecount = CustomItemListOffset;
-		SendMessage(hTwnd,WM_SETREDRAW,FALSE,0);
-		SendMessage(hTwnd,TVM_SELECTITEM,TVGN_CARET,(LPARAM)NULL); // 選択解除(TVN_SELCHANGED が連続発行されないように)
+		SendMessage(hTwnd, WM_SETREDRAW, FALSE, 0);
+		SendMessage(hTwnd, TVM_SELECTITEM, TVGN_CARET, (LPARAM)NULL); // 選択解除(TVN_SELCHANGED が連続発行されないように)
 		TreeView_DeleteAllItems(hTwnd);
 	}else{ // 左(+右)ツリーの表示
 		hTwnd = hIndexTreeWnd;
 		lines = CustomList;
-		SendMessage(hTwnd,WM_SETREDRAW,FALSE,0);
+		SendMessage(hTwnd, WM_SETREDRAW, FALSE, 0);
 	}
 
 	while ( *lines ){
@@ -579,7 +578,7 @@ void LoadListTree(BOOL itemtree)
 		TV_INSERTSTRUCT tvins;
 
 		line = lines;
-		GetCustItem(&item,line,itemtree); // itemtree なら内容も取得
+		GetCustItem(&item, line, itemtree); // itemtree なら内容も取得
 		if ( IsTrue(itemtree) ){ // item のときは、次のIndexで終了
 			if ( item.itemtype == ITEM_INDEXLABEL ) break;
 			item.layer--;
@@ -589,13 +588,13 @@ void LoadListTree(BOOL itemtree)
 		layer = item.layer;
 		if ( layer > maxlayer ){
 #ifndef RELEASE
-			XMessage(hTwnd,NULL,XM_DbgDIA,T("Flow layer %d"),linecount);
+			XMessage(hTwnd, NULL, XM_DbgDIA, T("Flow layer %d"), linecount);
 #endif
 			goto next;
 		}
 
 		tvi.mask = TVIF_TEXT | TVIF_PARAM;
-		MakeDisplayText(dest,&item,&tvi);
+		MakeDisplayText(dest, &item, &tvi);
 
 		if ( (layer == 1) && (tvi.iImage == ITEM_INDEXLABEL) ){
 			tvi.iImage = tvi.iSelectedImage = ICON_DOCKCLOSE;
@@ -608,19 +607,19 @@ void LoadListTree(BOOL itemtree)
 		tvins.hParent = hParent[layer - 1];
 		tvins.hInsertAfter = 0;
 		TreeInsertItemValue(tvins) = tvi;
-		hParent[layer] = (HTREEITEM)SendMessage(hTwnd,TVM_INSERTITEM,
-								0,(LPARAM)(LPTV_INSERTSTRUCT)&tvins);
+		hParent[layer] = (HTREEITEM)SendMessage(hTwnd, TVM_INSERTITEM,
+								0, (LPARAM)(LPTV_INSERTSTRUCT)&tvins);
 		if ( hFirst == NULL ) hFirst = hParent[layer];
-		if ( layer > oldlayer ) TreeView_Expand(hTwnd,tvins.hParent,TVE_EXPAND);
+		if ( layer > oldlayer ) TreeView_Expand(hTwnd, tvins.hParent, TVE_EXPAND);
 		oldlayer = layer;
 next:
 		linecount++;
 		lines += tstrlen(lines) + 1;
 		if ( *lines == '\n' ) lines++;
 	}
-	SendMessage(hTwnd,TVM_SELECTITEM,TVGN_FIRSTVISIBLE,(LPARAM)hFirst);
-	SendMessage(hTwnd,WM_SETREDRAW,TRUE,0);
-	InvalidateRect(hTwnd,NULL,TRUE);
+	SendMessage(hTwnd, TVM_SELECTITEM, TVGN_FIRSTVISIBLE, (LPARAM)hFirst);
+	SendMessage(hTwnd, WM_SETREDRAW, TRUE, 0);
+	InvalidateRect(hTwnd, NULL, TRUE);
 }
 
 #ifndef TVM_SETITEMHEIGHT
@@ -630,13 +629,13 @@ next:
 
 void EnterTouchMode(HWND hDlg)
 {
-	int dpi = (int)PPxCommonExtCommand(K_GETDISPDPI,(WPARAM)hDlg);
-	int nowheight = (int)SendMessage(hItemTreeWnd,TVM_GETITEMHEIGHT,0,0);
+	int dpi = (int)PPxCommonExtCommand(K_GETDISPDPI, (WPARAM)hDlg);
+	int nowheight = (int)SendMessage(hItemTreeWnd, TVM_GETITEMHEIGHT, 0, 0);
 	int minheight = (dpi * 60) >> 8; // 6.0mm ( 60 / 254 ) の近似値
 
 	if ( nowheight < minheight ){
-		SendMessage(hIndexTreeWnd,TVM_SETITEMHEIGHT,minheight,0);
-		SendMessage(hItemTreeWnd,TVM_SETITEMHEIGHT,minheight,0);
+		SendMessage(hIndexTreeWnd, TVM_SETITEMHEIGHT, minheight, 0);
+		SendMessage(hItemTreeWnd, TVM_SETITEMHEIGHT, minheight, 0);
 	}
 }
 
@@ -645,7 +644,7 @@ void EnterTouchMode(HWND hDlg)
 #define POINTER_FLAG_INCONTACT 4
 #endif
 
-void USEFASTCALL CheckTouch(HWND hWnd,UINT iMsg/*,WPARAM wParam*/)
+void USEFASTCALL CheckTouch(HWND hWnd, UINT iMsg/*, WPARAM wParam*/)
 {
 	if ( // ((iMsg == WM_POINTERUP) && (X_pmc[0] < 0) && (wParam & POINTER_FLAG_INCONTACT)) ||
 		 ((iMsg == WM_GESTURE) && (X_pmc[0] < 0))
@@ -654,16 +653,16 @@ void USEFASTCALL CheckTouch(HWND hWnd,UINT iMsg/*,WPARAM wParam*/)
 	}
 }
 
-LRESULT CALLBACK IndexTreeProc(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
+LRESULT CALLBACK IndexTreeProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
-	CheckTouch(hWnd,iMsg);
-	return CallWindowProc(OldIndexTreeProc,hWnd,iMsg,wParam,lParam);
+	CheckTouch(hWnd, iMsg);
+	return CallWindowProc(OldIndexTreeProc, hWnd, iMsg, wParam, lParam);
 }
 
-LRESULT CALLBACK ItemTreeProc(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
+LRESULT CALLBACK ItemTreeProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
-	CheckTouch(hWnd,iMsg);
-	return CallWindowProc(OldItemTreeProc,hWnd,iMsg,wParam,lParam);
+	CheckTouch(hWnd, iMsg);
+	return CallWindowProc(OldItemTreeProc, hWnd, iMsg, wParam, lParam);
 }
 
 #ifndef SM_MAXIMUMTOUCHES
@@ -676,18 +675,18 @@ void LoadList(HWND hDlg)	// チェックボックス等の画像を用意
 	int IconSize;
 
 	CustomList = LoadTextResource(MAKEINTRESOURCE(DEFCUSTLIST));
-	hIndexTreeWnd = GetDlgItem(hDlg,IDT_GENERAL);
-	hItemTreeWnd = GetDlgItem(hDlg,IDT_GENERALITEM);
+	hIndexTreeWnd = GetDlgItem(hDlg, IDT_GENERAL);
+	hItemTreeWnd = GetDlgItem(hDlg, IDT_GENERALITEM);
 
-	GetCustData(T("X_pmc"),&X_pmc,sizeof(X_pmc));
+	GetCustData(T("X_pmc"), &X_pmc, sizeof(X_pmc));
 	if ( X_pmc[0] > 0 ){
 		EnterTouchMode(hDlg);
 	}else if ( X_pmc[0] < 0 ){
 		if ( GetSystemMetrics(SM_MAXIMUMTOUCHES) != 0 ){
 			OldIndexTreeProc =(WNDPROC)SetWindowLongPtr(GetDlgItem(hDlg,
-					IDT_GENERAL),GWLP_WNDPROC,(LONG_PTR)IndexTreeProc);
+					IDT_GENERAL), GWLP_WNDPROC, (LONG_PTR)IndexTreeProc);
 			OldItemTreeProc =(WNDPROC)SetWindowLongPtr(GetDlgItem(hDlg,
-					IDT_GENERALITEM),GWLP_WNDPROC,(LONG_PTR)ItemTreeProc);
+					IDT_GENERALITEM), GWLP_WNDPROC, (LONG_PTR)ItemTreeProc);
 		}
 	}
 
@@ -695,9 +694,9 @@ void LoadList(HWND hDlg)	// チェックボックス等の画像を用意
 	if ( (IconSize >= 24) && (OSver.dwMajorVersion >= 6) ){
 	#if 0
 		// 画像の拡縮で対応する案
-		HBITMAP hOrgBMP,hBigBMP;
-		HDC hDC,hOrgMemDC,hBigMemDC;
-		HGDIOBJ hOldOrgBmp,hOldBigBmp,hOldFont;
+		HBITMAP hOrgBMP, hBigBMP;
+		HDC hDC, hOrgMemDC, hBigMemDC;
+		HGDIOBJ hOldOrgBmp, hOldBigBmp, hOldFont;
 		#define bitcolor 4
 		int i;
 		NONCLIENTMETRICS ncm;
@@ -705,47 +704,47 @@ void LoadList(HWND hDlg)	// チェックボックス等の画像を用意
 		TEXTMETRIC tm;
 
 		ncm.cbSize = sizeof(ncm);
-		SystemParametersInfo(SPI_GETNONCLIENTMETRICS,sizeof(ncm),&ncm,0);
+		SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
 
 		hDC = GetDC(hDlg);
 		hOrgMemDC = CreateCompatibleDC(hDC);
 		hBigMemDC = CreateCompatibleDC(hDC);
 
 		hControlFont = CreateFontIndirect(&ncm.lfStatusFont);
-		hOldFont = SelectObject(hOrgMemDC,hControlFont);
-		GetTextMetrics(hOrgMemDC,&tm);
-		SelectObject(hOrgMemDC,hOldFont);
+		hOldFont = SelectObject(hOrgMemDC, hControlFont);
+		GetTextMetrics(hOrgMemDC, &tm);
+		SelectObject(hOrgMemDC, hOldFont);
 		DeleteObject(hControlFont);
 //		tm.tmHeight = 32;
 
-		hImage = ImageList_Create(tm.tmHeight,tm.tmHeight,bitcolor,TreeImageCharCount,TreeImageCharCount);
+		hImage = ImageList_Create(tm.tmHeight, tm.tmHeight, bitcolor, TreeImageCharCount, TreeImageCharCount);
 
-		hOrgBMP = LoadBitmap(hInst,MAKEINTRESOURCE(BUTTONIMAGE));
-		hBigBMP = CreateCompatibleBitmap(hDC,tm.tmHeight,tm.tmHeight);
+		hOrgBMP = LoadBitmap(hInst, MAKEINTRESOURCE(BUTTONIMAGE));
+		hBigBMP = CreateCompatibleBitmap(hDC, tm.tmHeight, tm.tmHeight);
 
-		hOldOrgBmp = SelectObject(hOrgMemDC,hOrgBMP);
+		hOldOrgBmp = SelectObject(hOrgMemDC, hOrgBMP);
 
 		for ( i = 0 ; i < TreeImageCharCount ; i++ ){
-			hOldBigBmp = SelectObject(hBigMemDC,hBigBMP);
-			StretchBlt(hBigMemDC,0,0,tm.tmHeight,tm.tmHeight,
-					   hOrgMemDC,16 * i,0,16,16,SRCCOPY);
-			SelectObject(hBigMemDC,hOldBigBmp);
-			ImageList_AddMasked(hImage,hBigBMP,RGB(255,0,255));
+			hOldBigBmp = SelectObject(hBigMemDC, hBigBMP);
+			StretchBlt(hBigMemDC, 0, 0, tm.tmHeight, tm.tmHeight,
+					   hOrgMemDC, 16 * i, 0, 16, 16, SRCCOPY);
+			SelectObject(hBigMemDC, hOldBigBmp);
+			ImageList_AddMasked(hImage, hBigBMP, RGB(255, 0, 255));
 		}
-		SelectObject(hOrgMemDC,hOldOrgBmp);
+		SelectObject(hOrgMemDC, hOldOrgBmp);
 
 		DeleteObject(hBigBMP);
 		DeleteObject(hOrgBMP);
 
 		DeleteDC(hBigMemDC);
 		DeleteDC(hOrgMemDC);
-		ReleaseDC(hDlg,hDC);
+		ReleaseDC(hDlg, hDC);
 	#else
 		// 文字で対応する案
 		HBITMAP hBMP;
-		HDC hDC,hMemDC;
+		HDC hDC, hMemDC;
 		RECT box;
-		HGDIOBJ hOldBmp,hOldFont;
+		HGDIOBJ hOldBmp, hOldFont;
 		#define bitcolor 4
 		int i;
 		NONCLIENTMETRICS ncm;
@@ -753,42 +752,42 @@ void LoadList(HWND hDlg)	// チェックボックス等の画像を用意
 		TEXTMETRIC tm;
 
 		ncm.cbSize = sizeof(ncm);
-		SystemParametersInfo(SPI_GETNONCLIENTMETRICS,sizeof(ncm),&ncm,0);
+		SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
 
 		hDC = GetDC(hDlg);
 		hMemDC = CreateCompatibleDC(hDC);
 
 		hControlFont = CreateFontIndirect(&ncm.lfStatusFont);
-		hOldFont = SelectObject(hMemDC,hControlFont);
-		GetTextMetrics(hMemDC,&tm);
+		hOldFont = SelectObject(hMemDC, hControlFont);
+		GetTextMetrics(hMemDC, &tm);
 		if ( tm.tmHeight == 0 ){
 			tm.tmHeight = GetSystemMetrics(SM_CYMENU) - 5;
 		}
 
-		hImage = ImageList_Create(tm.tmHeight,tm.tmHeight,bitcolor,TreeImageCharCount,TreeImageCharCount);
+		hImage = ImageList_Create(tm.tmHeight, tm.tmHeight, bitcolor, TreeImageCharCount, TreeImageCharCount);
 
-		hBMP = CreateCompatibleBitmap(hMemDC,tm.tmHeight,tm.tmHeight);
+		hBMP = CreateCompatibleBitmap(hMemDC, tm.tmHeight, tm.tmHeight);
 		box.left = box.top = 0;
 		box.right = box.bottom = tm.tmHeight;
 
 		for ( i = 0 ; i < TreeImageCharCount ; i++ ){
-			hOldBmp = SelectObject(hMemDC,hBMP);
-			FillRect(hMemDC,&box,GetStockObject(WHITE_BRUSH));
-			TextOutW(hMemDC,0,0,&TreeImageChars[i],1);
-			SelectObject(hMemDC,hOldBmp);
-			ImageList_Add(hImage,hBMP,NULL);
+			hOldBmp = SelectObject(hMemDC, hBMP);
+			FillRect(hMemDC, &box, GetStockObject(WHITE_BRUSH));
+			TextOutW(hMemDC, 0, 0, &TreeImageChars[i], 1);
+			SelectObject(hMemDC, hOldBmp);
+			ImageList_Add(hImage, hBMP, NULL);
 		}
 		DeleteObject(hBMP);
-		SelectObject(hMemDC,hOldFont);
+		SelectObject(hMemDC, hOldFont);
 		DeleteObject(hControlFont);
 		DeleteDC(hMemDC);
-		ReleaseDC(hDlg,hDC);
+		ReleaseDC(hDlg, hDC);
 	#endif
 	}else{ // 内蔵画像を使用する
-		hImage = ImageList_LoadImage(hInst,MAKEINTRESOURCE(BUTTONIMAGE),
-				16,0,RGB(255,0,255),IMAGE_BITMAP,LR_DEFAULTCOLOR);
+		hImage = ImageList_LoadImage(hInst, MAKEINTRESOURCE(BUTTONIMAGE),
+				16, 0, RGB(255, 0, 255), IMAGE_BITMAP, LR_DEFAULTCOLOR);
 	}
-	SendMessage(hItemTreeWnd,TVM_SETIMAGELIST,(WPARAM)TVSIL_NORMAL,(LPARAM)hImage);
+	SendMessage(hItemTreeWnd, TVM_SETIMAGELIST, (WPARAM)TVSIL_NORMAL, (LPARAM)hImage);
 
 	LoadListTree(FALSE);
 /*  ↑で右側も表示されるので不要
@@ -796,34 +795,34 @@ void LoadList(HWND hDlg)	// チェックボックス等の画像を用意
 	CustomItemList = SearchList(2);
 	LoadListTree(TRUE);
 */
-	hEditWnd = CreateWindow(EDIT,NilStr,
-					WS_BORDER | WS_CHILD | WS_TABSTOP | ES_AUTOHSCROLL,
-					0,0,FLOAT_WIDTH,FLOAT_HEIGHT,hDlg,(HMENU)IDE_FLOAT,
-					hInst,NULL);
-	hSpinWnd = CreateWindow(T("msctls_updown32"),NilStr,
-					UDS_SETBUDDYINT | UDS_AUTOBUDDY | UDS_ARROWKEYS |
-					UDS_NOTHOUSANDS |
-					WS_CHILD | WS_TABSTOP | ES_AUTOHSCROLL,
-					0,0,FLOAT_WIDTH,FLOAT_HEIGHT,hDlg,NULL,hInst,NULL);
-	SendMessage(hSpinWnd,UDM_SETRANGE,0,TMAKELPARAM(0,0x7fff));
-	SendMessage(hSpinWnd,UDM_SETRANGE32,0,0x7fffffff);
-	hButtonWnd = CreateWindow(BUTTON,GetCText(T("参照\0ref")),
-					WS_BORDER | WS_CHILD | WS_TABSTOP | BS_PUSHBUTTON,
-					0,0,FLOAT_BUTTONWIDTH,FLOAT_HEIGHT,hDlg,
-					(HMENU)IDB_FLOAT,hInst,NULL);
+	hEditWnd = CreateWindow(EDIT, NilStr,
+			WS_BORDER | WS_CHILD | WS_TABSTOP | ES_AUTOHSCROLL,
+			0, 0, FLOAT_WIDTH, FLOAT_HEIGHT, hDlg,
+			CHILDWNDID(IDE_FLOAT), hInst, NULL);
+	hSpinWnd = CreateWindow(T("msctls_updown32"), NilStr,
+			UDS_SETBUDDYINT | UDS_AUTOBUDDY | UDS_ARROWKEYS |
+			UDS_NOTHOUSANDS |
+			WS_CHILD | WS_TABSTOP | ES_AUTOHSCROLL,
+			0, 0, FLOAT_WIDTH, FLOAT_HEIGHT, hDlg, NULL, hInst, NULL);
+	SendMessage(hSpinWnd, UDM_SETRANGE, 0, TMAKELPARAM(0, 0x7fff));
+	SendMessage(hSpinWnd, UDM_SETRANGE32, 0, 0x7fffffff);
+	hButtonWnd = CreateWindow(BUTTON, GetCText(T("参照\0ref")),
+			WS_BORDER | WS_CHILD | WS_TABSTOP | BS_PUSHBUTTON,
+			0, 0, FLOAT_BUTTONWIDTH, FLOAT_HEIGHT, hDlg,
+			CHILDWNDID(IDB_FLOAT), hInst, NULL);
 }
 
-void DispFix(HWND hTwnd,HTREEITEM titem,ITEMSTRUCT *item)
+void DispFix(HWND hTwnd, HTREEITEM titem, ITEMSTRUCT *item)
 {
 	TCHAR disp[0x1000];
 	TV_ITEM tvi;
 
 	tvi.mask = TVIF_TEXT;
-	MakeDisplayText(disp,item,&tvi);
+	MakeDisplayText(disp, item, &tvi);
 	tvi.hItem = titem;
 	tvi.pszText = disp;
 	tvi.cchTextMax = tstrlen32(disp);
-	TreeView_SetItem(hTwnd,&tvi);
+	TreeView_SetItem(hTwnd, &tvi);
 }
 
 void ModifyEditItem(HWND hWnd)
@@ -831,7 +830,7 @@ void ModifyEditItem(HWND hWnd)
 	TCHAR editbuf[VFPS * 2];
 	const TCHAR *p;
 
-	GetWindowText(hEditWnd,editbuf,TSIZEOF(editbuf));
+	GetWindowText(hEditWnd, editbuf, TSIZEOF(editbuf));
 	switch ( edititem.itemtype ){
 		case ITEM_INT:
 		case ITEM_DWORD:
@@ -839,25 +838,25 @@ void ModifyEditItem(HWND hWnd)
 		case ITEM_BYTE:
 			p = editbuf;
 			edititem.d.num.data = GetNumber(&p);
-			SetData(&edititem,&edititem.d.num.data,edititem.d.num.size);
+			SetData(&edititem, &edititem.d.num.data, edititem.d.num.size);
 			break;
 		case ITEM_STRING:
 			if ( edititem.option == ITEMOPTION_NOMACROSTR ){
-				if ( tstrchr(editbuf,'%') != NULL ){
-					SetDlgItemText(hWnd,IDE_FIND,GetCText(WarnNoMacroMsg));
+				if ( tstrchr(editbuf, '%') != NULL ){
+					SetDlgItemText(hWnd, IDE_FIND, GetCText(WarnNoMacroMsg));
 				}else{
-					SetDlgItemText(hWnd,IDE_FIND,NilStr);
+					SetDlgItemText(hWnd, IDE_FIND, NilStr);
 				}
 			}
-			tstrcpy(edititem.d.str.data,editbuf);
-			SetData(&edititem,&edititem.d.str.data,
+			tstrcpy(edititem.d.str.data, editbuf);
+			SetData(&edititem, &edititem.d.str.data,
 					TSTRSIZE32(edititem.d.str.data));
 			break;
 //		default:
 	}
 }
 
-void RefreshItems(HWND hTwnd,ITEMSTRUCT *item,HTREEITEM hItem1)
+void RefreshItems(HWND hTwnd, ITEMSTRUCT *item, HTREEITEM hItem1)
 {
 	HTREEITEM hItem;
 	TV_ITEM tvi;
@@ -865,68 +864,68 @@ void RefreshItems(HWND hTwnd,ITEMSTRUCT *item,HTREEITEM hItem1)
 	const TCHAR *p;
 
 	if ( item->layer <= 2 ){
-		DispFix(hTwnd,hItem1,item);
+		DispFix(hTwnd, hItem1, item);
 		return;
 	}
-	hItem = TreeView_GetParent(hTwnd,hItem1);
-	hItem = TreeView_GetChild(hTwnd,hItem);
+	hItem = TreeView_GetParent(hTwnd, hItem1);
+	hItem = TreeView_GetChild(hTwnd, hItem);
 
 	while ( hItem != NULL ){
 		tvi.hItem = hItem;
 		tvi.mask = TVIF_PARAM;
-		TreeView_GetItem(hTwnd,&tvi);
+		TreeView_GetItem(hTwnd, &tvi);
 		p = SearchList((int)tvi.lParam);
 		if ( p == NULL ) break;
-		GetCustItem(&enumitem,p,TRUE);
-		DispFix(hTwnd,hItem,&enumitem);
-		hItem = TreeView_GetNextSibling(hTwnd,hItem);
+		GetCustItem(&enumitem, p, TRUE);
+		DispFix(hTwnd, hItem, &enumitem);
+		hItem = TreeView_GetNextSibling(hTwnd, hItem);
 	}
 }
 
-void CloseEdit(HWND hDlg,HWND hTwnd)
+void CloseEdit(HWND hDlg, HWND hTwnd)
 {
 	if ( !useedit ) return;
-	ShowWindow(hEditWnd,SW_HIDE);
-	ShowWindow(hSpinWnd,SW_HIDE);
-	ShowWindow(hButtonWnd,SW_HIDE);
+	ShowWindow(hEditWnd, SW_HIDE);
+	ShowWindow(hSpinWnd, SW_HIDE);
+	ShowWindow(hButtonWnd, SW_HIDE);
 	useedit = 0;
 	edititem.edit = FALSE;
 	ModifyEditItem(hDlg);
-	RefreshItems(hTwnd,&edititem,hedititem);
+	RefreshItems(hTwnd, &edititem, hedititem);
 }
 
-void SetEditWindow(HWND hDlg,HWND hTwnd,ITEMSTRUCT *item,HTREEITEM hTitem)
+void SetEditWindow(HWND hDlg, HWND hTwnd, ITEMSTRUCT *item, HTREEITEM hTitem)
 {
 	RECT box;
 	POINT pos;
 
 	item->edit = TRUE;
-	DispFix(hTwnd,hTitem,item);
-	TreeView_GetItemRect(hTwnd,hTitem,&box,TRUE);
+	DispFix(hTwnd, hTitem, item);
+	TreeView_GetItemRect(hTwnd, hTitem, &box, TRUE);
 	pos.x = box.right;
 	pos.y = (box.top + box.bottom) / 2 - (FLOAT_HEIGHT / 2);
-	ClientToScreen(hTwnd,&pos);
-	ScreenToClient(hDlg,&pos);
+	ClientToScreen(hTwnd, &pos);
+	ScreenToClient(hDlg, &pos);
 
-	SetWindowPos(hEditWnd,HWND_TOP,pos.x,pos.y,0,0,SWP_NOSIZE | SWP_SHOWWINDOW);
+	SetWindowPos(hEditWnd, HWND_TOP, pos.x, pos.y, 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
 	if ( item->edittype != EDIT_EDIT ){
-		SetWindowPos(hButtonWnd,HWND_TOP,
-				pos.x + FLOAT_WIDTH,pos.y,0,0,SWP_NOACTIVATE | SWP_NOSIZE | SWP_SHOWWINDOW);
+		SetWindowPos(hButtonWnd, HWND_TOP,
+				pos.x + FLOAT_WIDTH, pos.y, 0, 0, SWP_NOACTIVATE | SWP_NOSIZE | SWP_SHOWWINDOW);
 	}else{
 		if ( item->itemtype != ITEM_STRING ){
-			SetWindowPos(hSpinWnd,HWND_TOP,
-				pos.x + FLOAT_WIDTH,pos.y,0,0,SWP_NOACTIVATE | SWP_NOSIZE | SWP_SHOWWINDOW);
+			SetWindowPos(hSpinWnd, HWND_TOP,
+				pos.x + FLOAT_WIDTH, pos.y, 0, 0, SWP_NOACTIVATE | SWP_NOSIZE | SWP_SHOWWINDOW);
 		}
 	}
-	PostMessage(hDlg,WM_COMMAND,IDM_SETEDITFOCUS,0);
+	PostMessage(hDlg, WM_COMMAND, IDM_SETEDITFOCUS, 0);
 }
 
-void SelectItem_Font(HWND hDlg,HWND hTwnd,HTREEITEM titem,ITEMSTRUCT *item)
+void SelectItem_Font(HWND hDlg, HWND hTwnd, HTREEITEM titem, ITEMSTRUCT *item)
 {
 	CHOOSEFONT cfont;
 
 // ※仮想中はdpiの変化無し
-	memset(&cfont,0,sizeof(CHOOSEFONT));
+	memset(&cfont, 0, sizeof(CHOOSEFONT));
 	cfont.lStructSize = sizeof(CHOOSEFONT);
 	cfont.hwndOwner = hDlg;
 	// cfont.hDC = NULL;
@@ -937,38 +936,38 @@ void SelectItem_Font(HWND hDlg,HWND hTwnd,HTREEITEM titem,ITEMSTRUCT *item)
 
 	// (未設定) なら、初期値を設定する
 	if ( item->d.fontdata.font.lfFaceName[0] == '(' ){
-		const TCHAR *pos = tstrchr(StrFontList,item->keyname[2]);
+		const TCHAR *pos = tstrchr(StrFontList, item->keyname[2]);
 
 		item->d.fontdata.font.lfFaceName[0] = '\0';
 		if ( pos != NULL ){
-			GetPPxFont((int)(pos - StrFontList),PPxCommonExtCommand(K_GETDISPDPI,(WPARAM)hDlg),&item->d.fontdata);
+			GetPPxFont((int)(pos - StrFontList), PPxCommonExtCommand(K_GETDISPDPI, (WPARAM)hDlg), &item->d.fontdata);
 		}
 	}
 	// ダイアログは Point を Pixel に変換する
-	if ( tstrcmp(item->keyname,T("F_dlg")) == 0 ){
+	if ( tstrcmp(item->keyname, T("F_dlg")) == 0 ){
 		item->d.fontdata.font.lfHeight = (item->d.fontdata.font.lfHeight * DEFAULT_WIN_DPI) / DEFAULT_DTP_DPI;
 	}
 
 	if ( IsTrue(ChooseFont(&cfont)) ){
 		// ダイアログは Pixel を Point に変換する
-		if ( tstrcmp(item->keyname,T("F_dlg")) == 0 ){
+		if ( tstrcmp(item->keyname, T("F_dlg")) == 0 ){
 			item->d.fontdata.font.lfHeight = (item->d.fontdata.font.lfHeight * DEFAULT_DTP_DPI) / DEFAULT_WIN_DPI;
 		}
-		item->d.fontdata.dpi = PPxCommonExtCommand(K_GETDISPDPI,(WPARAM)hDlg);
-		SetData(item,&item->d.fontdata,sizeof(item->d.fontdata));
-		RefreshItems(hTwnd,item,titem);
+		item->d.fontdata.dpi = PPxCommonExtCommand(K_GETDISPDPI, (WPARAM)hDlg);
+		SetData(item, &item->d.fontdata, sizeof(item->d.fontdata));
+		RefreshItems(hTwnd, item, titem);
 		Changed(hDlg);
 	}
 }
 
-BOOL SelectItem(HWND hDlg,HWND hTwnd,HTREEITEM titem,int linenumber)
+BOOL SelectItem(HWND hDlg, HWND hTwnd, HTREEITEM titem, int linenumber)
 {
 	ITEMSTRUCT item;
 	const TCHAR *listp;
 
 	listp = SearchList(linenumber);
 	if ( listp == NULL ) return FALSE;
-	GetCustItem(&item,listp,TRUE);
+	GetCustItem(&item, listp, TRUE);
 	switch ( item.edittype ){
 		case EDIT_NONE:			// ラベル／折り畳み処理
 			if ( (item.itemtype == ITEM_INDEXLABEL) &&
@@ -980,18 +979,18 @@ BOOL SelectItem(HWND hDlg,HWND hTwnd,HTREEITEM titem,int linenumber)
 			}
 
 			if ( item.layer == 1 ){
-				TreeView_Expand(hTwnd,titem,TVE_TOGGLE);
+				TreeView_Expand(hTwnd, titem, TVE_TOGGLE);
 			}
 			return TRUE;
 
 		case EDIT_CHECK:		// チェックボックス／更新も行う
 			if ( item.itemtype == ITEM_STRING ){
-				if ( !tstrcmp(item.d.str.data,item.d.str.setdata) ){
-					wsprintf(item.d.str.data,T("%d"),item.d.num.falsedata);
+				if ( !tstrcmp(item.d.str.data, item.d.str.setdata) ){
+					wsprintf(item.d.str.data, T("%d"), item.d.num.falsedata);
 				}else{
-					tstrcpy(item.d.str.data,item.d.str.setdata);
+					tstrcpy(item.d.str.data, item.d.str.setdata);
 				}
-				SetData(&item,&item.d.str.data,TSTRSIZE32(item.d.str.data));
+				SetData(&item, &item.d.str.data, TSTRSIZE32(item.d.str.data));
 			}else{
 				if ( item.d.num.mask == IITEM_VALUE ){	// 値変更
 					item.d.num.data = ( item.d.num.data == item.d.num.falsedata ) ?
@@ -999,9 +998,9 @@ BOOL SelectItem(HWND hDlg,HWND hTwnd,HTREEITEM titem,int linenumber)
 				}else{							// bit 変更
 					item.d.num.data ^= item.d.num.truedata;
 				}
-				SetData(&item,&item.d.num.data,item.d.num.size);
+				SetData(&item, &item.d.num.data, item.d.num.size);
 			}
-			RefreshItems(hTwnd,&item,titem);
+			RefreshItems(hTwnd, &item, titem);
 			Changed(hDlg);
 			return TRUE;
 
@@ -1014,30 +1013,30 @@ BOOL SelectItem(HWND hDlg,HWND hTwnd,HTREEITEM titem,int linenumber)
 					if ( item.d.num.data == item.d.num.truedata ) return FALSE;
 					Changed(hDlg);
 					item.d.num.data = item.d.num.truedata;
-					SetData(&item,&item.d.num.data,item.d.num.size);
+					SetData(&item, &item.d.num.data, item.d.num.size);
 					break;
 				case ITEM_STRING:
-					if ( !tstrcmp(item.d.str.data,item.d.str.setdata) ){
+					if ( !tstrcmp(item.d.str.data, item.d.str.setdata) ){
 						return FALSE;
 					}
 					Changed(hDlg);
-					tstrcpy(item.d.str.data,item.d.str.setdata);
-					SetData(&item,&item.d.str.data,TSTRSIZE32(item.d.str.data));
+					tstrcpy(item.d.str.data, item.d.str.setdata);
+					SetData(&item, &item.d.str.data, TSTRSIZE32(item.d.str.data));
 					break;
 //				default:
 			}
-			RefreshItems(hTwnd,&item,titem);
+			RefreshItems(hTwnd, &item, titem);
 			break;
 		case EDIT_FILE:			// ファイル名ボックス／編集開始
 		case EDIT_DIR:			// ディレクトリ／編集開始
 		case EDIT_EDIT: {		// エディットボックス／編集開始
 			TCHAR text[0x1000];
 
-			SendMessage(hEditWnd,EM_LIMITTEXT,VFPS - 1,0);
-			MakeEditText(text,&item);
-			SetWindowText(hEditWnd,text);
+			SendMessage(hEditWnd, EM_LIMITTEXT, VFPS - 1, 0);
+			MakeEditText(text, &item);
+			SetWindowText(hEditWnd, text);
 
-			SetEditWindow(hDlg,hTwnd,&item,titem);
+			SetEditWindow(hDlg, hTwnd, &item, titem);
 
 			useedit = linenumber;
 			hedititem = titem;
@@ -1056,14 +1055,14 @@ BOOL SelectItem(HWND hDlg,HWND hTwnd,HTREEITEM titem,int linenumber)
 			TCHAR temp[64];
 			const TCHAR *p;
 
-			PutKeyCode(temp,item.d.num.data);
-			if ( KeyInput(GetParent(hDlg),temp) <= 0 ){
+			PutKeyCode(temp, item.d.num.data);
+			if ( KeyInput(GetParent(hDlg), temp) <= 0 ){
 				if ( item.edittype != EDIT_ppchotkey ){
 					return TRUE;
 				}
 				// EDIT_ppchotkey で、既に割当てがあるときは削除するか確認
 				if ( (item.d.num.def == 0) ||
-					 (PMessageBox(hDlg,GetCText(DelKeyMsg),StrCustTitle,MB_YESNO) != IDYES) ){
+					 (PMessageBox(hDlg, GetCText(DelKeyMsg), StrCustTitle, MB_YESNO) != IDYES) ){
 					return TRUE;
 				}
 				item.d.num.data = 0;
@@ -1074,14 +1073,14 @@ BOOL SelectItem(HWND hDlg,HWND hTwnd,HTREEITEM titem,int linenumber)
 			if ( item.edittype == EDIT_ppchotkey ){
 				SetPPcHotKey(&item);
 			}else{
-				SetData(&item,&item.d.num.data,sizeof item.d.num.data);
+				SetData(&item, &item.d.num.data, sizeof item.d.num.data);
 			}
-			RefreshItems(hTwnd,&item,titem);
+			RefreshItems(hTwnd, &item, titem);
 			Changed(hDlg);
 			return TRUE;
 		}
 		case EDIT_FONT:		// フォント／編集＆更新
-			SelectItem_Font(hDlg,hTwnd,titem,&item);
+			SelectItem_Font(hDlg, hTwnd, titem, &item);
 			return TRUE;
 
 //		default:
@@ -1089,7 +1088,7 @@ BOOL SelectItem(HWND hDlg,HWND hTwnd,HTREEITEM titem,int linenumber)
 	return FALSE;
 }
 
-void TreeHelp(HWND hDlg,HWND hTwnd)
+void TreeHelp(HWND hDlg, HWND hTwnd)
 {
 	TV_ITEM tvi;
 	ITEMSTRUCT item;
@@ -1097,16 +1096,16 @@ void TreeHelp(HWND hDlg,HWND hTwnd)
 	TV_HITTESTINFO hit;
 
 	GetMessagePosPoint(hit.pt);
-	ScreenToClient(hTwnd,&hit.pt);
-	tvi.hItem = TreeView_HitTest(hTwnd,&hit);
+	ScreenToClient(hTwnd, &hit.pt);
+	tvi.hItem = TreeView_HitTest(hTwnd, &hit);
 
 	tvi.mask = TVIF_PARAM;
-	TreeView_GetItem(hTwnd,&tvi);
+	TreeView_GetItem(hTwnd, &tvi);
 
 	p = SearchList((int)(tvi.lParam));
 	if ( p == NULL ) return;
 
-	GetCustItem(&item,p,FALSE);
+	GetCustItem(&item, p, FALSE);
 	if ( item.keyname == NULL ){
 		int layer;
 
@@ -1114,7 +1113,7 @@ void TreeHelp(HWND hDlg,HWND hTwnd)
 		if ( layer == 1 ) return;
 		p = SearchList((int)(tvi.lParam) + 1);
 		if ( p == NULL ) return;
-		GetCustItem(&item,p,FALSE);
+		GetCustItem(&item, p, FALSE);
 		if ( item.keyname == NULL ) return;
 		if ( item.layer != (layer + 1) ) return;
 	}
@@ -1124,17 +1123,17 @@ void TreeHelp(HWND hDlg,HWND hTwnd)
 		int index;
 
 		hPopMenu = CreatePopupMenu();
-		AppendMenu(hPopMenu,MF_ES,1,GetCText(StrMenuDefault));
-		AppendMenu(hPopMenu,MF_ES,2,GetCText(StrMenuHelp));
+		AppendMenu(hPopMenu, MF_ES, 1, GetCText(StrMenuDefault));
+		AppendMenu(hPopMenu, MF_ES, 2, GetCText(StrMenuHelp));
 		GetMessagePosPoint(pos);
-		index = TrackPopupMenu(hPopMenu,TPM_TDEFAULT,pos.x,pos.y,0,hTwnd,NULL);
+		index = TrackPopupMenu(hPopMenu, TPM_TDEFAULT, pos.x, pos.y, 0, hTwnd, NULL);
 		DestroyMenu(hPopMenu);
 		switch ( index ){
 			case 1: // 初期化
-				if ( PMessageBox(hTwnd,GetCText(StrFontDefault),StrCustTitle,MB_YESNO) == IDYES ){
+				if ( PMessageBox(hTwnd, GetCText(StrFontDefault), StrCustTitle, MB_YESNO) == IDYES ){
 					DeleteCustData(item.keyname);
-					GetCustItem(&item,p,TRUE);
-					RefreshItems(hTwnd,&item,tvi.hItem);
+					GetCustItem(&item, p, TRUE);
+					RefreshItems(hTwnd, &item, tvi.hItem);
 					Changed(hDlg);
 				}
 				return;
@@ -1146,64 +1145,64 @@ void TreeHelp(HWND hDlg,HWND hTwnd)
 				return;
 		}
 	}
-	PPxHelp(hTwnd,HELP_KEY,(DWORD_PTR)item.keyname);
+	PPxHelp(hTwnd, HELP_KEY, (DWORD_PTR)item.keyname);
 }
 
-void ModifyItem2(HWND hDlg,HWND hTwnd)
+void ModifyItem2(HWND hDlg, HWND hTwnd)
 {
 	TV_ITEM tvi;
 
 	tvi.hItem = TreeView_GetSelection(hTwnd);
 	tvi.mask = TVIF_PARAM;
-	TreeView_GetItem(hTwnd,&tvi);
-	SelectItem(hDlg,hTwnd,tvi.hItem,(int)(tvi.lParam));
+	TreeView_GetItem(hTwnd, &tvi);
+	SelectItem(hDlg, hTwnd, tvi.hItem, (int)(tvi.lParam));
 }
 
-BOOL TreeNotify(HWND hDlg,NMHDR *nmh)
+BOOL TreeNotify(HWND hDlg, NMHDR *nmh)
 {
 	switch (nmh->code){
 		case PSN_SETACTIVE:
-			InitWndIcon(hDlg,IDB_TEST);
+			InitWndIcon(hDlg, IDB_TEST);
 			break;
 
 		case PSN_APPLY:
-			CloseEdit(hDlg,hItemTreeWnd);
+			CloseEdit(hDlg, hItemTreeWnd);
 		// PSN_HELP へ
 		case PSN_HELP:
-			StyleDlgProc(hDlg,WM_NOTIFY,IDD_GENERAL,(LPARAM)nmh);
+			StyleDlgProc(hDlg, WM_NOTIFY, IDD_GENERAL, (LPARAM)nmh);
 			break;
 
 		case NM_CLICK:
 			if ( nmh->hwndFrom == hItemTreeWnd ){
 			// おまじない。この時点ではまだカーソル位置のアイテムが
 			// 選択されていない。
-				PostMessage(hDlg,WM_COMMAND,IDM_RCLICKED,(LPARAM)nmh->hwndFrom);
+				PostMessage(hDlg, WM_COMMAND, IDM_RCLICKED, (LPARAM)nmh->hwndFrom);
 			}
 			break;
 
 		case NM_RCLICK:
-			TreeHelp(hDlg,nmh->hwndFrom);
+			TreeHelp(hDlg, nmh->hwndFrom);
 			break;
 
 		case NM_DBLCLK:
-			ModifyItem2(hDlg,nmh->hwndFrom);
+			ModifyItem2(hDlg, nmh->hwndFrom);
 			break;
 
 		case TVN_KEYDOWN:
 			switch ( ((TV_KEYDOWN *)nmh)->wVKey ){
 				case VK_F1:
-					TreeHelp(hDlg,nmh->hwndFrom);
+					TreeHelp(hDlg, nmh->hwndFrom);
 					break;
 
 				case VK_SPACE:
-					ModifyItem2(hDlg,nmh->hwndFrom);
+					ModifyItem2(hDlg, nmh->hwndFrom);
 					break;
 			}
 			break;
 
 		case TVN_SELCHANGED:
 			if ( nmh->hwndFrom == hIndexTreeWnd ){
-				PostMessage(hDlg,WM_COMMAND,IDM_RCLICKED,(LPARAM)nmh->hwndFrom);
+				PostMessage(hDlg, WM_COMMAND, IDM_RCLICKED, (LPARAM)nmh->hwndFrom);
 			}
 			break;
 
@@ -1215,33 +1214,33 @@ BOOL TreeNotify(HWND hDlg,NMHDR *nmh)
 void PushFloatButton_File(HWND hDlg)
 {
 	TCHAR Name[VFPS];
-	TCHAR Path[VFPS],*p;
+	TCHAR Path[VFPS], *p;
 
-	OPENFILENAME ofile = {sizeof(ofile),NULL,NULL,GetFileExtsStr,NULL,0,0,
-		NULL,TSIZEOF(Name),NULL,0,NULL,NULL,OFN_HIDEREADONLY | OFN_SHAREAWARE,
-		0,0,NilStr,0,NULL,NULL OPENFILEEXTDEFINE };
+	OPENFILENAME ofile = {sizeof(ofile), NULL, NULL, GetFileExtsStr, NULL, 0, 0,
+		NULL, TSIZEOF(Name), NULL, 0, NULL, NULL,
+		OFN_HIDEREADONLY | OFN_SHAREAWARE, 0, 0, NilStr, 0, NULL, NULL OPENFILEEXTDEFINE };
 
 	ofile.hwndOwner = hDlg;
 	ofile.lpstrFile = Name;
 	ofile.lpstrInitialDir = Path;
 
-	GetWindowText(hEditWnd,Path,TSIZEOF(Path));
+	GetWindowText(hEditWnd, Path, TSIZEOF(Path));
 	p = (Path[0] == '\"') ? (Path + 1) : Path;
 	p = VFSFindLastEntry(p);
-	tstrcpy(Name,(*p == '\\') ? p + 1 : p);
+	tstrcpy(Name, (*p == '\\') ? p + 1 : p);
 	*p = '\0';
-	p = tstrchr(Name,'\"');
+	p = tstrchr(Name, '\"');
 	if ( p != NULL ) *p = '\0';
 	if ( IsTrue(GetOpenFileName(&ofile)) ){
-		if ( (edititem.keyname[0] == 'A') && (tstrchr(Name,' ') != NULL) ){
-			VFSFullPath(NULL,Name,Path);
-			wsprintf(Path,T("\"%s\""),Name);
+		if ( (edititem.keyname[0] == 'A') && (tstrchr(Name, ' ') != NULL) ){
+			VFSFullPath(NULL, Name, Path);
+			wsprintf(Path, T("\"%s\""), Name);
 		}else{
-			VFSFullPath(Path,Name,Path);
+			VFSFullPath(Path, Name, Path);
 		}
-		SetWindowText(hEditWnd,Path);
+		SetWindowText(hEditWnd, Path);
 	}
-	RefreshItems(hIndexTreeWnd,&edititem,hedititem);
+	RefreshItems(hIndexTreeWnd, &edititem, hedititem);
 }
 
 void PushFloatButton_Dir(HWND hDlg)
@@ -1260,17 +1259,17 @@ void PushFloatButton_Dir(HWND hDlg)
 	tinput.firstC		= 0;
 	tinput.lastC		= EC_LAST;
 
-	GetWindowText(hEditWnd,Path,TSIZEOF(Path));
+	GetWindowText(hEditWnd, Path, TSIZEOF(Path));
 
-	if ( tInputEx(&tinput) > 0 ) SetWindowText(hEditWnd,Path);
-	RefreshItems(hIndexTreeWnd,&edititem,hedititem);
+	if ( tInputEx(&tinput) > 0 ) SetWindowText(hEditWnd, Path);
+	RefreshItems(hIndexTreeWnd, &edititem, hedititem);
 }
 
 #if !NODLL
-TCHAR *tstristr(const TCHAR *target,const TCHAR *findstr)
+TCHAR *tstristr(const TCHAR *target, const TCHAR *findstr)
 {
-	size_t len,flen;
-	const TCHAR *p,*tagetmax;
+	size_t len, flen;
+	const TCHAR *p, *tagetmax;
 
 	flen = tstrlen(findstr);
 	len = tstrlen(target);
@@ -1281,7 +1280,7 @@ TCHAR *tstristr(const TCHAR *target,const TCHAR *findstr)
 #else
 	for ( p = target ; p <= tagetmax ; p += Chrlen(*p) ){
 #endif
-		if ( !tstrnicmp(p,findstr,flen) ){
+		if ( !tstrnicmp(p, findstr, flen) ){
 			return (TCHAR *)p;
 		}
 	}
@@ -1289,24 +1288,24 @@ TCHAR *tstristr(const TCHAR *target,const TCHAR *findstr)
 }
 #endif
 
-BOOL FindItem(HWND hTreeWnd,HTREEITEM hItem,int findline,HTREEITEM *hFoundItem)
+BOOL FindItem(HWND hTreeWnd, HTREEITEM hItem, int findline, HTREEITEM *hFoundItem)
 {
 	while ( hItem != NULL ){
 		TV_ITEM tvi;
 
 		tvi.hItem = hItem;
 		tvi.mask = TVIF_PARAM;
-		TreeView_GetItem(hTreeWnd,&tvi);
+		TreeView_GetItem(hTreeWnd, &tvi);
 
 		if ( tvi.lParam == findline ){
 			*hFoundItem = hItem;
-			SendMessage(hTreeWnd,TVM_SELECTITEM,TVGN_CARET,(LPARAM)hItem);
+			SendMessage(hTreeWnd, TVM_SELECTITEM, TVGN_CARET, (LPARAM)hItem);
 			return TRUE;
 		}
-		if ( IsTrue(FindItem(hTreeWnd,TreeView_GetChild(hTreeWnd,hItem),findline,hFoundItem)) ){
+		if ( IsTrue(FindItem(hTreeWnd, TreeView_GetChild(hTreeWnd, hItem), findline, hFoundItem)) ){
 			return TRUE;
 		}
-		hItem = TreeView_GetNextSibling(hTreeWnd,hItem);
+		hItem = TreeView_GetNextSibling(hTreeWnd, hItem);
 	}
 	return FALSE;
 }
@@ -1318,27 +1317,27 @@ void FindKeyword(HWND hDlg)
 	int firstline = 1;
 	const TCHAR *p;
 
-	int line,indexline;
+	int line, indexline;
 	HTREEITEM hItem;
 
 	findtext[0] = '\0';
 	if ( FirstTypeName != NULL ){
-		tstrcpy(findtext,FirstTypeName);
+		tstrcpy(findtext, FirstTypeName);
 		FirstTypeName = NULL;
 		FirstItemName = NULL;
 		SetFocus(hItemTreeWnd);
 	}else{
-		GetControlText(hDlg,IDE_FIND,findtext,TSIZEOF(findtext));
+		GetControlText(hDlg, IDE_FIND, findtext, TSIZEOF(findtext));
 	}
 	if ( findtext[0] == '\0' ){
-		SetFocus(GetDlgItem(hDlg,IDE_FIND));
+		SetFocus(GetDlgItem(hDlg, IDE_FIND));
 		return;
 	}
 	// index の位置を求める
 	tvi.hItem = TreeView_GetSelection(hIndexTreeWnd);
 	if ( tvi.hItem != NULL ){
 		tvi.mask = TVIF_PARAM;
-		TreeView_GetItem(hIndexTreeWnd,&tvi);
+		TreeView_GetItem(hIndexTreeWnd, &tvi);
 		indexline = (int)tvi.lParam;
 	}else{
 		indexline = 1;
@@ -1347,9 +1346,9 @@ void FindKeyword(HWND hDlg)
 	tvi.hItem = TreeView_GetSelection(hItemTreeWnd);
 	if ( tvi.hItem != NULL ){
 		tvi.mask = TVIF_PARAM;
-		TreeView_GetItem(hItemTreeWnd,&tvi);
+		TreeView_GetItem(hItemTreeWnd, &tvi);
 		p = SearchList((int)tvi.lParam);
-		if ( (p != NULL) && (tstristr(p,findtext) != NULL) ){
+		if ( (p != NULL) && (tstristr(p, findtext) != NULL) ){
 			firstline = (int)tvi.lParam;
 		}
 	}
@@ -1370,14 +1369,14 @@ void FindKeyword(HWND hDlg)
 		if ( *p == '.' ){	// index だった
 			indexline = line;
 		}else{ // item
-			if ( tstristr(p,findtext) ){
+			if ( tstristr(p, findtext) ){
 				// index の位置を求める
-				if ( IsTrue(FindItem(hIndexTreeWnd,TreeView_GetRoot(hIndexTreeWnd),indexline,&hItem)) ){
+				if ( IsTrue(FindItem(hIndexTreeWnd, TreeView_GetRoot(hIndexTreeWnd), indexline, &hItem)) ){
 					CustomItemListOffset = indexline + 1;
 					CustomItemList = SearchList(indexline + 1);
 					LoadListTree(TRUE);
 					// item の位置を求める
-					FindItem(hItemTreeWnd,TreeView_GetRoot(hItemTreeWnd),line,&hItem);
+					FindItem(hItemTreeWnd, TreeView_GetRoot(hItemTreeWnd), line, &hItem);
 				}
 				return;
 			}
@@ -1388,19 +1387,19 @@ void FindKeyword(HWND hDlg)
 		const struct EtcLabelsStruct *el;
 
 		for ( el = EtcLabels ; el->name != NULL ; el++ ){
-			if ( tstristr(el->name,findtext) || tstristr(el->key,findtext) ){
-				PropSheet_SetCurSel(GetParent(hDlg),NULL,9);
+			if ( tstristr(el->name, findtext) || tstristr(el->key, findtext) ){
+				PropSheet_SetCurSel(GetParent(hDlg), NULL, 9);
 			}
 		}
 	}
 }
 
-LRESULT CALLBACK FindBoxProc(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
+LRESULT CALLBACK FindBoxProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 	if ( iMsg == WM_GETDLGCODE ) return DLGC_WANTALLKEYS;
 	if ( iMsg == WM_KEYDOWN ){
 		if ( wParam == VK_TAB ){
-			SetFocus(GetNextDlgTabItem(GetParent(hWnd),hWnd,
+			SetFocus(GetNextDlgTabItem(GetParent(hWnd), hWnd,
 					GetKeyState(VK_SHIFT) < 0));
 			return 0;
 		}
@@ -1409,20 +1408,20 @@ LRESULT CALLBACK FindBoxProc(HWND hWnd,UINT iMsg,WPARAM wParam,LPARAM lParam)
 			return 0;
 		}
 		if ( wParam == VK_ESCAPE ){
-			SetFocus(GetNextDlgTabItem(GetParent(hWnd),hWnd,TRUE));
+			SetFocus(GetNextDlgTabItem(GetParent(hWnd), hWnd, TRUE));
 		}
 	}
-	return CallWindowProc(OldFindBoxProc,hWnd,iMsg,wParam,lParam);
+	return CallWindowProc(OldFindBoxProc, hWnd, iMsg, wParam, lParam);
 }
 
-INT_PTR CALLBACK GeneralPage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK GeneralPage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg){
 		case WM_INITDIALOG:
-			SendDlgItemMessage(hDlg,IDE_FIND,EM_LIMITTEXT,MAX_PATH - 1,0);
-			SendDlgItemMessage(hDlg,IDE_FIND,EM_SETCUEBANNER,0,(LPARAM)GetCTextW(StrFindInfo));
+			SendDlgItemMessage(hDlg, IDE_FIND, EM_LIMITTEXT, MAX_PATH - 1, 0);
+			SendDlgItemMessage(hDlg, IDE_FIND, EM_SETCUEBANNER, 0, (LPARAM)GetCTextW(StrFindInfo));
 			OldFindBoxProc =(WNDPROC)SetWindowLongPtr(GetDlgItem(hDlg,
-					IDE_FIND),GWLP_WNDPROC,(LONG_PTR)FindBoxProc);
+					IDE_FIND), GWLP_WNDPROC, (LONG_PTR)FindBoxProc);
 			LoadList(hDlg);
 			if ( FirstTypeName == NULL ) break;
 			FindKeyword(hDlg);
@@ -1431,13 +1430,13 @@ INT_PTR CALLBACK GeneralPage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 		case WM_DESTROY: {	// １回しか作成しないのでイメージリストの廃棄を省略
 			HIMAGELIST hImage;
 
-			hImage = SendMessage(hItemTreeWnd,TVM_SETIMAGELIST,(WPARAM)TVSIL_NORMAL,(LPARAM)NULL);
+			hImage = SendMessage(hItemTreeWnd, TVM_SETIMAGELIST, (WPARAM)TVSIL_NORMAL, (LPARAM)NULL);
 			if ( hImage != NULL ) ImageList_Destroy(hImage);
 
 		}
 */
 		case WM_NOTIFY:
-			TreeNotify(hDlg,(NMHDR *)lParam );
+			TreeNotify(hDlg, (NMHDR *)lParam );
 			break;
 
 		case WM_COMMAND:
@@ -1446,8 +1445,8 @@ INT_PTR CALLBACK GeneralPage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 				break;
 			}
 			if ( wParam == IDM_RCLICKED ){
-				CloseEdit(hDlg,hItemTreeWnd);
-				ModifyItem2(hDlg,(HWND)lParam);
+				CloseEdit(hDlg, hItemTreeWnd);
+				ModifyItem2(hDlg, (HWND)lParam);
 				break;
 			}
 			if ( (HIWORD(wParam) == EN_CHANGE) &&
@@ -1480,11 +1479,11 @@ INT_PTR CALLBACK GeneralPage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 			break;
 
 		case WM_DESTROY:
-			return StyleDlgProc(hDlg,msg,wParam,lParam);
+			return StyleDlgProc(hDlg, msg, wParam, lParam);
 
 		default:
 			return FALSE;
-//			return StyleDlgProc(hDlg,msg,wParam,lParam); // とりあえず使用せず
+//			return StyleDlgProc(hDlg, msg, wParam, lParam); // とりあえず使用せず
 	}
 	return TRUE;
 }

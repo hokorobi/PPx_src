@@ -2,7 +2,6 @@
 	Paper Plane cUI		インクリメンタルサーチ
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include <winioctl.h>
 #include "PPX.H"
 #include "VFS.H"
@@ -10,7 +9,7 @@
 #include "PPC_FUNC.H"
 #pragma hdrstop
 
-const TCHAR *SearchStateTypeString[4] = {NilStr,T("name"),T("cmt"),T("f+c")};
+const TCHAR *SearchStateTypeString[4] = {NilStr, T("name"), T("cmt"), T("f+c")};
 const TCHAR StrKC_incs[] = T("KC_incs");
 const TCHAR ENTRYJUMPPROP[] = T("PPxEJUMP");
 const TCHAR EENFstr[] = MES_EENF;

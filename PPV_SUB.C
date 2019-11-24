@@ -2,7 +2,6 @@
 	Paper Plane vUI				Sub
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-#include <windowsx.h>
 #include "PPX.H"
 #include "VFS.H"
 #include "PPVUI.RH"
@@ -159,6 +158,40 @@ void MoveCursor(int *param)
 			return;
 	}
 	MoveCsrkey(deltaX, deltaY, param[2]);
+}
+
+void PPvFindCommand(PPV_APPINFO *vinfo, const TCHAR *param)
+{
+	TCHAR *more;
+	TCHAR buf[CMDLINESIZE];
+	UTCHAR code;
+	int mode = 1;
+
+	while( '\0' != (code = GetOptionParameter(&param, buf, &more)) ){
+		if ( code == '-' ){
+/*
+			if ( !tstrcmp( buf + 1, T("FORWARD")) ){
+				mode = 1;
+				continue;
+			}
+*/
+			if ( !tstrcmp( buf + 1, T("BACK")) ){
+				mode = -1;
+				continue;
+			}
+			if ( !tstrcmp( buf + 1, T("DIALOG")) ){
+				mode = 0;
+				continue;
+			}
+		}else{
+			tstrcpy(VOsel.VSstring, buf) /*, TSIZEOF(VOsel.VSstring));*/;
+		}
+	}
+	if ( mode == 0 ){
+		FindInputBox(vinfo->info.hWnd, T("Find forward"));
+	}else{
+		DoFind(vinfo->info.hWnd, mode);
+	}
 }
 
 /*-----------------------------------------------------------------------------
@@ -364,6 +397,11 @@ DWORD_PTR USECDECL PPxGetIInfo(PPV_APPINFO *vinfo, DWORD cmdID, PPXAPPINFOUNION 
 
 			if ( !tstrcmp(uptr->str, T("LAYOUT")) ){
 				PPvLayoutCommand();
+				break;
+			}
+
+			if ( !tstrcmp(uptr->str, T("FIND")) ){
+				PPvFindCommand(vinfo, param);
 				break;
 			}
 
@@ -1081,7 +1119,30 @@ void SetScrollBar(void)
 
 #if 0
 	if ( FileDivideMode >= FDM_DIV ){
-		int per = ; // 0 - 0xffff
+		sinfo.nPage	= VO_sizeX;
+		sinfo.nMin	= 0;
+//		sinfo.nPos	= VOi->offX;
+		sinfo.nMax	= 0x10000;
+
+		if ( FileRealSize.u.HighPart == 0 ){
+			div = FileRealSize.u.LowPart / X_wsiz + 1;
+
+
+		SetScrollInfo(vinfo.info.hWnd, SB_HORZ, &sinfo, TRUE);
+
+
+
+		int div;
+
+		}else if ( (FileRealSize.u.HighPart & 0xffff0000) == 0 ){
+			div = FileRealSize.u.LowPart / X_wsiz + 1;
+
+
+
+
+
+
+
 		FileDividePointer.LowPart
 
 		if ( FileRealSize.u.HighPart || (FileRealSize.u.LowPart & 0xffff0000) ){
@@ -2280,7 +2341,7 @@ void DoFind(HWND hWnd, int mode)
 {
 	int OldfoundY = VOsel.foundY;
 	VOsel.foundY = -1;
-	if (VOsel.VSstring[0] == '\0'){
+	if ( VOsel.VSstring[0] == '\0' ){
 		VOsel.highlight = FALSE;
 		return;
 	}

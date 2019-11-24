@@ -113,6 +113,10 @@ RC64	= /d_WIN64
 LINK64	= /MACHINE:AMD64
 X64Copt	= /wd4244 /wd4267
 # ↑サイズ違い警告を消す(※できるだけこの指定を使わないこと)
+!else # !$(X64)
+!if $(VCTOOLKIT)
+RC64	= /dLEGACYICON
+!endif
 !endif
 !if $(UseDebug)
   DebugCopt	= /Od /Zi /GS #/analyze

@@ -24,7 +24,7 @@ extern DWORD ExitCode;
 
 //------------------------------------- PPB_SUB.C
 extern void PPbExecuteRecv(TCHAR *param);
-extern void PPbExecuteInput(TCHAR *param, DWORD size);
+extern void PPbExecuteInput(TCHAR *param, size_t size);
 extern DWORD_PTR USECDECL PPbInfoFunc(PPXAPPINFO *ppb, DWORD cmdID, PPXAPPINFOUNION *uptr);
 extern void ReleasePPB(void);
 extern void TitleDisp(const TCHAR *addmes);

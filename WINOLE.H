@@ -535,8 +535,73 @@ interface IAccessible : public IDispatch
 };
 #endif // __cplusplus
 
+// ShObjIdl.h
+#ifndef FOF_NOCOPYSECURITYATTRIBS
+#define FOF_NOCOPYSECURITYATTRIBS  0x0800  // ACL 不要
+#define FOF_NORECURSION            0x1000  // no subdir
+#define FOF_NO_CONNECTED_ELEMENTS  0x2000  // １組ファイル扱いしない
+#define FOF_WANTNUKEWARNING        0x4000  // during delete operation, warn if object is being permanently destroyed instead of recycling (partially overrides FOF_NOCONFIRMATION)
+#define FOF_NORECURSEREPARSE       0x8000  //
+#endif
+// #define FOF_NO_UI (FOF_SILENT | FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_NOCONFIRMMKDIR)
+#ifndef FOFX_NOSKIPJUNCTIONS
+#define FOFX_NOSKIPJUNCTIONS         0x00010000
+#define FOFX_PREFERHARDLINK          0x00020000
+#define FOFX_SHOWELEVATIONPROMPT     0x00040000
+#define FOFX_RECYCLEONDELETE         0x00080000
+#define FOFX_EARLYFAILURE            0x00100000
+#define FOFX_PRESERVEFILEEXTENSIONS  0x00200000
+#define FOFX_KEEPNEWERFILE           0x00400000
+#define FOFX_NOCOPYHOOKS             0x00800000
+#define FOFX_NOMINIMIZEBOX           0x01000000
+#define FOFX_MOVEACLSACROSSVOLUMES   0x02000000
+#define FOFX_DONTDISPLAYSOURCEPATH   0x04000000
+#define FOFX_DONTDISPLAYDESTPATH     0x08000000
+#define FOFX_REQUIREELEVATION        0x10000000
+#endif
+#ifndef FOFX_ADDUNDORECORD // Win8
+#define FOFX_ADDUNDORECORD           0x20000000
+#endif
+#ifndef FOFX_COPYASDOWNLOAD // Win7
+#define FOFX_COPYASDOWNLOAD          0x40000000
+#define FOFX_DONTDISPLAYLOCATIONS    0x80000000
+#endif
+
+//#define FOF2_MERGEFOLDERSONCOLLISION 0x1 // Win10 RS4
+
+#define xIID_IFileOperationProgressSink {0x04b0f1a7, 0x9490, 0x44bc, {0x96, 0xe1, 0x42, 0x96, 0xa3, 0x12, 0x52 ,0xe2}}
+
+#undef INTERFACE
+#define INTERFACE xIFileOperationProgressSink
+
+DECLARE_INTERFACE_(xIFileOperationProgressSink, IUnknown)
+{
+	STDMETHOD(QueryInterface) (THIS_ REFIID riid, void **ppv) PURE;
+	STDMETHOD_(ULONG, AddRef) (THIS)  PURE;
+	STDMETHOD_(ULONG, Release) (THIS) PURE;
+
+	STDMETHOD(StartOperations)(THIS) PURE;
+
+	STDMETHOD(FinishOperations)(THIS_ HRESULT) PURE;
+	STDMETHOD(PreRenameItem)(THIS_ DWORD, xIShellItem *, LPCWSTR) PURE;
+	STDMETHOD(PostRenameItem)(THIS_ DWORD dwFlags, xIShellItem *psiItem, LPCWSTR pszNewName, HRESULT hrRename, xIShellItem *psiNewlyCreated) PURE;
+	STDMETHOD(PreMoveItem)(THIS_ DWORD dwFlags, xIShellItem *psiItem, xIShellItem *psiDestinationFolder, LPCWSTR pszNewName) PURE;
+	STDMETHOD(PostMoveItem)(THIS_ DWORD dwFlags, xIShellItem *psiItem, xIShellItem *psiDestinationFolder, LPCWSTR pszNewName, HRESULT hrMove, xIShellItem *psiNewlyCreated) PURE;
+	STDMETHOD(PreCopyItem)(THIS_ DWORD dwFlags, xIShellItem *psiItem, xIShellItem *psiDestinationFolder, LPCWSTR pszNewName) PURE;
+	STDMETHOD(PostCopyItem)(THIS_ DWORD dwFlags, xIShellItem *psiItem, xIShellItem *psiDestinationFolder, LPCWSTR pszNewName, HRESULT hrCopy, xIShellItem *psiNewlyCreated) PURE;
+	STDMETHOD(PreDeleteItem)(THIS_ DWORD dwFlags, xIShellItem *psiItem) PURE;
+	STDMETHOD(PostDeleteItem)(THIS_ DWORD dwFlags, xIShellItem *psiItem, HRESULT hrDelete, xIShellItem *psiNewlyCreated) PURE;
+	STDMETHOD(PreNewItem)(THIS_ DWORD dwFlags, xIShellItem *psiDestinationFolder, LPCWSTR pszNewName) PURE;
+	STDMETHOD(PostNewItem)(THIS_ DWORD dwFlags, xIShellItem *psiDestinationFolder, LPCWSTR pszNewName, LPCWSTR pszTemplateName, DWORD dwFileAttributes, HRESULT hrNew, xIShellItem *psiNewItem) PURE;
+	STDMETHOD(UpdateProgress)(THIS_ UINT iWorkTotal, UINT iWorkSoFar) PURE;
+	STDMETHOD(ResetTimer)(THIS) PURE;
+	STDMETHOD(PauseTimer)(THIS) PURE;
+	STDMETHOD(ResumeTimer)(THIS) PURE;
+};
+
 #define xIID_IFileOperation {0x947aab5f, 0x0a5c, 0x4c13, {0xb4, 0xd6, 0x4b, 0xf7, 0x83, 0x6f, 0xc9, 0xf8}}
-#define IFileOperationProgressSink void
+#define xCLSID_IFileOperation {0x3ad05575, 0x8857, 0x4850, {0x92, 0x77, 0x11, 0xb8, 0x5b, 0xdb, 0x8e, 0x09}}
+
 #define IOperationsProgressDialog void
 #define IPropertyChangeArray void
 #undef INTERFACE
@@ -547,7 +612,7 @@ DECLARE_INTERFACE_(xIFileOperation, IUnknown)
 	STDMETHOD_(ULONG, AddRef) (THIS)  PURE;
 	STDMETHOD_(ULONG, Release) (THIS) PURE;
 
-	STDMETHOD(Advise)(THIS_ IFileOperationProgressSink *, DWORD *pdwCookie) PURE;
+	STDMETHOD(Advise)(THIS_ xIFileOperationProgressSink *, DWORD *pdwCookie) PURE;
 	STDMETHOD(Unadvise)(THIS_ DWORD) PURE;
 	STDMETHOD(SetOperationFlags)(THIS_ DWORD) PURE;
 	STDMETHOD(SetProgressMessage)(THIS_ LPCWSTR) PURE;
@@ -556,15 +621,15 @@ DECLARE_INTERFACE_(xIFileOperation, IUnknown)
 	STDMETHOD(SetOwnerWindow)(THIS_ HWND hwndOwner) PURE;
 	STDMETHOD(ApplyPropertiesToItem)(THIS_ xIShellItem *) PURE;
 	STDMETHOD(ApplyPropertiesToItems)(THIS_ IUnknown *) PURE;
-	STDMETHOD(RenameItem)(THIS_ xIShellItem *, LPCWSTR, IFileOperationProgressSink *) PURE;
+	STDMETHOD(RenameItem)(THIS_ xIShellItem *, LPCWSTR, xIFileOperationProgressSink *) PURE;
 	STDMETHOD(RenameItems)(THIS_ IUnknown *, LPCWSTR ) PURE;
-	STDMETHOD(MoveItem)(THIS_ xIShellItem *, xIShellItem *, LPCWSTR, IFileOperationProgressSink *) PURE;
+	STDMETHOD(MoveItem)(THIS_ xIShellItem *, xIShellItem *, LPCWSTR, xIFileOperationProgressSink *) PURE;
 	STDMETHOD(MoveItems)(THIS_ IUnknown *, xIShellItem *) PURE;
-	STDMETHOD(CopyItem)(THIS_ xIShellItem *, xIShellItem *, LPCWSTR, IFileOperationProgressSink *) PURE;
+	STDMETHOD(CopyItem)(THIS_ xIShellItem *, xIShellItem *, LPCWSTR, xIFileOperationProgressSink *) PURE;
 	STDMETHOD(CopyItems)(THIS_ IUnknown *, xIShellItem *) PURE;
-	STDMETHOD(DeleteItem)(THIS_ xIShellItem *, IFileOperationProgressSink *) PURE;
+	STDMETHOD(DeleteItem)(THIS_ xIShellItem *, xIFileOperationProgressSink *) PURE;
 	STDMETHOD(DeleteItems)(THIS_ IUnknown *) PURE;
-	STDMETHOD(NewItem)(THIS_ xIShellItem *, DWORD, LPCWSTR, LPCWSTR, IFileOperationProgressSink *) PURE;
+	STDMETHOD(NewItem)(THIS_ xIShellItem *, DWORD, LPCWSTR, LPCWSTR, xIFileOperationProgressSink *) PURE;
 	STDMETHOD(PerformOperations)(THIS) PURE;
 	STDMETHOD(GetAnyOperationsAborted)(THIS_ BOOL *) PURE;
 };

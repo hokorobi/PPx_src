@@ -20,10 +20,10 @@
 #include "VFS_STRU.H"
 #pragma hdrstop
 
-#pragma pack(push,1)
+#pragma pack(push, 1)
 typedef struct tagUSERTYPEBLOCK {
 	struct tagUSERTYPEBLOCK *next;
-	DWORD first,last;
+	DWORD first, last;
 	DWORD size;
 	char data[];
 } USERTYPEBLOCK;
@@ -39,16 +39,16 @@ typedef struct tagUSERFILETYPE {
 #define HEADERTYPE_REL B1 // 浮動ヘッダ
 #define HEADERTYPE_REL_LAST B2 // 浮動ヘッダ、チェック用
 
-#define AH(off,size,head,func,name,memo,ext,code)\
-	{HEADERTYPE_ABS,off,size,head,func,T(name),T(memo),T(ext),code}
-#define RH(maxl,size,head,func,name,memo,ext,code)\
-	{HEADERTYPE_REL,maxl,size,head,func,T(name),T(memo),T(ext),code}
-#define RH_L(maxl,size,head,func,name,memo,ext,code)\
-	{HEADERTYPE_REL | HEADERTYPE_REL_LAST,maxl,size,head,func,T(name),T(memo),T(ext),code}
-#define JustH(off,size,head,func,name,memo,ext,code)\
-	{ 0,off,size,head,func,T(name),T(memo),T(ext),code}
-#define NH(off,size,head,func,name,memo,ext,code)\
-	{ 0,off,size,head,func,T(name),T(memo),T(ext),code}
+#define AH(off, size, head, func, name, memo, ext, code)\
+	{HEADERTYPE_ABS, off, size, head, func, T(name), T(memo), T(ext), code}
+#define RH(maxl, size, head, func, name, memo, ext, code)\
+	{HEADERTYPE_REL, maxl, size, head, func, T(name), T(memo), T(ext), code}
+#define RH_L(maxl, size, head, func, name, memo, ext, code)\
+	{HEADERTYPE_REL | HEADERTYPE_REL_LAST, maxl, size, head, func, T(name), T(memo), T(ext), code}
+#define JustH(off, size, head, func, name, memo, ext, code)\
+	{ 0, off, size, head, func, T(name), T(memo), T(ext), code}
+#define NH(off, size, head, func, name, memo, ext, code)\
+	{ 0, off, size, head, func, T(name), T(memo), T(ext), code}
 
 
 #define DT_scp		(DISPT_TEXT) // デフォルト VD_systemcp
@@ -81,14 +81,14 @@ typedef struct tagUSERFILETYPE {
 		:
 */
 
-USERFILETYPE tmptype = {NULL,NULL};
+USERFILETYPE tmptype = {NULL, NULL};
 char *usertypes = INVALID_HANDLE_VALUE;
 
 void MakeUserFileType(void)
 {
 	ThSTRUCT th;
 	int index = 0;
-	TCHAR kword[MAX_PATH],buf[CMDLINESIZE],*p,*q;
+	TCHAR kword[MAX_PATH], buf[CMDLINESIZE], *p, *q;
 	DWORD typeoffset;
 	USERTYPEBLOCK tempblock;
 #ifdef UNICODE
@@ -96,9 +96,9 @@ void MakeUserFileType(void)
 #endif
 	ThInit(&th);
 	buf[0] = '\0';
-	while ( EnumCustTable(index++,T("X_uftyp"),kword,buf,sizeof(buf)) >= 0 ){
+	while ( EnumCustTable(index++, T("X_uftyp"), kword, buf, sizeof(buf)) >= 0 ){
 		typeoffset = th.top;
-		ThAppend(&th,&tmptype,sizeof(tmptype));
+		ThAppend(&th, &tmptype, sizeof(tmptype));
 		p = buf;
 		while ( *p != '\0' ){
 			// 検索範囲を求める
@@ -118,20 +118,20 @@ void MakeUserFileType(void)
 			}
 			if ( *p == ',' ) p++;
 			// 検索文字列を取得する
-			q = tstrchr(p,',');
+			q = tstrchr(p, ',');
 			if ( q != NULL ){
 				*q++ = '\0';
 			}else{
 				q = p + tstrlen(p);
 			}
 #ifdef UNICODE
-			UnicodeToAnsi(p,bufA,MAX_PATH);
+			UnicodeToAnsi(p, bufA, MAX_PATH);
 			#define DataPtr bufA
 #else
 			#define DataPtr p
 #endif
 			{	// 非文字の処理
-				char *src,*dst;
+				char *src, *dst;
 				src = dst = DataPtr;
 				while ( *src ){
 					char c;
@@ -154,13 +154,13 @@ void MakeUserFileType(void)
 				tempblock.size = (SIZE32_T)(dst - DataPtr);
 				tempblock.next = (USERTYPEBLOCK *)(th.top + sizeof(USERTYPEBLOCK) + tempblock.size);
 			}
-			ThAppend(&th,&tempblock,sizeof(tempblock));
-			ThAppend(&th,DataPtr,tempblock.size);
+			ThAppend(&th, &tempblock, sizeof(tempblock));
+			ThAppend(&th, DataPtr, tempblock.size);
 			p = q;
 		}
-		((USERFILETYPE *)ThPointer(&th,typeoffset))->name = (TCHAR *)th.top; // C4306ok 後でポインタに変換する
-		ThAddString(&th,kword);
-		((USERFILETYPE *)ThPointer(&th,typeoffset))->next = (USERFILETYPE *)th.top; // C4306ok 後でポインタに変換する
+		((USERFILETYPE *)ThPointer(&th, typeoffset))->name = (TCHAR *)(DWORD_PTR)th.top;
+		ThAddString(&th, kword);
+		((USERFILETYPE *)ThPointer(&th, typeoffset))->next = (USERFILETYPE *)(DWORD_PTR)th.top;
 	}
 	if ( !th.top ){
 		usertypes = NULL;
@@ -169,19 +169,19 @@ void MakeUserFileType(void)
 	}
 	usertypes = th.bottom;
 	{		// offset を pointer に変換
-		size_t offset = 0,next;
+		size_t offset = 0, next;
 
 		for ( ; ; ){
 			USERFILETYPE *tmpft;
 			USERTYPEBLOCK *tmpbl;
 
-			tmpft = (USERFILETYPE *)ThPointer(&th,offset);
-			tmpft->name = ThPointerT(&th,(size_t)tmpft->name);
+			tmpft = (USERFILETYPE *)ThPointer(&th, offset);
+			tmpft->name = ThPointerT(&th, (size_t)tmpft->name);
 
 			// USERTYPEBLOCK の変換
 			tmpbl = (USERTYPEBLOCK *)(tmpft + 1); // USERFILETYPE直後BLOCKを指
 			for ( ; ; ){
-				tmpbl->next = (USERTYPEBLOCK *)ThPointer(&th,(size_t)tmpbl->next);
+				tmpbl->next = (USERTYPEBLOCK *)ThPointer(&th, (size_t)tmpbl->next);
 				if ( tmpbl->next == (USERTYPEBLOCK *)tmpft->name ){
 					tmpbl->next = NULL;
 					break;
@@ -191,7 +191,7 @@ void MakeUserFileType(void)
 
 			// USERFILETYPE の変換
 			next = (size_t)tmpft->next;
-			tmpft->next = (USERFILETYPE *)ThPointer(&th,next);
+			tmpft->next = (USERFILETYPE *)ThPointer(&th, next);
 			if ( next >= th.top ){
 				tmpft->next = 0;
 				break;
@@ -206,9 +206,9 @@ void MakeUserFileType(void)
 void SetUserFileType(VFSFILETYPE *dest, const USERFILETYPE *src)
 {
 	dest->dtype = 2;
-	tstrcpy(dest->type,src->name);
-	if ( dest->flags & VFSFT_TYPETEXT ) tstrcpy(dest->typetext,T("User define"));
-	if ( dest->flags & VFSFT_EXT      ) tstrcpy(dest->ext,NilStr);
+	tstrcpy(dest->type, src->name);
+	if ( dest->flags & VFSFT_TYPETEXT ) tstrcpy(dest->typetext, T("User define"));
+	if ( dest->flags & VFSFT_EXT      ) tstrcpy(dest->ext, NilStr);
 }
 
 BOOL CheckUserFileType(const char *image, DWORD size, VFSFILETYPE *result)
@@ -242,8 +242,8 @@ BOOL CheckUserFileType(const char *image, DWORD size, VFSFILETYPE *result)
 					if ( leftsize > 200 * KB ) leftsize = 200 * KB;
 				}
 				while ( (leftsize > 0) &&
-						(p = memchr(ptr,*ub->data,leftsize)) != NULL ){
-					if ( !memcmp(p + 1,ub->data + 1,ub->size - 1) ){
+						(p = memchr(ptr, *ub->data, leftsize)) != NULL ){
+					if ( !memcmp(p + 1, ub->data + 1, ub->size - 1) ){
 						ptr = p + ub->size;
 						break;
 					}
@@ -259,7 +259,7 @@ BOOL CheckUserFileType(const char *image, DWORD size, VFSFILETYPE *result)
 			// この ub は該当する
 			ub = ub->next;
 			if ( ub == NULL ){	// 最後まで該当→一致した
-				if ( result != NULL ) SetUserFileType(result,ut);
+				if ( result != NULL ) SetUserFileType(result, ut);
 				return TRUE;
 			}
 		}
@@ -271,14 +271,14 @@ BOOL CheckUserFileType(const char *image, DWORD size, VFSFILETYPE *result)
 void SetFileType(VFSFILETYPE *dest, const VFD_HEADERS *src)
 {
 	dest->dtype = src->dtype;
-	tstrcpy(dest->type,src->type);
-	if ( dest->flags & VFSFT_TYPETEXT ) tstrcpy(dest->typetext,src->typetext);
-	if ( dest->flags & VFSFT_EXT      ) tstrcpy(dest->ext,src->ext);
+	tstrcpy(dest->type, src->type);
+	if ( dest->flags & VFSFT_TYPETEXT ) tstrcpy(dest->typetext, src->typetext);
+	if ( dest->flags & VFSFT_EXT      ) tstrcpy(dest->ext, src->ext);
 }
 
 // HTML -----------------------------------------------------------------------
 const VFD_HEADERS vfd_filelinkheader =
-	NH(0,0,NULL,NULL,":FILELINK","File Link","lnk",DT_scp);
+	NH(0, 0, NULL, NULL, ":FILELINK", "File Link", "lnk", DT_scp);
 
 #pragma argsused
 ERRORCODE vfd_link(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
@@ -286,9 +286,9 @@ ERRORCODE vfd_link(const TCHAR *fname, const char *image, DWORD size, const char
 	TCHAR orgname[VFPS];
 	UnUsedParam(image);UnUsedParam(size);UnUsedParam(header);
 
-	if ( SUCCEEDED(GetLink(NULL,fname,orgname)) ){
+	if ( SUCCEEDED(GetLink(NULL, fname, orgname)) ){
 		if ( (GetFileAttributesL(orgname) & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
-			SetFileType(result,&vfd_filelinkheader);
+			SetFileType(result, &vfd_filelinkheader);
 			return ERROR_MORE_DATA;
 		}
 	}
@@ -297,11 +297,11 @@ ERRORCODE vfd_link(const TCHAR *fname, const char *image, DWORD size, const char
 
 // HTML -----------------------------------------------------------------------
 const VFD_HEADERS vfd_XHTMLheader =
-	NH(0,0,NULL,NULL,":HTML","XHTML","html",DT_html);
+	NH(0, 0, NULL, NULL, ":HTML", "XHTML", "html", DT_html);
 const VFD_HEADERS vfd_webmheader =
-	NH(0,0,NULL,NULL,":WEBM","webm","webm movie",DT_scp);
+	NH(0, 0, NULL, NULL, ":WEBM", "webm", "webm movie", DT_scp);
 const VFD_HEADERS vfd_matroskaheader =
-	NH(0,0,NULL,NULL,":MKV","mkv","matroska movie",DT_scp);
+	NH(0, 0, NULL, NULL, ":MKV", "mkv", "matroska movie", DT_scp);
 /*
 .mkv ‐ 映像と音声を含めたビデオファイル
 .mka ‐ 音声のみを含めた音楽ファイル
@@ -321,13 +321,13 @@ ERRORCODE vfd_HTML2(const TCHAR *fname, const char *image, DWORD size, const cha
 #pragma argsused
 ERRORCODE vfd_HTML(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
-	const char *p,*maxptr;
+	const char *p, *maxptr;
 	UnUsedParam(fname);
 
 	// ヘッダより前のチェック
 	p = image;
 	if ( p < header ){
-		if ( memcmp(p,UTF8HEADER,3) == 0 ) p += 3;
+		if ( memcmp(p, UTF8HEADER, 3) == 0 ) p += 3;
 
 		for ( ; p < header ; p++ ){
 			if ( (*p != ' ')  && (*p != '\t') &&
@@ -345,10 +345,10 @@ ERRORCODE vfd_HTML(const TCHAR *fname, const char *image, DWORD size, const char
 
 		if ( *(header + 1) != '?' ) return NO_ERROR; // html
 		// xml なら xhtml のチェック
-		p = memchr(p,'<',maxptr - p);
+		p = memchr(p, '<', maxptr - p);
 		if ( p == NULL ) return NO_ERROR;
-		if ( memcmp(p + 1,"!DOCTYPE html",13) != 0 ) return NO_ERROR;
-		SetFileType(result,&vfd_XHTMLheader);
+		if ( memcmp(p + 1, "!DOCTYPE html", 13) != 0 ) return NO_ERROR;
+		SetFileType(result, &vfd_XHTMLheader);
 		return ERROR_MORE_DATA;
 	}
 	return ERROR_NO_DATA_DETECTED;
@@ -360,12 +360,12 @@ ERRORCODE vfd_EBML(const TCHAR *fname, const char *image, DWORD size, const char
 	UnUsedParam(fname); UnUsedParam(header);
 
 	if ( size > 0x40 ){
-		if ( !memcmp(image + 0x1a,"\x81\x08\x42\x82\x84\x77\x65\x62",8) ){
-			SetFileType(result,&vfd_webmheader);
+		if ( !memcmp(image + 0x1a, "\x81\x08\x42\x82\x84\x77\x65\x62", 8) ){
+			SetFileType(result, &vfd_webmheader);
 			return ERROR_MORE_DATA;
 		}
-		if ( !memcmp(image + 0x1a,"\x81\x08\x42\x82\x88\x6d\x61\x74",8) ){
-			SetFileType(result,&vfd_matroskaheader);
+		if ( !memcmp(image + 0x1a, "\x81\x08\x42\x82\x88\x6d\x61\x74", 8) ){
+			SetFileType(result, &vfd_matroskaheader);
 			return ERROR_MORE_DATA;
 		}
 		return NO_ERROR;
@@ -390,7 +390,7 @@ ERRORCODE vfd_EBML(const TCHAR *fname, const char *image, DWORD size, const char
 			size = ((c & 0x0f) << 8) + (*(p + 1) << 8) + (*(p + 2) << 8) + (*(p + 3) << 8) + *(p + 4);
 			p += 3;
 		}
-		SetFileType(result,&vfd_XHTMLheader);
+		SetFileType(result, &vfd_XHTMLheader);
 		return ERROR_MORE_DATA;
 	}
 */
@@ -415,9 +415,9 @@ ERRORCODE vfd_text(const TCHAR *fname, const char *image, DWORD size, const char
 
 // PNG ------------------------------------------------------------------------
 const VFD_HEADERS vfd_APNG =
-	NH(0,0,NULL,NULL,":APNG","APNG","png",DT_scp);
+	NH(0, 0, NULL, NULL, ":APNG", "APNG", "png", DT_scp);
 const VFD_HEADERS vfd_FPNG =
-	NH(0,0,NULL,NULL,":FPNG","firework PNG","png",DT_scp);
+	NH(0, 0, NULL, NULL, ":FPNG", "firework PNG", "png", DT_scp);
 #pragma argsused
 ERRORCODE vfd_PNG(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
@@ -433,11 +433,11 @@ ERRORCODE vfd_PNG(const TCHAR *fname, const char *image, DWORD size, const char 
 		if ( nextoffset == 0 ) return NO_ERROR;
 		switch ( *(DWORD *)(ptr + 4) ){
 			case 0x4c546361: // acTL ?
-				SetFileType(result,&vfd_APNG);
+				SetFileType(result, &vfd_APNG);
 				return ERROR_MORE_DATA;
 
 			case 0x46426b6d: // mkBG ?
-				SetFileType(result,&vfd_FPNG);
+				SetFileType(result, &vfd_FPNG);
 				return ERROR_MORE_DATA;
 
 			case 0x54414449: // IDAT ?
@@ -466,9 +466,9 @@ ERRORCODE vfd_BMP(const TCHAR *fname, const char *image, DWORD size, const char 
 }
 // FAT Disk Image -------------------------------------------------------------
 const VFD_HEADERS vfd_NTFSheader =
-	NH(0,0,NULL,NULL,":NTFS","NTFS Disk Image","BIN",DT_scp);
+	NH(0, 0, NULL, NULL, ":NTFS", "NTFS Disk Image", "BIN", DT_scp);
 const VFD_HEADERS vfd_exFATheader =
-	NH(0,0,NULL,NULL,":EXFAT","exFAT Disk Image","BIN",DT_scp);
+	NH(0, 0, NULL, NULL, ":EXFAT", "exFAT Disk Image", "BIN", DT_scp);
 
 #pragma argsused
 ERRORCODE vfd_MBRIMG(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
@@ -487,17 +487,17 @@ ERRORCODE vfd_FATIMG(const TCHAR *fname, const char *image, DWORD size, const ch
 	int fatresult;
 	UnUsedParam(fname);UnUsedParam(header);
 
-	fatresult = CheckFATImage((const BYTE *)image,(const BYTE *)image + size);
+	fatresult = CheckFATImage((const BYTE *)image, (const BYTE *)image + size);
 	switch ( fatresult ){
 		case CHECKFAT_NONE:
 			return ERROR_NO_DATA_DETECTED;
 
 		case CHECKFAT_EXFAT:
-			SetFileType(result,&vfd_exFATheader);
+			SetFileType(result, &vfd_exFATheader);
 			return ERROR_MORE_DATA;
 
 		case CHECKFAT_NTFS:
-			SetFileType(result,&vfd_NTFSheader);
+			SetFileType(result, &vfd_NTFSheader);
 			return ERROR_MORE_DATA;
 	}
 	return NO_ERROR;
@@ -533,7 +533,7 @@ ERRORCODE vfd_squashfs(const TCHAR *fname, const char *image, DWORD size, const 
 #pragma argsused
 ERRORCODE vfd_LHA(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
-	BYTE sum = 0,*p,chksum;
+	BYTE sum = 0, *p, chksum;
 	UnUsedParam(fname);UnUsedParam(result);
 
 	if ( !IsalnumA(*(header + 3)) ) return ERROR_NO_DATA_DETECTED;	// -lh"?"
@@ -577,33 +577,33 @@ ERRORCODE vfd_CAB(const TCHAR *fname, const char *image, DWORD size, const char 
 // PKZIP ----------------------------------------------------------------------
 const char Odfheader[] = "mimetypeapplication/vnd.oasis.opendocument";
 const VFD_HEADERS vfd_Odfheader[] = {
-	AH(0,12,"presentation",	NULL,":ODP","OpenDocument Impress V2","odp",DT_scp),
-	AH(0,11,"spreadsheet",	NULL,":ODS","OpenDocument Calc V2","ods",DT_scp),
-	AH(0,13,"text-template",NULL,":OTT","OpenDocument Writer Template V2","ott",DT_scp),
-	AH(0,4,"base",			NULL,":ODT","OpenDocument Base V2","odb",DT_scp),
-	AH(0,7,"formula",		NULL,":ODF","OpenDocument Fomula V2","odf",DT_scp),
-	AH(0,8,"graphics",		NULL,":ODG","OpenDocument Graph V2","odg",DT_scp),
-	AH(0,4,"text",			NULL,":ODT","OpenDocument Writer V2","odt",DT_scp),
-	NH(0,0,NULL,			NULL,":ODT","OpenDocument V2","odt",DT_scp)
+	AH(0, 12, "presentation",	NULL, ":ODP", "OpenDocument Impress V2", "odp", DT_scp),
+	AH(0, 11, "spreadsheet",	NULL, ":ODS", "OpenDocument Calc V2", "ods", DT_scp),
+	AH(0, 13, "text-template", NULL, ":OTT", "OpenDocument Writer Template V2", "ott", DT_scp),
+	AH(0, 4, "base",			NULL, ":ODT", "OpenDocument Base V2", "odb", DT_scp),
+	AH(0, 7, "formula",		NULL, ":ODF", "OpenDocument Fomula V2", "odf", DT_scp),
+	AH(0, 8, "graphics",		NULL, ":ODG", "OpenDocument Graph V2", "odg", DT_scp),
+	AH(0, 4, "text",			NULL, ":ODT", "OpenDocument Writer V2", "odt", DT_scp),
+	NH(0, 0, NULL,			NULL, ":ODT", "OpenDocument V2", "odt", DT_scp)
 };
 const char Sofheader[] = "mimetypeapplication/vnd.sun.xml";
 const VFD_HEADERS vfd_Sofheader[] = {
-	AH(0,0,"writer",		NULL,":SXW","OpenDocument Writer V1","sxw",DT_scp),
-	NH(0,0,NULL,			NULL,":SXW","OpenDocument V1","sxw",DT_scp)
+	AH(0, 0, "writer",		NULL, ":SXW", "OpenDocument Writer V1", "sxw", DT_scp),
+	NH(0, 0, NULL,			NULL, ":SXW", "OpenDocument V1", "sxw", DT_scp)
 };
 const char XPSheader1[] = "Metadata/Job_PT.xml";
 const char XPSheader2[] = "[Content_Types].xml";
 const VFD_HEADERS vfd_XPSheader =
-	NH(0,0,NULL,			NULL,":XPS","XPS Document","xps",DT_scp);
+	NH(0, 0, NULL,			NULL, ":XPS", "XPS Document", "xps", DT_scp);
 
 ERRORCODE SearchPkExtHeader(const char *header, const VFD_HEADERS *vdh, VFSFILETYPE *result)
 {
 	for ( ; vdh->flags ; vdh++ ){
-		if ( !memcmp(header,vdh->header,vdh->hsize) ){
+		if ( !memcmp(header, vdh->header, vdh->hsize) ){
 			break;
 		}
 	}
-	SetFileType(result,vdh);
+	SetFileType(result, vdh);
 	return ERROR_MORE_DATA;
 }
 
@@ -616,22 +616,22 @@ ERRORCODE vfd_PK(const TCHAR *fname, const char *image, DWORD size, const char *
 	UnUsedParam(fname);UnUsedParam(image);
 
 	neededversion = *(header + 4);
-	if ( (neededversion < 10/* V1.0*/) ||(neededversion >= 100/* V10.0*/) ){
+	if ( (neededversion < 10/* V1.0*/) || (neededversion >= 100/* V10.0*/) ){
 		return ERROR_NO_DATA_DETECTED;
 	}
 
 	if ( size > 0x80 ){
-		if ( !memcmp(header + 0x1e,Odfheader,sizeof(Odfheader) - 1) ){
+		if ( !memcmp(header + 0x1e, Odfheader, sizeof(Odfheader) - 1) ){
 			return SearchPkExtHeader(header + 0x1e + sizeof(Odfheader),
-					vfd_Odfheader,result);
+					vfd_Odfheader, result);
 		}
-		if ( !memcmp(header + 0x1e,Sofheader,sizeof(Sofheader) - 1) ){
+		if ( !memcmp(header + 0x1e, Sofheader, sizeof(Sofheader) - 1) ){
 			return SearchPkExtHeader(header + 0x1e + sizeof(Sofheader),
-					vfd_Sofheader,result);
+					vfd_Sofheader, result);
 		}
-		if ( !memcmp(header + 0x1e,XPSheader1,sizeof(XPSheader1) - 1) ||
-			 !memcmp(header + 0x1e,XPSheader2,sizeof(XPSheader2) - 1) ){
-			SetFileType(result,&vfd_XPSheader);
+		if ( !memcmp(header + 0x1e, XPSheader1, sizeof(XPSheader1) - 1) ||
+			 !memcmp(header + 0x1e, XPSheader2, sizeof(XPSheader2) - 1) ){
+			SetFileType(result, &vfd_XPSheader);
 			return ERROR_MORE_DATA;
 		}
 	}
@@ -641,7 +641,7 @@ ERRORCODE vfd_PK(const TCHAR *fname, const char *image, DWORD size, const char *
 #pragma argsused
 ERRORCODE vfd_MSXBIN(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
-	WORD s,e;
+	WORD s, e;
 	UnUsedParam(fname);UnUsedParam(image);UnUsedParam(size);UnUsedParam(result);
 
 	s = *(WORD *)(header + 1);
@@ -693,21 +693,21 @@ typedef struct {
 	BYTE data[4];
 } TIFFDIR;
 
-DWORD GetTiffDWORD(BYTE *p,BOOL BE)
+DWORD GetTiffDWORD(BYTE *p, BOOL BE)
 {
 	if ( BE == FALSE ) return *(DWORD *)p;
 	return (*p * 0x1000000) + (*(p+1) * 0x10000) + (*(p+2) * 0x100) + *(p+3);
 }
-DWORD GetTiffWORD(BYTE *p,BOOL BE)
+DWORD GetTiffWORD(BYTE *p, BOOL BE)
 {
 	if ( BE == FALSE ) return *(WORD *)p;
 	return (*p * 0x100) + *(p+1);
 }
 
-char *GetTiffStr(BYTE *base,TIFFDIR *dir,BOOL BE)
+char *GetTiffStr(BYTE *base, TIFFDIR *dir, BOOL BE)
 {
-	if ( GetTiffDWORD(dir->size,BE) <= 4 ) return (char *)dir->data;
-	return (char *)(base + GetTiffDWORD(dir->data,BE));
+	if ( GetTiffDWORD(dir->size, BE) <= 4 ) return (char *)dir->data;
+	return (char *)(base + GetTiffDWORD(dir->data, BE));
 }
 
 #ifdef UNICODE
@@ -716,95 +716,95 @@ void ThCatStringTA(ThSTRUCT *th, const char *str)
 	WCHAR buf[0x1000];
 
 	buf[0] = '\0';
-	AnsiToUnicode(str,buf,0x1000);
-	ThCatString(th,buf);
+	AnsiToUnicode(str, buf, 0x1000);
+	ThCatString(th, buf);
 }
 #else
-#define ThCatStringTA(th,str) ThCatString(th,str)
+#define ThCatStringTA(th, str) ThCatString(th, str)
 #endif
 
 #ifdef UNICODE
-#define ThCatStringTW(th,str) ThCatString(th,str)
+#define ThCatStringTW(th, str) ThCatString(th, str)
 #else
-void ThCatStringTW(ThSTRUCT *th,WCHAR *wstr)
+void ThCatStringTW(ThSTRUCT *th, WCHAR *wstr)
 {
 	char buf[0x1000];
 
 	buf[0] = '\0';
-	UnicodeToAnsi(wstr,buf,0x1000);
-	ThCatString(th,buf);
+	UnicodeToAnsi(wstr, buf, 0x1000);
+	ThCatString(th, buf);
 }
 #endif
 
-void GetTiffRate(BYTE *base,TIFFDIR *dir,BOOL BE,TCHAR *buf)
+void GetTiffRate(BYTE *base, TIFFDIR *dir, BOOL BE, TCHAR *buf)
 {
-	DWORD offset,v1,v2;
+	DWORD offset, v1, v2;
 
-	offset = GetTiffDWORD(dir->data,BE);
+	offset = GetTiffDWORD(dir->data, BE);
 	if ( offset < 0x10000 ){
 		v1 = *(DWORD *)(base + offset);
 		v2 = *(DWORD *)(base + offset + 4);
 		if ( (v1 < 0x10000) && (v2 < 0x10000) && (v2 != 0) ){
 			if ( v2 == 1 ){
-				wsprintf(buf,T(" %u\r\n"),v1);
+				wsprintf(buf, T(" %u\r\n"), v1);
 			}else{
-				wsprintf(buf,T(" %u/%u\r\n"),v1,v2);
+				wsprintf(buf, T(" %u/%u\r\n"), v1, v2);
 			}
 			return;
 		}
 	}
-	tstrcpy(buf,T("?/?\r\n"));
+	tstrcpy(buf, T("?/?\r\n"));
 }
 
-void ThCatTiffData(ThSTRUCT *th, const TCHAR *header,BYTE *base,TIFFDIR *dir,BOOL BE)
+void ThCatTiffData(ThSTRUCT *th, const TCHAR *header, BYTE *base, TIFFDIR *dir, BOOL BE)
 {
 	TCHAR buf[32];
 
-	ThCatString(th,header);
-	switch( GetTiffWORD(dir->format,BE) ){
+	ThCatString(th, header);
+	switch( GetTiffWORD(dir->format, BE) ){
 		case 1:
-			wsprintf(buf,T(" %u\r\n"),dir->data[0]);
+			wsprintf(buf, T(" %u\r\n"), dir->data[0]);
 			break;
 
 		case 2:
-			ThCatString(th,T(" "));
-			ThCatStringTA(th,GetTiffStr(base,dir,BE));
-			ThCatString(th,T("\r\n"));
+			ThCatString(th, T(" "));
+			ThCatStringTA(th, GetTiffStr(base, dir, BE));
+			ThCatString(th, T("\r\n"));
 			return;
 
 		case 3:
-			wsprintf(buf,T(" %u\r\n"),GetTiffWORD(dir->data,BE));
+			wsprintf(buf, T(" %u\r\n"), GetTiffWORD(dir->data, BE));
 			break;
 
 		case 4:
-			wsprintf(buf,T(" %u\r\n"),GetTiffDWORD(dir->data,BE));
+			wsprintf(buf, T(" %u\r\n"), GetTiffDWORD(dir->data, BE));
 			break;
 
 		case 5:
-			GetTiffRate(base,dir,BE,buf);
+			GetTiffRate(base, dir, BE, buf);
 			break;
 
 		case 6:
-			wsprintf(buf,T(" %d\r\n"),dir->data[0]);
+			wsprintf(buf, T(" %d\r\n"), dir->data[0]);
 			break;
 
 		case 8:
-			wsprintf(buf,T(" %d\r\n"),GetTiffWORD(dir->data,BE));
+			wsprintf(buf, T(" %d\r\n"), GetTiffWORD(dir->data, BE));
 			break;
 
 		case 9:
-			wsprintf(buf,T(" %d\r\n"),GetTiffDWORD(dir->data,BE));
+			wsprintf(buf, T(" %d\r\n"), GetTiffDWORD(dir->data, BE));
 			break;
 
 		default:
-			ThCatString(th,T(" [?]\r\n"));
+			ThCatString(th, T(" [?]\r\n"));
 			return;
 	}
-	ThCatString(th,buf);
+	ThCatString(th, buf);
 }
 
 
-void GetExifInfo(BYTE *base,BYTE *basemax,ThSTRUCT *th)
+void GetExifInfo(BYTE *base, BYTE *basemax, ThSTRUCT *th)
 {
 	BOOL BE = FALSE;
 	TIFFDIR *dir;
@@ -814,13 +814,13 @@ void GetExifInfo(BYTE *base,BYTE *basemax,ThSTRUCT *th)
 	DWORD tag;
 	TCHAR namebuf[16];
 
-	ThCatString(th,T("*Exif\r\n"));
+	ThCatString(th, T("*Exif\r\n"));
 	if ( *base == 'M' ) BE = TRUE;
-	p = base + GetTiffDWORD(base + 4,BE);
-	count = GetTiffWORD(p,BE);
+	p = base + GetTiffDWORD(base + 4, BE);
+	count = GetTiffWORD(p, BE);
 	dir = (TIFFDIR *)(p + 2);
 	while ( count && ((BYTE *)dir < basemax) ){
-		tag = GetTiffWORD(dir->tag,BE);
+		tag = GetTiffWORD(dir->tag, BE);
 		switch( tag ){
 			case 0x100:
 				name = T("**Width:");
@@ -909,10 +909,10 @@ void GetExifInfo(BYTE *base,BYTE *basemax,ThSTRUCT *th)
 				break;
 
 			default:
-				wsprintf(namebuf,T("**%04d:"),tag);
+				wsprintf(namebuf, T("**%04d:"), tag);
 				name = namebuf;
 		}
-		ThCatTiffData(th,name,base,dir,BE);
+		ThCatTiffData(th, name, base, dir, BE);
 		count--;
 		dir++;
 	}
@@ -920,14 +920,14 @@ void GetExifInfo(BYTE *base,BYTE *basemax,ThSTRUCT *th)
 
 #define BEWORDPTR(ptr) (WORD)((*(ptr) * 0x100) + *(ptr + 1))
 #define BEDWORDPTR(ptr) (DWORD)((*(ptr) * 0x1000000) + (*(ptr+1) * 0x10000) + (*(ptr+2) * 0x100) + *(ptr+3))
-void AddTTFString(ThSTRUCT *th, const TCHAR *title,BYTE *basestr,BYTE *header)
+void AddTTFString(ThSTRUCT *th, const TCHAR *title, BYTE *basestr, BYTE *header)
 {
 	BYTE *str;
 	DWORD size;
 	int type; // 0:multibyte 1:unicode
 	TCHAR buf[0x200];
 
-	ThCatString(th,title);
+	ThCatString(th, title);
 	str = basestr + BEWORDPTR(header + 10);
 	size = BEWORDPTR(header + 8);
 	switch (BEWORDPTR(header)){
@@ -944,31 +944,31 @@ void AddTTFString(ThSTRUCT *th, const TCHAR *title,BYTE *basestr,BYTE *header)
 			return;
 	}
 	if (type){
-		WCHAR wtemp[0x200],*wp;
+		WCHAR wtemp[0x200], *wp;
 		int i;
 
-		for (wp = wtemp,i = size / 2; i ; i-- ){
+		for (wp = wtemp, i = size / 2; i ; i-- ){
 			*wp++ = (WCHAR)(*str * 0x100 + *(str + 1));
 			str += 2;
 		}
 		#ifdef UNICODE
 			*wp = '\0';
-			ThCatString(th,wtemp);
+			ThCatString(th, wtemp);
 		#else
 			buf[WideCharToMultiByte(
-					CP_ACP,0,wtemp,size / 2,buf,0x200,NULL,NULL)] = '\0';
-			ThCatString(th,buf);
+					CP_ACP, 0, wtemp, size / 2, buf, 0x200, NULL, NULL)] = '\0';
+			ThCatString(th, buf);
 		#endif
 	}else{
 		#ifdef UNICODE
 			buf[MultiByteToWideChar(
-					CP_ACP,MB_PRECOMPOSED,(char *)str,size,buf,0x200)] = '\0';
-			ThCatString(th,buf);
+					CP_ACP, MB_PRECOMPOSED, (char *)str, size, buf, 0x200)] = '\0';
+			ThCatString(th, buf);
 		#else
-			ThAppend(th,str,size);
+			ThAppend(th, str, size);
 		#endif
 	}
-	ThCatString(th,T("\r\n"));
+	ThCatString(th, T("\r\n"));
 }
 
 #pragma argsused
@@ -976,7 +976,7 @@ ERRORCODE vfd_TTF(const TCHAR *fname, const char *image, DWORD size, const char 
 {
 	ThSTRUCT th;
 	int headers;
-	BYTE *p,*imagemax,*np,*strbase,*base;
+	BYTE *p, *imagemax, *np, *strbase, *base;
 	UnUsedParam(fname);
 
 	if ( result == NULL ) return NO_ERROR;
@@ -990,30 +990,30 @@ ERRORCODE vfd_TTF(const TCHAR *fname, const char *image, DWORD size, const char 
 	headers = BEWORDPTR(base + 4);
 	p = (BYTE *)(base + 0xc);
 
-	for ( ; headers ; headers--,p += 0x10){
-		if ( memcmp(p,"name",4) ) continue;
+	for ( ; headers ; headers--, p += 0x10){
+		if ( memcmp(p, "name", 4) ) continue;
 		np = (BYTE *)(image + BEDWORDPTR(p + 8));
 		imagemax = (BYTE *)(np + BEDWORDPTR(p + 12));
 		if ( (BYTE *)(image + size) < imagemax ) break; // データ不足
 		headers = BEWORDPTR(np + 2);
 		strbase = np + BEWORDPTR(np + 4);
 		np += 6;
-		for ( ; headers ; headers--,np += 12 ){
+		for ( ; headers ; headers--, np += 12 ){
 			switch(BEWORDPTR(np + 6)){
 				case 1:
-					AddTTFString(&th,T("*Font Family:"),strbase,np);
+					AddTTFString(&th, T("*Font Family:"), strbase, np);
 					break;
 				case 2:
-					AddTTFString(&th,T("*Font Subfamily:"),strbase,np);
+					AddTTFString(&th, T("*Font Subfamily:"), strbase, np);
 					break;
 				case 4:
-					AddTTFString(&th,T("*Full Font name:"),strbase,np);
+					AddTTFString(&th, T("*Full Font name:"), strbase, np);
 					break;
 				case 5:
-					AddTTFString(&th,T("*Version:"),strbase,np);
+					AddTTFString(&th, T("*Version:"), strbase, np);
 					break;
 				default:
-	//				AddTTFString(&th,T("*?:"),strbase,np);
+	//				AddTTFString(&th, T("*?:"), strbase, np);
 					break;
 			}
 		}
@@ -1028,7 +1028,7 @@ ERRORCODE vfd_JPEG(const TCHAR *fname, const char *image, DWORD size, const char
 {
 	ThSTRUCT th;
 	TCHAR buf[VFPS];
-	BYTE *p,*imagemax;
+	BYTE *p, *imagemax;
 	UnUsedParam(fname);
 
 	if ( result == NULL ) return NO_ERROR;
@@ -1044,10 +1044,10 @@ ERRORCODE vfd_JPEG(const TCHAR *fname, const char *image, DWORD size, const char
 			case 0xC1:	// SOF1 seq
 			case 0xC2:	// SOF2 prog
 			case 0xC3:	// SOF3 lossless
-				wsprintf(buf,T("*SOF%d\r\n"),*(p + 1) - 0xc0);
-				ThCatString(&th,buf);
-				wsprintf(buf,T("*Size:%dx%d\r\n*colors %d\r\n"),BEWORDPTR(p+7),BEWORDPTR(p+5),*(p + 9));
-				ThCatString(&th,buf);
+				wsprintf(buf, T("*SOF%d\r\n"), *(p + 1) - 0xc0);
+				ThCatString(&th, buf);
+				wsprintf(buf, T("*Size:%dx%d\r\n*colors %d\r\n"), BEWORDPTR(p+7), BEWORDPTR(p+5), *(p + 9));
+				ThCatString(&th, buf);
 				break;
 
 //			case 0xC4:	// DHT ハフマンテーブル
@@ -1064,11 +1064,11 @@ ERRORCODE vfd_JPEG(const TCHAR *fname, const char *image, DWORD size, const char
 
 //			case 0xE0:	// APP0 JFIF 情報
 			case 0xE1:	// APP1 Exif 情報
-				if ( !memcmp(p+4,"Exif",5) ) GetExifInfo(p + 10,imagemax,&th);
+				if ( !memcmp(p+4, "Exif", 5) ) GetExifInfo(p + 10, imagemax, &th);
 				break;
 
 			case 0xE2:	// APP2 カラープロファイル
-				ThCatString(&th,T("*colorprofile\r\n"));
+				ThCatString(&th, T("*colorprofile\r\n"));
 				break;
 
 //			case 0xEC:	// ? Ducky
@@ -1086,12 +1086,12 @@ ERRORCODE vfd_JPEG(const TCHAR *fname, const char *image, DWORD size, const char
 						Tr = T("*color adobe CMYK/RGB\r\n");
 						break;
 				}
-				ThCatString(&th,Tr);
+				ThCatString(&th, Tr);
 				break;
 			}
 
 			case 0xFE:	// COM Comment
-				ThCatString(&th,T("*comment\r\n"));
+				ThCatString(&th, T("*comment\r\n"));
 				break;
 
 			default:
@@ -1099,8 +1099,8 @@ ERRORCODE vfd_JPEG(const TCHAR *fname, const char *image, DWORD size, const char
 					p = imagemax;
 					break;	// 異常コード
 				}
-//				wsprintf(buf,"*Unknown: %d\r\n",*(p+1));
-//				ThCatString(&th,buf);
+//				wsprintf(buf, "*Unknown: %d\r\n", *(p+1));
+//				ThCatString(&th, buf);
 				break;
 		}
 		p += 2 + BEWORDPTR(p + 2);
@@ -1134,8 +1134,8 @@ ERRORCODE vfd_GIF(const TCHAR *fname, const char *image, DWORD size, const char 
 	ThInit(&th);
 	p = (BYTE *)(header + 6);
 
-	wsprintf(buf,T("*Size:%dx%d"),*(WORD *)p,*(WORD *)(p+2));
-	ThCatString(&th,buf);
+	wsprintf(buf, T("*Size:%dx%d"), *(WORD *)p, *(WORD *)(p+2));
+	ThCatString(&th, buf);
 	result->info = (TCHAR *)th.bottom;
 	return NO_ERROR;
 }
@@ -1151,10 +1151,10 @@ ERRORCODE vfd_EMF(const TCHAR *fname, const char *image, DWORD size, const char 
 
 // ジャストシステム関係 -------------------------------------------------------
 const VFD_HEADERS JustHeaders[] = {
-	JustH(0,4,"JXW.JEX",	NULL,":JXW", "一太郎","JSW",DT_scp),
-	JustH(0,4,"HANA.JEX",	NULL,":HANA","花子",  "JBH",DT_scp),
-	JustH(0,4,"SNS.JEX",	NULL,":SNS", "三四郎","SNS",DT_scp),
-	NH   (0,0,NULL,			NULL,":JUST","Justsystem app.","",DT_scp)};
+	JustH(0, 4, "JXW.JEX",	NULL, ":JXW", "一太郎", "JSW", DT_scp),
+	JustH(0, 4, "HANA.JEX",	NULL, ":HANA", "花子",  "JBH", DT_scp),
+	JustH(0, 4, "SNS.JEX",	NULL, ":SNS", "三四郎", "SNS", DT_scp),
+	NH   (0, 0, NULL,		NULL, ":JUST", "Justsystem app.", "", DT_scp)};
 
 #pragma argsused
 ERRORCODE vfd_JUST(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
@@ -1163,9 +1163,9 @@ ERRORCODE vfd_JUST(const TCHAR *fname, const char *image, DWORD size, const char
 	UnUsedParam(fname);UnUsedParam(image);UnUsedParam(size);
 
 	for ( vdh = JustHeaders ; vdh->flags ; vdh++ ){
-		if ( stricmp(header + 0x80,vdh->header) == 0 ) break;
+		if ( stricmp(header + 0x80, vdh->header) == 0 ) break;
 	}
-	SetFileType(result,vdh);
+	SetFileType(result, vdh);
 	return ERROR_MORE_DATA;
 }
 // 複合ドキュメント -----------------------------------------------------------
@@ -1176,85 +1176,85 @@ typedef struct {
 	int		dtype;
 	BYTE	clsid[16];
 } DOCS;
-#define DOCH(type,comment,ext,dtype) {T(type),T(comment),T(ext),dtype
+#define DOCH(type, comment, ext, dtype) {T(type), T(comment), T(ext), dtype
 
 #define WORD8NO 3
 const DOCS DocsHeaders[] = {
-	DOCH(":DOC2",		"MS-Word2.0","DOC",DT_scp),
-	  {0x03,0x00,0x03,0x00, 0x00,0x00, 0x00,0x00,
-	   0xC0,0x00, 0x00,0x00,0x00,0x00,0x00,0x46}},
-	DOCH(":DOC5",		"MS-Word5","DOC",DT_scp),
-	  {0x03,0x00,0x03,0x00, 0x00,0x00, 0x00,0x00,
-	   0xc0,0x00, 0x00,0x00,0x00,0x00,0x00,0x46}},
-	DOCH(":DOC95",		"MS-Word6/7(95)","DOC",DT_word7),
-	  {0x00,0x09,0x02,0x00, 0x00,0x00, 0x00,0x00,
-	   0xc0,0x00, 0x00,0x00,0x00,0x00,0x00,0x46}},
-	DOCH(":DOC97",		"MS-Word97/98","DOC",DT_word8),
-	  {0x06,0x09,0x02,0x00, 0x00,0x00, 0x00,0x00,
-	   0xc0,0x00, 0x00,0x00,0x00,0x00,0x00,0x46}},
-	DOCH(":XLS",		"MS-Excel","XLS",DT_scp),
-	  {0x00,0x00,0x03,0x00, 0x00,0x00, 0x00,0x00,
-	   0xC0,0x00, 0x00,0x00,0x00,0x00,0x00,0x46}},
-	DOCH(":XLS95",		"MS-Excel95","XLS",DT_scp),
-	  {0x10,0x08,0x02,0x00, 0x00,0x00, 0x00,0x00,
-	   0xC0,0x00, 0x00,0x00,0x00,0x00,0x00,0x46}},
-	DOCH(":XLS97",		"MS-Excel97","XLS",DT_scp),
-	  {0x20,0x08,0x02,0x00, 0x00,0x00, 0x00,0x00,
-	   0xC0,0x00, 0x00,0x00,0x00,0x00,0x00,0x46}},
-	DOCH(":BND",		"MS-Office binder","BND",DT_scp),
-	  {0x00,0x04,0x85,0x59, 0x64,0x66, 0x1b,0x10,
-	   0xb2,0x1c, 0x00,0xaa,0x00,0x4b,0xa9,0x0b}},
-	DOCH(":PNT95",		"MS-PowerPoint95","PNT",DT_scp),
-	  {0x70,0xae,0x7b,0xea, 0x3b,0xfb, 0xcd,0x11,
-	   0xa9,0x03, 0x00,0xaa,0x00,0x51,0x0e,0xa3}},
-	DOCH(":PNT97",		"MS-PowerPoint97","PNT",DT_scp),
-	  {0x10,0x8d,0x81,0x64, 0x9b,0x4f, 0xcf,0x11,
-	   0x86,0xea, 0x00,0xaa,0x00,0xb9,0x29,0xe8}},
-	DOCH(":PNTWIZ",		"MS-PowerPoint97 Wizard","WIZ",DT_scp),
-	  {0xf0,0x46,0x72,0x81, 0x0a,0x72, 0xcf,0x11,
-	   0x87,0x18, 0x00,0xaa,0x00,0x60,0x26,0x3b}},
+	DOCH(":DOC2",		"MS-Word2.0", "DOC", DT_scp),
+	  {0x03, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00,
+	   0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}},
+	DOCH(":DOC5",		"MS-Word5", "DOC", DT_scp),
+	  {0x03, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00,
+	   0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}},
+	DOCH(":DOC95",		"MS-Word6/7(95)", "DOC", DT_word7),
+	  {0x00, 0x09, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+	   0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}},
+	DOCH(":DOC97",		"MS-Word97/98", "DOC", DT_word8),
+	  {0x06, 0x09, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+	   0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}},
+	DOCH(":XLS",		"MS-Excel", "XLS", DT_scp),
+	  {0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00,
+	   0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}},
+	DOCH(":XLS95",		"MS-Excel95", "XLS", DT_scp),
+	  {0x10, 0x08, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+	   0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}},
+	DOCH(":XLS97",		"MS-Excel97", "XLS", DT_scp),
+	  {0x20, 0x08, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+	   0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}},
+	DOCH(":BND",		"MS-Office binder", "BND", DT_scp),
+	  {0x00, 0x04, 0x85, 0x59, 0x64, 0x66, 0x1b, 0x10,
+	   0xb2, 0x1c, 0x00, 0xaa, 0x00, 0x4b, 0xa9, 0x0b}},
+	DOCH(":PNT95",		"MS-PowerPoint95", "PNT", DT_scp),
+	  {0x70, 0xae, 0x7b, 0xea, 0x3b, 0xfb, 0xcd, 0x11,
+	   0xa9, 0x03, 0x00, 0xaa, 0x00, 0x51, 0x0e, 0xa3}},
+	DOCH(":PNT97",		"MS-PowerPoint97", "PNT", DT_scp),
+	  {0x10, 0x8d, 0x81, 0x64, 0x9b, 0x4f, 0xcf, 0x11,
+	   0x86, 0xea, 0x00, 0xaa, 0x00, 0xb9, 0x29, 0xe8}},
+	DOCH(":PNTWIZ",		"MS-PowerPoint97 Wizard", "WIZ", DT_scp),
+	  {0xf0, 0x46, 0x72, 0x81, 0x0a, 0x72, 0xcf, 0x11,
+	   0x87, 0x18, 0x00, 0xaa, 0x00, 0x60, 0x26, 0x3b}},
 
-	DOCH(":PUB",		"MS-Publisher","PUB",DT_scp),
-	  {0x01,0x12,0x02,0x00, 0x00,0x00, 0x00,0x00,
-	   0x00,0xc0, 0x00,0x00,0x00,0x00,0x00,0x46}},
-	DOCH(":WORKS",		"MS-Works","WPS",DT_scp),
-	  {0xb2,0x5a,0xa4,0x0e, 0x0a,0x9e, 0xd1,0x11,
-	   0xa4,0x07, 0x00,0xc0,0x4f,0xb9,0x32,0xba}},
-	DOCH(":MSGRA",		"MS-Graph","GRA",DT_scp),
-	  {0x03,0x08,0x02,0x00, 0x00,0x00, 0x00,0x00,
-	   0xc0,0x00, 0x00,0x00,0x00,0x00,0x00,0x46}},
-	DOCH(":VISIO",		"Visio","VSD",DT_scp),
-	  {0x11,0x1a,0x02,0x00, 0x00,0x00, 0x00,0x00,
-	   0xc0,0x00, 0x00,0x00,0x00,0x00,0x00,0x46}},
-	DOCH(":VISIO",		"Visio","VSD",DT_scp),
-	  {0x12,0x1a,0x02,0x00, 0x00,0x00, 0x00,0x00,
-	   0xc0,0x00, 0x00,0x00,0x00,0x00,0x00,0x46}},
-	DOCH(":VISIO",		"Visio","VSD",DT_scp),
-	  {0x13,0x1a,0x02,0x00, 0x00,0x00, 0x00,0x00,
-	   0xc0,0x00, 0x00,0x00,0x00,0x00,0x00,0x46}},
-	DOCH(":MST",		"Windows Installer Transform","MST",DT_scp),
-	  {0x82,0x10,0x0c,0x00, 0x00,0x00, 0x00,0x00,
-	   0xC0,0x00, 0x00,0x00,0x00,0x00,0x00,0x46}},
-	DOCH(":MSI",		"Windows Installer Package","MSI",DT_scp),
-	  {0x84,0x10,0x0c,0x00, 0x00,0x00, 0x00,0x00,
-	   0xC0,0x00, 0x00,0x00,0x00,0x00,0x00,0x46}},
-	DOCH(":MSP",		"Windows Installer Patch","MSP",DT_scp),
-	  {0x86,0x10,0x0c,0x00, 0x00,0x00, 0x00,0x00,
-	   0xC0,0x00, 0x00,0x00,0x00,0x00,0x00,0x46}},
-	DOCH(":SDW",		"StarWriter","SDW",DT_scp),
-	  {0xd1,0xf9,0x0c,0xc2, 0xae,0x85, 0xd1,0x11,
-	   0xaa,0xb4, 0x00,0x60,0x97,0xda,0x56,0x1a}},
-	DOCH(":JXW7",		"一太郎7","JFW",DT_scp),
-	  {0x00,0x70,0x59,0x78, 0x84,0x1d, 0xcf,0x11,
-	   0x97,0x13, 0x00,0x20,0xaf,0xd8,0x06,0xf4}},
-	DOCH(":JXW8",		"一太郎8/9","JTD",DT_utf16L),
-	  {0x01,0x70,0x59,0x78, 0x84,0x1d, 0xcf,0x11,
-	   0x97,0x13, 0x00,0x20,0xaf,0xd8,0x06,0xf4}},
-	DOCH(":JHD",		"花子9","JHD",DT_scp),
-	  {0x60,0x27,0xce,0x06, 0xa4,0x93, 0xd1,0x11,
-	   0x90,0x79, 0x00,0x80,0x5f,0x1d,0x74,0x56}},
-	{NULL,			NULL,NULL,0,
-	  {0,0,0,0, 0,0, 0,0, 0,0, 0,0,0,0,0,0}}
+	DOCH(":PUB",		"MS-Publisher", "PUB", DT_scp),
+	  {0x01, 0x12, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+	   0x00, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}},
+	DOCH(":WORKS",		"MS-Works", "WPS", DT_scp),
+	  {0xb2, 0x5a, 0xa4, 0x0e, 0x0a, 0x9e, 0xd1, 0x11,
+	   0xa4, 0x07, 0x00, 0xc0, 0x4f, 0xb9, 0x32, 0xba}},
+	DOCH(":MSGRA",		"MS-Graph", "GRA", DT_scp),
+	  {0x03, 0x08, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+	   0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}},
+	DOCH(":VISIO",		"Visio", "VSD", DT_scp),
+	  {0x11, 0x1a, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+	   0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}},
+	DOCH(":VISIO",		"Visio", "VSD", DT_scp),
+	  {0x12, 0x1a, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+	   0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}},
+	DOCH(":VISIO",		"Visio", "VSD", DT_scp),
+	  {0x13, 0x1a, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+	   0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}},
+	DOCH(":MST",		"Windows Installer Transform", "MST", DT_scp),
+	  {0x82, 0x10, 0x0c, 0x00, 0x00, 0x00, 0x00, 0x00,
+	   0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}},
+	DOCH(":MSI",		"Windows Installer Package", "MSI", DT_scp),
+	  {0x84, 0x10, 0x0c, 0x00, 0x00, 0x00, 0x00, 0x00,
+	   0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}},
+	DOCH(":MSP",		"Windows Installer Patch", "MSP", DT_scp),
+	  {0x86, 0x10, 0x0c, 0x00, 0x00, 0x00, 0x00, 0x00,
+	   0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}},
+	DOCH(":SDW",		"StarWriter", "SDW", DT_scp),
+	  {0xd1, 0xf9, 0x0c, 0xc2, 0xae, 0x85, 0xd1, 0x11,
+	   0xaa, 0xb4, 0x00, 0x60, 0x97, 0xda, 0x56, 0x1a}},
+	DOCH(":JXW7",		"一太郎7", "JFW", DT_scp),
+	  {0x00, 0x70, 0x59, 0x78, 0x84, 0x1d, 0xcf, 0x11,
+	   0x97, 0x13, 0x00, 0x20, 0xaf, 0xd8, 0x06, 0xf4}},
+	DOCH(":JXW8",		"一太郎8/9", "JTD", DT_utf16L),
+	  {0x01, 0x70, 0x59, 0x78, 0x84, 0x1d, 0xcf, 0x11,
+	   0x97, 0x13, 0x00, 0x20, 0xaf, 0xd8, 0x06, 0xf4}},
+	DOCH(":JHD",		"花子9", "JHD", DT_scp),
+	  {0x60, 0x27, 0xce, 0x06, 0xa4, 0x93, 0xd1, 0x11,
+	   0x90, 0x79, 0x00, 0x80, 0x5f, 0x1d, 0x74, 0x56}},
+	{NULL,			NULL, NULL, 0,
+	  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
 };
 
 // ファイルプロパティAPIが無いときは、機能停止させる
@@ -1263,13 +1263,13 @@ IID T_FMTID_SummaryInformation = {0xf29f85e0L, 0x4ff9, 0x1068,{0xab, 0x91, 0x08,
 
 const TCHAR *propidlist[] =
 	{T("?"),	T("?"),		T("Title\t\t"),		T("Subject\t\t"),
-	T("Author\t\t"),T("Keywords\t"),T("Comments\t"),T("Template\t"),
-	T("LastAuthor\t"),T("Revision Number\t"),T("Edit Time\t"),T("Last printed\t"),
-	T("Created\t\t"),T("Last Saved\t"),T("Page Count\t"),T("Word Count\t"),
-	T("Char Count\t"),T("Thumpnail"),T("AppName\t\t"),T("Doc Security\t")
+	T("Author\t\t"), T("Keywords\t"), T("Comments\t"), T("Template\t"),
+	T("LastAuthor\t"), T("Revision Number\t"), T("Edit Time\t"), T("Last printed\t"),
+	T("Created\t\t"), T("Last Saved\t"), T("Page Count\t"), T("Word Count\t"),
+	T("Char Count\t"), T("Thumpnail"), T("AppName\t\t"), T("Doc Security\t")
 };
 
-void DumpProcvariant(ThSTRUCT *th,PROPVARIANT *procv)
+void DumpProcvariant(ThSTRUCT *th, PROPVARIANT *procv)
 {
 	TCHAR buf[64];
 	FILETIME lft;
@@ -1280,27 +1280,27 @@ void DumpProcvariant(ThSTRUCT *th,PROPVARIANT *procv)
 			if ( strlen(procv->pszVal) > 144 ){
 				char bufa[144 + 16];
 
-				memcpy(bufa,procv->pszVal,144);
-				strcpy(bufa + 144,"...");
-				ThCatStringTA(th,bufa);
+				memcpy(bufa, procv->pszVal, 144);
+				strcpy(bufa + 144, "...");
+				ThCatStringTA(th, bufa);
 			}else{
-				ThCatStringTA(th,procv->pszVal);
+				ThCatStringTA(th, procv->pszVal);
 			}
 			break;
 		case VT_BSTR:
-			ThCatStringTW(th,procv->bstrVal);
+			ThCatStringTW(th, procv->bstrVal);
 			break;
 		case VT_I4:
-			wsprintf(buf,T("%d"),procv->lVal);
-			ThCatString(th,buf);
+			wsprintf(buf, T("%d"), procv->lVal);
+			ThCatString(th, buf);
 			break;
 		case VT_FILETIME:
-			FileTimeToLocalFileTime(&procv->filetime,&lft);
-			FileTimeToSystemTime(&lft,&lst);
-			wsprintf(buf,T("%04d-%02d-%02d %02d:%02d:%02d"),
-				lst.wYear,lst.wMonth,lst.wDay,
-				lst.wHour,lst.wMinute,lst.wSecond);
-			ThCatString(th,buf);
+			FileTimeToLocalFileTime(&procv->filetime, &lft);
+			FileTimeToSystemTime(&lft, &lst);
+			wsprintf(buf, T("%04d-%02d-%02d %02d:%02d:%02d"),
+				lst.wYear, lst.wMonth, lst.wDay,
+				lst.wHour, lst.wMinute, lst.wSecond);
+			ThCatString(th, buf);
 			break;
 	}
 }
@@ -1332,17 +1332,17 @@ void vfd_COMinfo(const TCHAR *fname, const char *image, const char *imagemax, VF
 	ThSTRUCT th;
 	int cnt = 4;
 	HANDLE hOle32;
-	DefineWinAPI(HRESULT,StgOpenStorageEx,(const WCHAR *pwcsName, DWORD grfMode, DWORD stgfmt, DWORD grfAttrs,STGOPTIONS *pStgOptions,void *reserved,REFIID riid,void **ppObjectOpen));
-	DefineWinAPI(HRESULT,PropVariantClear,(PROPVARIANT *pvar));
+	DefineWinAPI(HRESULT, StgOpenStorageEx, (const WCHAR *pwcsName, DWORD grfMode, DWORD stgfmt, DWORD grfAttrs, STGOPTIONS *pStgOptions, void *reserved, REFIID riid, void **ppObjectOpen));
+	DefineWinAPI(HRESULT, PropVariantClear, (PROPVARIANT *pvar));
 	UnUsedParam(fname);UnUsedParam(image);UnUsedParam(result);
 
 	ThInit(&th);
 	if ( image != NULL ){
 		while ( (image + 0x80) <= imagemax ){
 			if ( *(const WORD *)image == '\0' ) break;
-			ThCatString(&th,WildCard_All);
-			ThCatStringTW(&th,(WCHAR *)image);
-			ThCatString(&th,T("\r\n"));
+			ThCatString(&th, WildCard_All);
+			ThCatStringTW(&th, (WCHAR *)image);
+			ThCatString(&th, T("\r\n"));
 			image += 0x80;
 			cnt--;
 			if ( !cnt ) break;
@@ -1350,9 +1350,9 @@ void vfd_COMinfo(const TCHAR *fname, const char *image, const char *imagemax, VF
 	}
 	hOle32 = GetModuleHandle(T("OLE32.DLL"));
 
-	GETDLLPROC(hOle32,PropVariantClear);
+	GETDLLPROC(hOle32, PropVariantClear);
 	if ( DPropVariantClear == NULL ) return;	// Win95 では存在しない
-	GETDLLPROC(hOle32,StgOpenStorageEx);
+	GETDLLPROC(hOle32, StgOpenStorageEx);
 
 	{
 		IStorage *pStorage = NULL;
@@ -1368,44 +1368,44 @@ void vfd_COMinfo(const TCHAR *fname, const char *image, const char *imagemax, VF
 	#define FNAMEW fname
 #else
 		WCHAR FNAMEW[VFPS];
-		AnsiToUnicode(fname,FNAMEW,VFPS);
+		AnsiToUnicode(fname, FNAMEW, VFPS);
 #endif
 		// IPropertySetStorage を取得
 		if ( DStgOpenStorageEx != NULL ){
 			if ( FAILED(DStgOpenStorageEx(FNAMEW,
-					STGM_READ | STGM_SHARE_EXCLUSIVE,4 /*STGFMT_ANY*/,0,NULL,
-					NULL,&XIID_IPropertySetStorage,(void **)&pProperty)) ){
+					STGM_READ | STGM_SHARE_EXCLUSIVE, 4 /*STGFMT_ANY*/, 0, NULL,
+					NULL, &XIID_IPropertySetStorage, (void **)&pProperty)) ){
 				pProperty = NULL;
 			}
 		}else{
 			pProperty = NULL;
-			if ( SUCCEEDED(StgOpenStorage(FNAMEW,NULL,
-					STGM_READ | STGM_SHARE_EXCLUSIVE,NULL,0,&pStorage)) ){
+			if ( SUCCEEDED(StgOpenStorage(FNAMEW, NULL,
+					STGM_READ | STGM_SHARE_EXCLUSIVE, NULL, 0, &pStorage)) ){
 				pStorage->lpVtbl->QueryInterface(pStorage,
-						&XIID_IPropertySetStorage,(void **)&pProperty);
+						&XIID_IPropertySetStorage, (void **)&pProperty);
 			}
 		}
 		if ( pProperty != NULL ){
-			if ( SUCCEEDED(pProperty->lpVtbl->Open(pProperty,&T_FMTID_SummaryInformation,STGM_READ | STGM_SHARE_EXCLUSIVE,&pPStorage)) ){
-				if ( SUCCEEDED(pPStorage->lpVtbl->Enum(pPStorage,&pEnumProp)) ){
-					while ( pEnumProp->lpVtbl->Next(pEnumProp,1,&pstg,&fetched) == S_OK ){
+			if ( SUCCEEDED(pProperty->lpVtbl->Open(pProperty, &T_FMTID_SummaryInformation, STGM_READ | STGM_SHARE_EXCLUSIVE, &pPStorage)) ){
+				if ( SUCCEEDED(pPStorage->lpVtbl->Enum(pPStorage, &pEnumProp)) ){
+					while ( pEnumProp->lpVtbl->Next(pEnumProp, 1, &pstg, &fetched) == S_OK ){
 						if ( fetched == 0 ) break;
-						memset(&procs,0,sizeof(procs));
+						memset(&procs, 0, sizeof(procs));
 						procs.ulKind = PRSPEC_PROPID;
 						procs.propid = pstg.propid;
-						if ( SUCCEEDED(pPStorage->lpVtbl->ReadMultiple(pPStorage,1,&procs,&procv)) ){
+						if ( SUCCEEDED(pPStorage->lpVtbl->ReadMultiple(pPStorage, 1, &procs, &procv)) ){
 							if ( procs.ulKind == PRSPEC_LPWSTR ){
-								ThCatStringTW(&th,pstg.lpwstrName);
+								ThCatStringTW(&th, pstg.lpwstrName);
 							}else{
 								if ( pstg.propid < 0x14 ){
-									ThCatString(&th,propidlist[procs.propid]);
+									ThCatString(&th, propidlist[procs.propid]);
 								}else{
-									ThCatString(&th,T("Unknown ID"));
+									ThCatString(&th, T("Unknown ID"));
 								}
 							}
-							ThCatString(&th,T(" : "));
-							DumpProcvariant(&th,&procv);
-							ThCatString(&th,T("\r\n"));
+							ThCatString(&th, T(" : "));
+							DumpProcvariant(&th, &procv);
+							ThCatString(&th, T("\r\n"));
 							DPropVariantClear(&procv);
 						}
 					}
@@ -1417,25 +1417,25 @@ void vfd_COMinfo(const TCHAR *fname, const char *image, const char *imagemax, VF
 		}
 		if ( pStorage != NULL ) pStorage->lpVtbl->Release(pStorage);
 #if 0
-		if ( SUCCEEDED(StgOpenStorage(FNAMEW,NULL,
-					STGM_READ | STGM_SHARE_EXCLUSIVE,NULL,0,&pStorage)) ){
+		if ( SUCCEEDED(StgOpenStorage(FNAMEW, NULL,
+					STGM_READ | STGM_SHARE_EXCLUSIVE, NULL, 0, &pStorage)) ){
 			IEnumSTATSTG *pEnumElement;
 
-			if ( SUCCEEDED(pStorage->lpVtbl->EnumElements(pStorage,0,NULL,0,&pEnumElement)) ){
+			if ( SUCCEEDED(pStorage->lpVtbl->EnumElements(pStorage, 0, NULL, 0, &pEnumElement)) ){
 				TCHAR buf[0x200];
 
 				for ( ;; ){
 					STATSTG ss;
 					ULONG count;
 
-					if ( FAILED(pEnumElement->lpVtbl->Next(pEnumElement,1,&ss,&count)) || (count == 0 ) ){
+					if ( FAILED(pEnumElement->lpVtbl->Next(pEnumElement, 1, &ss, &count)) || (count == 0 ) ){
 						break;
 					}
-					ThCatString(&th,WildCard_All);
-					ThCatStringTW(&th,ss.pwcsName);
+					ThCatString(&th, WildCard_All);
+					ThCatStringTW(&th, ss.pwcsName);
 					CoTaskMemFree(ss.pwcsName);
-					wsprintf(buf,T("\r\n  Type:%d\r\n  Size:%d\r\n  Time:\r\n"),ss.type,ss.cbSize);
-					ThCatString(&th,buf);
+					wsprintf(buf, T("\r\n  Type:%d\r\n  Size:%d\r\n  Time:\r\n"), ss.type, ss.cbSize);
+					ThCatString(&th, buf);
 				}
 				pEnumElement->lpVtbl->Release(pEnumElement);
 			}
@@ -1451,12 +1451,12 @@ void vfd_COMinfo(const TCHAR *fname, const char *image, const char *imagemax, VF
 void SetComType(VFSFILETYPE *result, const DOCS *comp)
 {
 	result->dtype = comp->dtype;
-	tstrcpy(result->type,comp->type);
+	tstrcpy(result->type, comp->type);
 	if ( result->flags & VFSFT_TYPETEXT ){
-		tstrcpy(result->typetext,comp->comment);
+		tstrcpy(result->typetext, comp->comment);
 	}
 	if ( result->flags & VFSFT_EXT){
-		tstrcpy(result->ext,comp->ext);
+		tstrcpy(result->ext, comp->ext);
 	}
 }
 
@@ -1479,22 +1479,22 @@ ERRORCODE vfd_COM(const TCHAR *fname, const char *image, DWORD size, const char 
 	}
 	#ifdef PRSPEC_PROPID
 	if ( result->flags & VFSFT_INFO ){
-		vfd_COMinfo(fname,rootentry,image + size,result);
+		vfd_COMinfo(fname, rootentry, image + size, result);
 	}
 	#endif
 	if ( rootentry != NULL ){
 		rootentry += 0x50;
 									// CLD ID を検索
 		for ( comp = DocsHeaders ; comp->type ; comp++ ){
-			if ( !memcmp(rootentry,comp->clsid,16) ){
-				SetComType(result,comp);
+			if ( !memcmp(rootentry, comp->clsid, 16) ){
+				SetComType(result, comp);
 				return ERROR_MORE_DATA;
 			}
 		};
 	}else{
 		if ( size > 0x400 ){
 			if ( *(DWORD *)(image + 0x200) == 0x00c1a5ec ){
-				SetComType(result,&DocsHeaders[WORD8NO]);
+				SetComType(result, &DocsHeaders[WORD8NO]);
 				return ERROR_MORE_DATA;
 			}
 		}
@@ -1504,61 +1504,61 @@ ERRORCODE vfd_COM(const TCHAR *fname, const char *image, DWORD size, const char 
 }
 // 実行ファイル ---------------------------------------------------------------
 struct EXEEXTTYPESTURCT {
-	const TCHAR *exttype,*uses,*ext;
+	const TCHAR *exttype, *uses, *ext;
 } ExeExtTypes[] = {
-	{T(":CPL"),T("Control Panel"),T("CPL")},
-	{T(":DLL"),T("Dynamic Link Library"),T("DLL")},
-	{T(":DRV"),T("Device driver"),T("DRV")},
-	{T(":IME"),T("Input Method Editor"),T("IME")},
-	{T(":OCX"),T("OLE Custom Controls"),T("OCX")},
-	{T(":SCR"),T("Screen saver"),T("SCR")},
-	{T(":SYS"),T("Device driver"),T("SYS")},
-	{T(":VXD"),T("Virtual device driver"),T("VXD")},
-	{T(":EXE"),T("progarm"),T("EXE")},
-	{NULL,NULL,NULL}
+	{T(":CPL"), T("Control Panel"), T("CPL")},
+	{T(":DLL"), T("Dynamic Link Library"), T("DLL")},
+	{T(":DRV"), T("Device driver"), T("DRV")},
+	{T(":IME"), T("Input Method Editor"), T("IME")},
+	{T(":OCX"), T("OLE Custom Controls"), T("OCX")},
+	{T(":SCR"), T("Screen saver"), T("SCR")},
+	{T(":SYS"), T("Device driver"), T("SYS")},
+	{T(":VXD"), T("Virtual device driver"), T("VXD")},
+	{T(":EXE"), T("progarm"), T("EXE")},
+	{NULL, NULL, NULL}
 };
 
 const TCHAR X86STR[] = T("x86");
 const TCHAR X64STR[] = T("x64");
 const TCHAR IA64STR[] = T("IA64");
 
-#define MH(id,name) {id,T(name)}
+#define MH(id, name) {id, T(name)}
 struct MPUTABLESTRUCT {
 	WORD id;
 	const TCHAR *name;
 } MpuTable[] = {
-{IMAGE_FILE_MACHINE_I386     ,X86STR},
+{IMAGE_FILE_MACHINE_I386, X86STR},
 #ifdef IMAGE_FILE_MACHINE_R3000
-MH(IMAGE_FILE_MACHINE_R3000    ,"R3000"),
-MH(IMAGE_FILE_MACHINE_R4000    ,"R4000"),
-MH(IMAGE_FILE_MACHINE_R10000   ,"R10000"),
-MH(0x169,"MIPS WCE"),
-MH(IMAGE_FILE_MACHINE_ALPHA    ,"Alpha"),
+MH(IMAGE_FILE_MACHINE_R3000, "R3000"),
+MH(IMAGE_FILE_MACHINE_R4000, "R4000"),
+MH(IMAGE_FILE_MACHINE_R10000, "R10000"),
+MH(0x169, "MIPS WCE"),
+MH(IMAGE_FILE_MACHINE_ALPHA, "Alpha"),
 #endif
-MH(0x1a2,"SH3"),
-MH(0x1a3,"SH3DSP"),
-MH(0x1a4,"SH3E"),
-MH(0x1a6,"SH4"),
-MH(0x1a8,"SH5"),
-MH(0x1c0,"ARM"),
-MH(0x1c2,"ARM T/T2LE"),
-MH(0x1c4,"ARM T2LE"),
-MH(0x1d3,"AM33"),
-MH(IMAGE_FILE_MACHINE_POWERPC  ,"PowerPC"),
-MH(0x1f1,"PowerPC FP"),
-{0x200,IA64STR},
-MH(0x266,"MIPS16"),
-MH(0x284,"ALPHA64"),
-MH(0x366,"MIPS FPU"),
-MH(0x466,"MIPF FPU16"),
-MH(0x520,"Infineon"),
-MH(0xcef,"CEF"),
-MH(0xebc,"EFI"),
-{0x8664,X64STR},
-MH(0x9041,"M32R"),
-MH(0xaa64,"ARM64 LE"),
-MH(0xc0ee,"CEE"),
-MH(0,"Unknown MPU")
+MH(0x1a2, "SH3"),
+MH(0x1a3, "SH3DSP"),
+MH(0x1a4, "SH3E"),
+MH(0x1a6, "SH4"),
+MH(0x1a8, "SH5"),
+MH(0x1c0, "ARM"),
+MH(0x1c2, "ARM T/T2LE"),
+MH(0x1c4, "ARM T2LE"),
+MH(0x1d3, "AM33"),
+MH(IMAGE_FILE_MACHINE_POWERPC, "PowerPC"),
+MH(0x1f1, "PowerPC FP"),
+{0x200, IA64STR},
+MH(0x266, "MIPS16"),
+MH(0x284, "ALPHA64"),
+MH(0x366, "MIPS FPU"),
+MH(0x466, "MIPF FPU16"),
+MH(0x520, "Infineon"),
+MH(0xcef, "CEF"),
+MH(0xebc, "EFI"),
+{0x8664, X64STR},
+MH(0x9041, "M32R"),
+MH(0xaa64, "ARM64 LE"),
+MH(0xc0ee, "CEE"),
+MH(0, "Unknown MPU")
 };
 
 const TCHAR EXE32USTR[] = T(":EXE32U");
@@ -1569,28 +1569,28 @@ struct SYSTEMTABLESTRUCT {
 	const TCHAR *name;
 	const TCHAR *exttype;
 } SystemTable[] = {
-{IMAGE_SUBSYSTEM_NATIVE      ,T("Native"),EXE32USTR},
-{IMAGE_SUBSYSTEM_WINDOWS_GUI ,T("GUI"),EXE32USTR},
-{IMAGE_SUBSYSTEM_WINDOWS_CUI ,T("CUI"),EXE32UCSTR},
-//{4,"回復コンソール用？"}
-{IMAGE_SUBSYSTEM_OS2_CUI     ,T("OS/2"),T(":EXE32OS2")},
-//{6,"？"}
-{IMAGE_SUBSYSTEM_POSIX_CUI   ,T("POSIX"),T(":EXEPOSIX")},
-{8							,T("Win9xDriver"),T(":VXD")},
-{9							,T("WinCE"),T(":EXECE")},
-{10							,T("EFI"),T(":EXEEFI")},
-{11							,T("EFI Boot Service"),T(":EXEEFI")},
-{12							,T("EFI runtime"),T(":EXEEFI")},
-{13							,T("EFI ROM"),T(":EXEEFI")},
-{14							,T("XBOX"),T(":EXEXBOX")},
-{0,T("Unknown"),T(":EXE")}
+{IMAGE_SUBSYSTEM_NATIVE,	T("Native"), EXE32USTR},
+{IMAGE_SUBSYSTEM_WINDOWS_GUI, T("GUI"), EXE32USTR},
+{IMAGE_SUBSYSTEM_WINDOWS_CUI, T("CUI"), EXE32UCSTR},
+//{4, "回復コンソール用？"}
+{IMAGE_SUBSYSTEM_OS2_CUI,	T("OS/2"), T(":EXE32OS2")},
+//{6, "？"}
+{IMAGE_SUBSYSTEM_POSIX_CUI,	T("POSIX"), T(":EXEPOSIX")},
+{8,		T("Win9xDriver"), T(":VXD")},
+{9,		T("WinCE"), T(":EXECE")},
+{10,	T("EFI"), T(":EXEEFI")},
+{11,	T("EFI Boot Service"), T(":EXEEFI")},
+{12,	T("EFI runtime"), T(":EXEEFI")},
+{13,	T("EFI ROM"), T(":EXEEFI")},
+{14,	T("XBOX"), T(":EXEXBOX")},
+{0, T("Unknown"), T(":EXE")}
 };
 
 const TCHAR *exeguitable[] = {
-	T(":EXE32"),T(":EXEIA64"),T(":EXEX64"),EXE32USTR
+	T(":EXE32"), T(":EXEIA64"), T(":EXEX64"), EXE32USTR
 };
 const TCHAR *execontable[] = {
-	T(":EXE32C"),T(":EXEIA64C"),T(":EXEX64C"),EXE32UCSTR
+	T(":EXE32C"), T(":EXEIA64C"), T(":EXEX64C"), EXE32UCSTR
 };
 const TCHAR *CheckExeMPU(const TCHAR *idtable[], const TCHAR *id)
 {
@@ -1609,43 +1609,43 @@ struct VERSIONTABLENAMES {
 	const TCHAR *name;
 	const TCHAR *ID;
 } VerTnames[] ={
-	{T("FileDescription"),T("Description")}, // ファイルの説明
-	{T("FileVersion"),T("Version\t")}, // ファイルバージョン
-	{T("CompanyName"),T("CompanyName")}, // 会社名
-	{T("LegalTrademarks"),T("LegalTrademarks")}, // トレンドマーク
-	{T("Comments"),T("Comment\t")},
-	{T("InternalName"),T("InternalName")}, // ファイル名
-	{T("LegalCopyright"),T("LegalCopyright")}, // コピーライト
-	{T("OriginalFilename"),T("OriginalName")}, // オリジナルファイル名
-	{T("ProductName"),T("ProductName")}, // プロダクト名
-	{T("ProductVersion"),T("ProductVersion")}, // プロダクトバージョン
-	{T("PrivateBuild"),T("PrivateBuild")}, // プライベートビルドバージョン
-	{T("SpecialBuild"),T("SpecialBuild")}, // スペシャルビルドバージョン
-	{NULL,NULL}
+	{T("FileDescription"), T("Description")}, // ファイルの説明
+	{T("FileVersion"), T("Version\t")}, // ファイルバージョン
+	{T("CompanyName"), T("CompanyName")}, // 会社名
+	{T("LegalTrademarks"), T("LegalTrademarks")}, // トレンドマーク
+	{T("Comments"), T("Comment\t")},
+	{T("InternalName"), T("InternalName")}, // ファイル名
+	{T("LegalCopyright"), T("LegalCopyright")}, // コピーライト
+	{T("OriginalFilename"), T("OriginalName")}, // オリジナルファイル名
+	{T("ProductName"), T("ProductName")}, // プロダクト名
+	{T("ProductVersion"), T("ProductVersion")}, // プロダクトバージョン
+	{T("PrivateBuild"), T("PrivateBuild")}, // プライベートビルドバージョン
+	{T("SpecialBuild"), T("SpecialBuild")}, // スペシャルビルドバージョン
+	{NULL, NULL}
 };
 
-DefineWinAPI(BOOL,GetFileVersionInfo,(LPCTSTR lptstrFilename, DWORD dwHandle, DWORD dwLen,LPVOID lpData));
-DefineWinAPI(DWORD,GetFileVersionInfoSize,(LPCTSTR lptstrFilename,LPDWORD lpdwHandle));
-DefineWinAPI(BOOL,VerQueryValue,(LPCVOID pBlock,LPCTSTR lpSubBlock,LPVOID *lplpBuffer,PUINT puLen));
+DefineWinAPI(BOOL, GetFileVersionInfo, (LPCTSTR lptstrFilename, DWORD dwHandle, DWORD dwLen, LPVOID lpData));
+DefineWinAPI(DWORD, GetFileVersionInfoSize, (LPCTSTR lptstrFilename, LPDWORD lpdwHandle));
+DefineWinAPI(BOOL, VerQueryValue, (LPCVOID pBlock, LPCTSTR lpSubBlock, LPVOID *lplpBuffer, PUINT puLen));
 
 LOADWINAPISTRUCT VERSIONDLL[] = {
 	LOADWINAPI1T(GetFileVersionInfo),
 	LOADWINAPI1T(GetFileVersionInfoSize),
 	LOADWINAPI1T(VerQueryValue),
-	{NULL,NULL}
+	{NULL, NULL}
 };
 
-void ThWS(char *res,ThSTRUCT *th,TCHAR *base,struct VERSIONTABLENAMES *Vt)
+void ThWS(char *res, ThSTRUCT *th, TCHAR *base, struct VERSIONTABLENAMES *Vt)
 {
 	TCHAR namebuf[80];
 	UINT size;
-	TCHAR buf[0x8000],*p;
+	TCHAR buf[0x8000], *p;
 
-	wsprintf(namebuf,base,Vt->name);
-	if ( IsTrue(DVerQueryValue(res,namebuf,(LPVOID *)&p,&size)) ){
+	wsprintf(namebuf, base, Vt->name);
+	if ( IsTrue(DVerQueryValue(res, namebuf, (LPVOID *)&p, &size)) ){
 		if( (size > 0) && (sizeof(buf) > size) ){
-			wsprintf(buf,T("%s\t:%s")T(NL),Vt->ID,p);
-			ThCatString(th,buf);
+			wsprintf(buf, T("%s\t:%s")T(NL), Vt->ID, p);
+			ThCatString(th, buf);
 		}
 	}
 }
@@ -1654,9 +1654,9 @@ void ThWS(char *res,ThSTRUCT *th,TCHAR *base,struct VERSIONTABLENAMES *Vt)
 #define IMAGE_NT_HEADERS32 IMAGE_NT_HEADERS
 #endif
 
-void GetExeVerInfo(const TCHAR *fname, VFSFILETYPE *result,IMAGE_NT_HEADERS32 *xhdr)
+void GetExeVerInfo(const TCHAR *fname, VFSFILETYPE *result, IMAGE_NT_HEADERS32 *xhdr)
 {
-	TCHAR ibuf[MAX_PATH],base[80];
+	TCHAR ibuf[MAX_PATH], base[80];
 	char *verres;
 	ThSTRUCT th;
 	DWORD size;
@@ -1664,34 +1664,34 @@ void GetExeVerInfo(const TCHAR *fname, VFSFILETYPE *result,IMAGE_NT_HEADERS32 *x
 	DWORD i;
 	HANDLE hVersionDLL;
 
-	hVersionDLL = LoadWinAPI("VERSION.DLL",NULL,VERSIONDLL,LOADWINAPI_LOAD);
+	hVersionDLL = LoadWinAPI("VERSION.DLL", NULL, VERSIONDLL, LOADWINAPI_LOAD);
 	if ( hVersionDLL == NULL ) return;
 
 	ThInit(&th);
 
-	size = DGetFileVersionInfoSize((TCHAR *)fname,NULL);
+	size = DGetFileVersionInfoSize((TCHAR *)fname, NULL);
 	if ( size != 0 ){
-		verres = HeapAlloc(DLLheap,0,size);
+		verres = HeapAlloc(DLLheap, 0, size);
 		if ( verres != NULL ){
-			DGetFileVersionInfo((TCHAR *)fname,0,size,verres);
+			DGetFileVersionInfo((TCHAR *)fname, 0, size, verres);
 
-			if ( IsTrue(DVerQueryValue(verres,T("\\VarFileInfo\\Translation"),(void *)&verlang,(UINT *)&size)) ){
+			if ( IsTrue(DVerQueryValue(verres, T("\\VarFileInfo\\Translation"), (void *)&verlang, (UINT *)&size)) ){
 				// 言語コードに対応した情報を出力する
-				for ( i = size / sizeof(DWORD) ; i ; i--,verlang++ ){
+				for ( i = size / sizeof(DWORD) ; i ; i--, verlang++ ){
 					struct VERSIONTABLENAMES *vt;
 
-					wsprintf(base,T("\\StringFileInfo\\%04x%04x\\%%s"),
-							LOWORD(*verlang),HIWORD(*verlang));
+					wsprintf(base, T("\\StringFileInfo\\%04x%04x\\%%s"),
+							LOWORD(*verlang), HIWORD(*verlang));
 					for ( vt = VerTnames ; vt->name ; vt++ ){
-						ThWS(verres,&th,base,vt);
+						ThWS(verres, &th, base, vt);
 					}
 				}
 			}
-			HeapFree(DLLheap,0,verres);
+			HeapFree(DLLheap, 0, verres);
 		}
 	}
-	wsprintf(ibuf,T("Image base\t:%x"),xhdr->OptionalHeader.ImageBase);
-	ThCatString(&th,ibuf);
+	wsprintf(ibuf, T("Image base\t:%x"), xhdr->OptionalHeader.ImageBase);
+	ThCatString(&th, ibuf);
 	result->info = (TCHAR *)th.bottom;
 	FreeLibrary(hVersionDLL);
 }
@@ -1716,10 +1716,10 @@ ERRORCODE vfd_EXE(const TCHAR *fname, const char *image, DWORD size, const char 
 		p = VFSFindLastEntry(fname);
 		p += FindExtSeparator(p);
 		if (*p == '.') p++;
-		tstrcpy(buf,p);
+		tstrcpy(buf, p);
 		tstrupr(buf);
 		for ( ; eet->ext ; eet++ ){
-			if ( !tstrcmp(eet->ext,buf) ){
+			if ( !tstrcmp(eet->ext, buf) ){
 				OSext = eet->ext;
 				OSexttype = eet->exttype;
 				OSuse = eet->uses;
@@ -1741,7 +1741,7 @@ ERRORCODE vfd_EXE(const TCHAR *fname, const char *image, DWORD size, const char 
 				struct SYSTEMTABLESTRUCT *sts;
 				WORD mid;
 
-				wsprintf(buf,T("Windows %d.%d"),
+				wsprintf(buf, T("Windows %d.%d"),
 					xhdr->OptionalHeader.MajorSubsystemVersion,
 					xhdr->OptionalHeader.MinorSubsystemVersion);
 				OStype = buf;
@@ -1761,7 +1761,7 @@ ERRORCODE vfd_EXE(const TCHAR *fname, const char *image, DWORD size, const char 
 				OStarget2 = sts->name;
 
 				if ( result->flags & VFSFT_INFO ){
-					GetExeVerInfo(fname,result,xhdr);
+					GetExeVerInfo(fname, result, xhdr);
 				}
 				if ( xhdr->FileHeader.Characteristics & IMAGE_FILE_DLL ){
 					OSuse = T("Dynamic Link Library");
@@ -1781,7 +1781,7 @@ ERRORCODE vfd_EXE(const TCHAR *fname, const char *image, DWORD size, const char 
 						// IMAGE_COR20_HEADER の位置を求める
 						vadr = FirstImageSectionHeader(xhdr)->PointerToRawData + (vadr - xhdr->OptionalHeader.BaseOfCode);
 						if ( vadr < size - 0x40 ){
-							wsprintf(buf,T("CLR %d.%d"),
+							wsprintf(buf, T("CLR %d.%d"),
 								*(WORD *)(image + vadr + 4),
 								*(WORD *)(image + vadr + 6));
 						}else{
@@ -1792,9 +1792,9 @@ ERRORCODE vfd_EXE(const TCHAR *fname, const char *image, DWORD size, const char 
 					}else{
 						OSexttype = sts->exttype;
 						if ( OSexttype == EXE32USTR ){
-							OSexttype = CheckExeMPU(exeguitable,OStarget);
+							OSexttype = CheckExeMPU(exeguitable, OStarget);
 						}else if ( OSexttype == EXE32UCSTR ){
-							OSexttype = CheckExeMPU(execontable,OStarget);
+							OSexttype = CheckExeMPU(execontable, OStarget);
 						}
 					}
 				}
@@ -1806,7 +1806,7 @@ ERRORCODE vfd_EXE(const TCHAR *fname, const char *image, DWORD size, const char 
 
 					LastSection = IMAGE_FIRST_SECTION(xhdr) + xhdr->FileHeader.NumberOfSections - 1;
 					secsize = LastSection->PointerToRawData + LastSection->SizeOfRawData;
-					hFF = FindFirstFileL(fname,&ff);
+					hFF = FindFirstFileL(fname, &ff);
 					if ( hFF != INVALID_HANDLE_VALUE ){
 						FindClose(hFF);
 						if ( ((ff.nFileSizeLow > secsize) || ff.nFileSizeHigh) &&
@@ -1818,7 +1818,7 @@ ERRORCODE vfd_EXE(const TCHAR *fname, const char *image, DWORD size, const char 
 							TCHAR *ap;
 
 							ap = buf + tstrlen(buf) + 1;
-							wsprintf(ap,T("%s with Archive 0x%x"),OSuse,secsize);
+							wsprintf(ap, T("%s with Archive 0x%x"), OSuse, secsize);
 							OSuse = ap;
 						}
 					}
@@ -1830,12 +1830,12 @@ ERRORCODE vfd_EXE(const TCHAR *fname, const char *image, DWORD size, const char 
 					OStarget = T("16bit");
 					OStarget2 = T("GUI");
 					OSexttype = T(":EXE16");
-				}else if (((IMAGE_OS2_HEADER *)xhdr)->ne_exetyp == 1){//OS/2,16
+				}else if (((IMAGE_OS2_HEADER *)xhdr)->ne_exetyp == 1){//OS/2, 16
 					OStype = T("OS/2");
 					OStarget = T("16bit");
 					OStarget2 = NilStr;
 					OSexttype = T(":EXE16OS2");
-				}else{	// 0:Unknown,3:DOS4
+				}else{	// 0:Unknown, 3:DOS4
 					OStarget = T("Unknown NE header");
 				}
 			}else if ( ((IMAGE_OS2_HEADER *)xhdr)->ne_magic == 0x584c ){
@@ -1852,12 +1852,12 @@ ERRORCODE vfd_EXE(const TCHAR *fname, const char *image, DWORD size, const char 
 			}
 		}
 	}
-	if ( result->flags & VFSFT_TYPE ) tstrcpy(result->type,OSexttype);
+	if ( result->flags & VFSFT_TYPE ) tstrcpy(result->type, OSexttype);
 	if ( result->flags & VFSFT_TYPETEXT ){
-		wsprintf(result->typetext,T("%s %s %s %s"),
-				OStype,OStarget,OStarget2,OSuse);
+		wsprintf(result->typetext, T("%s %s %s %s"),
+				OStype, OStarget, OStarget2, OSuse);
 	}
-	if ( result->flags & VFSFT_EXT ) tstrcpy(result->ext,OSext);
+	if ( result->flags & VFSFT_EXT ) tstrcpy(result->ext, OSext);
 	return ERROR_MORE_DATA;
 }
 
@@ -1919,7 +1919,7 @@ const TCHAR *Elf32_e_machine[] =
 	T("MIPS RS3000"),
 };
 
-int GetElfValue(DWORD value,BYTE EI_DATA, DWORD valuemax)
+int GetElfValue(DWORD value, BYTE EI_DATA, DWORD valuemax)
 {
 	if ( EI_DATA == 2 /* ELFDATA2MSB */ ){
 		value = ((value & 0xff00) >> 8) | ((value & 0xff) << 8);
@@ -1938,13 +1938,13 @@ ERRORCODE vfd_ELF(const TCHAR *fname, const char *image, DWORD size, const char 
 		const TCHAR *OStype, *OStarget, *OStarget2;
 		Elf32_Ehdr *ehdr = (Elf32_Ehdr *)image;
 
-		OStarget = Elf32_e_machine[GetElfValue(ehdr->e_machine,ehdr->e_ident.EI_DATA,8)];
-		OStarget2 = Elf32_ei_class[GetElfValue(ehdr->e_ident.EI_CLASS,0,2)];
-		OStype = Elf32_e_type[GetElfValue(ehdr->e_type,ehdr->e_ident.EI_DATA,8)];
+		OStarget = Elf32_e_machine[GetElfValue(ehdr->e_machine, ehdr->e_ident.EI_DATA, 8)];
+		OStarget2 = Elf32_ei_class[GetElfValue(ehdr->e_ident.EI_CLASS, 0, 2)];
+		OStype = Elf32_e_type[GetElfValue(ehdr->e_type, ehdr->e_ident.EI_DATA, 8)];
 		result->dtype = 2;
-		tstrcpy(result->type,T(":ELF"));
-		wsprintf(result->typetext,T("Unix/Linux %s %s %s"),
-				OStarget,OStarget2,OStype);
+		tstrcpy(result->type, T(":ELF"));
+		wsprintf(result->typetext, T("Unix/Linux %s %s %s"),
+				OStarget, OStarget2, OStype);
 		if ( result->flags & VFSFT_EXT ) result->ext[0] = '\0';
 		return ERROR_MORE_DATA;
 	}
@@ -1953,12 +1953,12 @@ ERRORCODE vfd_ELF(const TCHAR *fname, const char *image, DWORD size, const char 
 
 // RIFF -----------------------------------------------------------------------
 const VFD_HEADERS RIFFheaders[] = {
-	AH(0,4,"ACON",NULL,":ANI",	"Animated cursors","ANI",DT_scp),
-	AH(0,4,"AVI ",NULL,":AVI",	"Video for windows Movie","AVI",DT_scp),
-	AH(0,4,"RMID",NULL,":SMF",	"RIFF Standard MIDI File","RMI",DT_scp),
-	AH(0,4,"WAVE",NULL,":WAV",	"Wave file","WAV",DT_scp),
-	AH(0,4,"WEBP",NULL,":WEBP",	"WebP image","webp",DT_scp),
-	NH(0,0,NULL,NULL,	":RIFF","RIFF","RIFF",DT_scp)};
+	AH(0, 4, "ACON", NULL, ":ANI",	"Animated cursors", "ANI", DT_scp),
+	AH(0, 4, "AVI ", NULL, ":AVI",	"Video for windows Movie", "AVI", DT_scp),
+	AH(0, 4, "RMID", NULL, ":SMF",	"RIFF Standard MIDI File", "RMI", DT_scp),
+	AH(0, 4, "WAVE", NULL, ":WAV",	"Wave file", "WAV", DT_scp),
+	AH(0, 4, "WEBP", NULL, ":WEBP",	"WebP image", "webp", DT_scp),
+	NH(0, 0, NULL, NULL,	":RIFF", "RIFF", "RIFF", DT_scp)};
 
 #pragma argsused
 ERRORCODE vfd_RIFF(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
@@ -1967,9 +1967,9 @@ ERRORCODE vfd_RIFF(const TCHAR *fname, const char *image, DWORD size, const char
 	UnUsedParam(fname);UnUsedParam(image);UnUsedParam(size);
 
 	for ( vdh = RIFFheaders ; vdh->flags ; vdh++ ){
-		if (!memcmp(header + 8,vdh->header,4)) break;
+		if (!memcmp(header + 8, vdh->header, 4)) break;
 	}
-	SetFileType(result,vdh);
+	SetFileType(result, vdh);
 	return ERROR_MORE_DATA;
 }
 
@@ -1985,21 +1985,21 @@ ERRORCODE vfd_ID3(const TCHAR *fname, const char *image, DWORD size, const char 
 }
 
 const VFD_HEADERS QTheaders[] = {
-	AH(0,4,"3g2a",NULL,	":3GP",	"MPEG4 3GPP2 movie","3GP",DT_scp),
-	AH(0,4,"3g2b",NULL,	":3GP",	"MPEG4 3GPP2 movie","3GP",DT_scp),
-	AH(0,4,"3g2c",NULL,	":3GP",	"MPEG4 3GPP2 movie","3GP",DT_scp),
-	AH(0,4,"3gp4",NULL,	":3GP",	"MPEG4 3GPP movie","3GP",DT_scp),
-	AH(0,4,"3gp5",NULL,	":3GP",	"MPEG4 3GPP movie","3GP",DT_scp),
-	AH(0,4,"3gp6",NULL,	":3GP",	"MPEG4 3GPP movie","3GP",DT_scp),
-	AH(0,4,"3gp7",NULL,	":3GP",	"MPEG4 3GPP movie","3GP",DT_scp),
-	AH(0,4,"heic",NULL,	":HEIC","HEIC image","heic",DT_scp),
-	AH(0,4,"isom",NULL,	":MP4",	"MPEG4 movie","MP4",DT_scp),
-	AH(0,4,"kddi",NULL,	":3GP",	"MPEG4 3GPP movie(KDDI)","3GP",DT_scp),
-	AH(0,4,"mif1",NULL,	":HEIF","HEIF image","heif",DT_scp),
-	AH(0,4,"mmp4",NULL,	":3GP",	"MPEG4 3GPP movie(NTT docomo)","3GP",DT_scp),
-	AH(0,4,"mp41",NULL,	":MP4",	"MP4 v1 movie","MP4",DT_scp),
-	AH(0,4,"mp42",NULL,	":MP4",	"MP4 v2 movie","MP4",DT_scp),
-	NH(0,0,NULL,NULL,	":QT","QuickTime/MPEG4 movie/audio","qt",DT_scp)
+	AH(0, 4, "3g2a", NULL,	":3GP",	"MPEG4 3GPP2 movie", "3GP", DT_scp),
+	AH(0, 4, "3g2b", NULL,	":3GP",	"MPEG4 3GPP2 movie", "3GP", DT_scp),
+	AH(0, 4, "3g2c", NULL,	":3GP",	"MPEG4 3GPP2 movie", "3GP", DT_scp),
+	AH(0, 4, "3gp4", NULL,	":3GP",	"MPEG4 3GPP movie", "3GP", DT_scp),
+	AH(0, 4, "3gp5", NULL,	":3GP",	"MPEG4 3GPP movie", "3GP", DT_scp),
+	AH(0, 4, "3gp6", NULL,	":3GP",	"MPEG4 3GPP movie", "3GP", DT_scp),
+	AH(0, 4, "3gp7", NULL,	":3GP",	"MPEG4 3GPP movie", "3GP", DT_scp),
+	AH(0, 4, "heic", NULL,	":HEIC", "HEIC image", "heic", DT_scp),
+	AH(0, 4, "isom", NULL,	":MP4",	"MPEG4 movie", "MP4", DT_scp),
+	AH(0, 4, "kddi", NULL,	":3GP",	"MPEG4 3GPP movie(KDDI)", "3GP", DT_scp),
+	AH(0, 4, "mif1", NULL,	":HEIF", "HEIF image", "heif", DT_scp),
+	AH(0, 4, "mmp4", NULL,	":3GP",	"MPEG4 3GPP movie(NTT docomo)", "3GP", DT_scp),
+	AH(0, 4, "mp41", NULL,	":MP4",	"MP4 v1 movie", "MP4", DT_scp),
+	AH(0, 4, "mp42", NULL,	":MP4",	"MP4 v2 movie", "MP4", DT_scp),
+	NH(0, 0, NULL, NULL,	":QT", "QuickTime/MPEG4 movie/audio", "qt", DT_scp)
 };
 
 #pragma argsused
@@ -2010,287 +2010,287 @@ ERRORCODE vfd_qt(const TCHAR *fname, const char *image, DWORD size, const char *
 
 	if ( *(WORD *)image != 0 ) return ERROR_NO_DATA_DETECTED;
 	for ( vdh = QTheaders ; vdh->flags ; vdh++ ){
-		if ( memcmp(header + 4,vdh->header,4) == 0 ) break;
+		if ( memcmp(header + 4, vdh->header, 4) == 0 ) break;
 	}
-	SetFileType(result,vdh);
+	SetFileType(result, vdh);
 	return ERROR_MORE_DATA;
 }
 
 // 一般 -----------------------------------------------------------------------
 const VFD_HEADERS RootHeaders[] = {
 										// Image ------------------------------
-AH(0,2,"BM",vfd_BMP,		":BMP",		"BITMAP image","BMP",DT_scp),
-AH(0,4,"GIF8",vfd_GIF,		":GIF",		"GIF image","GIF",DT_scp),
-AH(0,12,"\x89PNG\x0d\x0a\x1a\x0a\0\0\0\x0d",vfd_PNG,	":PNG",		"PNG image","PNG",DT_scp),
-AH(0,11,"\x8aMNG\x0d\x0a\x1a\x0a\0\0",NULL,	":MNG",		"MNG animation","mng",DT_scp),
-AH(0,11,"\x8bJNG\x0d\x0a\x1a\x0a\0\0",NULL,	":JNG",		"JNG image","jng",DT_scp),
-AH(0,4,"II*",NULL,			":TIFF",	"TIFF image","TIF",DT_scp),
-AH(0,4,"II+",NULL,			":BTIFF",	"Big TIFF image","TIF",DT_scp),
-AH(0,4,"MM\0*",NULL,		":TIFF",	"TIFF image","TIF",DT_scp),
-AH(0,4,"MM\0+",NULL,		":BTIFF",	"Big TIFF image","TIF",DT_scp),
-AH(0,4,"II\xbc\1",NULL,		":WDP",		"JPEG XR image","wdp",DT_scp),
-AH(0,2,"\xff\xd8",vfd_JPEG,	":JPEG",	"JPEG image","jpg",DT_scp),
-AH(4,8,"jP  \r\n\x87\xa",NULL,":JP2",	"JPEG 2000 image","jp2",DT_scp),
-AH(0,4,"\xff\x4f\xff\x51",NULL,":J2K",	"JPEG 2000 stream image","j2k",DT_scp),
-AH(0,6,"8BPS\0\1",NULL,		":PSD",		"PhotoShop","PSD",DT_scp),
-AH(0,6,"8BPS\0\2",NULL,		":PSB",		"PhotoShop Big Document","PSB",DT_scp),
-AH(8,4,"AMFF",NULL,			":AMFF",	"AmigaMetaFile","AMFF",DT_scp),
-AH(0,11,"%!PS-Adobe-",NULL,	":PS",		"PostScriptFile","ps",DT_scp),
-AH(1,7,"\0\2\0\0\0\0",NULL,	":TGA",		"TGA image","TGA",DT_scp), //iconとの誤判定
-AH(0,4,"\0\0\1",vfd_Icon,	":ICON",	"Icon image","ICO",DT_scp),
-AH(0,4,"\0\0\2",vfd_Icon,	":CUR",		"Cursor image","CUR",DT_scp),
-//AH(0,4,"PICT",NULL,			":PICT",	"Macintosh Pictures","PCT",DT_scp),
-AH(0x20a,4,"\0\x11\x02\xff",NULL,	":PICT",	"Macintosh Pictures","PIC",DT_scp),
-AH(0,3,"\xa\0\1",NULL,		":PCX",		"PC Paintbrush 2.5 image","PCX",DT_scp),
-AH(0,3,"\xa\2\1",NULL,		":PCX",		"PC Paintbrush 2.8 image","PCX",DT_scp),
-AH(0,3,"\xa\3\1",NULL,		":PCX",		"PC Paintbrush 2.8 image","PCX",DT_scp),
-AH(0,3,"\xa\4\1",NULL,		":PCX",		"PC Paintbrush Win image","PCX",DT_scp),
-AH(0,3,"\xa\5\1",NULL,		":PCX",		"PC Paintbrush 3.0 image","PCX",DT_scp),
-AH(0,6,"MAKI02",NULL,		":MAG",		"MAG image","MAG",DT_scp),
-AH(0,6,"Pixia",NULL,		":PIXIA",	"Pixia image","pxa",DT_scp),
-AH(0,6,"VCLMTF",NULL,		":SVM",		"StarView MetaFile","SVM",DT_scp),
-AH(0,5,"xof 0",NULL,		":X",		"DirectX file format","x",DT_scp),
-AH(0,4,"\x1a\x45\xdf\xa3",vfd_EBML,	":EBML","EBML document","EBML",DT_scp),
+AH(0, 2, "BM", vfd_BMP,		":BMP",		"BITMAP image", "BMP", DT_scp),
+AH(0, 4, "GIF8", vfd_GIF,	":GIF",		"GIF image", "GIF", DT_scp),
+AH(0, 12, "\x89PNG\x0d\x0a\x1a\x0a\0\0\0\x0d", vfd_PNG,	":PNG",		"PNG image", "PNG", DT_scp),
+AH(0, 11, "\x8aMNG\x0d\x0a\x1a\x0a\0\0", NULL,	":MNG",		"MNG animation", "mng", DT_scp),
+AH(0, 11, "\x8bJNG\x0d\x0a\x1a\x0a\0\0", NULL,	":JNG",		"JNG image", "jng", DT_scp),
+AH(0, 4, "II*", NULL,		":TIFF",	"TIFF image", "TIF", DT_scp),
+AH(0, 4, "II+", NULL,		":BTIFF",	"Big TIFF image", "TIF", DT_scp),
+AH(0, 4, "MM\0*", NULL,		":TIFF",	"TIFF image", "TIF", DT_scp),
+AH(0, 4, "MM\0+", NULL,		":BTIFF",	"Big TIFF image", "TIF", DT_scp),
+AH(0, 4, "II\xbc\1", NULL,	":WDP",		"JPEG XR image", "wdp", DT_scp),
+AH(0, 2, "\xff\xd8", vfd_JPEG, ":JPEG",	"JPEG image", "jpg", DT_scp),
+AH(4, 8, "jP  \r\n\x87\xa", NULL, ":JP2",	"JPEG 2000 image", "jp2", DT_scp),
+AH(0, 4, "\xff\x4f\xff\x51", NULL, ":J2K",	"JPEG 2000 stream image", "j2k", DT_scp),
+AH(0, 6, "8BPS\0\1", NULL,	":PSD",		"PhotoShop", "PSD", DT_scp),
+AH(0, 6, "8BPS\0\2", NULL,	":PSB",		"PhotoShop Big Document", "PSB", DT_scp),
+AH(8, 4, "AMFF", NULL,		":AMFF",	"AmigaMetaFile", "AMFF", DT_scp),
+AH(0, 11, "%!PS-Adobe-", NULL, ":PS",	"PostScriptFile", "ps", DT_scp),
+AH(1, 7, "\0\2\0\0\0\0", NULL, ":TGA",	"TGA image", "TGA", DT_scp), //iconとの誤判定
+AH(0, 4, "\0\0\1", vfd_Icon, ":ICON",	"Icon image", "ICO", DT_scp),
+AH(0, 4, "\0\0\2", vfd_Icon, ":CUR",	"Cursor image", "CUR", DT_scp),
+//AH(0, 4, "PICT", NULL,			":PICT",	"Macintosh Pictures", "PCT", DT_scp),
+AH(0x20a, 4, "\0\x11\x02\xff", NULL,	":PICT",	"Macintosh Pictures", "PIC", DT_scp),
+AH(0, 3, "\xa\0\1", NULL,	":PCX",		"PC Paintbrush 2.5 image", "PCX", DT_scp),
+AH(0, 3, "\xa\2\1", NULL,	":PCX",		"PC Paintbrush 2.8 image", "PCX", DT_scp),
+AH(0, 3, "\xa\3\1", NULL,	":PCX",		"PC Paintbrush 2.8 image", "PCX", DT_scp),
+AH(0, 3, "\xa\4\1", NULL,	":PCX",		"PC Paintbrush Win image", "PCX", DT_scp),
+AH(0, 3, "\xa\5\1", NULL,	":PCX",		"PC Paintbrush 3.0 image", "PCX", DT_scp),
+AH(0, 6, "MAKI02", NULL,	":MAG",		"MAG image", "MAG", DT_scp),
+AH(0, 6, "Pixia", NULL,		":PIXIA",	"Pixia image", "pxa", DT_scp),
+AH(0, 6, "VCLMTF", NULL,	":SVM",		"StarView MetaFile", "SVM", DT_scp),
+AH(0, 5, "xof 0", NULL,		":X",		"DirectX file format", "x", DT_scp),
+AH(0, 4, "\x1a\x45\xdf\xa3", vfd_EBML, ":EBML", "EBML document", "EBML", DT_scp),
 										// Document ---------------------------
-AH(0x39,12,"<w:document ",NULL,":DOCX",	"Word2007","xml",DT_officex),
+AH(0x39, 12, "<w:document ", NULL, ":DOCX",	"Word2007", "xml", DT_officex),
 
-RH(0x800,5,"<?xml",vfd_HTML,	":XML",		"XML","xml",DT_xml),
-RH(0x800,5,"<HTML",vfd_HTML,	":HTML",	"HTML","html",DT_html),
-RH(0x800,5,"<html",vfd_HTML,	":HTML",	"HTML","html",DT_html),
-RH(0x800,14,"ype: text/html",vfd_HTML2,":HTML","HTML","html",DT_html),
-RH(0x800,1,"<",vfd_HTML,	":HTML",	"HTML like","HTM",DT_html),
-RH(0x2,10,"<\0?\0x\0m\0l",NULL,	":XML",		"XML","xml",DT_uhtml),
-RH(0x2,10,"<\0h\0t\0m\0l",NULL,	":HTML",	"HTML","html",DT_uhtml),
-RH(0x2,2,"<",NULL,	":HTML",	"HTML like","HTM",DT_uhtml),
-RH(0x1000,20,"g: quoted-printable\r",NULL,":QUOTED","quoted text","txt",DT_quoted),
+RH(0x800, 5, "<?xml", vfd_HTML,	":XML",		"XML", "xml", DT_xml),
+RH(0x800, 5, "<HTML", vfd_HTML,	":HTML",	"HTML", "html", DT_html),
+RH(0x800, 5, "<html", vfd_HTML,	":HTML",	"HTML", "html", DT_html),
+RH(0x800, 14, "ype: text/html", vfd_HTML2, ":HTML", "HTML", "html", DT_html),
+RH(0x800, 1, "<", vfd_HTML,	":HTML",	"HTML like", "HTM", DT_html),
+RH(0x2, 10, "<\0?\0x\0m\0l", NULL,	":XML",		"XML", "xml", DT_uhtml),
+RH(0x2, 10, "<\0h\0t\0m\0l", NULL,	":HTML",	"HTML", "html", DT_uhtml),
+RH(0x2, 2, "<", NULL,	":HTML",	"HTML like", "HTM", DT_uhtml),
+RH(0x1000, 20, "g: quoted-printable\r", NULL, ":QUOTED", "quoted text", "txt", DT_quoted),
 
-AH(0,5,"{\\rtf",NULL,		":RTF",		"Rich Text","RTF",DT_rtf),
-AH(0,4,"%PDF",NULL,			":PDF",		"Portable Doc. File","PDF",DT_scp),
-AH(0,7,"010010\0",NULL,		":JIS",		"JIS text","JIS",DT_jis),
-AH(0,7,"010020\0",NULL,		":JIS",		"JIS text","JIS",DT_jis),
-AH(0,7,"020020\0",NULL,		":JIS",		"JIS text","JIS",DT_jis),
-AH(0,7,"030140\0",NULL,		":JIS",		"JIS text","JIS",DT_jis),
-AH(0,4,"DHL1",NULL,			":JIS",		"JIS text","JIS",DT_jis),
-AH(0,4,"DHL2",NULL,			":JIS",		"JIS text","JIS",DT_jis),
-AH(0,3,"2ｾ",NULL,			":WRITE",	"MS-Write","WRI",DT_scp),
-AH(0,3,"1ｾ",NULL,			":WRITE",	"MS-Write","WRI",DT_scp),
-AH(0,4,"\x1d}\0\0",NULL,	":WS",		"WordStar","WS",DT_scp),
-AH(0,4,"\xffWPC",NULL,		":WP",		"WordPerfect","WPD",DT_scp),
-AH(0,2,"\xd0\xcf",vfd_COM,	":DOCS",	"複合ドキュメント","",DT_scp),
-AH(0,2,"\xf1\x10",NULL,		":OA2",		"OASYS2(A)","OA2",DT_oasys),
-AH(0,9,"VjCD0100\4",NULL,	":CDX",		"ChemDraw","CDX",DT_scp),
-AH(0,8,"AC1004\0",NULL,		":ACAD",	"AutoCAD EX-II","",DT_scp),
-AH(0,8,"AC1012\0",NULL,		":ACAD",	"AutoCAD R12","",DT_scp),
-AH(0,8,"AC1013\0",NULL,		":ACAD",	"AutoCAD R13","",DT_scp),
-AH(0,8,"AC1014\0",NULL,		":ACAD",	"AutoCAD R14","",DT_scp),
-AH(0,8,"AC1015\0",NULL,		":ACAD",	"AutoCAD R15/2000","",DT_scp),
-AH(0,8,"AC1018\0",NULL,		":ACAD",	"AutoCAD R18/2004","",DT_scp),
-AH(0,8,"AC1021\0",NULL,		":ACAD",	"AutoCAD R21/2007","",DT_scp),
-AH(0,8,"AC1024\0",NULL,		":ACAD",	"AutoCAD R24/2010","",DT_scp),
-AH(0,8,"AC1027\0",NULL,		":ACAD",	"AutoCAD R27/2013","",DT_scp),
-AH(0,4,"AC10",NULL,			":ACAD",	"AutoCAD","",DT_scp),
-AH(0,6,"(DWF V",NULL,		":DWF",		"Drawing Web Format","DWF",DT_scp),
-AH(0,8,"WordPro",NULL,		":LWP",		"LotusWordPro","LWP",DT_scp),
-AH(0,6,"\x9\0\4\0\2",NULL,	":XLS",		"MS-Excel2","XLS",DT_scp),
-AH(0,4,"EP*\0",NULL,		":MDI",		"Microsoft Document Imaging image","MDI",DT_scp),
-AH(0,8,"\x60\xe\x82\x1\x7\x80\x3",NULL,	":XDW",	"DocuWorks Document","xdw",DT_scp),
+AH(0, 5, "{\\rtf", NULL,	":RTF",		"Rich Text", "RTF", DT_rtf),
+AH(0, 4, "%PDF", NULL,		":PDF",		"Portable Doc. File", "PDF", DT_scp),
+AH(0, 7, "010010\0", NULL,	":JIS",		"JIS text", "JIS", DT_jis),
+AH(0, 7, "010020\0", NULL,	":JIS",		"JIS text", "JIS", DT_jis),
+AH(0, 7, "020020\0", NULL,	":JIS",		"JIS text", "JIS", DT_jis),
+AH(0, 7, "030140\0", NULL,	":JIS",		"JIS text", "JIS", DT_jis),
+AH(0, 4, "DHL1", NULL,		":JIS",		"JIS text", "JIS", DT_jis),
+AH(0, 4, "DHL2", NULL,		":JIS",		"JIS text", "JIS", DT_jis),
+AH(0, 3, "2ｾ", NULL,		":WRITE",	"MS-Write", "WRI", DT_scp),
+AH(0, 3, "1ｾ", NULL,		":WRITE",	"MS-Write", "WRI", DT_scp),
+AH(0, 4, "\x1d}\0\0", NULL,	":WS",		"WordStar", "WS", DT_scp),
+AH(0, 4, "\xffWPC", NULL,	":WP",		"WordPerfect", "WPD", DT_scp),
+AH(0, 2, "\xd0\xcf", vfd_COM, ":DOCS",	"複合ドキュメント", "", DT_scp),
+AH(0, 2, "\xf1\x10", NULL,	":OA2",		"OASYS2(A)", "OA2", DT_oasys),
+AH(0, 9, "VjCD0100\4", NULL, ":CDX",		"ChemDraw", "CDX", DT_scp),
+AH(0, 8, "AC1004\0", NULL,	":ACAD",	"AutoCAD EX-II", "", DT_scp),
+AH(0, 8, "AC1012\0", NULL,	":ACAD",	"AutoCAD R12", "", DT_scp),
+AH(0, 8, "AC1013\0", NULL,	":ACAD",	"AutoCAD R13", "", DT_scp),
+AH(0, 8, "AC1014\0", NULL,	":ACAD",	"AutoCAD R14", "", DT_scp),
+AH(0, 8, "AC1015\0", NULL,	":ACAD",	"AutoCAD R15/2000", "", DT_scp),
+AH(0, 8, "AC1018\0", NULL,	":ACAD",	"AutoCAD R18/2004", "", DT_scp),
+AH(0, 8, "AC1021\0", NULL,	":ACAD",	"AutoCAD R21/2007", "", DT_scp),
+AH(0, 8, "AC1024\0", NULL,	":ACAD",	"AutoCAD R24/2010", "", DT_scp),
+AH(0, 8, "AC1027\0", NULL,	":ACAD",	"AutoCAD R27/2013", "", DT_scp),
+AH(0, 4, "AC10", NULL,		":ACAD",	"AutoCAD", "", DT_scp),
+AH(0, 6, "(DWF V", NULL,	":DWF",		"Drawing Web Format", "DWF", DT_scp),
+AH(0, 8, "WordPro", NULL,	":LWP",		"LotusWordPro", "LWP", DT_scp),
+AH(0, 6, "\x9\0\4\0\2", NULL, ":XLS",		"MS-Excel2", "XLS", DT_scp),
+AH(0, 4, "EP*\0", NULL,		":MDI",		"Microsoft Document Imaging image", "MDI", DT_scp),
+AH(0, 8, "\x60\xe\x82\x1\x7\x80\x3", NULL,	":XDW",	"DocuWorks Document", "xdw", DT_scp),
 
-AH(0,11,"BEGIN:VCARD",NULL,	":VCF",		"vCard","vcf",DT_text),
-AH(0,15,"BEGIN:VCALENDAR",NULL,	":VCS",	"vCalendar","vcs",DT_text),
-RH(0xc00,16,"xl/_rels/workboo",NULL,":XLSX",	"Excel2007","xlsx",DT_scp),
-RH(0xc00,16,"word/_rels/docum",NULL,":DOCX",	"Word2007","docx",DT_scp),
-RH(0x1000,12,"ppt/slides/s",NULL,	":PPTX",	"PowerPoint2007","pptx",DT_scp),
-AH(0,4,"\'\\\" ",NULL,		":MAN",		"Manual text","",DT_scp),
-AH(0,4,".TH ",NULL,			":MAN",		"Manual text","",DT_scp),
+AH(0, 11, "BEGIN:VCARD", NULL, ":VCF",		"vCard", "vcf", DT_text),
+AH(0, 15, "BEGIN:VCALENDAR", NULL, ":VCS",	"vCalendar", "vcs", DT_text),
+RH(0xc00, 16, "xl/_rels/workboo", NULL, ":XLSX",	"Excel2007", "xlsx", DT_scp),
+RH(0xc00, 16, "word/_rels/docum", NULL, ":DOCX",	"Word2007", "docx", DT_scp),
+RH(0x1000, 12, "ppt/slides/s", NULL, ":PPTX",	"PowerPoint2007", "pptx", DT_scp),
+AH(0, 4, "\'\\\" ", NULL,	":MAN",		"Manual text", "", DT_scp),
+AH(0, 4, ".TH ", NULL,		":MAN",		"Manual text", "", DT_scp),
 										// Media ------------------------------
-AH(0,4,"MThd",NULL,			":SMF",		"Standerd Midi Format","MID",DT_scp),
-AH(0,4,"RIFF",vfd_RIFF,		":RIFF",	"RIFF","RIFF",DT_scp),
-AH(0,4,"RCM-",NULL,			":RCM",		"RECOMPOSER","RCP",DT_scp),
-AH(0,4,"\0\0\1\xba",NULL,	":MPG",		"MPEG movie","mpg",DT_scp),
-AH(0,4,"\0\0\1\xb3",NULL,	":MPG",		"MPEG movie","mpg",DT_scp),
-AH(0,2,"\xff\xfb",NULL,		":MP3",		"MPEG1 Layer 3","mp3",DT_scp),
-AH(0,2,"\xff\xf3",NULL,		":MP3",		"MPEG2 Layer 3","mp3",DT_scp),
-AH(0,3,"ID3",vfd_ID3,		":MP3",		"MPEG1/2 Layer 3 with ID3v2","mp3",DT_scp),
-AH(4,4,"ftyp",vfd_qt,		":QT",		"qt","qt",DT_scp),
-AH(0,2,"0&",NULL,			":ASF",		"WindowsMediaTec.","asf",DT_scp),
-AH(0,4,".RMF",NULL,			":RM",		"RealAudio movie","rm",DT_scp),
-AH(4,6,"moov\0",NULL,		":QT",		"QuickTime movie","qt",DT_scp),
-AH(0,8,"\0\0\0\x08wide",NULL,":MOV",	"QuickTime movie","mov",DT_scp),
-AH(0,5,"fLaC",NULL,			":FLAC",	"FLAC audio","flac",DT_scp),
-AH(0,4,"OggS",NULL,			":OGGV",	"Ogg Vorbis audio","ogg",DT_scp),
-AH(0,4,"dns.",NULL,			":AU",		"Audio file(Sun,Next)","au",DT_scp),
-AH(0,6,"\xd7\xcd\xc6\x9a\0",NULL,":WMF","Placeable Windows Meta File","WMF",DT_scp),
-AH(0,4,"\1\0\x09",NULL,		":WMF",		"Windows MetaFile","WMF",DT_scp),
-AH(0x28,4," EMF",vfd_EMF,	":EMF",		"Enhanced MetaFile","EMF",DT_emf),
-AH(0,3,"FWS",NULL,			":SWF",		"Flash Contents","swf",DT_scp),
-AH(0,3,"CWS",NULL,			":SWF",		"Flash Contents(Compressed)","swf",DT_scp),
-AH(0,3,"FLV",NULL,			":FLV",		"Flash Video","flv",DT_scp),
+AH(0, 4, "MThd", NULL,		":SMF",		"Standerd Midi Format", "MID", DT_scp),
+AH(0, 4, "RIFF", vfd_RIFF,	":RIFF",	"RIFF", "RIFF", DT_scp),
+AH(0, 4, "RCM-", NULL,		":RCM",		"RECOMPOSER", "RCP", DT_scp),
+AH(0, 4, "\0\0\1\xba", NULL, ":MPG",		"MPEG movie", "mpg", DT_scp),
+AH(0, 4, "\0\0\1\xb3", NULL, ":MPG",		"MPEG movie", "mpg", DT_scp),
+AH(0, 2, "\xff\xfb", NULL,	":MP3",		"MPEG1 Layer 3", "mp3", DT_scp),
+AH(0, 2, "\xff\xf3", NULL,	":MP3",		"MPEG2 Layer 3", "mp3", DT_scp),
+AH(0, 3, "ID3", vfd_ID3,	":MP3",		"MPEG1/2 Layer 3 with ID3v2", "mp3", DT_scp),
+AH(4, 4, "ftyp", vfd_qt,	":QT",		"qt", "qt", DT_scp),
+AH(0, 2, "0&", NULL,		":ASF",		"WindowsMediaTec.", "asf", DT_scp),
+AH(0, 4, ".RMF", NULL,		":RM",		"RealAudio movie", "rm", DT_scp),
+AH(4, 6, "moov\0", NULL,	":QT",		"QuickTime movie", "qt", DT_scp),
+AH(0, 8, "\0\0\0\x08wide", NULL, ":MOV",	"QuickTime movie", "mov", DT_scp),
+AH(0, 5, "fLaC", NULL,		":FLAC",	"FLAC audio", "flac", DT_scp),
+AH(0, 4, "OggS", NULL,		":OGGV",	"Ogg Vorbis audio", "ogg", DT_scp),
+AH(0, 4, "dns.", NULL,		":AU",		"Audio file(Sun, Next)", "au", DT_scp),
+AH(0, 6, "\xd7\xcd\xc6\x9a\0", NULL, ":WMF", "Placeable Windows Meta File", "WMF", DT_scp),
+AH(0, 4, "\1\0\x09", NULL,	":WMF",		"Windows MetaFile", "WMF", DT_scp),
+AH(0x28, 4, " EMF", vfd_EMF, ":EMF",		"Enhanced MetaFile", "EMF", DT_emf),
+AH(0, 3, "FWS", NULL,		":SWF",		"Flash Contents", "swf", DT_scp),
+AH(0, 3, "CWS", NULL,		":SWF",		"Flash Contents(Compressed)", "swf", DT_scp),
+AH(0, 3, "FLV", NULL,		":FLV",		"Flash Video", "flv", DT_scp),
 
-AH(0,15,"binary stl file",NULL,	":STLB", "STL vector image","stl",DT_scp),
-AH(0,11,"solid ascii",NULL,	":STLA",	"STL vector image","stl",DT_scp),
-AH(0,9,"ISO-10303",NULL,	":STEP",	"STEP CAD image","stp",DT_scp),
-AH(0,6,"#VRML ",NULL,		":VRML",	"VRML vector image","wrl",DT_scp),
-AH(0,4,"glTF",NULL,			":GLTF",	"GL Transmission Format","glb",DT_scp),
+AH(0, 15, "binary stl file", NULL, ":STLB", "STL vector image", "stl", DT_scp),
+AH(0, 11, "solid ascii", NULL, ":STLA",	"STL vector image", "stl", DT_scp),
+AH(0, 9, "ISO-10303", NULL, ":STEP",	"STEP CAD image", "stp", DT_scp),
+AH(0, 6, "#VRML ", NULL,	":VRML",	"VRML vector image", "wrl", DT_scp),
+AH(0, 4, "glTF", NULL,		":GLTF",	"GL Transmission Format", "glb", DT_scp),
 //	Encapsulated PostScript File  %!PS-Adobe-?.? EPSF
 										// Etc --------------------------------
-AH(0,5,"\0\0\x1a\0\0",NULL,	":123",		"Lotus1-2-3","WK3",DT_scp),
-AH(0,5,"\0\0\x1a\0\2",NULL,	":123",		"Lotus1-2-3","WK4",DT_scp),
-AH(0,5,"\0\0\x1a\0\3",NULL,	":123",		"Lotus1-2-3","123",DT_scp),
-AH(3,10,"\0FREELANCE",NULL,	":PRZ",		"LotusFreelance","PRZ",DT_scp),
-AH(0,4,"!BDN",NULL,			":XCHG",	"MS-Exchange mailbox","PST",DT_scp),
-AH(0,2,"?_",NULL,			":HELP",	"WinHELP","HLP",DT_scp),
-AH(0,6,":Base ",NULL,		":HELPC",	"WinHELP Contents","CNT",DT_scp),
-AH(0,4,"ITSF",NULL,			":HHELP",	"HtmlHELP","CHM",DT_scp),
-AH(0,4,"DOC",vfd_JUST,		":JUST",	"Justsystem app.","",DT_scp),
-AH(0,4,"PMCC",NULL,			":GRP",		"PROGMAN GROUP","GRP",DT_scp),
-AH(4,3,"\x82\x6am",NULL,	":MBC",		"KTX macro binary","MBC",DT_scp),
-AH(0,2,"\x00x",NULL,		":PIF",		"PIF/95","PIF",DT_scp),
-AH(0,2,"\x00\x4b",NULL,		":PIF",		"PIF/NT","PIF",DT_scp),
-AH(0,4,"\x4c\0\0",vfd_link,	":LINK",	"Link","lnk",DT_scp),
-AH(0,10,"!<symlink>",NULL,	":CLINK",	"cygwin symbolic Link","",DT_scp),
-AH(0x12,13,"\x52\0\x65\0\x67\0\x69\0\x73\0\x74\0\x72",NULL,	":REG",	"Registry file","reg",DT_utextL),
-AH(0x3c,8,"TEXtREAd",NULL,	":PDOC",	"Palm document","PRC",DT_scp),
-AH(4,16,"Standard Jet DB",NULL,":MDB",	"MS-Access DB","MDB",DT_scp),
-AH(0,4,"MSFT",NULL,			":MSFT",	"Type Library","TLB",DT_scp),
-AH(0,4,"\0\1\0\0",vfd_TTF,	":TTF",		"TrueType Font","TTF",DT_scp),
-AH(0,5,"ttcf\0",vfd_TTF,	":TTC",		"TrueType Font Collection","TTC",DT_scp),
-AH(0,16,"JASC BROWS FILE",NULL,":JBF",	"Paint Shop Pro Thumb nail cache","JBF",DT_scp),
-AH(0,4,"ID;P",NULL,			":SLK",		"SYLK form","SLK",DT_scp),
+AH(0, 5, "\0\0\x1a\0\0", NULL, ":123",		"Lotus1-2-3", "WK3", DT_scp),
+AH(0, 5, "\0\0\x1a\0\2", NULL, ":123",		"Lotus1-2-3", "WK4", DT_scp),
+AH(0, 5, "\0\0\x1a\0\3", NULL, ":123",		"Lotus1-2-3", "123", DT_scp),
+AH(3, 10, "\0FREELANCE", NULL, ":PRZ",		"LotusFreelance", "PRZ", DT_scp),
+AH(0, 4, "!BDN", NULL,		":XCHG",	"MS-Exchange mailbox", "PST", DT_scp),
+AH(0, 2, "?_", NULL,		":HELP",	"WinHELP", "HLP", DT_scp),
+AH(0, 6, ":Base ", NULL,	":HELPC",	"WinHELP Contents", "CNT", DT_scp),
+AH(0, 4, "ITSF", NULL,		":HHELP",	"HtmlHELP", "CHM", DT_scp),
+AH(0, 4, "DOC", vfd_JUST,	":JUST",	"Justsystem app.", "", DT_scp),
+AH(0, 4, "PMCC", NULL,		":GRP",		"PROGMAN GROUP", "GRP", DT_scp),
+AH(4, 3, "\x82\x6am", NULL,	":MBC",		"KTX macro binary", "MBC", DT_scp),
+AH(0, 2, "\x00x", NULL,		":PIF",		"PIF/95", "PIF", DT_scp),
+AH(0, 2, "\x00\x4b", NULL,	":PIF",		"PIF/NT", "PIF", DT_scp),
+AH(0, 4, "\x4c\0\0", vfd_link, ":LINK",	"Link", "lnk", DT_scp),
+AH(0, 10, "!<symlink>", NULL, ":CLINK",	"cygwin symbolic Link", "", DT_scp),
+AH(0x12, 13, "\x52\0\x65\0\x67\0\x69\0\x73\0\x74\0\x72", NULL,	":REG",	"Registry file", "reg", DT_utextL),
+AH(0x3c, 8, "TEXtREAd", NULL, ":PDOC",	"Palm document", "PRC", DT_scp),
+AH(4, 16, "Standard Jet DB", NULL, ":MDB",	"MS-Access DB", "MDB", DT_scp),
+AH(0, 4, "MSFT", NULL,		":MSFT",	"Type Library", "TLB", DT_scp),
+AH(0, 4, "\0\1\0\0", vfd_TTF, ":TTF",		"TrueType Font", "TTF", DT_scp),
+AH(0, 5, "ttcf\0", vfd_TTF,	":TTC",		"TrueType Font Collection", "TTC", DT_scp),
+AH(0, 16, "JASC BROWS FILE", NULL, ":JBF",	"Paint Shop Pro Thumb nail cache", "JBF", DT_scp),
+AH(0, 4, "ID;P", NULL,		":SLK",		"SYLK form", "SLK", DT_scp),
 
-AH(0,8,"\3\0\0\0\1\0\0",vfd_yaffs,	":YAFFS",	"yaffs Disk Image","img",DT_scp),
-AH(0,4,"hsqs",vfd_squashfs,	":SQUASHFS",	"squashfs Disk Image","img",DT_scp),
-AH(0x8000,CDHEADERSIZE,StrISO9660,NULL,":CD","CD-ROM Disk Image","iso",DT_scp),
-AH(0x9310,CDHEADERSIZE,StrISO9660,NULL,":CD","CD-ROM Disk Image","bin",DT_scp),
-AH(0x9318,CDHEADERSIZE,StrISO9660,NULL,":CD","CD-ROM XA Disk Image","bin",DT_scp),
-AH(0x8000,CDHEADERSIZE,StrUDF,NULL,	":CD",	"DVD Disk Image","iso",DT_scp),
-AH(0x9310,CDHEADERSIZE,StrUDF,NULL,	":CD",	"DVD Disk Image","bin",DT_scp),
+AH(0, 8, "\3\0\0\0\1\0\0", vfd_yaffs, ":YAFFS",	"yaffs Disk Image", "img", DT_scp),
+AH(0, 4, "hsqs", vfd_squashfs, ":SQUASHFS",	"squashfs Disk Image", "img", DT_scp),
+AH(0x8000, CDHEADERSIZE, StrISO9660, NULL, ":CD", "CD-ROM Disk Image", "iso", DT_scp),
+AH(0x9310, CDHEADERSIZE, StrISO9660, NULL, ":CD", "CD-ROM Disk Image", "bin", DT_scp),
+AH(0x9318, CDHEADERSIZE, StrISO9660, NULL, ":CD", "CD-ROM XA Disk Image", "bin", DT_scp),
+AH(0x8000, CDHEADERSIZE, StrUDF, NULL, ":CD",	"DVD Disk Image", "iso", DT_scp),
+AH(0x9310, CDHEADERSIZE, StrUDF, NULL, ":CD",	"DVD Disk Image", "bin", DT_scp),
 
-//AH(0,4,"\xc3\xab\xcd\xab",NULL,":ACS",	"Microsoft Agent Character File","ACS",DT_scp),
+//AH(0, 4, "\xc3\xab\xcd\xab", NULL, ":ACS",	"Microsoft Agent Character File", "ACS", DT_scp),
 										// PPx --------------------------------
-AH(0,4,"TC1",NULL,			":TC1",		"PPx Customize file","DAT",DT_scp),
-AH(0,4,"TC2",NULL,			":TC2",		"PPx Customize file","DAT",DT_scp),
-AH(0,4,"TH1",NULL,			":TH1",		"PPx History file","DAT",DT_scp),
-AH(0,4,"TH2",NULL,			":TH2",		"PPx History file","DAT",DT_scp),
-AH(0,6,"PPxCFG",NULL,		":XCFG",	"PPx configuration file","CFG",DT_text),
-AH(0,9,UTF8HEADER "PPxCFG",NULL,":XCFG","PPx configuration file","CFG",DT_utf8),
-AH(0,14,"\xff\xfeP\0P\0x\0C\0F\0G",NULL,":XCFG","PPx configuration file","CFG",DT_utextL),
-AH(0,sizeof(LHEADER)-3,LHEADER,NULL,":XLF","PPx list file","TXT",DT_scp),
-AH(2,18,";\0L\0i\0s\0t\0F\0i\0l\0e",NULL,":XLF","PPx list file","TXT",DT_utextL),
-AH(0,9,"'!*script",NULL,	":XVBS",	"PPx script(vbs)","vbs",DT_scp),
-AH(0,9,"#!*script",NULL,	":XPLS",	"PPx script(pls)","pls",DT_scp),
-AH(0,10,"//!*script",NULL,	":XJS",		"PPx script(js)","js",DT_scp),
-AH(0,13,UTF8HEADER "//!*script",NULL,	":XJS",		"PPx script(js)","js",DT_text),
+AH(0, 4, "TC1", NULL,		":TC1",		"PPx Customize file", "DAT", DT_scp),
+AH(0, 4, "TC2", NULL,		":TC2",		"PPx Customize file", "DAT", DT_scp),
+AH(0, 4, "TH1", NULL,		":TH1",		"PPx History file", "DAT", DT_scp),
+AH(0, 4, "TH2", NULL,		":TH2",		"PPx History file", "DAT", DT_scp),
+AH(0, 6, "PPxCFG", NULL,	":XCFG",	"PPx configuration file", "CFG", DT_text),
+AH(0, 9, UTF8HEADER "PPxCFG", NULL, ":XCFG", "PPx configuration file", "CFG", DT_utf8),
+AH(0, 14, "\xff\xfeP\0P\0x\0C\0F\0G", NULL, ":XCFG", "PPx configuration file", "CFG", DT_utextL),
+AH(0, sizeof(LHEADER)-3, LHEADER, NULL, ":XLF", "PPx list file", "TXT", DT_scp),
+AH(2, 18, ";\0L\0i\0s\0t\0F\0i\0l\0e", NULL, ":XLF", "PPx list file", "TXT", DT_utextL),
+AH(0, 9, "'!*script", NULL,	":XVBS",	"PPx script(vbs)", "vbs", DT_scp),
+AH(0, 9, "#!*script", NULL,	":XPLS",	"PPx script(pls)", "pls", DT_scp),
+AH(0, 10, "//!*script", NULL,	":XJS",		"PPx script(js)", "js", DT_scp),
+AH(0, 13, UTF8HEADER "//!*script", NULL,	":XJS",		"PPx script(js)", "js", DT_text),
 										// Text -------------------------------
-AH(0,2,UCF2HEADER,NULL,		":UTEXT",	"UNICODE text","txt",DT_utextL),
-AH(0,4,"\xd\x0\xa\0x0",NULL,":UTEXT","UNICODE text","TXT",DT_utf16L),
-AH(0,2,"\xfe\xff",NULL,		":BUTXT",	"Big endian UNICODE","TXT",DT_utextB),
-AH(0,4,"\x0\xd\x0\0xa",NULL,":BUTXT",	"Big endian UNICODE","TXT",DT_utf16B),
-AH(0,3,UTF8HEADER,NULL,	":UTF8",	"UTF-8 text","TXT",DT_utf8),
-RH(0x1000,10,"\n#include ",vfd_text,":C",	"C/C like source","c",DT_c),
-RH(0x1000,10,"\n#include\t",vfd_text,":C",	"C/C like source","c",DT_c),
-AH(0,10,"Received: ",NULL,":EML",		"E-Mail message","eml",DT_text),
-AH(0,13,"Return-Path: ",NULL,":EML",	"E-Mail message","eml",DT_text),
+AH(0, 2, UCF2HEADER, NULL,	":UTEXT",	"UNICODE text", "txt", DT_utextL),
+AH(0, 4, "\xd\x0\xa\0x0", NULL, ":UTEXT", "UNICODE text", "TXT", DT_utf16L),
+AH(0, 2, "\xfe\xff", NULL,	":BUTXT",	"Big endian UNICODE", "TXT", DT_utextB),
+AH(0, 4, "\x0\xd\x0\0xa", NULL, ":BUTXT",	"Big endian UNICODE", "TXT", DT_utf16B),
+AH(0, 3, UTF8HEADER, NULL,	":UTF8",	"UTF-8 text", "TXT", DT_utf8),
+RH(0x1000, 10, "\n#include ", vfd_text, ":C",	"C/C like source", "c", DT_c),
+RH(0x1000, 10, "\n#include\t", vfd_text, ":C",	"C/C like source", "c", DT_c),
+AH(0, 10, "Received: ", NULL, ":EML",		"E-Mail message", "eml", DT_text),
+AH(0, 13, "Return-Path: ", NULL, ":EML",	"E-Mail message", "eml", DT_text),
 										// Encode -----------------------------
-AH(0,7,"\x1a\0\0\0\x1a\0",NULL,":SSF",	"MULTI2 encode","SSF",DT_scp),
+AH(0, 7, "\x1a\0\0\0\x1a\0", NULL, ":SSF",	"MULTI2 encode", "SSF", DT_scp),
 										// Archive ----------------------------
-AH(0x101,5,"ustar",NULL,	":TAR",		"Tar archive","tar",DT_scp),
-AH(0,8,"!<arch>\xa",NULL,	":AR",		"AR archive","ar",DT_scp),
-AH(0,2,"\xc7\x71",NULL,		":CPIO",	"CPIO archive","ar",DT_scp),
-AH(0,4,"SZDD",NULL,			":SZDD",	"MS-COMPRESS 5 archive","",DT_scp),
-AH(0,4,"KWAJ",NULL,			":KWAJ",	"MS-COMPRESS 6 archive","",DT_scp),
-AH(0,3,"ZOO",NULL,			":ZOO",		"ZOO archive","ZOO",DT_scp),
-AH(0,3,"\x1f\x9d\x90",NULL,	":Z",		"compress archive","z",DT_scp),
-AH(0,3,"BZh",NULL,			":BZIP2",	"bzip2 archive","bz2",DT_scp),
-AH(0,2,"\x1f\x8b",NULL,		":GZIP",	"gzip archive","gz",DT_scp),
-AH(0,4,"\xed\xab\xee\xdb",NULL,":RPM",	"RPM package","rpm",DT_scp),
-AH(0,3,"2.0",NULL,			":DEB",		"Debian package","deb",DT_scp),
-AH(0,6,"MSWIM",NULL,		":WIM",	"Windows Imaging Format archive","wim",DT_scp),
-AH(0,4,"\x78\x9f\x3e\x22",NULL,	":TNEF","TNEF/winmail.dat archive","dat",DT_scp),
+AH(0x101, 5, "ustar", NULL,	":TAR",		"Tar archive", "tar", DT_scp),
+AH(0, 8, "!<arch>\xa", NULL, ":AR",		"AR archive", "ar", DT_scp),
+AH(0, 2, "\xc7\x71", NULL,	":CPIO",	"CPIO archive", "ar", DT_scp),
+AH(0, 4, "SZDD", NULL,		":SZDD",	"MS-COMPRESS 5 archive", "", DT_scp),
+AH(0, 4, "KWAJ", NULL,		":KWAJ",	"MS-COMPRESS 6 archive", "", DT_scp),
+AH(0, 3, "ZOO", NULL,		":ZOO",		"ZOO archive", "ZOO", DT_scp),
+AH(0, 3, "\x1f\x9d\x90", NULL, ":Z",	"compress archive", "z", DT_scp),
+AH(0, 3, "BZh", NULL,		":BZIP2",	"bzip2 archive", "bz2", DT_scp),
+AH(0, 2, "\x1f\x8b", NULL,	":GZIP",	"gzip archive", "gz", DT_scp),
+AH(0, 4, "\xed\xab\xee\xdb", NULL, ":RPM",	"RPM package", "rpm", DT_scp),
+AH(0, 3, "2.0", NULL,		":DEB",		"Debian package", "deb", DT_scp),
+AH(0, 6, "MSWIM", NULL,		":WIM",		"Windows Imaging Format archive", "wim", DT_scp),
+AH(0, 4, "\x78\x9f\x3e\x22", NULL, ":TNEF", "TNEF/winmail.dat archive", "dat", DT_scp),
 // RH(0,～ はここから RH_L までに限定すること
-RH(0,4,"MSCF",vfd_CAB,		":CAB",		"MS-CABINET archive","CAB",DT_scp),
-RH(0,4,"PK\3\4",vfd_PK,		":PKZIP",	"PKZIP archive","ZIP",DT_scp),
-RH(0,4,"Rar!",NULL,			":RAR",		"RAR archive","RAR",DT_scp),
-RH(0,3,"-lh",vfd_LHA,		":LHA",		"LHA archive","LZH",DT_scp),
-RH(0,4,"GCA0",NULL,			":GCA",		"GCA archive","GCA",DT_scp),
-RH(0,4,"GCAX",NULL,			":GCA",		"GCA archive","GCA",DT_scp),
-RH(0,4,"7z\xbc\xaf",NULL,	":7Z",		"7-Zip archive","7z",DT_scp),
-RH(0,6,"\xfd" "7zXZ",NULL,	":XZ",		"xz archive","xz",DT_scp),
-RH(0,5,"\x5d\0\0\x4",NULL,	":LZMA",	"lzma archive","lzma",DT_scp),
-RH(0,5,"\x5d\0\0\x80",NULL,	":LZMA",	"lzma archive","lzma",DT_scp),
-RH(0,2,"\x60\xea",vfd_ARJ,	":ARJ",		"ARJ archive","ARJ",DT_scp),
-RH_L(0x4000,3,"-lz",vfd_LHA,	":LHA",		"LArc archive","LZS",DT_scp),
-RH(0x4000,3,"-pm",NULL,		":PMA",		"PMA archive","PMA",DT_scp),
-RH(0x4000,7,"**ACE**",NULL,	":ACE",		"ACE archive","ACE",DT_scp),
-RH(0x4000,8,"StuffIt ",NULL,	":SIT",		"StuffIt archive","SIT",DT_scp),
-AH(8,12,"NullsoftInst",NULL,	":NSIS",	"Nullsoft Scriptable Install System","EXE",DT_scp),
-AH(0,4,"zlb\x1a",NULL,		":ZLIB",	"zlib archive","zlib",DT_scp),
+RH(0, 4, "MSCF", vfd_CAB,	":CAB",		"MS-CABINET archive", "CAB", DT_scp),
+RH(0, 4, "PK\3\4", vfd_PK,	":PKZIP",	"PKZIP archive", "ZIP", DT_scp),
+RH(0, 4, "Rar!", NULL,		":RAR",		"RAR archive", "RAR", DT_scp),
+RH(0, 3, "-lh", vfd_LHA,	":LHA",		"LHA archive", "LZH", DT_scp),
+RH(0, 4, "GCA0", NULL,		":GCA",		"GCA archive", "GCA", DT_scp),
+RH(0, 4, "GCAX", NULL,		":GCA",		"GCA archive", "GCA", DT_scp),
+RH(0, 4, "7z\xbc\xaf", NULL, ":7Z",		"7-Zip archive", "7z", DT_scp),
+RH(0, 6, "\xfd" "7zXZ", NULL, ":XZ",		"xz archive", "xz", DT_scp),
+RH(0, 5, "\x5d\0\0\x4", NULL, ":LZMA",	"lzma archive", "lzma", DT_scp),
+RH(0, 5, "\x5d\0\0\x80", NULL, ":LZMA",	"lzma archive", "lzma", DT_scp),
+RH(0, 2, "\x60\xea", vfd_ARJ, ":ARJ",		"ARJ archive", "ARJ", DT_scp),
+RH_L(0x4000, 3, "-lz", vfd_LHA, ":LHA",		"LArc archive", "LZS", DT_scp),
+RH(0x4000, 3, "-pm", NULL,	":PMA",		"PMA archive", "PMA", DT_scp),
+RH(0x4000, 7, "**ACE**", NULL, ":ACE",		"ACE archive", "ACE", DT_scp),
+RH(0x4000, 8, "StuffIt ", NULL, ":SIT",		"StuffIt archive", "SIT", DT_scp),
+AH(8, 12, "NullsoftInst", NULL, ":NSIS",	"Nullsoft Scriptable Install System", "EXE", DT_scp),
+AH(0, 4, "zlb\x1a", NULL,	":ZLIB",	"zlib archive", "zlib", DT_scp),
 										// Etc2 -------------------------------
-AH(0,2,"MZ",vfd_EXE,		":EXE",		"","EXE",DT_scp),
-AH(0,4,"\x7f\x45LF",vfd_ELF,":ELF",		"UNIX progarm","",DT_scp),
-AH(0,1,"\xfe",vfd_MSXBIN,	":MSXI",	"MSX BSAVE file","BIN",DT_scp),
-AH(0,4,"HU\0",NULL,			":X68K",	"X68000 progarm","x",DT_scp),
-AH(0,2,"MQ",vfd_MQ,			":TOWNS",	"FM-TOWNS progarm","EXG",DT_scp),
-AH(0,2,"P3",vfd_P3,			":TOWNS",	"FM-TOWNS progarm","EXP",DT_scp),
-AH(0,4,"\xCA\xFE\xBA\xBE",NULL,":MACU",	"Mac OS X Universal binary","",DT_scp),
-AH(0,4,"\xff\x00\x00\x00",NULL,":E500B","PC-E500 BASIC BINARY","BAS",DT_scp),
-AH(0,4,"\xff\x00\x01\x00",NULL,":E500D","PC-E500 DATA.BAS","BAS",DT_scp),
-AH(0,4,"\xff\x00\x02\x00",NULL,":E500F","PC-E500 FUNCKEY","DAT",DT_scp),
-AH(0,4,"\xff\x00\x04\x01",NULL,":E500E","PC-E500 AER","DAT",DT_scp),
-AH(0,4,"\xff\x00\x06\x01",NULL,":E500I","PC-E500 BSAVE file","BIN",DT_scp),
-AH(0,4,"\xff\x00\x07\x01",NULL,":E500R","PC-E500 RAMFILE","BIN",DT_scp),
-AH(0,4,"\xff\x00\x08\x00",NULL,":E500A","PC-E500 BASIC TEXT","BAS",DT_scp),
-AH(0x42f,11,"\0Apple_HFS",NULL,	":DMG",	"Apple disk image","bin",DT_scp),
-AH(0x4af,11,"\0Apple_HFS",NULL,	":DMG",	"Apple disk image","bin",DT_scp),
-AH(0x1fe,2,"\x55\xaa",vfd_MBRIMG,	":MBR",	"MBR disk image","bin",DT_scp),
-RH(0x8000,1,"\xeb",vfd_FATIMG,	":FAT",		"FAT Disk Image","BIN",DT_scp),
-RH(0x8000,1,"\xe9",vfd_FATIMG,	":FAT",		"FAT Disk Image","BIN",DT_scp),
-AH(0,1,"\0",vfd_MACBIN,			":MACBIN",	"MacBinary","BIN",DT_scp),
-AH(0,6,"\0\5\x16\7\0\2",NULL,	":MACRES",	"Mac Resource Forks","",DT_scp),
-RH(0x8000,1,"\x60",vfd_FATIMG,	":XFD",		"X68000 Disk Image","BIN",DT_scp),
-AH(0,17,"MEDIA DESCRIPTOR\1",NULL,":MDS",	"CD-ROM media descriptor","mds",DT_scp),
-AH(0x1002,6,"\x90\x90IPL1",NULL,":98HD","PC-9801 HD Image","BIN",DT_scp),
-AH(0,4,"COWD",NULL,			":VMDK",	"VMware Disk Image(-3.x)","vmdk",DT_scp),
-AH(0,4,"KDMV",NULL,			":VMDK4",	"VMware Disk Image(4.x)","vmdk",DT_scp),
-AH(0,4,"\xb4\x6e\x68\x44",NULL,	":TIB",	"True Image Disk Image","tib",DT_scp),
-AH(0,10,"conectix\0",NULL,		":VHD",	"VHD Disk Image","vhd",DT_scp),
-AH(0,8,"vhdxfile",NULL,		":VHDX",	"VHDx Disk Image","vhdx",DT_scp),
-AH(0,9,"PGPdMAIN|",NULL,	":PGD",		"PGP Disk Image","pgd",DT_scp),
-AH(0,4,"MSQM",NULL,	":SQM",		"MS Service Quality Monitoring log","sqm",DT_scp),
-{ 0,0,0,NULL,NULL,NULL,NULL,NULL,0}
+AH(0, 2, "MZ", vfd_EXE,		":EXE",		"", "EXE", DT_scp),
+AH(0, 4, "\x7f\x45LF", vfd_ELF, ":ELF",		"UNIX progarm", "", DT_scp),
+AH(0, 1, "\xfe", vfd_MSXBIN, ":MSXI",	"MSX BSAVE file", "BIN", DT_scp),
+AH(0, 4, "HU\0", NULL,		":X68K",	"X68000 progarm", "x", DT_scp),
+AH(0, 2, "MQ", vfd_MQ,		":TOWNS",	"FM-TOWNS progarm", "EXG", DT_scp),
+AH(0, 2, "P3", vfd_P3,		":TOWNS",	"FM-TOWNS progarm", "EXP", DT_scp),
+AH(0, 4, "\xCA\xFE\xBA\xBE", NULL, ":MACU",	"Mac OS X Universal binary", "", DT_scp),
+AH(0, 4, "\xff\x00\x00\x00", NULL, ":E500B", "PC-E500 BASIC BINARY", "BAS", DT_scp),
+AH(0, 4, "\xff\x00\x01\x00", NULL, ":E500D", "PC-E500 DATA.BAS", "BAS", DT_scp),
+AH(0, 4, "\xff\x00\x02\x00", NULL, ":E500F", "PC-E500 FUNCKEY", "DAT", DT_scp),
+AH(0, 4, "\xff\x00\x04\x01", NULL, ":E500E", "PC-E500 AER", "DAT", DT_scp),
+AH(0, 4, "\xff\x00\x06\x01", NULL, ":E500I", "PC-E500 BSAVE file", "BIN", DT_scp),
+AH(0, 4, "\xff\x00\x07\x01", NULL, ":E500R", "PC-E500 RAMFILE", "BIN", DT_scp),
+AH(0, 4, "\xff\x00\x08\x00", NULL, ":E500A", "PC-E500 BASIC TEXT", "BAS", DT_scp),
+AH(0x42f, 11, "\0Apple_HFS", NULL,	":DMG",	"Apple disk image", "bin", DT_scp),
+AH(0x4af, 11, "\0Apple_HFS", NULL,	":DMG",	"Apple disk image", "bin", DT_scp),
+AH(0x1fe, 2, "\x55\xaa", vfd_MBRIMG,	":MBR",	"MBR disk image", "bin", DT_scp),
+RH(0x8000, 1, "\xeb", vfd_FATIMG,	":FAT",		"FAT Disk Image", "BIN", DT_scp),
+RH(0x8000, 1, "\xe9", vfd_FATIMG,	":FAT",		"FAT Disk Image", "BIN", DT_scp),
+AH(0, 1, "\0", vfd_MACBIN,		":MACBIN",	"MacBinary", "BIN", DT_scp),
+AH(0, 6, "\0\5\x16\7\0\2", NULL,	":MACRES",	"Mac Resource Forks", "", DT_scp),
+RH(0x8000, 1, "\x60", vfd_FATIMG,	":XFD",		"X68000 Disk Image", "BIN", DT_scp),
+AH(0, 17, "MEDIA DESCRIPTOR\1", NULL, ":MDS",	"CD-ROM media descriptor", "mds", DT_scp),
+AH(0x1002, 6, "\x90\x90IPL1", NULL, ":98HD", "PC-9801 HD Image", "BIN", DT_scp),
+AH(0, 4, "COWD", NULL,		":VMDK",	"VMware Disk Image(-3.x)", "vmdk", DT_scp),
+AH(0, 4, "KDMV", NULL,		":VMDK4",	"VMware Disk Image(4.x)", "vmdk", DT_scp),
+AH(0, 4, "\xb4\x6e\x68\x44", NULL, ":TIB",	"True Image Disk Image", "tib", DT_scp),
+AH(0, 10, "conectix\0", NULL,	":VHD",	"VHD Disk Image", "vhd", DT_scp),
+AH(0, 8, "vhdxfile", NULL,		":VHDX",	"VHDx Disk Image", "vhdx", DT_scp),
+AH(0, 9, "PGPdMAIN|", NULL,	":PGD",		"PGP Disk Image", "pgd", DT_scp),
+AH(0, 4, "MSQM", NULL,		":SQM",		"MS Service Quality Monitoring log", "sqm", DT_scp),
+{ 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0}
 };
 
 const VFD_HEADERS DirHeader =
-	NH(0,0,NULL,NULL,			":DIR",		"Directory","",DT_scp);
+	NH(0, 0, NULL, NULL,			":DIR",		"Directory", "", DT_scp);
 
 
 const VFD_HEADERS *ReverseList[] = {
-	RootHeaders,JustHeaders,RIFFheaders,NULL
+	RootHeaders, JustHeaders, RIFFheaders, NULL
 };
 
 const VFD_HEADERS AllHeader =
-	NH(0,0,NULL,NULL,			"*",		"Default","",DT_scp);
+	NH(0, 0, NULL, NULL,			"*",		"Default", "", DT_scp);
 
 ERRORCODE ReverseGetFileType(const TCHAR *FileName, VFSFILETYPE *result)
 {
-	const VFD_HEADERS **mainlist,*list;
+	const VFD_HEADERS **mainlist, *list;
 	int mode;
 
 	if ( FileName[0] == '\0' ) return ERROR_NO_DATA_DETECTED;
 	mode = (FileName[0] == ':');
 	for ( mainlist = ReverseList ; *mainlist != NULL ; mainlist++ ){
 		for ( list = *mainlist ; list->flags ; list++ ){
-			if ( !tstricmp(mode ? list->type : list->ext,FileName) ){
-				SetFileType(result,list);
+			if ( !tstricmp(mode ? list->type : list->ext, FileName) ){
+				SetFileType(result, list);
 				return NO_ERROR;
 			}
 		}
 	}
-	if ( mode && !tstricmp(DirHeader.type,FileName) ){
-		SetFileType(result,&DirHeader);
+	if ( mode && !tstricmp(DirHeader.type, FileName) ){
+		SetFileType(result, &DirHeader);
 		return NO_ERROR;
 	}
-	if ( !tstricmp(AllHeader.type,FileName) ){
-		SetFileType(result,&AllHeader);
+	if ( !tstricmp(AllHeader.type, FileName) ){
+		SetFileType(result, &AllHeader);
 		return NO_ERROR;
 	}
 	return ERROR_NO_DATA_DETECTED;
@@ -2298,15 +2298,15 @@ ERRORCODE ReverseGetFileType(const TCHAR *FileName, VFSFILETYPE *result)
 
 VFSDLL ERRORCODE PPXAPI VFSGetFileType(const TCHAR *FileName, const char *image, DWORD size, VFSFILETYPE *result)
 {
-	const VFD_HEADERS *vdh,*vdh_rel = NULL;
-	char buf[VFS_check_size],*p_rel = NULL;
+	const VFD_HEADERS *vdh, *vdh_rel = NULL;
+	char buf[VFS_check_size], *p_rel = NULL;
 	DWORD atr;
 
 	if ( result != NULL ){
 		result->info = NULL;
 		result->comment = NULL;
 	}
-	if ( size == MAX32 ) return ReverseGetFileType(FileName,result);
+	if ( size == MAX32 ) return ReverseGetFileType(FileName, result);
 										// ディレクトリかを判別 ---------------
 	if ( FileName[0] == ':' ){
 		vdh = &DirHeader;
@@ -2328,26 +2328,26 @@ VFSDLL ERRORCODE PPXAPI VFSGetFileType(const TCHAR *FileName, const char *image,
 	if ( size == 0 ){
 		HANDLE hFile;
 
-		hFile = CreateFileL(FileName,GENERIC_READ,
-				FILE_SHARE_WRITE | FILE_SHARE_READ,NULL,
-				OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
+		hFile = CreateFileL(FileName, GENERIC_READ,
+				FILE_SHARE_WRITE | FILE_SHARE_READ, NULL,
+				OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		if ( hFile == INVALID_HANDLE_VALUE ) return GetLastError();
-		size = ReadFileHeader(hFile,(BYTE *)buf,VFS_check_size);
+		size = ReadFileHeader(hFile, (BYTE *)buf, VFS_check_size);
 		CloseHandle(hFile);
 		image = buf;
 	}
 	if ( usertypes != NULL ){
-		if ( IsTrue(CheckUserFileType(image,size,result)) ) return NO_ERROR;
+		if ( IsTrue(CheckUserFileType(image, size, result)) ) return NO_ERROR;
 	}
 										// 判別メイン -------------------------
 	for ( vdh = RootHeaders ; vdh->flags ; vdh++ ){
 		if ( !(vdh->flags & HEADERTYPE_REL) ){	// 固定位置ヘッダ
 			if ( size <= (vdh->off + vdh->hsize) ) continue;
-			if ( 0 == memcmp(image + vdh->off,vdh->header,vdh->hsize) ){
+			if ( 0 == memcmp(image + vdh->off, vdh->header, vdh->hsize) ){
 				ERRORCODE err;
 
 				if ( vdh->mChk == NULL ) goto found;
-				err = vdh->mChk(FileName,image,size,image + vdh->off,result);
+				err = vdh->mChk(FileName, image, size, image + vdh->off, result);
 				if ( err == ERROR_MORE_DATA ) return NO_ERROR;
 				if ( err == NO_ERROR ) goto found;
 				if ( err == ERROR_FILEMARK_DETECTED ) return err;
@@ -2373,12 +2373,12 @@ VFSDLL ERRORCODE PPXAPI VFSGetFileType(const TCHAR *FileName, const char *image,
 				if ( leftsize > 200*1024 ) leftsize = 200*1024;
 			}
 			while ( (leftsize > 0) &&
-					(p = memchr(ptr,*vdh->header,leftsize)) != NULL ){
-				if ( !memcmp(p + 1,vdh->header + 1,vdh->hsize - 1) ){
+					(p = memchr(ptr, *vdh->header, leftsize)) != NULL ){
+				if ( !memcmp(p + 1, vdh->header + 1, vdh->hsize - 1) ){
 					ERRORCODE err = NO_ERROR;
 
 					if ( (vdh->mChk == NULL) ||
-						 (err = vdh->mChk(FileName,image,size,p,result)) == NO_ERROR ){
+						 (err = vdh->mChk(FileName, image, size, p, result)) == NO_ERROR ){
 						if ( vdh->off == 0 ){
 							if ( (p_rel == NULL) || (p < p_rel) ){
 								vdh_rel = vdh;
@@ -2399,16 +2399,16 @@ VFSDLL ERRORCODE PPXAPI VFSGetFileType(const TCHAR *FileName, const char *image,
 	return ERROR_NO_DATA_DETECTED;
 
 found:
-	if ( result != NULL ) SetFileType(result,vdh);
+	if ( result != NULL ) SetFileType(result, vdh);
 	return NO_ERROR;
 }
 
-VFSDLL DWORD PPXAPI ReadFileHeader(HANDLE hFile,BYTE *header, DWORD headersize)
+VFSDLL DWORD PPXAPI ReadFileHeader(HANDLE hFile, BYTE *header, DWORD headersize)
 {
-	DWORD size,moreread,fsize; // Readfile用、追加読込サイズ、読込済みサイズ
+	DWORD size, moreread, fsize; // Readfile用、追加読込サイズ、読込済みサイズ
 
 	fsize = 0;
-	ReadFile(hFile,header,VFS_TINYREADSIZE,&fsize,NULL);
+	ReadFile(hFile, header, VFS_TINYREADSIZE, &fsize, NULL);
 	moreread = headersize - fsize;
 	// EXE ヘッダなら、末尾に書庫があるか調べる
 	if ( (fsize >= VFS_TINYREADSIZE) && (*header == 'M') && (*(header+1) == 'Z') ){
@@ -2424,16 +2424,16 @@ VFSDLL DWORD PPXAPI ReadFileHeader(HANDLE hFile,BYTE *header, DWORD headersize)
 			if ( fsize >
 				((BYTE *)LastSection - header + sizeof(IMAGE_SECTION_HEADER))){
 			size = LastSection->PointerToRawData + LastSection->SizeOfRawData;
-			GetFileInformationByHandle(hFile,&finfo);
+			GetFileInformationByHandle(hFile, &finfo);
 			// EXEヘッダが示すサイズが末尾+署名分のサイズより大きい
 			if ( (finfo.nFileSizeLow > (size + xhdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY].Size) ) &&
 					// EXEが1000h単位に揃えられていない?
 					(finfo.nFileSizeLow != ((size + 0xfff) & 0xfffff000)) ){
 				// EXEフォーマット末尾より後ろの一部分も取得
-				if ( MAX32 != SetFilePointer(hFile,size,NULL,FILE_BEGIN)){
-					ReadFile(hFile,header + VFS_TINYREADSIZE,VFS_ARCREADSIZE,&fsize,NULL);
+				if ( MAX32 != SetFilePointer(hFile, size, NULL, FILE_BEGIN)){
+					ReadFile(hFile, header + VFS_TINYREADSIZE, VFS_ARCREADSIZE, &fsize, NULL);
 					// EXEフォーマット途中を取得
-					SetFilePointer(hFile,VFS_TINYREADSIZE,NULL,FILE_BEGIN);
+					SetFilePointer(hFile, VFS_TINYREADSIZE, NULL, FILE_BEGIN);
 					fsize += VFS_TINYREADSIZE;
 					moreread = headersize - fsize;
 				}
@@ -2450,15 +2450,15 @@ VFSDLL DWORD PPXAPI ReadFileHeader(HANDLE hFile,BYTE *header, DWORD headersize)
 	}
 	if ( moreread ){
 		size = 0;
-		ReadFile(hFile,header + fsize,moreread,&size,NULL);
+		ReadFile(hFile, header + fsize, moreread, &size, NULL);
 		fsize += size;
 	}
-	if ( fsize < headersize ) memset(header + fsize,0,headersize - fsize);
+	if ( fsize < headersize ) memset(header + fsize, 0, headersize - fsize);
 	return fsize;
 }
 
 // Windows が保持している拡張子名から種類を示す文字列を得る -------------------
-VFSDLL BOOL PPXAPI VFSCheckFileByExt(const TCHAR *FileName,TCHAR *result)
+VFSDLL BOOL PPXAPI VFSCheckFileByExt(const TCHAR *FileName, TCHAR *result)
 {
 	const TCHAR *p;
 	TCHAR buf[VFPS];
@@ -2469,11 +2469,11 @@ VFSDLL BOOL PPXAPI VFSCheckFileByExt(const TCHAR *FileName,TCHAR *result)
 	p += FindExtSeparator(p);
 	if (!*p) return FALSE;
 										// 拡張子からキーを求める -------------
-	if (GetRegString(HKEY_CLASSES_ROOT,p,NilStr,buf,TSIZEOF(buf))){
+	if (GetRegString(HKEY_CLASSES_ROOT, p, NilStr, buf, TSIZEOF(buf))){
 										// アプリケーションのシェル -----------
-		if ( !GetRegString(HKEY_CLASSES_ROOT,buf,NilStr,
-										result ? result : buf,TSIZEOF(buf)) ){
-			if ( result != NULL ) tstrcpy(result,buf);
+		if ( !GetRegString(HKEY_CLASSES_ROOT, buf, NilStr,
+				result ? result : buf, TSIZEOF(buf)) ){
+			if ( result != NULL ) tstrcpy(result, buf);
 		}
 		err = TRUE;
 	}

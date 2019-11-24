@@ -135,7 +135,7 @@ DWORD_PTR USECDECL CommandModuleInfoFunc(COMMANDMODULEINFOSTRUCT *ppxa, DWORD cm
 
 			#ifdef UNICODE
 			VFSGetFileType((WCHAR *)&uptr->nums[1], NULL, 0, &vft);
-			strcpyW((TCHAR *)&uptr->nums[1], vft.type);
+			strcpyW((WCHAR *)&uptr->nums[1], vft.type);
 			#else
 			UnicodeToAnsi((WCHAR *)&uptr->nums[1], bufA, sizeof(bufA));
 			VFSGetFileType(bufA, NULL, 0, &vft);
@@ -311,13 +311,12 @@ DWORD_PTR USECDECL CommandModuleInfoFunc(COMMANDMODULEINFOSTRUCT *ppxa, DWORD cm
 			return 1;
 #endif
 		}
-		case PPXCMDID_LONG_RESULT:
-			if ( ppxa->Z == NULL ) return 0;
-		{
-#ifdef UNICODE
+		case PPXCMDID_LONG_RESULT: {
 			SIZE32_T textsize;
 
-			textsize = (wcslen(uptr->str) + 1) * sizeof(WCHAR);
+			if ( ppxa->Z == NULL ) return 0;
+#ifdef UNICODE
+			textsize = (strlenW(uptr->str) + 1) * sizeof(WCHAR);
 			if ( StoreLongParam(ppxa->Z, textsize) == FALSE ) return 0;
 			if ( ThSize(&ppxa->Z->ExtendDst, textsize) == FALSE ){
 				return 0;
@@ -325,8 +324,6 @@ DWORD_PTR USECDECL CommandModuleInfoFunc(COMMANDMODULEINFOSTRUCT *ppxa, DWORD cm
 			memcpy(ppxa->Z->ExtendDst.bottom + ppxa->Z->ExtendDst.top, uptr->str, textsize);
 			ppxa->Z->ExtendDst.top += textsize - sizeof(WCHAR);
 #else
-			SIZE32_T textsize;
-
 			textsize = UnicodeToAnsi(uptr->strW, NULL, 0);
 			if ( StoreLongParam(ppxa->Z, textsize) == FALSE ) return 0;
 			if ( ThSize(&ppxa->Z->ExtendDst, textsize) == FALSE ){
@@ -460,20 +457,114 @@ loaderror:
 	return FALSE;
 }
 
+
+
+
+UTCHAR GetParameter(LPCTSTR *commandline, TCHAR *param, size_t paramlen)
+{
+	const TCHAR *src;
+	TCHAR *dest, *destmax;
+	UTCHAR firstcode, code;
+
+	firstcode = SkipSpace(commandline);
+	if ( (firstcode == '\0') || (firstcode == ',') ){ // パラメータ無し
+		*param = '\0';
+		return firstcode;
+	}
+	dest = param;
+	destmax = dest + paramlen - 1;
+	if ( firstcode == '\"' ){
+		const TCHAR *ptr, *ptrfirst, *ptrlast;
+		TCHAR *dest;
+
+		dest = param;
+		ptrfirst = ptr = *commandline + 1;
+		for ( ; ; ){
+			TCHAR code;
+
+			code = *ptr;
+			if ( (code == '\0') /* || (code == '\r') || (code == '\n')*/ ){
+				ptrlast = ptr;
+				break;
+			}
+			if ( code != '\"' ){
+				ptr++;
+				continue;
+			}
+			// " を見つけた場合の処理
+			if ( *(ptr + 1) != '\"' ){	// "" エスケープ?
+				ptrlast = ptr++; // 単独 " … ここで終わり
+				break;
+			}
+			// エスケープ処理
+			{
+				size_t copysize;
+
+				copysize = ptr - ptrfirst + 1;
+				if ( (dest + copysize) >= destmax ){ // buffer overflow?
+					// " が 1文字エスケープされるので ">=" でok
+					ptrlast = ptr;
+					break;
+				}
+				memcpy(dest, ptrfirst, TSTROFF(copysize));
+				dest += copysize;
+				ptrfirst = (ptr += 2); // " x 2
+				continue;
+			}
+		}
+		*commandline = ptr;
+		{
+			size_t ptrsize;
+
+			ptrsize = ptrlast - ptrfirst;
+			if ( (dest + ptrsize) > destmax ){ // buffer overflow?
+				tstrcpy(param, T("<flow!!>"));
+			}else{
+				memcpy(dest, ptrfirst, TSTROFF(ptrsize));
+				*(dest + ptrsize) = '\0';
+			}
+		}
+		return *param;
+	}
+	src = *commandline + 1;
+	code = firstcode;
+	for ( ;; ){
+		*dest++ = code;
+		code = *src;
+		if ( (dest >= destmax) || (code == ',') || // (code == ' ') ||
+			 ((code < ' ') && ((code == '\0') /*|| (code == '\t') ||
+							   (code == '\r') || (code == '\n')*/)) ){
+			break;
+		}
+		src++;
+	}
+	while ( (dest > param) && (*(dest - 1) == ' ') ) dest--;
+	*dest = '\0';
+	*commandline = src;
+	return firstcode;
+}
+
+
 int CommandModule(EXECSTRUCT *Z, const TCHAR *cmdparam)
 {
-	const WCHAR *param;
-	DWORD paramcount = 0;
-	int result;
-	MODULESTRUCT *mdll;
-	int i;
-	WCHAR cmdbuf[CMDLINESIZE], *next;
 	COMMANDMODULEINFOSTRUCT ppxa;
 	PPXMCOMMANDSTRUCT command;
 	PPXMODULEPARAM module;
+	MODULESTRUCT *mdll;
+	int result;
+
+	const WCHAR *param;
+	DWORD paramcount = 0;
+	int i;
+	WCHAR cmdmainbuf[CMDLINESIZE], *next;
+	WCHAR *cmdbuf, *cmdaltbuf = NULL;
+	size_t cmdlenzW;
+	DWORD bufleft;
 
 #ifndef UNICODE
 	WCHAR regidW[REGIDSIZE], nameW[MAX_PATH];
+	char paramtmpbuf[CMDLINESIZE], *parambuf = paramtmpbuf;
+	DWORD parambuflen = CMDLINESIZE;
 
 	AnsiToUnicode(Z->Info->Name, nameW, MAX_PATH);
 	AnsiToUnicode(Z->Info->RegID, regidW, REGIDSIZE);
@@ -485,37 +576,49 @@ int CommandModule(EXECSTRUCT *Z, const TCHAR *cmdparam)
 #endif
 	if ( ppxmodule_count < 0 ) LoadModuleList();
 	if ( ppxmodule_count <= 0 ) return PPXMRESULT_SKIP; // モジュールがない
-									// arg(0) コマンド名保存
-	strcpyToW(cmdbuf, cmdparam, CMDLINESIZE);
-	param = next = cmdbuf + strlenW(cmdbuf) + 1;
+
+	strcpyToW(cmdmainbuf, cmdparam, CMDLINESIZE); // arg(0) コマンド名
+	cmdlenzW = strlenW(cmdmainbuf) + 1;
 	cmdparam += tstrlen(cmdparam) + 1;
+	if ( (cmdparam >= Z->DstBuf) &&
+		 (cmdparam < (Z->DstBuf + CMDLINESIZE)) ){
+		bufleft = CMDLINESIZE - cmdlenzW;
+		cmdbuf = cmdmainbuf;
+	}else{ // cmdparam が大きいときは、メモリ確保が必要
+		bufleft = cmdlenzW + tstrlen(cmdparam) + 1; // MultiByte のときは多めにメモリ確保することになる
+		#ifdef UNICODE
+			cmdaltbuf = (WCHAR *)HeapAlloc(DLLheap, 0, bufleft * sizeof(WCHAR));
+			if ( cmdaltbuf == NULL ) return PPXMRESULT_SKIP;
+		#else
+			cmdaltbuf = (WCHAR *)HeapAlloc(DLLheap, 0, bufleft * (sizeof(WCHAR) + sizeof(char)) );
+			if ( cmdaltbuf == NULL ) return PPXMRESULT_SKIP;
+			parambuf = (char *)(WCHAR *)(cmdaltbuf + bufleft);
+			parambuflen = bufleft;
+		#endif
+		cmdbuf = cmdaltbuf;
+		strcpyW(cmdaltbuf, cmdmainbuf); // arg(0) コマンド名
+	}
+	param = next = cmdbuf + cmdlenzW;
 									// arg(1...) パラメータの切り出し
-#ifndef UNICODE
-	while( *cmdparam ){
-		char tmp[CMDLINESIZE];
+	while( *cmdparam != '\0' ){
+		size_t len;
 
-		tmp[0] = '\0';
-
-		GetCommandParameter(&cmdparam, tmp, TSIZEOF(tmp));
-	//	GetLfGetParam(&cmdparam, tmp, TSIZEOF(tmp)); // 空白も切れる
-		if ( tmp[0] == '\0' ) break;
-		paramcount++;
-		AnsiToUnicode(tmp, next, CMDLINESIZE);
-		next = next + strlenW(next) + 1;
-		if ( NextParameter(&cmdparam) == FALSE ) break;
-	}
-#else
-	while( *cmdparam ){
+#ifdef UNICODE
 		*next = '\0';
-
-		GetCommandParameter(&cmdparam, next, CMDLINESIZE - VFPS);
-	//	GetLfGetParam(&cmdparam, next, CMDLINESIZE - VFPS); // 空白も切れる
+		GetParameter(&cmdparam, next, bufleft);
 		if ( *next == '\0' ) break;
+#else
+		*parambuf = '\0';
+		GetParameter(&cmdparam, parambuf, parambuflen);
+		if ( *parambuf == '\0' ) break;
+		AnsiToUnicode(parambuf, next, bufleft);
+#endif
 		paramcount++;
-		next = next + strlenW(next) + 1;
+		len = strlenW(next) + 1;
+		next = next + len;
+		bufleft -= len;
 		if ( NextParameter(&cmdparam) == FALSE ) break;
 	}
-#endif
 										// 検索と実行
 	mdll = ppxmodule_list;
 	module.command = &command;
@@ -548,10 +651,12 @@ int CommandModule(EXECSTRUCT *Z, const TCHAR *cmdparam)
 			result = mdll->OldModuleEntry(&ppxa.info, PPXMEVENT_COMMAND, module);
 		}
 #endif
-		if ( result == PPXMRESULT_SKIP ) continue;
-		return result;
+		if ( result != PPXMRESULT_SKIP ) goto end;
 	}
-	return PPXMRESULT_SKIP;
+	result = PPXMRESULT_SKIP;
+end:
+	if ( cmdaltbuf != 0 ) HeapFree(DLLheap, 0, cmdaltbuf);
+	return result;
 }
 #undef PPXAINFONAME
 #undef PPXAINFOREGID
@@ -625,8 +730,8 @@ void SelectTextFunction(EXECSTRUCT *Z, const TCHAR *param)
 
 	opt = SkipSpace(&param);
 	*Z->dst = '\0';
-	if ( Z->flag & XEO_CONSOLE ){
-		Z->result = PPxInfoFunc(Z->Info, PPXCMDID_PPBSELECTTEXT, Z->dst);
+	if ( Z->flags & XEO_CONSOLE ){
+		Z->result = PPxInfoFunc32u(Z->Info, PPXCMDID_PPBSELECTTEXT, Z->dst);
 	}else{
 		SendMessage(Z->hWnd, WM_PPXCOMMAND, KE_seltext, (LPARAM)Z->dst);
 	}
@@ -645,7 +750,7 @@ void SelectTextFunction(EXECSTRUCT *Z, const TCHAR *param)
 #endif
 		srcA = bufA;
 		dest = Z->dst;
-		maxptr = dest + CMDLINESIZE / 2;
+		maxptr = dest + CMDLINESIZE - 300;
 		while ( dest < maxptr ){
 			BYTE c;
 
@@ -680,7 +785,7 @@ void CountJobFunction(EXECSTRUCT *Z)
 // %*maxlength
 void SetMaxLengthFunction(EXECSTRUCT *Z, const TCHAR *param)
 {
-	Z->LongResultLen = GetDigitNumber(&param);
+	Z->LongResultLen = GetDigitNumber32(&param);
 	setflag(Z->status, ST_LONGRESULT);
 }
 
@@ -696,6 +801,125 @@ void GetLinkedPathFunction(EXECSTRUCT *Z, const TCHAR *param)
 	}
 	Z->dst += wsprintf(Z->dst, T("%s"), name);
 	return;
+}
+
+// %*ppxlist
+void GetPPxListFunction(EXECSTRUCT *Z, const TCHAR *param)
+{
+	TCHAR buf[CMDLINESIZE];
+	ThSTRUCT th;
+	ShareX *sx;
+#define LISTMODE_normal 0
+#define LISTMODE_combolist 1
+#define LISTMODE_combofilter 2
+#define NUMMODE_num 0
+#define NUMMODE_numandlist 1
+#define NUMMODE_list 2
+	int items = 0, listmode = LISTMODE_normal, nummode = NUMMODE_numandlist;
+	DWORD useppclist = 0; // 現プロセスで使用しているPPcのID一覧
+	TCHAR *pptr, filter = '\0', combofilter = '\0';
+
+	ThInit(&th);
+
+	// 個数表示モードを決定
+	GetCommandParameter(&param, buf, TSIZEOF(buf));
+	pptr = buf;
+	if ( *pptr == '+' ){
+		pptr++;
+		nummode = NUMMODE_num;
+	}else if ( *pptr == '-' ){
+		pptr++;
+		nummode = NUMMODE_list;
+	}
+
+	// フィルタを決定
+	if ( (*pptr == '#') || ((*pptr == 'C') && ((*(pptr + 1) == '#'))) ){
+		if ( *pptr == 'C' ) pptr++;
+		combofilter = *(pptr + 1);
+		if ( combofilter <= ' ' ){
+			if ( PPxInfoFunc(Z->Info, PPXCMDID_COMBOIDNAME, buf) != 0 ){
+				combofilter = (buf[0] != '\0') ? buf[2] : (TCHAR)'@';
+			}else{
+				filter = '\1'; // 列挙させない
+			}
+			listmode = LISTMODE_combofilter;
+		}else if ( combofilter == '#' ){
+			listmode = LISTMODE_combolist;
+		}else{
+			listmode = LISTMODE_combofilter;
+		}
+	}else if ( Isalpha(*pptr) ){
+		filter = *pptr;
+	}
+
+	// 一体化窓列挙
+	if ( ((filter == '\0') || (filter == 'C')) ){
+		int i = 0, combomax = X_MaxComboID - 1;
+
+		if ( listmode == LISTMODE_combofilter ){
+			i = combomax = (int)(BYTE)(combofilter - 'A');
+		}
+		for ( ; i <= combomax ; i++ ){
+			HWND hComboWnd;
+
+			hComboWnd = Sm->ppc.hComboWnd[i];
+			if ( (hComboWnd == NULL) || (hComboWnd == BADHWND) ){
+				continue;
+			}
+
+			if ( listmode == LISTMODE_combolist ){
+				wsprintf(buf, T("CB%c,"), i + 'A');
+				ThCatString(&th, buf);
+				items++;
+			}else{ // LISTMODE_normal / LISTMODE_combofilter
+				if ( hComboWnd == hProcessComboWnd ){
+					items += GetPPxListFromCurrentCombo(NULL, GetPPxList_IdList, &th, &useppclist, NULL);
+					continue;
+				}
+				items += GetPPxListFromProcessCombo(NULL, GetPPxList_IdList, &th, &useppclist, NULL, hComboWnd);
+			}
+		}
+	}
+
+	// 独立窓列挙
+	if ( listmode == LISTMODE_normal ){
+		int i;
+
+		UsePPx();
+		sx = Sm->P;
+		for ( i = 0 ; i < X_Mtask ; i++, sx++ ){
+			TCHAR ID;
+
+			ID = sx->ID[0];
+			if ( ID == '\0' ) continue;
+			if ( (filter != '\0') && (ID != filter) ) continue;
+			if ( (ID == 'C') && (useppclist & (1 << (sx->ID[2] - 'A'))) ){
+				continue;
+			}
+
+			wsprintf(buf, T("%s,"), sx->ID);
+			ThCatString(&th, buf);
+			items++;
+		}
+		FreePPx();
+	}
+
+	// 結果出力
+	if ( nummode == NUMMODE_num ){
+		Z->dst += wsprintf(Z->dst,T("%d"),items);
+	}else{
+		if ( nummode == NUMMODE_numandlist ){
+			Z->dst += wsprintf(Z->dst,T("%d,"),items);
+		}
+		if ( th.bottom != NULL ){
+			if ( th.top < 1 ){
+				Z->dst += wsprintf(Z->dst, T("%s"), th.bottom);
+			}else if ( IsTrue(StoreLongParam(Z, th.top / sizeof(TCHAR))) ){
+				ThCatString(&Z->ExtendDst, (TCHAR *)th.bottom);
+			}
+		}
+	}
+	ThFree(&th);
 }
 
 // %*name
@@ -791,8 +1015,10 @@ void InputFunctionOption(EXECSTRUCT *Z, TINPUT *tinput, const TCHAR *param, TCHA
 			if ( IsTrue(GetEditMode(&more, &options)) ){
 				tinput->hRtype = options.hist_readflags;
 				tinput->hWtype = HistWriteTypeflag[options.hist_writetype];
-				tinput->flag = (tinput->flag & ~(TIEX_REFTREE | TIEX_SINGLEREF)) |
-						TinputTypeflags[options.hist_writetype] | B31;
+				tinput->flag =
+						(tinput->flag & ~(TIEX_REFTREE | TIEX_SINGLEREF)) |
+						TinputTypeflags[options.hist_writetype] |
+						TIEX_Z_HIST_SETTINGED;
 				SetTInputOptionFlags(tinput, &options);
 			}
 			continue;
@@ -805,15 +1031,21 @@ void InputFunctionOption(EXECSTRUCT *Z, TINPUT *tinput, const TCHAR *param, TCHA
 				if ( (*more == '\0') || (*more == 'a') ){
 					tinput->firstC = 0;
 					tinput->lastC = EC_LAST;
+				}else if ( *more == 'f' ){
+					tinput->firstC = tinput->lastC = -2;
+					if ( *(more + 1) == 's' ) tinput->firstC = 0;
+				}else if ( *more == 'e' ){
+					tinput->firstC = tinput->lastC = -3;
+					if ( *(more + 1) == 's' ) tinput->lastC = EC_LAST;
 				}else if ( *more == 'l' ){
 					tinput->firstC = tinput->lastC = EC_LAST;
 				}else if ( *more == 't' ){
-					tinput->firstC = tinput->lastC = EC_LAST;
+					tinput->firstC = tinput->lastC = 0;
 				}else {
-					tinput->firstC = tinput->lastC = GetDigitNumber(&more);
+					tinput->firstC = tinput->lastC = GetDigitNumber32(&more);
 					if ( SkipSpace(&more) == ',' ){
 						more++;
-						tinput->lastC = GetDigitNumber(&more);
+						tinput->lastC = GetDigitNumber32(&more);
 					}
 				}
 			}
@@ -931,7 +1163,7 @@ UTCHAR ZFixParameter(TCHAR **commandline)
 			TCHAR code;
 
 			code = *src;
-			if ( (code == '\0') || (code == '\r') || (code == '\n') ){
+			if ( code == '\0' ){
 				break;
 			}
 			if ( code != '\"' ){
@@ -956,8 +1188,7 @@ UTCHAR ZFixParameter(TCHAR **commandline)
 			*dest++ = code;
 			code = *src;
 			if ( (code == ',') || // (code == ' ') ||
-				 ((code < ' ') && ((code == '\0') || (code == '\t') ||
-								   (code == '\r') || (code == '\n'))) ){
+				 ((code < ' ') && (code == '\0') ) ){
 				break;
 			}
 			src++;
@@ -1015,63 +1246,13 @@ void CalculationFunction(EXECSTRUCT *Z, TCHAR *param)
 	return;
 }
 
-void NestedFunction(EXECSTRUCT *Z)
-{
-	TCHAR function[CMDLINESIZE], *dst;
-	BOOL separate = FALSE;
-
-	dst = function + wsprintf(function, T("%%*%s"), Z->dst);
-	for ( ;; ){
-		TCHAR code;
-
-		code = *Z->src;
-		if ( (code == '\0') || (code == '\r') || (code == '\n') ||
-			 (dst >= (function + CMDLINESIZE)) ){
-			Z->result = ERROR_INVALID_PARAMETER;
-			return;
-		}
-		*dst++ = code;
-		Z->src++;
-		if ( code == '\"' ){
-			if ( separate == FALSE ){
-				separate = TRUE;
-			}else if ( *Z->src != '\"' ){ // 末尾 "
-				separate = FALSE;
-			}else{ // エスケープ "
-				*Z->dst++ = '\"';
-				Z->src++;
-			}
-		}else if ( (code == ')') && (separate == FALSE) ){
-			break;
-		}
-	}
-	*dst = '\0';
-
-	PP_InitLongParam(Z->dst);
-	Z->result = PP_ExtractMacro(Z->hWnd, Z->Info, NULL, function, Z->dst, XEO_EXTRACTLONG);
-	if ( Z->result == ERROR_PARTIAL_COPY ){
-		TCHAR *Zdst;
-
-		Zdst = Z->dst; // StoreLongParam で Z->dst が変化するので待避
-		if ( IsTrue(StoreLongParam(Z, 0)) ){
-			ThCatString(&Z->ExtendDst, PP_GetLongParamRAW(Zdst));
-		}
-		PP_FreeLongParamRAW(Zdst);
-		Z->result = NO_ERROR;
-	}
-
-	if ( Z->result == NO_ERROR ){
-		while ( *Z->dst != '\0' ) Z->dst++;
-	}
-}
-
 void CallFunction(EXECSTRUCT *Z, TCHAR *cmdname, DWORD namehash, const TCHAR *funcparam)
 {
 	PPXMDLFUNCSTRUCT mdlparam;
 
 	BOOL result;
 	MODULESTRUCT *mdll;
-	WCHAR argbuf[CMDLINESIZE], *next;
+	WCHAR argbuffer[CMDLINESIZE + MAX_PATH], *next, *argbuf = argbuffer;
 	const TCHAR *pptr;
 	COMMANDMODULEINFOSTRUCT ppxa;
 	PPXMCOMMANDSTRUCT function;
@@ -1084,7 +1265,7 @@ void CallFunction(EXECSTRUCT *Z, TCHAR *cmdname, DWORD namehash, const TCHAR *fu
 	mdlparam.dest[0] = '\0';
 	mdlparam.optparam = funcparam;
 
-	if ( 1 != (Z->result = (PPxInfoFunc(Z->Info, PPXCMDID_FUNCTION, &mdlparam) ^ 1)) ){
+	if ( 1 != (Z->result = (PPxInfoFunc32u(Z->Info, PPXCMDID_FUNCTION, &mdlparam) ^ 1)) ){
 		Z->dst += tstrlen(mdlparam.dest);
 		return;
 	}
@@ -1093,6 +1274,7 @@ void CallFunction(EXECSTRUCT *Z, TCHAR *cmdname, DWORD namehash, const TCHAR *fu
 	{
 		DWORD paramcount = 0;
 		int i;
+		size_t arglength, cmdlength;
 #ifndef UNICODE
 		WCHAR regidW[REGIDSIZE], nameW[MAX_PATH], destW[CMDLINESIZE];
 
@@ -1108,33 +1290,40 @@ void CallFunction(EXECSTRUCT *Z, TCHAR *cmdname, DWORD namehash, const TCHAR *fu
 #endif
 		if ( ppxmodule_count < 0 ) LoadModuleList();
 
+		arglength = tstrlen(funcparam) + MAX_PATH;
+		if ( arglength >= TSIZEOFW(argbuffer) ){
+			argbuf = HeapAlloc(DLLheap, 0, arglength * sizeof(WCHAR));
+			if ( argbuf == NULL ) return;
+		}else{
+			arglength = TSIZEOFW(argbuffer);
+		}
 		// arg の用意
 		strcpyToW(argbuf, cmdname, MAX_PATH); // arg(0) コマンド名保存
-		function.param = next = argbuf + strlenW(argbuf) + 1;
+		cmdlength = strlenW(argbuf) + 1;
+		function.param = next = argbuf + cmdlength;
+		arglength -= cmdlength;
 		pptr = funcparam;
 									// arg(1...) パラメータの切り出し
-#ifndef UNICODE
 		while ( *pptr ){
+			size_t len;
+#ifdef UNICODE
+			*next = '\0';
+			GetCommandParameter(&pptr, next, arglength);
+			if ( (*next == '\0') && (SkipSpace(&pptr) != ',') ) break;
+#else
 			char tmp[CMDLINESIZE];
 
 			tmp[0] = '\0';
 			GetCommandParameter(&pptr, tmp, TSIZEOF(tmp));
 			if ( (tmp[0] == '\0') && (SkipSpace(&pptr) != ',') ) break;
-			paramcount++;
-			AnsiToUnicode(tmp, next, CMDLINESIZE);
-			next = next + strlenW(next) + 1;
-			if ( NextParameter(&pptr) == FALSE ) break;
-		}
-#else
-		while ( *pptr ){
-			*next = '\0';
-			GetCommandParameter(&pptr, next, CMDLINESIZE - VFPS);
-			if ( (*next == '\0') && (SkipSpace(&pptr) != ',') ) break;
-			paramcount++;
-			next = next + strlenW(next) + 1;
-			if ( NextParameter(&pptr) == FALSE ) break;
-		}
+			AnsiToUnicode(tmp, next, arglength);
 #endif
+			len = strlenW(next) + 1;
+			next = next + len;
+			arglength -= len;
+			paramcount++;
+			if ( NextParameter(&pptr) == FALSE ) break;
+		}
 		GetCurrentDirectory(TSIZEOF(olddir), olddir);
 		SetCurrentDirectory(GetZCurDir(Z));
 										// function module実行
@@ -1180,12 +1369,11 @@ void CallFunction(EXECSTRUCT *Z, TCHAR *cmdname, DWORD namehash, const TCHAR *fu
 
 // user関数
 		((TCHAR *)argbuf)[CMDLINESIZE - 1] = '\0';
-		if ( NO_ERROR != GetCustTable(StrUserCommand, cmdname, (TCHAR *)argbuf, sizeof(argbuf)) ){
+		if ( NO_ERROR != GetCustTable(StrUserCommand, cmdname, (TCHAR *)argbuf, TSTROFF(CMDLINESIZE)) ){
 			XMessage(NULL, NULL, XM_GrERRld, T("Unknown function: %%*%s"), cmdname);
 			Z->result = ERROR_INVALID_FUNCTION;
 		}else{
-			tstrcpy(cmdname + tstrlen(cmdname) + 1, funcparam);
-
+			PP_InitLongParam(Z->dst);
 			if ( ((TCHAR *)argbuf)[CMDLINESIZE - 1] != '\0' ){
 				TCHAR *longbuf;
 				int size = GetCustTableSize(StrUserCommand, cmdname);
@@ -1196,15 +1384,25 @@ void CallFunction(EXECSTRUCT *Z, TCHAR *cmdname, DWORD namehash, const TCHAR *fu
 					goto endfunc;
 				}
 				GetCustTable(StrUserCommand, cmdname, longbuf, size);
-				UserCommand(Z, cmdname, longbuf, Z->dst);
+				UserCommand(Z, cmdname, funcparam, longbuf, Z->dst);
 				HeapFree(DLLheap, 0, longbuf);
 			}else{
-				UserCommand(Z, cmdname, (TCHAR *)argbuf, Z->dst);
+				UserCommand(Z, cmdname, funcparam, (TCHAR *)argbuf, Z->dst);
 			}
-			Z->dst += tstrlen(Z->dst);
+			if ( Z->result == ERROR_PARTIAL_COPY ){
+				Z->result = NO_ERROR;
+				*Z->dst = '\0';
+				if ( IsTrue(StoreLongParam(Z, 0)) ){
+					ThCatString(&Z->ExtendDst, PP_GetLongParamRAW(Z->dst));
+				}
+				PP_FreeLongParamRAW(Z->dst);
+			}else{
+				Z->dst += tstrlen(Z->dst);
+			}
 		}
 endfunc:
 		SetCurrentDirectory(olddir);
+		if ( argbuf != argbuffer ) HeapFree(DLLheap, 0, argbuf);
 		return;
 	}
 }
@@ -1253,8 +1451,8 @@ void ExecuteFunction(EXECSTRUCT *Z)
 
 		if ( !tstrcmp(cmdname, T("EDITTEXT")) ){
 			*Z->dst = '\0';
-			if ( Z->flag & XEO_CONSOLE ){
-				Z->result = PPxInfoFunc(Z->Info, PPXCMDID_PPBEDITTEXT, Z->dst);
+			if ( Z->flags & XEO_CONSOLE ){
+				Z->result = PPxInfoFunc32u(Z->Info, PPXCMDID_PPBEDITTEXT, Z->dst);
 			}else{
 				SendMessage(Z->hWnd, WM_PPXCOMMAND, KE_edtext, (LPARAM)Z->dst);
 			}
@@ -1315,6 +1513,11 @@ void ExecuteFunction(EXECSTRUCT *Z)
 
 		if ( !tstrcmp(cmdname, T("NOW")) ){
 			GetNowFunction(Z, funcparam);
+			return;
+		}
+
+		if ( !tstrcmp(cmdname, T("PPXLIST")) ){
+			GetPPxListFunction(Z, funcparam);
 			return;
 		}
 

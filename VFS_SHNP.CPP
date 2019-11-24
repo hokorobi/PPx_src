@@ -6,10 +6,12 @@
 #include <shlobj.h>
 #include <ole2.h>
 #include <wtypes.h>
+#include "WINOLE.H"
 #include "PPX.H"
-#include "PPD_DEF.H"
 #include "VFS.H"
+#include "PPD_DEF.H"
 #include "VFS_STRU.H"
+#include "VFS_FOP.H"
 #include "VFS_FF.H"
 #pragma hdrstop
 
@@ -876,4 +878,157 @@ VFSDLL ERRORCODE PPXAPI VFSLoadFileImage(const TCHAR *filename, DWORD margin, ch
 	}
 	pStream->Release();
 	return result;
+}
+
+const IID xxXIID_IFileOperationProgressSink = xIID_IFileOperationProgressSink;
+class CIFileOperationProgressSink : public xIFileOperationProgressSink
+{
+	private:
+		long m_cRefCount;
+		FOPSTRUCT *m_FS;
+	public:
+		CIFileOperationProgressSink(FOPSTRUCT *FS){
+			m_FS = FS;
+			m_cRefCount = 1;
+		};
+//		~CIFileOperationProgressSink(){ };
+
+		STDMETHOD(QueryInterface) (REFIID riid, void **ppv) {
+			if ( (riid == IID_IUnknown) || (riid == xxXIID_IFileOperationProgressSink) ){
+				*ppv = this;
+				AddRef();
+				return NOERROR;
+			}
+			*ppv = NULL;
+			return ResultFromScode(E_NOINTERFACE);
+		};
+	STDMETHOD_(ULONG, AddRef) (void)  { return ++m_cRefCount; };
+	STDMETHOD_(ULONG, Release) (void) {
+		long tempCount;
+
+		tempCount = --m_cRefCount;
+		if ( tempCount == 0 ) { XMessage(NULL,NULL,XM_DbgLOG,T("sink free")); delete this;}
+		return tempCount;
+	}
+
+	STDMETHOD(StartOperations)(void) { XMessage(NULL,NULL,XM_DbgLOG,T("Start IFO")); return S_OK; };
+
+	STDMETHOD(FinishOperations)(HRESULT) { XMessage(NULL,NULL,XM_DbgLOG,T("Fin IFO")); return S_OK; };
+	STDMETHOD(PreRenameItem)(DWORD flags, xIShellItem *, LPCWSTR) { XMessage(NULL,NULL,XM_DbgLOG,T("PreRen %x"),flags); return S_OK; };
+	STDMETHOD(PostRenameItem)(DWORD flags, xIShellItem *psiItem, LPCWSTR pszNewName, HRESULT hrRename, xIShellItem *psiNewlyCreated) { XMessage(NULL,NULL,XM_DbgLOG,T("PostRen %x %x"),flags, hrRename); return S_OK; };
+	STDMETHOD(PreMoveItem)(DWORD dwFlags, xIShellItem *psiItem, xIShellItem *psiDestinationFolder, LPCWSTR pszNewName) { return S_OK; };
+	STDMETHOD(PostMoveItem)(DWORD flags, xIShellItem *psiItem, xIShellItem *psiDestinationFolder, LPCWSTR pszNewName, HRESULT hrMove, xIShellItem *psiNewlyCreated) { XMessage(NULL,NULL,XM_DbgLOG,T("PostMove %x %x"),flags, hrMove); return S_OK; };
+	STDMETHOD(PreCopyItem)(DWORD dwFlags, xIShellItem *psiItem, xIShellItem *psiDestinationFolder, LPCWSTR pszNewName) { return S_OK; };
+	STDMETHOD(PostCopyItem)(DWORD flags, xIShellItem *psiItem, xIShellItem *psiDestinationFolder, LPCWSTR pszNewName, HRESULT hrCopy, xIShellItem *psiNewlyCreated) { XMessage(NULL,NULL,XM_DbgLOG,T("PostCopy %x %x"),flags, hrCopy); return S_OK; };
+	STDMETHOD(PreDeleteItem)(DWORD dwFlags, xIShellItem *psiItem) { return S_OK; };
+	STDMETHOD(PostDeleteItem)(DWORD dwFlags, xIShellItem *psiItem, HRESULT hrDelete, xIShellItem *psiNewlyCreated) { return S_OK; };
+	STDMETHOD(PreNewItem)(DWORD dwFlags, xIShellItem *psiDestinationFolder, LPCWSTR pszNewName) { return S_OK; };
+	STDMETHOD(PostNewItem)(DWORD dwFlags, xIShellItem *psiDestinationFolder, LPCWSTR pszNewName, LPCWSTR pszTemplateName, DWORD dwFileAttributes, HRESULT hrNew, xIShellItem *psiNewItem) { return S_OK; };
+	STDMETHOD(UpdateProgress)(UINT iWorkTotal, UINT iWorkSoFar) { XMessage(NULL,NULL,XM_DbgLOG,T("Prog %d %d"),iWorkTotal, iWorkSoFar); return S_OK; };
+	STDMETHOD(ResetTimer)(void) { XMessage(NULL,NULL,XM_DbgLOG,T("ResetTimer")); return S_OK; };
+	STDMETHOD(PauseTimer)(void) { XMessage(NULL,NULL,XM_DbgLOG,T("PauseTimer"));return S_OK; };
+	STDMETHOD(ResumeTimer)(void) { XMessage(NULL,NULL,XM_DbgLOG,T("ResumeTimer"));return S_OK; };
+};
+
+const IID xxXIID_IShellItem =
+{0x43826d1e, 0xe718, 0x42ee, {0xbc, 0x55, 0xa1, 0xe2, 0x61, 0xc3, 0x7b, 0xfe}};
+IID XIID_IFileOperation = xIID_IFileOperation;
+CLSID XCLSID_IFileOperation = xCLSID_IFileOperation;
+DefineWinAPI(HRESULT, SHCreateItemFromParsingName, (PCWSTR, IBindCtx *, REFIID, void **));
+
+void CheckAndInitIfo(FOPSTRUCT *FS)
+{
+	if ( FS->opt.fop.flags & VFSFOP_OPTFLAG_IFILEOP ){
+		if ( FAILED(CoCreateInstance(XCLSID_IFileOperation, NULL, CLSCTX_ALL,
+				XIID_IFileOperation, (LPVOID *)&FS->ifo)) ){
+			FS->ifo = NULL;
+		}else{
+		//	MessageA("ifo test");
+			FS->ifo->SetOwnerWindow(FS->hDlg);
+			FS->ifo->SetOperationFlags(
+//				FOF_ALLOWUNDO |	// Vista 以降ならセッション全体でUndo可能
+//				FOF_FILESONLY | // ワイルドカード指定時、ディレクトリを無視
+//				FOF_NOCONFIRMATION | // 全て Yes
+				FOF_NOCONFIRMMKDIR | // フォルダの作成確認をしない
+				FOF_NO_CONNECTED_ELEMENTS | // ファイルを組扱いしない
+				FOF_NOCOPYSECURITYATTRIBS | // ACLをコピーしない
+				FOF_NOERRORUI | // エラー表示しない。無視扱い
+//				FOF_NORECURSION | // サブディレクトリ無し
+				FOF_RENAMEONCOLLISION | // 名前が被ったら、名前変更
+//				FOF_SILENT | // プログレス無し
+				FOF_WANTNUKEWARNING | // 削除時、完全削除するなら警告
+//				FOFX_ADDUNDORECORD | // ユーザ指定によりundo記録 Win8
+				FOFX_NOSKIPJUNCTIONS | // Shell namespace junctions を無視しない
+//				FOFX_PREFERHARDLINK | // できるだけハードリンク
+				FOFX_SHOWELEVATIONPROMPT | // 必要なら UAC
+//				FOFX_EARLYFAILURE | // エラーが出たらすぐに終了
+				FOFX_PRESERVEFILEEXTENSIONS | // 名前変更は拡張子を維持
+//				FOFX_KEEPNEWERFILE | // 新しいファイル側を残す
+//				FOFX_NOCOPYHOOKS | // コピー拡張をしない
+//				FOFX_NOMINIMIZEBOX | // 最小化ボタン無し
+//				FOFX_MOVEACLSACROSSVOLUMES | // 別ドライブでもACLコピー
+//				FOFX_DONTDISPLAYSOURCEPATH | // ソース名非表示
+//				FOFX_DONTDISPLAYDESTPATH | // 先非表示
+				FOFX_RECYCLEONDELETE | // ごみ箱削除 Win8
+//				FOFX_REQUIREELEVATION | // 昇格の確認ダイアログ無し→いきなり昇格へ VistaSP1
+//				FOFX_COPYASDOWNLOAD | // 表示をダウンロードにする Win7
+//				FOFX_DONTDISPLAYLOCATIONS | // ダイアログに場所情報が無い Win7
+				0);
+			GETDLLPROC(hShell32, SHCreateItemFromParsingName);
+		}
+	}else{
+		FS->ifo = NULL;
+	}
+}
+
+BOOL CopyFileWithIfo(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst)
+{
+	xIShellItem *destShellItem = NULL;
+	xIShellItem *srcShellItem;
+	CIFileOperationProgressSink *ifop;
+	WCHAR destdirW[VFPS];
+	WCHAR *dstptr;
+	HRESULT result = FALSE;
+#ifdef UNICODE
+	#define srcdirW src
+	tstrcpy(destdirW, dst);
+#else
+	WCHAR srcdirW[VFPS];
+	AnsiToUnicode(dst, destdirW, VFPS);
+	AnsiToUnicode(src, srcdirW, VFPS);
+#endif
+	dstptr = strrchrW(destdirW, '\\');
+	if ( dstptr != NULL ) *dstptr = '\0';
+
+	if ( FAILED(DSHCreateItemFromParsingName(destdirW, NULL, xxXIID_IShellItem, (void**)&destShellItem)) ){
+		return FALSE;
+	}
+	if ( FAILED(DSHCreateItemFromParsingName(srcdirW, NULL, xxXIID_IShellItem, (void**)&srcShellItem)) ){
+		goto closedst;
+	}
+	ifop = new CIFileOperationProgressSink(FS);
+	if ( FS->opt.fop.mode == FOPMODE_MOVE ){
+		result = FS->ifo->MoveItem(srcShellItem, destShellItem, NULL, ifop);
+	}else{
+		result = FS->ifo->CopyItem(srcShellItem, destShellItem, NULL, ifop);
+	}
+	ifop->Release();
+	if ( SUCCEEDED(result) ){
+		result = FS->ifo->PerformOperations();
+	}
+	srcShellItem->Release();
+closedst:
+	destShellItem->Release();
+	if ( SUCCEEDED(result) ){
+		return TRUE;;
+	}else{
+	//	MessageA("x");
+		return FALSE;;
+	}
+}
+
+void FreeIfo(FOPSTRUCT *FS)
+{
+	FS->ifo->Release();
+	FS->ifo = NULL;
 }
