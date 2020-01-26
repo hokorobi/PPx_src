@@ -497,6 +497,13 @@ case '>':
 case '<':
 	DivChange(-1);
 	break;
+
+case '?':
+	LongText = !LongText;
+	SetPopMsg(POPMSG_NOLOGMSG, LongText ? T("RawText") : T("NormalText") );
+	WmWindowPosChanged(hWnd);
+	InvalidateRect(hWnd, NULL, TRUE);
+	break;
 //----------------------------------------------- page up
 case K_s | K_up:
 	if ( (VOsel.cursor != FALSE) && (vo_.DModeBit & VO_dmode_SELECTABLE) ){

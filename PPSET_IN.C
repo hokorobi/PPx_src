@@ -168,7 +168,7 @@ int USEFASTCALL WriteConfigRes(HANDLE hFile, WORD resource)
 
 		cp = IsValidCodePage(CP__SJIS) ? CP__SJIS : CP_ACP;
 		rsize = SizeofResource(hInst, hres);
-		rsize = MultiByteToWideChar(cp, MB_PRECOMPOSED,
+		rsize = MultiByteToWideChar(cp, 0,
 				LockResource(LoadResource(hInst, hres)), rsize, bufw, TSIZEOFW(bufw));
 		rsize = WideCharToMultiByte(CP_UTF8, 0, bufw, rsize, bufa, TSIZEOFA(bufa), NULL, NULL);
 		return (WriteFile(hFile, bufa, rsize, &size, NULL) == FALSE) ? 1 : 0;

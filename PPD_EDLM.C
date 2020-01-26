@@ -9,15 +9,15 @@
 #include "PPD_EDL.H"
 #pragma hdrstop
 
-BOOL SjisToEUCjp(char **text,DWORD *size)
+BOOL SjisToEUCjp(char **text, DWORD *size)
 {
-	BYTE *ptr,*maxptr;
-	BYTE *bottom,*top;
+	BYTE *ptr, *maxptr;
+	BYTE *bottom, *top;
 	DWORD maxsize;
 
 	maxptr = (BYTE *)(*text + *size);
 	maxsize = *size + ThSTEP;
-	top = bottom = HeapAlloc(DLLheap,0,maxsize);
+	top = bottom = HeapAlloc(DLLheap, 0, maxsize);
 	if ( bottom == NULL ) return FALSE;
 	ptr = (BYTE *)*text;
 	while ( ptr < maxptr ){
@@ -27,7 +27,7 @@ BOOL SjisToEUCjp(char **text,DWORD *size)
 			BYTE *newbottom;
 
 			maxsize += ThNextAllocSizeM(maxsize);
-			newbottom = HeapReAlloc(DLLheap,0,bottom,maxsize);
+			newbottom = HeapReAlloc(DLLheap, 0, bottom, maxsize);
 			if ( newbottom == NULL ) break;
 			top = newbottom + (top - bottom);
 			bottom = newbottom;
@@ -56,7 +56,7 @@ BOOL SjisToEUCjp(char **text,DWORD *size)
 			*top++ = (BYTE)code1;
 		}
 	}
-	HeapFree(ProcHeap,0,*text);
+	HeapFree(ProcHeap, 0, *text);
 	*text = (char *)bottom;
 	*size = top - bottom;
 	return TRUE;
@@ -66,13 +66,13 @@ void InitEditCharCode(PPxEDSTRUCT *PES)
 {
 	if ( PES->CharCode != 0 ) return;
 	PES->CharCode = VTYPE_SYSTEMCP;
-	GetCustData(T("X_newcp"),&PES->CharCode,sizeof(DWORD));
+	GetCustData(T("X_newcp"), &PES->CharCode, sizeof(DWORD));
 }
 
 /*-----------------------------------------------------------------------------
 	result	FALSE:cancel
 -----------------------------------------------------------------------------*/
-BOOL FileSave(PPxEDSTRUCT *PES,int mode)
+BOOL FileSave(PPxEDSTRUCT *PES, int mode)
 {
 	TCHAR name[VFPS];
 	BOOL result = FALSE;
@@ -80,50 +80,50 @@ BOOL FileSave(PPxEDSTRUCT *PES,int mode)
 	InitEditCharCode(PES);
 
 	if ( PES->filename[0] != '\0' ){
-		tstrcpy(name,PES->filename);
+		tstrcpy(name, PES->filename);
 	}else{
 		if ( PES->flags & PPXEDIT_TEXTEDIT ){
-			GetWindowText(GetParentCaptionWindow(PES->hWnd),name,TSIZEOF(name));
-			if ( name[0] == ' ' ) tstrcpy(name,T("EDITTEXT.TXT"));
+			GetWindowText(GetParentCaptionWindow(PES->hWnd), name, TSIZEOF(name));
+			if ( name[0] == ' ' ) tstrcpy(name, T("EDITTEXT.TXT"));
 		}else{
-			tstrcpy(name,T("EDITTEXT.TXT"));
+			tstrcpy(name, T("EDITTEXT.TXT"));
 		}
 	}
-	if ( FindPathSeparator(name) == NULL ) VFSFullPath(NULL,name,NULL);
+	if ( FindPathSeparator(name) == NULL ) VFSFullPath(NULL, name, NULL);
 
 	while ( (!(mode & EDL_FILEMODE_DIALOG) &&
 			  (mode & EDL_FILEMODE_NODIALOG) &&
 			  (PES->filename[0] != '\0') ) ||
-			( tInput(PES->hWnd,(mode & EDL_FILEMODE_APPEND) ?
-					MES_TAPN : MES_TSVN,name,TSIZEOF(name),
-					PPXH_NAME_R,PPXH_PATH) > 0) ){
+			( tInput(PES->hWnd, (mode & EDL_FILEMODE_APPEND) ?
+					MES_TAPN : MES_TSVN, name, TSIZEOF(name),
+					PPXH_NAME_R, PPXH_PATH) > 0) ){
 		HANDLE hFile;
 		DWORD size;
 		char *text;
 
-		if ( !(mode & EDL_FILEMODE_APPEND) && tstricmp(name,PES->filename) ){
-			hFile = CreateFileL(name,GENERIC_READ,
-					FILE_SHARE_WRITE | FILE_SHARE_READ,NULL,
-					OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
+		if ( !(mode & EDL_FILEMODE_APPEND) && tstricmp(name, PES->filename) ){
+			hFile = CreateFileL(name, GENERIC_READ,
+					FILE_SHARE_WRITE | FILE_SHARE_READ, NULL,
+					OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 			if ( hFile != INVALID_HANDLE_VALUE ){	// 同名ファイルあり
 				CloseHandle(hFile);
-				if ( PMessageBox(PES->hWnd,MES_QSAM,T("File exist"),
+				if ( PMessageBox(PES->hWnd, MES_QSAM, T("File exist"),
 							MB_APPLMODAL | MB_OKCANCEL |
 							MB_DEFBUTTON1 | MB_ICONQUESTION) != IDOK ){
-					resetflag(mode,EDL_FILEMODE_NODIALOG);
+					resetflag(mode, EDL_FILEMODE_NODIALOG);
 					continue;
 				}
 			}
 		}
-		hFile = CreateFileL(name,GENERIC_WRITE,0,NULL,
+		hFile = CreateFileL(name, GENERIC_WRITE, 0, NULL,
 				(mode & EDL_FILEMODE_APPEND) ? OPEN_ALWAYS : CREATE_ALWAYS,
-				FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+				FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 		if ( hFile == INVALID_HANDLE_VALUE ){
-			PPErrorBox(PES->hWnd,T("File open error"),PPERROR_GETLASTERROR);
-			resetflag(mode,EDL_FILEMODE_NODIALOG);
+			PPErrorBox(PES->hWnd, T("File open error"), PPERROR_GETLASTERROR);
+			resetflag(mode, EDL_FILEMODE_NODIALOG);
 			continue;
 		}
-		tstrcpy(PES->filename,name);
+		tstrcpy(PES->filename, name);
 										// 書き込み準備(各種コード変換)
 		#ifdef UNICODE	// UNICODE版は個別に処理する
 		if ( (PES->CharCode == VTYPE_UTF8) ||
@@ -135,9 +135,9 @@ BOOL FileSave(PPxEDSTRUCT *PES,int mode)
 			int offset;
 
 			size = GetWindowTextLengthW(PES->hWnd) + 1; // BOM分を加算
-			text = HeapAlloc(ProcHeap,0,TSTROFF(size + 1)); // '\0'分を加算
+			text = HeapAlloc(ProcHeap, 0, TSTROFF(size + 1)); // '\0'分を加算
 			if ( text == NULL ){
-				PPErrorBox(PES->hWnd,T("File write error"),PPERROR_GETLASTERROR);
+				PPErrorBox(PES->hWnd, T("File write error"), PPERROR_GETLASTERROR);
 				return FALSE;
 			}
 			// BOM なし
@@ -151,10 +151,10 @@ BOOL FileSave(PPxEDSTRUCT *PES,int mode)
 				offset = 1;
 			}
 
-			GetWindowTextW(PES->hWnd,(WCHAR *)text + offset,size + 1);
+			GetWindowTextW(PES->hWnd, (WCHAR *)text + offset, size + 1);
 
 			if ( PES->CrCode != VTYPE_CRLF ){
-				WCHAR *src,*dst;
+				WCHAR *src, *dst;
 				WCHAR crcode;
 
 				crcode = (WCHAR)((PES->CrCode == VTYPE_CR) ? '\r' : '\n');
@@ -174,15 +174,15 @@ BOOL FileSave(PPxEDSTRUCT *PES,int mode)
 				int newsize;
 				char *newtext;
 
-				newsize = WideCharToMultiByteU8(CP_UTF8,0,(WCHAR *)text,size,NULL,0,NULL,NULL);
-				newtext = HeapAlloc(ProcHeap,0,newsize);
+				newsize = WideCharToMultiByteU8(CP_UTF8, 0, (WCHAR *)text, size, NULL, 0, NULL, NULL);
+				newtext = HeapAlloc(ProcHeap, 0, newsize);
 				if ( newtext == NULL ){
-					HeapFree(ProcHeap,0,text);
-					PPErrorBox(PES->hWnd,T("File write error"),PPERROR_GETLASTERROR);
+					HeapFree(ProcHeap, 0, text);
+					PPErrorBox(PES->hWnd, T("File write error"), PPERROR_GETLASTERROR);
 					return FALSE;
 				}
-				size = WideCharToMultiByteU8(CP_UTF8,0,(WCHAR *)text,size,newtext,newsize,NULL,NULL);
-				HeapFree(ProcHeap,0,text);
+				size = WideCharToMultiByteU8(CP_UTF8, 0, (WCHAR *)text, size, newtext, newsize, NULL, NULL);
+				HeapFree(ProcHeap, 0, text);
 				text = newtext;
 			}else{ // CP__UTF16L / VTYPE_UNICODE / CP__UTF16B / VTYPE_UNICODEB
 				size *= sizeof(WCHAR);
@@ -201,12 +201,12 @@ BOOL FileSave(PPxEDSTRUCT *PES,int mode)
 		}else{
 			if ( PES->CharCode == VTYPE_SYSTEMCP ){
 				size = GetWindowTextLengthA(PES->hWnd);
-				text = HeapAlloc(ProcHeap,0,size + 1);
+				text = HeapAlloc(ProcHeap, 0, size + 1);
 				if ( text == NULL ){
-					PPErrorBox(PES->hWnd,T("File write error"),PPERROR_GETLASTERROR);
+					PPErrorBox(PES->hWnd, T("File write error"), PPERROR_GETLASTERROR);
 					return FALSE;
 				}
-				GetWindowTextA(PES->hWnd,text,size + 1);
+				GetWindowTextA(PES->hWnd, text, size + 1);
 			}else{
 				UINT cp;
 				int sizeW;
@@ -214,27 +214,27 @@ BOOL FileSave(PPxEDSTRUCT *PES,int mode)
 
 				cp = (PES->CharCode < VTypeToCPlist_max) ? VTypeToCPlist[PES->CharCode] : PES->CharCode;
 				sizeW = GetWindowTextLengthW(PES->hWnd) + 1; // '\0'分を加算
-				textW = HeapAlloc(ProcHeap,0,TSTROFF(sizeW));
+				textW = HeapAlloc(ProcHeap, 0, TSTROFF(sizeW));
 				if ( textW == NULL ){
-					PPErrorBox(PES->hWnd,T("File write error"),PPERROR_GETLASTERROR);
+					PPErrorBox(PES->hWnd, T("File write error"), PPERROR_GETLASTERROR);
 					return FALSE;
 				}
-				GetWindowTextW(PES->hWnd,textW,sizeW);
+				GetWindowTextW(PES->hWnd, textW, sizeW);
 
-				size = WideCharToMultiByteU8(cp,0,textW,sizeW,NULL,0,NULL,NULL);
-				text = HeapAlloc(ProcHeap,0,size);
+				size = WideCharToMultiByteU8(cp, 0, textW, sizeW, NULL, 0, NULL, NULL);
+				text = HeapAlloc(ProcHeap, 0, size);
 				if ( text == NULL ){
-					HeapFree(ProcHeap,0,textW);
-					PPErrorBox(PES->hWnd,T("File write error"),PPERROR_GETLASTERROR);
+					HeapFree(ProcHeap, 0, textW);
+					PPErrorBox(PES->hWnd, T("File write error"), PPERROR_GETLASTERROR);
 					return FALSE;
 				}
-				WideCharToMultiByteU8(cp,0,textW,sizeW,text,size,NULL,NULL);
+				WideCharToMultiByteU8(cp, 0, textW, sizeW, text, size, NULL, NULL);
 				if ( size ) size--; // '\0'除去
-				HeapFree(ProcHeap,0,textW);
+				HeapFree(ProcHeap, 0, textW);
 			}
 
 			if ( PES->CrCode != VTYPE_CRLF ){
-				char *src,*dst;
+				char *src, *dst;
 				char crcode;
 
 				crcode = (char)((PES->CrCode == VTYPE_CR) ? '\r' : '\n');
@@ -252,14 +252,14 @@ BOOL FileSave(PPxEDSTRUCT *PES,int mode)
 		}
 		#else	// ANSI版は、UNICODEの場合、ある程度まとめて処理する
 		size = GetWindowTextLength(PES->hWnd);
-		text = HeapAlloc(ProcHeap,0,size + 1);
+		text = HeapAlloc(ProcHeap, 0, size + 1);
 		if ( text == NULL ){
-			PPErrorBox(PES->hWnd,T("File write error"),PPERROR_GETLASTERROR);
+			PPErrorBox(PES->hWnd, T("File write error"), PPERROR_GETLASTERROR);
 			return FALSE;
 		}
-		GetWindowText(PES->hWnd,text,size + 1);
+		GetWindowText(PES->hWnd, text, size + 1);
 		if ( PES->CrCode != VTYPE_CRLF ){
-			char *src,*dst;
+			char *src, *dst;
 			char crcode;
 
 			crcode = (char)((PES->CrCode == VTYPE_CR) ? '\r' : '\n');
@@ -280,8 +280,8 @@ BOOL FileSave(PPxEDSTRUCT *PES,int mode)
 
 			cp = (PES->CharCode < VTypeToCPlist_max) ? VTypeToCPlist[PES->CharCode] : PES->CharCode;
 			// 一旦 UNICODE へ
-			size = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED,text,-1,NULL,0);
-			newtext = HeapAlloc(ProcHeap,0,size * sizeof(WCHAR));
+			size = MultiByteToWideChar(CP_ACP, 0, text, -1, NULL, 0);
+			newtext = HeapAlloc(ProcHeap, 0, size * sizeof(WCHAR));
 			if ( newtext != NULL ){
 				int offset;
 
@@ -294,8 +294,8 @@ BOOL FileSave(PPxEDSTRUCT *PES,int mode)
 					offset = 0;
 				}
 				size = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED,
-						text,-1,newtext + offset,size) + offset;
-				HeapFree(ProcHeap,0,text);
+						text, -1, newtext + offset, size) + offset;
+				HeapFree(ProcHeap, 0, text);
 				text = (char *)newtext;
 				if ( size ) size--; // '\0'除去
 			}
@@ -317,37 +317,37 @@ BOOL FileSave(PPxEDSTRUCT *PES,int mode)
 				int newsize;
 				char *newtext;
 
-				newsize = WideCharToMultiByteU8(cp,0,(WCHAR *)text,size,NULL,0,NULL,NULL);
-				newtext = HeapAlloc(ProcHeap,0,newsize);
+				newsize = WideCharToMultiByteU8(cp, 0, (WCHAR *)text, size, NULL, 0, NULL, NULL);
+				newtext = HeapAlloc(ProcHeap, 0, newsize);
 				if ( newtext == NULL ){
-					HeapFree(ProcHeap,0,text);
-					PPErrorBox(PES->hWnd,T("File write error"),PPERROR_GETLASTERROR);
+					HeapFree(ProcHeap, 0, text);
+					PPErrorBox(PES->hWnd, T("File write error"), PPERROR_GETLASTERROR);
 					return FALSE;
 				}
-				size = WideCharToMultiByteU8(cp,0,(WCHAR *)text,size,newtext,newsize,NULL,NULL);
-				HeapFree(ProcHeap,0,text);
+				size = WideCharToMultiByteU8(cp, 0, (WCHAR *)text, size, newtext, newsize, NULL, NULL);
+				HeapFree(ProcHeap, 0, text);
 				text = newtext;
 			}
 		}
 		#endif
-		if ( PES->CharCode == VTYPE_EUCJP ) SjisToEUCjp(&text,&size);
+		if ( PES->CharCode == VTYPE_EUCJP ) SjisToEUCjp(&text, &size);
 										// 書き込み
 		if ( mode & EDL_FILEMODE_APPEND ){
 			DWORD i = 0;
 
-			SetFilePointer(hFile,0,(PLONG)&i,FILE_END);
+			SetFilePointer(hFile, 0, (PLONG)&i, FILE_END);
 		}
-		if ( WriteFile(hFile,text,size,(DWORD *)&size,NULL) == FALSE ){
-			PPErrorBox(PES->hWnd,T("File write error"),PPERROR_GETLASTERROR);
+		if ( WriteFile(hFile, text, size, (DWORD *)&size, NULL) == FALSE ){
+			PPErrorBox(PES->hWnd, T("File write error"), PPERROR_GETLASTERROR);
 		}else{
 			result = TRUE;
 			XEditClearModify(PES);
 		}
 		CloseHandle(hFile);
 
-		HeapFree(ProcHeap,0,text);
+		HeapFree(ProcHeap, 0, text);
 		if ( PES->flags & PPXEDIT_TEXTEDIT ){
-			SetWindowText(GetParentCaptionWindow(PES->hWnd),name);
+			SetWindowText(GetParentCaptionWindow(PES->hWnd), name);
 		}
 		if ( IsTrue(result) ) break;
 	}
@@ -359,12 +359,12 @@ void OpenMainFromMem(PPxEDSTRUCT *PES, int openmode, const TCHAR *filename, cons
 	int crcode = VTYPE_CRLF, charcode;
 	TCHAR *text;
 
-	charcode = FixTextImage((const char *)textimage,memsize,&text,usecp);
+	charcode = FixTextImage((const char *)textimage, memsize, &text, usecp);
 	{									// 改行コードの決定
 		int size;
 		TCHAR *ptr;
 
-		for ( ptr = text,size = 0x1000 ; *ptr && size ; ptr++,size-- ){
+		for ( ptr = text, size = 0x1000 ; *ptr && size ; ptr++, size-- ){
 			if ( *ptr == '\r' ){ // CR
 				if ( *(ptr + 1) == '\n' ){ // LF
 					break;	// CRLF
@@ -381,46 +381,46 @@ void OpenMainFromMem(PPxEDSTRUCT *PES, int openmode, const TCHAR *filename, cons
 		PES->CharCode = (charcode >= 0) ? charcode : -charcode;
 		PES->CrCode = crcode;
 		if ( filename != NULL ){
-			tstrcpy(PES->filename,filename);
+			tstrcpy(PES->filename, filename);
 			if ( PES->flags & PPXEDIT_TEXTEDIT ){
-				SetWindowText(GetParentCaptionWindow(PES->hWnd),filename);
+				SetWindowText(GetParentCaptionWindow(PES->hWnd), filename);
 			}
 		}
 	}
 										// 改行コードに合わせて SetText
 	if ( crcode != VTYPE_CRLF ){
-		TCHAR *p,code;
+		TCHAR *p, code;
 
 		if ( openmode != PPE_OPEN_MODE_INSERT ){ // 上書き
-			SendMessage(PES->hWnd,EM_SETSEL,0,EC_LAST);
+			SendMessage(PES->hWnd, EM_SETSEL, 0, EC_LAST);
 		}
 		p = text;
 		code = (TCHAR)((crcode == VTYPE_CR) ? T('\r') : T('\n'));
 		while ( *p != '\0' ){
 			TCHAR *next;
 
-			next = tstrchr(p,code);
+			next = tstrchr(p, code);
 			if ( next == NULL ){
-				SendMessage(PES->hWnd,EM_REPLACESEL,0,(LPARAM)p);
+				SendMessage(PES->hWnd, EM_REPLACESEL, 0, (LPARAM)p);
 				break;
 			}else{
 				*next = '\0';
-				SendMessage(PES->hWnd,EM_REPLACESEL,0,(LPARAM)p);
-				SendMessage(PES->hWnd,EM_SETSEL,EC_LAST,EC_LAST);
-				SendMessage(PES->hWnd,EM_REPLACESEL,0,(LPARAM)T("\r\n"));
-				SendMessage(PES->hWnd,EM_SETSEL,EC_LAST,EC_LAST);
+				SendMessage(PES->hWnd, EM_REPLACESEL, 0, (LPARAM)p);
+				SendMessage(PES->hWnd, EM_SETSEL, EC_LAST, EC_LAST);
+				SendMessage(PES->hWnd, EM_REPLACESEL, 0, (LPARAM)T("\r\n"));
+				SendMessage(PES->hWnd, EM_SETSEL, EC_LAST, EC_LAST);
 				p = next + 1;
 			}
 		}
-		SendMessage(PES->hWnd,EM_SETSEL,EC_LAST,EC_LAST);
+		SendMessage(PES->hWnd, EM_SETSEL, EC_LAST, EC_LAST);
 	}else{
 		if ( openmode != PPE_OPEN_MODE_INSERT ){ // 上書き
-			SetWindowText(PES->hWnd,text);
+			SetWindowText(PES->hWnd, text);
 		}else{
-			SendMessage(PES->hWnd,EM_REPLACESEL,0,(LPARAM)text);
+			SendMessage(PES->hWnd, EM_REPLACESEL, 0, (LPARAM)text);
 		}
 	}
-	if ( charcode < 0 ) HeapFree(DLLheap,0,text);
+	if ( charcode < 0 ) HeapFree(DLLheap, 0, text);
 }
 
 /*-----------------------------------------------------------------------------
@@ -434,9 +434,9 @@ BOOL OpenFromFile(PPxEDSTRUCT *PES, int openmode, const TCHAR *fname)
 	TCHAR *textimage = NULL;
 	EDITMODESTRUCT ems = { EDITMODESTRUCT_DEFAULT };
 
-	const TCHAR *exec = NULL,*curdir = NULL;
+	const TCHAR *exec = NULL, *curdir = NULL;
 
-	TCHAR buf[CMDLINESIZE],code,*more;
+	TCHAR buf[CMDLINESIZE], code, *more;
 
 	if ( openmode >= PPE_OPEN_MODE_CMDOPEN ){
 		if ( openmode == PPE_OPEN_MODE_EXCMDOPEN ){
@@ -449,30 +449,30 @@ BOOL OpenFromFile(PPxEDSTRUCT *PES, int openmode, const TCHAR *fname)
 
 		filename[0] = '\0';
 		for ( ;; ){
-			code = GetOptionParameter(&fname,buf,&more);
+			code = GetOptionParameter(&fname, buf, &more);
 			if ( code == '\0' ) break;
 			if ( code != '-' ){
 				if ( (curdir != NULL) || (PES->filename[0] == '\0') ){
-					VFSFixPath(filename,buf,curdir,VFSFIX_FULLPATH | VFSFIX_REALPATH);
+					VFSFixPath(filename, buf, curdir, VFSFIX_FULLPATH | VFSFIX_REALPATH);
 				}else{
 					// カレントディレクトリを生成
-					VFSFullPath(filename,T(".."),PES->filename);
-					VFSFixPath(filename,buf,filename,VFSFIX_FULLPATH | VFSFIX_REALPATH);
+					VFSFullPath(filename, T(".."), PES->filename);
+					VFSFixPath(filename, buf, filename, VFSFIX_FULLPATH | VFSFIX_REALPATH);
 				}
 			}else{
-				if ( tstrcmp(buf + 1,T("NEW")) == 0 ){
+				if ( tstrcmp(buf + 1, T("NEW")) == 0 ){
 					newmode = TRUE;
-				}else if ( tstrcmp(buf + 1,T("K")) == 0 ){
+				}else if ( tstrcmp(buf + 1, T("K")) == 0 ){
 					exec = fname;
 					break;
-				}else if ( EditModeParam(&ems,buf + 1,more) == FALSE ){
-					XMessage(PES->hWnd,T("File open error"),XM_GrERRld,T("option error : %s"),buf);
+				}else if ( EditModeParam(&ems, buf + 1, more) == FALSE ){
+					XMessage(PES->hWnd, T("File open error"), XM_GrERRld, T("option error : %s"), buf);
 				}
 			}
 			NextParameter(&fname);
 		}
 	}else{
-		tstrcpy(filename,fname);
+		tstrcpy(filename, fname);
 	}
 	if ( filename[0] != '\0' ){	// ファイルの読み込み
 		ERRORCODE result;
@@ -483,21 +483,21 @@ BOOL OpenFromFile(PPxEDSTRUCT *PES, int openmode, const TCHAR *fname)
 				HWND hParentWnd;
 
 				if ( PES->filename[0] == '\0' ){
-					tstrcpy(PES->filename,filename);
+					tstrcpy(PES->filename, filename);
 					// 設定初期化1
-					PPeSetTab(PES,ems.tabwidth);
+					PPeSetTab(PES, ems.tabwidth);
 					if ( ems.crcode >= 0 ) PES->CrCode = ems.crcode;
 				}
 				hParentWnd = GetParent(PES->hWnd);
 				if ( openmode >= 0 ){ // PPE_OPEN_MODE_OPEN / PPE_OPEN_MODE_INSERT
-					PPErrorBox(PES->hWnd,filename,result);
+					PPErrorBox(PES->hWnd, filename, result);
 				}else{ // PPE_OPEN_MODE_OPENNEW
 					if ( hParentWnd != NULL ){
-						SetWindowText(hParentWnd,filename);
+						SetWindowText(hParentWnd, filename);
 					}
 				}
 				if ( hParentWnd != NULL ){
-					SetMessageOnCaption(hParentWnd,T("open error"));
+					SetMessageOnCaption(hParentWnd, T("open error"));
 				}
 				return FALSE;
 			}
@@ -506,59 +506,59 @@ BOOL OpenFromFile(PPxEDSTRUCT *PES, int openmode, const TCHAR *fname)
 	if ( (textimage == NULL) && (openmode != PPE_OPEN_MODE_INSERT) ){
 		textimage = HeapAlloc(ProcHeap, HEAP_ZERO_MEMORY, 4);
 	}
-	SendMessage(PES->hWnd,WM_SETREDRAW,FALSE,0);
+	SendMessage(PES->hWnd, WM_SETREDRAW, FALSE, 0);
 										// 文字コード判別＆変換
 	if ( textimage != NULL ){
 		OpenMainFromMem(PES, openmode, filename, textimage, memsize, ems.codepage);
 		HeapFree(ProcHeap, 0, textimage);
 	}
 	// 設定初期化2
-	PPeSetTab(PES,ems.tabwidth);
+	PPeSetTab(PES, ems.tabwidth);
 	if ( ems.crcode >= 0 ) PES->CrCode = ems.crcode;
 
-	SendMessage(PES->hWnd,EM_SCROLLCARET,0,0);
+	SendMessage(PES->hWnd, EM_SCROLLCARET, 0, 0);
 	if ( openmode == PPE_OPEN_MODE_INSERT ){
 		XEditSetModify(PES);
 	}else{
 		XEditClearModify(PES);
 	}
-	SendMessage(PES->hWnd,WM_SETREDRAW,TRUE,0);
-	InvalidateRect(PES->hWnd,NULL,TRUE);
+	SendMessage(PES->hWnd, WM_SETREDRAW, TRUE, 0);
+	InvalidateRect(PES->hWnd, NULL, TRUE);
 
-	SendMessage(PES->hWnd,WM_PPXCOMMAND,K_E_LOAD,0);
+	SendMessage(PES->hWnd, WM_PPXCOMMAND, K_E_LOAD, 0);
 
-	if ( exec != NULL ) EditExtractMacro(PES,exec,NULL,0);
+	if ( exec != NULL ) EditExtractMacro(PES, exec, NULL, 0);
 	return TRUE;
 }
 
 
-void FileOpen(PPxEDSTRUCT *PES,int mode)
+void FileOpen(PPxEDSTRUCT *PES, int mode)
 {
 	TCHAR name[VFPS];
 
 	name[0] = '\0';
 	if ( tInput(PES->hWnd,
 			(mode == 0) ? T("Open Filename") : T("Insert Filename"),
-			name,TSIZEOF(name),PPXH_NAME_R,PPXH_PATH) > 0 ){
-		OpenFromFile(PES,mode,name);
+			name, TSIZEOF(name), PPXH_NAME_R, PPXH_PATH) > 0 ){
+		OpenFromFile(PES, mode, name);
 	}
 }
 
 // 指定行へジャンプ -----------------------------------------------------------
-void JumptoLine(HWND hWnd,int line)
+void JumptoLine(HWND hWnd, int line)
 {
-	DWORD wP,lP;
+	DWORD wP, lP;
 	int offset;
 
-	SendMessage(hWnd,EM_GETSEL,(WPARAM)&wP,(WPARAM)&lP);
-	offset = SendMessage(hWnd,EM_LINEINDEX,(WPARAM)-1,0);
+	SendMessage(hWnd, EM_GETSEL, (WPARAM)&wP, (WPARAM)&lP);
+	offset = SendMessage(hWnd, EM_LINEINDEX, (WPARAM)-1, 0);
 	wP -= offset;
-	offset = SendMessage(hWnd,EM_LINEINDEX,(WPARAM)line,0);
+	offset = SendMessage(hWnd, EM_LINEINDEX, (WPARAM)line, 0);
 	if ( offset != -1 ){
-		lP = SendMessage(hWnd,EM_LINELENGTH,(WPARAM)line,0);
+		lP = SendMessage(hWnd, EM_LINELENGTH, (WPARAM)line, 0);
 		if ( wP > lP ) wP = lP;
 		wP += offset;
-		SendMessage(hWnd,EM_SETSEL,wP,wP);
-		SendMessage(hWnd,EM_SCROLLCARET,0,0);
+		SendMessage(hWnd, EM_SETSEL, wP, wP);
+		SendMessage(hWnd, EM_SCROLLCARET, 0, 0);
 	}
 }

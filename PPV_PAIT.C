@@ -5,13 +5,14 @@
 #include "WINAPI.H"
 #include "PPX.H"
 #include "VFS.H"
+#include "PPX_64.H"
 #include "PPV_STRU.H"
 #include "PPV_FUNC.H"
 #pragma hdrstop
 
-BOOL CheckReverse(int CharY,int CharX);
-void DrawLFSymbol(_In_ HDC hDC,BOOL fErase,BOOL reverse);
-void DrawTabSymbol(_In_ HDC hDC,int x,int y,COLORREF color);
+BOOL CheckReverse(int CharY, int CharX);
+void DrawLFSymbol(_In_ HDC hDC, BOOL fErase, BOOL reverse);
+void DrawTabSymbol(_In_ HDC hDC, int x, int y, COLORREF color);
 
 const char VtabcodeA = 0xaf;	// ↓ ^K VT Vertical Tabulation
 const char pagecodeA = 0xac;	// ← ^L FF Form Feed
@@ -23,13 +24,13 @@ const char pagecodeA = 0xac;	// ← ^L FF Form Feed
 
 #ifdef USEDIRECTX
 	#ifdef UNICODE
-	  void USEFASTCALL DxTextOutRelA(DXDRAWSTRUCT *DxDraw,HDC hDC,const char *str,int len)
+	  void USEFASTCALL DxTextOutRelA(DXDRAWSTRUCT *DxDraw, HDC hDC, const char *str, int len)
 	  {
 		WCHAR text[0x1000];
 		int lenW;
 
-		lenW = MultiByteToWideChar(CP_ACP,MB_PRECOMPOSED,str,len,text,0x1000);
-		DxTextOutBack(DxDraw,hDC,text,lenW);
+		lenW = MultiByteToWideChar(CP_ACP, 0, str, len, text, 0x1000);
+		DxTextOutBack(DxDraw, hDC, text, lenW);
 	  }
 	#endif
 
@@ -52,7 +53,7 @@ WCHAR CP437table[256] = {
 0x2261,	0xB1,	0x2265,	0x2264,	0x2320,	0x2321,	0xF7,	0x2248,	0xB0,	0x2219,	0xB7,	0x221A,	0x207F,	0xB2,	0x25A0,	0xA0};
 #endif
 
-BYTE GetMarkColor(int bc,int fc)
+BYTE GetMarkColor(int bc, int fc)
 {
 	int c = (bc + (fc - bc) / 4);
 	if ( c > 255 ) c = 255;
@@ -60,15 +61,15 @@ BYTE GetMarkColor(int bc,int fc)
 	return (BYTE)c;
 }
 
-COLORREF GetLineMarkColor(COLORREF bg,COLORREF mark)
+COLORREF GetLineMarkColor(COLORREF bg, COLORREF mark)
 {
 	return RGB(
-		GetMarkColor(GetRValue(bg),GetRValue(mark)),
-		GetMarkColor(GetRValue(bg),GetGValue(mark)),
-		GetMarkColor(GetBValue(bg),GetBValue(mark)) );
+		GetMarkColor(GetRValue(bg), GetRValue(mark)),
+		GetMarkColor(GetRValue(bg), GetGValue(mark)),
+		GetMarkColor(GetBValue(bg), GetBValue(mark)) );
 }
 
-void DrawSymbol(PAINTSTRUCT *ps,HFONT *nowfont,RECT *box,const char *ansi,const WCHAR *wide)
+void DrawSymbol(PAINTSTRUCT *ps, HFONT *nowfont, RECT *box, const char *ansi, const WCHAR *wide)
 {
 	#ifndef USEDIRECTX
 	if ( XV_bctl[1] == 1 ){
@@ -76,53 +77,65 @@ void DrawSymbol(PAINTSTRUCT *ps,HFONT *nowfont,RECT *box,const char *ansi,const 
 		if ( (ps->fErase != FALSE) && (fontY != fontSYMY) ){
 			POINT LP;
 
-			DxGetCurrentPositionEx(DxDraw,ps->hdc,&LP);
+			DxGetCurrentPositionEx(DxDraw, ps->hdc, &LP);
 			box->left   = LP.x;
 			box->right  = box->left + fontX;
-			DxFillBack(DxDraw,ps->hdc,box,C_BackBrush);
+			DxFillBack(DxDraw, ps->hdc, box, C_BackBrush);
 		}
-		DxSetTextColor(DxDraw,ps->hdc,CV_lf);
-		DxSetBkColor(DxDraw,ps->hdc,C_back);
+		DxSetTextColor(DxDraw, ps->hdc, CV_lf);
+		DxSetBkColor(DxDraw, ps->hdc, C_back);
 		if ( *nowfont != hSYMFont ){
 			*nowfont = hSYMFont;
-			IfGDImode(ps->hdc) SelectObject(ps->hdc,*nowfont);
+			IfGDImode(ps->hdc) SelectObject(ps->hdc, *nowfont);
 		}
-		DxTextOutRelA(DxDraw,ps->hdc,ansi,1);
+		DxTextOutRelA(DxDraw, ps->hdc, ansi, 1);
 	}else
 	#endif
 	{
-		DxSetTextColor(DxDraw,ps->hdc,CV_lf);
-		DxSetBkColor(DxDraw,ps->hdc,C_back);
-		DxTextOutRelW(DxDraw,ps->hdc,wide,1);
+		DxSetTextColor(DxDraw, ps->hdc, CV_lf);
+		DxSetBkColor(DxDraw, ps->hdc, C_back);
+		DxTextOutRelW(DxDraw, ps->hdc, wide, 1);
 	}
 }
 
-void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
+void PaintText(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 {
-	int y,CharX;
-	BYTE buf[TEXTBUFSIZE],*drawp;
+	int y, CharX;
+	BYTE buf[TEXTBUFSIZE], *drawp;
 	WCHAR wbuf[TEXTBUFSIZE];
-	POINT LP,FP;
+	POINT LP, FP;
 	int Rx;
 	RECT box;
-	HFONT textfont C4701CHECK,nowfont = NULL,normalfont;
+	HFONT textfont C4701CHECK, nowfont = NULL, normalfont;
 	int NowY;
 	MAKETEXTINFO mti;
+	VT_TABLE raw_vt;
 
-	NowY = pps->drawYtop + VOi->offY;
-	if ( NowY >= VOi->line  ){
-		if ( pps->ps.fErase != FALSE ){
-			if ( Use2ndView ){
-				box = pps->view;
-			}else{
-				box = pps->ps.rcPaint;
+	if ( !LongText ){
+		NowY = pps->drawYtop + VOi->offY;
+		if ( NowY >= VOi->line  ){
+			if ( pps->ps.fErase != FALSE ){
+				if ( Use2ndView ){
+					box = pps->view;
+				}else{
+					box = pps->ps.rcPaint;
+				}
+				if ( box.top < pps->view.top ) box.top = pps->view.top;
+				DxFillBack(DxDraw, pps->ps.hdc, &box, C_BackBrush);
 			}
-			if ( box.top < pps->view.top ) box.top = pps->view.top;
-			DxFillBack(DxDraw,pps->ps.hdc,&box,C_BackBrush);
+			return;
 		}
-		return;
+	}else{
+		DWORD dh, dl;
+		NowY = 0;
+		raw_vt = VOi->ti[0];
+		// vo->file.UseSize * VOi->offY / LONGTEXTWIDTH;
+		DDmul(vo->file.UseSize, VOi->offY, &dl, &dh);
+		dl = (dl >> LONGTEXTSHIFT) | (dh << LONGTEXTSHIFT);
+//		dh = dh >> LONGTEXTSHIFT;
+		raw_vt.ptr = vo->file.image + dl;
 	}
-	DxSetTextAlign(pps->ps.hdc,TA_LEFT | TA_TOP | TA_UPDATECP);	// CP を有効に
+	DxSetTextAlign(pps->ps.hdc, TA_LEFT | TA_TOP | TA_UPDATECP);	// CP を有効に
 												// 色の設定 -------------------
 	pps->si.fg = CV_char[VOi->ti[NowY].Fclr];
 	pps->si.bg = CV_char[VOi->ti[NowY].Bclr];
@@ -137,7 +150,7 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 	FP.x = pps->view.left - VOi->offX * fontX;
 	XV_lleft = 0;
 	if ( XV_lnum ){	// 行番号
-		DWORD line,newline;
+		DWORD line, newline;
 
 		LP.x = FP.x;
 		XV_lleft = fontX * DEFNUMBERSPACE;
@@ -147,40 +160,40 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 			line = 0;
 		}
 		for ( y = pps->drawYtop ; y <= pps->drawYbottom ; y++ ){
-			if ( (y + VOi->offY) >= VOi->line ){ // 空行
+			if ( ((y + VOi->offY) >= VOi->line) && !LongText ){ // 空行
 				if ( pps->ps.fErase != FALSE ){
 					box.top = y * LineY + pps->view.top;
 					box.bottom = (pps->drawYbottom + 1) * LineY + pps->view.top;
 					box.left = 0;
 					box.right = FP.x + XV_lleft;
-					DxFillBack(DxDraw,pps->ps.hdc,&box,C_BackBrush);
+					DxFillBack(DxDraw, pps->ps.hdc, &box, C_BackBrush);
 				}
 				break;
 			}
 
-			DxMoveToEx(DxDraw,pps->ps.hdc,FP.x,y * LineY + pps->view.top);
+			DxMoveToEx(DxDraw, pps->ps.hdc, FP.x, y * LineY + pps->view.top);
 			if ( XV_numt ){
 				newline = VOi->ti[y + VOi->offY].line;
 			}else{
 				newline = y + VOi->offY + 1;
 			}
-			DxSetTextColor(DxDraw,pps->ps.hdc,(line == newline) ? CV_lnum[1] : CV_lnum[0]);
-			DxTextOutRel(DxDraw,pps->ps.hdc,(TCHAR *)buf,
-				wsprintf((TCHAR *)buf,T("%5d "),newline) );
+			DxSetTextColor(DxDraw, pps->ps.hdc, (line == newline) ? CV_lnum[1] : CV_lnum[0]);
+			DxTextOutRel(DxDraw, pps->ps.hdc, (TCHAR *)buf,
+				wsprintf((TCHAR *)buf, T("%5d "), newline) );
 			line = newline;
 
 			if ( y == pps->drawYtop ){
-				DxGetCurrentPositionEx(DxDraw,pps->ps.hdc,&LP);
+				DxGetCurrentPositionEx(DxDraw, pps->ps.hdc, &LP);
 				XV_lleft = LP.x - FP.x;
 			}
 
 			if ( (pps->ps.fErase != FALSE) && (LineY > fontY) ){ // 行番号下の行間
-				DxGetCurrentPositionEx(DxDraw,pps->ps.hdc,&LP);
+				DxGetCurrentPositionEx(DxDraw, pps->ps.hdc, &LP);
 				box.left   = pps->ps.rcPaint.left;
 				box.right  = LP.x;
 				box.bottom = (y + 1) * LineY + pps->view.top;
 				box.top = box.bottom - (LineY - fontY);
-				DxFillBack(DxDraw,pps->ps.hdc,&box,C_BackBrush);
+				DxFillBack(DxDraw, pps->ps.hdc, &box, C_BackBrush);
 			}
 		}
 
@@ -193,13 +206,13 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 			box.top = pps->view.top;
 			box.bottom = pps->ps.rcPaint.bottom;
 
-			DxFillRectColor(DxDraw,pps->ps.hdc,&box,hB,CV_boun);
+			DxFillRectColor(DxDraw, pps->ps.hdc, &box, hB, CV_boun);
 			DeleteObject(hB);
 		}
 		FP.x += XV_lleft;
 	}
 	FP.x += XV_left;
-	box.top = max(pps->ps.rcPaint.top,pps->view.top);
+	box.top = max(pps->ps.rcPaint.top, pps->view.top);
 	Rx = FP.x + fontX * VOi->width;
 
 	if ( pps->ps.fErase != FALSE ){
@@ -207,12 +220,12 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 		if ( pps->ps.rcPaint.left < FP.x ){	// 左マージンの背景
 			box.right = FP.x;
 			box.left  = FP.x - XV_left;
-			DxFillBack(DxDraw,pps->ps.hdc,&box,C_BackBrush);
+			DxFillBack(DxDraw, pps->ps.hdc, &box, C_BackBrush);
 		}
 		if ( pps->ps.rcPaint.right > Rx ){	// 右端より右の背景
 			box.left  = Rx + 1;	// 境界線分
 			box.right = pps->ps.rcPaint.right;
-			DxFillBack(DxDraw,pps->ps.hdc,&box,C_BackBrush);
+			DxFillBack(DxDraw, pps->ps.hdc, &box, C_BackBrush);
 		}
 	}
 												// 右端の境界線 ---------------
@@ -225,7 +238,7 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 		if ( fontY >= 48 ) box.right += fontY / 48;
 
 		hBrush = CreateSolidBrush(CV_boun);
-		DxFillRectColor(DxDraw,pps->ps.hdc,&box,hBrush,CV_boun);
+		DxFillRectColor(DxDraw, pps->ps.hdc, &box, hBrush, CV_boun);
 		DeleteObject(hBrush);
 	}
 	normalfont = XV_unff ? hUnfixedFont : hBoxFont;
@@ -245,7 +258,7 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 			top = y * LineY + pps->view.top;
 			box.top = top;
 			box.bottom = top + fontY;
-			DxMoveToEx(DxDraw,pps->ps.hdc,FP.x,top);
+			DxMoveToEx(DxDraw, pps->ps.hdc, FP.x, top);
 		}
 		showy = y + VOi->offY;
 
@@ -253,15 +266,15 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 			if ( (CV_lbak[0] != C_AUTO) &&
 				 (ShowTextLineFlags & SHOWTEXTLINE_OLDTEXT) &&
 				 TailModeFlags ){
-				if ( showy <= OldTailLine ){
+				if ( (showy <= OldTailLine) && !LongText ){
 					pps->si.bg = CV_char[VOi->ti[showy].Bclr];
 					if ( showy < OldTailLine ){
-						pps->si.bg = GetLineMarkColor(pps->si.bg,CV_lbak[0]);
+						pps->si.bg = GetLineMarkColor(pps->si.bg, CV_lbak[0]);
 					}
 				}
 			}
 
-			if ( CV_lbak[2] != C_AUTO ){
+			if ( (CV_lbak[2] != C_AUTO) && !LongText ){
 				int bki;
 
 				for ( bki = BookmarkID_1st ; bki <= MaxBookmark ; bki++ ){
@@ -276,7 +289,7 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 					 ){
 						pps->si.bg = CV_char[VOi->ti[showy].Bclr];
 					 	if ( booky == showy ){
-							pps->si.bg = GetLineMarkColor(pps->si.bg,CV_lbak[2]);
+							pps->si.bg = GetLineMarkColor(pps->si.bg, CV_lbak[2]);
 							break;
 						}
 					}
@@ -289,24 +302,31 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 			drawp = (BYTE *)"";
 		}else{
 			textfont = normalfont;
-			DxSelectFont(DxDraw,XV_unff ? 1 : 0);
-			if ( VOi->ti[showy].type == VTYPE_IBM ){
-				textfont = GetIBMFont();
-			}else if ( VOi->ti[showy].type == VTYPE_ANSI ){
-				textfont = GetANSIFont();
+			DxSelectFont(DxDraw, XV_unff ? 1 : 0);
+
+			if ( !LongText ){
+				if ( VOi->ti[showy].type == VTYPE_IBM ){
+					textfont = GetIBMFont();
+				}else if ( VOi->ti[showy].type == VTYPE_ANSI ){
+					textfont = GetANSIFont();
+				}
 			}
 
 			if ( textfont != nowfont ){
 				nowfont = textfont;
-				IfGDImode(pps->ps.hdc) SelectObject(pps->ps.hdc,nowfont);
+				IfGDImode(pps->ps.hdc) SelectObject(pps->ps.hdc, nowfont);
 				#ifdef USEDIRECTWRITE
 					if ( (textfont == hIBMFont) || (textfont == hANSIFont) ){
-						SetFontDxDraw(DxDraw,textfont,1);
-						DxSelectFont(DxDraw,2);
+						SetFontDxDraw(DxDraw, textfont, 1);
+						DxSelectFont(DxDraw, 2);
 					}
 				#endif
 			}
-			VOi->MakeText(&mti,&VOi->ti[showy]);
+			if ( LongText ){
+				raw_vt.ptr = MakeDispText(&mti, &raw_vt);
+			}else{
+				VOi->MakeText(&mti, &VOi->ti[showy]);
+			}
 			drawp = buf;
 		}
 
@@ -318,34 +338,34 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 				int length;
 
 				if ( nowfont != textfont ){ // C4701ok ここに来るときは必ず textfont = normalfont; 済
-					DxSelectFont(DxDraw,XV_unff ? 1 : 0);
+					DxSelectFont(DxDraw, XV_unff ? 1 : 0);
 					nowfont = textfont;
-					IfGDImode(pps->ps.hdc) SelectObject(pps->ps.hdc,nowfont);
+					IfGDImode(pps->ps.hdc) SelectObject(pps->ps.hdc, nowfont);
 				}
 				if ( (VOsel.bottomOY <= y) && (VOsel.topOY >= y) ){
 					if ( pps->si.bgmode ){
-						DxSetBkMode(DxDraw,pps->ps.hdc,OPAQUE);
+						DxSetBkMode(DxDraw, pps->ps.hdc, OPAQUE);
 					}
-					DxSetBkColor(DxDraw,pps->ps.hdc,C_info);		// 文字色
-					DxSetTextColor(DxDraw,pps->ps.hdc,C_back);
+					DxSetBkColor(DxDraw, pps->ps.hdc, C_info);		// 文字色
+					DxSetTextColor(DxDraw, pps->ps.hdc, C_back);
 				}else{
 					if ( pps->si.bgmode ){
-						DxSetBkMode(DxDraw,pps->ps.hdc,TRANSPARENT);
+						DxSetBkMode(DxDraw, pps->ps.hdc, TRANSPARENT);
 					}
-					DxSetTextColor(DxDraw,pps->ps.hdc,
+					DxSetTextColor(DxDraw, pps->ps.hdc,
 						(*(drawp - 1) == VCODE_ASCII) ? pps->si.fg : CV_ctrl);
-					DxSetBkColor(DxDraw,pps->ps.hdc,pps->si.bg);
+					DxSetBkColor(DxDraw, pps->ps.hdc, pps->si.bg);
 				}
 				length = strlen32((char *)drawp);
 				if ( length ){
 					if ( (pps->ps.fErase != FALSE) && (nowfont != normalfont) ){
 						// 通常以外のフォントの時は、高さが合わないときがある
 						// ので、一旦背景消去する
-						DxGetCurrentPositionEx(DxDraw,pps->ps.hdc,&LP);
+						DxGetCurrentPositionEx(DxDraw, pps->ps.hdc, &LP);
 						box.left   = LP.x;
 						box.right  = box.left + length * fontX;
 						if ( XV_unff && (box.right > Rx) ) box.right = Rx;
-						DxFillBack(DxDraw,pps->ps.hdc,&box,C_BackBrush);
+						DxFillBack(DxDraw, pps->ps.hdc, &box, C_BackBrush);
 					}
 					if ( (nowfont == hIBMFont)
 #ifndef UNICODE
@@ -366,7 +386,7 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 #endif
 						}
 						*d = '\0';
-						DrawSelectedTextW(pps->ps.hdc,&pps->si,(WCHAR *)wbuf,length,CharX,y);
+						DrawSelectedTextW(pps->ps.hdc, &pps->si, (WCHAR *)wbuf, length, CharX, y);
 #if defined(UNICODE) || defined(USEDIRECTX)
 					}else if ( nowfont == hANSIFont ){
 						int wlength;
@@ -399,19 +419,19 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 
 				if ( nowfont != textfont ){
 					nowfont = textfont;
-					IfGDImode(pps->ps.hdc) SelectObject(pps->ps.hdc,nowfont);
+					IfGDImode(pps->ps.hdc) SelectObject(pps->ps.hdc, nowfont);
 				}
 				if ( (VOsel.bottomOY <= y) && (VOsel.topOY >= y) ){
-					if ( pps->si.bgmode ) DxSetBkMode(DxDraw,pps->ps.hdc,OPAQUE);
-					DxSetBkColor(DxDraw,pps->ps.hdc,C_info);		// 文字色
-					DxSetTextColor(DxDraw,pps->ps.hdc,C_back);
+					if ( pps->si.bgmode ) DxSetBkMode(DxDraw, pps->ps.hdc, OPAQUE);
+					DxSetBkColor(DxDraw, pps->ps.hdc, C_info);		// 文字色
+					DxSetTextColor(DxDraw, pps->ps.hdc, C_back);
 				}else{
-					if ( pps->si.bgmode ) DxSetBkMode(DxDraw,pps->ps.hdc,TRANSPARENT);
-					DxSetTextColor(DxDraw,pps->ps.hdc,pps->si.fg);
-					DxSetBkColor(DxDraw,pps->ps.hdc,pps->si.bg);
+					if ( pps->si.bgmode ) DxSetBkMode(DxDraw, pps->ps.hdc, TRANSPARENT);
+					DxSetTextColor(DxDraw, pps->ps.hdc, pps->si.fg);
+					DxSetBkColor(DxDraw, pps->ps.hdc, pps->si.bg);
 				}
 				length = strlenW32((WCHAR *)drawp);
-				DrawSelectedTextW(pps->ps.hdc,&pps->si,(WCHAR *)drawp,length,CharX,y);
+				DrawSelectedTextW(pps->ps.hdc, &pps->si, (WCHAR *)drawp, length, CharX, y);
 				drawp += (length + 1) * 2;
 				CharX += length;
 				break;
@@ -422,7 +442,7 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 				pps->si.bg = CV_char[*(drawp + 1)];
 				if ( BackScreen.X_WallpaperType ){
 					pps->si.bgmode = (*(drawp + 1) == CV__defback);
-					DxSetBkMode(DxDraw,pps->ps.hdc,pps->si.bgmode ? TRANSPARENT : OPAQUE);
+					DxSetBkMode(DxDraw, pps->ps.hdc, pps->si.bgmode ? TRANSPARENT : OPAQUE);
 				}
 				drawp += 2;
 				break;
@@ -447,12 +467,12 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 						break;
 					default:
 						textfont = normalfont;
-						DxSelectFont(DxDraw,XV_unff ? 1 : 0);
+						DxSelectFont(DxDraw, XV_unff ? 1 : 0);
 						break;
 				}
 				if ( textfont != nowfont ){
 					nowfont = textfont;
-					IfGDImode(pps->ps.hdc) SelectObject(pps->ps.hdc,nowfont);
+					IfGDImode(pps->ps.hdc) SelectObject(pps->ps.hdc, nowfont);
 				}
 				break;
 
@@ -460,50 +480,50 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 				BOOL reverse = FALSE;
 				int tabwidth;
 
-				DxGetCurrentPositionEx(DxDraw,pps->ps.hdc,&LP);
+				DxGetCurrentPositionEx(DxDraw, pps->ps.hdc, &LP);
 				box.left = LP.x;
 				tabwidth = VOi->tab * fontX;
 				box.right = FP.x + (((LP.x - FP.x) / tabwidth) + 1) * tabwidth;
 
 				if ( (VOsel.bottomOY <= y) && (VOsel.topOY >= y) ){
-					reverse = CheckReverse(y,CharX);
+					reverse = CheckReverse(y, CharX);
 				}
 				if ( !reverse ){
 					if ( pps->ps.fErase != FALSE ){
-						DxFillBack(DxDraw,pps->ps.hdc,&box,C_BackBrush);
+						DxFillBack(DxDraw, pps->ps.hdc, &box, C_BackBrush);
 					}
 				}else{
 					HBRUSH hB;
 
 					hB = CreateSolidBrush(C_info);
-					DxFillRectColor(DxDraw,pps->ps.hdc,&box,hB,C_info);
+					DxFillRectColor(DxDraw, pps->ps.hdc, &box, hB, C_info);
 					DeleteObject(hB);
 				}
 				if ( XV_bctl[0] ){
 					#ifndef USEDIRECTX
 					if ( XV_bctl[0] == 1 ){
-						DrawTabSymbol(pps->ps.hdc,box.left,box.top + LineY / 2,
+						DrawTabSymbol(pps->ps.hdc, box.left, box.top + LineY / 2,
 								reverse ? C_back : CV_tab);
 					}else
 					#endif
 					{
 						if ( reverse ){
-							DxSetTextColor(DxDraw,pps->ps.hdc,C_back);
-							DxSetBkColor(DxDraw,pps->ps.hdc,C_info);
+							DxSetTextColor(DxDraw, pps->ps.hdc, C_back);
+							DxSetBkColor(DxDraw, pps->ps.hdc, C_info);
 						}else{
-							DxSetTextColor(DxDraw,pps->ps.hdc,CV_tab);
-							DxSetBkColor(DxDraw,pps->ps.hdc,C_back);
+							DxSetTextColor(DxDraw, pps->ps.hdc, CV_tab);
+							DxSetBkColor(DxDraw, pps->ps.hdc, C_back);
 						}
 
 						if ( nowfont != normalfont ){
-							DxSelectFont(DxDraw,XV_unff ? 1 : 0);
+							DxSelectFont(DxDraw, XV_unff ? 1 : 0);
 							nowfont = normalfont;
-							IfGDImode(pps->ps.hdc) SelectObject(pps->ps.hdc,nowfont);
+							IfGDImode(pps->ps.hdc) SelectObject(pps->ps.hdc, nowfont);
 						}
-						DxTextOutRelW(DxDraw,pps->ps.hdc,XV_ctls + CTRLSIG_HTAB,1);
+						DxTextOutRelW(DxDraw, pps->ps.hdc, XV_ctls + CTRLSIG_HTAB, 1);
 					}
 				}
-				DxMoveToEx(DxDraw,pps->ps.hdc,box.right,box.top);
+				DxMoveToEx(DxDraw, pps->ps.hdc, box.right, box.top);
 				CharX++;
 				break;
 			}
@@ -514,27 +534,27 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 
 					 // 最終行の改行は、必ず選択範囲外
 					if ( (VOsel.bottomOY <= y) && (VOsel.topOY > y) ){
-						reverse = CheckReverse(y,CharX);
+						reverse = CheckReverse(y, CharX);
 					}
 					#ifndef USEDIRECTX
 					if ( XV_bctl[1] == 1 ){
-						DrawLFSymbol(pps->ps.hdc,pps->ps.fErase,reverse);
+						DrawLFSymbol(pps->ps.hdc, pps->ps.fErase, reverse);
 					}else
 					#endif
 					{
 						if ( reverse ){
-							DxSetTextColor(DxDraw,pps->ps.hdc,C_back);
-							DxSetBkColor(DxDraw,pps->ps.hdc,CV_lf);
+							DxSetTextColor(DxDraw, pps->ps.hdc, C_back);
+							DxSetBkColor(DxDraw, pps->ps.hdc, CV_lf);
 						}else{
-							DxSetTextColor(DxDraw,pps->ps.hdc,CV_lf);
-							DxSetBkColor(DxDraw,pps->ps.hdc,C_back);
+							DxSetTextColor(DxDraw, pps->ps.hdc, CV_lf);
+							DxSetBkColor(DxDraw, pps->ps.hdc, C_back);
 						}
 						if ( nowfont != normalfont ){
-							DxSelectFont(DxDraw,XV_unff ? 1 : 0);
+							DxSelectFont(DxDraw, XV_unff ? 1 : 0);
 							nowfont = normalfont;
-							IfGDImode(pps->ps.hdc) SelectObject(pps->ps.hdc,nowfont);
+							IfGDImode(pps->ps.hdc) SelectObject(pps->ps.hdc, nowfont);
 						}
-						DxTextOutRelW(DxDraw,pps->ps.hdc,XV_ctls + *drawp,1);
+						DxTextOutRelW(DxDraw, pps->ps.hdc, XV_ctls + *drawp, 1);
 					}
 				}
 				drawp++;
@@ -542,14 +562,14 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 
 			case VCODE_PARA:	// ^K ----------------------------------------
 				if ( XV_bctl[1] != 0 ){
-					DrawSymbol(&pps->ps,&nowfont,&box,&VtabcodeA,XV_ctls + CTRLSIG_VTAB);
+					DrawSymbol(&pps->ps, &nowfont, &box, &VtabcodeA, XV_ctls + CTRLSIG_VTAB);
 					CharX++;
 				}
 				break;
 
 			case VCODE_PAGE:	// ^L ----------------------------------------
 				if ( XV_bctl[1] != 0 ){
-					DrawSymbol(&pps->ps,&nowfont,&box,&pagecodeA,XV_ctls + CTRLSIG_PAGE);
+					DrawSymbol(&pps->ps, &nowfont, &box, &pagecodeA, XV_ctls + CTRLSIG_PAGE);
 				}
 				break;
 
@@ -557,16 +577,16 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 				BOOL reverse = FALSE;
 
 				if ( (VOsel.bottomOY <= y) && (VOsel.topOY >= y) ){
-					reverse = CheckReverse(y,CharX);
+					reverse = CheckReverse(y, CharX);
 				}
 				if ( !reverse ){
-					DxSetTextColor(DxDraw,pps->ps.hdc,CV_spc);
-					DxSetBkColor(DxDraw,pps->ps.hdc,C_back);
+					DxSetTextColor(DxDraw, pps->ps.hdc, CV_spc);
+					DxSetBkColor(DxDraw, pps->ps.hdc, C_back);
 				}else{
-					DxSetTextColor(DxDraw,pps->ps.hdc,C_back);
-					DxSetBkColor(DxDraw,pps->ps.hdc,C_info);
+					DxSetTextColor(DxDraw, pps->ps.hdc, C_back);
+					DxSetBkColor(DxDraw, pps->ps.hdc, C_info);
 				}
-				DxTextOutRelA(DxDraw,pps->ps.hdc,StrSJISSpace,2);
+				DxTextOutRelA(DxDraw, pps->ps.hdc, StrSJISSpace, 2);
 				CharX += 2;
 				break;
 			}
@@ -574,16 +594,16 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 				BOOL reverse = FALSE;
 
 				if ( (VOsel.bottomOY <= y) && (VOsel.topOY >= y) ){
-					reverse = CheckReverse(y,CharX);
+					reverse = CheckReverse(y, CharX);
 				}
 				if ( !reverse ){
-					DxSetTextColor(DxDraw,pps->ps.hdc,CV_spc);
-					DxSetBkColor(DxDraw,pps->ps.hdc,C_back);
+					DxSetTextColor(DxDraw, pps->ps.hdc, CV_spc);
+					DxSetBkColor(DxDraw, pps->ps.hdc, C_back);
 				}else{
-					DxSetTextColor(DxDraw,pps->ps.hdc,C_back);
-					DxSetBkColor(DxDraw,pps->ps.hdc,C_info);
+					DxSetTextColor(DxDraw, pps->ps.hdc, C_back);
+					DxSetBkColor(DxDraw, pps->ps.hdc, C_info);
 				}
-				DxTextOutRelW(DxDraw,pps->ps.hdc,StrWideSpace,1);
+				DxTextOutRelW(DxDraw, pps->ps.hdc, StrWideSpace, 1);
 				CharX++;
 				break;
 			}
@@ -593,26 +613,26 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 				break;
 
 			default:		// 未定義コード -----------------------------------
-				DxSetTextColor(DxDraw,pps->ps.hdc,C_CYAN);
-				DxTextOutRelA(DxDraw,pps->ps.hdc,"MakeTextError",13);
+				DxSetTextColor(DxDraw, pps->ps.hdc, C_CYAN);
+				DxTextOutRelA(DxDraw, pps->ps.hdc, "MakeTextError", 13);
 				drawp = (BYTE *)"";
 				break;
 		}
 		}
 		if ( pps->ps.fErase != FALSE ){
-			DxGetCurrentPositionEx(DxDraw,pps->ps.hdc,&LP);
+			DxGetCurrentPositionEx(DxDraw, pps->ps.hdc, &LP);
 			if ( LineY > fontY ){ // 描画文字の行間の消去
 				box.left   = FP.x;
 				box.right  = LP.x;
 				box.top    = box.bottom;
 				box.bottom += LineY - fontY;
-				DxFillBack(DxDraw,pps->ps.hdc,&box,C_BackBrush);
+				DxFillBack(DxDraw, pps->ps.hdc, &box, C_BackBrush);
 				box.top    = box.bottom - LineY;
 			}
 			if ( LP.x < Rx ){ // 右側余白の消去
 				box.left = LP.x;
 				box.right = Rx;
-				DxFillBack(DxDraw,pps->ps.hdc,&box,C_BackBrush);
+				DxFillBack(DxDraw, pps->ps.hdc, &box, C_BackBrush);
 			}
 		}
 		// 最終行ライン表示
@@ -624,7 +644,7 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 			box.bottom = box.top + 1;
 			if ( fontY >= 48 ) box.top -= fontY / 48;
 			hBrush = CreateSolidBrush(CV_boun);
-			DxFillRectColor(DxDraw,pps->ps.hdc,&box,hBrush,CV_boun);
+			DxFillRectColor(DxDraw, pps->ps.hdc, &box, hBrush, CV_boun);
 			DeleteObject(hBrush);
 		}
 		// ラインカーソル
@@ -637,14 +657,14 @@ void PaintText(PPVPAINTSTRUCT *pps,PPvViewObject *vo)
 			box.right = pps->ps.rcPaint.right;
 			box.top = box.bottom - 1;
 			if ( fontY >= 48 ) box.top -= fontY / 48;
-			DxFillRectColor(DxDraw,pps->ps.hdc,&box,hB,CV_lcsr);
+			DxFillRectColor(DxDraw, pps->ps.hdc, &box, hB, CV_lcsr);
 			DeleteObject(hB);
 		}
 	}
-	DxSetTextAlign(pps->ps.hdc,TA_LEFT | TA_TOP | TA_NOUPDATECP);	// CP を無効に
+	DxSetTextAlign(pps->ps.hdc, TA_LEFT | TA_TOP | TA_NOUPDATECP);	// CP を無効に
 }
 
-BOOL CheckReverse(int CharY,int CharX)
+BOOL CheckReverse(int CharY, int CharX)
 {
 	if ( VOsel.linemode ) return TRUE;
 
@@ -664,9 +684,9 @@ BOOL CheckReverse(int CharY,int CharX)
 	return FALSE;
 }
 
-void DrawSelectedTextW(HDC hDC,SELINFO *si,WCHAR *text,int length,int charX,int offsetY)
+void DrawSelectedTextW(HDC hDC, SELINFO *si, WCHAR *text, int length, int charX, int offsetY)
 {
-	int left,right;
+	int left, right;
 
 	if ( !length ) return;
 
@@ -675,7 +695,7 @@ void DrawSelectedTextW(HDC hDC,SELINFO *si,WCHAR *text,int length,int charX,int 
 		(VOsel.select == FALSE) ||
 		!( (offsetY == VOsel.bottomOY) || (offsetY == VOsel.topOY) )
 	){
-		DxTextOutRelW(DxDraw,hDC,text,length);
+		DxTextOutRelW(DxDraw, hDC, text, length);
 		return;
 	}
 
@@ -683,9 +703,9 @@ void DrawSelectedTextW(HDC hDC,SELINFO *si,WCHAR *text,int length,int charX,int 
 	right = ( offsetY != VOsel.topOY ) ? TEXTBUFSIZE : VOsel.top.x.offset;
 									// 選択範囲より左…非選択で表示
 	if ( (charX + length) <= left ){
-		DxSetTextColor(DxDraw,hDC,si->fg);
-		DxSetBkColor(DxDraw,hDC,si->bg);
-		DxTextOutRelW(DxDraw,hDC,text,length);
+		DxSetTextColor(DxDraw, hDC, si->fg);
+		DxSetBkColor(DxDraw, hDC, si->bg);
+		DxTextOutRelW(DxDraw, hDC, text, length);
 		return;
 	}
 									// 途中で選択範囲が始まる…始まる以前を表示
@@ -694,9 +714,9 @@ void DrawSelectedTextW(HDC hDC,SELINFO *si,WCHAR *text,int length,int charX,int 
 
 		d = left - charX;
 		if ( d > 0 ){
-			DxSetTextColor(DxDraw,hDC,si->fg);
-			DxSetBkColor(DxDraw,hDC,si->bg);
-			DxTextOutRelW(DxDraw,hDC,text,d);
+			DxSetTextColor(DxDraw, hDC, si->fg);
+			DxSetBkColor(DxDraw, hDC, si->bg);
+			DxTextOutRelW(DxDraw, hDC, text, d);
 			length -= d;
 			charX += d;
 			text += d;
@@ -709,29 +729,29 @@ void DrawSelectedTextW(HDC hDC,SELINFO *si,WCHAR *text,int length,int charX,int 
 		d = right - charX;
 		if ( d > 0 ){ // 範囲が終わるまで表示
 			if ( d > length ) d = length;
-			if ( si->bgmode ) DxSetBkMode(DxDraw,hDC,OPAQUE);
-			DxSetBkColor(DxDraw,hDC,C_info);
-			DxSetTextColor(DxDraw,hDC,C_back);
-			DxTextOutRelW(DxDraw,hDC,text,d);
-			if ( si->bgmode ) DxSetBkMode(DxDraw,hDC,TRANSPARENT);
+			if ( si->bgmode ) DxSetBkMode(DxDraw, hDC, OPAQUE);
+			DxSetBkColor(DxDraw, hDC, C_info);
+			DxSetTextColor(DxDraw, hDC, C_back);
+			DxTextOutRelW(DxDraw, hDC, text, d);
+			if ( si->bgmode ) DxSetBkMode(DxDraw, hDC, TRANSPARENT);
 			length -= d;
 			text += d;
 		}
 		// 終わった後を表示
-		DxSetTextColor(DxDraw,hDC,si->fg);
-		DxSetBkColor(DxDraw,hDC,si->bg);
-		DxTextOutRelW(DxDraw,hDC,text,length);
+		DxSetTextColor(DxDraw, hDC, si->fg);
+		DxSetBkColor(DxDraw, hDC, si->bg);
+		DxTextOutRelW(DxDraw, hDC, text, length);
 		return;
 	}
 										// 選択範囲より前で終わる
-	if ( si->bgmode ) DxSetBkMode(DxDraw,hDC,OPAQUE);
-	DxSetBkColor(DxDraw,hDC,C_info);
-	DxSetTextColor(DxDraw,hDC,C_back);
-	DxTextOutRelW(DxDraw,hDC,text,length);
-	if ( si->bgmode ) DxSetBkMode(DxDraw,hDC,TRANSPARENT);
+	if ( si->bgmode ) DxSetBkMode(DxDraw, hDC, OPAQUE);
+	DxSetBkColor(DxDraw, hDC, C_info);
+	DxSetTextColor(DxDraw, hDC, C_back);
+	DxTextOutRelW(DxDraw, hDC, text, length);
+	if ( si->bgmode ) DxSetBkMode(DxDraw, hDC, TRANSPARENT);
 }
 
-void TextFixOut(HDC hDC,char *str,int len)
+void TextFixOut(HDC hDC, char *str, int len)
 {
 	if ( len == 0 ) len = strlen32(str);
 #ifdef UNICODE
@@ -739,13 +759,13 @@ void TextFixOut(HDC hDC,char *str,int len)
 	  //    指定しても全て欧文フォントが使用されるのでUNICODEに変換する
 		WCHAR wbuf[TEXTBUFSIZE];
 
-		len = MultiByteToWideChar(CP_ACP,0,str,len,wbuf,TEXTBUFSIZE);
-		DxTextOutRelW(DxDraw,hDC,wbuf,len);
+		len = MultiByteToWideChar(CP_ACP, 0, str, len, wbuf, TEXTBUFSIZE);
+		DxTextOutRelW(DxDraw, hDC, wbuf, len);
 	}
 	return;
 #else
 	if ( (fontWW == 0) || XV_unff ){
-		DxTextOutRelA(DxDraw,hDC,str,len);
+		DxTextOutRelA(DxDraw, hDC, str, len);
 		return;
 	}
 	while(len){
@@ -753,25 +773,25 @@ void TextFixOut(HDC hDC,char *str,int len)
 			char *p;
 			int l = 0;
 
-			for ( p = str ; len && IskanjiA(*str) ; str+=2,l+=2,len-=2);
-			SetTextCharacterExtra(hDC,fontWW);
-			DxTextOutRelA(DxDraw,hDC,p,l);
-			SetTextCharacterExtra(hDC,0);
+			for ( p = str ; len && IskanjiA(*str) ; str+=2, l+=2, len-=2);
+			SetTextCharacterExtra(hDC, fontWW);
+			DxTextOutRelA(DxDraw, hDC, p, l);
+			SetTextCharacterExtra(hDC, 0);
 			if ( len <= 0 ) break;
 		}else{
 			char *p;
 			int l = 0;
 
-			for ( p = str ; len && !IskanjiA(*str) ; str++,l++,len--);
-			DxTextOutRelA(DxDraw,hDC,p,l);
+			for ( p = str ; len && !IskanjiA(*str) ; str++, l++, len--);
+			DxTextOutRelA(DxDraw, hDC, p, l);
 		}
 	}
 #endif
 }
 
-void DrawSelectedTextA(HDC hDC,SELINFO *si,char *text,int length,int charX,int offsetY)
+void DrawSelectedTextA(HDC hDC, SELINFO *si, char *text, int length, int charX, int offsetY)
 {
-	int left,right;
+	int left, right;
 
 	if ( length == 0 ) return;
 
@@ -780,7 +800,7 @@ void DrawSelectedTextA(HDC hDC,SELINFO *si,char *text,int length,int charX,int o
 		(VOsel.select == FALSE) ||
 		!( (offsetY == VOsel.bottomOY) || (offsetY == VOsel.topOY) )
 	){
-		TextFixOut(hDC,text,length);
+		TextFixOut(hDC, text, length);
 		return;
 	}
 
@@ -788,9 +808,9 @@ void DrawSelectedTextA(HDC hDC,SELINFO *si,char *text,int length,int charX,int o
 	right = ( offsetY != VOsel.topOY ) ? TEXTBUFSIZE : VOsel.top.x.offset;
 									// 選択範囲より左…非選択で表示
 	if ( (charX + length) <= left ){
-		DxSetTextColor(DxDraw,hDC,si->fg);
-		DxSetBkColor(DxDraw,hDC,si->bg);
-		TextFixOut(hDC,text,length);
+		DxSetTextColor(DxDraw, hDC, si->fg);
+		DxSetBkColor(DxDraw, hDC, si->bg);
+		TextFixOut(hDC, text, length);
 		return;
 	}
 									// 途中で選択範囲が始まる…始まる以前を表示
@@ -798,11 +818,11 @@ void DrawSelectedTextA(HDC hDC,SELINFO *si,char *text,int length,int charX,int o
 		int d;
 
 		d = left - charX;
-		if ( d > 0 ) d = SelColA(text,d) - text;
+		if ( d > 0 ) d = SelColA(text, d) - text;
 		if ( d > 0 ){
-			DxSetTextColor(DxDraw,hDC,si->fg);
-			DxSetBkColor(DxDraw,hDC,si->bg);
-			TextFixOut(hDC,text,d);
+			DxSetTextColor(DxDraw, hDC, si->fg);
+			DxSetBkColor(DxDraw, hDC, si->bg);
+			TextFixOut(hDC, text, d);
 			length -= d;
 			charX += d;
 			text += d;
@@ -813,40 +833,40 @@ void DrawSelectedTextA(HDC hDC,SELINFO *si,char *text,int length,int charX,int o
 		int d;
 
 		d = right - charX;
-		if ( d > 0 ) d = SelColA(text,d) - text;
+		if ( d > 0 ) d = SelColA(text, d) - text;
 		if ( d > 0 ){ // 範囲が終わるまで表示
 			if ( d > length ) d = length;
-			if ( si->bgmode ) DxSetBkMode(DxDraw,hDC,OPAQUE);
-			DxSetBkColor(DxDraw,hDC,C_info);
-			DxSetTextColor(DxDraw,hDC,C_back);
-			TextFixOut(hDC,text,d);
-			if ( si->bgmode ) DxSetBkMode(DxDraw,hDC,TRANSPARENT);
+			if ( si->bgmode ) DxSetBkMode(DxDraw, hDC, OPAQUE);
+			DxSetBkColor(DxDraw, hDC, C_info);
+			DxSetTextColor(DxDraw, hDC, C_back);
+			TextFixOut(hDC, text, d);
+			if ( si->bgmode ) DxSetBkMode(DxDraw, hDC, TRANSPARENT);
 			length -= d;
 			text += d;
 		}
 		// 終わった後を表示
-		DxSetTextColor(DxDraw,hDC,si->fg);
-		DxSetBkColor(DxDraw,hDC,si->bg);
-		TextFixOut(hDC,text,length);
+		DxSetTextColor(DxDraw, hDC, si->fg);
+		DxSetBkColor(DxDraw, hDC, si->bg);
+		TextFixOut(hDC, text, length);
 		return;
 	}
 										// 選択範囲より前で終わる
-	if ( si->bgmode ) DxSetBkMode(DxDraw,hDC,OPAQUE);
-	DxSetBkColor(DxDraw,hDC,C_info);
-	DxSetTextColor(DxDraw,hDC,C_back);
-	TextFixOut(hDC,text,length);
-	if ( si->bgmode ) DxSetBkMode(DxDraw,hDC,TRANSPARENT);
+	if ( si->bgmode ) DxSetBkMode(DxDraw, hDC, OPAQUE);
+	DxSetBkColor(DxDraw, hDC, C_info);
+	DxSetTextColor(DxDraw, hDC, C_back);
+	TextFixOut(hDC, text, length);
+	if ( si->bgmode ) DxSetBkMode(DxDraw, hDC, TRANSPARENT);
 	return;
 }
 // 改行記号を表示(低速版)
-void DrawLFSymbol(_In_ HDC hDC,BOOL fErase,BOOL reverse)
+void DrawLFSymbol(_In_ HDC hDC, BOOL fErase, BOOL reverse)
 {
-	int y,wide,height;
+	int y, wide, height;
 	POINT LP;
 	HGDIOBJ hOldPen;
 	RECT box;
 
-	DxGetCurrentPositionEx(DxDraw,hDC,&LP);
+	DxGetCurrentPositionEx(DxDraw, hDC, &LP);
 	box.right = LP.x + fontX;
 	box.top = LP.y;
 
@@ -856,41 +876,41 @@ void DrawLFSymbol(_In_ HDC hDC,BOOL fErase,BOOL reverse)
 		hB = CreateSolidBrush(C_info);
 		box.left   = LP.x;
 		box.bottom = box.top + fontY;
-		DxFillRectColor(DxDraw,hDC,&box,hB,C_info);
+		DxFillRectColor(DxDraw, hDC, &box, hB, C_info);
 		DeleteObject(hB);
 	}else if ( fErase != FALSE ){
 		box.left   = LP.x;
 		box.bottom = box.top + fontY;
-		DxFillBack(DxDraw,hDC,&box,C_BackBrush);
+		DxFillBack(DxDraw, hDC, &box, C_BackBrush);
 	}
 
 	y = LP.y + fontY / 2;
 	wide = fontX * 1 / 8 + 1;
 	height = fontY * 1 / 8 + 1;
-	hOldPen = SelectObject(hDC,CreatePen(PS_SOLID,0,CV_lf));
-	DxMoveToEx(DxDraw,hDC,LP.x + fontX - wide,y - height * 2);
-	LineTo  (hDC,LP.x + fontX - wide,y);
-	LineTo  (hDC,LP.x + wide ,y);
-	LineTo  (hDC,LP.x + wide * 3,y - height);
-	DxMoveToEx(DxDraw,hDC,LP.x + wide ,y);
-	LineTo  (hDC,LP.x + wide * 3,y + height);
-	DeleteObject(SelectObject(hDC,hOldPen));
-	DxMoveToEx(DxDraw,hDC,box.right,box.top);
+	hOldPen = SelectObject(hDC, CreatePen(PS_SOLID, 0, CV_lf));
+	DxMoveToEx(DxDraw, hDC, LP.x + fontX - wide, y - height * 2);
+	LineTo  (hDC, LP.x + fontX - wide, y);
+	LineTo  (hDC, LP.x + wide , y);
+	LineTo  (hDC, LP.x + wide * 3, y - height);
+	DxMoveToEx(DxDraw, hDC, LP.x + wide , y);
+	LineTo  (hDC, LP.x + wide * 3, y + height);
+	DeleteObject(SelectObject(hDC, hOldPen));
+	DxMoveToEx(DxDraw, hDC, box.right, box.top);
 }
 
 // tab記号を表示(低速版)
-void DrawTabSymbol(_In_ HDC hDC,int x,int y,COLORREF color)
+void DrawTabSymbol(_In_ HDC hDC, int x, int y, COLORREF color)
 {
-	int wide,height;
+	int wide, height;
 	HGDIOBJ hOldPen;
 
 	wide = fontX * 1 / 8 + 1;
 	height = fontY * 1 / 8 + 1;
-	hOldPen = SelectObject(hDC,CreatePen(PS_SOLID,0,color));
-	DxMoveToEx(DxDraw,hDC,x + wide, y);
-	LineTo  (hDC,x + fontX - wide ,y);
-	LineTo  (hDC,x + fontX - wide * 3,y - height);
-	DxMoveToEx(DxDraw,hDC,x + fontX - wide ,y);
-	LineTo  (hDC,x + fontX - wide * 3,y + height);
-	DeleteObject(SelectObject(hDC,hOldPen));
+	hOldPen = SelectObject(hDC, CreatePen(PS_SOLID, 0, color));
+	DxMoveToEx(DxDraw, hDC, x + wide, y);
+	LineTo  (hDC, x + fontX - wide , y);
+	LineTo  (hDC, x + fontX - wide * 3, y - height);
+	DxMoveToEx(DxDraw, hDC, x + fontX - wide , y);
+	LineTo  (hDC, x + fontX - wide * 3, y + height);
+	DeleteObject(SelectObject(hDC, hOldPen));
 }

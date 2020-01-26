@@ -28,6 +28,8 @@ extern "C" {
 #define TIMERID_MSGBOX_AUTORETRY 0x7402 // メッセージボックス表示中の自動再試行
 #define TIMERRATE_MSGBOX_AUTORETRY 300 // (0.3秒)
 
+#define ERROR_EX_RETURN	ERROR_CONTINUE // *return コマンドによる終了通知
+
 //==================================================== 共有メモリ(PPCOMMON.MEM)
 //#pragma pack(push, 4)
 
@@ -384,7 +386,7 @@ ExternWinAPI (int, WideCharToMultiByteU8, (UINT CodePage, DWORD dwFlags, const W
 #endif
 
 //------------------------------------------------------------------ ppd_cust.c
-extern TCHAR PPcustCDumpText(const TCHAR *str, const TCHAR *sub, TCHAR *result);
+extern void PPcustCDumpText(const TCHAR *str, const TCHAR *sub, TCHAR **result);
 
 //------------------------------------------------------------------ ppd_dlg.c
 // PPXSTATIC で使用可能な制御文字
@@ -604,17 +606,15 @@ extern void InitSysColors_main(void);
 #define InitSysColors() {if (C_3dFace == C_AUTO) InitSysColors_main();}
 extern void FreeSysColors(void);
 
-
-
 //------------------------------------------------------------------ ppd_wild.c
 extern void FreeRMatch(void);
 #ifndef REXPREPLACE
 typedef struct {int dummy;} RXPREPLACESTRING;
 
 extern BOOL InitRegularExpressionReplace(RXPREPLACESTRING **rxps, TCHAR *rxstring, BOOL slash);
-extern BOOL RegularExpressionReplace(RXPREPLACESTRING *rxps, TCHAR *target);
+extern const TCHAR *RegularExpressionReplace(RXPREPLACESTRING *rxps, TCHAR *target, TCHAR *dest, size_t dest_buflen);
 extern void FreeRegularExpressionReplace(RXPREPLACESTRING *rxps);
-extern void GetRegularExpressionName(TCHAR *str);
+extern TCHAR *GetRegularExpressionName(TCHAR *str);
 #endif
 extern BOOL InitMigemo(void);
 extern void FreeMigemo(void);

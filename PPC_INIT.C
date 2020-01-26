@@ -1303,6 +1303,11 @@ void PPcLoadCust(PPC_APPINFO *cinfo)
 
 	X_lddm[0] = -1;
 
+	work[0] = 0;
+	GetCustTable(Str_others, T("exdset"), &work, sizeof(work));
+	exdset = ((BYTE)work[0] == '1');
+	Use_X_icnl = IsExistCustData(T("X_icnl"));
+
 	if ( cinfo->info.hWnd != NULL ) CloseGuiControl(cinfo);
 }
 

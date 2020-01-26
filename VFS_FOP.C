@@ -1513,7 +1513,7 @@ DWORD_PTR USECDECL FioInfo(FIO_INFO *fio, DWORD cmdID, PPXAPPINFOUNION *uptr)
 	return 1;
 }
 
-BOOL USEFASTCALL CheckSaveDrive(struct FopOption *opt, _In_ const TCHAR *src, _In_ const TCHAR *dst)
+BOOL USEFASTCALL CheckSaveDriveMove(struct FopOption *opt, _In_ const TCHAR *src, _In_ const TCHAR *dst)
 {
 	const TCHAR *srcdend;
 

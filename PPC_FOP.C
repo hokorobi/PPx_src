@@ -1033,7 +1033,7 @@ void SetShellNewItemMenu(HMENU hMenu, int *index, TCHAR *extname, const TCHAR *e
 {
 	HKEY hSKey;
 	TCHAR subname[MAX_PATH];
-	DWORD s, t;
+	DWORD s;
 
 	if ( RegOpenKeyEx(HKEY_CLASSES_ROOT, extname, 0, KEY_READ, &hSKey)
 		!= ERROR_SUCCESS ){
@@ -1041,7 +1041,7 @@ void SetShellNewItemMenu(HMENU hMenu, int *index, TCHAR *extname, const TCHAR *e
 	}
 	s = sizeof subname;
 	subname[0] = '\0';
-	RegQueryValueEx(hSKey, NilStr, NULL, &t, (LPBYTE)subname, &s);
+	RegQueryValueEx(hSKey, NilStr, NULL, NULL, (LPBYTE)subname, &s);
 	if ( subname[0] != '\0' ) tstrcpy(extname, subname);
 	RegCloseKey(hSKey);
 
@@ -1053,7 +1053,7 @@ void SetShellNewItemMenu(HMENU hMenu, int *index, TCHAR *extname, const TCHAR *e
 
 void MakeMakeEntryItem(HMENU hMenu)
 {
-	DWORD regtype, regsize;
+	DWORD regsize;
 	TCHAR name[MAX_PATH];
 	int i = 0, index = NEWCMD_REG;
 
@@ -1077,7 +1077,7 @@ void MakeMakeEntryItem(HMENU hMenu)
 		if ( RegOpenKeyEx(HKEY_CLASSES_ROOT, name, 0, KEY_READ, &HK)
 			== ERROR_SUCCESS ){
 			regsize = sizeof extname;
-			if ( (RegQueryValueEx(HK, NilStr, NULL, &regtype, (LPBYTE)extname, &regsize) == ERROR_SUCCESS) && (regsize > 1) ){
+			if ( (RegQueryValueEx(HK, NilStr, NULL, NULL, (LPBYTE)extname, &regsize) == ERROR_SUCCESS) && (regsize > 1) ){
 				BOOL subget = FALSE;
 				HKEY hSub;
 				// 既定ドキュメント下にShellNew有り
@@ -1142,7 +1142,7 @@ ERRORCODE USEFASTCALL MakeEntryMain(PPC_APPINFO *cinfo, int type, TCHAR *name)
 			if ( RegOpenKeyEx(HKEY_CLASSES_ROOT, extname, 0, KEY_READ, &HKext)
 					== ERROR_SUCCESS ){
 				regsize = sizeof exttypename;
-				if ( (RegQueryValueEx(HKext, NilStr, NULL, &regtype, (LPBYTE)exttypename, &regsize) == ERROR_SUCCESS) && (regsize > 1) ){
+				if ( (RegQueryValueEx(HKext, NilStr, NULL, NULL, (LPBYTE)exttypename, &regsize) == ERROR_SUCCESS) && (regsize > 1) ){
 					HKEY HKsnew;
 					TCHAR temppath[VFPS];
 
@@ -1159,7 +1159,7 @@ ERRORCODE USEFASTCALL MakeEntryMain(PPC_APPINFO *cinfo, int type, TCHAR *name)
 					if ( HKsnew != NULL ){
 						// filename ?
 						regsize = sizeof filesrc;
-						if ( RegQueryValueEx(HKsnew, StrNewFileName, NULL, &regtype, (LPBYTE)filesrc, &regsize) == ERROR_SUCCESS ){
+						if ( RegQueryValueEx(HKsnew, StrNewFileName, NULL, NULL, (LPBYTE)filesrc, &regsize) == ERROR_SUCCESS ){
 							if ( filesrc[0] != '\0' ){
 								// ユーザ別Template
 								MakeType = GetTemplateFileName(filesrc, T("#21:\\"));

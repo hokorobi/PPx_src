@@ -558,6 +558,23 @@ void PPbExecuteRecv(TCHAR *param)
 	}
 }
 
+void PPbCommonCommand(const TCHAR *ptr)
+{
+	DWORD key;
+
+	key = GetNumber(&ptr);
+	switch ( key ){
+		case K_Lcust:
+		#ifndef WINEGCC
+			tInitCustomize();
+		#endif
+		// default ‚Ö
+		default:
+			PPxCommonCommand(hMainWnd, 0, (WORD)key);
+			break;
+	}
+}
+
 int ExecCommand(const TCHAR *ptr)
 {
 	switch( *ptr++ ){
@@ -568,6 +585,10 @@ int ExecCommand(const TCHAR *ptr)
 			// '\0' ‚Ö
 		case '\0':		// >	sync / NULL ---------------------------
 			return 0; // ‰üs–³‚µ
+
+		case 'M':		// >Mn	WM_PPXCOMMAND -----------------------------
+			PPbCommonCommand(ptr);
+			return 0;
 
 		case 'p':		// >pcmd line	sHell(part) -------------------
 			if ( LongParam.top == 0 ) ThCatString(&LongParam, T("H"));
@@ -598,7 +619,7 @@ int ExecCommand(const TCHAR *ptr)
 					}
 				}
 			}
-			if ( (*ptr == '>') && (*(ptr + 1) == '*') ){
+			if ( (*ptr == '>') && ((*(ptr + 1) == '*') || (*(ptr + 1) == '%')) ){ // PPb‚ÌExtractMacro
 				ppbexecinfo.hWnd = hMainWnd;
 				PP_ExtractMacro(hMainWnd, &ppbexecinfo, NULL, ptr + 1, NULL, XEO_NOUSEPPB | XEO_CONSOLE);
 				return 0;

@@ -437,6 +437,11 @@ BOOL InitMigemo(void)
 		hMigemoDLL = LoadWinAPI("MIGEMO64.DLL", NULL, MIGEMODLL, LOADWINAPI_LOAD);
 	}
 	#endif
+	#if defined(_M_ARM) || defined(_M_ARM64)
+	if ( hMigemoDLL == NULL ){
+		hMigemoDLL = LoadWinAPI("UNBYPASS.DLL", NULL, MIGEMODLL, LOADWINAPI_LOAD);
+	}
+	#endif
 	if ( hMigemoDLL != NULL ){
 		TCHAR *ptr;
 		#ifdef UNICODE
@@ -763,8 +768,6 @@ int GetWildDate(const TCHAR **string, FILETIME *ftime, SYSTEMTIME *stime)
 		dateH += tmpH;
 
 		GetSystemTimeAsFileTime(ftime);
-//		GetSystemTime(&stmptime);
-//		SystemTimeToFileTime(&stmptime, ftime);
 		SubDD(ftime->dwLowDateTime, ftime->dwHighDateTime, dateL, dateH);
 		*string = nowp;
 		return DAY_RELATIVE;
@@ -950,9 +953,7 @@ PPXDLL int PPXAPI FilenameRegularExpression(const TCHAR *src, FN_REGEXP *fn)
 		tstrcpy(fname, src);
 		CharLower(fname);
 		extOffset = FindExtSeparator(fname);
-		if ( fname[extOffset] ){
-			fname[extOffset++] = '\0';
-		}
+		if ( fname[extOffset] != '\0' ) fname[extOffset++] = '\0';
 		fext = fname + extOffset;
 	}
 
@@ -969,13 +970,13 @@ PPXDLL int PPXAPI FilenameRegularExpression(const TCHAR *src, FN_REGEXP *fn)
 				continue;
 
 			case EX_NOT:
-				if ( !((EXS_DATA *)b)->next ) return 0;
+				if ( !((EXS_DATA *)b)->next ) { return 0; }
 				b += ((EXS_DATA *)b)->next;
 				usenot = TRUE;
 				continue;
 
 			case EX_AND:
-				if ( !((EXS_DATA *)b)->next ) return 0;
+				if ( !((EXS_DATA *)b)->next ) { return 0; }
 				b += ((EXS_DATA *)b)->next;
 				useand = TRUE;
 				continue;
@@ -991,7 +992,8 @@ PPXDLL int PPXAPI FilenameRegularExpression(const TCHAR *src, FN_REGEXP *fn)
 					UnicodeToAnsi(src, fbuf, VFPS);
 				}
 				#endif
-				result = BMatch(((EXS_BREGEXP *)b)->data, NAME,
+				result = BMatch(((EXS_BREGEXP *)b)->data,
+						NAME,
 						NAME + strlen(NAME),
 						&((EXS_BREGEXP *)b)->rxp, mesbufA);
 				break;
@@ -1001,7 +1003,8 @@ PPXDLL int PPXAPI FilenameRegularExpression(const TCHAR *src, FN_REGEXP *fn)
 					result = 0;
 					break;
 				}
-				result = DBMatch(((EXS_BONIREGEXP *)b)->data, (TCHAR *)src,
+				result = DBMatch(((EXS_BONIREGEXP *)b)->data,
+						(TCHAR *)src,
 						(TCHAR *)src + tstrlen(src),
 						&((EXS_BONIREGEXP *)b)->rxp, mesbuf);
 				break;
@@ -1015,8 +1018,8 @@ PPXDLL int PPXAPI FilenameRegularExpression(const TCHAR *src, FN_REGEXP *fn)
 				}
 				result = FALSE;
 				target = CreateBstring(src);
-				IRegExp_Test(((EXS_IREGEXP *)b)->iregexp,
-						target, (VARIANT_BOOL *)&result);
+				IRegExp_Test(((EXS_IREGEXP *)b)->iregexp, target,
+						(VARIANT_BOOL *)&result);
 				DSysFreeString(target);
 				break;
 			}
@@ -1342,15 +1345,15 @@ PPXDLL int PPXAPI FinddataRegularExpression(const WIN32_FIND_DATA *ff, FN_REGEXP
 			if ( IsTrue(usenot) ){
 				usenot = FALSE;
 				useand = FALSE;
-				if ( result ) return 0;
+				if ( IsTrue(result) ) return 0;
 				if ( nextsize == 0 ) return 1;
 			}else{
 				if ( IsTrue(useand) ){
 					useand = FALSE;
-					if ( !result ) return 0;
+					if ( result == FALSE ) return 0;
 					if ( nextsize == 0 ) return 1;
 				}else{
-					if ( result ) return 1;
+					if ( IsTrue(result) ) return 1;
 					if ( nextsize == 0 ) return 0;
 				}
 			}
@@ -1358,6 +1361,7 @@ PPXDLL int PPXAPI FinddataRegularExpression(const WIN32_FIND_DATA *ff, FN_REGEXP
 		}
 	}
 }
+
 // ワイルドカードの保存内容を破棄 ---------------------------------------------
 PPXDLL void PPXAPI FreeFN_REGEXP(FN_REGEXP *fn)
 {
@@ -1434,7 +1438,7 @@ BOOL CheckExsmem(_In_ EXSMEM *exm, DWORD size)
 			BYTE *newptr;
 
 			newptr = HeapReAlloc(DLLheap, 0,
-					exm->alloced, exm->size + EXSMEMALLOCSIZE);
+					exm->alloced, (size_t)exm->size + EXSMEMALLOCSIZE);
 			if ( newptr == NULL ) return FALSE;
 			exm->dest = newptr + (exm->dest - exm->alloced);
 			exm->alloced = newptr;
@@ -1793,6 +1797,7 @@ typedef struct {
 	// IRegExp
 	IRegExp *iregexp;
 	BSTR string_ri; // iregexp 用の replace 保存場所
+	BSTR string_result; // iregexp 用の result 保存場所
 	// match
 	TCHAR *string_rh;
 
@@ -1893,7 +1898,7 @@ size_t RegularExpressionMatch_GetItem(RXPREPLACESTRING *rxps, IMatchCollection *
 	}
 }
 
-void RegularExpressionMatch_Result(RXPREPLACESTRING *rxps, IMatchCollection *Matchs, TCHAR *target)
+void RegularExpressionMatch_Result(RXPREPLACESTRING *rxps, IMatchCollection *Matchs, TCHAR *target, size_t dest_buflen)
 {
 	const TCHAR *fmtptr;
 	TCHAR *dest;
@@ -1901,7 +1906,7 @@ void RegularExpressionMatch_Result(RXPREPLACESTRING *rxps, IMatchCollection *Mat
 
 	dest = target;
 	fmtptr = rxps->string_rh;
-	destmax = dest + VFPS - 1;
+	destmax = dest + dest_buflen - 1;
 	if ( fmtptr[0] == '\0' ){
 		dest += RegularExpressionMatch_GetItem(rxps, Matchs, dest, 0);
 	}else{
@@ -1922,7 +1927,32 @@ void RegularExpressionMatch_Result(RXPREPLACESTRING *rxps, IMatchCollection *Mat
 	*dest = '\0';
 }
 
-BOOL RegularExpressionMatch_bregexp(RXPREPLACESTRING *rxps, TCHAR *target)
+const TCHAR *RegExp_CopyReturn(TCHAR *dest, const TCHAR *result, size_t dest_buflen)
+{
+	TCHAR *last;
+
+	last = tstrlimcpy(dest, result, dest_buflen);
+	if ( last < (dest + dest_buflen - 1) ) return dest;
+	*dest = '\0';
+	return result;
+}
+
+#ifdef UNICODE
+#define RegExp_CopyReturnT(dest, result, dest_buf) RegExp_CopyReturn(dest, result, dest_buf)
+#else
+const char *RegExp_CopyReturnA(char *dest, const WCHAR *result, size_t dest_buflen)
+{
+	int len;
+
+	len = UnicodeToAnsi(result, dest, dest_buflen);
+	if ( len != 0 ) return dest;
+	*(dest + dest_buflen - 1) = '\0'; // len==0...長すぎて失敗
+	return dest;
+}
+#define RegExp_CopyReturnT(dest, result, dest_buf) RegExp_CopyReturnA(dest, result, dest_buf)
+#endif
+
+const TCHAR *RegularExpressionMatch_bregexp(RXPREPLACESTRING *rxps, TCHAR *target, TCHAR *dest, size_t dest_buflen)
 {
 	TCHAR msg[VFPS];
 
@@ -1932,13 +1962,9 @@ BOOL RegularExpressionMatch_bregexp(RXPREPLACESTRING *rxps, TCHAR *target)
 		msg[0] = '\0';
 		result = DBMatch(rxps->string_rb, target, target + tstrlen(target),
 				&rxps->bonip, msg); // msg は未利用
-		if ( result ){
-			if( rxps->bonip == NULL ){
-				target[0] = '\0';
-			}else{
-				RegularExpressionMatch_Result(rxps, NULL, msg);
-				tstrcpy(target, msg);
-			}
+		if ( (result > 0) && (rxps->bonip != NULL) ){
+			RegularExpressionMatch_Result(rxps, NULL, msg, dest_buflen);
+			return RegExp_CopyReturn(dest, msg, dest_buflen);
 		}
 	}else{ // bregexp
 		int result;
@@ -1947,7 +1973,9 @@ BOOL RegularExpressionMatch_bregexp(RXPREPLACESTRING *rxps, TCHAR *target)
 		char renameA[VFPS];
 
 		UnicodeToAnsi(target, targetA, VFPS);
+		targetA[VFPS - 1] = '\0';
 		UnicodeToAnsi(rxps->string_rb, renameA, VFPS);
+		renameA[VFPS - 1] = '\0';
 #else
 		#define targetA target
 		#define renameA rxps->string_rb
@@ -1955,19 +1983,16 @@ BOOL RegularExpressionMatch_bregexp(RXPREPLACESTRING *rxps, TCHAR *target)
 		msg[0] = '\0';
 		result = BMatch(renameA, targetA, targetA + strlen(targetA),
 				&rxps->bregp, (char *)msg); // msg は未利用
-		if ( result ){
-			if( rxps->bregp == NULL ){
-				target[0] = '\0';
-			}else{
-				RegularExpressionMatch_Result(rxps, NULL, msg);
-				tstrcpy(target, msg);
-			}
+		if ( (result > 0) && (rxps->bregp != NULL) ){
+			RegularExpressionMatch_Result(rxps, NULL, msg, dest_buflen);
+			return RegExp_CopyReturn(dest, msg, dest_buflen);
 		}
 	}
-	return TRUE;
+	dest[0] = '\0';
+	return dest;
 }
 
-BOOL RegularExpressionMatch_iregexp(RXPREPLACESTRING *rxps, TCHAR *target)
+const TCHAR *RegularExpressionMatch_iregexp(RXPREPLACESTRING *rxps, const TCHAR *target, TCHAR *dest, size_t dest_buflen)
 {
 	BSTR btarget;
 	IDispatch *RegDispatch = NULL;
@@ -1977,16 +2002,16 @@ BOOL RegularExpressionMatch_iregexp(RXPREPLACESTRING *rxps, TCHAR *target)
 	if ( FAILED(IRegExp_Execute(rxps->iregexp, btarget, &RegDispatch)) ){
 		XMessage(NULL, NULL, XM_GrERRld, T("IRegExp error"));
 		DSysFreeString(btarget);
-		return FALSE;
+		return NULL;
 	}
 	DSysFreeString(btarget);
-	target[0] = '\0';
+	dest[0] = '\0';
 	if ( SUCCEEDED(RegDispatch->lpVtbl->QueryInterface(RegDispatch, &XIID_IMatchCollection, (void **)&Matchs)) ){
-		RegularExpressionMatch_Result(rxps, Matchs, target);
+		RegularExpressionMatch_Result(rxps, Matchs, dest, dest_buflen);
 		Matchs->lpVtbl->Release(Matchs);
 	}
 	RegDispatch->lpVtbl->Release(RegDispatch);
-	return TRUE;
+	return dest;
 }
 
 BOOL InitRegularExpressionReplace(RXPREPLACESTRING **rxpsptr, TCHAR *rxstring, BOOL slash)
@@ -2044,10 +2069,10 @@ BOOL InitRegularExpressionReplace(RXPREPLACESTRING **rxpsptr, TCHAR *rxstring, B
 	if ( rlist == NULL ) goto noparamerror;
 	*rlist++ = '\0';
 	{
-		TCHAR *p = SearchSeparater(rlist, separater); // 右端セパレータ
-		if ( p != NULL ){
-			*p = '\0';
-			option = p + 1;
+		TCHAR *rsep = SearchSeparater(rlist, separater); // 右端セパレータ
+		if ( rsep != NULL ){
+			*rsep = '\0';
+			option = rsep + 1;
 											// 余分なセパレータがないか確認
 			if ( tstrchr(option, separater) != NULL ){
 				XMessage(NULL, NULL, XM_GrERRld, T("RegExp: Bad separater"));
@@ -2123,6 +2148,7 @@ BOOL InitRegularExpressionReplace(RXPREPLACESTRING **rxpsptr, TCHAR *rxstring, B
 		DSysFreeString(pattern);
 		rxps->mode += RXMODE_IREGEXP_MIN;
 		rxps->string_ri = CreateBstring(rlist);
+		rxps->string_result = NULL;
 		rxps->iregexp = regexp;
 	}
 	*rxpsptr = rxps;
@@ -2148,23 +2174,24 @@ void FreeRegularExpressionReplace(RXPREPLACESTRING *rxps)
 		if ( rxps->mode == RXMODE_IREGEXP_H ) HeapFree(DLLheap, 0, rxps->string_rh);
 		IRegExp_Release(rxps->iregexp);
 		DSysFreeString(rxps->string_ri);
+		if ( rxps->string_result != NULL ) DSysFreeString(rxps->string_result);
 		if ( SUCCEEDED(rxps->ComInitResult) ) CoUninitialize();
 	}
 	HeapFree(DLLheap, 0, rxps);
 }
 
-BOOL RegularExpressionReplace(RXPREPLACESTRING *rxps, TCHAR *target)
+const TCHAR *RegularExpressionReplace(RXPREPLACESTRING *rxps, TCHAR *target, TCHAR *dest, size_t dest_buflen)
 {
 	if ( rxps->mode <= RXMODE_BREGEXP_MAX ){	// BRegExp(s/tr/h)
 		TCHAR msg[VFPS];
 
-		if ( rxps->mode == RXMODE_BREGEXP_H ){
-			return RegularExpressionMatch_bregexp(rxps, target);
+		if ( rxps->mode == RXMODE_BREGEXP_H ){ // h
+			return RegularExpressionMatch_bregexp(rxps, target, dest, dest_buflen);
 		}
+		msg[0] = '\0';
 		if ( DBSubst != NULL ){ // bregonig
 			int count; // 変換した文字数
 
-			msg[0] = '\0';
 			if ( rxps->mode != RXMODE_BREGEXP_TR ){
 				count = DBSubst(rxps->string_rb, target,
 						target + tstrlen(target), &rxps->bonip, msg);
@@ -2172,12 +2199,10 @@ BOOL RegularExpressionReplace(RXPREPLACESTRING *rxps, TCHAR *target)
 				count = DBTrans(rxps->string_rb, target,
 						target + tstrlen(target), &rxps->bonip, msg);
 			}
-			if ( count ){
-				if( (rxps->bonip == NULL) || (rxps->bonip->outp == NULL) ){
-					target[0] = '\0';
-				}else{
-					tstrcpy(target, rxps->bonip->outp);
-				}
+			if ( (count <= 0) || (rxps->bonip == NULL) || (rxps->bonip->outp == NULL) ){
+				return RegExp_CopyReturn(dest, target, dest_buflen);
+			}else{
+				return RegExp_CopyReturn(dest, rxps->bonip->outp, dest_buflen);
 			}
 		}else{ // bregexp
 			int count; // 変換した文字数
@@ -2186,12 +2211,13 @@ BOOL RegularExpressionReplace(RXPREPLACESTRING *rxps, TCHAR *target)
 			char renameA[VFPS];
 
 			UnicodeToAnsi(target, targetA, VFPS);
+			targetA[VFPS - 1] = '\0';
 			UnicodeToAnsi(rxps->string_rb, renameA, VFPS);
+			renameA[VFPS - 1] = '\0';
 #else
 			#define targetA target
 			#define renameA rxps->string_rb
 #endif
-			msg[0] = '\0';
 			if ( rxps->mode != RXMODE_BREGEXP_TR ){
 				count = BSubst(renameA, targetA, targetA + strlen(targetA),
 						&rxps->bregp, (char *)msg);
@@ -2199,40 +2225,40 @@ BOOL RegularExpressionReplace(RXPREPLACESTRING *rxps, TCHAR *target)
 				count = BTrans(renameA, targetA, targetA + strlen(targetA),
 						&rxps->bregp, (char *)msg);
 			}
-			if ( count ){
-				if( (rxps->bregp == NULL) || (rxps->bregp->outp == NULL) ){
-					target[0] = '\0';
-				}else{
+			if ( (count <= 0) || (rxps->bregp == NULL) || (rxps->bregp->outp == NULL) ){
+				return RegExp_CopyReturn(dest, target, dest_buflen);
+			}else{
 #ifdef UNICODE
-					AnsiToUnicode(rxps->bregp->outp, target, VFPS);
-#else
-					tstrcpy(target, rxps->bregp->outp);
-#endif
+				int len;
+				len = AnsiToUnicode(rxps->bregp->outp, dest, (int)dest_buflen);
+				if ( len == 0 ){
+					*(dest + dest_buflen - 1) = '\0'; // len==0...長すぎて失敗
 				}
+				return dest;
+#else
+				return RegExp_CopyReturn(dest, rxps->bregp->outp, dest_buflen);
+#endif
 			}
 		}
-		return TRUE;
 	}else{	// IRegExp(s/h)
 		BSTR btarget, result = NULL;
 
 		if ( rxps->mode == RXMODE_IREGEXP_H ){
-			return RegularExpressionMatch_iregexp(rxps, target);
+			return RegularExpressionMatch_iregexp(rxps, target, dest, dest_buflen);
 		}
 		btarget = CreateBstring(target);
 		if ( FAILED(IRegExp_Replace(rxps->iregexp,
 				btarget, rxps->string_ri, &result)) ){
 			XMessage(NULL, NULL, XM_GrERRld, T("IRegExp error"));
 			DSysFreeString(btarget);
-			return FALSE;
+			return NULL;
 		}
 		DSysFreeString(btarget);
-#ifdef UNICODE
-		tstrcpy(target, result);
-#else
-		UnicodeToAnsi(result, target, MAX_PATH);
-#endif
-		DSysFreeString(result);
-		return TRUE;
+		if ( rxps->string_result != NULL ){ // 古い内容を破棄
+			DSysFreeString(rxps->string_result);
+		}
+		rxps->string_result = result;
+		return RegExp_CopyReturnT(dest, result, dest_buflen);
 	}
 }
 
@@ -2346,7 +2372,7 @@ int CheckExtMode(EXSMEM *exm, MAKEFNSTRUCT *mfs)
 			FILETIME ftime;
 			SYSTEMTIME stime;
 			int daytype;
-			WORD offset = 0;
+			DWORD offset = 0;
 			TCHAR typechar;
 
 			setflag(mfs->flags, REGEXPF_REQ_TIME);
@@ -2408,14 +2434,14 @@ int CheckExtMode(EXSMEM *exm, MAKEFNSTRUCT *mfs)
 		}
 
 		case 'r': { // Roma: ローマ字指定
-			DWORD size, structsize;
+			size_t size, structsize;
 
 			if ( LoadRegExp() == FALSE ) return CEM_ERROR; // DLL 読み込み失敗
 			if ( InitMigemo() == FALSE ) return CEM_ERROR;
 
-			size = tstrlen32(mfs->param);
+			size = tstrlen(mfs->param);
 			structsize = sizeof(EXS_ROMA) + size * sizeof(TCHAR) + sizeof(TCHAR);
-			if ( CheckExsmem(exm, structsize) == FALSE) return CEM_ERROR;
+			if ( CheckExsmem(exm, (DWORD)structsize) == FALSE) return CEM_ERROR;
 
 			((EXS_ROMA *)(exm->dest))->ext = EX_ROMA;
 			((EXS_ROMA *)(exm->dest))->next = (WORD)structsize;
@@ -2434,27 +2460,27 @@ int CheckExtMode(EXSMEM *exm, MAKEFNSTRUCT *mfs)
 	return CEM_COMP; // 処理成功 & 解釈終了
 }
 
-void GetRegularExpressionName(TCHAR *str)
+TCHAR *GetRegularExpressionName(TCHAR *str)
 {
-	const TCHAR *p;
+	const TCHAR *name;
 
 	LoadRegExp();
 	switch ( RMatch ){
 		case EX_BREGEXP:
-			p = T("BREGEXP");
+			name = T("BREGEXP");
 			break;
 
 		case EX_BREGONIG:
-			p = T("bregonig");
+			name = T("bregonig");
 			break;
 
 		case EX_IREGEXP:
-			p = T("IRegExp");
+			name = T("IRegExp");
 			break;
 
 		default:
-			p = T("none");
+			name = T("none");
 			break;
 	}
-	tstrcpy(str, p);
+	return tstpcpy(str, name);
 }

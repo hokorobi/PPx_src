@@ -374,6 +374,22 @@ TCHAR *tstristr(const TCHAR *target, const TCHAR *findstr)
 	return NULL;
 }
 
+WCHAR *stpcpyW(WCHAR *deststr, const WCHAR *srcstr)
+{
+	WCHAR *destptr = deststr;
+	const WCHAR *srcptr = srcstr;
+
+	for(;;){
+		WCHAR code;
+
+		code = *srcptr;
+		*destptr = code;
+		if ( code == '\0' ) return destptr;
+		srcptr++;
+		destptr++;
+	}
+}
+
 #ifdef WINEGCC
 WCHAR *strchrW(const WCHAR *text, WCHAR findchar)
 {
@@ -452,14 +468,18 @@ WCHAR *wcslimcpy(WCHAR *deststr, const WCHAR *srcstr, size_t maxlength)
 void tstrreplace(TCHAR *text, const TCHAR *targetword, const TCHAR *replaceword)
 {
 	TCHAR *p;
+	size_t tlen, rlen;
 
-	while ( (p = tstrstr(text, targetword)) != NULL ){
-		int tlen = tstrlen32(targetword);
-		int rlen = tstrlen32(replaceword);
+	if ( (p = tstrstr(text, targetword)) == NULL ) return;
+	tlen = tstrlen(targetword);
+	rlen = tstrlen(replaceword);
 
+	for (;;){
 		if ( tlen != rlen ) memmove(p + rlen, p + tlen, TSTRSIZE(p + tlen));
 		memcpy(p, replaceword, TSTROFF(rlen));
 		text = p + rlen;
+		if ( (p = tstrstr(text, targetword)) != NULL ) continue;
+		break;
 	}
 }
 

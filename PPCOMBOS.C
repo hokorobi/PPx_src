@@ -1013,7 +1013,7 @@ void SavePane_Base(TCHAR *dest, TCHAR *memo, BOOL save)
 				Combo.base[Combo.show[showindex].baseNo].hWnd = BADHWND;
 				continue;
 			}else{
-				panedst += wsprintf(panedst, T("%s"), cinfo->RegSubCID + 1);
+				panedst = tstpcpy(panedst, cinfo->RegSubCID + 1);
 				if ( IsTrue(cinfo->ChdirLock) ) *panedst++ = '$';
 				panedst += wsprintf(panedst, T("%d"), showindex);
 			}
@@ -1054,7 +1054,7 @@ void SavePane_Base(TCHAR *dest, TCHAR *memo, BOOL save)
 					}
 				}else{
 					if ( tstrstr(dest, cinfo->RegSubCID + 1) == NULL ){
-						panedst += wsprintf(panedst, T("%s"), cinfo->RegSubCID + 1);
+						panedst = tstpcpy(panedst, cinfo->RegSubCID + 1);
 						if ( IsTrue(cinfo->ChdirLock) ) *panedst++ = '$';
 					}
 				}
@@ -1096,7 +1096,7 @@ void SavePane_Tab(TCHAR *dest, TCHAR *memo)
 				if ( cinfo != NULL ){
 					int showindex;
 
-					panedst += wsprintf(panedst, T("%s"), cinfo->RegSubCID + 1);
+					panedst = tstpcpy(panedst, cinfo->RegSubCID + 1);
 					if ( IsTrue(cinfo->ChdirLock) ) *panedst++ = '$';
 					showindex = GetComboShowIndex((HWND)tie.lParam);
 					if ( (showindex >= 0) &&

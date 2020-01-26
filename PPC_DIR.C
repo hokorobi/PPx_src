@@ -1352,7 +1352,7 @@ void SetCellInfo(PPC_APPINFO *cinfo, ENTRYCELL *cell, BYTE *extcolor)
 
 				cell->comment = cinfo->EntryComments.top;
 				ThSize(&cinfo->EntryComments, CMDLINESIZE);
-				p = (const TCHAR *)cell->f.dwReserved0; // dwReserved0/1 を使用
+				p = (const TCHAR *)(DWORD_PTR)cell->f.dwReserved0; // dwReserved0/1 を使用
 				GetCommandParameter(&p, (TCHAR *)ThLast(&cinfo->EntryComments), CMDLINESIZE);
 				cinfo->EntryComments.top += TSTRSIZE((TCHAR *)ThLast(&cinfo->EntryComments));
 			}
@@ -1457,7 +1457,9 @@ void SetCellInfo(PPC_APPINFO *cinfo, ENTRYCELL *cell, BYTE *extcolor)
 				extsp = src;
 			}else if ( type == '\0' ){
 				if ( extsp != NULL ) break;
-				return;
+				return; // 拡張子なし ... 拡張子以外で色付けしたいので終わらせたくない
+//				extsp = src;
+//				break;
 			}
 #ifndef UNICODE
 			if ( Iskanji(type) ) src++;
@@ -1468,10 +1470,10 @@ void SetCellInfo(PPC_APPINFO *cinfo, ENTRYCELL *cell, BYTE *extcolor)
 
 	if ( (DWORD)(cell->ext - (extsp - cell->f.cFileName)) > X_extl ) return;
 	cell->ext = (WORD)(extsp - cell->f.cFileName);
-	extsp++;
+	extsp++; // '.' をスキップ
 												// 色 -------------------------
 	if ( extcolor != NULL ){
-		BYTE *q;			// 現在の内容の先頭
+		BYTE *ecptr;			// 現在の内容の先頭
 		DWORD ssize;		// 文字列部分の大きさ
 		DWORD w;			// (+0)次の内容へのオフセット
 		TCHAR ext[MAX_PATH];
@@ -1480,27 +1482,27 @@ void SetCellInfo(PPC_APPINFO *cinfo, ENTRYCELL *cell, BYTE *extcolor)
 		ssize = TSTRSIZE32(extsp);
 		memcpy(ext, extsp, ssize);
 		tstrupr(ext);
-		q = extcolor;
+		ecptr = extcolor;
 		for ( ; ; ){
-			w = *(WORD *)q;
+			w = *(WORD *)ecptr;
 			if ( w == 0 ) break;
-			if ( *(TCHAR *)(BYTE *)(q + sizeof(WORD)) != '/' ){
-				if ( !memcmp( q + sizeof(WORD), ext, ssize) ){
-					cell->extC = *(DWORD *)(q + sizeof(WORD) + ssize);
+			if ( *(TCHAR *)(BYTE *)(ecptr + sizeof(WORD)) != '/' ){
+				if ( !memcmp( ecptr + sizeof(WORD), ext, ssize) ){
+					cell->extC = *(DWORD *)(ecptr + sizeof(WORD) + ssize);
 					break;
 				}
 			}else{
 				int fnresult;
 
-				MakeFN_REGEXP(&fn, (TCHAR *)(BYTE *)(q + sizeof(WORD)) + 1);
+				MakeFN_REGEXP(&fn, (TCHAR *)(BYTE *)(ecptr + sizeof(WORD)) + 1);
 				fnresult = FinddataRegularExpression(&cell->f, &fn);
 				FreeFN_REGEXP(&fn);
 				if ( fnresult ){
-					cell->extC = *(DWORD *)(q + sizeof(WORD) + TSTROFF(tstrlen((TCHAR *)(BYTE *)(q + sizeof(WORD))) + 1) );
+					cell->extC = *(DWORD *)(ecptr + sizeof(WORD) + TSTROFF(tstrlen((TCHAR *)(BYTE *)(ecptr + sizeof(WORD))) + 1) );
 					break;
 				}
 			}
-			q += w;
+			ecptr += w;
 		}
 	}
 }
@@ -2607,9 +2609,7 @@ void read_entry(PPC_APPINFO *cinfo, int flags)
 		if ( flags & RENTRYI_EXECLOADCMD ){
 			PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, T("*execute ,%si\"LoadCommand\""), NULL, 0);
 		}
-		if ( IsTrue(cinfo->UseLoadEvent) ){
-			SendMessage(cinfo->info.hWnd, WM_PPXCOMMAND, K_E_LOAD, 0);
-		}
+		if ( IsTrue(cinfo->UseLoadEvent) ) PPcCommand(cinfo, K_E_LOAD);
 	}
 //	EndCellEdit(cinfo); // ここだとアイコンが砂時計に
 
@@ -2778,7 +2778,7 @@ void LoadSettingMain(LOADSETTINGS *ls, const TCHAR *path)
 	const TCHAR *p;
 
 	tmpls.disp[0] = '\0';
-	if ( NO_ERROR != GetCustTable(T("XC_dset"), path, &tmpls, sizeof(tmpls)) ){
+	if ( NO_ERROR != GetCustTable(StrXC_dset, path, &tmpls, sizeof(tmpls)) ){
 		return;
 	}
 
@@ -2843,6 +2843,66 @@ void LoadSettingSecond(PPC_APPINFO *cinfo, const TCHAR *path, int *flags, TCHAR 
 
 	cinfo->dset = ls.dset;
 	cinfo->iconR = (ls.dset.infoicon != DSETI_NOSPACE) ? cinfo->XC_ifix_size.cx : 0;
+}
+
+int CheckPathHit(const TCHAR *target, const TCHAR *shortpath)
+{
+	size_t len = tstrlen(shortpath);
+
+	if ( (memicmp(target, shortpath, TSTROFF(len)) == 0) &&
+		 ((target[len] == '\0') || (target[len] == '\\')) ){
+		return TRUE;
+	}
+	return FALSE;
+}
+
+void LoadSettingWildcard(LOADSETTINGS *ls, const TCHAR *path)
+{
+	int index = 0, fnresult;
+	TCHAR keyword[VFPS], dummy[4];
+	FN_REGEXP fn;
+
+	while( EnumCustTable(index, StrXC_dset, keyword, dummy, 0) >= 0 ){
+		index++;
+		if ( keyword[0] == '%' ){
+			if ( keyword[1] == '0' ){ // %0
+				TCHAR *kwptr = keyword + 2;
+
+				if ( *kwptr == '\\' ) kwptr++;
+				VFSFullPath(keyword, kwptr, PPcPath);
+				if ( CheckPathHit(keyword, path) ){
+					LoadSettingMain(ls, keyword);
+					return;
+				}
+			}
+			continue;
+		}
+		if ( keyword[0] == '-' ){
+			VFSFullPath(NULL, keyword, NULL);
+			if ( CheckPathHit(keyword, path) ){
+				LoadSettingMain(ls, keyword);
+				return;
+			}
+			continue;
+		}
+		if ( keyword[0] != '/' ) continue;
+		if ( keyword[1] == '-' ){
+			VFSFullPath(keyword, keyword + 1, NULL);
+			if ( CheckPathHit(keyword, path) ){
+				LoadSettingMain(ls, keyword);
+				return;
+			}
+			continue;
+		}
+
+		MakeFN_REGEXP(&fn, keyword + 1);
+		fnresult = FilenameRegularExpression(path, &fn);
+		FreeFN_REGEXP(&fn);
+		if ( fnresult ){
+			LoadSettingMain(ls, keyword);
+			return;
+		}
+	}
 }
 
 // 現在パスの設定を取得する(一般)
@@ -2912,6 +2972,8 @@ void LoadSettingGeneral(PPC_APPINFO *cinfo, int *flags, TCHAR *mask)
 	}else if ( path[0] == '\\' ){ // \\ のとき
 		LoadSettingMain(&ls, T("\\"));
 	}
+
+	if ( exdset ) LoadSettingWildcard(&ls, path);
 
 	if ( !(*flags & RENTRY_UPDATE) ){ // 表示書式の反映(新規読み込み時のみ)
 		if ( ls.disp[0] ){

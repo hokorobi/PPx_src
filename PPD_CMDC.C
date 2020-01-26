@@ -11,6 +11,7 @@
 #include "PPCOMMON.RH"
 #include "PPD_DEF.H"
 #include "CALC.H"
+#include "PPX_64.H"
 #include "PPXCMDS.C"
 #pragma hdrstop
 
@@ -276,8 +277,26 @@ DWORD_PTR USECDECL UserCommandInfo(USERCOMMANDSTRUCT *info, DWORD cmdID, PPXAPPI
 					ptr = info->arg;
 					if ( info->cmdname == NULL ) ptr += tstrlen(ptr) + 1;
 					for (;;){
+						const TCHAR *oldptr;
+
+						oldptr = ptr;
 						GetCommandParameter(&ptr, uptr->funcparam.dest, CMDLINESIZE);
-						if ( --index == 0 ) break;
+						if ( --index == 0 ){
+							size_t len = ptr - oldptr;
+
+							if ( len >= CMDLINESIZE ){
+								TCHAR *longbuf;
+
+								len += 1; // Nil分
+								longbuf = HeapAlloc(ProcHeap, 0, TSTROFF(len));
+								if ( longbuf != NULL ){
+									ptr = oldptr;
+									GetCommandParameter(&ptr, longbuf, len);
+									uptr->funcparam.dest = longbuf;
+								}
+							}
+							break;
+						}
 						*uptr->funcparam.dest = '\0';
 						if ( NextParameter(&ptr) == FALSE ) break;
 					}
@@ -302,7 +321,7 @@ void UserCommand(EXECSTRUCT *Z, const TCHAR *cmdname, const TCHAR *args, const T
 	ucs.arg = args;
 	Z->result = PP_ExtractMacro(ucs.info.hWnd, &ucs.info, NULL, cmdline, dest,
 			(dest == NULL) ? XEO_EXTRACTEXEC : XEO_EXTRACTEXEC | XEO_EXTRACTLONG);
-	if ( Z->result == ERROR_CONTINUE ) Z->result = NO_ERROR;
+	if ( Z->result == ERROR_EX_RETURN ) Z->result = NO_ERROR;
 }
 
 void USEFASTCALL ExecOnConsole(EXECSTRUCT *Z, const TCHAR *param)
@@ -1041,6 +1060,54 @@ const TCHAR CheckUpdateNoupdMsg[] = MES_XUUN;
 const TCHAR CheckUpdateQueryMsg[] = MES_XUUQ;
 const TCHAR CheckUpdateBeginMsg[] = T("Download address '%s' is trust ?");
 
+#define FTHOUR_L 0x61c46800
+#define FTHOUR_H 8
+
+BOOL IntervalUpdateCheck(const TCHAR *ptr)
+{
+	int itime;
+	FILETIME nowtime;
+	TCHAR buf[64];
+	DWORD timeL, timeH, tmpH, tmpT;
+
+	// 確認間隔を取得
+	ptr++;
+	itime = GetDigitNumber32(&ptr);
+	if ( itime <= 0 ) itime = 7;
+	if ( *ptr != 'h' ) itime *= 24; // i123[d] ... 日数→時間
+
+	// 基準時間
+	DDmul(itime, FTHOUR_L, &timeL, &timeH);
+	DDmul(itime, FTHOUR_H, &tmpH, &tmpT);
+	timeH += tmpH;
+	// 以前の確認時刻を取得
+	buf[0] = '\0';
+	GetCustTable(StrCustSetup, T("CheckFT"), buf, sizeof(buf));
+	ptr = buf;
+	tmpT = GetDigitNumber32(&ptr);
+	if ( *ptr != '.' ) return TRUE; // データ内→初めてのチェック
+	ptr++;
+	tmpH = GetDigitNumber32(&ptr);
+	AddDD(timeL, timeH, tmpT, tmpH);
+	// 比較
+	GetSystemTimeAsFileTime(&nowtime);
+	// high
+	if ( nowtime.dwHighDateTime > timeH ) return TRUE;
+	if ( nowtime.dwHighDateTime < timeH ) return FALSE;
+	// low
+	return (nowtime.dwLowDateTime >= timeL ) ? TRUE : FALSE;
+}
+
+void Update_CheckUpdateInterval(void)
+{
+	TCHAR buf[64];
+	FILETIME nowtime;
+
+	GetSystemTimeAsFileTime(&nowtime);
+	wsprintf(buf, T("%u.%u"), nowtime.dwLowDateTime, nowtime.dwHighDateTime);
+	SetCustStringTable(StrCustSetup, T("CheckFT"), buf, 0);
+}
+
 void CmdCheckUpdateFile(EXECSTRUCT *Z, const char *dataA, const TCHAR *param)
 {
 	TCHAR ver[VFPS];
@@ -1098,7 +1165,7 @@ void CmdCheckUpdateFile(EXECSTRUCT *Z, const char *dataA, const TCHAR *param)
 		wsprintf(text, T("setup /sq \"%s\""), ver);
 
 		url[0] = '\0';
-		GetCustTable(T("_Setup"), T("elevate"), url, sizeof(url));
+		GetCustTable(StrCustSetup, T("elevate"), url, sizeof(url));
 		if ( url[0] == '1' ){ // 昇格
 			text[5] = '\0';
 			text[8] = ' ';
@@ -1116,6 +1183,8 @@ void CmdCheckUpdateFile(EXECSTRUCT *Z, const char *dataA, const TCHAR *param)
 			SetEnvironmentVariable(COMPATNAME, oldvaule);
 		#endif
 		}
+		// ●とりあえずもっと前の段階で時刻更新
+		// if ( tstrchr(param, 'i') != NULL) Update_CheckUpdateInterval();
 	}
 }
 
@@ -1147,11 +1216,16 @@ void CmdCheckUpdate(EXECSTRUCT *Z, const TCHAR *param)
 {
 	ThSTRUCT th;
 	const char *bottom;
-	const TCHAR *msg = CheckUpdateNoupdMsg, *force;
+	const TCHAR *msg = CheckUpdateNoupdMsg, *force, *ptr;
 
 	if ( *param == 'u' ){
 		zipunpack(Z, param + 1);
 		return;
+	}
+	ptr = tstrchr(param, 'i');
+	if ( ptr != NULL ){ // チェック間隔指定
+		if ( IntervalUpdateCheck(ptr) == FALSE ) return;
+		Update_CheckUpdateInterval(); // ●とりあえずここに
 	}
 
 	GetImageByHttp(CHECKVERSIONURL T("?exe=PPx&ver=") T(FileProp_Version)
@@ -1860,12 +1934,12 @@ void CmdCust(EXECSTRUCT *Z, TCHAR *line, BOOL reload)
 
 void CmdLineCust(EXECSTRUCT *Z, const TCHAR *line)
 {
-	TCHAR id[MAX_PATH];
-	TCHAR param[CMDLINESIZE], makedata[CMDLINESIZE * 2], *data1st;
-	TCHAR *custtext, *q, separator, *sub, orgseparator;
+	TCHAR id[MAX_PATH], *idsep;
+	TCHAR parambuf[CMDLINESIZE], *makedata, *param, *paramorg;
+	TCHAR *custtext, separator, *sub, orgseparator;
 	DWORD idsize;
 	BOOL toggle = FALSE;
-	TCHAR *p, *next, *last = NULL;
+	TCHAR *next, *last = NULL;
 
 	if ( SkipSpace(&line) == '^' ){
 		toggle = TRUE;
@@ -1878,23 +1952,27 @@ void CmdLineCust(EXECSTRUCT *Z, const TCHAR *line)
 	NextParameter(&line);
 
 	custtext = tstrchr(line, '=');
-	q = tstrchr(line, ',');
+	idsep = tstrchr(line, ',');
 	if ( custtext == NULL ){
-		if ( q == NULL ) return;
-		custtext = q;
+		if ( idsep == NULL ) return;
+		custtext = idsep;
 	}else{
-		if ( (q != NULL) && (custtext > q) ) custtext = q;
+		if ( (idsep != NULL) && (custtext > idsep) ) custtext = idsep;
 	}
 	separator = *custtext;
 	*custtext++ = '\0';
 
 	sub = tstrchr(line, ':');
 	if ( sub != NULL ) *sub++ = '\0';
-	orgseparator = PPcustCDumpText(line, sub, param);
-
+	param = paramorg = parambuf;
+	PPcustCDumpText(line, sub, &param);
+	orgseparator = '\0';
+	if ( *param == '\t' ) param++;
+	if ( (*param == '=') || (*param == ',') ) orgseparator = *param++;
+	if ( *param == ' ' ) param++;
 	next = param;
 	for (;;){
-		TCHAR c, *p1;
+		TCHAR c, *p1, *p;
 
 		if ( *next == '\0' ) break;
 		p = next;
@@ -1918,35 +1996,40 @@ void CmdLineCust(EXECSTRUCT *Z, const TCHAR *line)
 			break;
 		}
 	}
-	makedata[CMDLINESIZE - 1] = '\0';
-	if ( sub != NULL ){
-		p = makedata + wsprintf(makedata, T("%s = {\n%s %c"), line, sub, separator);
+	makedata = HeapAlloc(DLLheap, 0, TSTROFF(tstrlen(paramorg) + tstrlen(custtext) + 256));
+	if ( makedata == NULL ){
+		PPErrorBox(Z->hWnd, T("*linecust"), PPERROR_GETLASTERROR);
 	}else{
-		p = makedata + wsprintf(makedata, T("%s %c"), line, separator);
-	}
-	data1st = p;
-	if ( *param != '\0' ){
-		if ( ((*line == 'K') || (*line == 'E')) && (orgseparator == '=') ){
-			p += wsprintf(p, T("%%K\""));
+		TCHAR *destp, *data1st;
+
+		if ( sub != NULL ){
+			destp = makedata + wsprintf(makedata, T("%s = {\n%s %c"), line, sub, separator);
+		}else{
+			destp = makedata + wsprintf(makedata, T("%s %c"), line, separator);
 		}
-		p += wsprintf(p, T("%s"), param);
-	}
-	if ( *custtext != '\0' ){
+		data1st = destp;
 		if ( *param != '\0' ){
-			*p++ = '\n';
-			*p++ = '\t';
+			if ( ((*line == 'K') || (*line == 'E')) && (orgseparator == '=') ){
+				destp += wsprintf(destp, T("%%K\""));
+			}
+			destp = tstpcpy(destp, param);
 		}
-		p += wsprintf(p, T("%s %s"), id, custtext);
+		if ( *custtext != '\0' ){
+			if ( *param != '\0' ){
+				*destp++ = '\n';
+				*destp++ = '\t';
+			}
+			destp += wsprintf(destp, T("%s "), id);
+			destp = tstpcpy(destp, custtext);
+		}
+		if ( last != NULL ){
+			if ( destp != data1st ) *destp++ = '\n';
+			destp = tstpcpy(destp, last);
+		}
+		CustCmdSub(Z, makedata, destp, FALSE);
+		HeapFree(DLLheap, 0, makedata);
 	}
-	if ( last != NULL ){
-		if ( p != data1st ) *p++ = '\n';
-		p += wsprintf(p, T("%s"), last);
-	}
-	if ( makedata[CMDLINESIZE - 1] != '\0' ){
-		XMessage(Z->hWnd, T("*linecust"), XM_GrERRld, T("length error"));
-		return;
-	}
-	CustCmdSub(Z, makedata, p, FALSE);
+	if ( paramorg != parambuf ) HeapFree(ProcHeap, 0, paramorg);
 }
 
 void CmdDeleteCust(const TCHAR *param)
@@ -2776,7 +2859,7 @@ void ZExec(EXECSTRUCT *Z)
 										// *return
 		case CID_RETURN:
 			GetCommandParameter((const TCHAR **)&param, Z->DstBuf, CMDLINESIZE);
-			Z->result = ERROR_CONTINUE;
+			Z->result = ERROR_EX_RETURN;
 			Z->dst = Z->DstBuf + tstrlen(Z->dst);
 			Z->src += tstrlen(Z->src);
 			break;

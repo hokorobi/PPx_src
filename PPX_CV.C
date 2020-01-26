@@ -594,7 +594,8 @@ void LoadWallpaper(BGSTRUCT *bg, HWND hWnd, const TCHAR *regid)
 		HDC hDC, hMDC;
 		LPVOID lpBits;
 		BITMAPINFO *bmpinfo;
-		int olds, bmpsize, bitsize;
+		int olds;
+		size_t bmpsize, bitsize;
 		HBITMAP hBMP;
 		HGDIOBJ hOldBMP;
 		int srcx, srcy, srcw, srch;
@@ -604,8 +605,8 @@ void LoadWallpaper(BGSTRUCT *bg, HWND hWnd, const TCHAR *regid)
 		bmpsize = bg->X_WPbmp.DIB->biClrUsed;
 		bmpsize = bg->X_WPbmp.PaletteOffset +
 			( bmpsize ? bmpsize * sizeof(RGBQUAD) :
-			  ((bg->X_WPbmp.DIB->biBitCount <= 8) ? (DWORD)(1 << bg->X_WPbmp.DIB->biBitCount) * sizeof(RGBQUAD) : 0));
-		bitsize = DwordBitSize(dispW * bg->X_WPbmp.DIB->biBitCount) * dispH;
+			  ((bg->X_WPbmp.DIB->biBitCount <= 8) ? ((size_t)1 << bg->X_WPbmp.DIB->biBitCount) * sizeof(RGBQUAD) : 0));
+		bitsize = (size_t)DwordBitSize(dispW * bg->X_WPbmp.DIB->biBitCount) * dispH;
 
 		hDC = GetDC(hWnd);
 		hMDC = CreateCompatibleDC(hDC);
@@ -879,7 +880,7 @@ DWORD CalcBmpHeaderSize(BITMAPINFOHEADER *dumpdata)
 	if ( offset < sizeof(BITMAPINFOHEADER) ){
 												// OS/2 Œ`Ž®
 		color = ((BITMAPCOREHEADER *)dumpdata)->bcBitCount;
-		if ( color <= 8 ) offset += (DWORD)(1 << color) * sizeof(RGBTRIPLE);
+		if ( color <= 8 ) offset += (1 << color) * (DWORD)sizeof(RGBTRIPLE);
 	}else{								// WINDOWS Œ`Ž®
 		color = dumpdata->biBitCount;
 		palette = dumpdata->biClrUsed;
@@ -888,7 +889,7 @@ DWORD CalcBmpHeaderSize(BITMAPINFOHEADER *dumpdata)
 		}
 
 		palette = palette ? palette * sizeof(RGBQUAD) :
-				((color <= 8) ? (DWORD)(1 << color) * sizeof(RGBQUAD) : 0);
+				((color <= 8) ? (1 << color) * (DWORD)sizeof(RGBQUAD) : 0);
 
 		if ( offset == 0x7c/*BITMAPV5HEADER*/ ){
 			DWORD ProfileData = *(DWORD *)((BYTE *)dumpdata + 0x70); //bV5ProfileData

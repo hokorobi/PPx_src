@@ -12,6 +12,7 @@
 
 int X_calc = -1;
 DWORD X_esel[3] = {1, 1, 1};
+int shortedit = 0;
 const TCHAR StrContinuousMenu[] = MES_TREC;
 const TCHAR StrK_lied[] = T("K_lied");
 const TCHAR StrK_edit[] = T("K_edit");
@@ -81,7 +82,7 @@ void FixInputbox(HWND hDlg, HWND hEdWnd, TINPUT *tinput)
 
 	if ( !(tinput->flag & (TIEX_USEREFLINE | TIEX_USEOPTBTN)) ){
 		// ボタンは右
-		if ( TouchMode & TOUCH_LARGEWIDTH ){
+		if ( (TouchMode & TOUCH_LARGEWIDTH) || shortedit ){
 			refbox.right = (dpi * 120) >> 8; // 12.0mm ( 120 / 254 ) の近似値
 			editwidth -= /* OK */ refbox.right + /* X */ refbox.bottom;
 		}else{
@@ -100,8 +101,7 @@ void FixInputbox(HWND hDlg, HWND hEdWnd, TINPUT *tinput)
 	if ( (hTreeWnd == NULL) && (editwidth == (ncbox.right - ncbox.left)) ){
 		return;
 	}
-
-	if ( (TouchMode & TOUCH_LARGEWIDTH) &&
+	if ( ((TouchMode & TOUCH_LARGEWIDTH) || shortedit ) &&
 		!(tinput->flag & (TIEX_USEREFLINE | TIEX_USEOPTBTN)) ){
 		// タッチ用ボタン(ボタンは右)
 		SetWindowPos(GetDlgItem(hDlg, IDOK), NULL,
@@ -296,7 +296,10 @@ void USEFASTCALL tInputInitDialog(HWND hDlg, TINPUTSTRUCT *ts)
 		if ( (wParam != 0) || (lParam != 0) ){ // 選択し直し
 			SendMessage(ts->hEdWnd, EM_SETSEL, wParam, lParam);
 		}
+	}else if ( shortedit ){
+			FixInputbox(hDlg, ts->hEdWnd, ts->tinput);
 	}
+
 	if ( (tinput->info != NULL) &&
 		 (tinput->info->RegID != NULL) &&
 		 (tinput->info->RegID[0] == 'C') ){
@@ -498,7 +501,7 @@ void tInputContinuousMenu(HWND hDlg, LPARAM lParam)
 	RECT box;
 	int index;
 
-	if ( lParam == 0xffffffff ){ // keyによる操作
+	if ( lParam == (LPARAM)0xffffffff ){ // keyによる操作
 		GetWindowRect(hDlg, &box);
 		pos.x = box.left;
 		pos.y = box.bottom;
@@ -746,6 +749,7 @@ PPXDLL int PPXAPI tInputEx(TINPUT *tinput)
 	}else{
 		dialogid = IDD_INPUT;
 	}
+	shortedit = IsExistCustTable(StrCustOthers,T("shortedit"));
 
 	if ( GetCustDword(T("X_mled"), 0) != 0 ){ // 複数行の時は、IDE_INPUT_LINE の style に ES_MULTILINE を追加、ES_AUTOHSCROLL を削除
 		DLGTEMPLATE *dialog;

@@ -192,9 +192,13 @@
 #define TinyCharLowerA(chr) ((char)(unsigned char)((unsigned char)(chr) | 0x20))
 #define TinyCharLowerW(chr) ((WCHAR)((WCHAR)(chr) | 0x20))
 
+#ifdef __cplusplus
+	extern "C" {
+#endif
 #ifndef WINEGCC
 	#define strlenW(ptr) wcslen(ptr)
 	#define strcpyW(dst, src) wcscpy(dst, src)
+	extern WCHAR *stpcpyW(WCHAR *dst, const WCHAR *src);
 	#define strcatW(dst, src) wcscat(dst, src)
 	#define strcmpW(str1, str2) wcscmp(str1, str2)
 	#define stricmpW(str1, str2) _wcsicmp(str1, str2)
@@ -203,12 +207,10 @@
 	#define strrchrW wcsrchr
 	#define strstrW wcsstr
 	#define struprW _wcsupr
-#else // Wine
-	#ifdef __cplusplus
-		extern "C" {
-	#endif
+#else // Wine on Linux
 	#define strlenW(ptr) (size_t)lstrlenW(ptr)
 	#define strcpyW(dst, src) lstrcpyW(dst, src)
+	extern WCHAR *stpcpyW(WCHAR *dst, const WCHAR *src);
 	#define strcatW(dst, src) lstrcatW(dst, src)
 	#define strcmpW(str1, str2) lstrcmpW(str1, str2)
 	#define stricmpW(str1, str2) lstrcmpiW(str1, str2)
@@ -217,10 +219,11 @@
 	extern WCHAR *strrchrW(const WCHAR *text, WCHAR findchar);
 	extern WCHAR *strstrW(const WCHAR *text1, const WCHAR *text2);
 	#define struprW CharUpperW
-	#ifdef __cplusplus
-		}
-	#endif
 #endif
+#ifdef __cplusplus
+	}
+#endif
+
 #ifdef UNICODE
 	#define T(string)	U__STR(string)
 	typedef WCHAR		UTCHAR;
@@ -230,6 +233,7 @@
 	#define tWinMain	wWinMain
 	#define tstrlen(ptr)	strlenW(ptr)
 	#define tstrcpy(dst, src)	strcpyW(dst, src)
+	#define tstpcpy(dst, src)	stpcpyW(dst, src)
 	#define tstrcat(dst, src)	strcatW(dst, src)
 	#define tstrcmp(str1, str2)	strcmpW(str1, str2)
 	#define tstricmp(str1, str2)	stricmpW(str1, str2)
@@ -258,6 +262,7 @@
 	#define tWinMain	WinMain
 	#define tstrlen(ptr)	strlen(ptr)
 	#define tstrcpy(dst, src)	strcpy(dst, src)
+	#define tstpcpy(dst, src)	stpcpy(dst, src)
 	#define tstrcat(dst, src)	strcat(dst, src)
 	#define tstrcmp(str1, str2)	strcmp(str1, str2)
 	#define tstricmp(str1, str2)	stricmp(str1, str2)

@@ -22,7 +22,7 @@ const TCHAR StrReload[] = T("Reload text ?");
 #ifndef UNICODE
 int xpbug = 0;		// XP で EM_?ETSEL が WIDE に必ずなる bug なら負
 #endif
-int USEFASTCALL PPeFill1(PPxEDSTRUCT *PES);
+int USEFASTCALL PPeFill(PPxEDSTRUCT *PES);
 int USEFASTCALL PPeDefaultMenu(PPxEDSTRUCT *PES);
 ERRORCODE PPedCommand(PPxEDSTRUCT *PES, PPECOMMANDPARAM *param);
 ERRORCODE PPedExtCommand(PPxEDSTRUCT *PES, PPECOMMANDPARAM *param, const TCHAR *command);
@@ -1647,7 +1647,7 @@ int USEFASTCALL PPeFillInit(PPxEDSTRUCT *PES)
 	return PPeFillMain(PES, PES->hWnd);
 }
 
-int USEFASTCALL PPeFill1(PPxEDSTRUCT *PES)
+int USEFASTCALL PPeFill(PPxEDSTRUCT *PES)
 {
 	resetflag(PES->ED.cmdsearch, CMDSEARCH_FLOAT);
 	return PPeFillInit(PES);
@@ -1705,6 +1705,8 @@ int USEFASTCALL PPeTab(PPxEDSTRUCT *PES)
 			setflag(PES->ED.cmdsearch, CMDSEARCH_ROMA);
 		}else if ( mode == 5 ){
 			setflag(PES->ED.cmdsearch, CMDSEARCH_WILDCARD);
+		}else if ( mode == 6 ){
+			setflag(PES->ED.cmdsearch, CMDSEARCH_WILDCARD | CMDSEARCH_ROMA);
 		}
 	}else{
 		resetflag(PES->ED.cmdsearch, CMDSEARCH_FLOAT);
@@ -2056,7 +2058,7 @@ const KEYCOMMANDS ppecommands[] = {
 
 	{K_tab,				PPeTab},
 	{K_s | K_tab,		PPeShiftTab},
-	{K_ins,				PPeFill1},
+	{K_ins,				PPeFill},
 //	{K_s | ' ',			PPeFill},	0.35 廃止
 	{'\t',				PPeTabChar},
 	{K_s | '\t',		PPeTabChar},
@@ -3469,10 +3471,11 @@ PPXDLL HWND PPXAPI PPxRegistExEdit(PPXAPPINFO *info, HWND hEditWnd, int maxlen, 
 {
 	PPxEDSTRUCT *PES;
 	HWND hRealED;
-	DWORD X_ltab;
+	DWORD X_ltab[2] = {0, 2};
 
-	X_ltab = GetCustDword(T("X_ltab"), 0);
-	if ( X_ltab ) setflag(flags, PPXEDIT_TABCOMP);
+	GetCustData(T("X_ltab"), &X_ltab, sizeof(X_ltab));
+	if ( X_ltab[0] != 0 ) setflag(flags, PPXEDIT_TABCOMP);
+	if ( X_ltab[1] == 0 ) X_ltab[1] = X_ltab[0];
 	GetCustData(T("X_flst"), &X_flst, sizeof(X_flst));
 	if ( X_flst[0] != 0 ) setflag(flags, PPXEDIT_LISTCOMP);
 
@@ -3516,8 +3519,11 @@ PPXDLL HWND PPXAPI PPxRegistExEdit(PPXAPPINFO *info, HWND hEditWnd, int maxlen, 
 //		PES->filename[0] = '\0';
 //		PES->findstring[0] = '\0';
 		PES->ED.hF = NULL;
-		if ( X_ltab == 4 ) PES->ED.cmdsearch = CMDSEARCH_ROMA;
-		if ( X_ltab == 5 ) PES->ED.cmdsearch = CMDSEARCH_WILDCARD;
+		if ( X_ltab[1] == 4 ) PES->ED.cmdsearch = CMDSEARCH_ROMA;
+		if ( X_ltab[1] >= 5 ){
+			PES->ED.cmdsearch = CMDSEARCH_WILDCARD;
+			if ( X_ltab[1] == 6 ) PES->ED.cmdsearch = CMDSEARCH_WILDCARD | CMDSEARCH_ROMA;
+		}
 	}	// PES != NULL ... 登録済み→設定の変更のみ行う
 
 										// プロージャを設定 -------------------

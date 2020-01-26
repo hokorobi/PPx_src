@@ -65,19 +65,19 @@ DWORD AjiEnterCount = 0;
 // ƒŒƒWƒXƒgƒŠ‚©‚ç•¶š—ñ‚ğ“¾‚é -------------------------------------------------
 // ¦ path ‚Æ dest ‚ª“¯‚¶•Ï”‚Å‚à–â‘è–³‚¢
 _Success_(return)
-PPXDLL BOOL PPXAPI GetRegString(HKEY hKey, const TCHAR *path, const TCHAR *name, _Out_ TCHAR *dest, DWORD size)
+PPXDLL BOOL PPXAPI GetRegString(HKEY hKey, const TCHAR *path, const TCHAR *name, _Out_ TCHAR *dest, SIZE32_T destlen)
 {
 	HKEY HK;
-	DWORD t, s;
+	DWORD typ, siz;
 	TCHAR buf[VFPS];
 
 	if ( RegOpenKeyEx(hKey, path, 0, KEY_READ, &HK) == ERROR_SUCCESS ){
-		s = size;
-		if (RegQueryValueEx(HK, name, NULL, &t, (LPBYTE)dest, &s) == ERROR_SUCCESS){
-			if ( (t == REG_EXPAND_SZ) && (s < sizeof(buf)) ){
+		siz = destlen * sizeof(TCHAR);
+		if ( RegQueryValueEx(HK, name, NULL, &typ, (LPBYTE)dest, &siz) == ERROR_SUCCESS){
+			if ( (typ == REG_EXPAND_SZ) && (siz < sizeof(buf)) ){
 
 				tstrcpy(buf, dest);
-				ExpandEnvironmentStrings(buf, dest, size);
+				ExpandEnvironmentStrings(buf, dest, destlen);
 			}
 			RegCloseKey(HK);
 			return TRUE;
@@ -713,14 +713,14 @@ void MakeUserfilename(TCHAR *dst, const TCHAR *src, const TCHAR *idname)
 	wsprintf(dst, T("%s%sDEF.DAT"), DLLpath, src);
 	if ( GetFileAttributes(dst) != BADATTR ) return;
 
-	if ( !GetRegString(HKEY_CURRENT_USER, idname, src, dst, TSTROFF(MAX_PATH)) ){
+	if ( !GetRegString(HKEY_CURRENT_USER, idname, src, dst, TSIZEOF(dst)) ){
 		TCHAR *p;
 		DWORD t;
 
 		if ( ((DSHGetFolderPath != NULL) &&
 			  SUCCEEDED(DSHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, path)))
 			|| GetRegString(HKEY_CURRENT_USER,
-				RegAppData, RegAppDataName, path, TSTROFF(MAX_PATH)) ){
+				RegAppData, RegAppDataName, path, TSIZEOF(path)) ){
 			CatPath(NULL, path, T(PPxSettingsAppdataPath));
 		}else{
 			tstrcpy(path, DLLpath);

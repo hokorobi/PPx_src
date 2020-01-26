@@ -943,7 +943,8 @@ void CheckAndInitIfo(FOPSTRUCT *FS)
 				XIID_IFileOperation, (LPVOID *)&FS->ifo)) ){
 			FS->ifo = NULL;
 		}else{
-		//	MessageA("ifo test");
+			DWORD cookie;
+
 			FS->ifo->SetOwnerWindow(FS->hDlg);
 			FS->ifo->SetOperationFlags(
 //				FOF_ALLOWUNDO |	// Vista 以降ならセッション全体でUndo可能
@@ -952,7 +953,7 @@ void CheckAndInitIfo(FOPSTRUCT *FS)
 				FOF_NOCONFIRMMKDIR | // フォルダの作成確認をしない
 				FOF_NO_CONNECTED_ELEMENTS | // ファイルを組扱いしない
 				FOF_NOCOPYSECURITYATTRIBS | // ACLをコピーしない
-				FOF_NOERRORUI | // エラー表示しない。無視扱い
+//				FOF_NOERRORUI | // エラー表示しない。無視扱い
 //				FOF_NORECURSION | // サブディレクトリ無し
 				FOF_RENAMEONCOLLISION | // 名前が被ったら、名前変更
 //				FOF_SILENT | // プログレス無し
@@ -961,7 +962,7 @@ void CheckAndInitIfo(FOPSTRUCT *FS)
 				FOFX_NOSKIPJUNCTIONS | // Shell namespace junctions を無視しない
 //				FOFX_PREFERHARDLINK | // できるだけハードリンク
 				FOFX_SHOWELEVATIONPROMPT | // 必要なら UAC
-//				FOFX_EARLYFAILURE | // エラーが出たらすぐに終了
+				FOFX_EARLYFAILURE | // エラーが出たらすぐに終了
 				FOFX_PRESERVEFILEEXTENSIONS | // 名前変更は拡張子を維持
 //				FOFX_KEEPNEWERFILE | // 新しいファイル側を残す
 //				FOFX_NOCOPYHOOKS | // コピー拡張をしない
@@ -975,6 +976,9 @@ void CheckAndInitIfo(FOPSTRUCT *FS)
 //				FOFX_DONTDISPLAYLOCATIONS | // ダイアログに場所情報が無い Win7
 				0);
 			GETDLLPROC(hShell32, SHCreateItemFromParsingName);
+			CIFileOperationProgressSink *ifop = new CIFileOperationProgressSink(FS);
+			FS->ifo->Advise(ifop, &cookie); // cookie は必須
+			ifop->Release(); // ifo 内で Addref されている。ifo->Release で解放
 		}
 	}else{
 		FS->ifo = NULL;
@@ -985,7 +989,6 @@ BOOL CopyFileWithIfo(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst)
 {
 	xIShellItem *destShellItem = NULL;
 	xIShellItem *srcShellItem;
-	CIFileOperationProgressSink *ifop;
 	WCHAR destdirW[VFPS];
 	WCHAR *dstptr;
 	HRESULT result = FALSE;
@@ -1006,13 +1009,11 @@ BOOL CopyFileWithIfo(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst)
 	if ( FAILED(DSHCreateItemFromParsingName(srcdirW, NULL, xxXIID_IShellItem, (void**)&srcShellItem)) ){
 		goto closedst;
 	}
-	ifop = new CIFileOperationProgressSink(FS);
 	if ( FS->opt.fop.mode == FOPMODE_MOVE ){
-		result = FS->ifo->MoveItem(srcShellItem, destShellItem, NULL, ifop);
+		result = FS->ifo->MoveItem(srcShellItem, destShellItem, NULL, NULL);
 	}else{
-		result = FS->ifo->CopyItem(srcShellItem, destShellItem, NULL, ifop);
+		result = FS->ifo->CopyItem(srcShellItem, destShellItem, NULL, NULL);
 	}
-	ifop->Release();
 	if ( SUCCEEDED(result) ){
 		result = FS->ifo->PerformOperations();
 	}
@@ -1022,7 +1023,7 @@ closedst:
 	if ( SUCCEEDED(result) ){
 		return TRUE;;
 	}else{
-	//	MessageA("x");
+		XMessage(NULL,NULL,XM_DbgLOG,T("ifo failed %x"),result);
 		return FALSE;;
 	}
 }

@@ -62,23 +62,23 @@ void ReadFileTime(TCHAR **ptr, FILETIME *ft)
 
 TCHAR *GetLFname(TCHAR **src, TCHAR *dest, int size)
 {
-	TCHAR *ptr, *maxdest, *resultptr = NULL, chr;
+	TCHAR *srcptr, *maxdest, *resultptr = NULL, chr;
 
-	ptr = *src + 1;
+	srcptr = *src + 1;
 	maxdest = dest + size - 1;
 	for (;;){
-		chr = *ptr;
+		chr = *srcptr;
 		if ( chr == '\0' ) break;
-		ptr++;
+		srcptr++;
 		if ( chr == '\"' ) break;
 		if ( dest < maxdest ) *dest++ = chr;
 	}
 	*dest = '\0';
 	if ( dest == maxdest ){
 		resultptr = *src + 1;
-		if ( *(ptr - 1) == '\"' ) *(ptr - 1) = '\0';
+		if ( *(srcptr - 1) == '\"' ) *(srcptr - 1) = '\0';
 	}
-	*src = ptr;
+	*src = srcptr;
 	return resultptr;
 }
 
@@ -210,6 +210,8 @@ ERRORCODE InitFindFirstListFile(VFSFINDFIRST *VFF, const TCHAR *Fname, WIN32_FIN
 		VFF->v.LFILE.type = VFSDT_LFILE_TYPE_PARENT;
 		VFF->v.LFILE.base = NilStr;
 		VFF->v.LFILE.search = NilStr;
+		VFF->v.LFILE.sort = NilStr;
+		VFF->v.LFILE.view = NilStr;
 		VFF->mode = VFSDT_LFILE;
 		VFF->TypeName = TypeName_ListFile;
 		SetDummydir(findfile, T("."));
@@ -227,6 +229,12 @@ ERRORCODE InitFindFirstListFile(VFSFINDFIRST *VFF, const TCHAR *Fname, WIN32_FIN
 			}
 			if ( memcmp(line, T("Search="), 7 * sizeof(TCHAR)) == 0 ){
 				VFF->v.LFILE.search = line + 7;
+			}
+			if ( memcmp(line, T("Sort="), 5 * sizeof(TCHAR)) == 0 ){
+				VFF->v.LFILE.sort = line + 5;
+			}
+			if ( memcmp(line, T("View="), 5 * sizeof(TCHAR)) == 0 ){
+				VFF->v.LFILE.view = line + 5;
 			}
 			if ( memcmp(line, T("Error="), 6 * sizeof(TCHAR)) == 0 ){
 				line += 6;

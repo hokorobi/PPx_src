@@ -160,15 +160,19 @@ int ErrorActionMsgBox(FOPSTRUCT *FS, ERRORCODE error, const TCHAR *dir, BOOL aut
 
 	md.title = dir;
 	md.text = mes;
-	md.style = MB_ICONEXCLAMATION | MB_ABORTRETRYIGNORE | MB_DEFBUTTON1;
+	md.style = MB_ICONEXCLAMATION | MB_ABORTRETRYIGNORE | MB_DEFBUTTON1 | MB_PPX_ALLCHECKBOX;
 
 	if ( autoretrymode && (error == ERROR_SHARING_VIOLATION) ){
-		md.style = MB_ICONEXCLAMATION | MB_PPX_ABORTRETRYRENAMEIGNORE | MB_DEFBUTTON1 | MB_PPX_AUTORETRY;
+		md.style = MB_ICONEXCLAMATION | MB_PPX_ABORTRETRYRENAMEIGNORE | MB_DEFBUTTON1 | MB_PPX_AUTORETRY | MB_PPX_ALLCHECKBOX;
 		md.autoretryfunc = AutoRetryWriteOpen;
 	}
 	SetJobTask(FS->hDlg, JOBSTATE_ERROR);
 	result = (int)DialogBoxParam(DLLhInst, MAKEINTRESOURCE(IDD_NULL), FS->hDlg, MessageBoxDxProc, (LPARAM)&md);
 	SetJobTask(FS->hDlg, JOBSTATE_DEERROR);
+	if ( result & ID_PPX_CHECKED ){
+		resetflag(result, ID_PPX_CHECKED);
+		FS->opt.erroraction = result;
+	}
 	SetLastError(error);
 	return result;
 }
@@ -361,7 +365,7 @@ ERRORCODE DlgCopyFile(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD srcattr
 	}
 
 	// 移動を試みる -----------------------------------------------------------
-	while ( CheckSaveDrive(opt, src, dst) && (opt->fop.divide_num == 0) ){
+	while ( CheckSaveDriveMove(opt, src, dst) && (opt->fop.divide_num == 0) ){
 		ERRORCODE tryresult;
 
 		if ( IsTrue(FS->renamemode) &&
@@ -521,7 +525,7 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 			result = SameNameAction(FS, dstH, &srcfinfo, &dstfinfo, src, dst);
 			switch( result ){
 				case ACTION_RETRY:
-					if ( CheckSaveDrive(opt, src, dst) && (opt->fop.divide_num == 0) ){
+					if ( CheckSaveDriveMove(opt, src, dst) && (opt->fop.divide_num == 0) ){
 						if ( srcH != INVALID_HANDLE_VALUE ){
 							CloseHandle(srcH);
 							srcH = INVALID_HANDLE_VALUE;
@@ -562,7 +566,7 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 					}
 					return result;
 			}
-			if ( CheckSaveDrive(opt, src, dst) && (opt->fop.divide_num == 0) ){
+			if ( CheckSaveDriveMove(opt, src, dst) && (opt->fop.divide_num == 0) ){
 				if ( srcH != INVALID_HANDLE_VALUE ){
 					CloseHandle(srcH);
 					srcH = INVALID_HANDLE_VALUE;

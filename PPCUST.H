@@ -19,7 +19,7 @@ extern void InfoDb(TCHAR *buf);
 extern int *SubDialog;
 // console 関連 ---------------------------------------------------------------
 extern void Print(const TCHAR *str);
-extern int CustDump(const TCHAR *filename);
+extern int CustDump(const TCHAR *cmdptr, const TCHAR *filename);
 extern int CustStore(TCHAR *fname, int appendmode, HWND hDlg);
 extern int CustInit(void);
 extern int HistDump(const TCHAR *cmdptr, const TCHAR *filename);
@@ -77,7 +77,7 @@ extern void FixWildItemName(TCHAR *item);
 extern void Changed(HWND hWnd);
 extern int KeyInput(HWND hWnd, TCHAR *string);
 extern void Test(void);
-extern TCHAR *LoadTextResource(LPCTSTR rname);
+extern TCHAR *LoadTextResource(HINSTANCE hModule, LPCTSTR rname);
 extern void USEFASTCALL SetDlgFocus(HWND hDlg, int id);
 extern void EnableDlgWindow(HWND hDlg, int id, BOOL state);
 extern void ShowDlgWindow(const HWND hDlg, const UINT id, BOOL show);
@@ -93,8 +93,8 @@ extern int EtcEditFormat;
 enum { ETC_TEXT = 0,
 	ETC__EDITBUTTON, // これ以降は「編集」ボタン
 	ETC_CELLDISP, ETC_INFODISP, ETC_HKEY,
-	ETC__VIEW, // ここ以降は「編集」ボタンが無効になる
-	ETC_DSET, ETC_WINPOS, ETC_EXECS, ETC_NOPARAM};
+	ETC__VIEW, ETC_DSET, // ここ以降は「編集」ボタンが無効になる
+	ETC_WINPOS, ETC_EXECS, ETC_NOPARAM};
 
 struct EtcLabelsStruct {
 	const TCHAR *name, *key, *comment;

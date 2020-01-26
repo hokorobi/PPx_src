@@ -473,6 +473,9 @@ GVAR int OpenEntryNow GPARAM(0);	// Open çƒì¸ñhé~
 DLLGVAR int TouchMode DLLGPARAM(0);
 DLLGVAR int X_pmc[4] DLLGPARAM({X_pmc_defvalue});
 
+
+
+GVAR int LongText GPARAM(0); // äJî≠íÜ
 // àÛç¸ -----------------------------------------------------------------------
 GVAR PRINTINFO PrintInfo
 #ifndef GLOBALEXTERN

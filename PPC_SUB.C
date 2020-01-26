@@ -33,11 +33,21 @@ HMODULE hTSusiePlguin = NULL;
 CREATEPICTURE CreatePicture;
 
 #ifdef _WIN64
-	#define TGDIPNAME T("iftgdip.sph")
-	#define TWICNAME T("iftwic.sph")
+	#ifdef _M_ARM64
+		#define TGDIPNAME T("iftgdip.spha")
+		#define TWICNAME T("iftwic.spha")
+	#else
+		#define TGDIPNAME T("iftgdip.sph")
+		#define TWICNAME T("iftwic.sph")
+	#endif
 #else
-	#define TGDIPNAME T("iftgdip.spi")
-	#define TWICNAME T("iftwic.spi")
+	#ifdef _M_ARM
+		#define TGDIPNAME T("iftgdip.spia")
+		#define TWICNAME T("iftwic.spia")
+	#else
+		#define TGDIPNAME T("iftgdip.spi")
+		#define TWICNAME T("iftwic.spi")
+	#endif
 #endif
 
 #ifdef UNICODE
@@ -296,13 +306,15 @@ int GetItemTypeFromPoint(PPC_APPINFO *cinfo, POINT *pos, ENTRYINDEX *ItemNo)
 			rc = PPCR_UNKNOWN;
 		}else if ( y < cinfo->cel.Area.cy ){
 			CELLRIGHTRANGES ranges;
+			int xd;
 
 			GetCellRightRanges(cinfo, &ranges);
 			rc = PPCR_CELLBLANK;
 			//==== 検知対象 cell を決定
-			cell = cinfo->cellWMin + y +
-					(x / cinfo->cel.Size.cx) * cinfo->cel.Area.cy;
-			x = x % cinfo->cel.Size.cx;
+			xd = x / cinfo->cel.Size.cx;
+			cell = cinfo->cellWMin + y + xd * cinfo->cel.Area.cy;
+			x = x - (xd * cinfo->cel.Size.cx);
+
 			// 右端は、セルの範囲であっても空欄扱いにする
 			if ( (x > (cinfo->fontX * 3)) && (pos->x >= ranges.RightBorder) ){
 				if ( ItemNo != NULL ) *ItemNo = -1;
@@ -315,9 +327,11 @@ int GetItemTypeFromPoint(PPC_APPINFO *cinfo, POINT *pos, ENTRYINDEX *ItemNo)
 #endif
 			if ( (cell < cinfo->e.cellIMax) && (cell >= cinfo->cellWMin) FREEPOSCONDITION(cell) ){
 				int TailRight = cinfo->cel.Size.cx - ranges.TailRightOffset;
-				if ( TailRight >= ranges.RightBorder ){
-					TailRight = ranges.RightBorder;
+
+				if ( xd >= (cinfo->cel.VArea.cx - 1) ){ // 右端用の調整
+					TailRight = ranges.RightBorder % cinfo->cel.Size.cx;
 				}
+
 				if ( (x > (TailRight - ranges.TailWidth)) && (x < TailRight) ){
 					rc = PPCR_CELLTAIL;
 				}else if ( (DWORD)x < cinfo->CellNameWidth ){ // マーク部分の判定
@@ -860,12 +874,14 @@ void USEFASTCALL SetDummyCell(ENTRYCELL *cell, const TCHAR *lfn)
 TCHAR *GetFilesNextAlloc(TCHAR *nowptr, TCHAR **baseptr, TCHAR **nextptr)
 {
 	TCHAR *np, *lbaseptr = *baseptr;
+	size_t newsize;
 
-	np = HeapReAlloc(hProcessHeap, 0, lbaseptr,
-			TSTROFF((*nextptr - lbaseptr) + GFSIZE + VFPS));
+	newsize = *nextptr - lbaseptr + GFSIZE;
+	np = HeapReAlloc(hProcessHeap, 0, lbaseptr, TSTROFF(newsize) + VFPS);
 	if ( np != NULL ){
-		*nextptr = np + (*nextptr - lbaseptr + GFSIZE);
+		*nextptr = np + newsize;
 		*baseptr = np;
+		#pragma warning(suppress:6001) // サイズ計算のみにlbaseptrを使用
 		return np + (nowptr - lbaseptr);
 	}
 	*baseptr = NULL;
@@ -1403,7 +1419,7 @@ HANDLE USEFASTCALL CreateHandleForListFile(PPC_APPINFO *cinfo, const TCHAR *file
 			FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if ( hFile == INVALID_HANDLE_VALUE ) return NULL;
 
-	if ( !(flags & WLFC_NAMEONLY) ){
+	if ( !(flags & WLFC_NOHEADER) ){
 		WriteFile(hFile, ListFileHeaderStr, ListFileHeaderStrLen, &tmp, NULL);
 
 		// listfileでないか、listfileでBasePath指定有りのときは、BasePathを出力
@@ -1622,7 +1638,7 @@ void DelayedFileOperation(PPC_APPINFO *cinfo)
 		return;
 	}
 
-	while(EnumCustTable(count, T("_Delayed"), operation, param, sizeof(param)) >0){
+	while( EnumCustTable(count, T("_Delayed"), operation, param, sizeof(param)) > 0 ){
 		if ( !tstrcmp(operation, T("delete")) ){
 			DWORD atr;
 			BOOL result;
@@ -2281,7 +2297,7 @@ void WriteStdoutChooseName(TCHAR *name)
 		if ( (X_ChooseMode == CHOOSEMODE_CON_UTF16) ||
 			 (X_ChooseMode == CHOOSEMODE_MULTICON_UTF16) ){
 			src = (char *)name;
-			len = strlenW(name) * sizeof(WCHAR);
+			len = strlenW32(name) * (SIZE32_T)sizeof(WCHAR);
 		}else{
 			UINT codepage = CP_ACP;
 
@@ -2456,9 +2472,9 @@ UTCHAR GetCommandParameter(LPCTSTR *commandline, TCHAR *param, size_t paramlen)
 	destmax = dest + paramlen - 1;
 	code = firstcode;
 	for ( ;; ){
-		*dest++ = code;
+		if ( dest < destmax ) *dest++ = code;
 		code = *src;
-		if ( (dest >= destmax) || (code == ',') || // (code == ' ') ||
+		if ( (code == ',') || // (code == ' ') ||
 			 ((code < ' ') && ((code == '\0') || (code == '\t') ||
 							   (code == '\r') || (code == '\n'))) ){
 			break;
@@ -2714,18 +2730,35 @@ void TinyGetMenuPopPos(HWND hWnd, POINT *pos)
 	}
 }
 
+const TCHAR BlockKey[] = T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Blocked");
+
+BOOL IsShellExBlocked(const TCHAR *ClsID)
+{
+	TCHAR buf[64];
+
+	if ( (GetRegString(HKEY_LOCAL_MACHINE, BlockKey, ClsID, buf, TSIZEOF(buf)) == FALSE) &&
+		 (GetRegString(HKEY_CURRENT_USER, BlockKey, ClsID, buf, TSIZEOF(buf)) == FALSE) ){
+		return FALSE;
+	}
+	return TRUE;
+}
+
 #if !NODLL
 void tstrreplace(TCHAR *text, const TCHAR *targetword, const TCHAR *replaceword)
 {
 	TCHAR *p;
+	size_t tlen, rlen;
 
-	while ( (p = tstrstr(text, targetword)) != NULL ){
-		size_t tlen = tstrlen(targetword);
-		size_t rlen = tstrlen(replaceword);
+	if ( (p = tstrstr(text, targetword)) == NULL ) return;
+	tlen = tstrlen(targetword);
+	rlen = tstrlen(replaceword);
 
+	for (;;){
 		if ( tlen != rlen ) memmove(p + rlen, p + tlen, TSTRSIZE(p + tlen));
 		memcpy(p, replaceword, TSTROFF(rlen));
 		text = p + rlen;
+		if ( (p = tstrstr(text, targetword)) != NULL ) continue;
+		break;
 	}
 }
 
@@ -2741,5 +2774,19 @@ void EndButtonMenu(void)
 	ButtonMenuTick = (GetAsyncKeyState(VK_LBUTTON) & KEYSTATE_PUSH) ? GetTickCount() : 0;
 }
 
-#endif
+WCHAR *stpcpyW(WCHAR *deststr, const WCHAR *srcstr)
+{
+	WCHAR *destptr = deststr;
+	const WCHAR *srcptr = srcstr;
 
+	for(;;){
+		WCHAR code;
+
+		code = *srcptr;
+		*destptr = code;
+		if ( code == '\0' ) return destptr;
+		srcptr++;
+		destptr++;
+	}
+}
+#endif

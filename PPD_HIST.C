@@ -437,9 +437,9 @@ void DefCust(int mode)
 		rsize = SizeofResource(DLLhInst, hres);
 		rc = LockResource(LoadResource(DLLhInst, hres));
 		cp = IsValidCodePage(CP__SJIS) ? CP__SJIS : CP_ACP;
-		size = MultiByteToWideChar(cp, MB_PRECOMPOSED, rc, rsize, NULL, 0);
+		size = MultiByteToWideChar(cp, 0, rc, rsize, NULL, 0);
 		mem = HeapAlloc(ProcHeap, 0, TSTROFF(size) + 16);
-		size = MultiByteToWideChar(cp, MB_PRECOMPOSED, rc, rsize, mem, size);
+		size = MultiByteToWideChar(cp, 0, rc, rsize, mem, size);
 		mem[size] = '\0';
 	}
 	#else
@@ -488,11 +488,10 @@ PPXDLL void PPXAPI InitCust(void)
 
 // Editor の設定を行う --------------------------------------------------------
 	if ( GetRegString(HKEY_CLASSES_ROOT,
-			RegTxtExtName, NilStr, buf1, sizeof(buf1)) ){
+			RegTxtExtName, NilStr, buf1, TSIZEOF(buf1)) ){
 		tstrcat(buf1, T("\\shell\\open\\command"));
 										// アプリケーションのシェル -----------
-		if ( GetRegString(HKEY_CLASSES_ROOT,
-					buf1, NilStr, buf1, sizeof(buf1)) ){
+		if ( GetRegString(HKEY_CLASSES_ROOT, buf1, NilStr, buf1, TSIZEOF(buf1)) ){
 			const TCHAR *ptr;
 
 			ptr = buf1;

@@ -339,17 +339,45 @@ PPXDLL void PPXAPI PPxSendMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 	}
 }
+
+void PPxPostMessagePPb(UINT uMsg, WPARAM wParam, int index)
+{
+	TCHAR buf[0x100];
+	HANDLE hCommIdleEvent;
+	DWORD result;
+
+	if ( Sm->P[index].UsehWnd != BADHWND ) return;
+	if ( uMsg != WM_PPXCOMMAND ) return;
+
+	wsprintf(buf, T("%s%sR"), SyncTag, Sm->P[index].ID);
+	hCommIdleEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, buf);
+	if ( hCommIdleEvent == NULL ) return;
+	// PPb は[1]待機状態？
+	result = WaitForSingleObject(hCommIdleEvent, 0);
+	CloseHandle(hCommIdleEvent);
+	if ( result == WAIT_OBJECT_0 ){
+		// 待機状態なので送信
+		wsprintf(buf, T(">M%d"), wParam);
+		SendPPB(BADHWND, buf, index);
+	}
+}
+
 /*-----------------------------------------------------------------------------
 	タスク管理テーブルに登録された PPx 全てにコマンドを発行
 -----------------------------------------------------------------------------*/
 PPXDLL void PPXAPI PPxPostMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	int i;
+	int index;
 
 	FixTask();
-	for ( i = 0 ; i < X_Mtask ; i++ ){
-		if ( Sm->P[i].ID[0] != '\0' ){
-			PostMessage(Sm->P[i].hWnd, uMsg, wParam, lParam);
+	for ( index = 0 ; index < X_Mtask ; index++ ){
+		if ( Sm->P[index].ID[0] != '\0' ){
+			if ( (Sm->P[index].ID[0] != 'B') || (Sm->P[index].ID[1] != '_') ){
+				PostMessage(Sm->P[index].hWnd, uMsg, wParam, lParam);
+			}else{ // PPb用
+				PPxPostMessagePPb(uMsg, wParam, index);
+
+			}
 		}
 	}
 }
@@ -465,7 +493,7 @@ BOOL BootPPB(const TCHAR *path, const TCHAR *line, int flags)
 	return TRUE;
 }
 /*-----------------------------------------------------------------------------
-	PPB にコマンドを送信する
+	PPb にコマンドを送信する
 
 PPb			PPx				hCommSendEvent	hCommIdleEvent	ParamID
 [1]PPb 起動	受付待ち		---				---				free
@@ -493,7 +521,7 @@ int SendPPB(HWND hOwner, const TCHAR *param, int useID)
 	}
 
 	tstrcpy(buf, SyncTag);
-	tstrcat(buf, P->ID);					// PPB との通信手段を確保 ---------
+	tstrcat(buf, P->ID);					// PPb との通信手段を確保 ---------
 	FreePPx();
 	hCommSendEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, buf);
 	tstrcat(buf, T("R"));
@@ -504,7 +532,7 @@ int SendPPB(HWND hOwner, const TCHAR *param, int useID)
 		return -1;
 	}
 	for ( ; ; ){
-		DWORD result;			//[1]→[2] PPB が待機状態になるまで待つ ---
+		DWORD result;			//[1]→[2] PPb が待機状態になるまで待つ ---
 
 		if ( GetAsyncKeyState(VK_PAUSE) & KEYSTATE_PUSH ) break;
 		result = WaitForSingleObject(hCommIdleEvent, 100);
@@ -529,13 +557,13 @@ int SendPPB(HWND hOwner, const TCHAR *param, int useID)
 		}
 		break;
 	}
-	CloseHandle(hCommSendEvent);
 	CloseHandle(hCommIdleEvent);
+	CloseHandle(hCommSendEvent);
 	return 0;
 error:
 	XMessage(hOwner, NULL, XM_FaERRd, T("PPB-Event destroyed"));
-	CloseHandle(hCommSendEvent);
 	CloseHandle(hCommIdleEvent);
+	CloseHandle(hCommSendEvent);
 	return -1;
 }
 

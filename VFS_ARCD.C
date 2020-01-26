@@ -116,8 +116,8 @@ BOOL WINAPI DummySetUnicodeMode(const BOOL _bUnicode)
 void LoadSusiePlugin(TCHAR *path, int all)
 {
 	SUSIE_DLL sdll;
-	HANDLE hFF;			// FindFile 用ハンドル
-	WIN32_FIND_DATA	ff;				// ファイル情報
+	HANDLE hFF;
+	WIN32_FIND_DATA ff;
 	TCHAR dir[VFPS];
 
 	ThInit(&Thsusie);
@@ -125,9 +125,17 @@ void LoadSusiePlugin(TCHAR *path, int all)
 	tstrcpy(susiedir, path);
 										// プラグインの読み込み位置を決定する
 	#ifndef _WIN64
-		CatPath(dir, path, T("*.SPI"));	// 32bit
+		#ifdef _M_ARM
+			CatPath(dir, path, T("*.SPI*")); // arm32
+		#else
+			CatPath(dir, path, T("*.SPI"));	// x86
+		#endif
 	#else
-		CatPath(dir, path, T("*.SPH"));	// 64bit
+		#ifdef _M_ARM64
+			CatPath(dir, path, T("*.SPH*")); // arm64
+		#else
+			CatPath(dir, path, T("*.SPH")); // x64
+		#endif
 	#endif
 										// 検索 -------------------------------
 	hFF = FindFirstFileL(dir, &ff);
@@ -246,7 +254,7 @@ VFSDLL void PPXAPI VFSOn(int mode)
 									uD->PartExtCMD = p + 2;
 									break;
 
-								case 'i': // 対応拡張子ワイルドカード
+								case 'i': // 移動一覧に挙げるワイルドカード
 									uD->SupportWildcard = p + 2;
 									break;
 
@@ -254,7 +262,7 @@ VFSDLL void PPXAPI VFSOn(int mode)
 									uD->SingleExtCMD = p + 2;
 									break;
 
-								case 'w': // ワイルドカードマスク
+								case 'w': // 自動判別用ワイルドカード
 									if ( *(p + 2) != '\0' ){
 										uD->CheckWildcard = p + 2;
 									}
@@ -743,7 +751,7 @@ VFSDLL int PPXAPI VFSCheckDir(const TCHAR *filename, BYTE *header, DWORD hsize, 
 				tstrcat(rpath, T("\\ShellFolder"));
 				// XP。Win7はStorageHandler
 				if ( GetRegString(HKEY_CLASSES_ROOT,
-							rpath, RegAttr, (TCHAR *)&attr, sizeof(attr)) ){
+							rpath, RegAttr, (TCHAR *)&attr, TSIZEOF(attr)) ){
 					if ( attr & SFGAO_FOLDER ){
 						wsprintf(extbuf, T("+%s"), ext);
 						AppendMenuString(hPopupMenu, menuid++, extbuf);

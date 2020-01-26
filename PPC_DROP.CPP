@@ -530,18 +530,18 @@ void DDMenu(HWND hWnd, POINTL *pt, DWORD *pdwEffect, DWORD orgEffect, DWORD key,
 			HRESULT hres;
 
 			s = MAX_PATH;
-			if ( ::RegEnumKeyEx(hKey, enumno++, keyname, &s, NULL, NULL, NULL, &ft) !=
-					ERROR_SUCCESS){
+			if ( ::RegEnumKeyEx(hKey, enumno++, keyname, &s, NULL, NULL, NULL, &ft) != ERROR_SUCCESS){
 				break;
 			}
 			if ( keyname[0] == '{' ){
 				tstrcpy(idname, keyname);
 			}else{
-				if ( GetRegString(hKey, keyname, NilStr, idname, TSIZEOF(idname))
-						== FALSE ){
+				if ( GetRegString(hKey, keyname, NilStr, idname, TSIZEOF(idname)) == FALSE ){
 					continue;
 				}
 			}
+			if ( IsShellExBlocked(idname) ) continue; // block check
+
 			#ifndef UNICODE
 				WCHAR idnameW[MAX_PATH];
 				#define tidname idnameW

@@ -1542,6 +1542,26 @@ void PaintImageIcon(DISPSTRUCT *disp, const BYTE *fmt, int CheckM, int Ytop, int
 			DxFillBack(disp->DxDraw, hDC, &box, disp->hfbr);
 		}
 
+		#if 0
+		if ( CheckM ){
+			#ifndef USEDIRECTX
+			if ( TImageList_Draw(cinfo, &cinfo->EntryIcons, disp->cell->icon,
+				CTC_DXP hDC, disp->Xd, box.top,
+				(box.right - box.left), (box.bottom - box.top)) == FALSE ){
+				disp->cell->icon = ICONLIST_NOINDEX;
+				RequestGetIcon(cinfo);
+			}
+			#else
+			if ( DrawIconList(cinfo, &cinfo->EntryIcons, disp->cell->icon,
+				DIRECTXARG(&disp->cell->iconcache) CTC_DXP hDC,
+				disp->Xd, box.top, ILD_SELECTED) == FALSE ){
+				disp->cell->icon = ICONLIST_NOINDEX;
+				//RequestGetIcon(cinfo, &cinfo->EntryIcons);
+				RequestGetIcon(cinfo);
+			}
+			#endif
+		}else
+		#endif
 		// EnterCellEdit(cinfo); 表示時の同期は不要らしい
 		if ( DrawIconList(cinfo, &cinfo->EntryIcons, disp->cell->icon,
 			DIRECTXARG(&disp->cell->iconcache) CTC_DXP hDC,
@@ -2140,7 +2160,7 @@ void ShowTimeFormat(DISPSTRUCT *disp, const BYTE **format)
 				p += wsprintf(p, T("%02d"), sTime.wMonth);
 				break;
 			case 'a':
-				p += wsprintf(p, T("%s"), EMonth[sTime.wMonth - 1]);
+				p = tstpcpy(p, EMonth[sTime.wMonth - 1]);
 				break;
 		// 日
 			case 'd':
@@ -2151,10 +2171,10 @@ void ShowTimeFormat(DISPSTRUCT *disp, const BYTE **format)
 				break;
 		// 週
 			case 'w':
-				p += wsprintf(p, T("%s"), EWeek[sTime.wDayOfWeek]);
+				p = tstpcpy(p, EWeek[sTime.wDayOfWeek]);
 				break;
 			case 'W':
-				p += wsprintf(p, T("%s"), JWeek[sTime.wDayOfWeek]);
+				p = tstpcpy(p, JWeek[sTime.wDayOfWeek]);
 			#ifdef UNICODE
 				extdisplen += 2 / 2;
 			#endif
@@ -2200,12 +2220,10 @@ void ShowTimeFormat(DISPSTRUCT *disp, const BYTE **format)
 				break;
 		// 午
 			case 't':
-				p += wsprintf(p, T("%s"),
-					(sTime.wHour < 12) ? T("am") : T("pm"));
+				p = tstpcpy(p, (sTime.wHour < 12) ? T("am") : T("pm"));
 				break;
 			case 'T':
-				p += wsprintf(p, T("%s"),
-					(sTime.wHour < 12) ? T("午前") : T("午後"));;
+				p = tstpcpy(p, (sTime.wHour < 12) ? T("午前") : T("午後"));;
 			#ifdef UNICODE
 				extdisplen += 4 / 2;
 			#endif
@@ -3875,8 +3893,8 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 	if ( X_stip[TIP_TAIL_WIDTH] /*&& ((cinfo->PopupPosType != PPT_FOCUS) || (cinfo->Tip.states & STIP_SHOWTAILAREA))*/ ){
 //		resetflag(cinfo->Tip.states, STIP_SHOWTAILAREA);
 		if ( (EI_No >= 0) &&
-			 (((cellno == cinfo->e.cellPoint) && (cinfo->MouseStat.mode != MOUSEMODE_DRAG)) ||
-			  ((cinfo->LastInputType >= 2) && (cellno == cinfo->e.cellN))) ){
+			 (cellno == cinfo->e.cellPoint) &&
+			 (cinfo->MouseStat.mode != MOUSEMODE_DRAG) ){
 			HBRUSH hB;
 			int w;
 			CELLRIGHTRANGES ranges;

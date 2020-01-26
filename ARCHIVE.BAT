@@ -1,6 +1,6 @@
 @echo off
 rem XVER: 123 or 123p1
-set XVER=170
+set XVER=171
 set RETAIL=1
 set DIR64=PPx64
 rem *** set value ***
@@ -21,7 +21,8 @@ set ppffix=
 set ppcommon=
 
 rem *** main ***
-if "%1"=="64" goto :x64main
+if "%1"=="x64" goto :x64main
+if "%1"=="arm64" goto :arm64main
 WINCLOSE PaperPlaneCUI
 WINCLOSE PaperPlaneCUIW
 WINCLOSE PaperPlaneVUI
@@ -32,6 +33,7 @@ perl ppxver.pl %XVER%
 del /q *.zip 2> NUL
 del /q *.map 2> NUL
 del /q %DIR64%\*.* 2> NUL
+del /q %DIR64%ARM\*.* 2> NUL
 set arcbit=32
 set arcpath=
 set tail=W
@@ -59,24 +61,56 @@ ppb /c %%u/7-ZIP32.DLL,a -tzip -hide -mx=7 ppxhelp.zip %help%
 tfilesign s ppxhelp.zip ppxhelp.zip
 CT %readme% ppxhelp.zip
 
-rem *** x64 ***
+rem *** x64/arm64 ***
 :x64call
 md %DIR64%
 md %DIR64%\resource
 copy *.* %DIR64% > NUL
 del %DIR64%\*.map > NUL
 copy resource\*.* %DIR64%\resource > NUL
-cmd /c archive.bat 64 %DIR64% %readme%
+cmd /c archive.bat x64 %DIR64% %readme%
+
+md %DIR64%ARM
+md %DIR64%ARM\resource
+copy *.* %DIR64%ARM > NUL
+del %DIR64%ARM\*.map > NUL
+copy resource\*.* %DIR64%ARM\resource > NUL
+cmd /c archive.bat arm64 %DIR64%ARM %readme%
+
 
 rem *** final ***
 perl final.pl
-ppb /c %%u/7-ZIP32.DLL,a -tzip -hide -mx=7 -r ppx%XVER%map.zip *.map %DIR64%\*.map
+ppb /c %%u/7-ZIP32.DLL,a -tzip -hide -mx=7 -r ppx%XVER%map.zip *.map %DIR64%\*.map %DIR64%ARM\*.map
+goto :EOF
+
+rem *** arm64 main ***
+:arm64main
+CD %2
+rem vcvarsall.bat x64_arm64
+call VCARM64.bat
+copy ..\64FILESARM\*.* .
+del *.obj 2> NUL
+del *.zip 2> NUL
+make -DARM -DX64=1 -DRELEASE
+for %%i in (*.dll) do CT %3 %%i
+for %%i in (*.exe) do CT %3 %%i
+del ..\ppxarm64%XVER%.zip 2> NUL
+set arcpath=..\
+set arcx=ppxarm64
+set arcbit=64
+set tail=W
+if %RETAIL%==1 set etcfile=%etcfile% iftwic.spha UNBYPASS.DLL UNBYPASS.EXE PPXTEXT64A.DLL PPXSCR64A.DLL
+call :archive
+if %RETAIL%==1 CT PPX.TXT ..\ppxarm64%XVER%.zip
+del *.c 2> NUL
+del *.obj 2> NUL
 goto :EOF
 
 rem *** x64 main ***
 :x64main
 CD %2
-call VC64
+rem vcvarsall.bat amd64
+call VC64.BAT
 copy ..\64FILES\*.* .
 del *.obj 2> NUL
 del *.zip 2> NUL
@@ -88,7 +122,7 @@ set arcpath=..\
 set arcx=ppx64
 set arcbit=64
 set tail=W
-if %RETAIL%==1 set etcfile=%etcfile% IFTWIC.SPH UNBYPASS.DLL UNBYPASS.EXE
+if %RETAIL%==1 set etcfile=%etcfile% iftwic.sph UNBYPASS.DLL UNBYPASS.EXE
 call :archive
 if %RETAIL%==1 CT PPX.TXT ..\ppx64%XVER%.zip
 del *.c 2> NUL
@@ -99,15 +133,16 @@ rem *** make ***
 :makes
 del /q *.obj 2> NUL
 del /q *.res 2> NUL
+rem make / make -DUseUnicode=1
 call make%tail% -DRELEASE | perl makeflit.pl
 
 rem ** archive **
 :archive
 set ppcommon=PPLIB%arcbit%%tail%.DLL
 set ppc=PPC%tail%.EXE
-set ppv=PPV%tail%.EXE
-if %RETAIL%==1 set ppb=PPB%tail%.EXE
-if %RETAIL%==1 set ppcust=PPCUST%tail%.EXE
+if %RETAIL%==1 set ppv=PPV%tail%.EXE
+set ppb=PPB%tail%.EXE
+set ppcust=PPCUST%tail%.EXE
 if %RETAIL%==1 set pptray=PPTRAY%tail%.EXE
 if %RETAIL%==1 set ppffix=PPFFIX%tail%.EXE
 

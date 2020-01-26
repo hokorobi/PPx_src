@@ -49,10 +49,10 @@ SHORT DefaultFontY = 0; // 元のフォントサイズ(未設定:0)
 DefineWinAPI(BOOL, GetConsoleDisplayMode, (LPDWORD lpModeFlags)) = INVALID_VALUE(impGetConsoleDisplayMode);
 
 COLORREF palettes[16] = {
-	C_AUTO,C_AUTO,C_AUTO,C_AUTO,
-	C_AUTO,C_AUTO,C_AUTO,C_AUTO,
-	C_AUTO,C_AUTO,C_AUTO,C_AUTO,
-	C_AUTO,C_AUTO,C_AUTO,C_AUTO
+	C_AUTO, C_AUTO, C_AUTO, C_AUTO,
+	C_AUTO, C_AUTO, C_AUTO, C_AUTO,
+	C_AUTO, C_AUTO, C_AUTO, C_AUTO,
+	C_AUTO, C_AUTO, C_AUTO, C_AUTO
 };
 
 #ifdef WINEGCC
@@ -68,11 +68,55 @@ short int DefPair, NegPair;
 #ifndef ENABLE_EXTENDED_FLAGS
 #define ENABLE_EXTENDED_FLAGS 0x80
 #endif
+
+#ifndef WINEGCC
+void tInitCustomize(void)
+{
+	if ( DGetConsoleScreenBufferInfoEx == NULL ){
+		GETDLLPROC(hKernel32, GetConsoleScreenBufferInfoEx);
+		GETDLLPROC(hKernel32, SetConsoleScreenBufferInfoEx);
+		GETDLLPROC(hKernel32, GetCurrentConsoleFontEx);
+		GETDLLPROC(hKernel32, SetCurrentConsoleFontEx);
+	}
+	if ( DSetCurrentConsoleFontEx != NULL ){
+		LOGFONT confont;
+		xCONSOLE_FONT_INFOEX cfi;
+
+		if ( GetCustData(T("F_con"), &confont, sizeof(confont)) == NO_ERROR ){
+			cfi.cbSize = sizeof(cfi);
+			cfi.nFont = 0;
+			cfi.dwFontSize.X = (SHORT)confont.lfWidth;
+			cfi.dwFontSize.Y = (SHORT)confont.lfHeight;
+			cfi.FontFamily = (UINT)confont.lfPitchAndFamily;;
+			cfi.FontWeight = (UINT)confont.lfWeight;
+			strcpyToW(cfi.FaceName, confont.lfFaceName, LF_FACESIZE);
+			DSetCurrentConsoleFontEx(hStdout, FALSE, &cfi);
+		}
+	}
+	screen.info.cbSize = sizeof(screen.info);
+	if ( (DGetConsoleScreenBufferInfoEx != NULL) &&
+		 IsTrue(DGetConsoleScreenBufferInfoEx(hStdout, &screen.info)) ){
+		int i;
+		BOOL change = FALSE;
+
+		GetCustData(T("CB_pals"), &palettes, sizeof(palettes));
+		for ( i = 0 ; i < 16 ; i++ ){
+			if ( palettes[i] != C_AUTO ){
+				screen.info.ColorTable[i] = palettes[i];
+				change = TRUE;
+			}
+		}
+		if ( change ){
+			DSetConsoleScreenBufferInfoEx(hStdout, &screen.info);
+		}
+	}
+}
+#endif
+
 BOOL tInit(const TCHAR *title)
 {
 	if ( OldCsrMod.dwSize == 0 ){
 		if( title != NULL ) SetConsoleTitle(title);		// タイトル表示
-
 									// 起動時情報の取得 -----------------------
 										// 標準入出力ハンドルの取得
 		hStdin	= GetStdHandle(STD_INPUT_HANDLE);
@@ -80,50 +124,13 @@ BOOL tInit(const TCHAR *title)
 										// 標準入出力状態の取得
 		GetConsoleMode(hStdin, &OldStdinMode);
 		GetConsoleMode(hStdout, &OldStdoutMode);
-		#ifndef WINEGCC
-			if ( DGetConsoleScreenBufferInfoEx == NULL ){
-				GETDLLPROC(hKernel32, GetConsoleScreenBufferInfoEx);
-				GETDLLPROC(hKernel32, SetConsoleScreenBufferInfoEx);
-				GETDLLPROC(hKernel32, GetCurrentConsoleFontEx);
-				GETDLLPROC(hKernel32, SetCurrentConsoleFontEx);
-			}
-			if ( DSetCurrentConsoleFontEx != NULL ){
-				LOGFONT confont;
-				xCONSOLE_FONT_INFOEX cfi;
-
-				if ( GetCustData(T("F_con"), &confont, sizeof(confont)) == NO_ERROR ){
-					cfi.cbSize = sizeof(cfi);
-					cfi.nFont = 0;
-					cfi.dwFontSize.X = (SHORT)confont.lfWidth;
-					cfi.dwFontSize.Y = (SHORT)confont.lfHeight;
-					cfi.FontFamily = (UINT)confont.lfPitchAndFamily;;
-					cfi.FontWeight = (UINT)confont.lfWeight;
-					strcpyToW(cfi.FaceName, confont.lfFaceName, LF_FACESIZE);
-					DSetCurrentConsoleFontEx(hStdout, FALSE, &cfi);
-				}
-			}
-			screen.info.cbSize = sizeof(screen.info);
-			if ( (DGetConsoleScreenBufferInfoEx != NULL) &&
-				 IsTrue(DGetConsoleScreenBufferInfoEx(hStdout, &screen.info)) ){
-				int i;
-				BOOL change = FALSE;
-
-				GetCustData(T("CB_pals"), &palettes, sizeof(palettes));
-				for ( i = 0 ; i < 16 ; i++ ){
-					if ( palettes[i] != C_AUTO ){
-						screen.info.ColorTable[i] = palettes[i];
-						change = TRUE;
-					}
-				}
-				if ( change ){
-//					DSetConsoleScreenBufferInfoEx(hStdout, &screen.info);
-				}
-			}
-										// 標準出力のカーソル状態
-			if ( GetConsoleCursorInfo(hStdout, &OldCsrMod) == FALSE ){
-				return FALSE; // Wineのとき
-			}
-		#endif
+	#ifndef WINEGCC
+		tInitCustomize();
+									// 標準出力のカーソル状態
+		if ( GetConsoleCursorInfo(hStdout, &OldCsrMod) == FALSE ){
+			return FALSE; // Wineのとき
+		}
+	#endif
 		NowCsr.dwSize = OldCsrMod.dwSize;
 		NowCsr.bVisible = OldCsrMod.bVisible;
 	}

@@ -56,11 +56,10 @@ typedef struct {
 #define SMODE_MASK 2
 
 typedef struct {
-	DWORD_PTR romahandle;
+	DWORD_PTR x_handle;
 	TCHAR *first, *second;
 	size_t firstlen, secondlen;
 	DWORD startTick;
-//	int smode;
 	DWORD edmode;
 } SEARCHPARAMS;
 
@@ -985,6 +984,94 @@ LRESULT AddBraketTextToList(LISTADDINFO *list, const TCHAR *text, int braket)
 			return SendMessage(list->hWnd, list->msg, list->wParam, (LPARAM)text);
 }
 
+#define tstrcpartcmp(src, static_find_str) memcmp(src, static_find_str, TSIZEOFSTR(static_find_str))
+
+const TCHAR ShellDirRegStr[] = T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FolderDescriptions");
+const TCHAR ShellDirNameStr[] = T("Name");
+
+void ShellDriveSearch(LISTADDINFO *list, const TCHAR *first, int braket)
+{
+	HKEY hShellDirKey, hSubKey;
+	int count = 0;
+	TCHAR KeyName[128], buf[VFPS];
+	const TCHAR *search;
+	DWORD rsize;
+	FILETIME write;
+
+	if ( (first[0] != 's') || (first[1] != 'h') || (first[2] != 'e') ){
+		return;
+	}
+	search = NilStr;
+	if ( first[3] != '\0' ){
+		if ( first[3] != 'l' ) return;
+		if ( first[4] != '\0' ){
+			if ( first[4] != 'l' ) return;
+			search = (first[5] == ':') ? (first + 6) : (first + 5);
+		}
+	}
+
+	if ( ERROR_SUCCESS != RegOpenKeyEx(HKEY_LOCAL_MACHINE, ShellDirRegStr, 0, KEY_READ, &hShellDirKey)){
+		return;
+	}
+	for ( ; ; count++ ){					// 設定を取り出す ---------------------
+		rsize = TSIZEOF(KeyName);
+		if ( ERROR_SUCCESS != RegEnumKeyEx(hShellDirKey, count, KeyName, &rsize, NULL, NULL, NULL, &write) ){
+			break;
+		}
+
+		if ( ERROR_SUCCESS != RegOpenKeyEx(hShellDirKey, KeyName, 0, KEY_READ, &hSubKey)){
+			continue;
+		}
+
+		rsize = TSIZEOF(KeyName);
+		if ( ERROR_SUCCESS == RegQueryValueEx(hSubKey, ShellDirNameStr, NULL, NULL, (LPBYTE)KeyName, &rsize) ){
+			if ( tstristr(KeyName, search) != NULL ){
+				wsprintf(buf, T("shell:%s"), KeyName);
+				if ( LB_ERR == AddBraketTextToList(list, buf, braket) ) break;
+
+				list->items++;
+			}
+		}
+		RegCloseKey(hSubKey);
+	}
+	RegCloseKey(hShellDirKey);
+}
+
+// auxの一覧作成
+void AuxSearch(LISTADDINFO *list, const TCHAR *first)
+{
+	int count, size;
+	const TCHAR *search;
+	TCHAR name[VFPS], buf[CMDLINESIZE];
+
+	if ( (first[0] != 'a') || (first[1] != 'u') || (first[2] != 'x')  ){
+		return;
+	}
+	search = (first[3] == ':') ? (first + 4) : (first + 3);
+
+	for ( count = 0 ; ; count++ ){
+		size = EnumCustData(count, name, NULL, 0);
+		if ( 0 > size ) break;
+
+		if ( ((name[0] != 'M') && (name[0] != 'S')) ||
+			 (tstrcpartcmp(name + 1, T("_aux")) != 0) ){
+			continue;
+		}
+		if ( tstrstr(name, search) == NULL ) continue;
+
+		if ( GetCustTable(name, T("base"), buf, sizeof(buf)) == NO_ERROR ){
+			tstrreplace(buf, T(" %; "), T(" ; "));
+		}else{
+			wsprintf(buf, T("aux:%s"), name);
+		}
+
+		if ( LB_ERR == SendMessage(list->hWnd, list->msg, list->wParam, (LPARAM)buf) ){
+			break;
+		}
+		list->items++;
+	}
+}
+
 // 環境変数の一覧作成
 void EnvironmentStringsSearch(LISTADDINFO *list, TCHAR *first, size_t firstlen, int braket, WORD mode)
 {
@@ -1044,50 +1131,75 @@ void EnvironmentStringsSearch(LISTADDINFO *list, TCHAR *first, size_t firstlen, 
 	FreeEnvironmentStrings(envptr);
 }
 
-BOOL SearchRomaStringS(const TCHAR *text, TCHAR *textlast, const TCHAR *searchstr, DWORD_PTR *handles)
-{
-	TCHAR backup;
-	BOOL result;
-
-	backup = *textlast;
-	*textlast = '\0';
-
-	result = SearchRomaString(text, searchstr, ISEA_FLOAT, handles);
-	*textlast = backup;
-	return result;
-}
-
 void FreeExtraSearch(SEARCHPARAMS *spms)
 {
-	if ( spms->edmode & CMDSEARCH_ROMA ){
-		SearchRomaString(NULL, NULL, 0, &spms->romahandle);
-	}else if ( spms->edmode & CMDSEARCH_WILDCARD ){
-		FreeFN_REGEXP((FN_REGEXP *)spms->romahandle);
-		HeapFree(DLLheap, 0, (void *)spms->romahandle);
+	if ( spms->x_handle > 1 ){
+		if ( spms->edmode & CMDSEARCH_WILDCARD ){
+			FreeFN_REGEXP((FN_REGEXP *)spms->x_handle);
+			HeapFree(DLLheap, 0, (void *)spms->x_handle);
+		}else if ( spms->edmode & CMDSEARCH_ROMA ){
+			SearchRomaString(NULL, NULL, 0, &spms->x_handle);
+		}
 	}
+	spms->x_handle = 0;
 }
 
+const TCHAR WordSearchOption[] = T("o:xe,&*"); // wildcard 用
+const TCHAR WordSearchOption_R[] = T("o:xe,&r:"); // wildcard + roma
+const TCHAR WordSearchDummy[] = T("!*"); // 常に失敗用
+
+void MakeWordSearch(SEARCHPARAMS *spms, const TCHAR *searchstr)
+{
+	TCHAR text[0x1000];
+	FN_REGEXP *fr;
+
+	fr = (FN_REGEXP *)spms->x_handle;
+
+	if ( tstrlen(searchstr) >= MAX_PATH ){
+		MakeFN_REGEXP(fr, WordSearchDummy); // 常に失敗の内容にする
+		return;
+	}
+
+	if ( spms->edmode & CMDSEARCH_ROMA ){
+		tstrcpy(text, WordSearchOption_R);
+		tstrcpy(text + TSIZEOFSTR(WordSearchOption_R), searchstr);
+		tstrreplace(text + TSIZEOFSTR(WordSearchOption_R), T("."), T(",&r:"));
+	}else{
+/*
+		 // wildcard だけの時、and 指定が無いときは失敗に
+		if ( (tstrlen(searchstr) >= MAX_PATH) ||
+			 ((tstrchr(searchstr, '.') == NULL) && (spms->startTick != 3)) ){
+			MakeFN_REGEXP(fr, WordSearchDummy); // 常に失敗の内容にする
+			return;
+		}
+*/
+		tstrcpy(text, WordSearchOption);
+		tstrcpy(text + TSIZEOFSTR(WordSearchOption), searchstr);
+		tstrreplace(text + TSIZEOFSTR(WordSearchOption), T("."), T("*,&*"));
+		tstrcat(text + TSIZEOFSTR(WordSearchOption), T("*"));
+	}
+	MakeFN_REGEXP(fr, text);
+}
+/*
+void InitSearchString(SEARCHPARAMS *spms, const TCHAR *searchstr)
+{
+	if ( !(spms->edmode & (CMDSEARCH_ROMA | CMDSEARCH_WILDCARD) ) ) return;
+	if ( spms->edmode & CMDSEARCH_WILDCARD ){
+		spms->x_handle = (DWORD_PTR)HeapAlloc(DLLheap, 0, sizeof(FN_REGEXP));
+		MakeWordSearch(spms, searchstr);
+	}else{
+		SearchRomaString(NilStr, searchstr, ISEA_FLOAT, &spms->x_handle);
+	}
+}
+*/
 BOOL ExtraSearchString(const TCHAR *text, TCHAR *textlast, const TCHAR *searchstr, SEARCHPARAMS *spms)
 {
 	if ( ! (spms->edmode & (CMDSEARCH_ROMA | CMDSEARCH_WILDCARD) ) ) return FALSE;
-	if ( spms->edmode & CMDSEARCH_ROMA ){
-		if ( textlast != NULL ){
-			TCHAR backup;
-			BOOL result;
-
-			backup = *textlast;
-			*textlast = '\0';
-
-			result = SearchRomaString(text, searchstr, ISEA_FLOAT, &spms->romahandle);
-			*textlast = backup;
-			return result;
-		}else{
-			return SearchRomaString(text, searchstr, ISEA_FLOAT, &spms->romahandle);
-		}
-	}else{ // CMDSEARCH_WILDCARD
-		if ( spms->romahandle == 0 ){
-			spms->romahandle = (DWORD_PTR)HeapAlloc(DLLheap, 0, sizeof(FN_REGEXP));
-			MakeFN_REGEXP((FN_REGEXP *)spms->romahandle, searchstr);
+	if ( spms->x_handle == 1 ) return FALSE;
+	if ( spms->edmode & CMDSEARCH_WILDCARD ){
+		if ( spms->x_handle == 0 ){
+			spms->x_handle = (DWORD_PTR)HeapAlloc(DLLheap, 0, sizeof(FN_REGEXP));
+			MakeWordSearch(spms, searchstr);
 		}
 
 		if ( textlast != NULL ){
@@ -1097,13 +1209,49 @@ BOOL ExtraSearchString(const TCHAR *text, TCHAR *textlast, const TCHAR *searchst
 			backup = *textlast;
 			*textlast = '\0';
 
-			result = FilenameRegularExpression(text, (FN_REGEXP *)spms->romahandle);
+			result = FilenameRegularExpression(text, (FN_REGEXP *)spms->x_handle);
 			*textlast = backup;
 			return result;
 		}else{
-			return FilenameRegularExpression(text, (FN_REGEXP *)spms->romahandle);
+			return FilenameRegularExpression(text, (FN_REGEXP *)spms->x_handle);
+		}
+	}else{ // CMDSEARCH_ROMA
+		if ( textlast != NULL ){
+			TCHAR backup;
+			BOOL result;
+
+			backup = *textlast;
+			*textlast = '\0';
+
+			result = SearchRomaString(text, searchstr, ISEA_FLOAT, &spms->x_handle);
+			*textlast = backup;
+			return result;
+		}else{
+			return SearchRomaString(text, searchstr, ISEA_FLOAT, &spms->x_handle);
 		}
 	}
+}
+
+BOOL ExtraSearchStringS(const TCHAR *text, ESTRUCT *ED)
+{
+	SEARCHPARAMS spms;
+	BOOL result;
+
+	if ( ED->romahandle == 1 ){ // 検索初期化失敗のときは簡易検索
+		return (tstristr(text, ED->Fword) != NULL);
+	}
+
+	spms.edmode = ED->cmdsearch;
+	spms.x_handle = ED->romahandle;
+	spms.startTick = 3; // 識別用
+
+	result = ExtraSearchString(text, NULL, ED->Fword, &spms);
+	ED->romahandle = spms.x_handle;
+	if ( spms.x_handle <= 1 ){ // 検索初期化失敗のときは簡易検索
+		spms.x_handle = 1;
+		return (tstristr(text, ED->Fword) != NULL);
+	}
+	return result;
 }
 
 BOOL CheckFillTimeout(LISTADDINFO *list, SEARCHPARAMS *spms)
@@ -1265,7 +1413,7 @@ void EntrySearch(PPxEDSTRUCT *PES, LISTADDINFO *list, SEARCHPARAMS *spms, int br
 
 	ED.hF = NULL;
 	ED.info= PES->info;
-	ED.romahandle = spms->romahandle; // 親のを利用
+	ED.romahandle = spms->x_handle; // 親のを利用
 	ED.cmdsearch = 0;
 	mode = spms->edmode | CMDSEARCH_NOADDSEP;
 	for ( ; ; ){
@@ -1279,7 +1427,7 @@ void EntrySearch(PPxEDSTRUCT *PES, LISTADDINFO *list, SEARCHPARAMS *spms, int br
 		memmove(spms->first, ptr, TSTRSIZE(ptr));
 	}
 	list->items += itemcount;
-	spms->romahandle = ED.romahandle;
+	spms->x_handle = ED.romahandle;
 	ED.romahandle = 0; // 親で解放させる
 	SearchFileIned(&ED, NilStrNC, NULL, 0);
 	return;
@@ -1294,7 +1442,8 @@ void HistorySearch(LISTADDINFO *list, SEARCHPARAMS *spms, WORD targethist SMODEP
 
 	for ( index = 0 ; ; index++ ){
 		const TCHAR *hist;
-		const TCHAR *checkfirst, *checklast;
+		const TCHAR *checkfirst;
+		TCHAR *checklast;
 
 		UsePPx();
 		hist = EnumHistory(targethist, index);
@@ -1303,7 +1452,6 @@ void HistorySearch(LISTADDINFO *list, SEARCHPARAMS *spms, WORD targethist SMODEP
 			break;
 		}
 
-//			Sleep(300);
 		if ( IsTrue(CheckFillTimeout(list, spms)) ) {
 			FreePPx();
 			break;
@@ -1314,16 +1462,17 @@ void HistorySearch(LISTADDINFO *list, SEARCHPARAMS *spms, WORD targethist SMODEP
 			FreePPx();
 			continue;
 		}
-		if ( histlen < CMDLINESIZE ){
-			tstrcpy(textbuf, hist);
-			hist = textbuf;
+		if ( histlen >= CMDLINESIZE ){
+			FreePPx();
+			continue;
 		}
+		tstrcpy(textbuf, hist);
+		hist = textbuf;
 		FreePPx();
 
-		checkfirst = CalcTargetWordWidth(hist, &checklast SMODEPARAM(smode));
+		checkfirst = CalcTargetWordWidth(hist, (const TCHAR **)&checklast SMODEPARAM(smode));
 		if ( tmemimem(checkfirst, checklast, spms->first, spms->firstlen) == NULL ){
-			if ( ((spms->edmode & CMDSEARCH_ROMA) &&
-				  SearchRomaString(checkfirst, spms->first, ISEA_FLOAT, &spms->romahandle))  ){
+			if ( ExtraSearchString(checkfirst, checklast, spms->first, spms) ){
 			}else if ( (checkfirst == hist) || tstrnicmp(hist, spms->first, spms->firstlen) ){ // 前方一致
 				continue;
 			}
@@ -1517,7 +1666,7 @@ DWORD WINAPI KeyStepFillMain(KEYSTEPFILLMAIN_INFO *ksfinfo)
 	histmode = ksfinfo->histmode;
 	PES->ActiveListThreadID = ThreadID = GetCurrentThreadId();
 
-	if ( ksfinfo->hReadyEvent != NULL ){
+	if ( ksfinfo->hReadyEvent != NULL ){ // Sub thread mode
 		THREADSTRUCT threadstruct = {T("FillList"), XTHREAD_EXITENABLE /*| XTHREAD_TERMENABLE*/, NULL, 0, 0};
 
 		PES->ListThreadCount++;
@@ -1526,7 +1675,7 @@ DWORD WINAPI KeyStepFillMain(KEYSTEPFILLMAIN_INFO *ksfinfo)
 		CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
 		threadmode = TRUE;
 		mainlist.wParam = sublist.wParam = ThreadID;
-	}else{
+	}else{ // on thread mode
 		threadmode = FALSE;
 		mainlist.wParam = sublist.wParam = 0;
 	}
@@ -1627,10 +1776,10 @@ DWORD WINAPI KeyStepFillMain(KEYSTEPFILLMAIN_INFO *ksfinfo)
 	startP = line + nwP;
 
 	// 補完一覧の作成 ------------------------------
-	// オーバーフローは、補完がその場で終わるだけなので対処しない
+	// Tickオーバーフローは、補完がその場で終わるだけなので対処しない
 	len = tstrlen(startP);
 
-	spms.romahandle = spms2.romahandle = 0;
+	spms.x_handle = spms2.x_handle = 0;
 	spms.first = startP;
 	spms.firstlen = len;
 	spms.second = 0;
@@ -1669,7 +1818,7 @@ DWORD WINAPI KeyStepFillMain(KEYSTEPFILLMAIN_INFO *ksfinfo)
 				spms.startTick = GetTickCount();
 				EntrySearch(PES, &mainlist, &spms, braket);
 				histmask = (WORD)~PPXH_COMMAND;
-			}else{
+			}else{ // ２語目以降はパラメータ扱い
 				spms2.first = firstWordPtr;
 				spms2.firstlen = firstWordLen;
 				spms2.second = startP;
@@ -1690,6 +1839,10 @@ DWORD WINAPI KeyStepFillMain(KEYSTEPFILLMAIN_INFO *ksfinfo)
 			if ( *startP == '%' ){
 				EnvironmentStringsSearch(&mainlist, startP, len, braket, PES->list.WhistID);
 			}
+			if ( firstWordPtr != NULL ){
+				AuxSearch(&mainlist, startP);
+			}
+			ShellDriveSearch(&mainlist, startP, braket);
 			break;
 		}
 		case PPXH_MASK:
@@ -1716,6 +1869,8 @@ DWORD WINAPI KeyStepFillMain(KEYSTEPFILLMAIN_INFO *ksfinfo)
 			if ( *startP == '%' ){
 				EnvironmentStringsSearch(&mainlist, startP, len, braket, PES->list.WhistID);
 			}
+			AuxSearch(&mainlist, startP);
+			ShellDriveSearch(&mainlist, startP, braket);
 			break;
 
 		default:
@@ -1758,8 +1913,8 @@ DWORD WINAPI KeyStepFillMain(KEYSTEPFILLMAIN_INFO *ksfinfo)
 		}
 	}
 fin:
-	if ( spms.romahandle != 0 ) FreeExtraSearch(&spms);
-	if ( spms2.romahandle != 0 ) FreeExtraSearch(&spms2);
+	if ( spms.x_handle != 0 ) FreeExtraSearch(&spms);
+	if ( spms2.x_handle != 0 ) FreeExtraSearch(&spms2);
 fin2:
 	if ( PES->ActiveListThreadID == ThreadID ) PES->ActiveListThreadID = 0;
 	if ( line != linebuf ) HeapFree(DLLheap, 0, line);
@@ -1807,7 +1962,13 @@ void KeyStepFill(PPxEDSTRUCT *PES, BOOL histmode)
 			return; // 更に入力があるので、その時に処理する
 		}
 	}
-	if ( PES->ListThreadCount > 20 ) return; // スレッド数が多すぎるので中止
+	if ( PES->ListThreadCount > 20 ){
+#ifndef RELEASE
+		XMessage(NULL, NULL, XM_DbgLOG, T("> KeyStepFill 20 Thread"));
+		SetMessageForEdit(PES->hWnd, T("> KeyStepFill 20 Thread"));
+#endif
+		return; // スレッド数が多すぎるので中止
+	}
 
 	// メインリストウィンドウ作成
 	if ( PES->list.hWnd == NULL ){
@@ -1894,7 +2055,7 @@ HWND PPxRegistExEditCombo(HWND hED, int maxlen, const TCHAR *defstr, WORD rHist,
 	FreePPx();
 
 	list.hWnd = hED;
-	spms.romahandle = 0;
+	spms.x_handle= 0;
 	spms.startTick = GetTickCount();
 	spms.first = NilStrNC;
 	spms.firstlen = 0;

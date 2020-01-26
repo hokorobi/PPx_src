@@ -29,7 +29,7 @@ UTCHAR USEFASTCALL IsEOL(const TCHAR **str)
 	return code;
 }
 /*-----------------------------------------------------------------------------
-	空白(space,tab）をスキップする
+	空白(space, tab）をスキップする
 
 RET:	==0 :EOL	!=0 :Code
 -----------------------------------------------------------------------------*/
@@ -157,7 +157,7 @@ PPXDLL UTCHAR PPXAPI GetOption(LPCTSTR *commandline, TCHAR *param)
 
 void GetQuotedParameter(LPCTSTR *commandline, TCHAR *param, const TCHAR *parammax)
 {
-	const TCHAR *ptr,*ptrfirst,*ptrlast;
+	const TCHAR *ptr, *ptrfirst, *ptrlast;
 	TCHAR *dest;
 
 	dest = param;
@@ -189,7 +189,7 @@ void GetQuotedParameter(LPCTSTR *commandline, TCHAR *param, const TCHAR *paramma
 				ptrlast = ptr;
 				break;
 			}
-			memcpy(dest,ptrfirst,TSTROFF(copysize));
+			memcpy(dest, ptrfirst, TSTROFF(copysize));
 			dest += copysize;
 			ptrfirst = (ptr += 2); // " x 2
 			continue;
@@ -201,20 +201,20 @@ void GetQuotedParameter(LPCTSTR *commandline, TCHAR *param, const TCHAR *paramma
 
 		ptrsize = ptrlast - ptrfirst;
 		if ( (dest + ptrsize) > parammax ){ // buffer overflow?
-			tstrcpy(param,T("<flow!!>"));
+			tstrcpy(param, T("<flow!!>"));
 		}else{
-			memcpy(dest,ptrfirst,TSTROFF(ptrsize));
+			memcpy(dest, ptrfirst, TSTROFF(ptrsize));
 			*(dest + ptrsize) = '\0';
 		}
 	}
 }
 
 // ,/改行 区切りのパラメータを１つ取得する ※PPC_SUB.Cにも
-UTCHAR GetCommandParameter(LPCTSTR *commandline,TCHAR *param,size_t paramlen)
+UTCHAR GetCommandParameter(LPCTSTR *commandline, TCHAR *param, size_t paramlen)
 {
 	const TCHAR *src;
-	TCHAR *dest,*destmax;
-	UTCHAR firstcode,code;
+	TCHAR *dest, *destmax;
+	UTCHAR firstcode, code;
 
 	firstcode = SkipSpace(commandline);
 	if ( (firstcode == '\0') || (firstcode == ',') ){ // パラメータ無し
@@ -224,15 +224,15 @@ UTCHAR GetCommandParameter(LPCTSTR *commandline,TCHAR *param,size_t paramlen)
 	dest = param;
 	destmax = dest + paramlen - 1;
 	if ( firstcode == '\"' ){
-		GetQuotedParameter(commandline,param,destmax);
+		GetQuotedParameter(commandline, param, destmax);
 		return *param;
 	}
 	src = *commandline + 1;
 	code = firstcode;
 	for ( ;; ){
-		*dest++ = code;
+		if ( dest < destmax ) *dest++ = code;
 		code = *src;
-		if ( (dest >= destmax) || (code == ',') || // (code == ' ') ||
+		if ( (code == ',') || // (code == ' ') ||
 			 ((code < ' ') && ((code == '\0') || (code == '\t') ||
 							   (code == '\r') || (code == '\n'))) ){
 			break;

@@ -54,7 +54,7 @@ void AddOnGetSusieExt(HWND hDlg)
 		}
 	}
 	SendDlgItemMessageA(hDlg, IDE_AOSMASK, WM_SETTEXT, 0, (LPARAM)buf);
-	EnableDlgWindow(hDlg, IDB_GCADD, TRUE);
+	EnableDlgWindow(hDlg, IDB_ADDSETEXT, TRUE);
 }
 
 void AddonListSusie(HWND hDlg)
@@ -100,7 +100,7 @@ void AddonSelectSusie(HWND hDlg)
 	susieconfig = (sudll->hadd == NULL) ? NULL :
 		(CONFIGURATIONDLG)GetProcAddress( sudll->hadd, "ConfigurationDlg" );
 	EnableDlgWindow(hDlg, IDB_AOSSETTING, (susieconfig != NULL));
-	EnableDlgWindow(hDlg, IDB_GCADD, FALSE);
+	EnableDlgWindow(hDlg, IDB_ADDSETEXT, FALSE);
 }
 
 void AddonSaveSusie(HWND hDlg)
@@ -121,7 +121,7 @@ void AddonSaveSusie(HWND hDlg)
 	SetCustTable(T("P_susie"), (TCHAR *)(sustrings + sudll->DllNameOffset),
 			&sp, sizeof(DWORD) + TSTRSIZE(sp.filemask));
 	Changed(hDlg);
-	EnableDlgWindow(hDlg, IDB_GCADD, FALSE);
+	EnableDlgWindow(hDlg, IDB_ADDSETEXT, FALSE);
 }
 
 #pragma argsused
@@ -155,10 +155,10 @@ INT_PTR CALLBACK AddonPage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 					break;
 				case IDE_AOSMASK:
 					if ( HIWORD(wParam) == EN_CHANGE ){
-						EnableDlgWindow(hDlg, IDB_GCADD, TRUE);
+						EnableDlgWindow(hDlg, IDB_ADDSETEXT, TRUE);
 					}
 					break;
-				case IDB_GCADD:
+				case IDB_ADDSETEXT:
 				case IDX_AOSUSE:
 				case IDX_AOSDETECT:
 					AddonSaveSusie(hDlg);

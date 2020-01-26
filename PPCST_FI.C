@@ -99,7 +99,7 @@ INT_PTR CALLBACK TextCustomizeDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM
 
 			PPxSendMessage(WM_PPXCOMMAND, K_Scust, 0);
 			MakeTempEntry(VFPS, TextCustBackup, FILE_ATTRIBUTE_NORMAL);
-			CustDump(TextCustBackup);
+			CustDump(NilStr, TextCustBackup );
 			TextCustModify = FALSE;
 			CheckDlgButton(hDlg, IDX_APPEND, TRUE);
 
@@ -165,7 +165,7 @@ void CustMain(HWND hDlg, int mode)
 	ofile.hwndOwner = hDlg;
 	if ( mode == DumpMode ){
 		ofile.lpstrTitle = MessageText(MES_SDPF);
-		if ( GetSaveFileName(&ofile) ) result = CustDump(CustName);
+		if ( GetSaveFileName(&ofile) ) result = CustDump(NilStr, CustName);
 	}else if ( mode == HistMode ){
 		ofile.lpstrFile = HistName;
 		ofile.lpstrTitle = MessageText(MES_SDPF);

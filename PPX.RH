@@ -366,6 +366,7 @@
 #define IDE_AOSMASK		0x7475	// addon を有効にするファイル種類
 #define IDB_ADDDEFEXT	0x7477	// addon から有効拡張子を取得
 #define IDX_AOSDETECT	0x7478
+#define IDB_ADDSETEXT	0x7479
 //------------------------------------------------------------- Etc
 #define IDD_ETCTREE		0x7480
 #define IDS_ETCLIST		0x7481

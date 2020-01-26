@@ -123,7 +123,7 @@ typedef struct {
 } SSOCKET;
 
 const TCHAR RegProxy[] =T("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings");
-const char ProxyEnable[] = "ProxyEnable";
+const TCHAR ProxyEnable[] = T("ProxyEnable");
 const char ProxyServer[] = "ProxyServer";
 const char DefAgent[] = "PaperPlaneXUI/" FileCfg_Version;
 const char HttpResult[] = "=Result=\r\n";
@@ -147,23 +147,22 @@ void SockErrorMsg(ThSTRUCT *th, ERRORCODE code, HMODULE hModule)
 int GetProxySetting(char *proxyserver)
 {
 	HKEY HK;
-	DWORD t, s;
+	DWORD size;
 
 	DWORD enable = 0, port = 80;
 	char servers[0x800], *p, *q;
 
-	if ( RegOpenKeyEx(HKEY_CURRENT_USER, RegProxy, 0, KEY_READ, &HK)
-													!= ERROR_SUCCESS ){
+	if ( RegOpenKeyEx(HKEY_CURRENT_USER, RegProxy, 0, KEY_READ, &HK) != ERROR_SUCCESS ){
 		return 0;
 	}
-	s = sizeof(DWORD);
-	RegQueryValueExA(HK, ProxyEnable, NULL, &t, (LPBYTE)&enable, &s);
+	size = sizeof(DWORD);
+	RegQueryValueEx(HK, ProxyEnable, NULL, NULL, (LPBYTE)&enable, &size);
 	servers[0] = '\0';
-	s = sizeof(servers);
-	RegQueryValueExA(HK, ProxyServer, NULL, &t, (LPBYTE)servers, &s);
+	size = sizeof(servers);
+	RegQueryValueExA(HK, ProxyServer, NULL, NULL, (LPBYTE)servers, &size);
 	RegCloseKey(HK);
 
-	if (!enable) return 0;
+	if ( enable == 0 ) return 0;
 
 	p = strstr(servers, "http=");
 	if ( p != NULL ){

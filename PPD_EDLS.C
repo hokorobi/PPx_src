@@ -254,12 +254,16 @@ void ClearSearchFileIned(ESTRUCT *ED)
 		FindClose(ED->hF);
 		ED->hF = NULL;
 	}
-	if ( (ED->cmdsearch & CMDSEARCH_ROMA) && (ED->romahandle != 0) ){
-		SearchRomaString(NULL, NULL, 0, &ED->romahandle);
-	}
-	if ( (ED->cmdsearch & CMDSEARCH_WILDCARD) && (ED->romahandle != 0) ){
-		FreeFN_REGEXP((FN_REGEXP *)ED->romahandle);
-		HeapFree(DLLheap, 0, (void *)ED->romahandle);
+	if ( ED->romahandle != 0 ){
+		if ( ED->romahandle > 1 ){
+			if ( ED->cmdsearch & CMDSEARCH_WILDCARD ){
+				FreeFN_REGEXP((FN_REGEXP *)ED->romahandle);
+				HeapFree(DLLheap, 0, (void *)ED->romahandle);
+			}else if ( ED->cmdsearch & CMDSEARCH_ROMA ){
+				SearchRomaString(NULL, NULL, 0, &ED->romahandle);
+			}
+		}
+		ED->romahandle = 0;
 	}
 }
 
@@ -317,8 +321,8 @@ TCHAR *SearchFileInedMain(ESTRUCT *ED, TCHAR *str, int mode)
 		}
 		// •”•ª/romaˆê’v
 		if ( ED->cmdsearch & (CMDSEARCH_FLOAT | CMDSEARCH_ROMA | CMDSEARCH_WILDCARD) ){
-			if ( ED->cmdsearch & CMDSEARCH_ROMA ){
-				if ( SearchRomaString(ff.cFileName, ED->Fword, ISEA_FLOAT, &ED->romahandle) == FALSE ){
+			if ( ED->cmdsearch & (CMDSEARCH_ROMA | CMDSEARCH_WILDCARD) ){
+				if ( ExtraSearchStringS(ff.cFileName, ED) == FALSE ){
 					continue;
 				}
 			}else{ // CMDSEARCH_FLOAT

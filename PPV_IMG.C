@@ -161,7 +161,7 @@ void ClipBitmap(HWND hWnd)
 		color = vo_.bitmap.info->biBitCount;
 		palette = vo_.bitmap.info->biClrUsed;
 		palettesize += palette ? palette * sizeof(RGBQUAD) :
-				((color <= 8) ? (DWORD)(1 << color) * sizeof(RGBQUAD) : 0);
+				((color <= 8) ? (1 << color) * (DWORD)sizeof(RGBQUAD) : 0);
 		bitmapsize = vo_.bitmap.info->biSizeImage;
 
 		if ( (vo_.bitmap.info->biCompression == BI_BITFIELDS) &&

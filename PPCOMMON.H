@@ -521,7 +521,7 @@ extern PPXDLL BOOL PPXAPI MakeTempEntry(SIZE32_T bufsize, TCHAR *tempath, DWORD 
 
 // レジストリの文字列を取得する
 _Success_(return)
-extern PPXDLL BOOL PPXAPI GetRegString(HKEY hKey, const TCHAR *path, const TCHAR *name, _Out_ TCHAR *dest, SIZE32_T size);
+extern PPXDLL BOOL PPXAPI GetRegString(HKEY hKey, const TCHAR *path, const TCHAR *name, _Out_ TCHAR *dest, SIZE32_T destlen);
 // PPX.HLP を開く
 extern PPXDLL void PPXAPI PPxHelp(HWND hWnd, UINT command, DWORD_PTR data);
 
@@ -721,11 +721,11 @@ typedef struct {	// 編集処理共通構造体
 	HANDLE hF;				// ファイル検索用ハンドル
 // 設定不要
 	int cmdsearch;		// コマンド検索モード CMDSEARCH_
-	TCHAR Fsrc[VFPS+4];	// ファイル検索・連続検索用検索文字列
+	TCHAR Fsrc[VFPS + 4];	// ファイル検索・連続検索用検索文字列
 	TCHAR Fname[VFPS];	// ファイル検索・連続検索用キャッシュ
 	TCHAR *FnameP;		// ファイル検索・連続検索用書込位置
 	TCHAR *Fword;
-	DWORD_PTR romahandle;	// CMDSEARCH_ROMA 指定時要 0 設定
+	DWORD_PTR romahandle;	// CMDSEARCH_ROMA/CMDSEARCH_WILDCARD 指定時要 0 設定
 } ESTRUCT;
 
 typedef struct {
@@ -1398,11 +1398,15 @@ enum {
 	PPXCUSTMODE_STORE = 0,
 	PPXCUSTMODE_APPEND,
 	PPXCUSTMODE_UPDATE,
+
+	PPXCUSTMODE_DUMP_ALL = -1,
+	PPXCUSTMODE_DUMP_PART = -2
 };
 #define PPCUSTRESULT_RELOAD B1
 #define PPCUSTRESULT_RESTART B2
 extern PPXDLL int PPXAPI PPcustCStore(TCHAR *mem, TCHAR *memmax, int appendmode, TCHAR **log, int (USECDECL *Sure)(const TCHAR *message));
 extern PPXDLL TCHAR * PPXAPI PPcustCDump(void);
+extern PPXDLL TCHAR * PPXAPI PPcust(int mode, const TCHAR *param);
 
 /*-----------------------------------------------------------------------------
 	内蔵テキストエディタ PPeui
@@ -1500,9 +1504,9 @@ typedef struct tagPPXMSEARCHSTRUCT {
 } PPXMSEARCHSTRUCT;
 
 // ModuleEntry の戻り値
-#define PPXMRESULT_SKIP		0	// 処理しなかった…次のモジュールを調べても良い
-#define PPXMRESULT_DONE		1	// 処理した
-#define PPXMRESULT_STOP		-1	// 処理した、後続コマンドがあれば中止する
+#define PPXMRESULT_SKIP 0	// 処理しなかった…次のモジュールを調べても良い
+#define PPXMRESULT_DONE 1	// 処理した
+#define PPXMRESULT_STOP -1	// 処理した、後続コマンドがあれば中止する
 
 // PPx Module 側用の定義
 extern EXTDLL int PPXAPI ModuleEntry(PPXAPPINFOW *ppxa, DWORD cmdID, PPXMODULEPARAM pxp);

@@ -1047,7 +1047,8 @@ void SetScrollBar(void)
 				VO_maxX += (XV_lleft + fontX - 1) / fontX;
 			}
 
-			VO_maxY = VOi->line + TAILMARGIN;
+			VO_maxY = LongText ? LONGTEXTWIDTH : (VOi->line + TAILMARGIN);
+
 			VO_sizeX = (WndSize.cx / fontX);
 			VO_sizeY = ((BoxView.bottom - BoxView.top) / LineY + 1);
 			VO_stepX = VO_stepY = 1;
@@ -1117,32 +1118,12 @@ void SetScrollBar(void)
 	sinfo.nMax	= VO_maxX;
 	SetScrollInfo(vinfo.info.hWnd, SB_HORZ, &sinfo, TRUE);
 
-#if 0
-	if ( FileDivideMode >= FDM_DIV ){
-		sinfo.nPage	= VO_sizeX;
+	if ( LongText ){
+		sinfo.nPage	= 1;
 		sinfo.nMin	= 0;
-//		sinfo.nPos	= VOi->offX;
-		sinfo.nMax	= 0x10000;
+		sinfo.nPos	= VOi->offY;
 
-		if ( FileRealSize.u.HighPart == 0 ){
-			div = FileRealSize.u.LowPart / X_wsiz + 1;
-
-
-		SetScrollInfo(vinfo.info.hWnd, SB_HORZ, &sinfo, TRUE);
-
-
-
-		int div;
-
-		}else if ( (FileRealSize.u.HighPart & 0xffff0000) == 0 ){
-			div = FileRealSize.u.LowPart / X_wsiz + 1;
-
-
-
-
-
-
-
+/*
 		FileDividePointer.LowPart
 
 		if ( FileRealSize.u.HighPart || (FileRealSize.u.LowPart & 0xffff0000) ){
@@ -1166,32 +1147,13 @@ void SetScrollBar(void)
 				per = 0;
 			}
 		}
-
-
-
-
-
-
-		sinfo.nPage	= VO_sizeY;
-		sinfo.nMin	= 0;
-		sinfo.nPos	= ;
-		sinfo.nMax	= 0x7f000000;
-		SetScrollInfo(vinfo.info.hWnd, SB_VERT, &sinfo, TRUE);
-
-
-
+*/
 	}else{
 		sinfo.nPage	= VO_sizeY;
 		sinfo.nMin	= VO_minY;
 		sinfo.nPos	= VOi->offY;
-		sinfo.nMax	= VO_maxY;
-		SetScrollInfo(vinfo.info.hWnd, SB_VERT, &sinfo, TRUE);
 	}
-#endif
-	sinfo.nPage	= VO_sizeY;
-	sinfo.nMin	= VO_minY;
-	sinfo.nPos	= VOi->offY;
-	sinfo.nMax	= VO_maxY;
+	sinfo.nMax = VO_maxY;
 	SetScrollInfo(vinfo.info.hWnd, SB_VERT, &sinfo, TRUE);
 }
 //----------------------------------------------------------------------------
@@ -3076,7 +3038,7 @@ void PPvEnterTabletMode(HWND hWnd)
 UTCHAR GetCommandParameter(LPCTSTR *commandline, TCHAR *param, size_t paramlen)
 {
 	const TCHAR *src;
-	TCHAR *dest, *maxptr;
+	TCHAR *dest, *destmax;
 	UTCHAR firstcode, code;
 
 	firstcode = SkipSpace(commandline);
@@ -3087,12 +3049,12 @@ UTCHAR GetCommandParameter(LPCTSTR *commandline, TCHAR *param, size_t paramlen)
 	if ( firstcode == '\"' ) return GetLineParam(commandline, param);
 	src = *commandline + 1;
 	dest = param;
-	maxptr = dest + paramlen - 1;
+	destmax = dest + paramlen - 1;
 	code = firstcode;
 	for ( ;; ){
-		*dest++ = code;
+		if ( dest < destmax ) *dest++ = code;
 		code = *src;
-		if ( (dest >= maxptr) || (code == ',') || // (code == ' ') ||
+		if ( (code == ',') || // (code == ' ') ||
 			 ((code < ' ') && ((code == '\0') || (code == '\t') ||
 							   (code == '\r') || (code == '\n'))) ){
 			break;

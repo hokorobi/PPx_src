@@ -174,6 +174,7 @@ extern HWND PPxRegistExEditCombo(HWND hED, int maxlen, const TCHAR *defstr, WORD
 extern void CreateMainListWindow(PPxEDSTRUCT *PES, int direction);
 extern void CreateSubListWindow(PPxEDSTRUCT *PES);
 extern void CancelListThread(PPxEDSTRUCT *PES);
+extern BOOL ExtraSearchStringS(const TCHAR *text, ESTRUCT *ED);
 
 //--------------------------------------------------------------- PPD_EDLL.C
 extern void ClosePPeTreeWindow(PPxEDSTRUCT *PES);

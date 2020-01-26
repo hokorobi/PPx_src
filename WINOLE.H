@@ -539,10 +539,14 @@ interface IAccessible : public IDispatch
 #ifndef FOF_NOCOPYSECURITYATTRIBS
 #define FOF_NOCOPYSECURITYATTRIBS  0x0800  // ACL 不要
 #define FOF_NORECURSION            0x1000  // no subdir
-#define FOF_NO_CONNECTED_ELEMENTS  0x2000  // １組ファイル扱いしない
-#define FOF_WANTNUKEWARNING        0x4000  // during delete operation, warn if object is being permanently destroyed instead of recycling (partially overrides FOF_NOCONFIRMATION)
 #define FOF_NORECURSEREPARSE       0x8000  //
 #endif
+
+#ifndef FOF_NO_CONNECTED_ELEMENTS
+#define FOF_NO_CONNECTED_ELEMENTS  0x2000  // １組ファイル扱いしない
+#define FOF_WANTNUKEWARNING        0x4000  // during delete operation, warn if object is being permanently destroyed instead of recycling (partially overrides FOF_NOCONFIRMATION)
+#endif
+
 // #define FOF_NO_UI (FOF_SILENT | FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_NOCONFIRMMKDIR)
 #ifndef FOFX_NOSKIPJUNCTIONS
 #define FOFX_NOSKIPJUNCTIONS         0x00010000

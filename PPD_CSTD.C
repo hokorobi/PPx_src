@@ -19,7 +19,6 @@ T("; Paper Plane xUI Customize File")TNL
 T(";--------------------------------------------------------------------------")TNL
 T("; * Ú×‚Í PPX.HLP ‚© http://toro.d.dooo.jp/ppxhelp.html#textcust")TNL
 T(";   ‚ðŽQÆ‚µ‚Ä‚­‚¾‚³‚¢")TNL
-T("; * ”’lŽw’è:	1234  10i”	Habcd  16i”	B0101  2i”")TNL
 T("; * u;Ev‚Æu;**v‚ðƒRƒƒ“ƒg‚ÌŒ©o‚µ‚É—p‚¢‚Ä‚¢‚Ü‚·")TNL
 T(";")},
 {NilStr, 0, NULL,
@@ -37,7 +36,6 @@ T("; * ‰¼‘zƒL[ƒR[ƒh‚Ì’¼ÚŽw’è‚ÍV_(’l)")TNL
 T("; * ƒL[ƒ{[ƒh‚É‚Í–³‚¢ƒL[Žw’è—áBÚ×‚Íƒwƒ‹ƒv‚ðŽQÆ")TNL
 T(";     NULL\tŠ„‚è“–‚Ä‚ð–³Œø‚É‚·‚éŽž‚ÉŽg—p‚·‚é")TNL
 T(";     C_DIR\t(PPc)ƒJ[ƒ\ƒ‹‚ªŽ¦‚·ƒfƒBƒŒƒNƒgƒŠ‚ÉˆÚ“®")TNL
-T(";     CUSTOMIZE\tPPCUST ‚ð‹N“®")TNL
 T(";--------------------------------------------------------------------------")},
 {NilStr,0,NULL,
 T(";Eƒ}ƒNƒ•¶Žš(ˆê—á)")TNL
@@ -78,7 +76,6 @@ T("; %{.%|.%|.%}  ...‚ð•ÒWB“r’†‚Å%|‚ð“ü‚ê‚é‚Æ”ÍˆÍŽw’èB%|‚ª‚P‚Â‚È‚çƒJ[ƒ\ƒ‹ˆÊ’
 T(";")TNL
 T(";** ŽÀsˆ—")TNL
 T("; %v[m]   PPv‚Å•\Ž¦ m‚ª–³‚¢Žž‚Í%C ‘Š“–	%L	PPv‚ÌsˆÊ’u")TNL
-T("; %u[/]m,n   m ‚ÅŽw’è‚µ‚½ UnXXX.DLL ‚ð—˜—p‚µ‚Ä n ‚Ì“à—e‚Åˆ³kE“WŠJ‚ðs‚¤")TNL
 T("; %Z[m][,n]  CMD/COMMAND‚ÌSTART‘Š“–‚Ì•û–@‚ÅŽÀs m:ƒtƒ@ƒCƒ‹–¼ n:ŽÀs•û–@")TNL
 T("; %z[m][,n]  ShellContextMenu‚ÅŽÀs m:ƒtƒ@ƒCƒ‹–¼ n:ŽÀs•û–@")TNL
 T("; %Im      “à—em‚ðƒƒbƒZ[ƒWƒ{ƒbƒNƒX‚Å•\Ž¦‚·‚é([OK]ƒ{ƒ^ƒ“•t‚«)")TNL
@@ -113,12 +110,9 @@ T(";*cd \"path\"    ƒJƒŒƒ“ƒgƒfƒBƒŒƒNƒgƒŠ‚ðŽw’è‚·‚é")TNL
 T(";*launch \"command\"  command‚ð‚»‚ÌƒfƒBƒŒƒNƒgƒŠ‚ÅŽÀs")TNL
 T(";*set valuename=[value] ŠÂ‹«•Ï”‚ÌÝ’èAíœ‚ðs‚¤")TNL
 T(";*alias valuename=[value] ƒGƒCƒŠƒAƒX‚ÌÝ’èAíœ‚ðs‚¤")TNL
-T(";*closeppx    ‘S‚Ä‚ÌPPX‚ðI—¹")TNL
-T(";*selectppx [ID]  ‹N“®’†PPx‚ð‘I‘ðØ‘Ö")TNL
 T(";*cliptext text    ƒNƒŠƒbƒvƒ{[ƒh‚ÖƒRƒs[")TNL
 T(";*ppe \"filename\" / *edit \"filename\" PPe‚ÅŠJ‚­")TNL
 T(";*focus [caption[,filename]] caption‚ðŠÜ‚ÞƒEƒBƒ“ƒhƒE‚ÉƒtƒH[ƒJƒXˆÚ“®")TNL
-T(";*file [!]action[,[source][,[destination][,options]]] ƒtƒ@ƒCƒ‹‘€ì‚ðs‚¤")TNL
 T(";** PPe&ˆês•ÒW")TNL
 T(";*insert \"text\"  ƒJ[ƒ\ƒ‹^‘I‘ðˆÊ’u‚Étext‚ð‘}“ü/“ü‚ê‘Ö‚¦")TNL
 T(";*replace \"text\" •ÒW“à—e‚ðtext‚Æ“ü‚ê‘Ö‚¦")TNL
@@ -127,17 +121,11 @@ T(";*ppcfile [!]action[,[destination][,options]] ƒtƒ@ƒCƒ‹‘€ì‚ðs‚¤([C]‘Š“–)")TN
 T(";*setmaskentry wildcards ƒGƒ“ƒgƒŠƒ}ƒXƒNÝ’è(íŽž—p,\\[F]‘Š“–)")TNL
 T(";*maskentry wildcards ƒGƒ“ƒgƒŠƒ}ƒXƒN(ˆêŽž—p,[F]‘Š“–)")TNL
 T(";*markentry / *unmarkentry wildcards ƒGƒ“ƒgƒŠƒ}[ƒN([+]/[-]‘Š“–)")TNL
-T(";*clearchange íœ•\Ž¦ˆÈŠO‚ÌXVó‘Ô•\Ž¦‚ð‰ðœ‚·‚é")TNL
-T(";** OSI—¹E‹xŽ~")TNL
-T("; *logoff *poweroff *terminate *shutdown *reboot  *suspend *hibernate")TNL
 T(";--------------------------------------------------------------------------")TNL
 T(";EF")TNL
-T("; GUIŒn F‚ÌƒGƒCƒŠƒAƒXBˆÈ‰º‚ÌŠî–{F‚ÍA8bit color ‚Å‚à³‚µ‚­•\Ž¦‰Â”\")TNL
-T(";\t_BLA   _BLU   _RED   _MAG   _GRE    _CYA   _BRO   _WHI")TNL
-T(";\t_DBLA  _DBLU  _DRED  _DMAG  _DGRE   _DCYA  _DBRO  _DWHI _GRAY")TNL
-T(";   ¦_AUTO Žw’è‚ª‚Å‚«‚é‚à‚Ì‚Í‚±‚ÌŽw’è‚ð‚·‚é‚ÆƒVƒXƒeƒ€‚É‡‚í‚¹‚é")TNL
-T(";     Šî–{FˆÈŠO‚ÍAHbbggrr ‚ÆA16i”‚ÅŽw’è‚·‚éB")},
-{T("A_color"),fT+fRC+fSort,"=C",	T("\t; ’Ç‰ÁƒGƒCƒŠƒAƒXAƒ‰ƒxƒ‹‚Í‰pŽš‚Æ\'_\'‚Ì‚ÝŽg‚¦‚é")},
+T("; _AUTO Žw’è‚ª‚Å‚«‚é‚à‚Ì‚Í‚±‚ÌŽw’è‚ð‚·‚é‚ÆƒVƒXƒeƒ€‚É‡‚í‚¹‚é")TNL
+T("; Šî–{FˆÈŠO‚ÍAHbbggrr ‚ÆA16i”‚ÅŽw’è‚·‚éB")},
+{T("A_color"),fT + fRC + fSort,"=C",	T("\t; FƒGƒCƒŠƒAƒXAƒ‰ƒxƒ‹‚Í‰pŽš‚Æ\'_\'‚Ì‚ÝŽg‚¦‚é")},
 {NilStr,0,NULL,
 T(";--------------------------------------------------------------------------")TNL
 T(";EŠeŽíÝ’è")TNL
@@ -178,7 +166,7 @@ T(";\t•\Ž¦“_–Å,•\Ž¦cmd,I—¹“_–Å,I—¹cmd\t(0:–³ 1:— ‚ÌŽž 2:íŽž)")},
 {T("X_askp"),	0,"=D4",	T("\t; ”ñƒAƒNƒeƒBƒuŽžƒNƒŠƒbƒN‚ÌŽÀs–³Ž‹‚ð 0:‚µ‚È‚¢ 1:‚·‚é")},
 // ‘S”Ê - ŠeŽíˆês•¶Žš—ñ“ü—Í --------------------------------------------------
 {T("X_mled"),	fNoRelo,"=D4",	T("\t; ˆês•ÒW‚ð•¡”s•\Ž¦‚É 0:‚µ‚È‚¢ 1:‚·‚é")},
-{T("X_ltab"),	fNoRelo,"=D4",	T("\t; ‘S‚Ä‚Ìˆês•ÒW‚Å[TAB]Ý’è‚ð—LŒø‚É0:‚µ‚È‚¢ 1:‚·‚é 2,3:•”•ªˆê’v")},
+{T("X_ltab"),	fNoRelo,"=D4,D4",	T("\t; [TAB]Ý’è—LŒø 1:‚·‚éA•âŠ®“®ì 1:‘O•û 2,3:•”•ª")},
 {T("X_fdir"),	fNoRelo,"=D4",	T("\t; ƒGƒ“ƒgƒŠ•âŠ®‚Ådir“ü—Í‚ÌŽž‚ÍdirŒÀ’è 0:‚µ‚È‚¢ 1:‚·‚é")},
 {T("X_flst"),	fNoRelo,"=D4,D4,D4",	T("\t; ƒGƒ“ƒgƒŠ•âŠ®Œ‹‰Êˆê—— 0:–³ 1:—L 2:OS”Å 3`5:“®“I,0:æ“ª 1:•”•ª.ˆê——Å’á•¶Žš”")},
 {T("X_flto"),	fNoRelo,"=D4,D4",	T("\t; Œ‹‰Êˆê——‚Ì •\Ž¦ŠJŽnŽžŠÔ,ƒ^ƒCƒ€ƒAƒEƒg(ms)")},
@@ -247,28 +235,6 @@ T(";EPPc ŠÖ˜A --------")TNL
 T(";** ƒJ[ƒ\ƒ‹‚ÌˆÚ“®•û–@")TNL
 T(";ˆÚ“®•û–@,ˆÚ“®—Ê, (‰æ•û–@),(‰æ‘¼) ,(”Í•û–@),(”Í‘¼)")TNL
 T(";¦‰æxxx:‰æ–Ê’[‚©‚ç‚Í‚Ýo‚µ‚½   ”Íxxx:æ“ª/––’[‚©‚ç‚Í‚Ýo‚µ‚½")TNL
-T(";ˆÚ“®•û–@:")TNL
-T(";«’PˆÊ Œ`‘Ô:Šù’è’l ƒy[ƒW ƒXƒNƒ[ƒ‹ ƒJ[ƒ\ƒ‹ˆÚ“®‚¹‚¸‚ÉƒXƒNƒ[ƒ‹")TNL
-T(";---------------------------------------------------------")TNL
-T(";}1s(ã‰º)   0       1        2        3")TNL
-T(";}1Œ…(¶‰E)   4       5        6        7")TNL
-T(";}1ƒy[ƒW     8       9       10       11")TNL
-T(";ˆÚ“®—Ê: ã‹LˆÚ“®•û–@‚ÅˆÚ“®‚·‚é—Ê")TNL
-T(";xxx•û–@:")TNL
-T(";  0:’âŽ~")TNL
-T(";  1:‰æ–Ê”½‘Î(ü‘ÎÌ) 2:‰æ–Ê”½‘Î(“_‘ÎÌ)")TNL
-T(";  3:ˆês•ªƒXƒNƒ[ƒ‹ 4:ˆêŒ…•ªƒXƒNƒ[ƒ‹")TNL
-T(";  5:ƒy[ƒWØ‘Ö       6:eƒfƒBƒŒƒNƒgƒŠ‚Ö")TNL
-T(";  7:ƒhƒ‰ƒCƒu‘I‘ð")TNL
-T(";  8:[©]/[¨]Žg—p    9:page up/downŽg—p")TNL
-T("; 10:‘O‚ÌPPc‚Ö       11:ŽŸ‚ÌPPc‚Ö")TNL
-T("; 12:‘O‚Ìƒhƒ‰ƒCƒu‚Ö  13:ŽŸ‚Ìƒhƒ‰ƒCƒu‚Ö")TNL
-T("; 14:”½‘Î‘‹‚ÌPPc‚Ö	15:”¼ƒy[ƒWØ‘Ö	16-19: KC_main:RANGEEVENTn")TNL
-T(";xxx‘¼: B0000")TNL
-T(";        |||+-- B0  1:ƒŠƒs[ƒg–³‚µ¨u•û–@v‚ðŽÀs  —L‚è¨’âŽ~")TNL
-T(";        ||+--- B1  1:––’[/æ“ª‚É“ž’B‚µ‚Ä‚¢‚È‚¢Žž‚ÍˆÚ“®‚·‚é")TNL
-T(";        |+---- B2  1:“ñ–‡‘‹Žž‚Í‘‹ŠÔˆÚ“®‚ð—Dæ(ˆÚ“®•ûŒü‚ª—×Ú‘‹‘¤‚È‚ç‘‹ˆÚ“®)")TNL
-T(";        +----- B3  1:ˆÚ“®Žž‚Éƒ}[ƒN‚·‚é(Explorer•—‘I‘ð)")TNL
 T(";--------------------------------------------------------------------")},
 {T("XC_mvUD"),0,"=D4,D4,D4,B4/4,D4,B3/4",	T("\t; [ª][«]")},
 {T("XC_mvLR"),0,"=D4,D4,D4,B4/4,D4,B3/4",	T("\t; [©][¨]")},
@@ -488,8 +454,8 @@ T(";     B24=1:”Žš‚ð”’l‚Æ‚µ‚Äˆµ‚¤  B25=1:ƒfƒBƒŒƒNƒgƒŠ•”•ª‚ð–³Ž‹")TNL
 T(";   ‚»‚Ì‘¼(‹ó”’‹æØ)FƒGƒ“ƒgƒŠ•\Ž¦‘Ž® disp:\"MC_celS‚Ì€–Ú–¼\"")TNL
 T(";                     ƒGƒ“ƒgƒŠƒ}ƒXƒN   mask:\"ƒƒCƒ‹ƒhƒJ[ƒh\"")TNL
 T(";--------------------------------------------------------------------------")},
-{T("XC_dset"),	fT | fSort | fNoRelo,"=B4/4,d2,d2,d1,d1,d2,B6/4,B26/4,S",NOCOMMENT},
-{NilStr,0,NULL,
+{T("XC_dset"),	fT | fNoRelo | fK_PathWild, "=B4/4,d2,d2,d1,d1,d2,B6/4,B26/4,S",NOCOMMENT},
+{NilStr, 0, NULL,
 T(";EPPv --------")},
 {T("X_awhel"),	0,"=D4",	T("\t; ‘‹ŠO‚ÌƒzƒC[ƒ‹‚Íƒ}ƒEƒXã‚Ì‘‹‚ð‘ÎÛ‚É 0:‚µ‚È‚¢ 1:‚·‚é")},
 {T("X_llsiz"),	fNoRelo,"=D4",	T("\t; ƒtƒ@ƒCƒ‹‚ª‘å‚«‚¢‚Æ‚«‚Í 0:‘I‘ð 1:‘S“Çž 2:•”•ª“Çž 3:’†Ž~")},
@@ -517,28 +483,30 @@ T(";EPPvƒhƒ‰ƒbƒO‹““® --------")},
 T("\t\t; 0:Žg—p‚µ‚È‚¢ 1:¶ 2:‰E 3:’†/ƒzƒC[ƒ‹ 4:¶‰E“¯Žž 5:‘æ4 6:‘æ5")},
 {NilStr,0,NULL,
 T(";EPPb --------")},
-{T("XB_size"),	fNoRelo,"=D2,D2,D2,D2",
+{T("XB_size"),	fNoRelo, "=D2,D2,D2,D2",
 							T("\t; ƒRƒ“ƒ\[ƒ‹‚Ì‘S‘Ì‘å‚«‚³‚Æ•\Ž¦•”•ª‚Ì‘å‚«‚³")},
-{T("XB_uwid"),	fNoRelo,"=D4",	T("\t; (UNICODE”Å)³Šm‚ÈƒJ[ƒ\ƒ‹ˆÊ’uŽæ“¾‚ð 0:‚µ‚È‚¢ 1:‚·‚é")},
+{T("XB_uwid"),	fNoRelo, "=D4",	T("\t; (UNICODE”Å)³Šm‚ÈƒJ[ƒ\ƒ‹ˆÊ’uŽæ“¾‚ð 0:‚µ‚È‚¢ 1:‚·‚é")},
 {NilStr,0,NULL,
 T(";EPPcust --------")},
-{T("X_chidc"),	fNoRelo,"=D4",	T("\t; GUIŽg—p’†‚ÍƒRƒ“ƒ\[ƒ‹‚ð‰B‚· 0:‚µ‚È‚¢ 1:‚·‚é")},
-{T("X_ccode"),	fNoRelo,"=D4",	T("\t; ‘‚«o‚·Ý’èƒeƒLƒXƒg‚Í 0:Šù’è 1:S-JIS 2:UTF-8")},
+{T("X_chidc"),	fNoRelo, "=D4",	T("\t; GUIŽg—p’†‚ÍƒRƒ“ƒ\[ƒ‹‚ð‰B‚· 0:‚µ‚È‚¢ 1:‚·‚é")},
+{T("X_ccode"),	fNoRelo, "=D4",	T("\t; ‘‚«o‚·Ý’èƒeƒLƒXƒg‚Í 0:Šù’è 1:S-JIS 2:UTF-8")},
 {NilStr,0,NULL,
 T(";EPPe --------")},
-{T("X_newcp"),	fNoRelo,"=D4",	T("\t; V‹KŽž‚Ì•¶ŽšƒR[ƒh 3:ƒVƒXƒeƒ€ 10:UTF-8B ‘¼:ŠY“–CP")},
-{T("X_ucsr"),	fNoRelo,"=D4",	T("\t; ƒJ[ƒ\ƒ‹ˆÊ’u‚É‰ºü‚ðŽg‚¤ 0:‚µ‚È‚¢ 1:‚·‚é")},
+{T("X_newcp"),	fNoRelo, "=D4",	T("\t; V‹KŽž‚Ì•¶ŽšƒR[ƒh 3:ƒVƒXƒeƒ€ 10:UTF-8B ‘¼:ŠY“–CP")},
+{T("X_ucsr"),	fNoRelo, "=D4",	T("\t; ƒJ[ƒ\ƒ‹ˆÊ’u‚É‰ºü‚ðŽg‚¤ 0:‚µ‚È‚¢ 1:‚·‚é")},
 {NilStr,0,NULL,
 T(";EPPtray --------")},
-{T("X_eedit"),	fNoRelo,"=D4",	T("\t; ƒGƒfƒBƒbƒgŠg’£‚ðŠO•”’ñ‹Ÿ 0:‚µ‚È‚¢ 1:‚·‚é")},
+{T("X_eedit"),	fNoRelo, "=D4",	T("\t; ƒGƒfƒBƒbƒgŠg’£‚ðŠO•”’ñ‹Ÿ 0:‚µ‚È‚¢ 1:‚·‚é")},
 {NilStr,0,NULL,
 T(";EPPffix --------")},
-{T("X_ffxl"),	fNoRelo,"=D4",	T("\t; •ÏX‚·‚éŠg’£Žq‚ð¬•¶Žš‚ÉŒÅ’è 0:‚µ‚È‚¢ 1:‚·‚é")},
+{T("X_ffxl"),	fNoRelo, "=D4",	T("\t; •ÏX‚·‚éŠg’£Žq‚ð¬•¶Žš‚ÉŒÅ’è 0:‚µ‚È‚¢ 1:‚·‚é")},
 {NilStr,0,NULL,
 T(";E‚¨‚Ü‚¯ --------")},
 {T("X_execs"),	0,"=D4",	T("\t; ‰‚ß‚ÄŽÀs‚·‚éŽÀs‰Â”\ƒtƒ@ƒCƒ‹‚ðŒx 0:‚µ‚È‚¢ 1:‚·‚é")},
 {T("X_execx"),	fHide | fNoRelo,"=M",	T("\t; X_execs=1ŽžAŒx‘O‚ÉŽÀs‚·‚é“à—e %C:ŽÀs‘ÎÛ")},
 {T("X_fles"),	0,"=D4",	T("\t; ‰æ–Ê‚Ì‚¿‚ç‚Â‚«‘Îô‚ð 0:‚µ‚È‚¢ 1:‚·‚é")},
+{T("X_icnl"), f_EXTSET,  "=S", T("\t; Šg’£Žq•ÊƒAƒCƒRƒ“ ") TNL
+T("; Šg’£Žq(C_ext‚Æ“¯‚¶)=.icoƒtƒ@ƒCƒ‹ƒpƒX")},
 {NilStr,0,NULL,
 T(";======================================")TNL
 T(";E‚¨‚Ü‚¯/PPc,PPv‚Ì”wŒi‰æ‘œ‚Æ“§‰ßˆ—")TNL
@@ -562,17 +530,15 @@ T(";==========================================================================")
 T(";Eƒtƒ@ƒCƒ‹”»•Ê")TNL
 T(";")TNL
 T("; Žw’è•û–@     ”»•Ê•û–@ , ƒRƒ}ƒ“ƒhƒ‰ƒCƒ“")TNL
-T("; ”»•Ê•û–@  1)Šg’£Žq”»•Ê      Šg’£Žq–¼")TNL
-T(";           2)ƒtƒ@ƒCƒ‹–¼”»•Ê  ƒtƒ@ƒCƒ‹–¼.[Šg’£Žq–¼]")TNL
-T(";           3)Ží•Ê”»•Ê        ƒtƒ@ƒCƒ‹Ží•Ê–¼")TNL
-T(";           4)‘SŽw’è          *")TNL
+T("; ”»•Ê•û–@")TNL
+T(";  Šg’£Žq–¼ / ƒtƒ@ƒCƒ‹–¼.[Šg’£Žq] / :ƒtƒ@ƒCƒ‹Ží•Ê–¼ / * / ƒƒCƒ‹ƒhƒJ[ƒh")TNL
 T(";   E_xxx(xxx‚Í”CˆÓ)‚Å”CˆÓ‚Ìƒtƒ@ƒCƒ‹”»•Ê‚ð’Ç‰Á‚Å‚«‚é")TNL
 T(";==========================================================================")},
-{T("E_cr"),f_EXT,"/X",		T("\t; [Enter]—p”»•Ê")},
-{T("E_scr"),f_EXT,"/X",		T("\t; \\[Enter]—p”»•Ê")},
-{T("E_unpack2"),f_EXT,"/X",	T("\t; [U]—p”»•ÊAŽg—p‚Å‚«‚éDLL‚ª–³‚¢Žž‚ÉŽg—p")},
-{T("E_TipView"),f_EXT,"/X",	T("\t; ƒ`ƒbƒvƒvƒŒƒrƒ…[•\Ž¦")},
-{T("\2"),f_EXT,NULL,NULL},		// ƒ†[ƒUŽw’è—p
+{T("E_cr"), f_EXTRUN, "/X",		T("\t; [Enter]—p”»•Ê")},
+{T("E_scr"), f_EXTRUN, "/X",	T("\t; \\[Enter]—p”»•Ê")},
+{T("E_unpack2"), f_EXTRUN, "/X", T("\t; [U]—p”»•ÊAŽg—p‚Å‚«‚éDLL‚ª–³‚¢Žž‚ÉŽg—p")},
+{T("E_TipView"), f_EXTRUN,"/X", T("\t; ƒ`ƒbƒvƒvƒŒƒrƒ…[•\Ž¦")},
+{T("\2"), f_EXTRUN, NULL, NULL}, // ƒ†[ƒUŽw’è—p
 {NilStr,0,NULL,T(";======================================")TNL
 T(";Eƒ†[ƒU’è‹`“à—e”»•Ê")TNL
 T(";")TNL
@@ -596,21 +562,21 @@ T(";              \"--\"‚Æ‚·‚é‚Æ‹æØ‚èü‚É‚È‚é(‹ï‘Ì“à—e‚Í–³Ž‹)")TNL
 T(";              \"||\"‚Æ‚·‚é‚ÆV‚µ‚¢Œ…‚É‚È‚é(‹ï‘Ì“à—e‚Í–³Ž‹)")TNL
 T(";   M_xxx(xxx‚Í”CˆÓ)‚Å”CˆÓ‚Ìƒƒjƒ…[‚ð’Ç‰Á‚Å‚«‚é")TNL
 T(";==========================================================================")},
-{PathJumpName,f_MENU | fNoRelo,"=S",	T("\t; [0] Path Jump")},
-{T("M_edit"), f_MENU | fNoRelo,"=M",	T("\t; ˆês•ÒWƒƒjƒ…[ƒo[")},
-{T("M_editc"),f_MENU | fNoRelo,"=M",	T("\t; ˆês•ÒWƒRƒ“ƒeƒLƒXƒgƒƒjƒ…[")},
-{T("M_mask"), f_MENU | fNoRelo,"=S",	T("\t; ƒƒCƒ‹ƒhƒJ[ƒh“ü—Í•â•")},
-{T("MC_menu"),f_MENU,"=M",				T("\t; PPc ƒƒjƒ…[ƒo[A¦Žw’è‚·‚é‚Æ‰Šúƒƒjƒ…[‚ª‚È‚­‚È‚é")},
-{T("M_Ccr"),  f_MENU | fNoRelo,"=M",	T("\t; PPc ^[Enter] ContextMenu‚Ö‚Ì’Ç‰Á•ª")},
-{T("MC_sort"),f_MENU | fNoRelo,"=S",	T("\t; PPc [S] sort,\\[S] hold sort")},
-{T("M_wsrc"), f_MENU | fNoRelo,"=S",	T("\t; PPc ^[W] ŒŸõ‘ÎÛ“ü—Í•â•")},
-{T("MC_mdds"),f_MENU | fNoRelo,"=M",	T("\t; PPc Šg’£D&D—p‘}“ü•¶Žš—ñ")},
-{T("M_tabc"), f_MENU | fNoRelo,"=S",	T("\t; PPc ƒ^ƒuƒƒjƒ…[&[-]")},
-{T("MV_menu"),f_MENU,"=M",				T("\t; PPv ƒƒjƒ…[ƒo[")},
-{T("M_ppvc"), f_MENU | fNoRelo,"=M",	T("\t; PPvƒRƒ“ƒeƒLƒXƒg’Ç‰Á•ª")},
-{T("ME_menu"),f_MENU | fNoRelo,"=M",	T("\t; PPe ƒƒjƒ…[ƒo[")},
-{T("Mt_type"),f_MENU | fNoRelo,"=S",	T("\t; ƒcƒŠ[‚Ì•\Ž¦Ží—Þ")},
-{T("\1"),f_MENU | fNoRelo,"=M",NULL},	// ƒ†[ƒUŽw’è—p
+{PathJumpName, f_POPMENU, "=S",	T("\t; [0] Path Jump")},
+{T("M_edit"), f_POPMENU, "=M",	T("\t; ˆês•ÒWƒƒjƒ…[ƒo[")},
+{T("M_editc"), f_POPMENU, "=M",	T("\t; ˆês•ÒWƒRƒ“ƒeƒLƒXƒgƒƒjƒ…[")},
+{T("M_mask"), f_POPMENU, "=S",	T("\t; ƒƒCƒ‹ƒhƒJ[ƒh“ü—Í•â•")},
+{T("MC_menu"), f_MENUBAR, "=M",				T("\t; PPc ƒƒjƒ…[ƒo[A¦Žw’è‚·‚é‚Æ‰Šúƒƒjƒ…[‚ª‚È‚­‚È‚é")},
+{T("M_Ccr"),  f_POPMENU, "=M",	T("\t; PPc ^[Enter] ContextMenu‚Ö‚Ì’Ç‰Á•ª")},
+{T("MC_sort"), f_POPMENU, "=S",	T("\t; PPc [S] sort,\\[S] hold sort")},
+{T("M_wsrc"), f_POPMENU, "=S",	T("\t; PPc ^[W] ŒŸõ‘ÎÛ“ü—Í•â•")},
+{T("MC_mdds"), f_POPMENU, "=M",	T("\t; PPc Šg’£D&D—p‘}“ü•¶Žš—ñ")},
+{T("M_tabc"), f_POPMENU, "=S",	T("\t; PPc ƒ^ƒuƒƒjƒ…[&[-]")},
+{T("MV_menu"), f_MENUBAR, "=M",				T("\t; PPv ƒƒjƒ…[ƒo[")},
+{T("M_ppvc"), f_POPMENU, "=M",	T("\t; PPvƒRƒ“ƒeƒLƒXƒg’Ç‰Á•ª")},
+{T("ME_menu"), f_POPMENU, "=M",	T("\t; PPe ƒƒjƒ…[ƒo[")},
+{T("Mt_type"), f_POPMENU, "=S",	T("\t; ƒcƒŠ[‚Ì•\Ž¦Ží—Þ")},
+{T("\1"), f_POPMENU, "=M",NULL},	// ƒ†[ƒUŽw’è—p
 // Hidden Menu ----------------------------------------------------------------
 {NilStr,0,NULL,
 T(";==========================================================================")TNL
@@ -619,8 +585,8 @@ T(";•\Ž¦“à—e(4bytesˆÈ“à),•¶ŽšF,”wŒiF=ƒL[–¼Ì")TNL
 T(";•\Ž¦“à—e(4bytesˆÈ“à),•¶ŽšF,”wŒiF,ƒRƒ}ƒ“ƒhƒ‰ƒCƒ“")TNL
 T(";¦Hidden Menu‚ª•s—v‚È‚ç 1s–Ú‚Éunull,_AUTO,_AUTO,v‚ð‹LÚ‚·‚é‚±‚Æ")TNL
 T(";==========================================================================")},
-{T("HM_ppc"),fT | fHMenu,",C,Cx",	T("\t; PPc(‘O”¼‚ªã’iAŒã”¼‚ª‰º’i")},
-{T("HM_ppv"),fT | fHMenu,",C,Cx",	T("\t; PPv")},
+{T("HM_ppc"),fT | fK_HMenu,",C,Cx",	T("\t; PPc(‘O”¼‚ªã’iAŒã”¼‚ª‰º’i")},
+{T("HM_ppv"),fT | fK_HMenu,",C,Cx",	T("\t; PPv")},
 {NilStr,0,NULL,
 T(";==========================================================================")TNL
 T(";Eƒc[ƒ‹ƒo[(B_xxx) ƒo[Š„“–‚Ä")TNL
@@ -629,7 +595,7 @@ T("; ˆês•ÒW B_flm:ƒ}ƒEƒXŽž	B_flp:ƒyƒ“Žž	B_flt:ƒ^ƒbƒ`Žž")TNL
 T(";[•\Ž¦“à—e/]ƒc[ƒ‹ƒ`ƒbƒv,ƒ{ƒ^ƒ“‰æ‘œƒCƒ“ƒfƒbƒNƒX=ƒL[–¼Ì")TNL
 T(";[•\Ž¦“à—e/]ƒc[ƒ‹ƒ`ƒbƒv,ƒ{ƒ^ƒ“‰æ‘œƒCƒ“ƒfƒbƒNƒX,ƒRƒ}ƒ“ƒhƒ‰ƒCƒ“")TNL
 T(";==========================================================================")},
-{T("\4"),f_TBAR,",d4x",NOCOMMENT},	// ƒc[ƒ‹ƒo[^ƒ†[ƒUŽw’è—p
+{T("\4"), f_TOOLBAR, ",d4x", NOCOMMENT},	// ƒc[ƒ‹ƒo[^ƒ†[ƒUŽw’è—p
 {T("X_dock"),fT,"=M",		T("\t; ƒo[Š„“–‚Ä(—vIE4ˆÈ~)*layout,*dock")},
 // ƒL[ -----------------------------------------------------------------------
 {NilStr,0,NULL,
@@ -692,9 +658,9 @@ T(";¦L_CLOS“™Š„‚è“–‚Ä‚Å‚«‚È‚¢‚à‚Ì‚ª‚ ‚éB")TNL
 T(";  ‚Ü‚½AL_SPC‚ÆLD_SPC‚Ì—l‚ÉƒNƒŠƒbƒN‚Ì‚Ý‚Æƒ_ƒuƒ‹ƒNƒŠƒbƒN‚Ì—¼•û‚ð“¯Žž‚É")TNL
 T(";  Žw’è‚µ‚Ä‚à”»•Ê‚Å‚«‚È‚¢")TNL
 T(";==========================================================================")},
-{T("MC_click"),fU | fT | fSort | fNoRelo,"/X",	T("\t; PPc ƒƒCƒ“‘‹")},
-{T("MV_click"),fU | fT | fSort | fNoRelo,"/X",	T("\t; PPv ƒƒCƒ“‘‹")},
-{T("MT_icon"), fU | fT | fSort | fNoRelo,"/X",	T("\t; PPtray (ƒ{ƒ^ƒ“Ží)_ICON ‚ÌƒRƒ}ƒ“ƒhŽw’è‚Ì‚Ý—LŒø")},
+{T("MC_click"),fK_Mouse | fT | fSort | fNoRelo,"/X",	T("\t; PPc ƒƒCƒ“‘‹")},
+{T("MV_click"),fK_Mouse | fT | fSort | fNoRelo,"/X",	T("\t; PPv ƒƒCƒ“‘‹")},
+{T("MT_icon"), fK_Mouse | fT | fSort | fNoRelo,"/X",	T("\t; PPtray (ƒ{ƒ^ƒ“Ží)_ICON ‚ÌƒRƒ}ƒ“ƒhŽw’è‚Ì‚Ý—LŒø")},
 // ‘S‘Ì:FileOpration ----------------------------------------------------------
 {NilStr,0,NULL,
 T(";==========================================================================")TNL
@@ -742,7 +708,7 @@ T(";\t ƒGƒ“ƒgƒŠó‘Ô(ƒtƒ@ƒCƒ‹‚Ì”wŒiF“™)")TNL
 T("; ƒƒbƒZ[ƒW,íœ,’Êí,•s–¾,XV,’Ç‰Á, NoFocus,˜g,‰ºü,ƒ}[ƒN,’Êí(‹ô”s),")TNL
 T("; ‘I‘ð,‹æØü, ƒnƒCƒ‰ƒCƒg1`7, ƒ}ƒEƒXƒJ[ƒ\ƒ‹‰º")},
 {T("C_eInfo"),	0,"=C,C,C,C,C,C, C,C,C,C,C,C,C, C,C,C,C,C,C,C, C",NOCOMMENT},
-{T("C_ext"),fT | fW | fNoRelo,"=C",	T("\t; Šg’£ŽqF")},
+{T("C_ext"), f_EXTSET, "=C",	T("\t; Šg’£ŽqF")},
 {NilStr,0,NULL,
 T(";** PPv ŠÖ˜A --------")},
 {T("CV_boun"),	0,"=C",		T("\t; ’[ü")},
@@ -760,7 +726,7 @@ T("; ŒÅ’èƒL[ƒ[ƒh CV_hkey = {")TNL
 T("; Šg’£Žqext = F,ƒL[ƒ[ƒh")TNL
 T("; (‹ó”’Eƒ^ƒu)F,ƒL[ƒ[ƒh")TNL
 T("; }")},
-{T("CV_hkey"),	fT+fSort+fW,"=M",NOCOMMENT},
+{T("CV_hkey"), f_EXTSET | fSort, "=M", NOCOMMENT},
 {NilStr,0,NULL,
 T(";\t •¶ŽšF/ƒGƒXƒP[ƒvƒV[ƒPƒ“ƒX(ESC[m)‚ÌFŠ„‚è“–‚Ä")TNL
 T("; ŠD,–¾Ô,–¾—Î,–¾Â,–¾‰©,–¾…,–¾Ž‡,–¾”’, •(”wŒi),Ô,—Î,Â,‰©,…,Ž‡,ˆÃ”’(’Êí)")},
@@ -795,8 +761,8 @@ T("; B0:=1 INŒ`Ž®\tB1:=1 AMŒ`Ž®\tB2:=1 Ž©“®”»•Ê‘ÎÛŠO")},
 T(";==========================================================================")TNL
 T(";E•\Ž¦•¶Žš—ñ")TNL
 T(";==========================================================================")},
-{T("Mes0411"),f_MES,"=s",	T("\t; “ú–{")},
-{T("\3"),f_MES,"=s",NULL},	// •s–¾Œ¾Œê
+{T("Mes0411"), f_MSGS, "=s",	T("\t; “ú–{")},
+{T("\3"), f_MSGS, "=s", NULL},	// •s–¾Œ¾Œê
 // ‚»‚Ì‘¼ --------------------------------------------------------------
 {NilStr,0,NULL,
 T(";==========================================================================")TNL
@@ -809,9 +775,9 @@ T(";==========================================================================")
 T(";==========================================================================")TNL
 T(";E“à•”Žw’è—p(’Êí‚Í•ÏX‚·‚é•K—v–³‚µ)")TNL
 T(";==========================================================================")},
-{T("_Setup"),	fT | fNoRelo,"=S",		T("\t; ƒZƒbƒgƒAƒbƒvî•ñ")},
+{StrCustSetup,	fT | fNoRelo,"=S",		T("\t; ƒZƒbƒgƒAƒbƒvî•ñ")},
 {T("_Path"),	fT | fNoRelo,"=S",		T("\t; ‹N“®Žž‚ÌƒfƒBƒŒƒNƒgƒŠ")},
-{StrCustOthers,	fT | fB | fNoRelo,"=M",		T("\t; ‚»‚Ì‘¼Ý’è")},
+{StrCustOthers,	fT | fB | fNoRelo,"=M",		T("\t; ‚»‚Ì‘¼Ý’è")}, // _others
 {T("_WinPos"),	fT | fSort | fNoRelo,"=d4,d4,d4,d4,D2",
 							T("\t; ƒEƒBƒ“ƒhƒE‚Ì•\Ž¦ˆÊ’u XB,YB,XT,YT,Show")},
 {T("_IDpwd"),	fT | fB | fHide | fNoRelo,"=S",	T("\t; FTP,ƒlƒbƒgƒ[ƒN‚ÌID,password")},

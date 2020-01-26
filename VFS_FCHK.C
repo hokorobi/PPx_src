@@ -594,7 +594,7 @@ const VFD_HEADERS vfd_Sofheader[] = {
 const char XPSheader1[] = "Metadata/Job_PT.xml";
 const char XPSheader2[] = "[Content_Types].xml";
 const VFD_HEADERS vfd_XPSheader =
-	NH(0, 0, NULL,			NULL, ":XPS", "XPS Document", "xps", DT_scp);
+	NH(0, 0, NULL, NULL, ":XPS", "XPS Document", "xps", DT_scp);
 
 ERRORCODE SearchPkExtHeader(const char *header, const VFD_HEADERS *vdh, VFSFILETYPE *result)
 {
@@ -607,7 +607,16 @@ ERRORCODE SearchPkExtHeader(const char *header, const VFD_HEADERS *vdh, VFSFILET
 	return ERROR_MORE_DATA;
 }
 
-
+const VFD_HEADERS vfd_XPSheaders[] = {
+RH(0xc00, 10, "xl/workboo", NULL, ":XLSX",	"Excel2007", "xlsx", DT_scp),
+RH(0xc00, 16, "xl/_rels/workboo", NULL, ":XLSX",	"Excel2007", "xlsx", DT_scp),
+RH(0xc00, 12, "xl/drawings/", NULL, ":XLSX",	"Excel2007", "xlsx", DT_scp),
+RH(0xc00, 10, "word/docum", NULL, ":DOCX",	"Word2007", "docx", DT_scp),
+RH(0xc00, 16, "word/_rels/docum", NULL, ":DOCX",	"Word2007", "docx", DT_scp),
+RH(0x1000, 11, "ppt/slides/", NULL, ":PPTX",	"PowerPoint2007", "pptx", DT_scp),
+RH(0x1000, 13, "ppt/drawings/", NULL, ":PPTX",	"PowerPoint2007", "pptx", DT_scp),
+NH(0, 0, NULL, NULL, ":XPS", "XPS Document", "xps", DT_scp),
+};
 
 #pragma argsused
 ERRORCODE vfd_PK(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
@@ -629,9 +638,35 @@ ERRORCODE vfd_PK(const TCHAR *fname, const char *image, DWORD size, const char *
 			return SearchPkExtHeader(header + 0x1e + sizeof(Sofheader),
 					vfd_Sofheader, result);
 		}
-		if ( !memcmp(header + 0x1e, XPSheader1, sizeof(XPSheader1) - 1) ||
-			 !memcmp(header + 0x1e, XPSheader2, sizeof(XPSheader2) - 1) ){
+		if ( !memcmp(header + 0x1e, XPSheader1, sizeof(XPSheader1) - 1) ){
 			SetFileType(result, &vfd_XPSheader);
+			return ERROR_MORE_DATA;
+		}
+
+		if ( !memcmp(header + 0x1e, XPSheader2, sizeof(XPSheader2) - 1) ){
+			const VFD_HEADERS *vdh;
+
+			for ( vdh = vfd_XPSheaders ; vdh->flags ; vdh++ ){
+				const char *ptr, *p;
+				DWORD leftsize;
+				#define xps_skipsize 0x200
+
+				if ( size < (xps_skipsize + vdh->hsize) ) continue;
+				ptr = header + xps_skipsize;
+				leftsize = size - xps_skipsize;
+				if ( leftsize > vdh->off ) leftsize = vdh->off;
+				while ( (leftsize > 0) &&
+						(p = memchr(ptr, *vdh->header, leftsize)) != NULL ){
+					if ( !memcmp(p + 1, vdh->header + 1, vdh->hsize - 1) ){
+						goto found;
+					}
+					leftsize -= (SIZE32_T)(p - ptr + 1);
+					if ( leftsize <= 0 ) break;
+					ptr = p + 1;
+				}
+			}
+found:
+			SetFileType(result, vdh);
 			return ERROR_MORE_DATA;
 		}
 	}
@@ -1170,11 +1205,11 @@ ERRORCODE vfd_JUST(const TCHAR *fname, const char *image, DWORD size, const char
 }
 // 複合ドキュメント -----------------------------------------------------------
 typedef struct {
-	TCHAR	*type;
-	TCHAR	*comment;
-	TCHAR	*ext;
-	int		dtype;
-	BYTE	clsid[16];
+	TCHAR *type;
+	TCHAR *comment;
+	TCHAR *ext;
+	int dtype;
+	BYTE clsid[16];
 } DOCS;
 #define DOCH(type, comment, ext, dtype) {T(type), T(comment), T(ext), dtype
 
@@ -1700,6 +1735,7 @@ ERRORCODE vfd_EXE(const TCHAR *fname, const char *image, DWORD size, const char 
 {
 	const TCHAR *p;
 	TCHAR buf[MAX_PATH];
+//	TCHAR option[MAX_PATH];
 
 	const TCHAR *OStype = T("DOS");	// OSの種類
 	const TCHAR *OStarget = NilStr;	// 対象MPU
@@ -1709,6 +1745,7 @@ ERRORCODE vfd_EXE(const TCHAR *fname, const char *image, DWORD size, const char 
 	const TCHAR *OSext = T("EXE");		// 拡張子
 
 	result->dtype = 2;
+//	option[0] = '\0';
 								// 拡張子で種別を決定 -------------------------
 	{
 		struct EXEEXTTYPESTURCT *eet = ExeExtTypes;
@@ -1803,6 +1840,7 @@ ERRORCODE vfd_EXE(const TCHAR *fname, const char *image, DWORD size, const char 
 					DWORD secsize;
 					HANDLE hFF;
 					WIN32_FIND_DATA ff;
+//					TCHAR *dst;
 
 					LastSection = IMAGE_FIRST_SECTION(xhdr) + xhdr->FileHeader.NumberOfSections - 1;
 					secsize = LastSection->PointerToRawData + LastSection->SizeOfRawData;
@@ -1822,6 +1860,14 @@ ERRORCODE vfd_EXE(const TCHAR *fname, const char *image, DWORD size, const char 
 							OSuse = ap;
 						}
 					}
+					/*
+					dst = option;
+					*dst++ = ' ';
+#define xIMAGE_FILE_LARGE_ADDRESS_AWARE       0x0020
+					if ( xhdr->FileHeader.Characteristics & xIMAGE_FILE_LARGE_ADDRESS_AWARE ){
+						dst += wsprintf(dst, T(">2G "));
+					}
+					*/
 				}
 			}else if ( ((IMAGE_OS2_HEADER *)xhdr)->ne_magic ==
 								IMAGE_OS2_SIGNATURE ){	// NE header(Win/OS)
@@ -1985,6 +2031,7 @@ ERRORCODE vfd_ID3(const TCHAR *fname, const char *image, DWORD size, const char 
 }
 
 const VFD_HEADERS QTheaders[] = {
+	AH(0, 4, "avif", NULL,	":AVIF", "AV1 Image File Format", "avif", DT_scp),
 	AH(0, 4, "3g2a", NULL,	":3GP",	"MPEG4 3GPP2 movie", "3GP", DT_scp),
 	AH(0, 4, "3g2b", NULL,	":3GP",	"MPEG4 3GPP2 movie", "3GP", DT_scp),
 	AH(0, 4, "3g2c", NULL,	":3GP",	"MPEG4 3GPP2 movie", "3GP", DT_scp),
@@ -2072,13 +2119,13 @@ AH(0, 7, "020020\0", NULL,	":JIS",		"JIS text", "JIS", DT_jis),
 AH(0, 7, "030140\0", NULL,	":JIS",		"JIS text", "JIS", DT_jis),
 AH(0, 4, "DHL1", NULL,		":JIS",		"JIS text", "JIS", DT_jis),
 AH(0, 4, "DHL2", NULL,		":JIS",		"JIS text", "JIS", DT_jis),
-AH(0, 3, "2ｾ", NULL,		":WRITE",	"MS-Write", "WRI", DT_scp),
-AH(0, 3, "1ｾ", NULL,		":WRITE",	"MS-Write", "WRI", DT_scp),
+AH(0, 3, "2\xbe", NULL,		":WRITE",	"MS-Write", "WRI", DT_scp),
+AH(0, 3, "1\xbe", NULL,		":WRITE",	"MS-Write", "WRI", DT_scp),
 AH(0, 4, "\x1d}\0\0", NULL,	":WS",		"WordStar", "WS", DT_scp),
 AH(0, 4, "\xffWPC", NULL,	":WP",		"WordPerfect", "WPD", DT_scp),
 AH(0, 2, "\xd0\xcf", vfd_COM, ":DOCS",	"複合ドキュメント", "", DT_scp),
 AH(0, 2, "\xf1\x10", NULL,	":OA2",		"OASYS2(A)", "OA2", DT_oasys),
-AH(0, 9, "VjCD0100\4", NULL, ":CDX",		"ChemDraw", "CDX", DT_scp),
+AH(0, 9, "VjCD0100\4", NULL, ":CDX",	"ChemDraw", "CDX", DT_scp),
 AH(0, 8, "AC1004\0", NULL,	":ACAD",	"AutoCAD EX-II", "", DT_scp),
 AH(0, 8, "AC1012\0", NULL,	":ACAD",	"AutoCAD R12", "", DT_scp),
 AH(0, 8, "AC1013\0", NULL,	":ACAD",	"AutoCAD R13", "", DT_scp),
@@ -2097,9 +2144,6 @@ AH(0, 8, "\x60\xe\x82\x1\x7\x80\x3", NULL,	":XDW",	"DocuWorks Document", "xdw", 
 
 AH(0, 11, "BEGIN:VCARD", NULL, ":VCF",		"vCard", "vcf", DT_text),
 AH(0, 15, "BEGIN:VCALENDAR", NULL, ":VCS",	"vCalendar", "vcs", DT_text),
-RH(0xc00, 16, "xl/_rels/workboo", NULL, ":XLSX",	"Excel2007", "xlsx", DT_scp),
-RH(0xc00, 16, "word/_rels/docum", NULL, ":DOCX",	"Word2007", "docx", DT_scp),
-RH(0x1000, 12, "ppt/slides/s", NULL, ":PPTX",	"PowerPoint2007", "pptx", DT_scp),
 AH(0, 4, "\'\\\" ", NULL,	":MAN",		"Manual text", "", DT_scp),
 AH(0, 4, ".TH ", NULL,		":MAN",		"Manual text", "", DT_scp),
 										// Media ------------------------------
@@ -2214,19 +2258,19 @@ RH(0, 3, "-lh", vfd_LHA,	":LHA",		"LHA archive", "LZH", DT_scp),
 RH(0, 4, "GCA0", NULL,		":GCA",		"GCA archive", "GCA", DT_scp),
 RH(0, 4, "GCAX", NULL,		":GCA",		"GCA archive", "GCA", DT_scp),
 RH(0, 4, "7z\xbc\xaf", NULL, ":7Z",		"7-Zip archive", "7z", DT_scp),
-RH(0, 6, "\xfd" "7zXZ", NULL, ":XZ",		"xz archive", "xz", DT_scp),
+RH(0, 6, "\xfd" "7zXZ", NULL, ":XZ",	"xz archive", "xz", DT_scp),
 RH(0, 5, "\x5d\0\0\x4", NULL, ":LZMA",	"lzma archive", "lzma", DT_scp),
 RH(0, 5, "\x5d\0\0\x80", NULL, ":LZMA",	"lzma archive", "lzma", DT_scp),
-RH(0, 2, "\x60\xea", vfd_ARJ, ":ARJ",		"ARJ archive", "ARJ", DT_scp),
-RH_L(0x4000, 3, "-lz", vfd_LHA, ":LHA",		"LArc archive", "LZS", DT_scp),
+RH(0, 2, "\x60\xea", vfd_ARJ, ":ARJ",	"ARJ archive", "ARJ", DT_scp),
+RH_L(0x4000, 3, "-lz", vfd_LHA, ":LHA",	"LArc archive", "LZS", DT_scp),
 RH(0x4000, 3, "-pm", NULL,	":PMA",		"PMA archive", "PMA", DT_scp),
-RH(0x4000, 7, "**ACE**", NULL, ":ACE",		"ACE archive", "ACE", DT_scp),
-RH(0x4000, 8, "StuffIt ", NULL, ":SIT",		"StuffIt archive", "SIT", DT_scp),
-AH(8, 12, "NullsoftInst", NULL, ":NSIS",	"Nullsoft Scriptable Install System", "EXE", DT_scp),
+RH(0x4000, 7, "**ACE**", NULL, ":ACE",	"ACE archive", "ACE", DT_scp),
+RH(0x4000, 8, "StuffIt ", NULL, ":SIT",	"StuffIt archive", "SIT", DT_scp),
+AH(8, 12, "NullsoftInst", NULL, ":NSIS", "Nullsoft Scriptable Install System", "EXE", DT_scp),
 AH(0, 4, "zlb\x1a", NULL,	":ZLIB",	"zlib archive", "zlib", DT_scp),
 										// Etc2 -------------------------------
-AH(0, 2, "MZ", vfd_EXE,		":EXE",		"", "EXE", DT_scp),
-AH(0, 4, "\x7f\x45LF", vfd_ELF, ":ELF",		"UNIX progarm", "", DT_scp),
+AH(0, 2, "MZ", vfd_EXE,		":EXE",	"", "EXE", DT_scp),
+AH(0, 4, "\x7f\x45LF", vfd_ELF, ":ELF",	"UNIX progarm", "", DT_scp),
 AH(0, 1, "\xfe", vfd_MSXBIN, ":MSXI",	"MSX BSAVE file", "BIN", DT_scp),
 AH(0, 4, "HU\0", NULL,		":X68K",	"X68000 progarm", "x", DT_scp),
 AH(0, 2, "MQ", vfd_MQ,		":TOWNS",	"FM-TOWNS progarm", "EXG", DT_scp),
@@ -2239,18 +2283,18 @@ AH(0, 4, "\xff\x00\x04\x01", NULL, ":E500E", "PC-E500 AER", "DAT", DT_scp),
 AH(0, 4, "\xff\x00\x06\x01", NULL, ":E500I", "PC-E500 BSAVE file", "BIN", DT_scp),
 AH(0, 4, "\xff\x00\x07\x01", NULL, ":E500R", "PC-E500 RAMFILE", "BIN", DT_scp),
 AH(0, 4, "\xff\x00\x08\x00", NULL, ":E500A", "PC-E500 BASIC TEXT", "BAS", DT_scp),
-AH(0x42f, 11, "\0Apple_HFS", NULL,	":DMG",	"Apple disk image", "bin", DT_scp),
-AH(0x4af, 11, "\0Apple_HFS", NULL,	":DMG",	"Apple disk image", "bin", DT_scp),
-AH(0x1fe, 2, "\x55\xaa", vfd_MBRIMG,	":MBR",	"MBR disk image", "bin", DT_scp),
-RH(0x8000, 1, "\xeb", vfd_FATIMG,	":FAT",		"FAT Disk Image", "BIN", DT_scp),
-RH(0x8000, 1, "\xe9", vfd_FATIMG,	":FAT",		"FAT Disk Image", "BIN", DT_scp),
-AH(0, 1, "\0", vfd_MACBIN,		":MACBIN",	"MacBinary", "BIN", DT_scp),
-AH(0, 6, "\0\5\x16\7\0\2", NULL,	":MACRES",	"Mac Resource Forks", "", DT_scp),
-RH(0x8000, 1, "\x60", vfd_FATIMG,	":XFD",		"X68000 Disk Image", "BIN", DT_scp),
-AH(0, 17, "MEDIA DESCRIPTOR\1", NULL, ":MDS",	"CD-ROM media descriptor", "mds", DT_scp),
+AH(0x42f, 11, "\0Apple_HFS", NULL, ":DMG",	"Apple disk image", "bin", DT_scp),
+AH(0x4af, 11, "\0Apple_HFS", NULL, ":DMG",	"Apple disk image", "bin", DT_scp),
+AH(0x1fe, 2, "\x55\xaa", vfd_MBRIMG, ":MBR",	"MBR disk image", "bin", DT_scp),
+RH(0x8000, 1, "\xeb", vfd_FATIMG, ":FAT",	"FAT Disk Image", "BIN", DT_scp),
+RH(0x8000, 1, "\xe9", vfd_FATIMG, ":FAT",	"FAT Disk Image", "BIN", DT_scp),
+AH(0, 1, "\0", vfd_MACBIN, ":MACBIN", "MacBinary", "BIN", DT_scp),
+AH(0, 6, "\0\5\x16\7\0\2", NULL, ":MACRES",	"Mac Resource Forks", "", DT_scp),
+RH(0x8000, 1, "\x60", vfd_FATIMG, ":XFD",	"X68000 Disk Image", "BIN", DT_scp),
+AH(0, 17, "MEDIA DESCRIPTOR\1", NULL, ":MDS", "CD-ROM media descriptor", "mds", DT_scp),
 AH(0x1002, 6, "\x90\x90IPL1", NULL, ":98HD", "PC-9801 HD Image", "BIN", DT_scp),
-AH(0, 4, "COWD", NULL,		":VMDK",	"VMware Disk Image(-3.x)", "vmdk", DT_scp),
-AH(0, 4, "KDMV", NULL,		":VMDK4",	"VMware Disk Image(4.x)", "vmdk", DT_scp),
+AH(0, 4, "COWD", NULL, ":VMDK", "VMware Disk Image(-3.x)", "vmdk", DT_scp),
+AH(0, 4, "KDMV", NULL, ":VMDK4", "VMware Disk Image(4.x)", "vmdk", DT_scp),
 AH(0, 4, "\xb4\x6e\x68\x44", NULL, ":TIB",	"True Image Disk Image", "tib", DT_scp),
 AH(0, 10, "conectix\0", NULL,	":VHD",	"VHD Disk Image", "vhd", DT_scp),
 AH(0, 8, "vhdxfile", NULL,		":VHDX",	"VHDx Disk Image", "vhdx", DT_scp),
@@ -2260,7 +2304,7 @@ AH(0, 4, "MSQM", NULL,		":SQM",		"MS Service Quality Monitoring log", "sqm", DT_
 };
 
 const VFD_HEADERS DirHeader =
-	NH(0, 0, NULL, NULL,			":DIR",		"Directory", "", DT_scp);
+	NH(0, 0, NULL, NULL, ":DIR", "Directory", "", DT_scp);
 
 
 const VFD_HEADERS *ReverseList[] = {
@@ -2268,7 +2312,7 @@ const VFD_HEADERS *ReverseList[] = {
 };
 
 const VFD_HEADERS AllHeader =
-	NH(0, 0, NULL, NULL,			"*",		"Default", "", DT_scp);
+	NH(0, 0, NULL, NULL, "*", "Default", "", DT_scp);
 
 ERRORCODE ReverseGetFileType(const TCHAR *FileName, VFSFILETYPE *result)
 {

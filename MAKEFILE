@@ -14,34 +14,31 @@ VCTOOLKIT = 0	# VC TOOL KIT を使うなら1に、VS2008なら0に
 !endif
 !ifndef X64
 X64 = 0		# 1 なら x64版(常にUNICODE版)
-SSEOPT = /arch:SSE2
+!endif
+!ifndef ARM
+ARM = 0		# 1 なら Arm/Arm64版(常にUNICODE版)
 !endif
 !ifndef UseUnicode
 UseUnicode = 0	# 1 なら UNICODE版
 !endif
 
 !ifdef RELEASE
-RTAIL = R
+TAIL = R
 UseDebug = 0
-DebugCopt = /DRELEASE
+Copt = /DRELEASE
 !endif
-
-!ifdef USEDIRECTX
-EXTAIL = DX
-Dxopt = /DUSEDIRECTX $(SSEOPT)
-LIBDX = dxguid.lib d3d9.lib d3dx9.lib msimg32.lib
-!endif
-!ifdef USEDIRECTWRITE
-EXTAIL = DW
-Dxopt = /DUSEDIRECTX /DUSEDIRECTWRITE $(SSEOPT)
-LIBDX =
-!endif
-#=======================================
-closeall = -@if exist $(PPXLIB).DLL PPB$(W) /c *closeppx
 
 !if $(X64)
 UseBCC	= 0
 UseUnicode	= 1
+!else
+SSEOPT = /arch:SSE2
+!endif
+
+!if $(ARM)
+UseBCC	= 0
+UseUnicode	= 1
+TAIL	= $(TAIL)A
 !endif
 
 !if $(UseUnicode)
@@ -55,22 +52,34 @@ W	= W
 !else
 PPXLIB	= PPLIB32
 !endif
-#=======================================
+
+!ifdef USEDIRECTX
+TAIL = $(TAIL)DX
+Dxopt = /DUSEDIRECTX $(SSEOPT)
+LIBDX = dxguid.lib d3d9.lib d3dx9.lib msimg32.lib
+!endif
+!ifdef USEDIRECTWRITE
+TAIL = $(TAIL)DW
+Dxopt = /DUSEDIRECTX /DUSEDIRECTWRITE $(SSEOPT)
+LIBDX =
+!endif
+
 !if $(WineMode)
 WineCopt	= -DWINEMODE
 !endif
+#=======================================
+closeall = -@if exist $(PPXLIB).DLL PPB$(W) /c *closeppx
+
 #=============================================================== Borland 用設定
 # プリコンパイルヘッダがある場合、そのディレクトリを環境変数CSMに指定すること
 !if $(UseBCC)
 .autodepend
 !if $(UseDebug)
-  DebugCopt	= -R -v -DDEBUG	# 追加 C コンパイルオプション
+  Copt	= -R -v -DDEBUG	# 追加 C コンパイルオプション
   DebugLopt	= -v
-#  DebugCopt	= -R -v -vG -DDEBUG	# code guard
-#  DebugLib	= CG32.LIB		# 追加ライブラリ
 !endif
 #-------------------------------------- コンパイラ
-cc	= @BCC32 -ps -4 -c -C -d -H -Hc -w -O -O1 -RT- -x- -DWINVER=0x400 $(bc56opt) $(DebugCopt) $(UnicodeCopt) $(WineCopt)
+cc	= @BCC32 -ps -4 -c -C -d -H -Hc -w -O -O1 -RT- -x- -DWINVER=0x400 $(bc56opt) $(Copt) $(UnicodeCopt) $(WineCopt)
 #-------------------------------------- リンカ共通指定
 !if $(UseIlink)
  bc56opt = -Oc -q -a4
@@ -102,35 +111,47 @@ rc	= @Brc32 -r $(UnicodeCopt) -dLEGACYICON
 .RC.RES:
   $(rc) -fo$@ $<
 #============================================================= Microsoft 用設定
-!else
+!else # !UseBCC
+
+!if $(UseDebug)
+Copt	= /Od /Zi /GS #/analyze
+DebugLopt	= /DEBUG
+!else # UseDebug
+!ifdef RELEASE
+Copt	= /Gz /O2 /Os /Oy /DRELEASE
+!else # RELEASE
+Copt	= /Gz /O2 /Os /Oy
+!endif # RELEASE
+!endif # UseDebug
+
 !if $(X64)
-!if $(VCTOOLKIT)
-LIB64	= bufferoverflowu.lib
-RC64	= /d_WIN64 /dLEGACYICON
-!else
-RC64	= /d_WIN64
-!endif
-LINK64	= /MACHINE:AMD64
 X64Copt	= /wd4244 /wd4267
 # ↑サイズ違い警告を消す(※できるだけこの指定を使わないこと)
+!if $(VCTOOLKIT)
+LINK64	= /MACHINE:AMD64
+LIB64	= bufferoverflowu.lib
+RC64	= /d_WIN64 /dLEGACYICON
+!else # !VCTOOLKIT
+!if !$(ARM)
+LINK64	= /MACHINE:AMD64 /LARGEADDRESSAWARE
+!else # ARM
+LINK64	= /MACHINE:ARM64 /LARGEADDRESSAWARE
+Copt	= /O2 /Os /Oy /DRELEASE
+X64Copt	= /wd4244 /wd4267
+!endif # ARM
+RC64	= /d_WIN64
+!endif # VCTOOLKIT
 !else # !$(X64)
 !if $(VCTOOLKIT)
 RC64	= /dLEGACYICON
-!endif
-!endif
-!if $(UseDebug)
-  DebugCopt	= /Od /Zi /GS #/analyze
-  DebugLopt	= /DEBUG
- # 4099:pdbファイルが見つからない
-!else
-!ifdef RELEASE
-    DebugCopt	= /O2 /Os /Oy /DRELEASE
-!else
-    DebugCopt	= /O2 /Os /Oy
-!endif
-!endif
+!endif # VCTOOLKIT
+!if $(ARM)
+LINK64	= /MACHINE:ARM /LARGEADDRESSAWARE
+!endif # ARM
+!endif # X64
+
 #-------------------------------------- コンパイラ
-cc	= @"cl" /Gz /GF /nologo /c /DWINVER=0x400 $(Dxopt) $(DebugCopt) $(UnicodeCopt) $(WineCopt) /W3 $(X64Copt) /wd4068 /wd4996
+cc	= @"cl" /GF /nologo /c /DWINVER=0x400 $(Dxopt) $(Copt) $(UnicodeCopt) $(WineCopt) /W3 $(X64Copt) /wd4068 /wd4996
 # 4068:不明な #pragma	4996:古い関数を使用した	/Wp64:64bit移植性チェック
 
 #-------------------------------------- リンカ共通指定
@@ -161,18 +182,18 @@ rc	= @%COMSPEC% /C RC $(RC64) $(UnicodeCopt)
 !endif
 
 #------------------------------------------------------------------------------
-allFiles:	$(PPXLIB)$(RTAIL)$(EXTAIL).OBJ	$(PPXLIB).DLL	SETUP.EXE\
+allFiles:	$(PPXLIB)$(TAIL).OBJ	$(PPXLIB).DLL	SETUP.EXE\
 		PPCUST$(W).EXE	PPB$(W).EXE	PPC$(W).EXE	PPV$(W).EXE\
 		PPTRAY$(W).EXE	PPFFIX$(W).EXE	PPX.HLP
 
 PPXH	= PPX.H PPX.RH PPCOMMON.H CHRTYPE.H TOROWIN.H TKEY.H
 COMMON	= MAKEFILE PPCOMMON.H VFS.H
 #------------------------------------------------------ PPX.OBJ(code体系切換用)
-$(PPXLIB)$(RTAIL)$(EXTAIL).OBJ:
+$(PPXLIB)$(TAIL).OBJ:
   -@del *.obj 2> nul
   -@del *.res 2> nul
   -@if exist %CSM% del %CSM%\*.CSM
-  @copy nul $(PPXLIB)$(RTAIL)$(EXTAIL).OBJ > nul
+  @copy nul $(PPXLIB)$(TAIL).OBJ > nul
 #--------------------------------------------------------------------- PPCOMMON
 PPDH	= $(PPXH) PPCOMMON.RH PPD_DEF.H
 VFSH	= $(PPXH) VFS.H VFS_STRU.H

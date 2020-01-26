@@ -669,12 +669,68 @@ LRESULT CALLBACK ItemTreeProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam
  #define SM_MAXIMUMTOUCHES 95
 #endif
 
+size_t GetCustomListSize(const TCHAR *list)
+{
+	const TCHAR *last;
+
+	last = list;
+	for (;;){
+		if ( *last == '\0' ) break;
+		last = last + tstrlen(last) + 1;
+	}
+	return TSTROFF(last - list + 1);
+}
+
+void LoadCustomList(void)
+{
+	TCHAR *list, *extlist, *newlist, *path;
+	HANDLE hFF;
+	TCHAR custpath[MAX_PATH];//, path[MAX_PATH];
+	WIN32_FIND_DATA ff;
+
+	list = LoadTextResource(hInst, MAKEINTRESOURCE(DEFCUSTLIST));
+
+	GetModuleFileName(hInst, custpath, MAX_PATH);
+	path = VFSFindLastEntry(custpath) + 1;
+	tstrcpy(path, T("PPX*.DLL"));
+	hFF = FindFirstFile(custpath, &ff);
+	if ( hFF != INVALID_HANDLE_VALUE ){
+		do {
+			HINSTANCE hInst;
+
+			// リソースしか使用しないが、32/64の区別が必要なため、DONT_RESOLVE_DLL_REFERENCESを指定
+			tstrcpy(path, ff.cFileName);
+			hInst = LoadLibraryEx(path, NULL, DONT_RESOLVE_DLL_REFERENCES);
+			if ( hInst != NULL ){
+				extlist = LoadTextResource(hInst, MAKEINTRESOURCE(PPXRCDATA_CUSTOMIZE_LIST));
+				if ( extlist != NULL ){
+					size_t listsize, extsize;
+
+					listsize = GetCustomListSize(list);
+					extsize = GetCustomListSize(extlist);
+					newlist = HeapAlloc(GetProcessHeap(), 0, listsize + extsize + 4 );
+					if ( newlist != NULL ){
+						memcpy(newlist, list, listsize);
+						memcpy((char *)newlist + listsize - sizeof(TCHAR), extlist , extsize );
+						HeapFree(GetProcessHeap(), 0 ,list);
+						list = newlist;
+					}
+					HeapFree(GetProcessHeap(), 0 ,extlist);
+				}
+			}
+			FreeLibrary(hInst);
+		}while( IsTrue(FindNextFile(hFF, &ff)) );
+		FindClose(hFF);
+	}
+	CustomList = list;
+}
+
 void LoadList(HWND hDlg)	// チェックボックス等の画像を用意
 {
 	HIMAGELIST hImage;
 	int IconSize;
 
-	CustomList = LoadTextResource(MAKEINTRESOURCE(DEFCUSTLIST));
+	LoadCustomList();
 	hIndexTreeWnd = GetDlgItem(hDlg, IDT_GENERAL);
 	hItemTreeWnd = GetDlgItem(hDlg, IDT_GENERALITEM);
 

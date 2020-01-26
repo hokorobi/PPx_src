@@ -139,8 +139,8 @@ void AutoCustomizeUpdate(void)
 			BOOL error = FALSE;
 
 			ptr = PPcustCDump();
-			if ( NO_ERROR != GetCustTable(T("_Setup"), StrPath, &fpath, sizeof(fpath)) ){
-				SetCustStringTable(T("_Setup"), StrPath, DLLpath, 0);
+			if ( NO_ERROR != GetCustTable(StrCustSetup, StrPath, &fpath, sizeof(fpath)) ){
+				SetCustStringTable(StrCustSetup, StrPath, DLLpath, 0);
 			}
 			Get_X_save_widthUI(fpath);
 			wsprintf(fname, T("PPX%c%c%c_O.TXT"), oldver[0], oldver[2], oldver[3]);
@@ -414,7 +414,7 @@ void WmSettingChange(HWND hWnd, LPARAM lParam)
 
 		PostMessage(hWnd, WM_PPXCOMMAND, LOAD_UserInteractionMode);
 
-		if ( IsTrue(GetRegString(HKEY_CURRENT_USER, ImmersiveShellPatg, TabletMode, (TCHAR *)&value, sizeof(value))) ){
+		if ( IsTrue(GetRegString(HKEY_CURRENT_USER, ImmersiveShellPatg, TabletMode, (TCHAR *)&value, TSIZEOF(value))) ){
 			GetCustData(T("X_pmc"), &X_pmc, sizeof(X_pmc));
 			TouchMode = value ? ~X_pmc[1] : 0;
 			PostMessage(hWnd, WM_PPXCOMMAND, value ? K_E_TABLET : K_E_PC, 0);

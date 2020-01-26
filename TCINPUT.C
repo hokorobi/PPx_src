@@ -551,11 +551,11 @@ BOOL ScrIncSearch(int next)
 
 	pos = incsearch.pos;
 	oldlen = incsearch.len;
-	if ( next ){
+	if ( next ){ // 1: Ÿ‚ğŒŸõ
 		pos.X++;
-		if ( next == 2 ) pos.X = pos.Y = 0;
+		if ( next == 2 ) pos.X = pos.Y = 0; // 2: Å‰‚©‚çŒŸõ
 	}else{
-		oldlen--;
+		oldlen--; // 0: ‚P•¶šíœ
 	}
 
 	for ( ; pos.Y < screen.info.dwSize.Y ; pos.Y++ ){
@@ -1773,6 +1773,7 @@ void ScrollModeCommand(int key)
 			JumpWordCursor(FALSE, 1, key);
 			break;
 
+		case K_F3: // ŒŸõ
 		case K_tab:
 			if ( incsearch.len == 0 ) break;
 			if ( ScrIncSearch(1) == FALSE ){

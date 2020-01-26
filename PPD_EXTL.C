@@ -20,13 +20,13 @@ const TCHAR runasV5str[] = MES_MCRK;
 const TCHAR runasV6str[] = MES_MCRV;
 const TCHAR ExtsChoiseStr[] = T("Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\%s\\UserChoice");
 const TCHAR ProgIDstr[] = T("ProgId");
+const TCHAR LegacyDisablestr[] = T("LegacyDisable");
 const TCHAR PAOstr[] = T("ProgrammaticAccessOnly");
 
 // 指定拡張子のアクション一覧をメニューに登録する -----------------------------
 PPXDLL int PPXAPI GetExtentionMenu(HMENU hSubMenu, const TCHAR *ext, PPXMENUDATAINFO *pmdi)
 {
 	DWORD Bsize; // バッファサイズ指定用
-	DWORD Rtyp; // レジストリの種類
 
 	FILETIME write;
 	DWORD keyS;
@@ -50,11 +50,11 @@ PPXDLL int PPXAPI GetExtentionMenu(HMENU hSubMenu, const TCHAR *ext, PPXMENUDATA
 	if ( ext[0] == '.' ){				// 拡張子からキーを求める -------------
 		// Windows8以降
 		wsprintf(keyN, ExtsChoiseStr, ext);
-		if ( FALSE == GetRegString(HKEY_CURRENT_USER, keyN, ProgIDstr, appN, sizeof(appN)) ){
+		if ( FALSE == GetRegString(HKEY_CURRENT_USER, keyN, ProgIDstr, appN, TSIZEOF(appN)) ){
 			// 従来
-			if ( FALSE == GetRegString(HKEY_CLASSES_ROOT, ext, NilStr, appN, sizeof(appN)) ){
+			if ( FALSE == GetRegString(HKEY_CLASSES_ROOT, ext, NilStr, appN, TSIZEOF(appN)) ){
 				// 全種
-				if ( FALSE == GetRegString(HKEY_CLASSES_ROOT, WildCard_All, NilStr, appN, sizeof(appN))){
+				if ( FALSE == GetRegString(HKEY_CLASSES_ROOT, WildCard_All, NilStr, appN, TSIZEOF(appN))){
 					tstrcpy(appN, T("Unknown")); // 該当無し
 				}
 			}
@@ -72,7 +72,7 @@ PPXDLL int PPXAPI GetExtentionMenu(HMENU hSubMenu, const TCHAR *ext, PPXMENUDATA
 
 	Bsize = sizeof(defN);
 	defN[0] = '\0';
-	RegQueryValueEx(hAppShellKey, NilStr, 0, &Rtyp, (LPBYTE)defN, &Bsize);
+	RegQueryValueEx(hAppShellKey, NilStr, NULL, NULL, (LPBYTE)defN, &Bsize);
 	if ( defN[0] == '\0' ) tstrcpy(defN, ShellVerb_open);	// デフォルトの指定が無い
 
 	for ( ; ; cnt++ ){					// 設定を取り出す ---------------------
@@ -80,10 +80,20 @@ PPXDLL int PPXAPI GetExtentionMenu(HMENU hSubMenu, const TCHAR *ext, PPXMENUDATA
 		if ( ERROR_SUCCESS != RegEnumKeyEx(hAppShellKey, cnt, keyN, &keyS, NULL, NULL, NULL, &write) ){
 			break;
 		}
+
+		if ( ERROR_SUCCESS == RegOpenKeyEx(hAppShellKey, keyN, 0, KEY_READ, &hCommandKey) ){
+			Bsize = sizeof(appN);
+			if ( ERROR_SUCCESS == RegQueryValueEx(hCommandKey, LegacyDisablestr, NULL, NULL, NULL, &Bsize) ){
+				RegCloseKey(hCommandKey);
+				continue;
+			}
+			RegCloseKey(hCommandKey);
+		}
+
 		// keyがprintto(指定プリンタに印刷)以外  && shell\key name\command が開けるなら登録
 		tstrcpy(comN, keyN);
 		tstrcat(comN, T("\\command"));
-		if ( tstricmp(keyN, T("printto")) && (ERROR_SUCCESS == RegOpenKeyEx(hAppShellKey, comN, 0, KEY_READ, &hCommandKey)) ){
+		if ( (tstricmp(keyN, T("printto")) != 0) && (ERROR_SUCCESS == RegOpenKeyEx(hAppShellKey, comN, 0, KEY_READ, &hCommandKey)) ){
 			RegCloseKey(hCommandKey);
 			minfo.dwTypeData = keyN;
 							// デフォルトは太字にする
@@ -98,11 +108,11 @@ PPXDLL int PPXAPI GetExtentionMenu(HMENU hSubMenu, const TCHAR *ext, PPXMENUDATA
 				Bsize = sizeof(appN);
 				appN[0] = '\0';
 #ifdef UNICODE
-				RegQueryValueEx(hAppItemKey, MUIVerbStr, 0, &Rtyp, (LPBYTE)appN, &Bsize);
+				RegQueryValueEx(hAppItemKey, MUIVerbStr, NULL, NULL, (LPBYTE)appN, &Bsize);
 				if ( appN[0] == '\0' ){
 #endif
 					Bsize = sizeof(appN);
-					RegQueryValueEx(hAppItemKey, NilStr, 0, &Rtyp, (LPBYTE)appN, &Bsize);
+					RegQueryValueEx(hAppItemKey, NilStr, NULL, NULL, (LPBYTE)appN, &Bsize);
 #ifdef UNICODE
 				}
 #endif
@@ -121,7 +131,7 @@ PPXDLL int PPXAPI GetExtentionMenu(HMENU hSubMenu, const TCHAR *ext, PPXMENUDATA
 
 				if ( appN[0] == '\0' ){ // 表示文字列が無いとき。
 					Bsize = sizeof(appN);
-					if ( RegQueryValueEx(hAppItemKey, PAOstr, 0, &Rtyp, (LPBYTE)appN, &Bsize) == ERROR_SUCCESS ){
+					if ( RegQueryValueEx(hAppItemKey, PAOstr, NULL, NULL, (LPBYTE)appN, &Bsize) == ERROR_SUCCESS ){
 						// ProgrammaticAccessOnly があるので表示しない
 						RegCloseKey(hAppItemKey);
 						continue;

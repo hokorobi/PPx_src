@@ -2894,14 +2894,14 @@ HICON LoadDefaultDirTreeIcon(void)
 
 	if ( X_dicn[0] != '\0' ){
 		VFSFixPath(NULL, X_dicn, DLLpath, VFSFIX_FULLPATH | VFSFIX_REALPATH);
-		// C6001OK. SHGFI_ATTR_SPECIFIED ‚ª‚È‚¯‚ê‚Î[in]‚Å‚Í‚È‚¢
+		#pragma warning(suppress:6001) // SHGFI_ATTR_SPECIFIED ‚ª‚È‚¯‚ê‚Î[in]‚Å‚Í‚È‚¢
 		if ( SHGetFileInfo(X_dicn, 0, &shfinfo, sizeof(shfinfo), TreeIconSHflag) ){
 			return shfinfo.hIcon;
 		}
 	}
 	PP_ExtractMacro(NULL, NULL, NULL, T("%'WinDir'"), X_dicn, 0);
 	while ( retry-- ){
-		// C6001OK. SHGFI_ATTR_SPECIFIED ‚ª‚È‚¯‚ê‚Î[in]‚Å‚Í‚È‚¢
+		#pragma warning(suppress:6001) // SHGFI_ATTR_SPECIFIED ‚ª‚È‚¯‚ê‚Î[in]‚Å‚Í‚È‚¢
 		if ( SHGetFileInfo(X_dicn, FILE_ATTRIBUTE_DIRECTORY, &shfinfo,
 				sizeof(shfinfo), TreeIconSHflag | SHGFI_USEFILEATTRIBUTES) ){
 			if ( shfinfo.hIcon != NULL ) break;

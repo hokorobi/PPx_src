@@ -784,15 +784,15 @@ VFSDLL void PPXAPI GetDriveNameTitle(TCHAR *buf, TCHAR drive)
 	wbuf[0] = '\0';
 	for ( ; ; ){
 		HKEY hKey;
-		DWORD t, s;
+		DWORD size;
 
 		if ( RegOpenKeyEx(HKEY_LOCAL_MACHINE,
 				MountString, 0, KEY_READ, &hKey) != ERROR_SUCCESS ){
 			break;
 		}
-		s = sizeof wbuf;
-		if ( RegQueryValueEx(hKey, buf, NULL, &t, (LPBYTE)wbuf, &s)== ERROR_SUCCESS ){
-			*(WORD *)(BYTE *)((BYTE *)wbuf + (s & 0x1fe)) = '\0';
+		size = sizeof wbuf;
+		if ( RegQueryValueEx(hKey, buf, NULL, NULL, (LPBYTE)wbuf, &size) == ERROR_SUCCESS ){
+			*(WORD *)(BYTE *)((BYTE *)wbuf + (size & 0x1fe)) = '\0';
 		}
 		RegCloseKey(hKey);
 		break;

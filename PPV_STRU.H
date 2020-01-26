@@ -12,6 +12,9 @@ extern "C" {
 #include "TM_MEM.H"
 #include "PPX_CV.H"
 
+#define LONGTEXTSHIFT (12 - 1)
+#define LONGTEXTWIDTH ((DWORD)(1 << LONGTEXTSHIFT))
+
 #define DEFAULTCOLS	80	// テキストの標準表示桁数
 #define DEFAULTTAB	8	// テキストの標準タブ桁数
 

@@ -245,7 +245,7 @@ ERRORCODE DlgCopyDir(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD srcattr)
 	if ( (FS->testmode == FALSE) && (FS->renamemode == FALSE) ){
 		ERRORCODE mderror;
 
-		if ( CheckSaveDrive(&FS->opt, src, dst) ){ // ˆÚ“®
+		if ( CheckSaveDriveMove(&FS->opt, src, dst) ){ // ˆÚ“®
 			if ( IsTrue(MoveFileL(src, dst)) ) return NO_ERROR;
 			result = GetLastError();
 			if ( ( result != ERROR_ALREADY_EXISTS    ) &&

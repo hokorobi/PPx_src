@@ -278,7 +278,7 @@ ERRORCODE wjobinfo(WHEREDIALOG *pws, TCHAR *dir)
 		if ( pws->hitcount ){
 			wsprintf(mesbuf, T("Hit:%d  %s"), pws->hitcount, dir);
 		}else{
-			wsprintf(mesbuf, T("%s"), dir);
+			tstrcpy(mesbuf, dir);
 		}
 		SetPopMsg(pws->cinfo, POPMSG_PROGRESSBUSYMSG, mesbuf);
 		UpdateWindow_Part(pws->cinfo->info.hWnd);
@@ -558,7 +558,7 @@ ERRORCODE WhereIsDirComment(TCHAR *dir, WHEREDIALOG *pws, HANDLE hFile)
 	}while( IsTrue(FindNextFile(hFF, &ff)) );
 	result = NO_ERROR;
 end:
-	VFSFindClose(hFF);
+	FindClose(hFF);
 	return result;
 }
 

@@ -635,9 +635,9 @@ DWORD_PTR USEFASTCALL PPcExecExMenu(PPC_APPINFO *cinfo, EXECEXMENUINFO *execmenu
 		if ( buf[0] == '\0' ) return 0;
 	}
 	if ( (index >= CRID_SORT) && (index <= CRID_SORT_MAX) ){
-		SortKeyCommand(cinfo, index);
+		SortKeyCommand(cinfo, index, NULL);
 	}else if ( (index >= CRID_VIEWFORMAT) && (index <= CRID_VIEWFORMAT_MAX) ){
-		SetCellDisplayFormat(cinfo, index);
+		SetCellDisplayFormat(cinfo, index, NULL);
 	}else if ( (index >= CRID_NEWENTRY) && (index <= CRID_NEWENTRY_MAX) ){
 		MakeEntryMain(cinfo, index, buf);
 	}else if ( (index >= CRID_DRIVELIST) && (index <= CRID_DRIVELIST_MAX) ){
@@ -651,6 +651,36 @@ DWORD_PTR USEFASTCALL PPcExecExMenu(PPC_APPINFO *cinfo, EXECEXMENUINFO *execmenu
 	return PPXCMDID_EXECEXMENU;
 }
 
+// ワイルドカード用の処理を行う
+void PathWildItemName(TCHAR *dest, const TCHAR *src)
+{
+	const TCHAR *sp;
+
+	if ( !((src[0] == '*') && (src[1] == '\0')) ){
+		sp = src;
+		if ( *sp != ':' ){ // 強制パス指定(/区切り用)以外ならワイルドカードチェック
+			if ( tstrchr(sp, '/') != NULL ){ // 正規表現か ftp:/ 系か
+				int drive;
+				if ( VFSGetDriveType(sp, &drive, NULL) != NULL ){
+					if ( drive >= VFSPT_FILESCHEME ){ // VFSPT_FTP, VFSPT_SHELLSCHEME, VFSPT_HTTP
+						sp = NilStr;
+					}
+				}
+			}
+			for ( ; *sp ; sp++ ){
+				if ( (*sp >= '!') && (*sp <= '?') ){
+					if ( tstrchr(DetectPathWildcardLetter, *sp) != NULL ){
+						dest[0] = '/';
+						tstrcpy(dest + 1, src);
+						return;
+					}
+				}
+			}
+		}
+	}
+	tstrcpy(dest, src);
+}
+
 int GetDirSettingOption(PPC_APPINFO *cinfo, const TCHAR **param, int type, TCHAR *path)
 {
 	TCHAR buf[CMDLINESIZE];
@@ -660,9 +690,12 @@ int GetDirSettingOption(PPC_APPINFO *cinfo, const TCHAR **param, int type, TCHAR
 	(*param)++;
 	GetLineParam(param, buf);
 
+	path[0] = '\0';
 	if ( (*ptr == '\"') || (*(ptr + 1) == '\"') ){
-		tstrcpy(path, buf);
+		PathWildItemName(path, buf);
 		mode = DSMD_PATH_BRANCH;
+		if ( tstrcmp(buf, StrArchiveMode) == 0 ) mode = DSMD_ARCHIVE;
+		if ( tstrcmp(buf, StrListfileMode) == 0 ) mode = DSMD_LISTFILE;
 	}else if ( tstrcmp(buf, T("used")) == 0 ){
 		path[0] = '\0';
 		if ( type == ITEMSETTING_SORT ){
@@ -712,12 +745,12 @@ ERRORCODE ViewStyleCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 		}
 	}
 	if ( SkipSpace(&param) == '\0' ){
-		return SetCellDisplayFormat(cinfo, mode);
+		return SetCellDisplayFormat(cinfo, mode, path);
 	}
 	GetCommandParameter(&param, buf, TSIZEOF(buf));
 
 	if ( tstrcmp(buf, T("directory")) == 0 ){
-		return SetCellDisplayFormat(cinfo, CRID_VIEWFORMAT_PATHMASK);
+		return SetCellDisplayFormat(cinfo, CRID_VIEWFORMAT_PATHMASK, NULL);
 	}
 	if ( tstrcmp(buf, T("separate")) == 0 ){
 		cinfo->UseSplitPathName = !cinfo->UseSplitPathName;
@@ -754,13 +787,13 @@ DWORD_PTR PPcAddExMenu(PPC_APPINFO *cinfo, ADDEXMENUINFO *addmenu)
 		DWORD mid, id;
 
 		ThInit(&PopupTbl);
-		hSortMenu = AddPPcSortMenu(cinfo, addmenu->hMenu, &PopupTbl, &mid, &id, 1);
+		hSortMenu = AddPPcSortMenu(cinfo, addmenu->hMenu, &PopupTbl, &mid, &id, 1, NULL);
 		SortMenuCheck(hSortMenu, (TCHAR *)PopupTbl.bottom, id, &cinfo->XC_sort, 0);
 		ThFree(&PopupTbl);
 		return PPXCMDID_ADDEXMENU;
 	}
 	if ( !tstrcmp(addmenu->exname, T("viewmenu")) ){
-		AddPPcCellDisplayMenu(cinfo, addmenu->hMenu, NULL, NULL);
+		AddPPcCellDisplayMenu(cinfo, addmenu->hMenu, NULL, NULL, NULL);
 		return PPXCMDID_ADDEXMENU;
 	}
 	if ( !tstrcmp(addmenu->exname, T("newmenu")) ){
@@ -805,7 +838,7 @@ DWORD_PTR PPcAddExMenu(PPC_APPINFO *cinfo, ADDEXMENUINFO *addmenu)
 	}
 
 	if ( !tstrcmp(addmenu->exname, T("diroptionmenu")) ){
-		DirOptionMenu(cinfo, addmenu->hMenu, addmenu->index, addmenu->TH, DSMD_TEMP);
+		DirOptionMenu(cinfo, addmenu->hMenu, addmenu->index, addmenu->TH, DSMD_TEMP, NULL);
 		return PPXCMDID_ADDEXMENU;
 	}
 
@@ -1207,33 +1240,37 @@ void MakeListFileCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 				continue;
 			}
 		}// オプション
-		switch ( GetStringCommand(&param, T("NORMAL\0") T("MARKED\0") T("MARKTAG\0") T("NAME\0") T("BASIC\0") T("COMMENT\0") T("MESSAGE\0")) ){
+		switch ( GetStringCommand(&param, T("NORMAL\0") T("MARKED\0") T("MARKTAG\0") T("NAME\0") T("BASIC\0") T("COMMENT\0") T("MESSAGE\0") T("NOHEADER\0")) ){
 			case 0:
 				flags = WLFC_COMMAND_DEFAULT;
 				break;
 
-			case 1:
+			case 1: // marked
 				flags |= WLFC_MARKEDONLY;
 				break;
 
-			case 2:
+			case 2: // marktag
 				flags |= WLFC_WITHMARK;
 				break;
 
-			case 3:
+			case 3: // name
 				flags = WLFC_NAMEONLY;
 				break;
 
-			case 4:
+			case 4: // basic
 				flags = 0;
 				break;
 
-			case 5:
+			case 5: // comment
 				flags |= WLFC_COMMENT;
 				break;
 
-			case 6:
+			case 6: // message
 				flags |= WLFC_SYSMSG;
+				break;
+
+			case 7: // noheader
+				flags |= WLFC_NOHEADER;
 				break;
 
 		}
@@ -1553,7 +1590,7 @@ ERRORCODE UnpackCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 ERRORCODE SortEntryCommand(PPC_APPINFO *cinfo, const TCHAR *param, int mode)
 {
 	TCHAR buf[CMDLINESIZE], path[VFPS];
-	const TCHAR *p;
+	const TCHAR *ptr;
 	XC_SORT xc;
 
 	if ( (SkipSpace(&param) == '-') && !Isdigit(*(param + 1)) ){
@@ -1564,11 +1601,11 @@ ERRORCODE SortEntryCommand(PPC_APPINFO *cinfo, const TCHAR *param, int mode)
 
 	SetExtParam(param, buf, TSIZEOF(buf));
 	GetCustTable(T("MC_sort"), buf, buf, sizeof(buf));
-	p = buf;
-	if ( SkipSpace(&p) == '\0' ){ // メニュー表示
-		return SortKeyCommand(cinfo, mode);
+	ptr = buf;
+	if ( SkipSpace(&ptr) == '\0' ){ // メニュー表示
+		return SortKeyCommand(cinfo, mode, path);
 	}
-	LoadSortOpt(&p, &xc);
+	LoadSortOpt(&ptr, &xc);
 	SaveSortSetting(cinfo, mode, path, &xc);
 	PPC_SortMain(cinfo, &xc);
 	return NO_ERROR;
@@ -2090,7 +2127,7 @@ ENTRYCELL * USEFASTCALL GetCellData_HS(PPC_APPINFO *cinfo, ENTRYINDEX index)
 ERRORCODE PPcDirOptionCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 {
 	int mode = DSMD_TEMP;
-	TCHAR dset_path[CMDLINESIZE];
+	TCHAR dset_path[CMDLINESIZE], *dset_path_a;
 	ThSTRUCT PopupTbl;
 	LOADSETTINGS ls;
 
@@ -2099,6 +2136,7 @@ ERRORCODE PPcDirOptionCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 		mode = GetDirSettingOption(cinfo, &param, ITEMSETTING_DIROPT, dset_path);
 		if ( mode < 0 ) return ERROR_INVALID_PARAMETER;
 	}
+	dset_path_a = (dset_path[0] == '/') ? dset_path + 1 : dset_path;
 
 	ThInit(&PopupTbl);
 	if ( SkipSpace(&param) == '\0' ){ // 指定が無いときはメニュー表示
@@ -2109,7 +2147,7 @@ ERRORCODE PPcDirOptionCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 			ThFree(&PopupTbl);
 
 			makeindex = IDW_INTERNALMIN;
-			hPopupMenu = DirOptionMenu(cinfo, NULL, &makeindex, &PopupTbl, mode);
+			hPopupMenu = DirOptionMenu(cinfo, NULL, &makeindex, &PopupTbl, mode, dset_path_a);
 			menuindex = PPcTrackPopupMenu(cinfo, hPopupMenu);
 			if ( menuindex >= CRID_DIROPT ){
 				mode = menuindex - CRID_DIROPT;

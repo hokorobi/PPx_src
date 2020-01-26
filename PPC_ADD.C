@@ -151,7 +151,7 @@ HGLOBAL FileToHDrop(const TCHAR *filename, const TCHAR *path)
 			OLECHAR olePath[VFPS];
 
 			VFSFullPath(buf, (TCHAR *)filename, path);
-			l = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, buf, -1,
+			l = MultiByteToWideChar(CP_ACP, 0, buf, -1,
 					olePath, VFPS) * sizeof(WCHAR);
 			if ( TM_check(&files.tm, files.p + l + sizeof(WCHAR)) == FALSE ){
 				goto memerror;

@@ -116,7 +116,7 @@ ANYSIZEICON LinkIcon = {NULL, NULL, NULL, NULL}; // ショートカット矢印
 #define SelectIconSizeMacro(iconsize) ((iconsize <= 32) ? ((iconsize <= 16) ? 16 : 32) : ((iconsize <= 48) ? 48 : 256))
 
 BOOL GetExplorerThumbnail(const TCHAR *filename, HTBMP *hTBmp, int thumsize);
-HICON LoadIcons(PPC_APPINFO *cinfo, ENTRYCELL *celltmp, int iconsize, int mode, OverlayClassTable **LayPtr);
+HICON LoadIconOne(PPC_APPINFO *cinfo, ENTRYCELL *celltmp, int iconsize, int mode, OverlayClassTable **LayPtr);
 
 BOOL CheckStaticIcon(PPC_APPINFO *cinfo, const TCHAR *ext, int iconid, int iconmode);
 
@@ -294,7 +294,7 @@ BOOL SearchCacheIcon(PPC_APPINFO *cinfo, ENTRYCELL *celltmp, int iconmode, Overl
 	// 非同期読み込みのキャッシュ使用時は、新たに読み込みしない
 	if ( (cinfo->e.Dtype.ExtData == INVALID_HANDLE_VALUE) && IsTrue(cinfo->SlowMode) ) return TRUE;
 
-	hIcon = LoadIcons(cinfo, celltmp, CacheIconsY, iconmode, LayPtr);
+	hIcon = LoadIconOne(cinfo, celltmp, CacheIconsY, iconmode, LayPtr);
 	if ( hIcon == NULL ){
 		celltmp->icon = cibuf.ci.index = ICONLIST_UNKNOWN;
 	} else{
@@ -340,7 +340,7 @@ void GetInfoIcon(PPC_APPINFO *cinfo, HICON *hInfoIcon, SubThreadData *threaddata
 	setflag(threaddata->threeadinfo.threadinfo.flag, XTHREAD_RESTARTREQUEST);
 
 	if ( celltmp.icon != ICONLIST_BROKEN ){
-		hIcon = LoadIcons(cinfo, &celltmp, cinfo->XC_ifix_size.cx, cinfo->dset.infoicon, &threaddata->LayPtr); // アイコン取得
+		hIcon = LoadIconOne(cinfo, &celltmp, cinfo->XC_ifix_size.cx, cinfo->dset.infoicon, &threaddata->LayPtr); // アイコン取得
 	} else{
 		hIcon = NULL;
 	}
@@ -452,24 +452,24 @@ HICON GetIconByExt(const TCHAR *ext, int iconsize)
 	TCHAR *indexp;
 	int index = -1;
 										// 拡張子からキーを求める -------------
-	if ( !GetRegString(HKEY_CLASSES_ROOT, ext, NilStr, progid, sizeof(progid)) ){
+	if ( !GetRegString(HKEY_CLASSES_ROOT, ext, NilStr, progid, TSIZEOF(progid)) ){
 		return NULL;
 	}
 										// アプリケーションのシェル -----------
 	tstrcpy(buf, progid);
 	tstrcat(buf, T("\\DefaultIcon"));
-	if ( !GetRegString(HKEY_CLASSES_ROOT, buf, NilStr, buf, sizeof(buf)) ){
+	if ( !GetRegString(HKEY_CLASSES_ROOT, buf, NilStr, buf, TSIZEOF(buf)) ){
 		return NULL;
 	}
 	tstrreplace(buf, T("\""), NilStr);
 	if ( (buf[0] == '%') && (buf[1] == '1') ){
 		tstrcpy(buf, progid);
 		tstrcat(buf, T("\\CLSID"));
-		if ( GetRegString(HKEY_CLASSES_ROOT, buf, NilStr, buf, sizeof(buf)) ){
+		if ( GetRegString(HKEY_CLASSES_ROOT, buf, NilStr, buf, TSIZEOF(buf)) ){
 			TCHAR oldname[MAX_PATH];
 
 			wsprintf(oldname, T("CLSID\\%s\\DefaultIcon"), buf);
-			GetRegString(HKEY_CLASSES_ROOT, oldname, NilStr, buf, sizeof(buf));
+			GetRegString(HKEY_CLASSES_ROOT, oldname, NilStr, buf, TSIZEOF(buf));
 		} else{
 			tstrcpy(buf, ext);
 		}
@@ -950,11 +950,46 @@ HICON LoadUnknownIcon(PPC_APPINFO *cinfo, int iconsize)
 	return hGetIcon;
 }
 
+HICON LoadIconFromIcol(PPC_APPINFO *cinfo, ENTRYCELL *celltmp, int iconsize)
+{
+	int index = 0, fnresult;
+	TCHAR keyword[VFPS];
+	TCHAR buf[VFPS];
+	const TCHAR *ext, *filename;
+	FN_REGEXP fn;
+
+	filename = celltmp->f.cFileName;
+	ext = filename + celltmp->ext;
+	if ( *ext == '.' ) ext++;
+
+	while( EnumCustTable(index, T("X_icnl"), keyword, buf, sizeof(buf)) >= 0 ){
+		index++;
+		if ( keyword[0] != '/' ){
+			if ( tstricmp(keyword, ext) != 0 ) continue;
+		}else{
+			MakeFN_REGEXP(&fn, keyword + 1);
+			fnresult = FinddataRegularExpression(&celltmp->f, &fn);
+			FreeFN_REGEXP(&fn);
+			if ( fnresult == 0 ) continue;
+		}
+		VFSFullPath(NULL, buf, cinfo->RealPath);
+		return LoadFileIcon(buf, 0, SHGFI_ICON, iconsize, NULL);
+	}
+	return INVALID_HANDLE_VALUE;
+}
+
 // １このアイコン取得   ※celltmp は予めコピーしてスレッドセーフにしておくこと
-HICON LoadIcons(PPC_APPINFO *cinfo, ENTRYCELL *celltmp, int iconsize, int mode, OverlayClassTable **LayPtr)
+HICON LoadIconOne(PPC_APPINFO *cinfo, ENTRYCELL *celltmp, int iconsize, int mode, OverlayClassTable **LayPtr)
 {
 	TCHAR buf[VFPS];
 
+	// 独自アイコンを使用するときの処理
+	if ( IsTrue(Use_X_icnl) ){
+		HICON hFileIcon;
+
+		hFileIcon = LoadIconFromIcol(cinfo, celltmp, iconsize);
+		if ( hFileIcon != INVALID_HANDLE_VALUE ) return hFileIcon;
+	}
 	// ディレクトリに独自アイコンを使用するときの処理
 	if ( X_dicn[0] && (celltmp->f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ){
 		TCHAR *p;
@@ -1118,15 +1153,15 @@ BOOL CheckStaticIcon(PPC_APPINFO *cinfo, const TCHAR *ext, int iconid, int iconm
 	if ( iconmode >= DSETI_OVLNOC ) return FALSE;
 	if ( *ext == '\0' ) return FALSE; // 拡張子なし→dynamic
 										// 拡張子からキーを求める -------------
-	if ( IsTrue(GetRegString(HKEY_CLASSES_ROOT, ext, NilStr, buf, sizeof(buf))) ){
+	if ( IsTrue(GetRegString(HKEY_CLASSES_ROOT, ext, NilStr, buf, TSIZEOF(buf))) ){
 		p = buf + tstrlen(buf);
 										// アプリケーションのシェル -----------
 		tstrcpy(p, T("\\shellex\\IconHandler"));
-		if ( GetRegString(HKEY_CLASSES_ROOT, buf, NilStr, buf, sizeof(buf)) ){
+		if ( GetRegString(HKEY_CLASSES_ROOT, buf, NilStr, buf, TSIZEOF(buf)) ){
 			return FALSE;	// アイコンハンドラ有り→dynamic
 		}
 		tstrcpy(p, T("\\DefaultIcon"));
-		if ( GetRegString(HKEY_CLASSES_ROOT, buf, NilStr, buf, sizeof(buf)) ){
+		if ( GetRegString(HKEY_CLASSES_ROOT, buf, NilStr, buf, TSIZEOF(buf)) ){
 			if ( (buf[0] == '%') || (buf[1] == '%') ) return FALSE; // % 指定→dynamic
 		}
 	}
@@ -1256,7 +1291,7 @@ void USEFASTCALL GetCellIcon(PPC_APPINFO *cinfo, SubThreadData *threaddata)
 					EnterCellEdit(cinfo);
 					break;
 				}
-				hIcon = LoadIcons(cinfo, &celltmp, cinfo->EntryIconGetSize, iconmode, &threaddata->LayPtr);
+				hIcon = LoadIconOne(cinfo, &celltmp, cinfo->EntryIconGetSize, iconmode, &threaddata->LayPtr);
 				if ( hIcon == NULL ){
 					celltmp.icon = ICONLIST_LOADERROR;
 				} else{
@@ -1463,7 +1498,7 @@ BOOL USEFASTCALL LoadCellImage(PPC_APPINFO *cinfo, ENTRYCELL *celltmp, BYTE *fmt
 	olds = SetStretchBltMode(hMDC, HALFTONE);
 
 	// 画像作成
-	if ( IsTrue(useimage) && (hTbmp.size.cx > 0) && (hTbmp.size.cy > 0) && (hTbmp.bits != NULL) ){
+	if ( IsTrue(useimage) && (hTbmp.size.cx > 0) && (hTbmp.size.cy > 0) && (hTbmp.bits != NULL) && (lpBits != NULL) ){
 		int rate;
 		int srcX = 0, srcY = 0;
 
@@ -1726,11 +1761,11 @@ BOOL USEFASTCALL LoadCellImage(PPC_APPINFO *cinfo, ENTRYCELL *celltmp, BYTE *fmt
 
 		// アイコンの位置・大きさを決定
 		if ( useimage == 0 ){ // 画像代わりに中央配置
-			if ( bmpinfo.bmiHeader.biBitCount == 32 ){
+			if ( (bmpinfo.bmiHeader.biBitCount == 32) && (lpBits != NULL) ){
 				memset(lpBits, 0, bmpinfo.bmiHeader.biWidth * bmpinfo.bmiHeader.biHeight * 4);
 			}
 
-			hIcon = LoadIcons(cinfo, celltmp, cinfo->EntryIconGetSize, DSETI_OVL, NULL);
+			hIcon = LoadIconOne(cinfo, celltmp, cinfo->EntryIconGetSize, DSETI_OVL, NULL);
 			if ( hIcon == NULL ){
 				IconDestroy = FALSE;
 				hIcon = LoadUnknownIcon(cinfo, cinfo->EntryIconGetSize);
@@ -1751,7 +1786,7 @@ BOOL USEFASTCALL LoadCellImage(PPC_APPINFO *cinfo, ENTRYCELL *celltmp, BYTE *fmt
 			iconX = bmpWidth - iconsize;
 			iconY = bmpHeight - iconsize;
 
-			hIcon = LoadIcons(cinfo, celltmp, iconsize, DSETI_OVL, NULL);
+			hIcon = LoadIconOne(cinfo, celltmp, iconsize, DSETI_OVL, NULL);
 			if ( hIcon == NULL ){
 				IconDestroy = FALSE;
 				hIcon = LoadUnknownIcon(cinfo, iconsize);

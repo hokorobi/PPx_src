@@ -9,6 +9,7 @@
 #include "PPV_FUNC.H"
 #pragma hdrstop
 
+#define EUROCHAR 0 // code:0x80 をユーロ単価となるように調整する
 
 /*
 	CharNextExA
@@ -498,18 +499,18 @@ DWORD GetCodePage(BYTE **text)
 		return 0;
 	}
 	for (;;){
-		DWORD s, t;
+		DWORD size;
 
 		if ( RegOpenKeyEx(HKroot, textbuf, 0, KEY_READ, &HKitem) != ERROR_SUCCESS ){
 			break;
 		}
 
-		s = sizeof cp;
-		if ( ERROR_SUCCESS == RegQueryValueEx(HKitem, CodePageName, NULL, &t, (LPBYTE)&cp, &s) ){
+		size = sizeof cp;
+		if ( ERROR_SUCCESS == RegQueryValueEx(HKitem, CodePageName, NULL, NULL, (LPBYTE)&cp, &size) ){
 			if ( cp != 0 ) *text += textdest - textbuf;
 		}else{
-			s = sizeof textbuf;
-			if ( (loop == FALSE) && (ERROR_SUCCESS == RegQueryValueEx(HKitem, CodePageAliasName, NULL, &t, (LPBYTE)&textbuf, &s)) ){
+			size = sizeof textbuf;
+			if ( (loop == FALSE) && (ERROR_SUCCESS == RegQueryValueEx(HKitem, CodePageAliasName, NULL, NULL, (LPBYTE)&textbuf, &size)) ){
 				loop = TRUE;
 				RegCloseKey(HKitem);
 				continue;
@@ -1502,6 +1503,7 @@ void CheckCharset(BYTE *text, int *dcode)
 	}
 }
 
+#if EUROCHAR
 void DecodeEuro(TEXTCODEINFO *tci, int dcode)
 {
 	if ( OSver.dwMajorVersion >= 5 ){
@@ -1524,6 +1526,7 @@ void DecodeEuro(TEXTCODEINFO *tci, int dcode)
 		tci->cnt -= 3;
 	}
 }
+#endif
 
 BOOL DecodeControlCode(TEXTCODEINFO *tci, BYTE **textptr, int c1st, int *attrs, int *dcode)
 {
@@ -2548,14 +2551,15 @@ BYTE *MakeDispText(MAKETEXTINFO *mti, VT_TABLE *tbl)
 			}else{
 				if ( (c > '\0') && (c < 0x20) && (*(tci.text + 1) == '\0') ) tci.text++;
 			}
+#if EUROCHAR
 		}else
 //-----------------------------------------------------------------------------
 		if ( (c == 0x80) && (dcode == VTYPE_ANSI) && (OSver.dwMajorVersion < 6) ){	// ユーロ単価
 			DecodeEuro(&tci, dcode);
 			tci.text++;
 			continue;
+#endif
 		}
-
 		ct = T_CHRTYPE[(unsigned char)c];
 		if ( ct & T_IS_CTL ){				// コントロールコード -------------
 			if ( IsTrue(DecodeControlCode(&tci, &tci.text, c, &attrs, &dcode)) ) continue;

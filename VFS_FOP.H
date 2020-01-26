@@ -312,7 +312,7 @@ extern const TCHAR StrLogTest[];
 extern const TCHAR StrLogExist[];
 extern const TCHAR StrLogAppend[];
 
-extern BOOL USEFASTCALL CheckSaveDrive(struct FopOption *opt, _In_ const TCHAR *src, _In_ const TCHAR *dst);
+extern BOOL USEFASTCALL CheckSaveDriveMove(struct FopOption *opt, _In_ const TCHAR *src, _In_ const TCHAR *dst);
 extern BOOL Fop_ShellNameSpace(FOPSTRUCT *FS, const TCHAR *srcDIR, const TCHAR *dstDIR);
 extern ERRORCODE RenameDestFile(FOPSTRUCT *FS, const TCHAR *dst, BOOL addOldStr);
 

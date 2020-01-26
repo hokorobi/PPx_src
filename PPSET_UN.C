@@ -22,10 +22,10 @@ void DeleteRegDir(HKEY hKey, const TCHAR *path)
 			DWORD nsize;
 
 			nsize = TSIZEOF(name);
-			if ( RegEnumValue(HK, index,name, &nsize,NULL,NULL,NULL,NULL) != ERROR_SUCCESS){
+			if ( RegEnumValue(HK, index, name, &nsize, NULL, NULL, NULL, NULL) != ERROR_SUCCESS){
 				break;
 			}
-			if ( RegDeleteValue(HK,name) != ERROR_SUCCESS) index++;
+			if ( RegDeleteValue(HK, name) != ERROR_SUCCESS) index++;
 //			index++;	// 見つけた順に削除するので"++"不要
 		}
 		RegCloseKey(HK);
@@ -47,9 +47,9 @@ BOOL CheckOpen(void)
 	TCHAR data[MAX_PATH];
 
 	data[0] = '\0';
-	GetRegStrLocal(HKEY_CURRENT_USER,RegOpen,NilStr, data);
+	GetRegStrLocal(HKEY_CURRENT_USER, RegOpen, NilStr, data);
 	if ( data[0] == '\0' ){
-		GetRegStrLocal(HKEY_LOCAL_MACHINE,RegOpen,NilStr, data);
+		GetRegStrLocal(HKEY_LOCAL_MACHINE, RegOpen, NilStr, data);
 	}
 	return !tstrcmp(data, T("PPc"));
 }
@@ -60,7 +60,7 @@ void DeleteRegisterContext(_In_ HKEY hk)
 	TCHAR buf[MAX_PATH];
 	int depth;
 
-	tstrcpy(buf,RegPath);
+	tstrcpy(buf, RegPath);
 	depth = DeleteRegisterContextDepth;
 	// HKEY_LOCAL_MACHINE で Folderは削除禁止
 	if ( hk == HKEY_LOCAL_MACHINE ) depth--;
@@ -73,8 +73,8 @@ void DeleteRegisterContext(_In_ HKEY hk)
 void DeleteOpenRegisterContext(void)
 {
 	if ( CheckOpen() == FALSE ) return;
-	RegDeleteValue(HKEY_CURRENT_USER,RegOpen);
-	RegDeleteValue(HKEY_LOCAL_MACHINE,RegOpen);
+	RegDeleteValue(HKEY_CURRENT_USER, RegOpen);
+	RegDeleteValue(HKEY_LOCAL_MACHINE, RegOpen);
 }
 
 
@@ -134,12 +134,12 @@ INT_PTR CALLBACK UnExecDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 				FILETIME ft;
 
 				nsize = TSIZEOF(name);
-				if ( RegEnumKeyEx(HKEY_USERS, index,name, &nsize,
-						NULL,NULL,NULL, &ft) != ERROR_SUCCESS ){
+				if ( RegEnumKeyEx(HKEY_USERS, index, name, &nsize,
+						NULL, NULL, NULL, &ft) != ERROR_SUCCESS ){
 					break;
 				}
 				tstrcat(name, Str_PPxRegPath);
-				DeleteRegDir(HKEY_USERS,name);
+				DeleteRegDir(HKEY_USERS, name);
 				index++;
 			}
 		}
@@ -153,7 +153,7 @@ INT_PTR CALLBACK UnExecDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 				FILETIME ft;
 
 				nsize = TSIZEOF(name);
-				if ( RegEnumKeyEx(HK, 0,name, &nsize,NULL,NULL,NULL, &ft)
+				if ( RegEnumKeyEx(HK, 0, name, &nsize, NULL, NULL, NULL, &ft)
 							!= ERROR_SUCCESS){
 					RegCloseKey(HK);
 					RegDeleteKey(HKEY_CURRENT_USER, Str_RegTOROid);
@@ -176,20 +176,20 @@ INT_PTR CALLBACK UnExecDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 		TCHAR tempname[MAX_PATH], temppath[MAX_PATH];
 		TCHAR cmd[MAX_PATH], param[MAX_PATH * 2];
 
-		hRsrc = FindResource(hInst, MAKEINTRESOURCE(IF_PPXDEL),RT_RCDATA);
+		hRsrc = FindResource(hInst, MAKEINTRESOURCE(IF_PPXDEL), RT_RCDATA);
 		size = SizeofResource(hInst, hRsrc);
 
 		GetTempPath(TSIZEOF(temppath), temppath);
 		wsprintf(tempname, T("%s\\") T(DELBATNAME), temppath);
 		hFile = CreateFile(tempname, GENERIC_WRITE,
-				FILE_SHARE_READ | FILE_SHARE_WRITE,NULL,
-				CREATE_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+				FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+				CREATE_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 		if ( hFile == INVALID_HANDLE_VALUE ){
 			SMessage(T("作業ファイルの作成失敗"));
 			break;
 		}else{
 			WriteFile(hFile,
-					LockResource(LoadResource(hInst, hRsrc)), size, &size,NULL);
+					LockResource(LoadResource(hInst, hRsrc)), size, &size, NULL);
 			CloseHandle(hFile);
 		}
 //		GetShortPathName(XX_setupedPPx, XX_setupedPPx, sizeof(XX_setupedPPx));
@@ -211,7 +211,7 @@ INT_PTR CALLBACK UnExecDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 			si.dwFlags		= 0;
 			si.cbReserved2	= 0;
 			si.lpReserved2	= NULL;
-			if ( CreateProcess(NULL, param,NULL,NULL, FALSE, CREATE_NEW_CONSOLE |
+			if ( CreateProcess(NULL, param, NULL, NULL, FALSE, CREATE_NEW_CONSOLE |
 					CREATE_DEFAULT_ERROR_MODE | IDLE_PRIORITY_CLASS,
 					NULL, temppath, &si, &pi) ){
 				CloseHandle(pi.hProcess);

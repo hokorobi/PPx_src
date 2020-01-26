@@ -24,6 +24,9 @@ BOOL EditExtractText(EXECSTRUCT *Z);
 void EnumEntries(EXECSTRUCT *Z);
 void ZInitSentence(EXECSTRUCT *Z);
 DWORD USEFASTCALL GetLongParamMaxLen(EXECSTRUCT *Z);
+
+#define ZMC_BREAK	FALSE
+#define ZMC_CONTINUE	TRUE
 BOOL ZMacroChartor(EXECSTRUCT *Z);
 
 const TCHAR HistType[] = T("gnhdcfsmpveuUxX");	// ヒストリ種類を表わす文字 ※ R, O は別の用途で使用中
@@ -246,14 +249,16 @@ void SetLongParamToParam(EXECSTRUCT *Z, LONGEXTRACTPARAM *extract)
 
 void ZErrorFix(EXECSTRUCT *Z)
 {
-	if ( Z->result != ERROR_CONTINUE ) return;
-	if ( Z->extract != NULL ){
-		if ( (Z->ExtendDst.top != 0) ||
-			 ((Z->dst - Z->DstBuf) >= (CMDLINESIZE - 1)) ){ // 長さ制限
-			SetLongParamToParam(Z, (LONGEXTRACTPARAM *)Z->extract);
-		}else{
-			tstrcpy(Z->extract, Z->DstBuf);
-		}
+	if ( Z->extract == NULL ) return;
+	if ( Z->result != ERROR_EX_RETURN ){
+		*Z->extract = '\0';
+		return;
+	}
+	if ( (Z->ExtendDst.top != 0) ||
+		 ((Z->dst - Z->DstBuf) >= (CMDLINESIZE - 1)) ){ // 長さ制限
+		SetLongParamToParam(Z, (LONGEXTRACTPARAM *)Z->extract);
+	}else{
+		tstrcpy(Z->extract, Z->DstBuf);
 	}
 }
 
@@ -262,7 +267,7 @@ BOOL USEFASTCALL ZExecAndCheckError(EXECSTRUCT *Z) // %&
 	setflag(Z->flags, XEO_SEQUENTIAL);
 	if ( Z->flags & XEO_DISPONLY ){		// 表示のみ
 		*Z->dst++ = ':';
-		return FALSE;
+		return TRUE;
 	}				// 実行
 	ZExec(Z);
 	if ( Z->result != NO_ERROR ){
@@ -274,7 +279,7 @@ BOOL USEFASTCALL ZExecAndCheckError(EXECSTRUCT *Z) // %&
 		return FALSE;
 	}
 	ZInitSentence(Z);
-	return TRUE;
+	return TRUE; // 継続実行可能
 }
 
 
@@ -1842,7 +1847,7 @@ BOOL GetCommandString(EXECSTRUCT *Z)
 	return FALSE;
 }
 
-BOOL ZFunction(EXECSTRUCT *Z)
+ERRORCODE ZFunction(EXECSTRUCT *Z)
 {
 	TCHAR *dst;
 	const TCHAR *olds;
@@ -1861,8 +1866,7 @@ BOOL ZFunction(EXECSTRUCT *Z)
 		Z->src = olds;
 		ExecuteFunction(Z);
 		Z->func.off = oldfunc.off;
-		if ( Z->result != NO_ERROR ) return TRUE;
-		return FALSE;
+		return Z->result;
 	}
 	// 括弧有り
 	Z->func.quotation = FALSE;
@@ -1870,7 +1874,11 @@ BOOL ZFunction(EXECSTRUCT *Z)
 
 	for (;;){
 		if ( *Z->src == '\0' ){ // src の nested を戻す
-			if ( Z->oldsrc == NULL ) break;
+			if ( Z->oldsrc == NULL ){
+				XMessage(NULL, NULL, XM_GrERRld, T("function: missing ')'."));
+				Z->result = ERROR_INVALID_FUNCTION;
+				break;
+			}
 			RestoreSrc(Z);
 			continue;
 		}
@@ -1884,6 +1892,13 @@ BOOL ZFunction(EXECSTRUCT *Z)
 
 		// 関数内解析
 		if ( *Z->src == '\"' ){ // " チェック
+			if ( Z->status & ST_ESCAPE_Q ){
+				*Z->dst = '\"';
+				*(Z->dst + 1) = '\"';
+				Z->src++;
+				Z->dst += 2;
+				continue;
+			}
 			*Z->dst++ = *Z->src++;
 			if ( Z->func.quotation ){
 				if ( *Z->src != '\"' ){
@@ -1902,13 +1917,6 @@ BOOL ZFunction(EXECSTRUCT *Z)
 			ExecuteFunction(Z);
 			break;
 		}
-		if ( (*Z->src == '\"') && (Z->status & ST_ESCAPE_Q) ){
-			*Z->dst = '\"';
-			*(Z->dst + 1) = '\"';
-			Z->src++;
-			Z->dst += 2;
-			continue;
-		}
 
 		// ※改行はパラメータ内に含める
 
@@ -1916,15 +1924,14 @@ BOOL ZFunction(EXECSTRUCT *Z)
 			*Z->dst++ = *Z->src++;
 			continue;
 		}
-		if ( ZMacroChartor(Z) == FALSE ) break;
+		if ( ZMacroChartor(Z) == ZMC_BREAK ) break;
 		if ( Z->result != NO_ERROR ) break;
 	}
 	Z->func = oldfunc;
-
-	if ( Z->result != NO_ERROR ) return TRUE;
-	return FALSE;
+	return Z->result;
 }
 
+// TRUE:解釈継続、FALSE:解釈終了
 BOOL ZMacroChartor(EXECSTRUCT *Z)	// マクロ % 解析
 {
 	Z->edit.EdOffset = -1;
@@ -1958,8 +1965,8 @@ BOOL ZMacroChartor(EXECSTRUCT *Z)	// マクロ % 解析
 			break;
 						//----- %*		関数・関数モジュール
 		case '*':
-			if ( IsTrue(ZFunction(Z)) ) return TRUE;
-			break;
+			if ( ZFunction(Z) == NO_ERROR ) break;
+			return ZMC_BREAK;
 
 		case '0':		//----- %0		PPx ディレクトリ --------------
 		case '1':			//	%1	カーソル位置のディレクトリ
@@ -1972,7 +1979,7 @@ BOOL ZMacroChartor(EXECSTRUCT *Z)	// マクロ % 解析
 			break;
 						//----- %&	終了コードで判断 ----------------
 		case '&':
-			if ( IsTrue(ZExecAndCheckError(Z)) ) return TRUE;
+			if ( IsTrue(ZExecAndCheckError(Z)) ) return ZMC_BREAK;
 			break;
 						//----- %:		コマンド区切り ----------------
 		case ':':
@@ -1981,9 +1988,9 @@ BOOL ZMacroChartor(EXECSTRUCT *Z)	// マクロ % 解析
 				break;
 			}else{					// 実行
 				ZExec(Z);
-				if ( Z->result != NO_ERROR ) { ZErrorFix(Z); break; }
+				if ( Z->result != NO_ERROR ) { ZErrorFix(Z); return ZMC_BREAK; }
 				ZInitSentence(Z);
-				return TRUE;
+				return ZMC_CONTINUE;
 			}
 
 		case 'C':		// %C		対象ファイル名 ------------
@@ -2031,7 +2038,7 @@ BOOL ZMacroChartor(EXECSTRUCT *Z)	// マクロ % 解析
 				*Z->dst++ = *(Z->src - 1);
 			}else{
 				ZExec(Z);
-				if ( Z->result != NO_ERROR ) { ZErrorFix(Z); break; }
+				if ( Z->result != NO_ERROR ) { ZErrorFix(Z); return ZMC_BREAK; }
 				ZInitSentence(Z);
 				Z->command = *(Z->src - 1);
 				SkipSpace(&Z->src);
@@ -2044,7 +2051,7 @@ BOOL ZMacroChartor(EXECSTRUCT *Z)	// マクロ % 解析
 			break;
 						//----- %M		補助メニュー／拡張子判別 ------
 		case 'M':
-			if ( MenuCmd(Z) ) return TRUE;
+			if ( MenuCmd(Z) ) return ZMC_CONTINUE;
 			break;
 						//----- %N		PPxのHWND取得 ------------
 		case 'N':
@@ -2085,7 +2092,7 @@ BOOL ZMacroChartor(EXECSTRUCT *Z)	// マクロ % 解析
 			// %a へ
 		case 'a':		//----- %a		レスポンスファイル 対応 %C ----
 			setflag(Z->status, ST_PATHFIX);
-			if ( CreateResponseFile(Z) == FALSE ) return TRUE;
+			if ( CreateResponseFile(Z) == FALSE ) return ZMC_BREAK;
 			break;
 						//----- %b		行末エスケープ・文字挿入 ------
 		case 'b':
@@ -2106,7 +2113,7 @@ BOOL ZMacroChartor(EXECSTRUCT *Z)	// マクロ % 解析
 						//----- %m		追加情報(何もしない) ----------
 		case 'm':
 			ZMemo(Z);
-			return TRUE;
+			return ZMC_CONTINUE;
 						//----- %n		WND取得 ------------
 		case 'n':
 			GetPPxID(Z);
@@ -2124,7 +2131,7 @@ BOOL ZMacroChartor(EXECSTRUCT *Z)	// マクロ % 解析
 				ZExec(Z);
 				if ( Z->result != NO_ERROR ){
 					ZErrorFix(Z);
-					break;
+					return ZMC_BREAK;
 				}
 				ZInitSentence(Z);
 				Z->command = 'u';
@@ -2160,9 +2167,9 @@ BOOL ZMacroChartor(EXECSTRUCT *Z)	// マクロ % 解析
 	}
 
 	if ( (Z->edit.EdOffset >= 0) && !(Z->flags & (XEO_DISPONLY | XEO_NOEDIT)) ){
-		if( EditExtractText(Z) == FALSE ) return FALSE; // %!x 部分編集
+		if( EditExtractText(Z) == FALSE ) return ZMC_BREAK; // %!x 部分編集
 	}
-	return TRUE;
+	return ZMC_CONTINUE;
 }
 
 // Z の初期化 -----------------------------------------------------------------
@@ -2256,7 +2263,10 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd, PPXAPPINFO *ParentInfo, POINT
 				}else{					// 実行
 					*Z.dst = '\0';
 					ZExec(&Z);
-					if ( Z.result != NO_ERROR ) { ZErrorFix(&Z); break; }
+					if ( Z.result != NO_ERROR ) {
+						ZErrorFix(&Z);
+						goto execbreak;
+					}
 					ZInitSentence(&Z);
 				}
 				continue;
@@ -2266,7 +2276,7 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd, PPXAPPINFO *ParentInfo, POINT
 				*Z.dst++ = *Z.src++;
 				continue;
 			}
-			if ( ZMacroChartor(&Z) == FALSE ) break;
+			if ( ZMacroChartor(&Z) == ZMC_BREAK ) break;
 			if ( Z.result == NO_ERROR ) continue;
 			if ( extract != NULL ) *extract = '\0';
 			goto execbreak;
@@ -2288,7 +2298,7 @@ PPXDLL ERRORCODE PPXAPI PP_ExtractMacro(HWND hWnd, PPXAPPINFO *ParentInfo, POINT
 		}						// 実行処理
 		if ( Z.result != NO_ERROR ) break; // エラー有り
 		ZExec(&Z);
-		if ( Z.result != NO_ERROR ) break;
+		if ( Z.result != NO_ERROR ) break; // ZErrorFix 不要 (*return処理不要)
 
 		// 次のマークを処理するか判断
 		if ( (Z.flags & XEO_EXECMARK) && !(Z.flags & XEO_NOEXECMARK) ){

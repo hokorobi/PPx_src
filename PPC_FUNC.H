@@ -111,13 +111,13 @@ extern void SetMaskTarget(HWND hDlg, FILEMASKDIALOGSTRUCT *PFS);
 extern void MaskTargetMenu(HWND hDlg, HWND hButtonWnd, FILEMASKDIALOGSTRUCT *PFS);
 extern void SortMenuCheck(HMENU hMenu, const TCHAR *str, int indexmax, XC_SORT *xc, int descending_sort);
 extern void SaveSortSetting(PPC_APPINFO *cinfo, int mode, const TCHAR *path, XC_SORT *xc);
-extern HMENU AddPPcSortMenu(PPC_APPINFO *cinfo, HMENU hMenu, ThSTRUCT *PopupTbl, DWORD *mmmode, DWORD *sid, DWORD sortmode);
-extern HMENU DirOptionMenu(PPC_APPINFO *cinfo, HMENU hPopupMenu, DWORD *index, ThSTRUCT *TH, DWORD nowmode);
-extern void AddPPcCellDisplayMenu(PPC_APPINFO *cinfo, HMENU hMenu, int *rmode, DWORD *rfmtsize);
+extern HMENU AddPPcSortMenu(PPC_APPINFO *cinfo, HMENU hMenu, ThSTRUCT *PopupTbl, DWORD *mmmode, DWORD *sid, DWORD sortmode, const TCHAR *path);
+extern HMENU DirOptionMenu(PPC_APPINFO *cinfo, HMENU hPopupMenu, DWORD *index, ThSTRUCT *TH, DWORD nowmode, const TCHAR *path);
+extern void AddPPcCellDisplayMenu(PPC_APPINFO *cinfo, HMENU hMenu, int *rmode, DWORD *rfmtsize, const TCHAR *path);
 extern ERRORCODE PPC_PathJump(PPC_APPINFO *cinfo);
 extern void PPC_ReverseMark(PPC_APPINFO *cinfo);
 extern void PPC_RootDir(PPC_APPINFO *cinfo);
-extern ERRORCODE SortKeyCommand(PPC_APPINFO *cinfo, DWORD sortmode);
+extern ERRORCODE SortKeyCommand(PPC_APPINFO *cinfo, DWORD sortmode, const TCHAR *path);
 extern void PPC_Tree(PPC_APPINFO *cinfo, int mode);
 extern void PPC_CloseTree(PPC_APPINFO *cinfo);
 extern void PPC_UpDir(PPC_APPINFO *cinfo);
@@ -147,7 +147,7 @@ extern void ClipDirectory(PPC_APPINFO *cinfo);
 extern void ClipFiles(PPC_APPINFO *cinfo, DWORD effect, DWORD cliptypes);
 extern void SetMag(PPC_APPINFO *cinfo, int offset);
 extern BOOL SetPairPath(PPC_APPINFO *cinfo, const TCHAR *path, const TCHAR *entry);
-extern ERRORCODE SetCellDisplayFormat(PPC_APPINFO *cinfo, int selectindex);
+extern ERRORCODE SetCellDisplayFormat(PPC_APPINFO *cinfo, int selectindex, const TCHAR *path);
 
 #define ITEMSETTING_DISP 0
 #define ITEMSETTING_MASK 1
@@ -554,6 +554,7 @@ extern TCHAR *FindBothLastEntry(const TCHAR *path);
 extern void AppendPath(TCHAR *path, const TCHAR *appendpath, TCHAR sepchar);
 extern void TinyGetMenuPopPos(HWND hWnd, POINT *pos);
 extern void tstrreplace(TCHAR *text, const TCHAR *targetword, const TCHAR *replaceword);
+extern BOOL IsShellExBlocked(const TCHAR *ClsID);
 
 //------------------------------------------------------------------ ppc_subi.c
 extern BOOL USEFASTCALL LoadCellImage(PPC_APPINFO *cinfo, ENTRYCELL *celltmp, BYTE *fmt, const TCHAR *UseFile);

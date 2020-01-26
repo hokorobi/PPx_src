@@ -107,7 +107,7 @@ ERRORCODE LFNfilter(struct FopOption *opt, TCHAR *src)
 		// Rename
 		if ( opt->UseNameFilter & NameFilter_Rename ){
 			if ( opt->rexps != NULL ){	// ³‹K•\Œ»‚É‚æ‚é‰ÁH
-				if ( RegularExpressionReplace(opt->rexps, name) == FALSE ){
+				if ( RegularExpressionReplace(opt->rexps, name, name, VFPS - (name - src) ) == NULL ){
 					return ERROR_CANCELLED;
 				}
 				if ( FindPathSeparator(src) != NULL ) UseRenum = TRUE; // RENAME_NUMBERING

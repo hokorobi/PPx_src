@@ -112,7 +112,7 @@ TCHAR *GetColumnExtTextInfo(PPC_APPINFO *cinfo, int cellcolumn, TCHAR *dst)
 				}
 				offset = cndi->next;
 			}
-			dst += wsprintf(dst, T("%s"), (TCHAR *)(BYTE *)(cinfo->ColumnData.bottom + cdsptr->textoffset) );
+			dst = tstpcpy(dst, (TCHAR *)(BYTE *)(cinfo->ColumnData.bottom + cdsptr->textoffset) );
 		}
 		if ( cdsptr->nextoffset == 0 ) break;
 		cdsptr = (COLUMNDATASTRUCT *)(BYTE *)(cinfo->ColumnData.bottom + cdsptr->nextoffset);
@@ -672,7 +672,7 @@ BOOL GetInfoTipText(const TCHAR *filename, int extlen, GETINFOTIPCALLBACK callba
 			filename + extlen);
 	idname[0] = '\0';
 	GetRegString(HKEY_CLASSES_ROOT, name, NilStr, idname, TSIZEOF(idname));
-	if ( idname[0] != '\0' ){
+	if ( (idname[0] != '\0') && !IsShellExBlocked(idname) ){
 		#undef tidname
 		#ifndef UNICODE
 			WCHAR idnameW[MAX_PATH];
@@ -779,6 +779,7 @@ HRESULT GetLink(HWND hWnd, const TCHAR *LinkFile, TCHAR *Original)
 			if ( SUCCEEDED(hres) ){
 				hres = psl->Resolve(hWnd, SLR_ANY_MATCH);
 				if ( SUCCEEDED(hres) ){
+					#pragma warning(suppress:6001) // ff –¢ŽQÆ
 					hres = psl->GetPath(Original, MAX_PATH, &ff, SLGP_UNCPRIORITY);
 					if ( FAILED(hres) || (Original[0] == '\0') ){
 						LPITEMIDLIST idl;
@@ -1036,7 +1037,7 @@ void InitProcWindow(HWND hWnd)
 			tabname[0] = '\0';
 			TabCtrl_GetItem(hTabWnd, i, &tie);
 			if ( !tstrcmp(tabname, PropTab) ){
-				SetProp(hWnd, PropThreadThreadName, (HANDLE)i);
+				SetProp(hWnd, PropThreadThreadName, (HANDLE)(INT_PTR)i);
 				SendMessage(hWnd, PSM_SETCURSEL, i, 0);
 			}
 		}
@@ -1092,7 +1093,7 @@ void SetFileProcWindow(HWND hWnd, SYNCPROPINFO *info)
 			if ( !tstrcmp(filename, oldtitle) ) break;
 		}
 		if ( i >= newpages ) i = 0;
-		SetProp(hWnd, PropThreadThreadName, (HANDLE)i);
+		SetProp(hWnd, PropThreadThreadName, (HANDLE)(INT_PTR)i);
 		SendMessage(hWnd, PSM_SETCURSEL, i, 0);
 		SendMessage(hWnd, WM_SETREDRAW, TRUE, 0);
 		InvalidateRect(hWnd, NULL, TRUE);
@@ -1202,6 +1203,8 @@ void AddExtProps(LPITEMIDLIST idlist, LPDATAOBJECT pDataObject, const TCHAR *tna
 				continue;
 			}
 		}
+		if ( IsShellExBlocked(idname) ) continue; // block check
+
 		#ifndef UNICODE
 			WCHAR idnameW[MAX_PATH];
 			#define tidname idnameW
@@ -1944,7 +1947,7 @@ void Debug_DispIID(const TCHAR *mes, REFIID riid)
 #else
 	UnicodeToAnsi(pathW, path, MAX_PATH);
 #endif
-	if ( GetRegString(HKEY_CLASSES_ROOT, path, NilStr, name, sizeof(name)) ){
+	if ( GetRegString(HKEY_CLASSES_ROOT, path, NilStr, name, TSIZEOF(name)) ){
 		XMessage(NULL, NULL, XM_DbgLOG, T("%s %s"), mes, name);
 	}else{
 		XMessage(NULL, NULL, XM_DbgLOG, T("%s %s"), mes, path);

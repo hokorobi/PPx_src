@@ -23,7 +23,7 @@ void FileMappingOff(FM_H *fm)
 	atr			FILE_ATTRIBUTE_NORMAL								通常
 				FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE	一時
 */
-int FileMappingOn(FM_H *fm,const TCHAR *fname,const TCHAR *mapname,DWORD size,DWORD atr)
+int FileMappingOn(FM_H *fm, const TCHAR *fname, const TCHAR *mapname, DWORD size, DWORD atr)
 {
 	int status = 0;
 	ERRORCODE err;
@@ -33,8 +33,8 @@ int FileMappingOn(FM_H *fm,const TCHAR *fname,const TCHAR *mapname,DWORD size,DW
 	// fm->mapH = NULL;
 	fm->ptr = NULL;
 
-	tstrcpy(localmapname,UserName);
-	tstrcat(localmapname,mapname);
+	tstrcpy(localmapname, UserName);
+	tstrcat(localmapname, mapname);
 	//************************** NT-- OpenFileMapping -> CreateFile
 	#ifndef UNICODE
 	//************************** 95-- CreateFile -> OpenFileMapping
@@ -45,9 +45,9 @@ int FileMappingOn(FM_H *fm,const TCHAR *fname,const TCHAR *mapname,DWORD size,DW
 												// ファイルを作成する
 		// 95 ではあらかじめ作成しておく
 		// → 95 はここに置かないと最後まで管理してくれない（tmp時）
-			fm->fileH = CreateFile(fname,GENERIC_READ | GENERIC_WRITE,
-					FILE_SHARE_READ | FILE_SHARE_WRITE,NULL,
-					OPEN_ALWAYS,atr,NULL);
+			fm->fileH = CreateFile(fname, GENERIC_READ | GENERIC_WRITE,
+					FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+					OPEN_ALWAYS, atr, NULL);
 			err = GetLastError();
 			if ( err == NO_ERROR ){	// ファイル新規作成
 				status = FMAP_CREATEFILE;
@@ -58,7 +58,7 @@ int FileMappingOn(FM_H *fm,const TCHAR *fname,const TCHAR *mapname,DWORD size,DW
 	}
 	#endif
 										// 共有メモリを作成する
-	fm->mapH = OpenFileMapping(FILE_MAP_ALL_ACCESS,FALSE,localmapname);
+	fm->mapH = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, localmapname);
 
 	if ( fm->mapH == NULL ){		// Open に失敗→新規作成する必要があるかも
 		#ifndef UNICODE
@@ -71,9 +71,9 @@ int FileMappingOn(FM_H *fm,const TCHAR *fname,const TCHAR *mapname,DWORD size,DW
 													// ファイルを作成する
 				// NT ではここで作成する
 				// CreateFile ではエラーがでても無視する
-				fm->fileH = CreateFile(fname,GENERIC_READ | GENERIC_WRITE,
-						FILE_SHARE_READ | FILE_SHARE_WRITE,NULL,
-						OPEN_ALWAYS,atr,NULL);
+				fm->fileH = CreateFile(fname, GENERIC_READ | GENERIC_WRITE,
+						FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+						OPEN_ALWAYS, atr, NULL);
 				err = GetLastError();
 				if ( err == NO_ERROR ){	// ファイル新規作成
 					status = FMAP_CREATEFILE;
@@ -84,8 +84,8 @@ int FileMappingOn(FM_H *fm,const TCHAR *fname,const TCHAR *mapname,DWORD size,DW
 		}
 		// ※ 前のOpenFileMappingの後に、別スレッドでCreateFileMappingが
 		// 完了していてもここでハンドルを得ることができる。
-		fm->mapH = CreateFileMapping(fm->fileH,NULL,PAGE_READWRITE,
-				0,size,localmapname);
+		fm->mapH = CreateFileMapping(fm->fileH, NULL, PAGE_READWRITE,
+				0, size, localmapname);
 		if ( fm->mapH == NULL ){
 			FileMappingOff(fm);
 			return -1;
@@ -93,7 +93,7 @@ int FileMappingOn(FM_H *fm,const TCHAR *fname,const TCHAR *mapname,DWORD size,DW
 		status++;	// 新規作成 (FMAP_CREATEMAP)
 	}
 										// 共有メモリを配置する
-	fm->ptr = MapViewOfFile(fm->mapH,FILE_MAP_ALL_ACCESS,0,0,size);
+	fm->ptr = MapViewOfFile(fm->mapH, FILE_MAP_ALL_ACCESS, 0, 0, size);
 	if ( fm->ptr == NULL ){
 		FileMappingOff(fm);
 		return -1;

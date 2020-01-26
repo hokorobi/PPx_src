@@ -255,7 +255,7 @@ void FormatEtcItem(TCHAR *data, int size, int type)
 	if ( ls->dset.infoicon != DSETI_DEFAULT ) p = SetCText(p, T("情報行アイコン指定有 \0info.icon settings,"));
 	if ( (ls->dset.cellicon != DSETI_DEFAULT) && ls->dset.cellicon ) p = SetCText(p, T("カーソル位置アイコン指定有 \0cursor line icon settings,"));
 	if ( ls->dset.sort.mode.dat[0] != -1 ) p = SetCText(p, T("ソート指定有 \0sort settings,"));
-	if ( ls->disp[0] ) p += wsprintf(p, T("%s"), ls->disp);
+	if ( ls->disp[0] ) p = tstpcpy(p, ls->disp);
 	*p = '\0';
 	tstrcpy(data, buf);
 }
@@ -298,7 +298,7 @@ void EnumEtcItem(HWND hDlg)
 	if ( !tstrcmp(p, T("_Execs")) ) EtcEditFormat = ETC_EXECS;
 	if ( !tstrcmp(p, T("X_fopt")) ) EtcEditFormat = ETC_NOPARAM;
 */
-	EnableDlgWindow(hDlg, IDB_TB_SETITEM, EtcEditFormat < ETC__VIEW);
+	EnableDlgWindow(hDlg, IDB_TB_SETITEM, (EtcEditFormat < ETC__VIEW) || (EtcEditFormat == ETC_DSET) );
 	SetDlgItemText(hDlg, IDB_TB_SETITEM, GetCText(
 		((EtcEditFormat > ETC__EDITBUTTON) && (EtcEditFormat < ETC__VIEW)) ?
 			StrAddLabel_Edit : StrAddLabel_Add) );
@@ -373,6 +373,13 @@ void AddEtcItem(HWND hDlg)
 	key = EtcLabels[seltree - ETCID].key;
 	if ( EtcEditFormat > ETC_TEXT ){
 		BOOL tempcreate = FALSE;
+
+		if ( EtcEditFormat == ETC_DSET ) {
+			const TCHAR *path = (label[0] == '/') ? label + 1 : label;
+			wsprintf( buf, T("*ppc \"%s\" -single -k *diroption -\"%s\""), path, path);
+			PP_ExtractMacro(NULL, NULL, NULL, buf, NULL, 0);
+			return;
+		}
 
 		if ( EtcEditFormat > ETC__VIEW ) return;
 
@@ -466,7 +473,7 @@ void EtcSelectType(HWND hDlg, HWND hTwnd)
 	ShowDlgWindow(hDlg, IDB_MEUP, etc);
 	ShowDlgWindow(hDlg, IDB_MEDW, etc);
 	if ( etc ){ // Etc
-		etc = (seltree < 0x102) || (seltree > 0x104);
+		etc = (seltree <= (ETC__EDITBUTTON + ETCID)) || (seltree > (ETC__VIEW + ETCID));
 		ShowDlgWindow(hDlg, IDE_EXTYPE, etc);
 		ShowDlgWindow(hDlg, IDE_ALCCMD, etc);
 		EnumEtcItem(hDlg);

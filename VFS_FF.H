@@ -87,8 +87,12 @@ typedef struct {
 	TCHAR *mem;	// ファイルイメージの先頭
 	TCHAR *readptr;	// 読込み位置
 	TCHAR *maxptr;	// 最大位置
-	const TCHAR *base; // ;BASE= の位置
+// ListFile 追加情報
+	const TCHAR *base; // ;Base= の位置
 	const TCHAR *search; // ;Search= の位置
+	const TCHAR *sort; // ;Sort= の位置
+	const TCHAR *view; // ;View= の位置
+// エントリ追加情報
 	const TCHAR *longname; // MAX_PATH越えファイル名
 	const TCHAR *comment; // コメント
 } FF_LFILE;

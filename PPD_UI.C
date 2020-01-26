@@ -837,9 +837,11 @@ BOOL MessageBoxInitDialog(HWND hDlg, MESSAGEDATA *md)
 				IconSize, IconSize, hDlg, CHILDWNDID(20), DLLhInst, 0);
 		if ( hWnd != NULL ){
 			SendMessage(hWnd, WM_SETFONT, (WPARAM)md->hDlgFont, 0);
-			SendMessage(hWnd, STM_SETICON, (WPARAM)LoadImage(NULL,
-					MAKEINTRESOURCE((int)IDI_HAND + IconType - 1),
-					IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED), 0);
+			SendMessage(hWnd, STM_SETICON,
+					(WPARAM)LoadImage(NULL,
+					MAKEINTRESOURCE((int)(INT_PTR)IDI_HAND + IconType - 1),
+					IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED),
+					0);
 		}
 	}
 	{				// テキスト

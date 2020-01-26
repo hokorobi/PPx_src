@@ -918,7 +918,6 @@ PPXDLL HANDLE PPXAPI PPxShellExecute(HWND hwnd, LPCTSTR lpOperation, LPCTSTR lpF
 int GetE2(TCHAR *fname)
 {
 	DWORD Bsize;				// バッファサイズ指定用
-	DWORD Rtyp;				// レジストリの種類
 
 	TCHAR appN[MAX_PATH];		// アプリケーションのキー
 	TCHAR defN[MAX_PATH];		// デフォルトのアクション
@@ -930,24 +929,23 @@ int GetE2(TCHAR *fname)
 	ext += FindExtSeparator(ext);
 
 										// 拡張子からキーを求める -------------
-	if (ERROR_SUCCESS != RegOpenKeyEx(HKEY_CLASSES_ROOT, ext, 0, KEY_READ, &hExt)){
+	if ( ERROR_SUCCESS != RegOpenKeyEx(HKEY_CLASSES_ROOT, ext, 0, KEY_READ, &hExt) ){
 		RegOpenKeyEx(HKEY_CLASSES_ROOT, WildCard_All, 0, KEY_READ, &hExt);
 	}
 	Bsize = sizeof appN;					// 拡張子の識別子
-	Rtyp = REG_SZ;
 	if ( ERROR_SUCCESS ==
-				RegQueryValueEx(hExt, NilStr, 0, &Rtyp, (LPBYTE)appN, &Bsize) ){
+			RegQueryValueEx(hExt, NilStr, NULL, NULL, (LPBYTE)appN, &Bsize) ){
 		tstrcat(appN, T("\\shell"));
 										// アプリケーションのシェル -----------
 		if ( ERROR_SUCCESS ==
 				RegOpenKeyEx(HKEY_CLASSES_ROOT, appN, 0, KEY_READ, &hAP)){
 			Bsize = sizeof defN;
 			defN[0] = '\0';
-			RegQueryValueEx(hAP, NilStr, 0, &Rtyp, (LPBYTE)defN, &Bsize);
+			RegQueryValueEx(hAP, NilStr, NULL, NULL, (LPBYTE)defN, &Bsize);
 			if ( defN[0] == '\0' ) tstrcpy(defN, ShellVerb_open); // の指定が無い
 
 			tstrcat(defN, T("\\command"));
-			if ( GetRegString(hAP, defN, NilStr, appN, sizeof(appN)) ){
+			if ( GetRegString(hAP, defN, NilStr, appN, TSIZEOF(appN)) ){
 				TCHAR *p, *q = NULL;
 
 				p = appN;

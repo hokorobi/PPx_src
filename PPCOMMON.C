@@ -20,7 +20,7 @@ BOOL InitProcessDLL(void);
 -----------------------------------------------------------------------------*/
 const TCHAR usernamestr[] = T("%USERNAME%");
 const TCHAR MSG_SHAREBLOCKERROR[] = T("Share block create error");
-const TCHAR MSG_DLLVERSIONERROR[] = T(PPCOMMONDLL) T(" version error");
+const TCHAR MSG_DLLVERSIONERROR[] = T("Already running other PPLIBxxx.DLL.");
 const TCHAR MSG_HITORYAREAERROR[] = T("History file open error");
 const TCHAR MSG_HISTORYIDCOLLAPSED[] = T("History ID collapsed, initialize now.\n(ヒストリ領域破損の為、初期化)");
 const TCHAR MSG_HISTORYCOLLAPSED[] = T("History structure collapsed, fix now.\n(ヒストリ領域破損の為、初期化)");

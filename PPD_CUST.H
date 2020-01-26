@@ -36,29 +36,31 @@
 		E		(PPC)エントリの表示書式
 		,,		省略可能 ,
 -----------------------------------------------------------------------------*/
-#define fT		B0	// table mode
+#define fT			B0	// table mode
 #define fNoRelo	PPCUSTRESULT_RELOAD // (B1)カスタマイズ後、再読み込み処理をしなくてもよい
 #define fReSta	PPCUSTRESULT_RESTART // (B2) カスタマイズ後、起動し直さないと反映されない
-#define fB		B3	// 空欄でもカスタマイズする
-#define fSwarn	B4	// 区切り文字が無いときも警告無し
-#define fSort	B5	// 書き出し時に並び替えを行う
-#define fInternal	B6	// 常時非表示。内部保存用
-#define fHide	B7	// 記録がなければ書き出ししない
-#define fOld	B8	// 記録がなければ書き出ししない & 新規登録しない。旧項目用
-//#define fC	未使用	// 先頭の空白を維持する
-							// テーブルのキーワードに対する
-#define fK		B10	// キーの処理(正規化する)
-#define fHMenu	B11	// Hidden Menu の処理(4bytesに変換)
-#define fRC		B12 // A_colorを使用しない(A_color自体の定義用)
-#define fW		B13 // ワイルドカード検出
-#define fA		B14	// keyword が '--'なら追加書き込み
-#define fU		B15	// 大文字変換
+#define fB			B3	// (Data) 空欄でもカスタマイズする
+#define fSwarn		B4	// (Data) 区切り文字が無いときも警告無し
+#define fRC			B5	// (Data) A_colorを使用しない(A_color自体の定義用)
+#define fSort		B6	// (Table) 書き出し時に並び替えを行う
+#define fInternal	B7	// 常時非表示。内部保存用
+#define fHide		B8	// 記録がなければ書出しない。オプション機能
+#define fOld		B9	// 記録がなければ書出しない & 新規登録しない。旧項目用
 
-#define f_MENU (fT | fA | fB)
-#define f_EXT (fT | fW | fNoRelo)
-#define f_KEY (fT | fK | fNoRelo)
-#define f_MES (fT | fSort)
-#define f_TBAR (fT | fA)
+#define fKeyFix		B10	// (Key) キーの処理(正規化する)
+#define fK_HMenu	B11	// (Key) Hidden Menu の処理(4bytesに変換)
+#define fK_ExtWild	B12	// (Key) 拡張子用ワイルドカード検出
+#define fK_PathWild	B13	// (Key) パス用ワイルドカード検出
+#define fK_sep		B14	// (Key) keyword が '--'なら追加書き込み(Menu,ToolBar)
+#define fK_Mouse	B15	// (Key) マウス割当ての大文字変換
+
+#define f_MENUBAR (fT | fK_sep | fB) // メニューバー
+#define f_POPMENU (fT | fK_sep | fB | fNoRelo) // ポップアップメニュー
+#define f_EXTRUN (fT | fK_ExtWild | fNoRelo) // ファイル判別実行
+#define f_EXTSET (fT | fK_ExtWild | fNoRelo) // 拡張子・ワイルドカード別設定
+#define f_KEY (fT | fKeyFix | fNoRelo) // キー割当て
+#define f_MSGS (fT | fSort) // 言語別メッセージ
+#define f_TOOLBAR (fT | fK_sep) // ツールバー
 
 typedef struct {	// カスタマイズ列挙構造体 ---------------------------------
 	const TCHAR *name;	// 変数名 \0:comment	\1:User Menu書込位置指定

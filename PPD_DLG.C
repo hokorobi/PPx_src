@@ -31,7 +31,7 @@ LPDLGTEMPLATE GetDialogTemplate(HWND hParentWnd, HANDLE hinst, LPCTSTR lpszTempl
 	fontlength = (strlenW(BoxFont.font.lfFaceName) + 2) * sizeof(WCHAR);
 	memcpy(&fontdata[1], BoxFont.font.lfFaceName, fontlength - sizeof(WCHAR));
 #else
-	fontlength = (MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED,
+	fontlength = (MultiByteToWideChar(CP_ACP, 0,
 		BoxFont.font.lfFaceName, -1, &fontdata[1],
 		sizeof(fontdata) / sizeof(WCHAR) - 2) + 1) * sizeof(WCHAR);
 #endif

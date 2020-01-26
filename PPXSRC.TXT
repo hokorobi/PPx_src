@@ -1,5 +1,5 @@
  ------------------------------------------------------------------------------
-	Paper Plane xUI  Source archive		Copyright (c)1997-2019 TORO
+	Paper Plane xUI  Source archive		Copyright (c)1997-2020 TORO
  ------------------------------------------------------------------------------
 
 	Paper Plane xUI を構築するために必要なファイル一式です。
@@ -39,12 +39,12 @@
 	以下の構成で確認しました。
 
 	Borland MAKE	Version 5.2
-	Microsoft 32-bit C/C++ Optimizing Compiler Version 13.10.3052 for 80x86
-	Microsoft Incremental Linker Version 7.10.3052
-	Microsoft Platform SDK for Windows Server 2003 SP1
+	Microsoft 32-bit C/C++ Optimizing Compiler Version 15.00.30729.01
+	Microsoft Incremental Linker Version 9.00.30729.01
 
-	また、添付 PPx.sln を使って Visual Studio 2008/2015 上でもビルドが
-	可能です。Visual Studio 2017 以降は、VS2015 を使用してください。
+	また、添付 VS2008\PPx.sln を使って Visual Studio 2008/2015 上でも
+	ビルドが可能です。Visual Studio 2017 以降は、VS2015 を使用して
+	ください。
 
 
 ・64bit
@@ -69,7 +69,7 @@
 
 ・Wine
 
-	Wine 1.6 on ubuntu 16.04、Wine 3.0 on ubuntu 18.04 の Winelib を
+	Wine 3.0 on ubuntu 18.04、Wine 1.6 on ubuntu 16.04 の Winelib を
 	使って部分的に Linux にネイティブ対応する PPc, PPv, PPb, PPcust が
 	構築可能なのを確認しています。
 
@@ -80,8 +80,8 @@
 	  ( sudo apt-get install make g++ )
 	※ PPb で ncurses を使用しています。
 	  ( sudo apt-get install ncurses-dev )
-	※ Wine 1.6(3.0未満) のときは、 GNUmakefile 中の WineVer の値を変更
-	  してください。
+	※ Wine 1.6(3.0未満) のときは、GESTURECONFIG のエラーが出ます。
+	  GNUmakefile 中の WineVer の値を変更してください。
 
 	尚、Wine 上での PPx の動作はまだ完全ではありません。
 	・PPb はターミナルからのログの取得ができません。仕様です。

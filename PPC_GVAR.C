@@ -116,6 +116,7 @@ extern "C" {
 #define CRID_DIROPT_THIS_BRANCH	(CRID_DIROPT + DSMD_THIS_BRANCH)
 #define CRID_DIROPT_LISTFILE	(CRID_DIROPT + DSMD_LISTFILE)
 #define CRID_DIROPT_ARCHIVE		(CRID_DIROPT + DSMD_ARCHIVE)
+#define CRID_DIROPT_PATH_BRANCH	(CRID_DIROPT + DSMD_PATH_BRANCH)
 #define CRID_DIROPT_MODELAST	(CRID_DIROPT + DSMD_MAX)
 #define CRID_DIROPT_MAX			(CRID_DIROPT + 0x1f)
 
@@ -382,6 +383,7 @@ GVAR DWORD ColumnExtUserID GPARAM(DFC_USERMAX); // 外部データ保存のときの割振ID
 
 GVAR const TCHAR StrKC_main[] GPARAM(T("KC_main"));
 GVAR const TCHAR StrXC_rmsk[] GPARAM(T("XC_rmsk"));
+GVAR const TCHAR StrXC_dset[] GPARAM(T("XC_dset"));
 GVAR const TCHAR StrWordMatchWildCard[6] GPARAM(T("o:ew,"));
 GVAR const TCHAR StrMaskDlalogWildCard[5] GPARAM(T("o:e,"));
 GVAR const TCHAR Str_others[] GPARAM(T("_others"));
@@ -735,7 +737,9 @@ GVAR ICONCACHESTRUCT CacheIcon
 #endif
 ;
 GVAR int CacheIconsX, CacheIconsY;
+GVAR BOOL Use_X_icnl GPARAM(FALSE);
 //-------------------------------------- 開発中
+GVAR BOOL exdset GPARAM(FALSE);
 
 #ifdef __cplusplus
 }

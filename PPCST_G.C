@@ -86,8 +86,9 @@ ExpandListStruct ExpandList[] = { // ダイアログ幅拡張時の対象
 	{IDB_HMBACKC, EPFLAG_MOVEY},
 //	{IDL_GCTYPE, EPFLAG_TALL},
 //	{IDL_GCITEM, EPFLAG_TALL}, // 高さが増えすぎる
-	{IDB_GCADD, EPFLAG_MOVEX},
+//	{IDB_GCADD, EPFLAG_MOVEX},
 	{IDB_ADDDEFEXT, EPFLAG_MOVEX},
+	{IDB_ADDSETEXT, EPFLAG_MOVEX},
 	{IDL_AOSUSIE, EPFLAG_TALL},
 	{IDE_AOSINFO, EPFLAG_WIDE | EPFLAG_MOVEY},
 	{IDL_EXITEM, EPFLAG_WIDE | EPFLAG_TALL},
@@ -436,7 +437,7 @@ INT_PTR CALLBACK StyleDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 						Restore = FALSE;
 						Test();
 						Print(T("*backup..."));
-						CustDump(Backup);
+						CustDump(NilStr, Backup);
 					}
 					break;
 
@@ -481,7 +482,7 @@ void GUIcustomizer(int startpage, const TCHAR *param)
 	if ( UseLcid == LCID_PPXDEF ) pinfo = PageInfo;
 
 #ifndef WINEGCC				// コンソールウィンドウが開いているか確認する
-	GetRegString(HKEY_CURRENT_USER, ImmersiveShellPatg, TabletMode, (TCHAR *)&TabletModeValue, sizeof(TabletModeValue));
+	GetRegString(HKEY_CURRENT_USER, ImmersiveShellPatg, TabletMode, (TCHAR *)&TabletModeValue, TSIZEOF(TabletModeValue));
 	if ( TabletModeValue != 0 ){
 		hConsoleWnd = NULL; // TabletMode時はウィンドウが隠れてしまうので無効に
 	}else{
@@ -561,7 +562,7 @@ void GUIcustomizer(int startpage, const TCHAR *param)
 		wsprintf(temp, T("*Customize backup file:%s\r\n"), Backup);
 		Print(temp);
 		Print(T("*backup..."));
-		CustDump(Backup);
+		CustDump(NilStr, Backup);
 //		PPxHookEdit(1);	// 入れると異常動作するため保留
 		PropertySheet(&head);
 //		PPxHookEdit(-1);
@@ -597,7 +598,7 @@ void ShowDlgWindow(const HWND hDlg, const UINT id, BOOL show)
 	ShowWindow(GetDlgItem(hDlg, id), show ? SW_SHOW : SW_HIDE);
 }
 #endif
-TCHAR *LoadTextResource(LPCTSTR rname)
+TCHAR *LoadTextResource(HINSTANCE hModule, LPCTSTR rname)
 {
 	TCHAR *ptr, *text;
 	HRSRC hRcust;
@@ -607,22 +608,24 @@ TCHAR *LoadTextResource(LPCTSTR rname)
 	char *rp;
 	UINT cp;
 
-	hRcust = FindResource(hInst, rname, RT_RCDATA);
-	rsize = SizeofResource(hInst, hRcust);
-	rp = LockResource(LoadResource(hInst, hRcust));
+	hRcust = FindResource(hModule, rname, RT_RCDATA);
+	if ( hRcust == NULL ) return NULL;
+	rsize = SizeofResource(hModule, hRcust);
+	rp = LockResource(LoadResource(hModule, hRcust));
 
 	cp = IsValidCodePage(CP__SJIS) ? CP__SJIS : CP_ACP;
-	size = TSTROFF(MultiByteToWideChar(cp, MB_PRECOMPOSED, rp, rsize, NULL, 0));
+	size = TSTROFF(MultiByteToWideChar(cp, 0, rp, rsize, NULL, 0));
 	text = HeapAlloc(GetProcessHeap(), 0, size + 4);
 	if ( text == NULL ) return L"";
-	MultiByteToWideChar(cp, MB_PRECOMPOSED, rp, rsize, text, size);
+	MultiByteToWideChar(cp, 0, rp, rsize, text, size);
 	memset((char *)text + size, 0, 4);
 #else
-	hRcust = FindResource(hInst, rname, RT_RCDATA);
-	size = SizeofResource(hInst, hRcust);
+	hRcust = FindResource(hModule, rname, RT_RCDATA);
+	if ( hRcust == NULL ) return NULL;
+	size = SizeofResource(hModule, hRcust);
 	text = HeapAlloc(GetProcessHeap(), 0, size + 4);
 	if ( text == NULL ) return "";
-	memcpy(text, LockResource(LoadResource(hInst, hRcust)), size);
+	memcpy(text, LockResource(LoadResource(hModule, hRcust)), size);
 	memset(text + size, 0, 4);
 #endif
 	ptr = text;
@@ -821,3 +824,21 @@ void GetControlText(HWND hDlg, UINT ID, TCHAR *text, DWORD len)
 		*textlast = '\0';
 	}
 }
+
+#if !NODLL
+WCHAR *stpcpyW(WCHAR *deststr, const WCHAR *srcstr)
+{
+	WCHAR *destptr = deststr;
+	const WCHAR *srcptr = srcstr;
+
+	for(;;){
+		WCHAR code;
+
+		code = *srcptr;
+		*destptr = code;
+		if ( code == '\0' ) return destptr;
+		srcptr++;
+		destptr++;
+	}
+}
+#endif

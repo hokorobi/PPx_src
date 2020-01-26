@@ -483,6 +483,26 @@ TCHAR *MakeMouseDetailText(HWND hDlg, const TCHAR *text, TCHAR *dest)
 		*gdest = '\0';
 	}
 	tstrcpy(dest, area);
+	if ( (button != NilStr) && !Isalpha(*text) ){
+		TCHAR *dptr, *dbutton;
+
+		dbutton = dptr = dest + tstrlen(dest) + 1;
+		while ( !Isalpha(*text) ){
+			switch ( *text++ ){
+				case '&':
+					dptr += wsprintf(dptr, T("Alt+"));
+					break;
+				case '^':
+					dptr += wsprintf(dptr, T("Ctrl+"));
+					break;
+				case '\\':
+					dptr += wsprintf(dptr, T("Shift+"));
+					break;
+			}
+		}
+		tstrcpy(dptr, button);
+		return dbutton;
+	}
 	return (TCHAR *)button;
 }
 
@@ -682,9 +702,9 @@ void USEFASTCALL InitCmdList(HWND hDlg)
 void CommandTreeDlgBox_Init(HWND hDlg)
 {
 	GetCustData(T("X_LANG"), &UseLcid, sizeof(UseLcid));
-	if ( !UseLcid ) UseLcid = LOWORD(GetUserDefaultLCID());
+	if ( UseLcid == 0 ) UseLcid = LOWORD(GetUserDefaultLCID());
 
-	KeyList = LoadTextResource(MAKEINTRESOURCE(DEFKEYLIST));
+	KeyList = LoadTextResource(hInst, MAKEINTRESOURCE(DEFKEYLIST));
 	hCmdListWnd = GetDlgItem(hDlg, IDT_GENERAL);
 	if ( X_dss & DSS_COMCTRL ) SendMessage(hCmdListWnd, CCM_DPISCALE, TRUE, 0);
 	InitCommandTree();
@@ -2089,7 +2109,7 @@ void FixWildItemName(TCHAR *item)
 		sp = item;
 		if ( *sp == ':' ) sp++;
 		for ( ; *sp ; sp++ ){
-			if ( (*sp >= '!') && (*sp <='?') ){
+			if ( (*sp >= '!') && (*sp <= '?') ){
 				if ( tstrchr(DetectWildcardLetter, *sp) != NULL ){
 					memmove(&item[1], &item[0], TSTRSIZE(item));
 					item[0] = '/';
@@ -2609,7 +2629,7 @@ void InitTablePage(HWND hDlg, TABLEINFO *tinfo)
 	tinfo->hLVTypeWnd = GetDlgItem(hDlg, IDV_EXTYPE);
 	tinfo->ListViewLastSort = 0;
 	if ( KeyList == NULL ){
-		KeyList = LoadTextResource(MAKEINTRESOURCE(DEFKEYLIST));
+		KeyList = LoadTextResource(hInst, MAKEINTRESOURCE(DEFKEYLIST));
 #if 0		// キーコードの正当性チェック
 		{
 			const TCHAR *p, *group;

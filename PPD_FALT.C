@@ -14,27 +14,12 @@
 #include "PPX_64.H"
 #pragma hdrstop
 
+#define FAULTTEST 0
+
 THREADSTRUCT *ThreadBottom = NULL;
 
 #define AppName T("PPx")
 #define AppExeName T("PP")
-
-#ifdef _WIN64
-	#define MSGBIT T("x64")
-	#define REGPREFIX(reg) R ## reg
-	#define CHECK_HOOK "hookx64"
-
-	#define CPUTYPE IMAGE_FILE_MACHINE_AMD64
-	#define LOADWINAPI164(name) {(void (WINAPI **)())&(D ## name), #name "64"}
-	#define TAIL64(name) name ## 64
-	#ifdef UNICODE
-		#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name), #name "W64"}
-		#define TAIL64T(name) name ## W64
-	#else
-		#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name), #name "64"}
-		#define TAIL64T(name) name ## 64
-	#endif
-#endif
 
 #ifdef _M_ARM
 	#define MSGBIT T("ARM")
@@ -71,19 +56,36 @@ THREADSTRUCT *ThreadBottom = NULL;
 #endif
 
 #ifndef CPUTYPE
-	#define MSGBIT
-	#define REGPREFIX(reg) E ## reg
-	#define CHECK_HOOK "hook"
+	#ifdef _WIN64
+		#define MSGBIT T("x64")
+		#define REGPREFIX(reg) R ## reg
+		#define CHECK_HOOK "hookx64"
 
-	#define CPUTYPE IMAGE_FILE_MACHINE_I386
-	#define LOADWINAPI164(name) {(void (WINAPI **)())&(D ## name), #name}
-	#define TAIL64(name) name
-	#ifdef UNICODE
-		#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name), #name "W"}
-		#define TAIL64T(name) name ## W
+		#define CPUTYPE IMAGE_FILE_MACHINE_AMD64
+		#define LOADWINAPI164(name) {(void (WINAPI **)())&(D ## name), #name "64"}
+		#define TAIL64(name) name ## 64
+		#ifdef UNICODE
+			#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name), #name "W64"}
+			#define TAIL64T(name) name ## W64
+		#else
+			#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name), #name "64"}
+			#define TAIL64T(name) name ## 64
+		#endif
 	#else
-		#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name), #name}
-		#define TAIL64T(name) name
+		#define MSGBIT
+		#define REGPREFIX(reg) E ## reg
+		#define CHECK_HOOK "hook"
+
+		#define CPUTYPE IMAGE_FILE_MACHINE_I386
+		#define LOADWINAPI164(name) {(void (WINAPI **)())&(D ## name), #name}
+		#define TAIL64(name) name
+		#ifdef UNICODE
+			#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name), #name "W"}
+			#define TAIL64T(name) name ## W
+		#else
+			#define LOADWINAPI164TW(name) {(void (WINAPI **)())&(D ## name), #name}
+			#define TAIL64T(name) name
+		#endif
 	#endif
 #endif
 
@@ -375,7 +377,9 @@ PPXDLL BOOL PPXAPI PPxRegisterThread(THREADSTRUCT *threadstruct)
 			SetJobTask(NULL, JOBSTATE_REGIST | JOBSTATE_THREAD);
 		}
 	}
-//	*(BYTE *)0x1234 = 0; // 落とすコード
+#if FAULTTEST
+	*(BYTE *)0x1234 = 0; // 落とすコード
+#endif
 	return TRUE;
 }
 
@@ -570,7 +574,9 @@ typedef struct {
 } ExceptionData;
 
 volatile DWORD PPxUnhandledExceptionFilterMainCount = 0;
-volatile PVOID PPxUnhandledExceptionFilterOldAddress;
+volatile DWORD PPxUnhandledExceptionFilterOld_Code;
+volatile PVOID PPxUnhandledExceptionFilterOld_Address;
+volatile ULONG_PTR PPxUnhandledExceptionFilterOld_Info1;
 
 void GetExceptionCodeText(EXCEPTION_RECORD *ExceptionRecord, const TCHAR **Msg, TCHAR *exceptionbuf, const TCHAR **Comment)
 {
@@ -596,6 +602,30 @@ void GetExceptionCodeText(EXCEPTION_RECORD *ExceptionRecord, const TCHAR **Msg, 
 	}else{
 		wsprintf(exceptionbuf, Msg[msgstr_except], ExceptionRecord->ExceptionCode);
 	}
+}
+
+void DeepExceptionInfo(const TCHAR **Msg, TCHAR *exceptionbuf, TCHAR *stackinfo, EXCEPTION_RECORD *ExceptionRecord)
+{
+	TCHAR *eb;
+
+	EXCEPTION_RECORD OldExceptionRecord;
+
+	wsprintf(stackinfo,
+			T("n:") T(PTRPRINTFORMAT) T("(PPLIB:") T(PTRPRINTFORMAT)
+			T(")\np:") T(PTRPRINTFORMAT),
+			ExceptionRecord->ExceptionAddress, DLLhInst,
+			PPxUnhandledExceptionFilterOld_Address);
+
+	eb = exceptionbuf + tstrlen(exceptionbuf);
+		*eb++ = '/';
+		*eb++ = 'p';
+		*eb++ = ':';
+
+	OldExceptionRecord.ExceptionCode = PPxUnhandledExceptionFilterOld_Code;
+	OldExceptionRecord.ExceptionAddress = PPxUnhandledExceptionFilterOld_Address;
+	OldExceptionRecord.ExceptionInformation[0] = 0;
+	OldExceptionRecord.ExceptionInformation[1] = PPxUnhandledExceptionFilterOld_Info1;
+	GetExceptionCodeText(&OldExceptionRecord, Msg, eb, NULL);
 }
 
 DWORD WINAPI PPxUnhandledExceptionFilterMain(ExceptionData *EP)
@@ -626,25 +656,16 @@ DWORD WINAPI PPxUnhandledExceptionFilterMain(ExceptionData *EP)
 	GetExceptionCodeText(ExceptionRecord, Msg, exceptionbuf, &Comment);
 
 	// PPxUnhandledExceptionFilterMain 内で落ちたかもしれないので前回のを表示
-	if ( PPxUnhandledExceptionFilterMainCount != 0 ){
-		TCHAR *eb;
-		wsprintf(stackinfo,
-				T("n:") T(PTRPRINTFORMAT) T("(PPLIB:") T(PTRPRINTFORMAT)
-				T(")\np:") T(PTRPRINTFORMAT),
-				ExceptionRecord->ExceptionAddress, DLLhInst,
-				PPxUnhandledExceptionFilterOldAddress);
-		eb = exceptionbuf + tstrlen(exceptionbuf);
-		*eb++ = '\n';
-		*eb++ = 'p';
-		*eb++ = ':';
-		GetExceptionCodeText(ExceptionRecord, Msg, eb, NULL);
-
+	if ( PPxUnhandledExceptionFilterMainCount > 0 ){
+		DeepExceptionInfo(Msg, exceptionbuf, stackinfo, ExceptionRecord);
 		ShowErrorDialog(Msg, msgstr_fault, msgexfthread, exceptionbuf, stackinfo, Msg[msgstr_deepprom]);
 		ExitProcess(ExceptionRecord->ExceptionCode);
 		#pragma warning(suppress: 4702) // 直前のExitProcessで終わるけど、念のため
 		return EXCEPTION_EXECUTE_HANDLER;
 	}
-	PPxUnhandledExceptionFilterOldAddress = ExceptionRecord->ExceptionAddress;
+	PPxUnhandledExceptionFilterOld_Code = ExceptionRecord->ExceptionCode;
+	PPxUnhandledExceptionFilterOld_Address = ExceptionRecord->ExceptionAddress;
+	PPxUnhandledExceptionFilterOld_Info1 = ExceptionRecord->ExceptionInformation[1];
 	PPxUnhandledExceptionFilterMainCount++;
 
 	// デバッグ情報、シンボル情報取得の準備
@@ -712,9 +733,9 @@ DWORD WINAPI PPxUnhandledExceptionFilterMain(ExceptionData *EP)
 		targetThc.ContextFlags = CONTEXT_FULL;
 		memset(&sframe, 0, sizeof(sframe));
 
-#ifdef _M_ARM
-		sframe.AddrPC.Offset = 0;
-		sframe.AddrStack.Offset = 0;
+#if defined(_M_ARM) || defined(_M_ARM64)
+		sframe.AddrPC.Offset = ExceptionInfo->ContextRecord->REGPREFIX(Pc);
+		sframe.AddrStack.Offset = ExceptionInfo->ContextRecord->REGPREFIX(Sp);
 		sframe.AddrFrame.Offset = 0;
 #else
 		sframe.AddrPC.Offset = ExceptionInfo->ContextRecord->REGPREFIX(ip);
@@ -808,6 +829,10 @@ DWORD WINAPI PPxUnhandledExceptionFilterMain(ExceptionData *EP)
 		 (tstristr(threadname, T("PP")) == NULL) &&
 		 (tstristr(stackinfo, T("(") AppExeName) == NULL) ){
 		result = IDCANCEL;
+	// 管理外スレッドで、無視しても良さそうなのは、無視する
+	}else if ( (tstruct == NULL) && (
+		  (tstrstr(stackinfo, T("SS1H001")) != 0) ) ){
+		result = IDIGNORE;
 	// スレッド再起動可能スレッドで、一部の異常が起きやすいDLLなら、Thr再起動
 	}else if ( ((tstruct != NULL) && (tstruct->flag & XTHREAD_RESTARTREQUEST))
 		&&
@@ -840,15 +865,19 @@ DWORD WINAPI PPxUnhandledExceptionFilterMain(ExceptionData *EP)
 	}
 	if ( (tstruct != NULL) &&
 		 (tstruct->flag & (XTHREAD_RESTARTREQUEST | XTHREAD_TERMENABLE)) ){
-		HANDLE hCloseThread;
-
-		if ( DSymCleanup != NULL ) DSymCleanup(hProcess);
 		if ( tstruct->flag & XTHREAD_RESTARTREQUEST ){
 			SendMessage( ((RESTARTTHREADSTRUCT *)tstruct)->hParentWnd,
 					WM_PPXCOMMAND,
 					((RESTARTTHREADSTRUCT *)tstruct)->wParam,
 					((RESTARTTHREADSTRUCT *)tstruct)->lParam);
 		}
+		result = IDIGNORE;
+	}
+	if ( result == IDIGNORE ){
+		HANDLE hCloseThread;
+
+		if ( DSymCleanup != NULL ) DSymCleanup(hProcess);
+
 		hCloseThread = EP->hThread;
 		TerminateThread(hCloseThread, 0);
 		CloseHandle(hCloseThread);
@@ -970,6 +999,7 @@ void PPxSendReport(const TCHAR *text)
 	TCHAR *textbuf;
 	DWORD tid;
 
+	if ( text == NULL) text = NilStr;
 	textbuf = HeapAlloc(DLLheap, 0, TSTRSIZE(text) + sizeof(TCHAR));
 	if ( textbuf == NULL ) return;
 	*textbuf = '\0';
@@ -979,13 +1009,24 @@ void PPxSendReport(const TCHAR *text)
 	while( textbuf[0] == '\0' ) Sleep(100);
 }
 
+const TCHAR OSverinfo[] = T("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion");
+const TCHAR ReleaseId[] = T("ReleaseId");
 int ShowErrorDialog(const TCHAR **Msg, int msgtype, const TCHAR *threadtext, const TCHAR *infotext, const TCHAR *addrtext, const TCHAR *comment)
 {
 	TCHAR msgbuf[WSSIZE], *typename;
 	int result;
 	DWORD OSsubver;
 
-	OSsubver = (OSver.dwMajorVersion == 10) ? OSver.dwBuildNumber : OSver.dwMinorVersion;
+	if ( OSver.dwMajorVersion >= 10 ){
+		const TCHAR *ptr;
+
+		msgbuf[0] = '\0';
+		GetRegString(HKEY_LOCAL_MACHINE, OSverinfo, ReleaseId, msgbuf, TSIZEOF(msgbuf));
+		ptr = msgbuf;
+		OSsubver = GetDigitNumber32u(&ptr);
+	}else{
+		OSsubver = OSver.dwMinorVersion;
+	}
 	if ( msgtype == msgstr_foundprom ){
 		wsprintf(msgbuf, Msg[msgstr_foundprom], OSver.dwMajorVersion, OSsubver,
 				infotext, Msg[msgstr_sendreport]);

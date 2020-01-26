@@ -134,10 +134,10 @@ DWORD ConvertText(TCHAR **text)
 	#else
 		if ( codepage == CP_ACP ) goto noconvert;
 
-		size = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, *text, -1, NULL, 0);
+		size = MultiByteToWideChar(CP_ACP, 0, *text, -1, NULL, 0);
 		srcW = HeapAlloc(GetProcessHeap(), 0, size * sizeof(WCHAR));
 		if ( srcW == NULL ) goto noconvert;
-		MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, *text, -1, srcW, size);
+		MultiByteToWideChar(CP_ACP, 0, *text, -1, srcW, size);
 		HeapFree(GetProcessHeap(), 0, *text);
 		*text = (char *)srcW;
 	#endif
@@ -162,15 +162,25 @@ noconvert: ;
 }
 
 //-----------------------------------------------------------------------------
-int CustDump(const TCHAR *filename)
+int CustDump(const TCHAR *cmdptr, const TCHAR *filename)
 {
-	TCHAR *ptr, buf[VFPS + 0x100];
+	TCHAR *ptr, buf[CMDLINESIZE], *mask = NULL, code, *more;
 	HANDLE hFile;
 	DWORD size, wsize;
 	int result = EXIT_SUCCESS;
 
+	while( '\0' != (code = GetOptionParameter(&cmdptr, buf, CONSTCAST(TCHAR **, &more))) ){
+		if ( code == '-' ){
+			if ( !tstrcmp( buf + 1, T("MASK")) ){
+				mask = more;
+			}
+		}
+	}
+
 	PPxSendMessage(WM_PPXCOMMAND, K_Scust, 0);
-	ptr = PPcustCDump();
+	ptr = PPcust(
+			(mask == NULL ) ? PPXCUSTMODE_DUMP_ALL : PPXCUSTMODE_DUMP_PART,
+			mask);
 
 	hFile = OpenDumpTarget(filename);
 	if ( hFile == NULL ){
@@ -435,21 +445,11 @@ int USECDECL main(void)
 			tstrcpy(FileName, Param);
 			continue;
 		}
-/*
-		if ( TinyCharUpper(Command[0]) == 'H' ){ // ヒストリオプション
-			if ( !tstrcmp( Param + 1, T("MASK")) ){
-				historytype = GetHistoryType(&more);
-			}else if ( !tstrcmp( Param + 1, T("FORMAT")) ){
-				format = GetNumber(&more);
-			}
-		}else{ // カスタマイズオプション
-		}
-*/
 	}
 //-------------------------------------------------------------- Customize Dump
 	if ( !tstricmp(Command, T("CD")) || !tstricmp(Command, T("DC")) ){
 		Print(T("Customize data dumping...") TNL);
-		return CustDump(FileName);
+		return CustDump(cmdptr, FileName);
 	}
 //------------------------------------------------------------- Customize Store
 	if ( !tstricmp(Command, T("CS")) || !tstricmp(Command, T("SC")) ){

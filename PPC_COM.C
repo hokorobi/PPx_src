@@ -213,10 +213,10 @@ case K_s | 'R':
 	break;
 //----------------------------------------------- Sort
 case 'S':
-	return SortKeyCommand(cinfo, 0);
+	return SortKeyCommand(cinfo, 0, NULL);
 //----------------------------------------------- Hold Sort
 case K_s | 'S':
-	return SortKeyCommand(cinfo, 1);
+	return SortKeyCommand(cinfo, 1, NULL);
 //----------------------------------------------- Tree (once)
 case K_F4:
 case 'T':
@@ -309,9 +309,9 @@ case K_c | K_F5:
 case '/':
 	DivMark(cinfo);
 	break;
-//----------------------------------------------- Width
+//----------------------------------------------- View style
 case ';':
-	return SetCellDisplayFormat(cinfo, 0);
+	return SetCellDisplayFormat(cinfo, 0, NULL);
 //----------------------------------------------- Copy Path
 case '=':
 	SetPairPath(cinfo, NULL, NULL);

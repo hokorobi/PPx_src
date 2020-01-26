@@ -749,7 +749,7 @@ void DxGetTextExtentExPoint(DXDRAWSTRUCT *DxDraw, HDC hDC, const TCHAR *str, int
 		#define DRAWSTR str
 	#else
 		WCHAR DRAWSTR[0x200];
-		int DRAWLEN = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, str, len, DRAWSTR, TSIZEOFW(DRAWSTR));
+		int DRAWLEN = MultiByteToWideChar(CP_ACP, 0, str, len, DRAWSTR, TSIZEOFW(DRAWSTR));
 	#endif
 
 	for (;;){
@@ -802,7 +802,7 @@ void DxTextOutRel(DXDRAWSTRUCT *DxDraw, HDC hDC, const TCHAR *str, int len)
 		#define DRAWSTR str
 	#else
 		WCHAR DRAWSTR[0x200];
-		int DRAWLEN = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, str, len, DRAWSTR, TSIZEOFW(DRAWSTR) );
+		int DRAWLEN = MultiByteToWideChar(CP_ACP, 0, str, len, DRAWSTR, TSIZEOFW(DRAWSTR) );
 	#endif
 
 	if ( FAILED(DxDraw->dwFactory->CreateGdiCompatibleTextLayout(DRAWSTR, DRAWLEN, DxDraw->textFormat, 32000, 32000, 1.0f, NULL, FALSE, &dwLayout)) ){
@@ -906,7 +906,7 @@ void DxDrawText(DXDRAWSTRUCT *DxDraw, HDC hDC, const TCHAR *str, int len, RECT *
 		if ( len == -1 ) len = strlenW(str);
 	#else
 		WCHAR DRAWSTR[0x200];
-		int DRAWLEN = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, str, len, DRAWSTR, TSIZEOFW(DRAWSTR) );
+		int DRAWLEN = MultiByteToWideChar(CP_ACP, 0, str, len, DRAWSTR, TSIZEOFW(DRAWSTR) );
 	#endif
 
 	if ( flags & DT_WORDBREAK ){

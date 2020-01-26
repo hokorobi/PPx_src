@@ -421,7 +421,7 @@ void LoadLs(const TCHAR *path, LOADSETTINGS *ls)
 	ls->dset.sort.atr = FILEATTRMASK_DIR_FILES;
 	ls->dset.sort.option = SORTE_DEFAULT_VALUE;
 	ls->disp[0] = '\0';
-	GetCustTable(T("XC_dset"), path, ls, sizeof(LOADSETTINGS));
+	GetCustTable(StrXC_dset, path, ls, sizeof(LOADSETTINGS));
 }
 
 void SaveLs(const TCHAR *path, LOADSETTINGS *ls)
@@ -432,9 +432,9 @@ void SaveLs(const TCHAR *path, LOADSETTINGS *ls)
 		(ls->dset.cellicon != DSETI_DEFAULT) ||
 		(ls->dset.sort.mode.dat[0] >= 0) ||
 		ls->disp[0] ){
-		SetCustTable(T("XC_dset"), path, ls, sizeof(XC_DSET) + TSTRSIZE(ls->disp));
+		SetCustTable(StrXC_dset, path, ls, sizeof(XC_DSET) + TSTRSIZE(ls->disp));
 	} else{
-		DeleteCustTable(T("XC_dset"), path, 0);
+		DeleteCustTable(StrXC_dset, path, 0);
 	}
 }
 
@@ -723,7 +723,7 @@ int FindSortSetting(PPC_APPINFO *cinfo, TCHAR *findpath)
 	return mode;
 }
 
-HMENU AddPPcSortMenu(PPC_APPINFO *cinfo, HMENU hMenu, ThSTRUCT *PopupTbl, DWORD *mmmode, DWORD *sid, DWORD sortmode)
+HMENU AddPPcSortMenu(PPC_APPINFO *cinfo, HMENU hMenu, ThSTRUCT *PopupTbl, DWORD *mmmode, DWORD *sid, DWORD sortmode, const TCHAR *path)
 {
 	DWORD id = CRID_SORT;
 	BOOL settab;
@@ -741,19 +741,24 @@ HMENU AddPPcSortMenu(PPC_APPINFO *cinfo, HMENU hMenu, ThSTRUCT *PopupTbl, DWORD 
 		newmmmode = X_dsst[0] + CRID_SORTEX;
 	}
 	settab = AppendMenuPopString(hMenu, SortPopStringList);
-	if ( newmmmode != CRID_SORT_PATH_BRANCH ){
+	if ( newmmmode == CRID_SORT_PATH_BRANCH ){
+		if ( (sortmode == CRID_SORT_PATH_BRANCH) && (path != NULL) && (path[0] != '\0') ){
+			tstrcpy(setpath, path);
+		}
+	}else{
 		setpath[1] = '*';
 		setpath[2] = '\0';
 	}
 	AppendMenuString(hMenu, CRID_SORT_PATH_BRANCH, settab ? setpath : setpath + 1);
-	if ( cinfo->e.Dtype.mode == VFSDT_LFILE ){
+	if ( (cinfo->e.Dtype.mode == VFSDT_LFILE) || (sortmode == CRID_SORT_LISTFILE) ){
 		AppendMenuString(hMenu, CRID_SORT_LISTFILE, StrDsetListfile);
 	}
 	if ( (cinfo->e.Dtype.mode == VFSDT_UN) ||
 		(cinfo->e.Dtype.mode == VFSDT_SUSIE) ||
 		(cinfo->e.Dtype.mode == VFSDT_CABFOLDER) ||
 		(cinfo->e.Dtype.mode == VFSDT_LZHFOLDER) ||
-		(cinfo->e.Dtype.mode == VFSDT_ZIPFOLDER) ){
+		(cinfo->e.Dtype.mode == VFSDT_ZIPFOLDER) ||
+		(sortmode == CRID_SORT_ARCHIVE) ){
 		tstrcpy(settab ? setpath + 1 : setpath, MessageText(StrDsetArchive));
 		AppendMenuString(hMenu, CRID_SORT_ARCHIVE, setpath);
 	}
@@ -765,7 +770,7 @@ HMENU AddPPcSortMenu(PPC_APPINFO *cinfo, HMENU hMenu, ThSTRUCT *PopupTbl, DWORD 
 			newmmmode = CRID_SORT_REGID;
 		}
 	} else{		// [S] 一時設定
-		newmmmode = X_dsst[1] + CRID_SORTEX;
+		newmmmode = CRID_SORTEX + X_dsst[1];
 	}
 	CheckMenuRadioItem(hMenu, CRID_SORT_TEMP, CRID_SORT_MODELAST - 1, newmmmode, MF_BYCOMMAND);
 	if ( mmmode != NULL ){
@@ -812,7 +817,7 @@ void SaveSortSetting(PPC_APPINFO *cinfo, int mode, const TCHAR *path, XC_SORT *x
 }
 
 
-BOOL PPC_SortMenu(PPC_APPINFO *cinfo, XC_SORT *xc, DWORD sortmode)
+BOOL PPC_SortMenu(PPC_APPINFO *cinfo, XC_SORT *xc, DWORD sortmode, const TCHAR *path)
 {
 	BOOL result = FALSE;
 	DWORD id;
@@ -829,7 +834,7 @@ BOOL PPC_SortMenu(PPC_APPINFO *cinfo, XC_SORT *xc, DWORD sortmode)
 	ThInit(&PopupTbl);
 
 	if ( sortmode == CRID_SORT_DESCENDING ) descending_sort = 1;
-	hMenu = AddPPcSortMenu(cinfo, NULL, &PopupTbl, &mmmode, &id, sortmode);
+	hMenu = AddPPcSortMenu(cinfo, NULL, &PopupTbl, &mmmode, &id, sortmode, path);
 	if ( hMenu != NULL ){
 		for ( ; ; ){
 			switch ( mmmode ){ // モード切替
@@ -843,6 +848,7 @@ BOOL PPC_SortMenu(PPC_APPINFO *cinfo, XC_SORT *xc, DWORD sortmode)
 				case CRID_SORT_THIS_BRANCH:
 				case CRID_SORT_PATH_BRANCH:
 				case CRID_SORT_ARCHIVE:
+				case CRID_SORT_LISTFILE:
 					GetSetPath(cinfo, setpath, mmmode, CRID_SORTEX, hMenu);
 					LoadLs(setpath, &ls);
 					tmpxc = ls.dset.sort;
@@ -928,12 +934,16 @@ void PPC_SortMain(PPC_APPINFO *cinfo, XC_SORT *xc)
 
 //-----------------------------------------------------------------------------
 // ソート
-ERRORCODE SortKeyCommand(PPC_APPINFO *cinfo, DWORD sortmode)
+ERRORCODE SortKeyCommand(PPC_APPINFO *cinfo, DWORD sortmode, const TCHAR *path)
 {
 	XC_SORT xc;
 
 	xc = cinfo->XC_sort;
-	if ( PPC_SortMenu(cinfo, &xc, sortmode) == FALSE ) return ERROR_CANCELLED;
+	if ( PPC_SortMenu(cinfo, &xc, sortmode, path) == FALSE ) return ERROR_CANCELLED;
+	if ( (sortmode == CRID_SORT_PATH_BRANCH) && (path != NULL) && (path[0] != '\0') ){
+		return NO_ERROR; // -"path" 指定の時はソートしない
+	}
+
 	PPC_SortMain(cinfo, &xc);
 	return NO_ERROR;
 }
@@ -2310,7 +2320,7 @@ BOOL IsSameDispFormat(XC_CFMT *cfmt, BYTE *targetformat, size_t fmtsize)
 	return !memcmp(cfmt->fmtbase + 2, targetformat + 2, fmtsize - 2);
 }
 
-void AddPPcCellDisplayMenu(PPC_APPINFO *cinfo, HMENU hMenu, int *rmode, DWORD *rfmtsize)
+void AddPPcCellDisplayMenu(PPC_APPINFO *cinfo, HMENU hMenu, int *rmode, DWORD *rfmtsize, const TCHAR *optpath)
 {
 	int id, mode;
 	TCHAR path[VFPS], sname[MAX_PATH];
@@ -2353,17 +2363,24 @@ void AddPPcCellDisplayMenu(PPC_APPINFO *cinfo, HMENU hMenu, int *rmode, DWORD *r
 	} else{
 		AppendMenuPopString(hMenu, DispPopStringList3);
 	}
-	if ( mode == CRID_VIEWFORMAT_PATH_BRANCH ){
-		AppendMenuString(hMenu, CRID_VIEWFORMAT_PATH_BRANCH, path);
+	if ( (mode == CRID_VIEWFORMAT_PATH_BRANCH) || (optpath != NULL) ){
+		if ( optpath != NULL ) tstrcpy(path, optpath);
+		AppendMenuString(hMenu, CRID_VIEWFORMAT_PATH_BRANCH,
+			(optpath != NULL) ? optpath : path);
 	}
 	if ( (cinfo->e.Dtype.mode == VFSDT_LFILE) ||
 		 (cinfo->e.Dtype.mode == VFSDT_UN) ||
 		 (cinfo->e.Dtype.mode == VFSDT_SUSIE) ||
 		 (cinfo->e.Dtype.mode == VFSDT_CABFOLDER) ||
 		 (cinfo->e.Dtype.mode == VFSDT_LZHFOLDER) ||
-		 (cinfo->e.Dtype.mode == VFSDT_ZIPFOLDER) ){
-		if ( cinfo->e.Dtype.mode == VFSDT_LFILE ){
+		 (cinfo->e.Dtype.mode == VFSDT_ZIPFOLDER) ||
+		 ((rmode != NULL) && (*rmode == CRID_VIEWFORMAT_ARCHIVE)) ||
+		 ((rmode != NULL) && (*rmode== CRID_VIEWFORMAT_LISTFILE)) ){
+		if ( (cinfo->e.Dtype.mode == VFSDT_LFILE) || ((rmode != NULL) && (*rmode == CRID_VIEWFORMAT_LISTFILE)) ){
 			AppendMenuString(hMenu, CRID_VIEWFORMAT_LISTFILE, StrDsetListfile);
+			if ( (rmode != NULL) && (*rmode == CRID_VIEWFORMAT_ARCHIVE) ){
+				AppendMenuString(hMenu, CRID_VIEWFORMAT_ARCHIVE, StrDsetArchive);
+			}
 		}else{
 			AppendMenuString(hMenu, CRID_VIEWFORMAT_ARCHIVE, StrDsetArchive);
 		}
@@ -2382,7 +2399,7 @@ void AddPPcCellDisplayMenu(PPC_APPINFO *cinfo, HMENU hMenu, int *rmode, DWORD *r
 	}
 }
 
-ERRORCODE SetCellDisplayFormat(PPC_APPINFO *cinfo, int selectindex)
+ERRORCODE SetCellDisplayFormat(PPC_APPINFO *cinfo, int selectindex, const TCHAR *path)
 {
 	int index, mode = selectindex;
 	TCHAR sname[VFPS];
@@ -2392,8 +2409,12 @@ ERRORCODE SetCellDisplayFormat(PPC_APPINFO *cinfo, int selectindex)
 	DWORD fmtsize;
 	// LOADSETTINGS ls;
 
+	if ( (selectindex != CRID_VIEWFORMAT_PATH_BRANCH) ||
+		 ( (path != NULL) && (path[0] == '\0')) ){
+		path = NULL;
+	}
 	hMenu = CreatePopupMenu();
-	AddPPcCellDisplayMenu(cinfo, hMenu, &mode, &fmtsize);
+	AddPPcCellDisplayMenu(cinfo, hMenu, &mode, &fmtsize, path);
 	for ( ; ; ){
 		MENUITEMINFO minfo;
 
@@ -2723,13 +2744,11 @@ void ClipFiles(PPC_APPINFO *cinfo, DWORD effect, DWORD cliptypes)
 
 void ClipDirectory(PPC_APPINFO *cinfo)
 {
-	TCHAR buf[VFPS];
 	TMS_struct files = {{NULL, 0, NULL}, 0};
 	HGLOBAL hClip;
 
 	TMS_reset(&files);
-	wsprintf(buf, T("%s"), cinfo->path);
-	TMS_set(&files, buf);
+	TMS_set(&files, cinfo->path);
 	TMS_off(&files);
 	hClip = GlobalReAlloc(files.tm.h, files.p, GMEM_MOVEABLE);
 	if ( hClip == NULL ) hClip = files.tm.h;
@@ -2915,6 +2934,17 @@ ERRORCODE MaskEntry(PPC_APPINFO *cinfo, int mode, const TCHAR *defmask, const TC
 	mask.attr = 0;
 	mask.file[0] = '\0';
 	pfs.mask = &mask;
+	/*
+	if ( (mode == DSMD_PATH_BRANCH) && (path != NULL) && (path[0] != '\0') ){
+		FDSOS fds;
+
+		fds.mode = DSMD_NOMODE;
+		fds.findpath = findpath;
+		fds.finditem = finditem;
+		fds.itemptr = fds.ls.mask;
+		FindDirSettingOne(&fds, path, DSMD_PATH_BRANCH);
+	}else
+	*/
 	if ( mode != DSMD_TEMP ){
 		*pfs.mask = cinfo->mask; // Holdmask(\F)
 		if ( mode == DSMD_NOMODE ){
@@ -2923,6 +2953,43 @@ ERRORCODE MaskEntry(PPC_APPINFO *cinfo, int mode, const TCHAR *defmask, const TC
 			if ( mode == DSMD_NOMODE ){
 				GetCustData(Str_X_dsst, &X_dsst, sizeof(X_dsst));
 				mode = X_dsst[0];
+			}
+		}else{
+			LOADSETTINGS ls;
+
+			ls.mask[0] = '\0';
+			switch ( mode ){
+				case DSMD_THIS_PATH:
+					LoadSettingMain(&ls, cinfo->path);
+					defmask = ls.mask;
+					break;
+
+				case DSMD_THIS_BRANCH:
+					CatPath(maskpath, cinfo->path, NilStr);
+					LoadSettingMain(&ls, maskpath);
+					defmask = ls.mask;
+					break;
+
+				case DSMD_REGID:
+					defmask = cinfo->mask.file;
+					break;
+
+				case DSMD_LISTFILE:
+					LoadSettingMain(&ls, StrListfileMode);
+					defmask = ls.mask;
+					break;
+
+				case DSMD_ARCHIVE:
+					LoadSettingMain(&ls, StrArchiveMode);
+					defmask = ls.mask;
+					break;
+
+				case DSMD_PATH_BRANCH:
+					if ( path != NULL ){
+						LoadSettingMain(&ls, path);
+						defmask = ls.mask;
+					}
+					break;
 			}
 		}
 	}
@@ -2946,24 +3013,23 @@ ERRORCODE MaskEntry(PPC_APPINFO *cinfo, int mode, const TCHAR *defmask, const TC
 			SetCustTable(T("XC_mask"), cinfo->RegCID + 1,
 				&cinfo->mask, TSTRSIZE(cinfo->mask.file) + 4);
 		} else{ // DSMD_NOMODE, DSMD_TEMP, DSMD_REGID 以外
-			if ( (path == NULL) || (*path == '\0') ){
-				switch ( pfs.mode ){
-					case DSMD_THIS_PATH:
-						path = cinfo->path;
-						break;
-					case DSMD_LISTFILE:
-						path = StrListfileMode;
-						break;
-					case DSMD_ARCHIVE:
-						path = StrArchiveMode;
-						break;
-//					case DSMD_THIS_BRANCH:
-//					case DSMD_PATH_BRANCH:
-					default:
-						CatPath(maskpath, cinfo->path, NilStr);
-						path = maskpath;
-						break;
-				}
+			switch ( pfs.mode ){
+				case DSMD_THIS_PATH:
+					path = cinfo->path;
+					break;
+				case DSMD_LISTFILE:
+					path = StrListfileMode;
+					break;
+				case DSMD_ARCHIVE:
+					path = StrArchiveMode;
+					break;
+				case DSMD_PATH_BRANCH:
+					if ( (path != NULL) && (*path != '\0') ) break;
+//				case DSMD_THIS_BRANCH:
+				default:
+					CatPath(maskpath, cinfo->path, NilStr);
+					path = maskpath;
+					break;
 			}
 			SetNewXdir(path, LOADMASKSTR, pfs.mask->file);
 		}
@@ -3007,14 +3073,16 @@ void MaskTargetMenu(HWND hDlg, HWND hButtonWnd, FILEMASKDIALOGSTRUCT *PFS)
 	setpath[1] = '\0';
 	settab = AppendMenuPopString(hMenu, SortPopStringList + 1);
 
-	if ( PFS->cinfo->e.Dtype.mode == VFSDT_LFILE ){
+	if ( (PFS->cinfo->e.Dtype.mode == VFSDT_LFILE) ||
+		 (PFS->mode == DSMD_LISTFILE) ){
 		AppendMenuString(hMenu, CRID_SORT_LISTFILE, StrDsetListfile);
 	}
 	if ( (PFS->cinfo->e.Dtype.mode == VFSDT_UN) ||
 		(PFS->cinfo->e.Dtype.mode == VFSDT_SUSIE) ||
 		(PFS->cinfo->e.Dtype.mode == VFSDT_CABFOLDER) ||
 		(PFS->cinfo->e.Dtype.mode == VFSDT_LZHFOLDER) ||
-		(PFS->cinfo->e.Dtype.mode == VFSDT_ZIPFOLDER) ){
+		(PFS->cinfo->e.Dtype.mode == VFSDT_ZIPFOLDER) ||
+		(PFS->mode == DSMD_ARCHIVE) ){
 		tstrcpy(settab ? setpath + 1 : setpath, MessageText(StrDsetArchive));
 		AppendMenuString(hMenu, CRID_SORT_ARCHIVE, setpath);
 	}
@@ -3931,15 +3999,16 @@ struct DirOptionOptCommandStruct {
 };
 struct DirOptionOptCommandStruct DirOptionOptCommand_view = {MES_MTVF, T("*viewstyle %s"), 'V'};
 struct DirOptionOptCommandStruct DirOptionOptCommand_mask = {MES_TFEM, T("*setmaskentry %s |%s"), 'M'};
-struct DirOptionOptCommandStruct DirOptionOptCommand_cmd = {MES_JMRU, T("*diroption %s cmd %s"), 'O'};
+struct DirOptionOptCommandStruct DirOptionOptCommand_sort = {MES_MTSO, T("*setsortentry %s"), 'S'};
+struct DirOptionOptCommandStruct DirOptionOptCommand_cmd = {MES_JMRU, T("*diroption %s cmd %s"), 'X'};
 
 void DirOption_OptCommand(struct DirOptionMenuArgs *DOMA, struct DirOptionOptCommandStruct *doo, const TCHAR *param)
 {
 	TCHAR buf[CMDLINESIZE];
-	const TCHAR *p;
+	const TCHAR *paramptr;
 
-	p = param ? param : T("");
-	GetLineParam(&p, buf + wsprintf(buf, T("%s...(&%c) : "), MessageText(doo->menuname), doo->menuacc));
+	paramptr = param ? param : NilStr;
+	GetLineParam(&paramptr, buf + wsprintf(buf, T("%s...(&%c) : "), MessageText(doo->menuname), doo->menuacc));
 	AppendMenuString(DOMA->hPopupMenu, (*DOMA->index)++, buf);
 	if ( DOMA->opttype == NilStr ){
 		buf[0] = '\0';
@@ -3950,9 +4019,9 @@ void DirOption_OptCommand(struct DirOptionMenuArgs *DOMA, struct DirOptionOptCom
 }
 
 // *diroption
-HMENU DirOptionMenu(PPC_APPINFO *cinfo, HMENU hPopupMenu, DWORD *index, ThSTRUCT *TH, DWORD nowmode)
+HMENU DirOptionMenu(PPC_APPINFO *cinfo, HMENU hPopupMenu, DWORD *index, ThSTRUCT *TH, DWORD nowmode, const TCHAR *path)
 {
-	TCHAR buf[VFPS];
+	TCHAR buf[VFPS], optpath[VFPS + 8];
 	LOADSETTINGS ls;
 	struct DirOptionMenuArgs DOMA;
 
@@ -3975,6 +4044,17 @@ HMENU DirOptionMenu(PPC_APPINFO *cinfo, HMENU hPopupMenu, DWORD *index, ThSTRUCT
 		CatPath(buf, cinfo->path, NilStr);
 		LoadLs(buf, &ls);
 		DOMA.opttype = T("-thisbranch");
+	} else if ( nowmode == DSMD_ARCHIVE ){
+		LoadLs(T("listfile"), &ls);
+		DOMA.opttype = T("-archive");
+	} else if ( nowmode == DSMD_LISTFILE ){
+		LoadLs(T("listfile"), &ls);
+		DOMA.opttype = T("-listfile");
+	} else if ( nowmode == DSMD_PATH_BRANCH ){
+		wsprintf(buf, T("/%s"), path);
+		LoadLs(buf, &ls);
+		wsprintf(optpath, T("-\"%s\""), path);
+		DOMA.opttype = optpath;
 	}
 
 	DirOption_SetDirOptCommand(&DOMA, T("watch"),
@@ -4004,7 +4084,7 @@ HMENU DirOptionMenu(PPC_APPINFO *cinfo, HMENU hPopupMenu, DWORD *index, ThSTRUCT
 		ThAddString(TH, T("%K\"\\F"));
 	} else {
 		TCHAR *p;
-		TCHAR *disp = NULL, *mask = NULL, *cmd = NULL;
+		const TCHAR *disp = NULL, *mask = NULL, *cmd = NULL, *sort = NULL;
 
 		p = ls.disp;
 		while ( SkipSpace((const TCHAR **)&p) ){
@@ -4030,8 +4110,21 @@ HMENU DirOptionMenu(PPC_APPINFO *cinfo, HMENU hPopupMenu, DWORD *index, ThSTRUCT
 				continue;
 			}
 		}
+		{ // sort
+			int index = 0;
+
+			for ( ; SortItems[index] != NULL ; index++ ){
+				if ( ls.dset.sort.mode.dat[0] == sortIDtable[index] ){
+					wsprintf(buf, T("\"%s\""), MessageText(SortItems[index]));
+					sort = buf;
+					break;
+				}
+			}
+		}
+
 		DirOption_OptCommand(&DOMA, &DirOptionOptCommand_view, disp);
 		DirOption_OptCommand(&DOMA, &DirOptionOptCommand_mask, mask);
+		DirOption_OptCommand(&DOMA, &DirOptionOptCommand_sort, sort);
 		DirOption_OptCommand(&DOMA, &DirOptionOptCommand_cmd, cmd);
 	}
 	AppendMenuPopString(hPopupMenu, DispDiroptStringList);
@@ -4045,6 +4138,11 @@ HMENU DirOptionMenu(PPC_APPINFO *cinfo, HMENU hPopupMenu, DWORD *index, ThSTRUCT
 		(cinfo->e.Dtype.mode == VFSDT_ZIPFOLDER) ){
 		AppendMenuString(hPopupMenu, CRID_DIROPT_ARCHIVE, StrDsetArchive);
 	}
+
+	if ( nowmode == DSMD_PATH_BRANCH ){
+		AppendMenuString(hPopupMenu, CRID_DIROPT_PATH_BRANCH, path);
+	}
+
 	CheckMenuRadioItem(hPopupMenu, CRID_DIROPT, CRID_DIROPT_MODELAST - 1, CRID_DIROPT + nowmode, MF_BYCOMMAND);
 	return hPopupMenu;
 }

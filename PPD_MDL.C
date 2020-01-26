@@ -799,7 +799,7 @@ void GetLinkedPathFunction(EXECSTRUCT *Z, const TCHAR *param)
 	if ( FAILED(GetLink(NULL, buf, name)) ){
 		if ( GetReparsePath(buf, name) == 0 ) return;
 	}
-	Z->dst += wsprintf(Z->dst, T("%s"), name);
+	Z->dst = tstpcpy(Z->dst, name);
 	return;
 }
 
@@ -913,7 +913,7 @@ void GetPPxListFunction(EXECSTRUCT *Z, const TCHAR *param)
 		}
 		if ( th.bottom != NULL ){
 			if ( th.top < 1 ){
-				Z->dst += wsprintf(Z->dst, T("%s"), th.bottom);
+				Z->dst = tstpcpy(Z->dst, (TCHAR *)th.bottom);
 			}else if ( IsTrue(StoreLongParam(Z, th.top / sizeof(TCHAR))) ){
 				ThCatString(&Z->ExtendDst, (TCHAR *)th.bottom);
 			}
@@ -958,7 +958,7 @@ void GetNameFunction(EXECSTRUCT *Z, const TCHAR *param)
 	if ( flag & FMOPT_UNIQUE ) GetUniqueEntryName(buf);
 	GetFmacroString(flag, buf, name);
 
-	Z->dst += wsprintf(Z->dst, T("%s"), name);
+	Z->dst = tstpcpy(Z->dst, name);
 	return;
 
 error:
@@ -1104,46 +1104,35 @@ void InputFunction(EXECSTRUCT *Z, TCHAR *param)
 	resetflag(Z->status, ST_USECACHE);
 }
 
+TCHAR *PPcustCDumpTextItemPtr(TCHAR *param)
+{
+	TCHAR *fp = param;
+	if ( *fp == '\t' ) fp++;
+	if ( (*fp == '=') || (*fp == ',') ) fp++;
+	if ( *fp == ' ' ) fp++;
+	return fp;
+}
+
 void GetCustFunction(EXECSTRUCT *Z, const TCHAR *param)
 {
-	TCHAR buf[CMDLINESIZE], str[VFPS+2], *sub;
+	TCHAR buf[CMDLINESIZE], str[VFPS+2], *sub, *bufptr;
 
 	GetCommandParameter(&param, str, TSIZEOF(str));
 	sub = tstrchr(str, ':');
 	if ( sub != NULL ) *sub++ = '\0';
 
-	PPcustCDumpText(str, sub, buf);
-	Z->dst += wsprintf(Z->dst, T("%s"), buf);
-	return;
-}
-
-void RegExpFunction(EXECSTRUCT *Z, const TCHAR *param)
-{
-	TCHAR buf[CMDLINESIZE];
-	RXPREPLACESTRING *rexps;
-
-	GetCommandParameter(&param, Z->dst, CMDLINESIZE);
-	if ( SkipSpace(&param) != ',' ) goto error;
-	param++;
-	GetCommandParameter(&param, buf, TSIZEOF(buf));
-
-	if ( FALSE == InitRegularExpressionReplace(&rexps, buf, FALSE) ) return;
-	RegularExpressionReplace(rexps, Z->dst);
-	FreeRegularExpressionReplace(rexps);
-
-	Z->dst += tstrlen(Z->dst);
-	return;
-
-error:
-	if ( *Z->dst != '?' ){
-		XMessage(NULL, NULL, XM_GrERRld, T("%*regexp(src,regexp)"));
-		Z->result = ERROR_INVALID_PARAMETER;
-		return;
+	bufptr = buf;
+	PPcustCDumpText(str, sub, &bufptr);
+	if ( bufptr == buf ){
+		Z->dst = tstpcpy(Z->dst, PPcustCDumpTextItemPtr(buf));
+	}else{
+		if ( IsTrue(StoreLongParam(Z, 0)) ){
+			ThCatString(&Z->ExtendDst, PPcustCDumpTextItemPtr(bufptr));
+			HeapFree(ProcHeap, 0, bufptr);
+		}
 	}
-	GetRegularExpressionName(Z->dst);
-	Z->dst += tstrlen(Z->dst);
+	return;
 }
-
 
 UTCHAR ZFixParameter(TCHAR **commandline)
 {
@@ -1160,8 +1149,6 @@ UTCHAR ZFixParameter(TCHAR **commandline)
 	if ( code == '\"' ){
 		src++;
 		for ( ; ; ){
-			TCHAR code;
-
 			code = *src;
 			if ( code == '\0' ){
 				break;
@@ -1174,6 +1161,7 @@ UTCHAR ZFixParameter(TCHAR **commandline)
 			// " を見つけた場合の処理
 			if ( *(src + 1) != '\"' ){	// "" エスケープ?
 				src++; // 単独 " … ここで終わり
+				code = *src;
 				break;
 			}
 			// エスケープ処理
@@ -1198,6 +1186,40 @@ UTCHAR ZFixParameter(TCHAR **commandline)
 	*dest = '\0';
 	*commandline = src;
 	return code;
+}
+
+void RegExpFunction(EXECSTRUCT *Z, TCHAR *param)
+{
+	const TCHAR *long_result;
+	TCHAR *src, *pattern;
+	RXPREPLACESTRING *rexps;
+
+	src = param;
+	if ( (ZFixParameter(&param) != ',') && (SkipSpace((const TCHAR **)&param) != ',') ) goto error;
+	param++;
+
+	pattern = param;
+	ZFixParameter(&param);
+
+	if ( FALSE == InitRegularExpressionReplace(&rexps, pattern, FALSE) ) return;
+	long_result = RegularExpressionReplace(rexps, src, Z->dst, CMDLINESIZE);
+	if ( long_result == Z->dst ){
+		Z->dst += tstrlen(Z->dst);
+	}else{
+		if ( IsTrue(StoreLongParam(Z, 0)) ){
+			ThCatString(&Z->ExtendDst, long_result);
+		}
+	}
+	FreeRegularExpressionReplace(rexps);
+	return;
+
+error:
+	if ( *src != '?' ){
+		XMessage(NULL, NULL, XM_GrERRld, T("%*regexp(src,regexp)"));
+		Z->result = ERROR_INVALID_PARAMETER;
+		return;
+	}
+	Z->dst = GetRegularExpressionName(Z->dst);
 }
 
 void ExtractFunction(EXECSTRUCT *Z, TCHAR *param)
@@ -1266,7 +1288,14 @@ void CallFunction(EXECSTRUCT *Z, TCHAR *cmdname, DWORD namehash, const TCHAR *fu
 	mdlparam.optparam = funcparam;
 
 	if ( 1 != (Z->result = (PPxInfoFunc32u(Z->Info, PPXCMDID_FUNCTION, &mdlparam) ^ 1)) ){
-		Z->dst += tstrlen(mdlparam.dest);
+		if ( mdlparam.dest == Z->dst ){
+			Z->dst += tstrlen(mdlparam.dest);
+		}else{
+			if ( IsTrue(StoreLongParam(Z, 0)) ){
+				ThCatString(&Z->ExtendDst, mdlparam.dest);
+			}
+			HeapFree(ProcHeap, 0, mdlparam.dest);
+		}
 		return;
 	}
 

@@ -25,6 +25,7 @@ GVAR const TCHAR PPXJOBMUTEX[] GPARAM(T("PPxJOB"));	// 実行シリアライズ用Mutex
 GVAR const TCHAR StrListFileid[] GPARAM(T("::listfile"));
 GVAR const TCHAR StrPath[] GPARAM(T("PATH"));
 GVAR const TCHAR StrCustOthers[] GPARAM(T("_others"));
+GVAR const TCHAR StrCustSetup[] GPARAM(T("_Setup"));
 GVAR const TCHAR PPxRegPath[] GPARAM(T(PPxSettingsRegPath));
 GVAR const TCHAR IdlCacheName[] GPARAM(T("#IdlC"));
 GVAR const TCHAR StrShortcutExt[] GPARAM(T(ShortcutExt));

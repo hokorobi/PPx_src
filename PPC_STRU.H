@@ -646,6 +646,7 @@ typedef struct tagPPC_APPINFO {
 	// TCHAR RegSubID[REGEXTIDSIZE]; // C_x / C_Zyz 形式
 	TCHAR RegSubCID[REGEXTIDSIZE];	 // Cx / CZyzz 形式
 	HWND hHeaderWnd;			// 一覧のカラムヘッダ
+
 	#define LIT_UNKNOWN		0
 	#define LIT_KEYBOARD	1
 	#define LIT_MOUSE		2
@@ -653,8 +654,7 @@ typedef struct tagPPC_APPINFO {
 	#define LIT_PEN			4
 	#define LIT_POINTUI_MIN	LIT_MOUSE
 	#define LIT_DIRECTPOINTUI_MIN	LIT_TOUCH
-
-	int LastInputType;
+	int LastInputType; // LIT_xxx
 	int PopupPosType;			// メニューなどを表示するとき使う座標の種類
 								//  (TKEY.H の PPT_ )
 	POINT PopupPos;		// メニューなどを表示するとき使う座標
@@ -670,6 +670,7 @@ typedef struct tagPPC_APPINFO {
 	DWORD SubThreadID; // サブスレッドのスレッドID
 	unsigned long ShNotifyID; // SHNパスの更新通知ID
 	volatile int SubTCmdFlags; // サブスレッドへの指令
+
 	TCHAR		Caption[VFPS];	// タイトルバー表示用文字列
 	ThSTRUCT	thGuiWork;		// DockやToolBarなどの記憶領域
 	ThSTRUCT	StringVariable;	// %s(i)用領域
@@ -1006,6 +1007,7 @@ typedef struct {
 #define WLFC_COMMENT	B3	// コメント出力を有効にする
 #define WLFC_SYSMSG		B4	// システムメッセージを出力する
 #define WLFC_MARKEDONLY	B5	// マーク付きのみ出力
+#define WLFC_NOHEADER	B6	// ヘッダ無し
 
 #define WLFC_COMMAND_DEFAULT	(WLFC_DETAIL | WLFC_OPTIONSTR | WLFC_COMMENT)
 #define WLFC_WRITEDIR_DEFAULT	(WLFC_DETAIL | WLFC_OPTIONSTR | WLFC_COMMENT)
@@ -1037,6 +1039,9 @@ ExternWinAPI(BOOL, GetGestureInfo, (HGESTUREINFO hGestureInfo, PGESTUREINFO pGes
 extern const IID XIID_IShellItem;
 
 extern PPXINMENUBAR ppcbar[];
+
+extern char sortIDtable[];
+extern const TCHAR *SortItems[];
 
 #ifndef SHGFI_ADDOVERLAYS
 	#define SHGFI_ADDOVERLAYS  0x000000020

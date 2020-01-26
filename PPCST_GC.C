@@ -123,7 +123,7 @@ const TCHAR stringaoff[] = T("非表示\0disable");
 const TCHAR stringetc[] = T(" 他 \0 other ");
 const TCHAR AutoString[] = T("a)");
 const TCHAR SubMenuString[] = T(">");
-const WCHAR stringExtInfo[] = L"拡張子(ﾜｲﾙﾄﾞｶｰﾄﾞ可)\0file extention";
+const WCHAR stringExtInfo[] = L"拡張子/ワイルドカード\0extention/wildcard";
 
 #define COLORLIST_WIDTH 6
 #define COLORLIST_HEIGHT 12

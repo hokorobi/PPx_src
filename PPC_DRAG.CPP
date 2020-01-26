@@ -565,7 +565,7 @@ void ExecSendTo(PPC_APPINFO *cinfo, const TCHAR *cmd)
 	if ( tstrlen(cmdext) > 5 ){
 		if ( GetRegString(HKEY_CLASSES_ROOT, cmdext, NilStr, buf, TSIZEOF(buf)) ){
 			tstrcat(buf, T("\\shellex\\DropHandler"));
-			if ( GetRegString(HKEY_CLASSES_ROOT, buf, NilStr, buf2, TSIZEOF(buf2)) ){
+			if ( GetRegString(HKEY_CLASSES_ROOT, buf, NilStr, buf2, TSIZEOF(buf2)) && !IsShellExBlocked(buf2) ){
 				CLSID hid;
 				#undef tidname
 				#ifndef UNICODE

@@ -746,13 +746,13 @@ void FixTextIndex(DWORD_PTR offset)
 
 void ImageRealloc(DWORD reqsize)
 {
-	HGLOBAL newH, oldH;
+	HGLOBAL mapH, newH;
 	BYTE *newImage, *oldImage;
 	DWORD asize;
 
 	oldImage = vo_.file.image;
-	oldH = vo_.file.mapH;
-	GlobalUnlock(oldH);
+	mapH = vo_.file.mapH;
+	GlobalUnlock(mapH);
 
 	if ( reqsize >= 0x80000000 ){
 		asize = 0x80000000;
@@ -760,17 +760,17 @@ void ImageRealloc(DWORD reqsize)
 		asize = vo_.file.ImageSize * 2;
 		while ( asize < reqsize ) asize *= 2;
 	}
-	newH = GlobalReAlloc(oldH, asize + FILEBUFMARGIN, GMEM_MOVEABLE);
-	if ( newH == NULL ){ // 確保失敗
-		newH = oldH;
-	}else{ // 拡張
+	newH = GlobalReAlloc(mapH, asize + FILEBUFMARGIN, GMEM_MOVEABLE);
+	if ( newH != NULL ){ // 拡張
+		mapH = newH;
 		vo_.file.ImageSize = asize;
 	}
-	newImage = GlobalLock(newH);
+	#pragma warning(suppress:6001) // 失敗時対応済み
+	newImage = GlobalLock(mapH);
 	if ( newImage != oldImage ){ // アドレスがずれるので、補正をする
 		vo_.file.image = newImage;
 		VOi->img = newImage;
-		vo_.file.mapH = newH;
+		vo_.file.mapH = mapH;
 		VOi->line = VOi->cline = 0;
 
 		if ( vo_.DModeType == DISPT_DOCUMENT ){
@@ -2364,7 +2364,7 @@ BOOL OpenViewObject(const TCHAR *filename, HGLOBAL memblock, VIEWOPTIONS *viewop
 		}
 	}else{	// GlobalAlloc
 		vo_.file.memdata = TRUE;
-		vo_.file.UseSize = GlobalSize(memblock);
+		vo_.file.UseSize = (DWORD)GlobalSize(memblock);
 		if ( vo_.file.UseSize == 0 ){
 			VO_error(PPERROR_GETLASTERROR);
 			GlobalFree(memblock);
@@ -2398,7 +2398,7 @@ BOOL OpenViewObject(const TCHAR *filename, HGLOBAL memblock, VIEWOPTIONS *viewop
 							MB_ICONQUESTION) ){
 					 break;
 				}
-				ThAppend(&vo_.memo, vo_.file.image, p + 4 - vo_.file.image);
+				ThAppend(&vo_.memo, vo_.file.image, (DWORD)(p + 4 - vo_.file.image));
 				ThAddString(&vo_.memo, NilStr);
 				vo_.file.image = p + 4;
 				break;
@@ -2476,7 +2476,7 @@ BOOL OpenViewObject(const TCHAR *filename, HGLOBAL memblock, VIEWOPTIONS *viewop
 					vo_.DModeType = DISPT_IMAGE;
 					GetMemo();
 					if ( FixOpenBmp(vo_.bitmap.info, viewopt,
-							LocalSize(vo_.bitmap.bits.mapH)) ){
+							(DWORD)LocalSize(vo_.bitmap.bits.mapH)) ){
 						goto success;
 					}
 				}
@@ -2884,7 +2884,7 @@ void ChangePage(int delta)
 		if ( gpage.optionoffset == 0 ){
 			memcpy(tempimg, vo_.file.image, tempsize);
 		}else{
-			DWORD srcoffset, destoffset;
+			size_t srcoffset, destoffset;
 			PNGchunk *pc;
 			PNGFrameControlStruct *fcs;
 
@@ -2984,7 +2984,7 @@ void ChangePage(int delta)
 	}
 
 	if ( VFSGetDibDelay(filename,
-			tempimg, tempsize, vo_.file.typeinfo, &hHeader, &hImage, NULL) ){
+			tempimg, (DWORD)tempsize, vo_.file.typeinfo, &hHeader, &hImage, NULL) ){
 		SIZE newsize;
 
 		NewBMPinfo = (BITMAPINFO *)LocalLock(hHeader);
@@ -3028,7 +3028,7 @@ void ChangePage(int delta)
 				newpal = (DWORD *)((BYTE *)NewBMPinfo + NewBMPinfo->bmiHeader.biSize);
 
 				if ( 0 != memcmp(oldpal, newpal,
-					(size_t)(1 << NewBMPinfo->bmiHeader.biBitCount) * sizeof(DWORD) ) ){
+					((size_t)1 << NewBMPinfo->bmiHeader.biBitCount) * sizeof(DWORD) ) ){
 					paletteFix = TRUE;
 					if ( tmode == TMODE_GIFMODE ){ // 新しいパレットインデックスを旧パレットインデックスに変換する表を作成
 						int ni, oi, newcols, oldcols;

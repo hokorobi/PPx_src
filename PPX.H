@@ -341,6 +341,7 @@ typedef struct {
 #define MC_CELS_TEMPNAME T("?Edit?") // 表示書式編集用に使う一時設定名
 
 #define DetectWildcardLetter T("!*,/:;?")
+#define DetectPathWildcardLetter T("!*,/;?")
 
 // X_dss の指定
 #define DSS_FONT	B0 // フォントサイズの変更を有効にする
@@ -706,6 +707,7 @@ typedef enum {
 #define MES_MTSI	T("MTSI|&Show icon")
 #define MES_MTSL	T("MTSL|&Line")
 #define MES_MTSN	T("MTSN|Single &Node")
+#define MES_MTSO	T("MTSO|Sort")
 #define MES_MTSS	T("MTSS|S&ync-select")
 #define MES_MTST	T("MTST|&Settings")
 #define MES_MTUE	T("MTUE|Custo&mize User list")
@@ -882,8 +884,8 @@ typedef enum {
 #define MES_USTD	T("USTD|Action is unsupported this directory")
 #define MES_VFSL	T("VFSL|VFS load")
 #define MES_VFSU	T("VFSU|VFS unload")
-#define MES_VTDC	T("VTDC|Document")
 #define MES_VTAI	T("VTAI|T&ail mode")
+#define MES_VTDC	T("VTDC|Document")
 #define MES_VTHE	T("VTHE|Hex")
 #define MES_VTIM	T("VTIM|Image")
 #define MES_VTRI	T("VTRI|Raw Image")
@@ -902,6 +904,7 @@ typedef enum {
 //#define IECS	Customize area extension was ready. 0.50廃止
 //#define NOES	any mach 1.28廃止
 //#define ERED	Read error 1.28廃止
+//#define 7883	一時設定 1.70 ボタン→ボタンメニューに変更
 
 /* 初期カスタマイズ内で使用している項目
 	MES_CDAT	MES_CDCM	MES_CDD1	MES_CDD2	MES_CDFN	MES_CDI1	.
@@ -910,7 +913,7 @@ typedef enum {
 	MES_JMAL	MES_JMCL	MES_JMCR	MES_JMCU	MES_JMPA	MES_JMPR	.
 	MES_JMPS	MES_JMPV	MES_JMTE	MES_MTDL	MES_MTDS	MES_MTED	.
 	MES_MTNW	MES_MTRS	MES_MTRT	.
-	MES_MTSC	MES_MTSO	MES_PJCP	MES_PJDE	MES_PJDL	.
+	MES_MTSC	MES_PJCP	MES_PJDE	MES_PJDL	.
 	MES_PJMD	MES_PJRB	*/
 
 #define POPMSG_MSG	0

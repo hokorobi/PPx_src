@@ -202,12 +202,17 @@ VFSDLL void PPXAPI VFSGetFFInfo(HANDLE hFF, int *mode, TCHAR *type, void **dt_op
 
 	switch( VFF->mode ){
 		case VFSDT_LFILE:
-			if ( (INT_PTR)mode == 1 ){
-				tstrcpy(type, VFF->v.LFILE.base);
-				return;
-			}
-			if ( (INT_PTR)mode == 2 ){
-				tstrcpy(type, VFF->v.LFILE.search);
+			if ( (INT_PTR)mode <= 4 ){
+				const TCHAR *ptr;
+				switch ( (INT_PTR)mode ){
+					case 2: ptr = VFF->v.LFILE.search; break;
+					case 3: ptr = VFF->v.LFILE.sort; break;
+					case 4: ptr = VFF->v.LFILE.view; break;
+//					case 1:
+					default:
+						ptr = VFF->v.LFILE.base; break;
+				}
+				tstrcpy(type, ptr);
 				return;
 			}
 			*dt_opt = VFF->v.LFILE.readptr;
