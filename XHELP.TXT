@@ -12,21 +12,24 @@ PPx‚Ì‘Og‚Æ‚µ‚Ä K-Launcher ‚Æ‚¢‚¤ƒtƒ@ƒCƒ‰‚ª‚ ‚è‚Ü‚·B‚±‚¿‚ç‚Í MS-DOS —p‚È‚Ì‚Å‚·‚
 .2:“®ìŠÂ‹«=ppxenv
 <groupa:‘Î‰ž/“®ìŠm”F OS::supportos>
 
-<b>32bit MultiByte”Å</b>
+<b>32bit MultiByte ”Å</b>
 @Windows 95, 98, 98SE, Me / NT4.0, 2000, XP, 2003(R2), Vista, 2008(R2), 7, 8, 8.1, 2012(R2), 10, 2016, 2019 ‚Å“®ì‚µ‚Ü‚·B
 @Windows XP, 2003(R2), Vista, 2008(R2), 7, 8, 8.1, 2012(R2), 10, 2016, 2019 ‚Ì 64bit”Å ‚Å‚à“®ì‚µ‚Ü‚·B
 @Win32s ‚â Windows(NT) 3.xˆÈ‰º‚Å‚Í“®ì‚µ‚Ü‚¹‚ñB
 
-<b>32bit UNICODE”Å</b>
+<b>32bit UNICODE ”Å</b>
 @Windows NT4.0, 2000, XP, 2003(R2), Vista, 2008(R2), 7, 8, 8.1, 2012(R2), 10, 2016, 2019 ‚Å“®ì‚µ‚Ü‚·B
 @Windows XP, 2003(R2), Vista, 2008(R2), 7, 8, 8.1, 2012(R2), 10, 2016, 2019 ‚Ì 64bit”Å ‚Å‚à“®ì‚µ‚Ü‚·B
 @Windows 95`Me, Win32s, Windows(NT) 3.xˆÈ‰º‚Å‚Í“®ì‚µ‚Ü‚¹‚ñB
 
-<b>64bit UNICODE”Å</b>
+<b>64bit UNICODE ”Å</b>
 @Windows XP, 2003(R2), Vista, 2008(R2), 7, 8, 8.1, 2012(R2), 10, 2016, 2019 ‚Ì 64bit”Å ‚Å“®ì‚µ‚Ü‚·B
 @32bit”Å Windows ‚Å‚Í“®ì‚µ‚Ü‚¹‚ñB
 
-EŠJ”­‚âŽå‚È“®ìŠm”F‚Í Windows 10 Pro(1903,19H1) 64bit”Å ‚Ås‚Á‚Ä‚¢‚Ü‚·B
+<b>ARM64 ”Å</b>
+@Windows 10 ARM64 ”Å ‚Å“®ì‚µ‚Ü‚·B
+
+EŠJ”­‚âŽå‚È“®ìŠm”F‚Í Windows 10 Pro 1909 64bit”Å ‚Ås‚Á‚Ä‚¢‚Ü‚·B
 EPPx‚ÌŽÀsƒtƒ@ƒCƒ‹‚ª‚ ‚éƒfƒBƒŒƒNƒgƒŠ/ƒtƒHƒ‹ƒ_‚ª‘‚«ž‚Ý‹ÖŽ~‚Å‚ ‚Á‚Ä‚àŽxá‚ªo‚È‚¢‚æ‚¤‚Él—¶‚µ‚Ä‚¢‚Ü‚·B
 <key:(Limit)><key:Limit><key:(Elevate)><a:Elevate>E•Ê‚Ìƒ†[ƒU‚Æ‚µ‚ÄŽÀs / RUNAS ‚ðl—¶‚µ‚Ä‚¨‚èAŽg—p’†‚ÌƒfƒXƒNƒgƒbƒv‚Ìƒ†[ƒU‚ÆˆÙ‚È‚éê‡‚ÍAƒ^ƒCƒgƒ‹ƒo[(ƒLƒƒƒvƒVƒ‡ƒ“)‚É‚»‚ÌPPx‚ª‘®‚·‚éƒ†[ƒU–¼‚ª•\Ž¦‚³‚ê‚Ü‚·B
   —á) PPC[A](username)C:\\
@@ -55,7 +58,7 @@ HKEY_CURRENT_USER\\Software\\TOROid\\PPX ‚ÉˆÈ‰º‚ÌƒL[‚ð‹LÚ‚·‚é‚ÆA‚»‚ÌƒL[‚ÉŽ¦‚
 PPXC	ƒJƒXƒ^ƒ}ƒCƒY“à—e‚ð•Û‘¶‚·‚éƒtƒ@ƒCƒ‹‚ÌêŠ‚ðŽ¦‚·ƒpƒX
 PPXH	ƒqƒXƒgƒŠ“à—e‚ð•Û‘¶‚·‚éƒtƒ@ƒCƒ‹‚ÌêŠ‚ðŽ¦‚·ƒpƒX
 
-œUNICODE”Å, 64bit”Å
+œUNICODE”Å, 64bit”Å, ARM64 ”Å
 PPWC	ƒJƒXƒ^ƒ}ƒCƒY“à—e‚ð•Û‘¶‚·‚éƒtƒ@ƒCƒ‹‚ÌêŠ‚ðŽ¦‚·ƒpƒX
 PPWH	ƒqƒXƒgƒŠ“à—e‚ð•Û‘¶‚·‚éƒtƒ@ƒCƒ‹‚ÌêŠ‚ðŽ¦‚·ƒpƒX
 <tb:0>
@@ -2713,6 +2716,7 @@ PPc‚ÌƒJ[ƒ\ƒ‹ã‚Ìƒtƒ@ƒCƒ‹‚ðPPv‚Å•\Ž¦‚µ‚Ä‚¢‚é‚Æ‚«‚ÉCtrl+[ª]/[«]‚Åƒ}[ƒN‚µ‚ÄA‘O
 <group:[@]::•¶ŽšƒR[ƒhØ‘Ö>
 
 IBM/US ` other CP	c<jmpa:•¶ŽšƒR[ƒh:ppvtextcode>Ø‘ÖAother CP ‚Í Windows ‚Ì”CˆÓƒR[ƒhƒy[ƒW‚É‚æ‚é•\Ž¦‚Å‚·B
+Detect:			c‘S‘Ì/‘I‘ð”ÍˆÍ‚Ì•¶ŽšƒR[ƒh‚ðŽ©“®”»•Ê‚µ‚½Œ‹‰Ê‚É‚æ‚éØ‘Ö‚Å‚·
 Auto,Binary,Kana Text	cƒJƒiƒR[ƒh(JISX0201,SI/SO)‰ðÍ•û–@‚ÌØ‘Ö
 ESC			cESC code ‚Ì‰ðÍ‚Ì—L–³
 < tag >			cHTML,MINE ‰ðÍ‚Ì—L–³
@@ -3261,6 +3265,12 @@ MC_menuAMV_menu‚Æ‚»‚Ì‰ºˆÊŠK‘w‚Ìƒƒjƒ…[‚ªC³‘ÎÛ‚Å‚·B
 <b>F</b>F¶‚Ì€–Úˆê——‚É’Ç‰Á‚µ‚½‚¢€–Ú–¼‚ð“ü‚ê‚éêŠ‚Å‚·
 <b>F‚Ìˆê——</b>FŠÈ’P‚ÈF‚Ìˆê——‚Å‚·B‰E’[‚Ìˆê—ñ‚ÍPPx‚âWindows‚ÅŽg—p‚µ‚Ä‚¢‚éF‚Å‚·Bu‘¼v‚Í¶‘¤‚É‚È‚¢FAuŽ©“®v‚Í€–Ú‚É‰ž‚¶‚ÄŽ©“®‘I‘ð‚³‚ê‚éFi‹ï‘Ì“I‚ÈF‚ÍPPx‚ÌŽg—pŽž‚ÉŠm”F‚µ‚Ä‚­‚¾‚³‚¢j‚Å‚·B
 <b>‚»‚Ì‘¼</b>Fã‚ÌFˆê——ˆÈŠO‚ÌF‚ðŽw’è‚µ‚½‚¢ê‡‚ÉŽg—p‚µ‚Ü‚·
+
+<b>”zFƒe[ƒ}</b>
+•¡”‚Ì€–Ú‚ð‹K’è‚Ì”zF‚ÅˆêŠ‡‚Å•ÏX‚Å‚«‚Ü‚·B
+ •ÒW‘O	•Ê‚Ì”zF‚ð‘I‚ñ‚¾‚Æ‚«‚ÉAŒ³‚É–ß‚¹‚Ü‚·
+ Windows€‹’	Windows‚Ì”zFi¦WindowsXPˆÈ‘O‚Ì”zFj‚ð‚Å‚«‚é‚¾‚¯Žg—p‚µ‚½”zF‚Å‚·B
+ ¦ Œ»Ý‚Ì”zF‚ð•Û‘¶‚·‚é‚Æ‚«‚ÍAu*ppcust cd color.cfg -mask:"C*"v‚Æ‚·‚é‚Æucolor.cfgvƒtƒ@ƒCƒ‹‚É•Û‘¶‚Å‚«‚Ü‚·B
 }\page
 }<hid:IDD_ADDON>
 .2:GUI - Susieƒ^ƒu
@@ -5524,10 +5534,17 @@ ENTER , *execute ,%*edittext %: %K"@^Y" ; •ÒW•¶Žš—ñ‚ðŽÀsBƒ}ƒNƒ•¶ŽšŽg—p‰Â”\B
 
 ¦“Æ—§‘‹PPc‚Å‚àƒc[ƒ‹ƒo[(<jmpa:X_dock>)‚ÉƒƒOƒEƒBƒ“ƒhƒE‚ð–„‚ßž‚ÝAˆê‘Ì•\Ž¦‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B‚½‚¾‚µAƒc[ƒ‹ƒo[‚Å‚Íƒhƒ‰ƒbƒO‚É‚æ‚é‚‚³’²®‚ª‚Å‚«‚È‚¢‚½‚ßAs”‚ª10sŒÅ’è‚É‚È‚Á‚Ä‚¢‚Ü‚·B‚³‚ç‚ÉA•¡”‘‹‚Ìê‡‚Í‚P‚Â‚µ‚©Žg‚í‚ê‚Ü‚¹‚ñB
 @‚±‚Ì•û–@‚ðŽg‚¤‚Æ‚«‚ÍAƒƒjƒ…[‚ÌƒŒƒCƒAƒEƒg/*layout ƒRƒ}ƒ“ƒh/*dock add,b,log ‚Å•\Ž¦‚Å‚«‚Ü‚·B*logwindow ƒRƒ}ƒ“ƒh‚Å‚Í•K‚¸“Æ—§‚µ‚½‘‹‚É‚È‚è‚Ü‚·B
-<groupa:#*markentry <i>[|][wildcards]</i>::ƒGƒ“ƒgƒŠƒ}[ƒN::markentry>
+<groupa:#*markentry <i>[option] [|][wildcards]</i>::ƒGƒ“ƒgƒŠƒ}[ƒN::markentry>
 
 ƒGƒ“ƒgƒŠƒ}[ƒN([+]‘Š“–)‚ðs‚¢‚Ü‚·B
 "|"‚ª•t‰Á‚³‚ê‚Ä‚¢‚é‚Æ‚«‚Í•ÒWƒ_ƒCƒAƒƒO‚ð•\Ž¦‚µ‚Ü‚·B
+<a:markoption>
+option ‚ÍŽŸ‚ÌŽw’è‚ª‚Å‚«‚Ü‚·B
+-mark	ƒ}[ƒN
+-unmark	ƒ}[ƒN‰ðœ
+-reversemark	ƒ}[ƒN”½“]
+-highlight[:n]	ƒnƒCƒ‰ƒCƒgB:n‚ª‚È‚¯‚ê‚ÎƒnƒCƒ‰ƒCƒg1A:0‚È‚çƒnƒCƒ‰ƒCƒg‰ðœA:1`:7‚È‚çŽw’èƒnƒCƒ‰ƒCƒg‚É‚È‚è‚Ü‚·B
+
 <jmpa:ƒƒCƒ‹ƒhƒJ[ƒh‚ÌŽw’è•û–@:wildcard>
 ŠÖ˜A:<jmpa:*unmarkentry:unmarkentry>
 <group:#*maskpath <i>[on|off|short]</i>::‘ŒÉ“à‚ÌƒfƒBƒŒƒNƒgƒŠ‰¼‘zˆÚ“®>
@@ -5846,10 +5863,11 @@ point	ƒ}ƒEƒXƒJ[ƒ\ƒ‹‚ªŽ¦‚·ƒGƒ“ƒgƒŠ
 
 Žw’è‚È‚µ‚ÌŽž‚Í on/off ƒgƒOƒ‹‚Å‚·B
 ¦˜A“®ƒvƒƒpƒeƒB‚ÍAWindows•W€‚ÌƒvƒƒpƒeƒB‚ªŽg—p‚Å‚«‚È‚¢‚½‚ß“ÆŽ©•\Ž¦‚ð‚µ‚Ä‚¢‚Ü‚·B‚±‚Ì‚½‚ßAˆê•”‚Ìƒ^ƒu‚Ì•\Ž¦“à—e‚ªˆÙ‚È‚Á‚½‚èA–³‚¢ƒy[ƒW‚ª‚ ‚Á‚½‚è‚µ‚Ü‚·B
-<groupa:#*unmarkentry <i>[wildcards]</i>::ƒGƒ“ƒgƒŠƒ}[ƒN‰ðœ::unmarkentry>
+<groupa:#*unmarkentry <i>[option][wildcards]</i>::ƒGƒ“ƒgƒŠƒ}[ƒN‰ðœ::unmarkentry>
 
 ƒGƒ“ƒgƒŠƒ}[ƒN‰ðœ([-]‘Š“–)‚ðs‚¢‚Ü‚·B
 <jmpa:ƒƒCƒ‹ƒhƒJ[ƒh‚ÌŽw’è•û–@:wildcard>
+<jmpa:ƒIƒvƒVƒ‡ƒ“‚ÌŽw’è•û–@:markoption>
 ŠÖ˜A:<jmpa:*markentry:markentry>
 <groupa:#*viewstyle <i>[option] [MC_celS–¼|directory|separate]</i>::ƒGƒ“ƒgƒŠ•\Ž¦‚ÌŽí—Þ‚ð•ÏX::viewstyle>
 
@@ -6074,8 +6092,8 @@ menu	ƒcƒŠ[•\Ž¦Œ`Ž®“™‚ð•Ï‚¦‚éƒƒjƒ…[‚ð•\Ž¦
 on|offŽw’è‚Íu1v‚©u0v‚Å‚àŽw’è‚Å‚«A‰½‚àŽw’è‚µ‚È‚¢ê‡‚Íonˆµ‚¢‚É‚È‚è‚Ü‚·B
 <b>E‹¤’ÊŽw’è</b>
 -src:<i>source path</i>
-	ƒRƒs[Œ³‚Ì–¼‘O‚ðŽw’è‚µ‚Ü‚·B<jmpa:ƒƒCƒ‹ƒhƒJ[ƒh:wildcard>‚â<jmpa:ƒŒƒXƒ|ƒ“ƒXƒtƒ@ƒCƒ‹>‚àŽw’è‚Å‚«‚Ü‚·B
-	<i>—á) -src:"*.txt"</i> , <i>-src:"@file.txt"</i>
+	ƒRƒs[Œ³‚Ì–¼‘O‚ðŽw’è‚µ‚Ü‚·B<jmpa:ƒƒCƒ‹ƒhƒJ[ƒh:wildcard>*,?A<jmpa:ƒŒƒXƒ|ƒ“ƒXƒtƒ@ƒCƒ‹>A<jmpa:ListFile:listformat> ‚àŽw’è‚Å‚«‚Ü‚·B
+	<i>—á) -src:"*.txt"</i>, <i>-src:"@c:\\dir\\response.txt"</i>, <i>-src:"@listfile.txt"</i>
 
 -mask:<i>wildcards</i>
 	Žw’è‚µ‚½<jmpa:ƒƒCƒ‹ƒhƒJ[ƒh:wildcard>‚ÉŠY“–‚·‚éƒtƒ@ƒCƒ‹‚Ì‚ÝŽÀÛ‚Éˆ—‚µ‚Ü‚·B-src‚ÅŒÀ’è‚Å‚«‚È‚¢ƒtƒ@ƒCƒ‹(ƒfƒBƒŒƒNƒgƒŠ“à‚Ìƒtƒ@ƒCƒ‹“™)‚ði‚é‚Ì‚ÉŽg—p‚µ‚Ü‚·B
@@ -6085,7 +6103,7 @@ on|offŽw’è‚Íu1v‚©u0v‚Å‚àŽw’è‚Å‚«A‰½‚àŽw’è‚µ‚È‚¢ê‡‚Íonˆµ‚¢‚É‚È‚è‚Ü‚·B
 
 -dest:<i>destination path</i>
 	ƒRƒs[æ‚ÌƒfƒBƒŒƒNƒgƒŠ‚ðŽw’è‚µ‚Ü‚·B<i>ex) -dest:"d:\\"</i>
-	‚Ü‚½Au|v‚ð‹LÚ‚·‚é‚±‚Æ‚ÅƒJ[ƒ\ƒ‹ˆÊ’u‚ðŽw’è‚µ‚½‚èA‚Q‚Â‚Ìu|v‚ÅˆÍ‚Þ‚±‚Æ‚Å”ÍˆÍ‘I‘ð‚ð‚µ‚½‚è‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+	‚Ü‚½Au|v‚ð‹LÚ‚·‚é‚±‚Æ‚Åƒ_ƒCƒAƒƒOã‚ÌƒJ[ƒ\ƒ‹ˆÊ’u‚ðŽw’è‚µ‚½‚èA‚Q‚Â‚Ìu|v‚ÅˆÍ‚Þ‚±‚Æ‚Å”ÍˆÍ‘I‘ð‚ð‚µ‚½‚è‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
 
 -sheet:<i>sheet no</i>
 	Žn‚ß‚ÉŠJ‚­ƒV[ƒg‚ðŽw’è‚µ‚Ü‚·B<i>ex) -sheet:1</i>
@@ -8086,19 +8104,28 @@ swf , *IE
 ‚µ‚È‚¢   2k        1M
 ‚·‚é     1k      976K</pre>
 
-X_nfmt = Z‚ÌŽw’è,z‚ÌŽw’è,DF/DU/DT/mS‚ÌŽw’è,Df/Du/Dt/ms‚ÌŽw’è
+<b>¬”“_•\Ž¦‚ð—DæŽg—p‚·‚é</b>
+’PˆÊ•t‚«•\Ž¦‚ð‚µ‚Ä‚¢‚é‚Æ‚«‚ÉA•\Ž¦Œ…”‚Ì—]—T‚ª‚ ‚Á‚Ä‚à¬”“_•\Ž¦‚ðs‚¤‚©‚Ç‚¤‚©‚ÌŽw’è‚Å‚·B¬”•”‚ÌŒ…”‚ÍðŒ‚É‚æ‚Á‚Ä1Œ…–”‚Í2Œ…‚É‚È‚è‚Ü‚·B
+¦1024‚Å’PˆÊŒvŽZ‚·‚é / •K‚¸ukvuMvˆÈã‚Ì’PˆÊ‚É‚·‚é ‚ðŽg—p‚µ‚Ä‚¢‚é‚Æ‚«‚Í‹@”\‚µ‚Ü‚¹‚ñB
+
+ —DæŽg—p‚µ‚È‚¢: 123,456k
+ —DæŽg—p‚·‚é: 123.45M
+
 <b>Žw’è•û–@</b>
-<pre>B00000000
- ||||||||
- |||||||+- B0
- ||||||+-- B1
- |||||+--- B2
- ||||+---- B3 ’PˆÊ—p‚É‚PŒ…Šm•Û‚·‚é
- |||+----- B4 1024‚Å’PˆÊŒvŽZ‚·‚é
- ||+------ B5
- |+------- B6 •K‚¸ukvˆÈã‚Ì’PˆÊ‚É‚·‚é
- +-------- B7 •K‚¸uMvˆÈã‚Ì’PˆÊ‚É‚·‚é
- ¦B6,B7‚ª‹¤‚É‚P‚Ì‚Æ‚«‚ÍuGvˆÈã‚Ì’PˆÊ‚É‚È‚é</pre>
+X_nfmt = Z‚ÌŽw’è,z‚ÌŽw’è,DF/DU/DT/mS‚ÌŽw’è,Df/Du/Dt/ms‚ÌŽw’è
+<pre>B0000000000
+ ||||||||||
+ |||||||||+- B0
+ ||||||||+-- B1
+ |||||||+--- B2
+ ||||||+---- B3 ’PˆÊ—p‚É‚PŒ…Šm•Û‚·‚é
+ |||||+----- B4 1024‚Å’PˆÊŒvŽZ‚·‚é
+ ||||+------ B5
+ |||+------- B6 •K‚¸ukvˆÈã‚Ì’PˆÊ‚É‚·‚é
+ ||+-------- B7 •K‚¸uMvˆÈã‚Ì’PˆÊ‚É‚·‚é
+ |+--------- B8 •K‚¸uTvˆÈã‚Ì’PˆÊ‚É‚·‚é
+ +---------- B9 ¬”“_•\Ž¦‚ð—DæŽg—p‚·‚é
+ ¦B6,B7‚ª‹¤‚É‚P‚Ì‚Æ‚«‚ÍuGvˆÈã‚Ì’PˆÊ‚É‚È‚è‚Ü‚·</pre>
 ¦Ý’èƒtƒ@ƒCƒ‹Œo—R‚Å‚±‚±‚É‹LÚ‚µ‚Ä‚¢‚È‚¢€–Ú‚Ì•ÏX‚à‚Å‚«‚Ü‚·‚ªA’Êí‚Í•Ï‚¦‚é•K—v‚ª‚È‚¢‚à‚Ì‚Å‚ ‚é‚½‚ßà–¾‚ðÈ—ª‚µ‚Ä‚¢‚Ü‚·Bi‚Ç‚¤‚µ‚Ä‚à‹C‚É‚È‚él‚Íƒ\[ƒX‚ÌFormatNumber ‚Ì’è” XFN_xxx‚ðŽQÆ‚µ‚Ä‚­‚¾‚³‚¢j
 <hr>
 <tk:XC_ocig>  <jmpa:ƒGƒ“ƒgƒŠ•\Ž¦‘Ž®:ppc_dispfmt>‚É‰æ‘œ(n)‚ðŽg—p‚µ‚½‚Æ‚«‚ÌƒTƒ€ƒlƒCƒ‹ˆ—
@@ -8981,9 +9008,9 @@ dockã = ?docktmenu
  19 / -- :“Ç‚Ýž‚Ý‡(ƒfƒBƒŒƒNƒgƒŠ‚ð‚»‚Ì‚Ü‚Ü“Ç‚ñ‚¾‚Æ‚«‚Ì‡”Ô)
  20 / 21 :Šg’£ŽqF
  22 / 23 :ƒfƒBƒŒƒNƒgƒŠ(‘®«ƒ\[ƒg‚Æ‚Í•Ê‚Ìƒ^ƒCƒ~ƒ“ƒO‚Ås‚¤‚Æ‚«‚ÉŽg—p)
- 24 / 25 :Šg’£ƒRƒƒ“ƒg1 ¦Šg’£ƒRƒƒ“ƒg‚É‚æ‚éƒ\[ƒg‚ÍA•¡”’iŽg—p‚Å‚«‚Ü‚¹‚ñB
- 26 / 27 :Šg’£ƒRƒƒ“ƒg2 ¦ŠY“–Šg’£ƒRƒƒ“ƒg‚ª–¢Ý’è‚Ìê‡‚Í"COMMENTEVENTn"‚ªŽÀs‚³‚ê‚Ü‚·B
-    :
+ 24 / 25 :Šg’£ƒRƒƒ“ƒg1 ¦Šg’£ƒRƒƒ“ƒg‚É‚æ‚éƒ\[ƒg‚ÍA•¡”Žg—p‚Å‚«‚Ü‚¹‚ñB
+ 26 / 27 :Šg’£ƒRƒƒ“ƒg2 ¦Šg’£ƒRƒƒ“ƒgˆÈŠO‚È‚çŠg’£ƒRƒƒ“ƒgƒ\[ƒg‚Æ‘g‚Ý‡‚í‚¹‚Å‚«‚Ü‚·B
+    :                   ¦ŠY“–Šg’£ƒRƒƒ“ƒg‚ª–¢Ý’è‚Ìê‡‚Í"COMMENTEVENTn"‚ªŽÀs‚³‚ê‚Ü‚·B
  42 / 43 :Šg’£ƒRƒƒ“ƒg10
 
 ¦‘®«(16)ˆÈŠO‚ðŽw’è‚µ‚Ä‚àA‘®«‚É‚æ‚éƒ\[ƒg‚ðs‚¢‚Ü‚·B‘®«(16)Žw’è‚ÍA‘®«‚Ì‚Ýƒ\[ƒg‚µ‚½‚¢‚Æ‚«‚ÉŽg—p‚µ‚Ü‚·B
@@ -9006,7 +9033,7 @@ dockã = ?docktmenu
  B27 = 1 : use linguistic rules for casing(WindowsVistaˆÈ~)
 
 ‰E‚©‚ç25”Ô–Ú‚Ìƒrƒbƒg(B24)‚ð1‚ÉŽw’è‚·‚é‚Æ”’l‚Ì‘å‚«‚³‡(u000vu1vu012v‚Ì‡)‚É–¼‘O‚Ìƒ\[ƒg‚ª‚Å‚«‚Ü‚·BiŽw’è‚µ‚È‚¢ê‡‚Í•¶ŽšƒR[ƒh‡Au000vu012vu1v‚Ì‡‚É‚È‚è‚Ü‚·j
-‰E‚©‚ç26”Ô–Ú‚Ìƒrƒbƒg(B25)‚ð1‚ÉŽw’è‚·‚é‚ÆListFile‚â‘ŒÉ“à‚É‚¨‚¢‚ÄAƒfƒBƒŒƒNƒgƒŠ(dir\\file)•”•ª‚ð–³Ž‹‚µ‚Äfile‚Ì‚Ý‚Å–¼‘O‚Ìƒ\[ƒg‚ª‚Å‚«‚Ü‚·B
+‰E‚©‚ç26”Ô–Ú‚Ìƒrƒbƒg(B25)‚ð1‚ÉŽw’è‚·‚é‚ÆListFile‚â‘ŒÉ“à‚É‚¨‚¢‚ÄAƒGƒ“ƒgƒŠ‚ÉŠÜ‚Ü‚ê‚éƒfƒBƒŒƒNƒgƒŠ(dir\\file’†‚Ìdir)•”•ª‚ð–³Ž‹‚µ‚Äfile‚Ì‚Ý‚Å–¼‘O‚Ìƒ\[ƒg‚ª‚Å‚«‚Ü‚·B
 <hr>
 <b>‰ŠúƒJƒXƒ^ƒ}ƒCƒYƒƒjƒ…[ˆê——</b>
 
@@ -9286,6 +9313,19 @@ _auto ‚ðŽg—p‚·‚é‚ÆAWindows‚ÌƒcƒŠ[‚Æ“¯‚¶F‚É‚È‚è‚Ü‚·B
 
 PPc‚ÌƒGƒ“ƒgƒŠ–¼‚Ìƒ`ƒbƒv‚É—p‚¢‚ç‚ê‚é•¶ŽšF‚Æ”wŒiF‚Å‚·B<jmpa:FŽw’è•û–@:color>
 _auto ‚ðŽg—p‚·‚é‚ÆAWindows‚Ìƒ`ƒbƒv‚Æ“¯‚¶F‚É‚È‚è‚Ü‚·B
+
+<tk:C_win> ‘‹˜gEƒ_ƒCƒAƒƒO
+ ‘‹˜g–¾	‘‹˜g‚Ì¶‘¤^ã‘¤
+ ‘‹˜g•\–Ê	‘‹˜g‚Ì’†‰›
+ ‘‹˜g‰e	‘‹˜g‚Ì‰E‘¤^‰º‘¤
+
+EˆÈ‰º‚ÌÝ’è‚Íƒ_ƒCƒAƒƒO”wŒi‚ªŽ©“®‚Ì‚Æ‚«‚ÍŽg—p‚³‚ê‚È‚¢‰ÓŠ‚ª‚ ‚è‚Ü‚·B
+ ŽŽ)‘‹”wŒi	ˆês•ÒWAƒŠƒXƒgƒ{ƒbƒNƒX“™‚Ì”wŒi
+ ŽŽ)ƒ_ƒCƒAƒƒO”wŒi	ƒ_ƒCƒAƒƒO‚Ì”wŒi
+ ŽŽ)‘‹•¶Žš	ƒ{ƒ^ƒ““™‚Ì•¶Žš
+ ŽŽ)‘I‘ð”wŒi	‘I‘ðó‘Ô‚Ì”wŒi‚âAi’»•\Ž¦
+ ŽŽ)‘I‘ð•¶Žš	‘I‘ðó‘Ô‚Ì•¶Žš
+ ŠDF	ŠDF•¶Žš
 
 <atk:C_ext> PPc Šg’£ŽqF
 
@@ -9605,7 +9645,8 @@ DLLƒtƒ@ƒCƒ‹–¼ = ƒRƒ}ƒ“ƒh,OpenArchive,CloseArchive,FindFirst,FindNext,CheckArchiv
 
 <i>—á)
 P_susieP = c:\\Program Files\\Susie
-P_susieP = Susie</i>
+P_susieP = .	PPxƒfƒBƒŒƒNƒgƒŠ(%0‘Š“–)
+P_susieP = Susie	PPxƒfƒBƒŒƒNƒgƒŠ\\Susie</i>
 <hr>
 <atk:P_susie>
 

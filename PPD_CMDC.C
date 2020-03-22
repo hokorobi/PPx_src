@@ -1964,8 +1964,10 @@ void CmdLineCust(EXECSTRUCT *Z, const TCHAR *line)
 
 	sub = tstrchr(line, ':');
 	if ( sub != NULL ) *sub++ = '\0';
-	param = paramorg = parambuf;
+	param = parambuf;
 	PPcustCDumpText(line, sub, &param);
+	paramorg = param;
+
 	orgseparator = '\0';
 	if ( *param == '\t' ) param++;
 	if ( (*param == '=') || (*param == ',') ) orgseparator = *param++;

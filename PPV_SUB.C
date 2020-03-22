@@ -904,6 +904,8 @@ HMENU TextCodeMenu(BOOL SelectMode)
 	}
 
 	if ( vo_.DModeBit & VO_dmode_TEXTLIKE ){
+		int textC;
+
 		for ( i = 0 ; i < (VTYPE_MAX - 1) ; i++ ){
 			AppendMenuCheckString(hPopupMenu, MENUID_TEXTCODE + i, VO_textS[i], i == nowcode);
 		}
@@ -915,7 +917,19 @@ HMENU TextCodeMenu(BOOL SelectMode)
 			wsprintf(buf, VO_CodePage ?
 				T("&other CP %d...") : T("&other CP..."), VO_CodePage);
 			AppendMenuCheckString(hPopupMenu, MENUID_TEXTCODE + VTYPE_OTHER, buf, nowcode == VTYPE_OTHER);
+
+			textC = GetPPvTextCode(vo_.file.image, vo_.file.UseSize);
+		}else{
+			textC = GetPPvTextCode(VOi->ti[VOsel.top.y.line].ptr,
+					VOi->ti[VOsel.top.y.line + 1].ptr - VOi->ti[VOsel.top.y.line].ptr);
 		}
+		if ( textC < VTYPE_MAX ){
+			wsprintf(buf, T("Detect: %s"), VO_textS[textC]);
+		}else{
+			wsprintf(buf, T("Detect: CP%d"), textC - VTYPE_MAX);
+			textC = VTYPE_OTHER;
+		}
+		AppendMenuString(hPopupMenu, MENUID_TEXTCODE + textC, buf);
 	}
 	if ( vo_.DModeBit & DOCMODE_TEXT ){
 		if ( SelectMode == FALSE ){

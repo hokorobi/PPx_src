@@ -179,6 +179,7 @@ typedef struct {
 #define K_INITROMA	0xbf48			// migemo.dllをロードする
 #define K_IMEOFF	0xbf49			// IME を offにする
 #define K_ENABLE_NC_SCALE	0xbf4a	// 非クライアント領域の拡大縮小を有効に
+#define K_DRAWCCBACK	0xbf4b		// ツールバー等の背景を描画 wParam:NMH
 
 #define K_COMMAND	0xbff0			// Command (lparam:hMap)
 #define K_EXTRACT	0xbff1			// Extract (lparam:hMap)

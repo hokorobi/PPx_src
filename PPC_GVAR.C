@@ -257,11 +257,11 @@ GVAR MAINWINDOWSTRUCT MainWindows
 
 GVAR const TCHAR *StateText[]
 #ifndef GLOBALEXTERN
- = { NilStr, T("Init"), T("ReadStart"), T("ReadError"), T("UpdateStart"), T("?")};
+ = { NilStr, T("readentry Init"), T("ReadStart"), T("ReadError"), T("UpdateStart"), T("Crmenu"), T("Celllook"), T("scmenu"), T("GetExtCommand"), T("?")};
 #else
 ;
 typedef enum {
-	StateID_NoState = 0, StateID_Init, StateID_ReadStart, StateID_ReadError, StateID_UpdateStart, StateID_MAX
+	StateID_NoState = 0, StateID_Init, StateID_ReadStart, StateID_ReadError, StateID_UpdateStart, StateID_Crmenu, StateID_Celllook, StateID_Scmenu, StateID_GetExtCommand, StateID_MAX
 } StateID;
 #endif
 
@@ -332,12 +332,20 @@ GVAR DWORD StrBusyLength;
 GVAR const TCHAR MemWarnStr[] GPARAM(T("プロセスの空きメモリが500M未満です。動作が不安定になる恐れがあります。"));
 #endif
 
+GVAR const char ListFileHeaderStrW[] GPARAM(UCF2HEADER LHEADERU);
+GVAR const char ListFileHeaderStrA[] GPARAM(LHEADER);
+GVAR const char ListFileHeaderStr8[] GPARAM(UTF8HEADER LHEADER);
+
+#define ListFileHeaderSizeW sizeof(UCF2HEADER LHEADERU)
+#define ListFileHeaderSizeA (sizeof(LHEADER) - sizeof(char))
+#define ListFileHeaderSize8 (sizeof(UTF8HEADER LHEADER) - sizeof(char))
+
 #ifdef UNICODE
-GVAR const char ListFileHeaderStr[] GPARAM(UCF2HEADER ";\0L\0i\0s\0t\0F\0i\0l\0e\0\r\0\n");
-#define ListFileHeaderStrLen sizeof(UCF2HEADER ";\0L\0i\0s\0t\0F\0i\0l\0e\0\r\0\n")
+#define ListFileHeaderStr ListFileHeaderStrW
+#define ListFileHeaderSize ListFileHeaderSizeW
 #else
-GVAR const char ListFileHeaderStr[] GPARAM(LHEADER);
-#define ListFileHeaderStrLen (sizeof(LHEADER) - sizeof(char))
+#define ListFileHeaderStr ListFileHeaderStrA
+#define ListFileHeaderSize ListFileHeaderSizeA
 #endif
 GVAR const TCHAR ListFileFormatStr[] GPARAM(T("\",\"%s\",A:H%x,C:%u.%u,L:%u.%u,W:%u.%u,S:%u.%u"));
 
@@ -603,10 +611,10 @@ GVAR int XC_rrt[2] GPARAM2(2, 5);
 GVAR DWORD rdirmask;	// 相対dir「.」「..」の表示を制御する(XC_tdir)
 GVAR TCHAR X_dicn[MAX_PATH];
 
-#define CXFN_FILE_NOSEP X_nfmt[0]
-#define CXFN_FILE X_nfmt[1]
-#define CXFN_SUM_NOSEP X_nfmt[2]
-#define CXFN_SUM X_nfmt[3]
+#define CXFN_FILE_NOSEP X_nfmt[0]	// エントリファイルサイズ、桁区切り無し
+#define CXFN_FILE X_nfmt[1]			// エントリファイルサイズ、桁区切り有り
+#define CXFN_SUM_NOSEP X_nfmt[2]	// ドライブ容量・空き、桁区切り無し
+#define CXFN_SUM X_nfmt[3]			// ドライブ容量・空き、桁区切り有り
 GVAR DWORD X_nfmt[4]
 #ifndef GLOBALEXTERN
 = {	XFN_RIGHT | XFN_UNITSPACE | XFN_HEXUNIT,
@@ -740,6 +748,7 @@ GVAR int CacheIconsX, CacheIconsY;
 GVAR BOOL Use_X_icnl GPARAM(FALSE);
 //-------------------------------------- 開発中
 GVAR BOOL exdset GPARAM(FALSE);
+GVAR int UseCCDrawBack GPARAM(0);
 
 #ifdef __cplusplus
 }

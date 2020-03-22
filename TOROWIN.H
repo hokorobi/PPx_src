@@ -198,6 +198,11 @@
 #ifndef WINEGCC
 	#define strlenW(ptr) wcslen(ptr)
 	#define strcpyW(dst, src) wcscpy(dst, src)
+	#ifdef __BORLANDC__		// Boland 用定義
+		#define stpcpyA(dst, src) stpcpy(dst, src)
+	#else
+		extern char *stpcpyA(char *dst, const char *src);
+	#endif
 	extern WCHAR *stpcpyW(WCHAR *dst, const WCHAR *src);
 	#define strcatW(dst, src) wcscat(dst, src)
 	#define strcmpW(str1, str2) wcscmp(str1, str2)
@@ -262,7 +267,7 @@
 	#define tWinMain	WinMain
 	#define tstrlen(ptr)	strlen(ptr)
 	#define tstrcpy(dst, src)	strcpy(dst, src)
-	#define tstpcpy(dst, src)	stpcpy(dst, src)
+	#define tstpcpy(dst, src)	stpcpyA(dst, src)
 	#define tstrcat(dst, src)	strcat(dst, src)
 	#define tstrcmp(str1, str2)	strcmp(str1, str2)
 	#define tstricmp(str1, str2)	stricmp(str1, str2)
@@ -543,6 +548,7 @@ typedef DWORD ERRORCODE;	// Win32API のエラーコード(GetLastError)
 	#define WM_MOUSEWHEEL 0x020a
 	#define WHEEL_DELTA 120
 #endif
+#define WHEEL_STANDARD_LINES 3 // ホイールの１ノッチで移動する行数
 #ifndef MOUSE_WHEELED
 	#define MOUSE_WHEELED 0x0004
 #endif

@@ -703,14 +703,14 @@ INT_PTR CALLBACK tInputMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 					break;
 			}
 			break;
-
+/*
 		case WM_CLOSE:
 			EndDialog(hDlg, 0);
 			break;
-
+*/
 		default:
 			if ( message == WM_PPXCOMMAND ) return ERROR_INVALID_FUNCTION;
-			return FALSE;
+			return PPxDialogHelper(hDlg, message, wParam, lParam);
 	}
 	return TRUE;
 }
@@ -743,6 +743,7 @@ PPXDLL int PPXAPI tInputEx(TINPUT *tinput)
 	UINT dialogid;
 	TINPUTSTRUCT ts;
 
+	InitSysColors();
 	ts.tinput = tinput;
 	if ( tinput->flag & (TIEX_USEREFLINE | TIEX_USEOPTBTN) ){
 		dialogid = (tinput->flag & TIEX_USEREFLINE) ? IDD_INPUTREF : IDD_INPUT_OPT;

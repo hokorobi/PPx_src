@@ -506,7 +506,7 @@ PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd, LPARAM lParam, WORD key)
 
 		case K_Lcust:
 			if ( lParam != 0 ){
-				if ( CustTick != (DWORD)lParam ) break; // d•¡‚È‚Ì‚ÅÈ—ª
+				if ( CustTick == (DWORD)lParam ) break; // d•¡‚È‚Ì‚ÅÈ—ª
 				CustTick = (DWORD)lParam;
 			}else{
 				CustTick = GetTickCount();
@@ -683,6 +683,26 @@ PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd, LPARAM lParam, WORD key)
 	return NO_ERROR;
 }
 
+#ifndef TBSTYLE_CUSTOMERASE
+#define TBSTYLE_CUSTOMERASE 0x2000
+#define CDDS_PREERASE 0x00000003
+#define CDRF_SKIPDEFAULT 0x00000004
+#endif
+#ifndef NM_CUSTOMDRAW
+#define NM_CUSTOMDRAW (NM_FIRST-12)
+
+typedef struct
+{
+	NMHDR hdr;
+	DWORD dwDrawStage;
+	HDC hdc;
+	RECT rc;
+	DWORD_PTR dwItemSpec;
+	UINT uItemState;
+	LPARAM lItemlParam;
+} NMCUSTOMDRAW;
+#endif
+
 PPXDLL LRESULT PPXAPI PPxCommonExtCommand(WORD key, WPARAM wParam)
 {
 	switch( key ){
@@ -768,6 +788,19 @@ PPXDLL LRESULT PPXAPI PPxCommonExtCommand(WORD key, WPARAM wParam)
 
 		case KC_GETCRCHECK:
 			return (LRESULT)&CrmenuCheck;
+
+		case K_DRAWCCBACK:
+			if ( wParam == 0 ){
+				InitSysColors();
+				return (LRESULT)hDialogBackBrush;
+			}else{
+				#define CSD ((NMCUSTOMDRAW *)wParam)
+				if ( hDialogBackBrush == NULL ) return 0;
+				if ( CSD->dwDrawStage != CDDS_PREERASE ) return 0;
+				FillRect(CSD->hdc, &CSD->rc, hDialogBackBrush);
+				return CDRF_SKIPDEFAULT;
+				#undef CSD
+			}
 
 		default:
 			return ERROR_INVALID_FUNCTION;

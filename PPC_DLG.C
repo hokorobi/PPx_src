@@ -472,6 +472,71 @@ INT_PTR CALLBACK DiskinfoDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lPar
 /*-----------------------------------------------------------------------------
 	File[M]ask / Wildcard ダイアログボックス/コールバック
 -----------------------------------------------------------------------------*/
+#define TMIN_HIGHLIGHTOFF 3
+#define TMIN_REVERSE 2
+const TCHAR *MarkItemName[] = {MES_LMAK, MES_LUMA, MES_LRMA, MES_LHIO};
+
+void SetMarkTarget(HWND hDlg, FILEMASKDIALOGSTRUCT *PFS)
+{
+	TCHAR buf[0x40], buf2[0x40];
+	const TCHAR *typename = NilStr;
+
+	if ( PFS->mode >= MARK_HIGHLIGHT1 ){
+		typename = buf2;
+		wsprintf(buf2, T("%s %d"), MessageText(MES_LHIL), PFS->mode - MARK_HIGHLIGHT1 + 1);
+	}else if ( PFS->mode >= MARK_REVERSE ){
+		typename = MessageText(MarkItemName[
+				(PFS->mode == MARK_HIGHLIGHTOFF) ?
+					TMIN_HIGHLIGHTOFF :
+					TMIN_REVERSE - PFS->mode - 1]);
+	}
+
+	wsprintf(buf, T("%s %s"), MessageText(MES_FBAC), typename);
+	SetDlgItemText(hDlg, IDX_MASK_MODE, buf);
+}
+
+#define ID_MARKMIN 1
+// unmark:2 reverse:3
+#define ID_HIGHTLIGHTOFF 4
+#define ID_HIGHTLIGHT1 5
+void MarkTargetMenu(HWND hDlg, HWND hButtonWnd, FILEMASKDIALOGSTRUCT *PFS)
+{
+	RECT box;
+	HMENU hMenu;
+	int index, i;
+	TCHAR buf[VFPS];
+
+	if ( IsShowButtonMenu() == FALSE ) return;
+
+	GetWindowRect(hButtonWnd, &box);
+	hMenu = CreatePopupMenu();
+
+	for ( i = 0 ; i <= TMIN_HIGHLIGHTOFF ; i++ ){
+		AppendMenuString(hMenu,
+				(i == TMIN_HIGHLIGHTOFF) ? ID_HIGHTLIGHTOFF :
+				1 - MARK_REVERSE - i + ID_MARKMIN, MarkItemName[i]);
+		XMessage(NULL,NULL,XM_DbgLOG,T("%s %s"),MarkItemName[i],MessageText(MarkItemName[i]));
+	}
+	for ( i = 0 ; i < PPC_HIGHLIGHT_COLORS ; i++ ){
+		wsprintf(buf, T("%s &%d"), MessageText(MES_LHIL), i + 1);
+		AppendMenuString(hMenu, i + ID_HIGHTLIGHT1, buf);
+		XMessage(NULL,NULL,XM_DbgLOG,T("%s"),buf);
+	}
+
+	CheckMenuRadioItem(hMenu, ID_MARKMIN, ID_HIGHTLIGHT1 + PPC_HIGHLIGHT_COLORS - 1, PFS->mode - MARK_REVERSE + 1, MF_BYCOMMAND);
+
+	index = TrackPopupMenu(hMenu, TPM_TDEFAULT, box.left, box.bottom, 0, hDlg, NULL);
+	DestroyMenu(hMenu);
+	EndButtonMenu();
+	if ( index > 0 ){
+		index = index - ID_MARKMIN + MARK_REVERSE;
+		if ( PFS->mode != index ){
+			PFS->mode = index;
+			SetMarkTarget(hDlg, PFS);
+		}
+	}
+}
+
 DWORD USEFASTCALL GetFileMaskAttr(HWND hDlg)
 {
 	return
@@ -484,8 +549,12 @@ DWORD USEFASTCALL GetFileMaskAttr(HWND hDlg)
 
 #define REALTIMEMASKLIMIT(cinfo) ((cinfo)->e.cellDataMax > (int)(OSver.dwMajorVersion * 3000 - 8000)) // Ver4:4000 5:7000 6:10000
 
-const DWORD HideMaskItemList[] = {IDX_MASK_RTM, IDX_MASK_MODE, IDG_FOP_ATTR,
-		IDX_FOP_RONLY, IDX_FOP_SYSTEM, IDX_FOP_HIDE, IDX_FOP_ARC, IDX_MASK_DIR, 0};
+const DWORD HideMaskItemList[] = {
+		// FindMark の時は隠す
+		IDX_MASK_RTM, /*IDX_MASK_MODE,*/
+		// FindMark / FindMask で一時等以外の時は隠す
+		IDG_FOP_ATTR, IDX_FOP_RONLY, IDX_FOP_SYSTEM, IDX_FOP_HIDE,
+		IDX_FOP_ARC, IDX_MASK_DIR, 0};
 
 void HideMaskItem(HWND hDlg, FILEMASKDIALOGSTRUCT *PFS)
 {
@@ -493,7 +562,7 @@ void HideMaskItem(HWND hDlg, FILEMASKDIALOGSTRUCT *PFS)
 	int showstate = SW_HIDE;
 
 	if ( IsTrue(PFS->maskmode) ){ // ファイルマスク
-		item += 2;
+		item += 1; // 2;
 		if ( (PFS->mode == DSMD_TEMP) || (PFS->mode == DSMD_REGID) ){
 			showstate = SW_SHOWNOACTIVATE;
 		}
@@ -503,6 +572,7 @@ void HideMaskItem(HWND hDlg, FILEMASKDIALOGSTRUCT *PFS)
 	}
 }
 
+// FindMark / FindMask ダイアログ
 INT_PTR CALLBACK FileMaskDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	FILEMASKDIALOGSTRUCT *PFS;
@@ -530,6 +600,8 @@ INT_PTR CALLBACK FileMaskDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				CheckDlgButton(hDlg, IDX_MASK_RTM, PFS->option.realtime);
 				EnableDlgWindow(hDlg, IDX_MASK_RTM, !REALTIMEMASKLIMIT(PFS->cinfo));
 				SetMaskTarget(hDlg, PFS);
+			}else{ // ファイルマーク
+				SetMarkTarget(hDlg, PFS);
 			}
 			HideMaskItem(hDlg, PFS);
 
@@ -610,8 +682,12 @@ INT_PTR CALLBACK FileMaskDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 
 				case IDX_MASK_MODE:
 					if ( HIWORD(wParam) == BN_CLICKED ){
-						MaskTargetMenu(hDlg, (HWND)lParam, PFS);
-						HideMaskItem(hDlg, PFS);
+						if ( IsTrue(PFS->maskmode) ){ // ファイルマスク
+							MaskTargetMenu(hDlg, (HWND)lParam, PFS);
+							HideMaskItem(hDlg, PFS);
+						}else{ // ファイルマーク
+							MarkTargetMenu(hDlg, (HWND)lParam, PFS);
+						}
 					}
 					break;
 

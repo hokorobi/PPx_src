@@ -575,12 +575,13 @@ void ModifyAlpha256(void)
 	}
 }
 
-void ModifyAlpha(HWND hWnd)
+void ModifyAlpha(void)
 {
 	MaskBits *bit, *maxbit;
 	int backleft, backcountX, backcountY;
 	WORD backLcolor, backcolor;
 
+	DIRECTXDEFINE(DxDrawFreeBMPCache(&vo_.bitmap.DxCache));
 	if ( vo_.bitmap.info->biBitCount < 32 ){
 		if ( vo_.bitmap.info->biBitCount == 8 ){
 			ModifyAlpha256();
@@ -628,5 +629,4 @@ void ModifyAlpha(HWND hWnd)
 			}
 		}
 	}
-	InvalidateRect(hWnd, NULL, TRUE);
 }

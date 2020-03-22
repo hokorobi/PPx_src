@@ -731,7 +731,7 @@ ERRORCODE WhereIsMain(PPC_APPINFO *cinfo, WHEREDIALOG *Pws)
 	hFile = CreateFileL(templistfile, GENERIC_WRITE, 0,
 			NULL, CREATE_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if ( hFile == INVALID_HANDLE_VALUE ) return GetLastError();
-	WriteFile(hFile, ListFileHeaderStr, ListFileHeaderStrLen, &tmp, NULL);
+	WriteFile(hFile, ListFileHeaderStr, ListFileHeaderSize, &tmp, NULL);
 
 	VFSFixPath(temp, Pws->src, cinfo->path, fixflags);
 	if ( GetFileAttributesL(temp) != BADATTR ){

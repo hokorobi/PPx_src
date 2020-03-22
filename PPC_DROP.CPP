@@ -15,6 +15,7 @@
 #include <shlobj.h>
 #include <ole2.h>
 #include <wtypes.h>
+#include "WINOLE.H"
 #include "PPX.H"
 #include "VFS.H"
 #include "PPC_STRU.H"
@@ -322,7 +323,7 @@ DWORD GetDDEffect(DWORD targetattr, DWORD keystate, DWORD *result, DWORD defacti
 	DWORD tmpresult, enable;
 
 	if ( !(targetattr & FILE_ATTRIBUTE_DIRECTORY) ){ // ターゲットがファイル
-		tmpresult = DROPEFFECT_LINK;
+		tmpresult = defaction;
 	}else{
 											// シフトキーの状態による方法の判定
 		if ( keystate & MK_ALT ){			// Alt
@@ -352,6 +353,24 @@ DWORD GetDDEffect(DWORD targetattr, DWORD keystate, DWORD *result, DWORD defacti
 	if ( enable == 0 ) enable = DROPEFFECT_LINK;
 	*result = enable;
 	return enable;
+}
+
+BOOL IsFileStorage(PPC_APPINFO *cinfo, ENTRYINDEX cellno)
+{
+	TCHAR path[VFPS];
+	DWORD fsize;
+	BYTE header[64];
+
+	if ( VFSFullPath(path, (TCHAR *)GetCellFileName(cinfo, &CEL(cellno), path), cinfo->path) == NULL ) return FALSE;
+
+	fsize = GetFileHeader(path, header, sizeof(header));
+	if ( fsize == 0 ) return FALSE;
+	if ( (memcmp(header, ListFileHeaderStrW, ListFileHeaderSizeW) == 0) ||
+		 (memcmp(header, ListFileHeaderStrA, ListFileHeaderSizeA) == 0) ||
+		 (memcmp(header, ListFileHeaderStr8, ListFileHeaderSize8) == 0) ){
+		return TRUE;
+	}
+	return FALSE;
 }
 
 void USEFASTCALL AppendDefaultDDMenu(HMENU hMenu)
@@ -411,10 +430,12 @@ void DDMenu(HWND hWnd, POINTL *pt, DWORD *pdwEffect, DWORD orgEffect, DWORD key,
 					if ( CEL(Cell).f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ){
 						::AppendDefaultDDMenu(hMenu);
 					}else{										// Entry
+						if ( IsFileStorage(cinfo, Cell) ){
+							::AppendMenuString(hMenu, DROPEFFECT_ADDLIST, MES_DDAL);
+						}
+						::AppendMenuString(hMenu, DROPEFFECT_OPENWITH, MES_DDOP);
 						if ( DropModeFlags & DROPMODE_FILEFOLDER ){
 							::AppendMenuString(hMenu, DROPEFFECT_COPY, MES_DDCP);
-						}else{
-							::AppendMenuString(hMenu, DROPEFFECT_OPENWITH, MES_DDOP);
 						}
 					}
 				}
@@ -450,7 +471,13 @@ void DDMenu(HWND hWnd, POINTL *pt, DWORD *pdwEffect, DWORD orgEffect, DWORD key,
 															// ファイルなど
 				}else if ( cinfo && (Cell >= 0) &&
 					!(CEL(Cell).f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ){
+					if ( IsFileStorage(cinfo, Cell) ){
+						::AppendMenuString(hMenu, DROPEFFECT_ADDLIST, MES_DDAL);
+					}
 					::AppendMenuString(hMenu, DROPEFFECT_OPENWITH, MES_DDOP);
+					if ( DropModeFlags & DROPMODE_FILEFOLDER ){
+						::AppendMenuString(hMenu, DROPEFFECT_COPY, MES_DDCP);
+					}
 				}else{
 					if ( IsTrue(DDtype.hdrop) ){
 						if ( (DDtype.priority == cfFileContents) && (cfFileContents != 0) ){
@@ -494,7 +521,7 @@ void DDMenu(HWND hWnd, POINTL *pt, DWORD *pdwEffect, DWORD orgEffect, DWORD key,
 						if (DDtype.text){
 							::AppendMenuString(hMenu, DROPEFFECT_TEXT, MES_DDTX);
 						}
-						if (DDtype.etc){
+						if ( DDtype.etc ){
 							::AppendMenuString(hMenu, DROPEFFECT_ETC, MES_DDET);
 						}
 					}
@@ -506,8 +533,12 @@ void DDMenu(HWND hWnd, POINTL *pt, DWORD *pdwEffect, DWORD orgEffect, DWORD key,
 		}else{ // 左ボタンのメニュー不要指定
 			if ( (cinfo != NULL) && (Cell >= 0) &&
 				!(CEL(Cell).f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ){
+				if ( IsFileStorage(cinfo, Cell) ){ // ListFile なら追加
+					*pdwEffect = DROPEFFECT_ADDLIST;
 				// ファイルなら開く
-				*pdwEffect = DROPEFFECT_OPENWITH;
+				}else if ( !(DropModeFlags & DROPMODE_FILEFOLDER) ){
+					*pdwEffect = DROPEFFECT_OPENWITH;
+				}
 			}
 		}
 	}
@@ -685,20 +716,25 @@ void LinkDrop(HWND hWnd, TCHAR *sDrop, TCHAR *targetpath)
 	}
 }
 
-void ListDrop(HWND hWnd, TCHAR *sDrop, TCHAR *targetpath, TCHAR *destpath)
+void ListDrop(HWND hWnd, TCHAR *sDrop, TCHAR *targetpath, TCHAR *destpath, TCHAR *mem)
 {
 	HANDLE hFile;
 	DWORD size;
 
-	ExistCheck(destpath, targetpath, T("ListFile.TXT"));
-	hFile = CreateFileL(destpath, GENERIC_WRITE, 0, NULL, CREATE_NEW,
-				FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+	if ( mem == NULL ) ExistCheck(destpath, targetpath, T("ListFile.TXT"));
+	hFile = CreateFileL(destpath, GENERIC_WRITE, 0, NULL,
+			(mem == NULL) ? CREATE_NEW : CREATE_ALWAYS,
+			FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if ( hFile == INVALID_HANDLE_VALUE ){
 		PPErrorBox(hWnd, destpath, PPERROR_GETLASTERROR);
 		return;
 	}
-	WriteFile(hFile, ListFileHeaderStr, ListFileHeaderStrLen, &size, NULL);
-
+	if ( mem != NULL ){
+		WriteFile(hFile, mem, TSTRLENGTH(mem), &size, NULL);
+		HeapFree(hProcessHeap, 0, mem);
+	}else{
+		WriteFile(hFile, ListFileHeaderStr, ListFileHeaderSize, &size, NULL);
+	}
 	while( *sDrop != '\0' ){
 		WIN32_FIND_DATA ff;
 		HANDLE hFF;
@@ -1023,7 +1059,7 @@ STDMETHODIMP CDropTarget::DragEnter(LPDATAOBJECT pDataObj, DWORD grfKeyState, PO
 #endif
 	result = QueryDrop(grfKeyState, &pt, pdwEffect);
 
-	if ( IsNodirShnPath(mCinfo) ){ // SHN 形式
+	if ( IsNodirShnPath(mCinfo) ){ // Src が SHN 形式
 		mShnDropTarget = (IDropTarget *)GetPathInterface(mCinfo->info.hWnd, mCinfo->path, IID_IDropTarget, NULL);
 		if ( mShnDropTarget != NULL ){
 			return mShnDropTarget->DragEnter(pDataObj, grfKeyState, pt, pdwEffect);
@@ -1092,9 +1128,10 @@ STDMETHODIMP CDropTarget::DragLeave(void)
 		POINT pt				マウスの現在位置
 		LPDWORD pdwEffect		動作の指定（変更可）
 -----------------------------------------------------------------------------*/
-BOOL CDropTarget::DropDDFormat(LPDATAOBJECT pDataObj, POINTL *pt, DWORD pdwEffect)
+BOOL CDropTarget::DropDDFormat(LPDATAOBJECT pDataObj, POINTL *pt, DWORD dwEffect)
 {
 	TCHAR *sDrop, buf[MAXCMDLINESIZE];
+	TCHAR destpath[VFPS];
 	int mode;
 	TMS_struct files = {{NULL, 0, NULL}, 0};
 
@@ -1106,7 +1143,7 @@ BOOL CDropTarget::DropDDFormat(LPDATAOBJECT pDataObj, POINTL *pt, DWORD pdwEffec
 			VFSGetRealPath(NULL, mTargetPath, mTargetPath);
 		}
 	}
-	switch( pdwEffect ){
+	switch( dwEffect ){
 		case DROPEFFECT_ADDTOOLBAR:
 			AddToolBarButton(mCinfo->info.hWnd, sDrop, mToolBarName);
 			break;
@@ -1115,14 +1152,22 @@ BOOL CDropTarget::DropDDFormat(LPDATAOBJECT pDataObj, POINTL *pt, DWORD pdwEffec
 			::SendMessage(mCinfo->hTreeWnd, VTM_ADDTREEITEM, 0, (LPARAM)sDrop);
 			break;
 
-		case DROPEFFECT_MAKELIST: {
-			TCHAR destpath[VFPS];
+		case DROPEFFECT_ADDLIST: {
+			TCHAR *mem, *psrc;
 
-			ListDrop(mCinfo->info.hWnd, sDrop, mTargetPath, destpath);
+			VFSFullPath(destpath, (TCHAR *)GetCellFileName(mCinfo, &mCEL(mCell), buf), mCinfo->path);
+			mem = NULL;
+			LoadTextImage(destpath, (TCHAR **)&mem, (TCHAR **)&psrc, NULL);
+			ListDrop(mCinfo->info.hWnd, sDrop, mTargetPath, destpath, mem);
 			tstrcpy(mCinfo->Jfname, FindLastEntryPoint(destpath));
 			::read_entry(mCinfo, RENTRY_JUMPNAME | RENTRY_NOHIST);
 			break;
 		}
+		case DROPEFFECT_MAKELIST:
+			ListDrop(mCinfo->info.hWnd, sDrop, mTargetPath, destpath, NULL);
+			tstrcpy(mCinfo->Jfname, FindLastEntryPoint(destpath));
+			::read_entry(mCinfo, RENTRY_JUMPNAME | RENTRY_NOHIST);
+			break;
 //=============================================================================
 		case DROPEFFECT_LINK:
 			LinkDrop(mCinfo->info.hWnd, sDrop, mTargetPath);
@@ -1205,7 +1250,7 @@ BOOL CDropTarget::DropDDFormat(LPDATAOBJECT pDataObj, POINTL *pt, DWORD pdwEffec
 		}
 //=============================================================================
 		case DROPEFFECT_DUP:
-			::ExecFileOperation(pdwEffect, mTargetPath, &files, mCinfo, DupOptionStr);
+			::ExecFileOperation(dwEffect, mTargetPath, &files, mCinfo, DupOptionStr);
 			::read_entry(mCinfo, RENTRY_UPDATE | RENTRY_SAVEOFF);
 			return TRUE;
 //=============================================================================
@@ -1250,7 +1295,7 @@ BOOL CDropTarget::DropDDFormat(LPDATAOBJECT pDataObj, POINTL *pt, DWORD pdwEffec
 			}
 		// default へ
 		default:
-			::ExecFileOperation(pdwEffect, mTargetPath, &files, mCinfo, NULL);
+			::ExecFileOperation(dwEffect, mTargetPath, &files, mCinfo, NULL);
 			if ( mCell == DDCELL_CONTROL ){
 				if ( mCinfo->hTreeWnd != NULL ){
 					::SendMessage(mCinfo->hTreeWnd,
@@ -1686,24 +1731,32 @@ STDMETHODIMP CDropTarget::Drop(LPDATAOBJECT pDataObj, DWORD grfKeyState, POINTL 
 }
 
 //==================================================================== 内部処理
-/* このままだと書庫内一覧を作成することがあるので保留
 BOOL CheckFileFolder(PPC_APPINFO *cinfo, ENTRYINDEX cellno)
 {
-	HANDLE hFF;
 	TCHAR path[VFPS];
-	WIN32_FIND_DATA ff;
+	LPITEMIDLIST pidl;
+	LPSHELLFOLDER pSF;
+	DWORD flags;
+	BOOL result = FALSE;
 
-	VFSFullPath(path + 1, (TCHAR *)GetCellFileName(cinfo, &CEL(cellno), path), cinfo->path);
-	CatPath(NULL, path, T("*"));
-	path[0] = '+';
-	hFF = VFSFindFirst(path, &ff);
-	if ( hFF != INVALID_HANDLE_VALUE ){
-		VFSFindClose(hFF);
-		return TRUE;
+	if ( cinfo->e.Dtype.mode == VFSDT_SHN ){
+		return (CEL(cellno).f.dwFileAttributes & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTEX_FOLDER)) ? TRUE : FALSE;
 	}
-	return FALSE;
+
+	VFSFullPath(path, (TCHAR *)GetCellFileName(cinfo, &CEL(cellno), path), cinfo->path);
+	if ( VFSMakeIDL(path, &pSF, &pidl, path) == FALSE ) return FALSE;
+
+	flags = SFGAO_STORAGE | SFGAO_STORAGEANCESTOR | SFGAO_FOLDER;
+	if ( SUCCEEDED(pSF->GetAttributesOf(1, (LPCITEMIDLIST *)&pidl, &flags)) ){
+		if ( flags & (SFGAO_STORAGE | SFGAO_STORAGEANCESTOR | SFGAO_FOLDER) ){
+			result = TRUE;
+		}
+	}
+	FreePIDL(pidl);
+	pSF->Release();
+	return result;
 }
-*/
+
 /*-----------------------------------------------------------------------------
 	QueryDrop			ドロップができるか判定する
 
@@ -1809,12 +1862,12 @@ STDMETHODIMP CDropTarget::QueryDrop(DWORD grfKeyState, POINTL *pt, DWORD *pdwEff
 				}else{
 					tstrcpy(mTargetPath, targetdir);
 					mDefAction = DROPEFFECT_LINK;
-/*
+
 					if ( IsTrue(CheckFileFolder(mCinfo, cellno)) ){
-						setflag(NewDropModeFlags, DROPMODE_FILEFOLDER); // 開発中
+						setflag(NewDropModeFlags, DROPMODE_FILEFOLDER);
 						mDefAction = DROPEFFECT_COPY;
 					}
-*/
+
 				}
 			}
 			mDropModeFlags = NewDropModeFlags;

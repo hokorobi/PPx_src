@@ -19,22 +19,26 @@ const int DialogID[] = {IDD_FOP_GENERAL, IDD_FOP_RENAME, IDD_FOP_OPTION};
 
 void InitControlData(FOPSTRUCT *FS, int id);
 
+#define FDLC_MOVE	0
+#define FDLC_RESIZE	1
+#define FDLC_LOG	2
+
 typedef struct {
 	int ID;
-	DWORD flags;
+	int type;
 } FIXDIALOGCONTROLS;
 const FIXDIALOGCONTROLS SizeFixFopID[] = {
-	{IDOK, 1},
-	{IDCANCEL, 1},
-	{IDB_TEST, 1},
-	{IDHELP, 1},
-	{IDC_FOP_MODE, 1},
-	{IDS_FOP_SRCNAME, 0},
-	{IDS_FOP_PROGRESS, 0},
-	{IDE_FOP_LOG, 0},
-	{IDC_FOP_DESTDIR, 0},
-	{IDB_REF, 1},
-	{IDE_FOP_RENAME, 0},
+	{IDOK, FDLC_MOVE},
+	{IDCANCEL, FDLC_MOVE},
+	{IDB_TEST, FDLC_MOVE},
+	{IDHELP, FDLC_MOVE},
+	{IDC_FOP_MODE, FDLC_MOVE},
+	{IDS_FOP_SRCNAME, FDLC_RESIZE},
+	{IDS_FOP_PROGRESS, FDLC_RESIZE},
+	{IDE_FOP_LOG, FDLC_LOG},
+	{IDC_FOP_DESTDIR, FDLC_RESIZE},
+	{IDB_REF, FDLC_MOVE},
+	{IDE_FOP_RENAME, FDLC_RESIZE},
 	{0, 0}
 };
 
@@ -58,7 +62,7 @@ void FixDialogControlsSize(HWND hDlg, const FIXDIALOGCONTROLS *fdc, int RefID)
 	HWND hRefWnd, hCtlWnd;
 	RECT box, refbox;
 	POINT pos = {0, 0};
-	int width;
+	int width, clientbottom;
 
 	memset(&box, 0, sizeof(box));
 	box.right = 3;
@@ -69,6 +73,7 @@ void FixDialogControlsSize(HWND hDlg, const FIXDIALOGCONTROLS *fdc, int RefID)
 	pos.x = box.right;
 	pos.y = box.bottom;
 	ClientToScreen(hDlg, &pos);
+	clientbottom = pos.y;
 
 	hRefWnd = GetDlgItem(hDlg, RefID);
 	GetWindowRect(hRefWnd, &refbox);
@@ -82,17 +87,23 @@ void FixDialogControlsSize(HWND hDlg, const FIXDIALOGCONTROLS *fdc, int RefID)
 		if ( hCtlWnd == NULL ) continue;
 
 		GetWindowRect(hCtlWnd, &box);
-		if ( fdc->flags == 0 ){
+		if ( fdc->type == FDLC_RESIZE ){
 			SetWindowPos(hCtlWnd, NULL, 0, 0,
 					box.right - box.left + width,
 					box.bottom - box.top,
 					SWP_NOACTIVATE | SWP_NOREDRAW | SWP_NOMOVE | SWP_NOZORDER);
-		}else{
+		}else if ( fdc->type == FDLC_MOVE ){
 			SetWindowPos(hCtlWnd, NULL,
 					box.left - pos.x + width,
 					box.top - pos.y,
 					0, 0,
 					SWP_NOACTIVATE | SWP_NOREDRAW | SWP_NOSIZE | SWP_NOZORDER);
+		}else{ // FDLC_LOG
+			clientbottom -= box.top;
+			if ( clientbottom < 4 ) clientbottom = 4;
+			SetWindowPos(hCtlWnd, NULL, 0, 0,
+					box.right - box.left + width, clientbottom,
+					SWP_NOACTIVATE | SWP_NOREDRAW | SWP_NOMOVE | SWP_NOZORDER);
 		}
 	}
 	InvalidateRect(hDlg, NULL, TRUE);
@@ -836,16 +847,17 @@ BOOL LoadOption(FOPSTRUCT *FS, const TCHAR *action, const TCHAR *option)
 		tstrcpy(FS->opt.action, action);
 	}
 
-	if ( !tstrcmp(FS->opt.action, T("Rename")) ){
+	if ( tstricmp(FS->opt.action, T("rename")) == 0 ){
 		FOP->firstsheet = FOPTAB_RENAME;
 	}
 	if ( NO_ERROR != GetCustTable(T("X_fopt"), FS->opt.action, FOP, sizeof(VFSFOP_OPTIONS)) ){
 		XMessage(NULL, STR_FOP, XM_NsERRd, T("%s setting not found."), FS->opt.action);
 		result = FALSE;
-		if ( !tstricmp(FS->opt.action, T("copy")) ){
-		}else if ( !tstricmp(FS->opt.action, T("move")) ){
+		if ( tstricmp(FS->opt.action, T("copy")) == 0 ){
+			// FOPMODE_COPY 設定済み
+		}else if ( tstricmp(FS->opt.action, T("move")) == 0 ){
 			FOP->mode = FOPMODE_MOVE;
-		}else if ( !tstricmp(FS->opt.action, T("rename")) ){
+		}else if ( tstricmp(FS->opt.action, T("rename")) == 0 ){
 			FOP->mode = FOPMODE_MOVE;
 			memcpy(FOP->str, optstr + sizeof(TCHAR) * 4,
 					sizeof(optstr) - sizeof(TCHAR) * 4);
@@ -1969,12 +1981,13 @@ void FopMinMaxInfo(HWND hDlg, LPARAM lParam)
 	RECT box;
 
 	box.top = 0;
-	box.bottom = 0;
+	box.bottom = WINY_SETT;
 	box.left = 0;
 	box.right = 254; // IDD_FOP のおおまかな幅(dialog unit)
 	MapDialogRect(hDlg, &box);
 
 	((MINMAXINFO *)lParam)->ptMinTrackSize.x = box.right;
+	((MINMAXINFO *)lParam)->ptMinTrackSize.y = box.bottom;
 }
 
 INT_PTR CALLBACK FileOperationDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
@@ -1996,23 +2009,32 @@ INT_PTR CALLBACK FileOperationDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM
 			FopCommands(hDlg, wParam, lParam);
 			break;
 
-		case WM_NCHITTEST: { // サイズ変更を左右のみに制限
+		case WM_NCHITTEST: { // サイズ変更を制限
 			LRESULT result = DefWindowProc(hDlg, WM_NCHITTEST, wParam, lParam);
 
 			switch ( result ){
+				case HTBOTTOM:
+					if ( ((FOPSTRUCT *)GetWindowLongPtr(hDlg, DWLP_USER))->hEWnd != NULL ){
+						break; // Log があるときは、サイズ変更有り
+					}
+					// HTTOP へ(サイズ変更不可)
 				case HTTOP:
-				case HTBOTTOM: {
 					result = HTBORDER;
 					break;
-				}
 
-				case HTTOPLEFT:
 				case HTBOTTOMLEFT:
+					if ( ((FOPSTRUCT *)GetWindowLongPtr(hDlg, DWLP_USER))->hEWnd != NULL ){
+						break; // Log があるとき
+					}
+				case HTTOPLEFT:
 					result = HTLEFT;
 					break;
 
-				case HTTOPRIGHT:
 				case HTBOTTOMRIGHT:
+					if ( ((FOPSTRUCT *)GetWindowLongPtr(hDlg, DWLP_USER))->hEWnd != NULL ){
+						break; // Log があるとき
+					}
+				case HTTOPRIGHT:
 					result = HTRIGHT;
 					break;
 			}

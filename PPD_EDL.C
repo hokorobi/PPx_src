@@ -2496,8 +2496,9 @@ case K_F7:
 	break;
 case K_s | K_F7:
 	if ( PES->findrep == NULL ) break;
-	SendMessage(PES->hWnd, EM_REPLACESEL, 0, (LPARAM)
-		((PES->findrep->replacetext[0] != '\0') ? PES->findrep->replacetext : PES->findrep->findtext));
+	SendMessage(PES->hWnd, EM_REPLACESEL, 0,
+			(LPARAM)((PES->findrep->replacetext[0] != '\0') ?
+				PES->findrep->replacetext : PES->findrep->findtext));
 	break;
 //-----------------------------------------------
 case K_s | K_Pup:		// \[PgUp]
@@ -2869,6 +2870,14 @@ LRESULT CALLBACK EDsHell(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	PES = (PPxEDSTRUCT *)GetProp(hWnd, PPxED);
 	if ( PES == NULL ) return DefWindowProc(hWnd, iMsg, wParam, lParam);
 	switch (iMsg){
+		case WM_CTLCOLORLISTBOX:
+			if ( hDialogBackBrush == NULL ){
+				return DefWindowProc(hWnd, iMsg, wParam, lParam);
+			}
+			SetTextColor((HDC)wParam, C_WindowText);
+			SetBkColor((HDC)wParam, C_WindowBack);
+			return (BOOL)(DWORD_PTR)GetWindowBackBrush();
+
 		case WM_NCLBUTTONDOWN:
 			if ( (PES->flags & PPXEDIT_LINE_MULTI) && (wParam == HTVSCROLL) ){
 				LineMulti_VScrollDown(hWnd, PES->fontY, lParam);

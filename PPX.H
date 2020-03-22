@@ -244,6 +244,9 @@ typedef struct {
 
 #define ShortcutExt ".lnk" // Win2000/98まで:.LNK WinXP以降:.lnk
 
+#define PPC_HIGHLIGHT_COLORS 7
+#define PPV_HIGHLIGHT_COLORS 8
+
 //------------------------------------- PPb 関連
 #define PPBBOOTSYNC "PPbS" // PPbの起動時同期に使用するイベント名
 
@@ -407,7 +410,8 @@ typedef enum {
 #define MES_CTHE	T("CTHE|Hook&Edit")
 #define MES_CUTR	T("CUTR|Cut ready")
 #define MES_DDAB	T("DDAB|Add button")
-#define MES_DDAI	T("DDAI|Add tree item")
+#define MES_DDAI	T("DDAI|Add item to tree")
+#define MES_DDAL	T("DDAL|Add item to listfile")
 #define MES_DDCM	T("DDCM|Can\'t move on")
 #define MES_DDCP	T("DDCP|&Copy to")
 #define MES_DDDP	T("DDDP|&Dup on")
@@ -652,7 +656,13 @@ typedef enum {
 #define MES_LGER	T("LGER|Error")
 #define MES_LGOW	T("LGOW|Overwrite")
 #define MES_LGWA	T("LGWA|Warning")
+
+#define MES_LHIL	T("LHIL|Highlight")
+#define MES_LHIO	T("LHIO|Highlight off")
+#define MES_LMAK	T("LMAK|Mark")
 #define MES_LOAD	T("LOAD|loading")
+#define MES_LRMA	T("LRMA|Reverse mark")
+#define MES_LUMA	T("LUMA|Unmark")
 
 #define MES_LYCA	T("LYCA|&Caption")
 #define MES_LYDB	T("LYDB|Dock &Bottom")

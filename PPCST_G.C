@@ -417,12 +417,6 @@ void MakeKeyDetailText(int key, TCHAR *dest, BOOL extype)
 INT_PTR CALLBACK StyleDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg){
-		case WM_DESTROY:
-			if ( PPxGetHWND(PPcustRegID) != NULL ){ // この中は１回だけ呼び出される
-				PPxRegist(NULL, PPcustRegID, PPXREGIST_FREE);
-			}
-			break;
-
 		case WM_CONTEXTMENU:
 			if ( (HWND)wParam == hDlg ) break;
 		case WM_HELP:
@@ -590,6 +584,9 @@ void GUIcustomizer(int startpage, const TCHAR *param)
 		DeleteFile(Backup);
 		Print(T("*Deleted customize backup file."));
 	}
+	if ( PPxGetHWND(PPcustRegID) != NULL ){ // この中は１回だけ呼び出される
+		PPxRegist(NULL, PPcustRegID, PPXREGIST_FREE);
+	}
 	CoUninitialize();
 }
 #if !NODLL
@@ -669,7 +666,6 @@ void InitWndIcon(HWND hDlg, UINT baseControlID)
 	hBaseWnd = GetDlgItem(hDlg, baseControlID);
 	if ( hBaseWnd == NULL ) return;
 
-		// Task 登録
 	PPxRegist(hPropWnd, PPcustRegID, PPXREGIST_NORMAL);
 
 		// ウィンドウのアイコンを設定する
@@ -826,6 +822,24 @@ void GetControlText(HWND hDlg, UINT ID, TCHAR *text, DWORD len)
 }
 
 #if !NODLL
+#ifndef __BORLANDC__
+char *stpcpyA(char *deststr, const char *srcstr)
+{
+	char *destptr = deststr;
+	const char *srcptr = srcstr;
+
+	for(;;){
+		char code;
+
+		code = *srcptr;
+		*destptr = code;
+		if ( code == '\0' ) return destptr;
+		srcptr++;
+		destptr++;
+	}
+}
+#endif
+
 WCHAR *stpcpyW(WCHAR *deststr, const WCHAR *srcstr)
 {
 	WCHAR *destptr = deststr;

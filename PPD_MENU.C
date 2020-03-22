@@ -16,7 +16,7 @@ DWORD MenuEnterCount = 0; // メニュー再入によるスタックオーバフローチェッカ
 
 const TCHAR SetWindowPosToDeskStr[] = MES_SWPD;
 
-void AddInMenu(HMENU hTopMenu, const PPXINMENU *menus, PPXAPPINFO *info, DWORD *PopupID, ThSTRUCT *thMenuData);
+void AddInternalMenu(HMENU hTopMenu, const PPXINMENU *menus, PPXAPPINFO *info, DWORD *PopupID, ThSTRUCT *thMenuData);
 
 #define HELPID_DATAISSTRUCT 0x1061
 
@@ -809,7 +809,7 @@ BOOL ExMenuAdd(PPXAPPINFO *info, ThSTRUCT *thMenuData, HMENU hMenu, const TCHAR 
 		hMenuDest = CreatePopupMenu();
 		AppendMenu(hMenu, MF_EPOP, (UINT_PTR)hMenuDest, namebuf);
 	}
-	if ( (exmenu[0] == 'M') && (exmenu[1] == '_') ){
+	if ( *exmenu == 'M' ){ // M_xxx
 		hWnd = (info == NULL) ? NULL : info->hWnd;
 		PP_AddMenu(info, hWnd, hMenuDest, PopupID, exmenu, thMenuData);
 		return TRUE;
@@ -1014,6 +1014,9 @@ PPXDLL HMENU PPXAPI PP_AddMenu(PPXAPPINFO *ParentInfo, HWND hWnd, HMENU hMenu, D
 			}
 
 			if ( code == '?' ){	// 拡張 ================
+				if ( (menuflag & MF_MENUBARBREAK) && (*(paramp + 1) == '?') ){
+					AppendMenu(hTmpMenu, MF_SEPARATOR | MF_MENUBARBREAK, 0, NULL);
+				}
 				if ( IsTrue(ExMenuAdd(ParentInfo, thMenuData, hTmpMenu,
 						paramp + 1, keyword, id)) ){
 					continue;
@@ -1151,7 +1154,7 @@ void MakeRootMenu(ThSTRUCT *thMenuData, HMENU hRootMenu, const TCHAR *CustName, 
 		for ( inmp = inmenu ; inmp->name != NULL ; inmp++ ){
 			if ( thMenuData != NULL ){
 				hPopupMenu = CreatePopupMenu();
-				AddInMenu(hPopupMenu, inmp->menus, PPxDefInfo, &id, NULL);
+				AddInternalMenu(hPopupMenu, inmp->menus, PPxDefInfo, &id, NULL);
 				AppendMenu(hRootMenu, MF_EPOP, (UINT_PTR)hPopupMenu, inmp->name);
 			}else{
 				AppendMenuString(hRootMenu, count + IDW_MENU, inmp->name);
@@ -1256,7 +1259,7 @@ PPXDLL void PPXAPI DynamicMenu_InitMenu(DYNAMICMENUSTRUCT *dms, HMENU hMenuBar, 
 	dms->Sysmenu = FALSE;
 }
 
-void AddInMenu(HMENU hTopMenu, const PPXINMENU *menus, PPXAPPINFO *info, DWORD *PopupID, ThSTRUCT *thMenuData)
+void AddInternalMenu(HMENU hTopMenu, const PPXINMENU *menus, PPXAPPINFO *info, DWORD *PopupID, ThSTRUCT *thMenuData)
 {
 	DWORD layer = 1;
 	HMENU hMenus[3], hMenu;
@@ -1346,7 +1349,7 @@ PPXDLL BOOL PPXAPI DynamicMenu_InitPopupMenu(DYNAMICMENUSTRUCT *dms, HMENU hPopu
 						}
 					}
 				}else{ // 内蔵メニュー
-					AddInMenu(hPopupMenu, dms->inmenu[offset].menus, info, &dms->PopupID, &dms->thMenuData);
+					AddInternalMenu(hPopupMenu, dms->inmenu[offset].menus, info, &dms->PopupID, &dms->thMenuData);
 				}
 			}
 			return TRUE;
@@ -1392,7 +1395,7 @@ TCHAR USEFASTCALL GetMenuShortcutkey(const TCHAR *menustring)
 	return upper(*p);
 }
 
-void MenuExtract(PPXAPPINFO *info, const TCHAR *itemname, const TCHAR *param)
+void DynamicMenuExtract(PPXAPPINFO *info, const TCHAR *itemname, const TCHAR *param)
 {
 	if ( *param == '?' ){
 		HMENU hPopupMenu = CreatePopupMenu();
@@ -1440,7 +1443,7 @@ PPXDLL void PPXAPI SystemDynamicMenu(DYNAMICMENUSTRUCT *dms, PPXAPPINFO *info, W
 	if ( dms->MenuName != NULL ){ // 外部メニュー
 		while( EnumCustTable(count, dms->MenuName, keyword, param, sizeof(param)) >= 0 ){
 			if ( GetMenuShortcutkey(keyword) == c ){
-				MenuExtract(info, keyword, param);
+				DynamicMenuExtract(info, keyword, param);
 				return;
 			}
 			count++;
@@ -1457,7 +1460,7 @@ PPXDLL void PPXAPI SystemDynamicMenu(DYNAMICMENUSTRUCT *dms, PPXAPPINFO *info, W
 				POINT pos;
 
 				ThInit(&thMenuData);
-				AddInMenu(hPopupMenu, inmp->menus, info, &index, &thMenuData);
+				AddInternalMenu(hPopupMenu, inmp->menus, info, &index, &thMenuData);
 
 				if ( !PPxInfoFunc(info, PPXCMDID_POPUPPOS, &pos) ){
 					GetCursorPos(&pos);
@@ -1468,7 +1471,7 @@ PPXDLL void PPXAPI SystemDynamicMenu(DYNAMICMENUSTRUCT *dms, PPXAPPINFO *info, W
 					const TCHAR *extparam;
 
 					extparam = GetMenuDataString(&thMenuData, index - 1);
-					MenuExtract(info, keyword, extparam);
+					DynamicMenuExtract(info, keyword, extparam);
 				}
 				ThFree(&thMenuData);
 				DestroyMenu(hPopupMenu);

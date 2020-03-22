@@ -260,9 +260,14 @@ BOOL CheckParam(VIEWOPTIONS *viewopts, const TCHAR *param, TCHAR *filename)
 				VO_PrintMode = (id - 1) + PRINTMODE_ONE;
 				break;
 								// •\Ž¦ƒ‚[ƒh
+			case 5:				//	"DOCUMENT",
+				viewopts->dtype = DISPT_DOCUMENT;
+				ThSetString(NULL, StrDocFilterCmd, more);
+				break;
+
 			case 3:				//	"HEX",
 			case 4:				//	"TEXT",
-			case 5:				//	"DOCUMENT",
+//			case 5:				//	"DOCUMENT",
 			case 6:				//	"IMAGE",
 			case 7:				//	"RAWIMAGE",
 				viewopts->dtype = id - 3 + DISPT_HEX;

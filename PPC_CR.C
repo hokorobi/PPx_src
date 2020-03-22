@@ -624,6 +624,10 @@ void CrMenu(PPC_APPINFO *cinfo, BOOL ShowMenu)
 
 	CRMENUSTACKCHECK *CrmCheck; // スタック異常等の検出用
 
+	cinfo->FreezeType = FREEZE_CRMENU;
+	cinfo->StateInfo.state = StateID_Crmenu;
+	cinfo->StateInfo.tick = GetTickCount();
+
 	CrmCheck = (CRMENUSTACKCHECK *)PPxCommonExtCommand(KC_GETCRCHECK, 0);
 	if ( CrmCheck == (CRMENUSTACKCHECK *)(LONG_PTR)ERROR_INVALID_FUNCTION ){
 		CrmCheck = &DummyCrmCheck;
@@ -640,8 +644,18 @@ void CrMenu(PPC_APPINFO *cinfo, BOOL ShowMenu)
 										// SHN 用 ----------------------------
 	if ( (cinfo->RealPath[0] == '?') ||
 		 (CEL(cinfo->e.cellN).f.dwFileAttributes & FILE_ATTRIBUTEX_VIRTUAL) ){
-		if ( !ShowMenu && IsTrue(CellLook(cinfo, -1)) ) return;
+		cinfo->StateInfo.state = StateID_Celllook;
+		cinfo->FreezeType = FREEZE_CRMENU_CELLLOOK;
+		if ( !ShowMenu && IsTrue(CellLook(cinfo, -1)) ){
+			cinfo->FreezeType = FREEZE_NONE;
+			cinfo->StateInfo.state = StateID_NoState;
+			return;
+		}
+		cinfo->FreezeType = FREEZE_CRMENU_SCMENU;
+		cinfo->StateInfo.state = StateID_Scmenu;
 		SCmenu(cinfo, NULL);
+		cinfo->FreezeType = FREEZE_NONE;
+		cinfo->StateInfo.state = StateID_NoState;
 		return;
 	}
 	cminfo.comID = CRID_EXTMENU;
@@ -655,6 +669,8 @@ void CrMenu(PPC_APPINFO *cinfo, BOOL ShowMenu)
 
 	if ( VFSFullPath(cminfo.PathName, CEL(cminfo.cellindex).f.cFileName, cinfo->RealPath) == NULL ){
 		SetPopMsg(cinfo, ERROR_PATH_NOT_FOUND, NULL);
+		cinfo->FreezeType = FREEZE_NONE;
+		cinfo->StateInfo.state = StateID_NoState;
 		return;
 	}
 	if ( !ShowMenu ){ // ディレクトリ移動
@@ -662,22 +678,34 @@ void CrMenu(PPC_APPINFO *cinfo, BOOL ShowMenu)
 			if ( CEL(cinfo->e.cellN).attr & ECA_THIS ){	// "." ----------------
 				if ( X_ChooseMode == CHOOSEMODE_NONE ){
 					PPC_RootDir(cinfo);
+					cinfo->StateInfo.state = StateID_NoState;
+					cinfo->FreezeType = FREEZE_NONE;
 					return;
 				}
 			}else if ( CEL(cinfo->e.cellN).attr & ECA_PARENT ){ // ".." -------
 				PPC_UpDir(cinfo);
+				cinfo->FreezeType = FREEZE_NONE;
+				cinfo->StateInfo.state = StateID_NoState;
 				return;
 														// <dir> --------------
 			}else if ( CEL(cinfo->e.cellN).f.dwFileAttributes &
 						(FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTEX_FOLDER) ){
 				if ( (X_ChooseMode != CHOOSEMODE_NONE) ||
 					 !IsExistCustTable(ExtTableID, T(":DIR")) ){
-					if ( IsTrue(CellLook(cinfo, -1)) ) return;
+					cinfo->FreezeType = FREEZE_CRMENU_CELLLOOK;
+					if ( IsTrue(CellLook(cinfo, -1)) ){
+						cinfo->FreezeType = FREEZE_NONE;
+						cinfo->StateInfo.state = StateID_NoState;
+						return;
+					}
+					cinfo->FreezeType = FREEZE_CRMENU;
 				}
 			}
 		}
 		if ( X_ChooseMode != CHOOSEMODE_NONE ){ // Choose Mode の確定処理
 			DoChooseResult(cinfo, Param);
+			cinfo->StateInfo.state = StateID_NoState;
+			cinfo->FreezeType = FREEZE_NONE;
 			return;
 		}
 	}
@@ -690,8 +718,12 @@ void CrMenu(PPC_APPINFO *cinfo, BOOL ShowMenu)
 		TypeFlag = GetCustTable(ExtTableID, T(":DIR"), Param, sizeof(Param));
 		if ( TypeFlag != 0 ) TypeFlag = PPEXTRESULT_NONE;
 	}else{
+		cinfo->FreezeType = FREEZE_CRMENU_GetExtCommand;
+		cinfo->StateInfo.state = StateID_GetExtCommand;
 		TypeFlag = PP_GetExtCommand(cminfo.PathName, ExtTableID, Param, cminfo.TypeName);
+		cinfo->FreezeType = FREEZE_CRMENU;
 	}
+	cinfo->StateInfo.state = StateID_NoState;
 	if ( Param[CMDLINESIZE - 1] != '\0' ){
 		LongParam = TRUE;
 		Param[CMDLINESIZE - 1] = '\0';
@@ -733,6 +765,7 @@ void CrMenu(PPC_APPINFO *cinfo, BOOL ShowMenu)
 				}
 			}
 			CrmCheck->enter--;
+			cinfo->FreezeType = FREEZE_NONE;
 			return;
 		}
 		if ( (UTCHAR)*ptr == EXTCMD_CMD ) ptr++;
@@ -872,6 +905,7 @@ freefin:
 	ThFree(&pmdi.th);
 	if ( IsTrue(cinfo->UnpackFix) ) OffArcPathMode(cinfo);
 	CrmCheck->enter--;
+	cinfo->FreezeType = FREEZE_NONE;
 }
 
 void RegisterAction(PPC_APPINFO *cinfo, HMENU hMenu, PPCMENUINFO *cminfo, BOOL always)

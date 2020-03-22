@@ -2456,7 +2456,7 @@ ERRORCODE PPcGetIInfo_Command(PPC_APPINFO *cinfo, PPXAPPINFOUNION *uptr)
 		}else if ( !tstrcmp(uptr->str, T("MASKENTRY")) ){
 			return MaskEntryCommand(cinfo, param, DSMD_TEMP);
 		}else if ( !tstrcmp(uptr->str, T("MARKENTRY")) ){
-			return PPC_FindMark(cinfo, param, 1);
+			return PPC_FindMark(cinfo, param, MARK_CHECK);
 		}else{
 			return ERROR_INVALID_FUNCTION;
 		}
@@ -2490,7 +2490,7 @@ ERRORCODE PPcGetIInfo_Command(PPC_APPINFO *cinfo, PPXAPPINFOUNION *uptr)
 		}else if ( !tstrcmp(uptr->str, T("UNPACK")) ){
 			return UnpackCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str, T("UNMARKENTRY")) ){
-			return PPC_FindMark(cinfo, param, 0);
+			return PPC_FindMark(cinfo, param, MARK_REMOVE);
 		}else if ( !tstrcmp(uptr->str, T("VIEWSTYLE")) ){
 			return ViewStyleCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str, T("WHEREIS")) ){

@@ -86,6 +86,8 @@ GVAR int FontDPI GPARAM(DEFAULT_WIN_DPI);
 
 GVAR BOOL Embed GPARAM(FALSE); // ウィンドウ埋め込み
 
+GVAR const TCHAR StrDocFilterCmd[] GPARAM(T("FilterCmd"));
+GVAR const TCHAR StrDocFilteredTextPath[] GPARAM(T("FilteredText"));
 //--------------------------------------------------------- 色関係
 GVAR HBRUSH C_BackBrush GPARAM(NULL);	// 背景用ブラシ
 GVAR int VideoBits;					// 画面の色数(4, 8, 16, 24, 32)
@@ -211,7 +213,7 @@ GVAR int VO_PrintMode GPARAM(PRINTMODE_OFF);
 GVAR const TCHAR textcp_systemcp[] GPARAM(T("local codepage"));
 GVAR const TCHAR textcp_sjis[] GPARAM(T("S-JIS"));
 
-GVAR const TCHAR *VO_textS[]
+GVAR const TCHAR *VO_textS[VTYPE_MAX]
 #ifndef GLOBALEXTERN
 ={	T("IBM/US"),		// 0	VTYPE_IBM
 	T("ANSI/Latin1"),	// 1	VTYPE_ANSI

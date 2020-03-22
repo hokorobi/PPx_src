@@ -15,6 +15,7 @@ const TCHAR StrInvokeProperties[] = T("properties");
 
 ERRORCODE PPXAPI PPcCommand(PPC_APPINFO *cinfo, WORD key)
 {
+	cinfo->FreezeType = (int)key;
 	if ( !(key & K_raw) ) return ExecKeyCommand(&PPcExecKey, &cinfo->info, key);
 
 	resetflag(key, K_raw);	// エイリアスビットを無効にする
@@ -292,10 +293,10 @@ case '*':
 	break;
 //----------------------------------------------- AddMark
 case '+':
-	return PPC_FindMark(cinfo, NULL, 1);
+	return PPC_FindMark(cinfo, NULL, MARK_CHECK);
 //----------------------------------------------- DelMark
 case '-':
-	return PPC_FindMark(cinfo, NULL, 0);
+	return PPC_FindMark(cinfo, NULL, MARK_REMOVE);
 //----------------------------------------------- Reload
 case K_F5:
 case '.':

@@ -76,7 +76,7 @@ struct LABELTEXT {
  {T("M_wsrc"), T("PPc検索、検索対象入力補助\0PPc where is,source")},
  {T("MC_mdds"), T("PPc拡張D&D\0PPc ex-D&D")},
  {T("M_xpack"), T("PPc \\[P]\0")},
- {T("M_bin"),  T("PPc [B]バイナリ変換\0PPc [B]")},
+ {T("M_bin"),  T("PPc [B]バイナリ操作\0PPc [B]")},
  {T("M_tabc"), T("PPc タブメニュー&[-]\0PPc tab menu &[-]")},
  {T("MV_menu"), T("PPvメニューバー\0PPv menu bar")},
  {T("M_ppvc"), T("PPvコンテキスト追加分\0PPv context")},

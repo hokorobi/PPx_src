@@ -1379,7 +1379,7 @@ void DrawCommentEx(DISPSTRUCT *disp, const BYTE *fmt)
 // 画像表示 ===================================================================
 // 選択表示を行う
 #ifndef USEDIRECTX
-BOOL TImageList_Draw(PPC_APPINFO *cinfo, ICONCACHESTRUCT *icons, int index, CTC_DXD HDC hDC, int x, int y, int imgsizeX, int imgsizeY)
+BOOL TImageList_SelectDraw(PPC_APPINFO *cinfo, ICONCACHESTRUCT *icons, int index, CTC_DXD HDC hDC, int x, int y, int imgsizeX, int imgsizeY)
 {
 	HBITMAP hTempBMP;
 	HGDIOBJ hOldBMP;
@@ -1388,7 +1388,7 @@ BOOL TImageList_Draw(PPC_APPINFO *cinfo, ICONCACHESTRUCT *icons, int index, CTC_
 	HDC hTempDC;
 	DWORD size;
 	DWORD selcolor = C_eInfo[ECS_SELECT];
-	int R, G, B;
+	DWORD R, G, B;
 	BOOL result;
 
 	bmpinfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -1402,7 +1402,6 @@ BOOL TImageList_Draw(PPC_APPINFO *cinfo, ICONCACHESTRUCT *icons, int index, CTC_
 	bmpinfo.bmiHeader.biClrImportant = 0;
 
 	hTempDC = CreateCompatibleDC(hDC);
-
 	hTempBMP = CreateDIBSection(hTempDC, &bmpinfo, DIB_RGB_COLORS, (void **)&bitmap, NULL, 0);
 	if ( hTempBMP == NULL ){
 		DeleteDC(hTempDC);
@@ -1509,13 +1508,59 @@ void RequestGetIcon(PPC_APPINFO *cinfo /* , ICONCACHESTRUCT *icons */)
 	SetEvent(cinfo->SubT_cmd);
 }
 
+void CellImageIconList(DISPSTRUCT *disp, ICONCACHESTRUCT *icons, int cellicon, BOOL CheckMark, int boxtop, int imgsizeX, int imgsizeY)
+{
+	PPC_APPINFO *cinfo = disp->cinfo;
+	HDC hDC = disp->hDC;
+	RECT tempbox;
+
+	if ( CheckMark == FALSE ){ // 通常
+		if ( IsTrue(DrawIconList(cinfo, icons, cellicon,
+				DIRECTXARG(&disp->cell->iconcache) CTC_DXP hDC,
+				disp->Xd, boxtop, ILD_NORMAL)) ){
+			return;
+		}
+		// 代用描画
+		if ( !disp->NoBack && (icons->maskmode == ICONLIST_NOMASK) ){
+			tempbox.left = disp->Xd;
+			tempbox.top = boxtop;
+			tempbox.right = tempbox.left + imgsizeX;
+			tempbox.bottom = tempbox.top + imgsizeY;
+
+			DxFillBack(disp->DxDraw, hDC, &tempbox, disp->hback);
+		}
+	} else{ // マーク反転
+		#ifndef USEDIRECTX
+			if ( IsTrue(TImageList_SelectDraw(cinfo, icons, cellicon,
+					CTC_DXP hDC, disp->Xd, boxtop, imgsizeX, imgsizeY)) ){
+				return;
+			}
+		#else
+			if ( IsTrue(DrawIconList(cinfo, icons, cellicon,
+					DIRECTXARG(&disp->cell->iconcache) CTC_DXP hDC,
+					disp->Xd, boxtop, ILD_SELECTED)) ){
+				// 反転描画
+				tempbox.left = disp->Xd;
+				tempbox.top = boxtop;
+				tempbox.right = tempbox.left + imgsizeX;
+				tempbox.bottom = tempbox.top + imgsizeY;
+
+				DxDrawBack(disp->DxDraw, hDC, &tempbox,
+					C_eInfo[ECS_SELECT] | 0x80000000);
+				return;
+			}
+		#endif
+	}
+	disp->cell->icon = ICONLIST_NOINDEX;
+	RequestGetIcon(cinfo);
+}
+
 void PaintImageIcon(DISPSTRUCT *disp, const BYTE *fmt, int CheckM, int Ytop, int Ybtm, const XC_CFMT *cfmt)
 {
-	HDC hDC;
 	RECT box;
 	PPC_APPINFO *cinfo = disp->cinfo;
+	HDC hDC = disp->hDC;
 
-	hDC = disp->hDC;
 	box.top = Ytop;
 	box.bottom = Ybtm;
 										// イメージリスト未作成なら作成指示
@@ -1541,39 +1586,7 @@ void PaintImageIcon(DISPSTRUCT *disp, const BYTE *fmt, int CheckM, int Ytop, int
 			box.left = disp->Xd;
 			DxFillBack(disp->DxDraw, hDC, &box, disp->hfbr);
 		}
-
-		#if 0
-		if ( CheckM ){
-			#ifndef USEDIRECTX
-			if ( TImageList_Draw(cinfo, &cinfo->EntryIcons, disp->cell->icon,
-				CTC_DXP hDC, disp->Xd, box.top,
-				(box.right - box.left), (box.bottom - box.top)) == FALSE ){
-				disp->cell->icon = ICONLIST_NOINDEX;
-				RequestGetIcon(cinfo);
-			}
-			#else
-			if ( DrawIconList(cinfo, &cinfo->EntryIcons, disp->cell->icon,
-				DIRECTXARG(&disp->cell->iconcache) CTC_DXP hDC,
-				disp->Xd, box.top, ILD_SELECTED) == FALSE ){
-				disp->cell->icon = ICONLIST_NOINDEX;
-				//RequestGetIcon(cinfo, &cinfo->EntryIcons);
-				RequestGetIcon(cinfo);
-			}
-			#endif
-		}else
-		#endif
-		// EnterCellEdit(cinfo); 表示時の同期は不要らしい
-		if ( DrawIconList(cinfo, &cinfo->EntryIcons, disp->cell->icon,
-			DIRECTXARG(&disp->cell->iconcache) CTC_DXP hDC,
-			disp->Xd, box.top, ILD_NORMAL) == FALSE ){
-			if ( !disp->NoBack && (cinfo->EntryIcons.maskmode == ICONLIST_NOMASK) ){
-				box.left = disp->Xd;
-				DxFillBack(disp->DxDraw, hDC, &box, disp->hback);
-			}
-			disp->cell->icon = ICONLIST_NOINDEX;
-			//RequestGetIcon(cinfo, &cinfo->EntryIcons);
-			RequestGetIcon(cinfo);
-		}
+		CellImageIconList(disp, &cinfo->EntryIcons, disp->cell->icon, CheckM, box.top, (box.right - disp->Xd), (box.bottom - box.top));
 		if ( CheckM ) IfGDImode(hDC)
 		{// "*" 表示
 			HBRUSH hFrameBrush;
@@ -1730,37 +1743,7 @@ void PaintIcon(DISPSTRUCT *disp, int imgsizeX, int imgsizeY, int CheckM, int Xe,
 		}
 	} else{ // アイコンあり
 		// EnterCellEdit(cinfo); 表示時の同期は不要らしい
-		if ( !CheckM ){ // 通常
-			if ( DrawIconList(cinfo, icons, cellicon,
-				DIRECTXARG(&disp->cell->iconcache) CTC_DXP hDC,
-				disp->Xd, boxtop, ILD_NORMAL) == FALSE ){
-				disp->cell->icon = ICONLIST_NOINDEX;
-				RequestGetIcon(cinfo);
-			}
-		} else{ // マーク反転
-		#ifndef USEDIRECTX
-			if ( TImageList_Draw(cinfo, icons, cellicon, CTC_DXP hDC,
-				disp->Xd, boxtop, imgsizeX, imgsizeY) == FALSE ){
-				disp->cell->icon = ICONLIST_NOINDEX;
-				RequestGetIcon(cinfo);
-			}
-		#else
-			if ( DrawIconList(cinfo, icons, cellicon,
-				DIRECTXARG(&disp->cell->iconcache) CTC_DXP hDC,
-				disp->Xd, boxtop, ILD_SELECTED) == FALSE ){
-				disp->cell->icon = ICONLIST_NOINDEX;
-				RequestGetIcon(cinfo);
-			} else{
-				tempbox.left = disp->Xd;
-				tempbox.top = boxtop;
-				tempbox.right = tempbox.left + imgsizeX;
-				tempbox.bottom = tempbox.top + imgsizeY;
-
-				DxDrawBack(disp->DxDraw, hDC, &tempbox,
-					C_eInfo[ECS_SELECT] | 0x80000000);
-			}
-		#endif
-		}
+		CellImageIconList(disp, icons, cellicon, CheckM, boxtop, imgsizeX, imgsizeY);
 	}
 										// 未描画部分の描画
 	if ( !disp->NoBack ){

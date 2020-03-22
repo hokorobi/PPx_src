@@ -847,26 +847,29 @@ void SortComboWindows(int fixshowindex)
 	DEBUGLOGF("SortWindows - %d end", fixshowindex);
 }
 
-void WmComboNotify(NMHDR *nmh)
+LRESULT WmComboNotify(NMHDR *nmh)
 {
-	if ( nmh->hwndFrom == NULL ) return;
+	if ( nmh->hwndFrom == NULL ) return 0;
 
 	if ( IsTrue(DocksNotify(&comboDocks, nmh)) ){
+		if ( (nmh->code == NM_CUSTOMDRAW) && (UseCCDrawBack > 1) ){
+			return PPxCommonExtCommand(K_DRAWCCBACK, (WPARAM)nmh);
+		}
 		if ( nmh->code == RBN_HEIGHTCHANGE ){
 			SortComboWindows(SORTWIN_LAYOUTALL);
 		}
-		return;
+		return 0;
 	}
 	if ( nmh->code == TTN_NEEDTEXT ){
-		if ( SetTabTipText(nmh) ) return;
-		if ( SetToolBarTipText(Combo.ToolBar.hWnd, &thGuiWork, nmh) ) return;
-		if ( DocksNeedTextNotify(&comboDocks, nmh) ) return;
-		return;
+		if ( SetTabTipText(nmh) ) return 0;
+		if ( SetToolBarTipText(Combo.ToolBar.hWnd, &thGuiWork, nmh) ) return 0;
+		if ( DocksNeedTextNotify(&comboDocks, nmh) ) return 0;
+		return 0;
 	}
 	if ( nmh->hwndFrom == Combo.ToolBar.hWnd ){
 		if ( nmh->code == NM_RCLICK ){
 			if ( IsTrue(ToolBarDirectoryButtonRClick(Combo.hWnd, nmh, &thGuiWork)) ){
-				return;
+				return 0;
 			}
 			PostMessage(hComboFocus, WM_PPXCOMMAND,
 					TMAKELPARAM(K_POPOPS, PPT_MOUSE), 0);
@@ -875,12 +878,15 @@ void WmComboNotify(NMHDR *nmh)
 		if ( nmh->code == TBN_DROPDOWN ){
 			ComboToolbarCommand(((LPNMTOOLBAR)nmh)->iItem, K_s);
 		}
-		return;
+		if ( (nmh->code == NM_CUSTOMDRAW) && (UseCCDrawBack > 1) ){
+			return PPxCommonExtCommand(K_DRAWCCBACK, (WPARAM)nmh);
+		}
+		return 0;
 	}
 	if ( nmh->code == TCN_SELCHANGE ){
 		SelectChangeTab(nmh);
-		return;
 	}
+	return 0;
 }
 
 int SplitHitTest(POINT *pos)
@@ -2658,7 +2664,7 @@ LRESULT CALLBACK ComboProcMain(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 			break;
 		case WM_PAINT:				WmComboPaint(hWnd);			break;
 		case WM_WINDOWPOSCHANGED:	WmComboPosChanged(hWnd);	break;
-		case WM_NOTIFY:				WmComboNotify((NMHDR *)lParam); break;
+		case WM_NOTIFY:				return WmComboNotify((NMHDR *)lParam);
 
 		case WM_COPYDATA:	return WmComboCopyData((COPYDATASTRUCT *)lParam);
 

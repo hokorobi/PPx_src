@@ -34,7 +34,7 @@ extern BYTE *VD_oasys_mdt(MAKETEXTINFO *mti, VT_TABLE *tbl);
 extern void CreateDIBtoPalette(PPvViewObject *vo);
 extern void ClipBitmap(HWND hWnd);
 extern void Rotate(HWND hWnd, int d);
-extern void ModifyAlpha(HWND hWnd);
+extern void ModifyAlpha(void);
 
 //------------------------------------------------------------------ ppv_init.c
 extern BOOL InitializePPv(int *result);
@@ -62,6 +62,7 @@ extern void SetOpts(VIEWOPTIONS *viewopts);
 extern void GetMemo(void);
 extern void InitRawImageRectSize(void);
 extern void SetHighlight(PPV_APPINFO *vinfo);
+extern int GetPPvTextCode(const BYTE *image, DWORD size);
 
 //------------------------------------------------------------------ ppv_pain.c
 extern void Paint(HWND hWnd);

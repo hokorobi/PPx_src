@@ -311,8 +311,8 @@ int PPxWheelMouse(MOUSESTATE *ms, HWND hWnd, WPARAM wParam, LPARAM lParam)
 		ms->WheelDelta = 0; // Overflow
 	}
 	ms->WheelDelta += now;
-	delta = ms->WheelDelta / (WHEEL_DELTA / 3);
-	ms->WheelDelta -= delta * (WHEEL_DELTA / 3);
+	delta = ms->WheelDelta / (WHEEL_DELTA / WHEEL_STANDARD_LINES);
+	ms->WheelDelta -= delta * (WHEEL_DELTA / WHEEL_STANDARD_LINES);
 	return delta;
 }
 

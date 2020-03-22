@@ -19,10 +19,10 @@ int GetPointY(int posY);
 BOOL multichar = FALSE;
 #endif
 
-#define CSRTM_OFF 0			// timer 使用せず
+#define CSRTM_OFF 0		// timer 使用せず
 #define CSRTM_OUT 1		// 範囲外スクロール(クリック中)
 #define CSRTM_INERTIA 2	// 慣性スクロール(クリック後)
-#define CSRTM_SELECT 3		// 範囲選択スクロール(クリック中)
+#define CSRTM_SELECT 3	// 範囲選択スクロール(クリック中)
 int CursorTimerMode = CSRTM_OFF;
 SIZE OffPos = {0, 0}; // 慣性スクロール量
 static LONG ClkTime;
@@ -1410,7 +1410,7 @@ void DoubleClickMouse(HWND hWnd, MOUSESTATE *ms)
 void WheelMouse(HWND hWnd, MOUSESTATE *ms, WPARAM wParam, LPARAM lParam)
 {
 	int now;
-	int X_wheel = 3;
+	int X_wheel = WHEEL_STANDARD_LINES;
 
 	now = PPxWheelMouse(ms, hWnd, wParam, lParam);
 	if ( now == 0 ) return;
@@ -1441,9 +1441,9 @@ void WheelMouse(HWND hWnd, MOUSESTATE *ms, WPARAM wParam, LPARAM lParam)
 		}
 		return;
 	}else if ( wParam & MK_LBUTTON ){
-		MoveCsrkey(-now * X_wheel / 3 * VO_stepX, 0, VOsel.select);
+		MoveCsrkey(-now * X_wheel / WHEEL_STANDARD_LINES * VO_stepX, 0, VOsel.select);
 	}else if ( wParam & MK_MBUTTON ){
-		MoveCsrkey(0, -now * VO_sizeY / 3, VOsel.select);
+		MoveCsrkey(0, -now * VO_sizeY / WHEEL_STANDARD_LINES, VOsel.select);
 	}else{
 #if 0
 		if ( (vo_.DModeBit & VO_dmode_IMAGE) && !vo_.bitmap.page.animate &&
@@ -1471,8 +1471,13 @@ void WheelMouse(HWND hWnd, MOUSESTATE *ms, WPARAM wParam, LPARAM lParam)
 				return;
 			}
 		}
-
-		MoveCsrkey(0, -now * X_wheel / 3 * VO_stepY, VOsel.select);
+		if ( ((VO_stepY * X_wheel) >= VO_sizeY) &&
+			 ((now <= -X_wheel) || (now >= X_wheel)) ){
+			// -now * X_wheel / X_wheel / WHEEL_STANDARD_LINES * VO_sizeY
+			MoveCsrkey(0, (-now * VO_sizeY) / WHEEL_STANDARD_LINES, VOsel.select);
+		}else{
+			MoveCsrkey(0, (-now * X_wheel * VO_stepY) / WHEEL_STANDARD_LINES , VOsel.select);
+		}
 	}
 }
 

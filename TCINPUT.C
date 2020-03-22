@@ -40,7 +40,7 @@ struct tagSCROLLMODEINFO {
 	int cx, cy;	// スクロールモード時のカーソル座標
 	int sx, sy;	// スクロールモード時の選択座標
 	int BackupY;	// スクロールモード開始時の編集行
-	BOOL LineMode;
+	int LineMode;	// FALSE:ブロック選択 TRUE:行選択
 } sinfo;
 #define TCI_TI_DRAW 1
 #define TCI_TI_SCROLL 2
@@ -1641,9 +1641,11 @@ void MoveCursorS(int offX, int offY, int key)
 			sinfo.sy = sinfo.cy;
 		}
 		ReverseRange(FALSE);
+		// 左右移動無しの上下移動 or 左右移動 →行選択
+		// 左右移動後の上下移動 →ブロック選択
+		sinfo.LineMode = (sinfo.sx == newX) ? TRUE : offX;
 		sinfo.cx = newX;
 		sinfo.cy = newY;
-		sinfo.LineMode = offX;
 		ReverseRange(TRUE);
 	}else{
 		ReverseRange(FALSE);
@@ -1954,8 +1956,8 @@ int MouseCommand(MOUSE_EVENT_RECORD *me)
 			now = -HISHORTINT(me->dwButtonState);
 			if ( (WheelOffset ^ now) & B31 ) WheelOffset = 0; // Overflow
 			WheelOffset += now;
-			now = WheelOffset / (WHEEL_DELTA / 3);
-			WheelOffset -= now * (WHEEL_DELTA / 3);
+			now = WheelOffset / (WHEEL_DELTA / WHEEL_STANDARD_LINES);
+			WheelOffset -= now * (WHEEL_DELTA / WHEEL_STANDARD_LINES);
 
 			if ( me->dwControlKeyState & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED) ){
 				if ( me->dwControlKeyState & SHIFT_PRESSED ){

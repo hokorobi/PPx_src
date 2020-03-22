@@ -43,8 +43,8 @@
 	Microsoft Incremental Linker Version 9.00.30729.01
 
 	また、添付 VS2008\PPx.sln を使って Visual Studio 2008/2015 上でも
-	ビルドが可能です。Visual Studio 2017 以降は、VS2015 を使用して
-	ください。
+	ビルドが可能です。Visual Studio 2015 以降は、VS2015\PPx.sln を
+	使用してください。
 
 
 ・64bit
@@ -65,6 +65,12 @@
   <PropertyGroup Label="Configuration">
     <LibraryPath>$(VC_LibraryPath_ARM);$(WindowsSDK_LibraryPath_ARM);$(NETFXKitsDir)Lib\um\arm;C:\Program Files (x86)\Windows Kits\10\Lib\10.0.10586.0\um\arm</LibraryPath>
   </PropertyGroup>
+
+
+・ARM64
+
+	Visual Studio 2019 で ARM64 版が作成可能です。
+	VS2015\PPx.sln を Visual Studio 2019 で開き、ARM64 を追加してください。
 
 
 ・Wine

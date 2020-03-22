@@ -527,12 +527,14 @@ void WheelMouse(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 		}
 	}
 	// スクロール動作
-	if ( (now <= -3) || (now >= 3) ) now /= 3;
+	if ( (now <= -WHEEL_STANDARD_LINES) || (now >= WHEEL_STANDARD_LINES) ){
+		now /= WHEEL_STANDARD_LINES;
+	}
 	if ( XC_page ){
 		if ( wParam & MK_MBUTTON ){
 			now = now * cinfo->cel.Area.cy;
 		}else{
-			int X_wheel = 3;
+			int X_wheel = WHEEL_STANDARD_LINES;
 
 			GetCustData(T("X_wheel"), &X_wheel, sizeof(X_wheel));
 			now = now * X_wheel;
@@ -646,6 +648,8 @@ void USEFASTCALL PPcMinMaxJoinFix(PPC_APPINFO *cinfo, MINMAXINFO *minfo)
 	}
 }
 
+#define _NM_CUSTOMDRAW (NM_FIRST-12)
+
 LRESULT USEFASTCALL PPcNotify(PPC_APPINFO *cinfo, NMHDR *nmh)
 {
 	if ( nmh->hwndFrom == NULL ) return 0;
@@ -664,9 +668,15 @@ LRESULT USEFASTCALL PPcNotify(PPC_APPINFO *cinfo, NMHDR *nmh)
 			cinfo->PopupPosType = PPT_MOUSE;
 			PPcLayoutCommand(cinfo, NilStr);
 		}
+		if ( (nmh->code == NM_CUSTOMDRAW) && (UseCCDrawBack > 1)){
+			return PPxCommonExtCommand(K_DRAWCCBACK, (WPARAM)nmh);
+		}
 		return 0;
 	}
 	if ( IsTrue(DocksNotify(&cinfo->docks, nmh)) ){
+		if ( (nmh->code == NM_CUSTOMDRAW) && (UseCCDrawBack > 1) ){
+			return PPxCommonExtCommand(K_DRAWCCBACK, (WPARAM)nmh);
+		}
 		if ( nmh->code == RBN_HEIGHTCHANGE ){
 			WmWindowPosChanged(cinfo);
 		}
@@ -2764,6 +2774,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case WM_DPICHANGED:
 			WMDpiChanged(cinfo, wParam, (RECT *)lParam);
 			break;
+
+		case WM_IME_STARTCOMPOSITION:
+			if ( (X_IME == 1) && !cinfo->IncSearchMode ){
+				PPxCommonCommand(hWnd, 0, K_IMEOFF);
+			}
+			return DefWindowProc(hWnd, message, wParam, lParam);
+
 							// 知らないメッセージ -----------------------------
 		default:
 			if ( message == WM_PPXCOMMAND ){

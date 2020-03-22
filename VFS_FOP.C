@@ -1716,21 +1716,26 @@ TCHAR *MakeFOPlistFromPPx(PPXAPPINFO *info)
 	return names;
 }
 
+BOOL IsResponseFilePath(TCHAR *src, const TCHAR *param, const TCHAR *path)
+{
+	if ( param[0] != '@' ) return FALSE;
+	VFSFullPath(src, (TCHAR *)param + 1, path);
+	return GetFileAttributesL(src) != BADATTR;
+}
+
 TCHAR *MakeFOPlistFromParam(const TCHAR *param, const TCHAR *path)
 {
 	ThSTRUCT th;
+	TCHAR src[VFPS];
 									// レスポンスファイル
-	if ( (param[0] == '@') && (GetFileAttributesL(param + 1) != BADATTR)){
-		TCHAR src[VFPS];
+	if ( IsResponseFilePath(src, param, path) ){
 		TCHAR *mem, *ps, *pd;
-
-		VFSFullPath(src, (TCHAR *)param + 1, path);
 
 		if ( LoadTextImage(src, (TCHAR **)&mem, (TCHAR **)&ps, NULL) != NO_ERROR){
 			return NULL;
 		}
 		pd = mem;
-		while (*ps){
+		while ( *ps != '\0' ){
 			TCHAR *oldpd;
 
 			oldpd = pd;
@@ -1738,7 +1743,7 @@ TCHAR *MakeFOPlistFromParam(const TCHAR *param, const TCHAR *path)
 				while ( (*ps != '\r') && (*ps != '\n') ) ps++;
 			}else if ( *ps == '\"' ){
 				ps++;
-				while( *ps ){
+				while( *ps != '\0' ){
 					if ( *ps == '\r' || *ps == '\n' ) break;
 					if ( *ps == '\"' ){
 						ps++;
@@ -1746,27 +1751,28 @@ TCHAR *MakeFOPlistFromParam(const TCHAR *param, const TCHAR *path)
 					}
 					*pd++ = *ps++;
 				}
+				// 改行までスキップ
 				while ( (*ps != '\r') && (*ps != '\n') ) ps++;
 			}else{
-				while( *ps ){
+				while( *ps != '\0' ){
 					if ( *ps == '\r' || *ps == '\n' ) break;
 					*pd++ = *ps++;
 				}
 			}
 			while ( (*ps == '\r') || (*ps == '\n') ) ps++;
-			if (oldpd != pd) *pd++ = '\0';
+			if ( oldpd != pd ) *pd++ = '\0'; // 中身があったので区切りを入れる
 		}
 		*pd = '\0';
 		return mem;
 	}
 									// ワイルドカード
 	if ( tstrchr(param, '*') || tstrchr(param, '?') ){
-		HANDLE			hFF;
+		HANDLE hFF;
 		WIN32_FIND_DATA	ff;
 		FN_REGEXP fn;
 		const TCHAR *p;
 		TCHAR mask[VFPS], hpath[VFPS];
-		TCHAR src[VFPS], name[VFPS];
+		TCHAR name[VFPS];
 
 		p = VFSFindLastEntry(param);
 		if ( *p == '\\' ){

@@ -330,6 +330,14 @@ LRESULT CALLBACK PPeProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	PES = (PPeditSTRUCT *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 	switch (message){
+		case WM_CTLCOLOREDIT:
+			if ( hDialogBackBrush == NULL ){
+				return DefWindowProc(hWnd, message, wParam, lParam);
+			}
+			SetTextColor((HDC)wParam, C_WindowText);
+			SetBkColor((HDC)wParam, C_WindowBack);
+			return (BOOL)(DWORD_PTR)GetWindowBackBrush();
+
 		case WM_MENUCHAR:
 			return PPxMenuProc(hWnd, message, wParam, lParam);
 
@@ -447,6 +455,7 @@ PPXDLL HWND PPXAPI PPEui(HWND hPWnd, const TCHAR *title, const TCHAR *text)
 
 	hFWnd = hPWnd;
 	if ( hFWnd == BADHWND ) hFWnd = GetFocus();
+	InitSysColors();
 										// ウインドウクラスを定義する ---------
 	wcClass.style			= CS_BYTEALIGNCLIENT | CS_DBLCLKS;
 	wcClass.lpfnWndProc		= PPeProc;

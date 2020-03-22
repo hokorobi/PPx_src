@@ -2452,7 +2452,9 @@ VFSDLL DWORD PPXAPI ReadFileHeader(HANDLE hFile, BYTE *header, DWORD headersize)
 	DWORD size, moreread, fsize; // Readfile用、追加読込サイズ、読込済みサイズ
 
 	fsize = 0;
-	ReadFile(hFile, header, VFS_TINYREADSIZE, &fsize, NULL);
+	if ( ReadFile(hFile, header, min(headersize, VFS_TINYREADSIZE), &fsize, NULL) == FALSE ){
+		fsize = 0;
+	}
 	moreread = headersize - fsize;
 	// EXE ヘッダなら、末尾に書庫があるか調べる
 	if ( (fsize >= VFS_TINYREADSIZE) && (*header == 'M') && (*(header+1) == 'Z') ){

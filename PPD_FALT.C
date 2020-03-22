@@ -329,6 +329,7 @@ PPXDLL BOOL PPXAPI PPxWaitExitThread(void)
 						if ( result == (WAIT_OBJECT_0 + 1) ) continue; // Message
 						if ( result != WAIT_TIMEOUT ) hThread = NULL;
 					}	// スレッドを開けない→強制終了と見なす
+					#pragma warning(suppress:6001)
 					if ( (hThread == NULL) && (IsBadReadPtr(ts, sizeof(THREADSTRUCT)) == FALSE) ){
 						setflag(ts->flag, XTHREAD_EXITENABLE);
 					}

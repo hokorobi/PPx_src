@@ -229,12 +229,18 @@
 //============================================================== CUST 74xx-77xx
 //									74xx
 #define IDB_TEST		0x7400
-//#define IDB_INSMAC		0x7401
+//#define IDB_INSMAC	0x7401
 //#define IDD_BLANK		0x7402
 #define IDD_CMDTREE		0x7402
 //-------------------------------------- list
 #define DEFKEYLIST		0x740e	// CUSTKEY.CFG
 #define DEFCUSTLIST		0x740f	// CUSTLIST.CFG
+
+#define COLOR_THEME_1	0x74a0
+#define COLOR_THEME_2	0x74a1
+#define COLOR_THEME_3	0x74a2
+#define COLOR_THEME_4	0x74a3
+#define COLOR_THEME_5	0x74a4
 //------------------------------------------------------------- File tab
 #define IDD_INFO		0x7410
 #define IDD_INFOE		0x7420

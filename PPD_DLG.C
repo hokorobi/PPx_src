@@ -129,6 +129,7 @@ PPXDLL INT_PTR PPXAPI PPxDialogBoxParam(HANDLE hinst, const TCHAR *lpszTemplate,
 	LPDLGTEMPLATE dialog;
 	INT_PTR result;
 
+	InitSysColors();
 	dialog = GetDialogTemplate(hwndOwner, hinst, lpszTemplate);
 	if ( dialog == NULL ) return -1;
 	result = DialogBoxIndirectParam(hinst, dialog, hwndOwner, dlgprc, lParamInit);
@@ -330,7 +331,7 @@ void PaintPPxStatic(HWND hWnd)
 		rect.left += 2;
 		InitSysColors();
 		SetTextColor(ps.hdc, C_WindowText);
-		SetBkColor(ps.hdc, C_3dFace);
+		SetBkColor(ps.hdc, C_StaticBack);
 		hOldFont = SelectObject(ps.hdc,
 				(HFONT)GetWindowLongPtr(hWnd, GWLP_USERDATA));
 
@@ -373,7 +374,7 @@ void PaintPPxStatic(HWND hWnd)
 			switch ( *format ){
 				case PXSC_NORMAL: {				// í èÌ
 					SetTextColor(ps.hdc, C_WindowText);
-					SetBkColor(ps.hdc, C_3dFace);
+					SetBkColor(ps.hdc, C_StaticBack);
 					break;
 				}
 				case PXSC_HILIGHT: {
@@ -435,7 +436,7 @@ x1| x10|x1|Åc|x2|Åc|x1|
 					box.bottom += baseW;
 					box.left = box.right;
 					box.right = Draw.x + baseW * PAR_WIDTH;
-					hB = Get3dFaceBrush();
+					hB = GetStaticBackBrush();
 					FillBox(ps.hdc, &box, hB);
 
 					drawbar = (int)GetWindowLongPtr(hWnd, 0);

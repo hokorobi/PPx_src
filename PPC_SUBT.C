@@ -13,6 +13,7 @@
 #include "PPC_STRU.H"
 #include "PPC_FUNC.H"
 #include "PPC_DD.H"
+#include "PPCOMBO.H"
 #include "PPC_SUBT.H"
 #pragma hdrstop
 
@@ -38,6 +39,7 @@ DefineWinAPINoDLL(HANDLE, OpenThread, (DWORD dwDesiredAccess, BOOL bInheritHandl
 #else
 DefineWinAPI(HANDLE, OpenThread, (DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwThreadId)) = INVALID_VALUE(impOpenThread);
 #endif
+DefineWinAPI(BOOL, IsHungAppWindow, (HWND)) = INVALID_VALUE(impIsHungAppWindow);
 
 const TCHAR SubThreadName[] = T("PPc sub");
 const TCHAR SubThreadThumbnail[] = T("PPc thumbnail");
@@ -144,16 +146,56 @@ void USEFASTCALL StartReload(PPC_APPINFO *cinfo, int *FixRead)
 	}
 }
 
+HWND hCancelWnd = NULL;
+
+const TCHAR *FreezeTypes[FREEZE_TYPELAST] = { T("?"), T("read_entry"), T("CRMENU"), T("CRMENU_CELLLOOK"), T("CRMENU_SCMENU"), T("CRMENU_GetExtCommand") };
+
+
 void USEFASTCALL IntervalSubThread(PPC_APPINFO *cinfo, SUBTHREADSTRUCT *sts)
 {
 	if ( OSver.dwMajorVersion >= 6 ){
-		// œ IsHungAppWindow (W2k)‚ðŽg‚¤‚±‚Æ‚ðŒŸ“¢‚·‚é 1.32
-		if ( GetAsyncKeyState(VK_PAUSE) & KEYSTATE_FULLPUSH ){
+		// ‰ž“š–³‚µó‘Ô‚ÌŒŸo
+		if ( DIsHungAppWindow != NULL ){
+			HWND hTargetWnd = cinfo->combo ? Combo.hWnd : cinfo->info.hWnd;
+			if ( DIsHungAppWindow(hTargetWnd) == FALSE ){
+				if ( hCancelWnd != NULL ){
+//					HWND hWnd = hCancelWnd;
+
+					hCancelWnd = NULL;
+//					DestroyWindow(hWnd);
+				}
+			}else{
+				if ( hCancelWnd != hTargetWnd ){
+					if ( cinfo->FreezeType < FREEZE_TYPELAST ){
+						XMessage(NULL,NULL,XM_DbgLOG,T("Freeze %s: %s"),
+							cinfo->RegCID, FreezeTypes[cinfo->FreezeType]);
+					}else{
+						XMessage(NULL,NULL,XM_DbgLOG,T("Freeze %s: key-%x"),
+							cinfo->RegCID, cinfo->FreezeType);
+					}
+				}
+
+				if ( hCancelWnd == NULL ){
+					hCancelWnd = hTargetWnd;
+//					hCancelWnd = (HWND)PPxCommonExtCommand(0xff10,(WPARAM)hTargetWnd);
+				}else{
+/*
+					MSG msg;
+
+					while ( PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) ){
+						if ( msg.message == WM_QUIT ) break;
+						DispatchMessage(&msg);
+					}
+*/
+/*
 			cinfo->BreakFlag = TRUE;
-			if ( GetAsyncKeyState(VK_CONTROL) & KEYSTATE_FULLPUSH ){
-				IObreak(cinfo);
+			IObreak(cinfo);
+*/
+				}
 			}
+
 		}
+		// read_entry ‚Ì‰ž“š–³‚µŒŸo
 		if ( cinfo->StateInfo.state != StateID_NoState ){
 			DWORD tick = GetTickCount();
 			if ( (tick - cinfo->StateInfo.tick) > 4000 ){
@@ -162,7 +204,7 @@ void USEFASTCALL IntervalSubThread(PPC_APPINFO *cinfo, SUBTHREADSTRUCT *sts)
 				cinfo->StateInfo.tick = tick;
 				if ( state > StateID_MAX ) state = StateID_MAX;
 
-				XMessage(NULL, NULL, XM_DbgLOG, T("BUSY[%s:%d]%s"), cinfo->RegCID, cinfo->LoadCounter, StateText[state]);
+				XMessage(NULL, NULL, XM_DbgLOG, T("ReadBUSY %s,readID:%d,%s"), cinfo->RegCID, cinfo->LoadCounter, StateText[state]);
 			}
 		}
 
@@ -283,6 +325,9 @@ DWORD WINAPI SubThread(LPDWORD lpdwParam)
 
 	if ( DOpenThread == INVALID_HANDLE_VALUE ){
 		GETDLLPROC(GetModuleHandle(StrKernel32DLL), OpenThread);
+	}
+	if ( DIsHungAppWindow == INVALID_HANDLE_VALUE ){
+		GETDLLPROC(GetModuleHandle(StrUser32DLL), IsHungAppWindow);
 	}
 
 	for ( ; ; ){

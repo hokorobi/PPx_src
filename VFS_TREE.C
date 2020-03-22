@@ -12,8 +12,6 @@
 #include "VFS_STRU.H"
 #pragma hdrstop
 
-HBRUSH hEx3dfaceBrush = NULL;
-
 #ifndef TBSTYLE_CUSTOMERASE
 #define TBSTYLE_CUSTOMERASE 0x2000
 #define CDDS_PREERASE 0x00000003
@@ -1185,7 +1183,7 @@ void VfsTreeSetFlagFix(VFSTREESTRUCT *VTS)
 
 			VTS->hBarWnd = CreateToolBar(&VTS->cmdwork, VTS->vtinfo.hWnd, &ID,
 					T("B_tree"), DLLpath,
-					((hWndBackBrush != NULL) ? TBSTYLE_CUSTOMERASE : 0) |
+					((hDialogBackBrush != NULL) ? TBSTYLE_CUSTOMERASE : 0) |
 					((VTS->flags & VFSTREE_PPC) ? 0 : TBSTYLE_WRAPABLE)  );
 			if ( VTS->hBarWnd != NULL ){
 				RECT box;
@@ -2305,7 +2303,7 @@ void WmTreePaint(HWND hWnd)
 	BeginPaint(hWnd, &ps);
 	if ( ps.rcPaint.right > box.left ) ps.rcPaint.right = box.left;
 	if ( (ps.rcPaint.right - ps.rcPaint.left) > 0 ){
-		FillBox(ps.hdc, &ps.rcPaint, Get3dFaceBrush());
+		FillBox(ps.hdc, &ps.rcPaint, GetFrameFaceBrush());
 	}
 	DrawSeparateLine(ps.hdc, &box, BF_RIGHT | BF_MIDDLE); // BF_LEFT ‚Í‚È‚µ
 	EndPaint(hWnd, &ps);
@@ -2468,11 +2466,11 @@ LRESULT CALLBACK TreeProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			switch ( NHPTR->code ){
 				case NM_CUSTOMDRAW:
-					if ( hWndBackBrush != NULL ){
+					if ( hDialogBackBrush != NULL ){
 						NMCUSTOMDRAW *csd = (NMCUSTOMDRAW *)lParam;
 
 						if ( csd->dwDrawStage == CDDS_PREERASE ){
-							FillRect(csd->hdc, &csd->rc, hWndBackBrush);
+							FillRect(csd->hdc, &csd->rc, hDialogBackBrush);
 							return CDRF_SKIPDEFAULT;
 						}
 					}

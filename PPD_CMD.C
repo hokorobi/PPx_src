@@ -456,6 +456,7 @@ void GetFmacroString(DWORD flag, TCHAR *src, TCHAR *dest)
 		}
 	}
 	if ( flag & FMOPT_FILENOEXT ){
+		#pragma warning(suppress:6001) // ì™Ç≈GetFileAttributesÇégópçœÇ›
 		if ( (attr == BADATTR) || !(attr & FILE_ATTRIBUTE_DIRECTORY) ||
 				GetCustDword(T("XC_sdir"), 0) ){
 			TCHAR *lastentry;

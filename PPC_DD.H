@@ -238,7 +238,7 @@ extern void AddToolBarButton(HWND hWnd, const TCHAR *sDrop, const TCHAR *ToolBar
 extern void GetSourcePath(LPDATAOBJECT pDataObj, TCHAR *SourcePath);
 
 extern BOOL GetDropData(LPDATAOBJECT pDataObj, TMS_struct *files);
-extern void ListDrop(HWND hWnd, TCHAR *sDrop, TCHAR *targetpath, TCHAR *destpath);
+extern void ListDrop(HWND hWnd, TCHAR *sDrop, TCHAR *targetpath, TCHAR *destpath, TCHAR *mem);
 extern void LinkDrop(HWND hWnd, TCHAR *sDrop, TCHAR *targetpath);
 extern BOOL ExecFileOperation(DWORD pdwEffect, const TCHAR *targetpath, TMS_struct *files, PPC_APPINFO *cinfo, const TCHAR *option);
 
@@ -263,6 +263,7 @@ enum {
 	DROPEFFECT_OPENWITH,	// 開く
 //	DROPEFFECT_NEWPANE,		// 新規タブで表示
 	DROPEFFECT_MAKELIST,	// ListFile 作成
+	DROPEFFECT_ADDLIST,		// ListFile 追加
 	DROPEFFECT_ADDTREEITEM,	// ツリーに項目作成
 	DROPEFFECT_ADDTOOLBAR,	// ツールバーに項目作成
 	DROPEFFECT_OBJECTSTART, // 指定オブジェクトで保存

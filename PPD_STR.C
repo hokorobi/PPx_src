@@ -390,6 +390,24 @@ WCHAR *stpcpyW(WCHAR *deststr, const WCHAR *srcstr)
 	}
 }
 
+#ifndef __BORLANDC__
+char *stpcpyA(char *deststr, const char *srcstr)
+{
+	char *destptr = deststr;
+	const char *srcptr = srcstr;
+
+	for(;;){
+		char code;
+
+		code = *srcptr;
+		*destptr = code;
+		if ( code == '\0' ) return destptr;
+		srcptr++;
+		destptr++;
+	}
+}
+#endif
+
 #ifdef WINEGCC
 WCHAR *strchrW(const WCHAR *text, WCHAR findchar)
 {

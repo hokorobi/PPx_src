@@ -468,9 +468,9 @@ ex)
 #define ThSTEP 4096				// メモリの確保単位
 
 typedef struct tagThSTRUCT {	// Stack Heap 管理構造体
-	char	*bottom;	// 確保したメモリの先頭
-	DWORD	top;		// 使用中のメモリの末端
-	SIZE32_T	size;		// 確保量
+	char *bottom;	// 確保したメモリの先頭
+	DWORD top;		// 使用中のメモリの末端
+	SIZE32_T size;	// 確保量
 } ThSTRUCT;
 
 extern PPXDLL void PPXAPI ThInit(ThSTRUCT *TH);
@@ -605,6 +605,7 @@ extern PPXDLL INT_PTR PPXAPI GetNumber(LPCTSTR *ptr);
 extern PPXDLL BOOL PPXAPI GetSizeNumber(LPCTSTR *ptr, DWORD *Low, DWORD *High);
 
 // 数値を文字列に変換する
+// length は最低4+1文字(123k\0)確保する必要あり
 #define XFN_SEPARATOR	B0	// 区切り文字「,」を追加
 #define XFN_RIGHT		B1	// 右づめ
 #define XFN_LEFT		B2	// 左づめ
@@ -612,12 +613,11 @@ extern PPXDLL BOOL PPXAPI GetSizeNumber(LPCTSTR *ptr, DWORD *Low, DWORD *High);
 #define XFN_HEXUNIT		B4	// 1024単位
 #define XFN_MUL			B5	// low * high の値を用いる
 #define XFN_MINKILO		B6	// 少なくとも「k」が付く
-#define XFN_MINUNITMASK	(B6 | B7) // 1:k 2:M 3:G
+#define XFN_DECIMALPOINT B9 // 単位使用時小数点を使用(6桁=小数1桁,7以上=小2桁)
+#define XFN_MINUNITMASK	(B6 | B7 | B8) // 1:k 2:M 3:G 4:T 5:P 6:E
 #define XFN_MINUNITSHIFT 6
-// B8 は reserved(XFN_MINUNITMASK用)
-// B9以上を使うときは XFN_MINUNITMASK の処理を調整する必要がある
 
-extern PPXDLL void PPXAPI FormatNumber(TCHAR *str, DWORD flag, int length, DWORD low, DWORD high);
+extern PPXDLL void PPXAPI FormatNumber(TCHAR *str, DWORD flags, int length, DWORD low, DWORD high);
 extern PPXDLL COLORREF PPXAPI GetColor(LPCTSTR *linesrc, BOOL usealias);
 
 															// 全角・半角変換 -
@@ -1400,7 +1400,8 @@ enum {
 	PPXCUSTMODE_UPDATE,
 
 	PPXCUSTMODE_DUMP_ALL = -1,
-	PPXCUSTMODE_DUMP_PART = -2
+	PPXCUSTMODE_DUMP_PART = -2,
+	PPXCUSTMODE_DUMP_PART_NOBOM = -3
 };
 #define PPCUSTRESULT_RELOAD B1
 #define PPCUSTRESULT_RESTART B2

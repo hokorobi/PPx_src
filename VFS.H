@@ -50,7 +50,8 @@ extern "C" { // Assume C declarations for C++
 #define VFSDT_HTTP		80			// HTTP
 #define VFSDT_UN		96			// UNxxx
 
-#define LHEADER	";ListFile\r\n"
+#define LHEADER		";ListFile\r\n"
+#define LHEADERU	";\0L\0i\0s\0t\0F\0i\0l\0e\0\r\0\n" // ç≈å„ÇÃ\0Ç™è»ó™
 
 #define X_wdel_default {1, 0, 1, 1}
 //--------------------------------------------------------- ãåSDKÇ…Ç»Ç¢íËã`

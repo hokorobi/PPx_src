@@ -223,8 +223,8 @@ typedef struct {
 #define ECS_HILIGHT	13	// hilight1-7
 #define ECS_HOVER	(ECS_HILIGHT + ECS_HLMAX)	// mouse hover
 
-#define ECS_HLMAX	7	// hilight max
-#define ECS_HLBIT	32	// hilight
+#define ECS_HLMAX	PPC_HIGHLIGHT_COLORS	// highlight max
+#define ECS_HLBIT	32	// highlight
 #define ECS_STATEMASK	7
 #define ECS_HLMASK	0x1f
 
@@ -838,35 +838,35 @@ typedef struct tagPPC_APPINFO {
 
 	HIDDENMENUS	HiddenMenu;
 	int			swin;			//	b5:B4=1のとき、=0:大きさ =1:大きさ+位置
-	XC_MASK		mask;			// 表示マスク
-	XC_CFMT		stat;			// ステータス表示行
-	XC_CFMT		inf1;			// 情報表示１行目
-	XC_CFMT		inf2;			// 情報表示２行目
-	XC_CFMT		celF;			// セル表示書式
-	BOOL		FixcelF;		// XC_dsetで celF が変更中の時は TRUE
+	XC_MASK mask;			// 表示マスク
+	XC_CFMT stat;			// ステータス表示行
+	XC_CFMT inf1;			// 情報表示１行目
+	XC_CFMT inf2;			// 情報表示２行目
+	XC_CFMT celF;			// セル表示書式
+	BOOL FixcelF;		// XC_dsetで celF が変更中の時は TRUE
 
-	XC_DSET		dset;			// ドライブ毎の設定
-	int			iconR;			// アイコンの右端のX座標(0:表示せず)
-	SIZE		XC_ifix_size;	// 情報行アイコンの大きさ
-	int			X_lspc, X_lspcOrg;
+	XC_DSET dset;			// ドライブ毎の設定
+	int iconR;			// アイコンの右端のX座標(0:表示せず)
+	SIZE XC_ifix_size;	// 情報行アイコンの大きさ
+	int X_lspc, X_lspcOrg;
 
 	WHEREDIALOG	Pws;			// Where is の内容
 	volatile int FDirWrite;		// ディレクトリ更新要求管理
 	HGLOBAL		CLIPDATAS[CLIPTYPES];	// クリップボードにコピーする内容
 	DWORD		X_win;			// ウィンドウ関連のカスタマイズ
-	HWND		hTrayWnd;		// PPTray Window
-	HWND		hComboWnd;		// Combo Window
-	HWND		hToolBarWnd;
-	HWND		hScrollBarWnd;	// スクロールバーウィンドウ
-	HWND		hScrollTargetWnd;	// スクロール表示を行うウィンドウ(info.hWndかhScrollBarWnd)
-	int			ScrollBarSize;
-	int			ScrollBarY;
-	int			ScrollBarHV; // バーの向き 水平 SB_HORZ(0) or 垂直 SB_VERT(1)
+	HWND hTrayWnd;		// PPTray Window
+	HWND hComboWnd;		// Combo Window
+	HWND hToolBarWnd;
+	HWND hScrollBarWnd;	// スクロールバーウィンドウ
+	HWND hScrollTargetWnd;	// スクロール表示を行うウィンドウ(info.hWndかhScrollBarWnd)
+	int ScrollBarSize;
+	int ScrollBarY;
+	int ScrollBarHV; // バーの向き 水平 SB_HORZ(0) or 垂直 SB_VERT(1)
 							// ※ SBS_HORZ / SBS_VERT としても使用可能
 
-	int			CellHashType;	// ENTRYCELL.hash の形式
-	int			DownMPos;		// 押したHidden Menu
-	int			Mpos;			// 選択中の Hidden Menu
+	int CellHashType;	// ENTRYCELL.hash の形式
+	int DownMPos;		// 押したHidden Menu
+	int Mpos;			// 選択中の Hidden Menu
 	XC_SORT		XC_sort;		// 保持ソート用
 	XC_SORT_MODE sort_nowmode;
 	DWORD		sort_columnindex;
@@ -879,23 +879,23 @@ typedef struct tagPPC_APPINFO {
 	XC_TREE		XC_tree;		// Tree 処理用
 	int			TreeX;			// Tree窓の幅
 
-	ICONCACHESTRUCT	EntryIcons;	// 各cellに表示するアイコン／画像
-	int			EntryIconGetSize; // hEntryIcons の為に取得するアイコンの大きさ
+	ICONCACHESTRUCT EntryIcons;	// 各cellに表示するアイコン／画像
+	int EntryIconGetSize; // hEntryIcons の為に取得するアイコンの大きさ
 								// ※ INVALID_HANDLE_VALUE ならstaticを使用
-	TCHAR		OldIconsPath[VFPS];
-	HICON		hInfoIcon;
+	TCHAR OldIconsPath[VFPS];
+	HICON hInfoIcon;
 	DIRECTXDEFINE(BOOL InfoIcon_DirtyCache)
 	DIRECTXDEFINE(DXBMPCACHE *InfoIcon_Cache)
 
-	BOOL		UseLoadEvent;
-	BOOL		UseSelectEvent;
-	BOOL		UseActiveEvent;
+	BOOL UseLoadEvent;
+	BOOL UseSelectEvent;
+	BOOL UseActiveEvent;
 
-	BOOL		RequestVolumeLabel;
-	TCHAR		VolumeLabel[MAX_PATH];
+	BOOL RequestVolumeLabel;
+	TCHAR VolumeLabel[MAX_PATH];
 
-	int			AcceptReload;	// キャッシュ後再読込の動作(read_entryの値)
-	int			AloadCount;		// 非同期読み込み量保存
+	int AcceptReload;	// キャッシュ後再読込の動作(read_entryの値)
+	int AloadCount;		// 非同期読み込み量保存
 
 	PPXDOCKS docks;
 	DYNAMICMENUSTRUCT DynamicMenu;
@@ -913,12 +913,22 @@ typedef struct tagPPC_APPINFO {
 
 	DIRECTXDEFINE(DXDRAWSTRUCT *DxDraw)
 
+	#define FREEZE_NONE 0
+	#define FREEZE_read_entry 1
+	#define FREEZE_CRMENU 2
+	#define FREEZE_CRMENU_CELLLOOK 3
+	#define FREEZE_CRMENU_SCMENU 4
+	#define FREEZE_CRMENU_GetExtCommand 5
+	#define FREEZE_TYPELAST 6
+
+	DWORD FreezeType;
+
 #if FREEPOSMODE
 	FREEPOSPOINT FreePosList[FREEPOSMODE];
-	DWORD		FreePosEntries;
+	DWORD FreePosEntries;
 #endif
 #if SHOWFRAMERATE
-	DWORD	FrameCount, FrameTime, FrameRate;
+	DWORD FrameCount, FrameTime, FrameRate;
 #endif
 } PPC_APPINFO;
 

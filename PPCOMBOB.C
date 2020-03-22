@@ -12,13 +12,19 @@
 
 #define TOOLBAR_CMDID 0x1000
 
+#define _TBSTYLE_CUSTOMERASE 0x2000
+
 void ComboCreateToolBar(HWND hWnd)
 {
 	RECT box;
 	UINT ID = TOOLBAR_CMDID;
 	HWND hBarWnd;
 
-	hBarWnd = CreateToolBar(&thGuiWork, hWnd, &ID, T("B_cdef"), PPcPath, 0);
+	if ( UseCCDrawBack == 0 ){
+		UseCCDrawBack = PPxCommonExtCommand(K_DRAWCCBACK, 0) ? 2 : 1;
+	}
+	hBarWnd = CreateToolBar(&thGuiWork, hWnd, &ID, T("B_cdef"), PPcPath,
+			(UseCCDrawBack > 1) ? _TBSTYLE_CUSTOMERASE : 0);
 	Combo.ToolBar.hWnd = hBarWnd;
 	if ( hBarWnd != NULL ){
 		GetWindowRect(hBarWnd, &box);

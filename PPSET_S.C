@@ -440,7 +440,23 @@ BOOL CopyPPxFileMain(HWND hWnd, const TCHAR *srcpath, const TCHAR *destpath, con
 	TCHAR srcname[MAX_PATH], destname[MAX_PATH];
 
 	wsprintf(srcname, T("%s\\%s"), srcpath, filename);
-	if ( GetFileAttributes(srcname) == BADATTR ) return TRUE;
+	waitcount = 100; // 10 •b
+	for (;;){
+		ERRORCODE result;
+
+		if ( GetFileAttributes(srcname) != BADATTR ) break;
+		result = GetLastError();
+		if ( result == ERROR_FILE_NOT_FOUND ) return TRUE;
+		if ( (result == ERROR_ACCESS_DENIED) ||
+			 (result == ERROR_SHARING_VIOLATION) ){
+			Sleep(100);
+			waitcount--;
+			if ( waitcount >= 0 ) continue;
+		}
+		wsprintf(srcname + tstrlen(srcname), T(" error(%d)"), result);
+		WriteResult(srcname, RESULT_FAULT);
+		return TRUE;
+	}
 	wsprintf(destname, T("%s\\%s"), destpath, filename);
 
 	waitcount = 100; // 10 •b

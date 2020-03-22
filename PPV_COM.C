@@ -211,7 +211,8 @@ case 'T':
 case 'M':
 	if ( (vo_.memo.bottom == NULL) || (vo_.memo.top <= 1) ){
 		if ( ((vo_.DModeType == DISPT_IMAGE) || (vo_.DModeType == DISPT_RAWIMAGE)) && (vo_.bitmap.transcolor >= 0) ){
-			ModifyAlpha(hWnd);
+			ModifyAlpha();
+			InvalidateRect(hWnd, NULL, TRUE);
 			break;
 		}
 		if ( (vo_.DModeType == DISPT_DOCUMENT) &&

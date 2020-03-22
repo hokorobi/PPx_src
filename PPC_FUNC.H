@@ -69,6 +69,8 @@ extern BOOL MoveCellCursor(PPC_APPINFO *cinfo, CURSORMOVER *cm);
 extern BOOL MoveCellCursorR(PPC_APPINFO *cinfo, CURSORMOVER *cm);
 extern BOOL CellLook(PPC_APPINFO *cinfo, int IsFileRead);
 extern ERRORCODE DirChk(const TCHAR *name, TCHAR *dest);
+#define MARK_HIGHLIGHT1	3 // FileMaskDialog —p
+#define MARK_HIGHLIGHTOFF	2 // FileMaskDialog —p
 #define MARK_CHECK	1
 #define MARK_REMOVE	0
 #define MARK_REVERSE	-1
@@ -499,6 +501,7 @@ extern DWORD GetCustXDword(const TCHAR *kword, const TCHAR *subkword, DWORD defa
 extern DWORD BackPathTrackingList(PPC_APPINFO *cinfo, DWORD top);
 extern void JumpPathTrackingList(PPC_APPINFO *cinfo, int dest);
 extern int PPctInput(PPC_APPINFO *cinfo, const TCHAR *title, TCHAR *string, int maxlen, WORD readhist, WORD writehist);
+extern ERRORCODE InputTargetDir(PPC_APPINFO *cinfo, const TCHAR *title, TCHAR *string, int maxlen);
 extern void USEFASTCALL GetPairPath(PPC_APPINFO *cinfo, TCHAR *path);
 extern HWND USEFASTCALL GetPairWnd(PPC_APPINFO *cinfo);
 extern ENTRYINDEX GetFirstMarkCell(PPC_APPINFO *cinfo);

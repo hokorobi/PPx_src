@@ -534,7 +534,7 @@ PPXDLL BOOL PPXAPI ThSetString(ThSTRUCT *TH, const TCHAR *name, const TCHAR *str
 		if ( (tvsnamesize == namesize) &&
 			 (memcmp(tvs->name, name, namesize) == 0) ){
 			if ( tvs->varsize >= varsize ){ // 再利用が可能
-				if ( strsize == sizeof(TCHAR) ){ // 削除
+				if ( strsize <= sizeof(TCHAR) ){ // 削除
 					tvs->namesize = 0;
 				}else{
 					memcpy( tvs->name + tvs->namesize, str, strsize );
@@ -548,7 +548,7 @@ PPXDLL BOOL PPXAPI ThSetString(ThSTRUCT *TH, const TCHAR *name, const TCHAR *str
 		}
 		tvs = (THVARS *)(char *)( (char *)tvs + tvs->varsize );
 	}
-	if ( strsize == sizeof(TCHAR) ) return TRUE; // 削除...保存してなかった
+	if ( strsize <= sizeof(TCHAR) ) return TRUE; // 削除...保存してなかった
 
 	if ( nulltvs != NULL ){ // 再利用可能
 		nulltvs->namesize = (WORD)namesize;

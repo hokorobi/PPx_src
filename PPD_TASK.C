@@ -1649,8 +1649,8 @@ void InitJobList(HWND hMainWnd)
 			CreateFontIndirect(&cursfont.font), TMAKELPARAM(TRUE, 0));
 		if ( (hMainWnd != NULL) && (CJ_log[0] != C_AUTO) || (CJ_log[1] != C_AUTO) ){
 			InitSysColors();
-			if ( CJ_log[0] == C_AUTO) CJ_log[0] = C_WindowText;
-			if ( CJ_log[1] == C_AUTO) CJ_log[1] = C_WindowBack;
+			if ( CJ_log[0] == C_AUTO ) CJ_log[0] = C_WindowText;
+			if ( CJ_log[1] == C_AUTO ) CJ_log[1] = C_WindowBack;
 			hJobBackBrush = CreateSolidBrush(CJ_log[1]);
 		}
 		SetWindowLongPtr(hParentWnd, GWLP_USERDATA, (LONG_PTR)hJobBackBrush);

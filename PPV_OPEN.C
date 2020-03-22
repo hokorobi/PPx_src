@@ -644,17 +644,6 @@ void LoadHighlight(VFSFILETYPE *vft)
 	X_hkey = NULL;
 	ThInit(&mem);
 
-	// デフォルトのハイライト設定を取得
-	fname = VFSFindLastEntry(vo_.file.name);
-	ext = fname + FindExtSeparator(fname);
-	if ( *ext == '.' ) ext++;
-
-	if ( (hks = LoadDefaultHighlight(&mem, fname, ext)) == NULL ){
-		if ( (vft->type[0] == '\0') || ((hks = LoadDefaultHighlight(&mem, NULL, vft->type)) == NULL) ){
-			hks = LoadDefaultHighlight(&mem, NULL, T("*"));
-		}
-	}
-
 	// 一時ハイライト設定を取得
 	textp = ThGetString(NULL, T("Highlight"), NULL, 0);
 	if ( textp != NULL ) while ( GetLineParam(&textp, buf) >= ' ' ){
@@ -693,6 +682,19 @@ void LoadHighlight(VFSFILETYPE *vft)
 		memcpy((char *)(hks + 1), strW, sizeW);
 		mem.top += size;
 	}
+
+	// デフォルトのハイライト設定を取得
+	fname = VFSFindLastEntry(vo_.file.name);
+	ext = fname + FindExtSeparator(fname);
+	if ( *ext == '.' ) ext++;
+
+	if ( (hks = LoadDefaultHighlight(&mem, fname, ext)) == NULL ){
+		if ( (vft->type[0] == '\0') || ((hks = LoadDefaultHighlight(&mem, NULL, vft->type)) == NULL) ){
+			hks = LoadDefaultHighlight(&mem, NULL, T("*"));
+		}
+	}
+
+	// ハイライト最終処理
 	if ( hks != NULL ) hks->next = NULL;
 
 	X_hkey = (HILIGHTKEYWORD *)mem.bottom;
@@ -1846,6 +1848,25 @@ void SetOpts(VIEWOPTIONS *viewopts)
 	}
 }
 
+int GetPPvTextCode(const BYTE *image, DWORD size)
+{
+	int textC;
+
+	textC = GetTextCodeType(image, size);
+	if ( textC >= VTYPE_MAX ){
+		if ( textC == CP__UTF16L ){
+			textC = VTYPE_UNICODE;
+		}else if ( textC == CP__UTF16B ){
+			textC = VTYPE_UNICODEB;
+		}else if ( textC == CP_UTF8 ){
+			textC = VTYPE_UTF8;
+		}else{
+			textC += VTYPE_MAX;
+		}
+	}
+	return textC;
+}
+
 // 表示準備 -------------------------------------------------------------------
 void InitViewObject(VIEWOPTIONS *viewopts, TCHAR *type)
 {
@@ -1856,6 +1877,7 @@ void InitViewObject(VIEWOPTIONS *viewopts, TCHAR *type)
 	ScrollWidth = ScrollWidth_MIN;
 
 	vo_.DModeBit = DOCMODE_NONE; // バグ取り用
+//	ThSetString(NULL, StrDocFilterCmd, NilStr);
 
 	if ( type != NULL ){ // 初めての読み込みなので設定取得
 		TCHAR optbuf[CMDLINESIZE];
@@ -1898,19 +1920,11 @@ void InitViewObject(VIEWOPTIONS *viewopts, TCHAR *type)
 			if ( VOi->img == NULL ){
 															// 文字コード 判別
 				if ( (VOi->textC < 0) || (VOi->textC >= VTYPE_MAX) ){
-					VOi->textC = GetTextCodeType(vo_.file.image, vo_.file.UseSize);
+					VOi->textC = GetPPvTextCode(vo_.file.image, vo_.file.UseSize);
 					if ( VOi->textC >= VTYPE_MAX ){
-						if ( VOi->textC == CP__UTF16L ){
-							VOi->textC = VTYPE_UNICODE;
-						}else if ( VOi->textC == CP__UTF16B ){
-							VOi->textC = VTYPE_UNICODEB;
-						}else if ( VOi->textC == CP_UTF8 ){
-							VOi->textC = VTYPE_UTF8;
-						}else{
-							VO_CodePage = VOi->textC;
-							VO_CodePageValid = IsValidCodePage(VO_CodePage);
-							VOi->textC = VTYPE_OTHER;
-						}
+						VO_CodePage = VOi->textC - VTYPE_MAX;
+						VO_CodePageValid = IsValidCodePage(VO_CodePage);
+						VOi->textC = VTYPE_OTHER;
 					}
 				}
 				VOi->img = vo_.file.image;
@@ -2152,7 +2166,7 @@ BOOL USEFASTCALL FixOpenBmp(BITMAPINFOHEADER *bih, VIEWOPTIONS *viewopt, DWORD b
 	InitViewObject(viewopt, NULL);
 
 	if ( (viewopt != NULL) ? (viewopt->I_CheckeredPattern == 1) : (viewopt_def.I_CheckeredPattern == 1) ){
-		if ( vo_.bitmap.transcolor >= 0 ) ModifyAlpha(vinfo.info.hWnd);
+		if ( vo_.bitmap.transcolor >= 0 ) ModifyAlpha();
 	}
 	return TRUE;
 }

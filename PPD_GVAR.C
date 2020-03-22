@@ -261,25 +261,57 @@ GVAR ValueWinAPI(AddVectoredExceptionHandler) GPARAM(NULL);
 GVAR ValueWinAPI(RemoveVectoredExceptionHandler) GPARAM(NULL);
 #endif
 //---------------------------------------------------------------------
-// 窓
-GVAR COLORREF C_3dHighlight GPARAM(C_AUTO); // COLOR_BTNHIGHLIGHT
-GVAR COLORREF C_3dFace GPARAM(C_AUTO); // COLOR_BTNFACE
-GVAR COLORREF C_3dShadow GPARAM(C_AUTO); // COLOR_BTNSHADOW
-// 文字
-GVAR COLORREF C_WindowText GPARAM(C_AUTO); // COLOR_WINDOWTEXT
-GVAR COLORREF C_HighlightText GPARAM(C_AUTO); // COLOR_HIGHLIGHTTEXT
+#ifdef GLOBALEXTERN
+typedef struct {
+// 窓枠
+	COLORREF _FrameHighlight;
+	COLORREF _FrameFace;
+	COLORREF _FrameShadow;
 // 背景
-GVAR COLORREF C_WindowBack GPARAM(C_AUTO); // COLOR_WINDOW
-GVAR COLORREF C_HighlightBack GPARAM(C_AUTO); // COLOR_HIGHLIGHT
-GVAR COLORREF C_GrayState GPARAM(C_AUTO); // COLOR_GRAYTEXT 非アクティブ時の文字・背景
+	COLORREF _WindowBack;
+	COLORREF _DialogBack;
+// 文字
+	COLORREF _WindowText;
+// 選択時
+	COLORREF _HighlightBack;
+	COLORREF _HighlightText;
+// 灰色
+	COLORREF _GrayState;
 
-GVAR HBRUSH h3dHighlight GPARAM(NULL); // 左・上
-GVAR HBRUSH h3dFace GPARAM(NULL); // 中央
-GVAR HBRUSH h3dShadow GPARAM(NULL); // 右
+	COLORREF _StaticBack;
+} WindowColorsList;
+#endif
+
+GVAR WindowColorsList C_WindowColors
+#ifndef GLOBALEXTERN
+ = { C_AUTO, C_AUTO, C_AUTO,  C_AUTO, C_AUTO,  C_AUTO, C_AUTO,  C_AUTO, C_AUTO, C_AUTO }
+#endif
+;
+
+#define C_FrameHighlight (C_WindowColors._FrameHighlight) // オブジェクト明
+#define C_FrameFace (C_WindowColors._FrameFace) // オブジェクト表面（本来のダイアログ表面）
+#define C_FrameShadow (C_WindowColors._FrameShadow) // オブジェクト影
+
+#define C_WindowBack (C_WindowColors._WindowBack) // ウィンドウ窓内(Edit,ListBox)
+#define C_DialogBack (C_WindowColors._DialogBack) // ダイアログ表面(元は3dFace)
+#define C_StaticBack (C_WindowColors._StaticBack) // コントロール表面（Static,元は3dFace)
+
+#define C_WindowText (C_WindowColors._WindowText) // ウィンドウ文字
+
+#define C_HighlightText (C_WindowColors._HighlightText) // 選択文字
+#define C_HighlightBack (C_WindowColors._HighlightBack) // 選択背景
+
+#define C_GrayState (C_WindowColors._GrayState) // 灰色文字・背景
+
+GVAR HBRUSH hFrameHighlight GPARAM(NULL); // 左・上
+GVAR HBRUSH hFrameFace GPARAM(NULL); // 中央
+GVAR HBRUSH hFrameShadow GPARAM(NULL); // 右
 GVAR HBRUSH hHighlightBack GPARAM(NULL);
 GVAR HBRUSH hGrayBack GPARAM(NULL);
 
-GVAR HBRUSH hWndBackBrush GPARAM(NULL);
+GVAR HBRUSH hDialogBackBrush GPARAM(NULL);
+GVAR HBRUSH hWindowBackBrush GPARAM(NULL);
+GVAR HBRUSH hStaticBackBrush GPARAM(NULL);
 
 //--------------------------------------------------------------------- COM定義
 // RegExp

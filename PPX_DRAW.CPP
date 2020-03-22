@@ -24,12 +24,13 @@
 #undef HMONITOR_DECLARED
 
 #if DWMGLASS
-  #define RenderTargetProperties_OPTION D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
+  #define RenderTargetProperties_OPTION(type) type, D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
 #else
-  #define RenderTargetProperties_OPTION
+  #define RenderTargetProperties_OPTION(type) type
 #endif
 
 #define DEFAULT_DPI 96.0f
+extern "C" UINT WM_PPXCOMMAND;
 // Direct Write 版 ------------------------------------------------------------
 #if DRAWMODE == DRAWMODE_DW
 #include <wincodec.h>
@@ -67,6 +68,7 @@ extern "C" typedef struct tagDXDRAWSTRUCT {
 
 	ID2D1HwndRenderTarget *HwndRenderTarget;
 	int HwndRenderTargetCounter;
+	D2D1_RENDER_TARGET_TYPE RenderTargetType;
 	D2D1_MATRIX_3X2_F DefaultTransform;
 	D2D1::Matrix3x2F HitPointTransform;
 	D2D1::Matrix3x2F BMPTransform;
@@ -82,6 +84,7 @@ extern "C" typedef struct tagDXDRAWSTRUCT {
 	FLOAT DotScaleRate; // 現在(DWM)の画面dpiの比率 ※逆数
 	D2D1_POINT_2F DeskScale; // 起動時(GDI)の画面dpi
 	D2D1_POINT_2F DeskScaleRate; // 起動時(GDI)の画面dpi ※逆数
+	UINT32 MaxBitmapPixels; // bitmapの１辺の最大値
 
 	// 文字描画
 	IDWriteFactory *dwFactory;
@@ -124,7 +127,7 @@ BOOL CreateDxDraw(DXDRAWSTRUCT **DxDrawPtr, HWND hWnd)
 		hD2D1 = LoadLibrary(T("d2d1.dll"));
 		if ( hD2D1 == NULL ){
 			hD2D1 = static_cast<HMODULE>(INVALID_HANDLE_VALUE);
-			xmessage(XM_FaERRld, T("d2d1.dll not found"));
+			SendMessage(hWnd, WM_PPXCOMMAND, K_SETPOPLINENOLOG, (LPARAM)T("Force GDI mode"));
 			return FALSE;
 		}
 		GETDLLPROC(hD2D1, D2D1CreateFactory);
@@ -135,7 +138,7 @@ BOOL CreateDxDraw(DXDRAWSTRUCT **DxDrawPtr, HWND hWnd)
 		hDWRITE = LoadLibrary(T("dwrite.dll"));
 		if ( hDWRITE == NULL ){
 			hDWRITE = static_cast<HMODULE>(INVALID_HANDLE_VALUE);
-			xmessage(XM_FaERRld, T("dwrite.dll not found"));
+			SendMessage(hWnd, WM_PPXCOMMAND, K_SETPOPLINENOLOG, (LPARAM)T("Force GDI mode"));
 			return FALSE;
 		}
 		GETDLLPROC(hDWRITE, DWriteCreateFactory);
@@ -151,6 +154,7 @@ BOOL CreateDxDraw(DXDRAWSTRUCT **DxDrawPtr, HWND hWnd)
 	DxDraw->hWnd = hWnd;
 	DxDraw->HwndRenderTarget = NULL;
 	DxDraw->HwndRenderTargetCounter = 0;
+	DxDraw->RenderTargetType = D2D1_RENDER_TARGET_TYPE_DEFAULT;
 	memset(&DxDraw->bmpCache, 0, sizeof(DxDraw->bmpCache));
 	DxDraw->BmpAtlas.bmp = NULL;
 	DxDraw->BmpAtlas.IndexNow = 1;
@@ -266,13 +270,11 @@ void InitRenderTarget(DXDRAWSTRUCT *DxDraw)
 	DxDraw->clientArea.height = DxDraw->clientBox.bottom;
 
 	SetRotate(DxDraw, 0);
-// BMP の最大サイズ(HwndRenderTarget->GetMaximumBitmapSize())を緩和
-// D2D1::RenderTargetProperties();
-// properties.type = D2D1_RENDER_TARGET_TYPE_SOFTWARE;
 	DxDraw->d2dFactory->CreateHwndRenderTarget(
-			D2D1::RenderTargetProperties(RenderTargetProperties_OPTION),
+			D2D1::RenderTargetProperties(RenderTargetProperties_OPTION(DxDraw->RenderTargetType)),
 			D2D1::HwndRenderTargetProperties(DxDraw->hWnd, DxDraw->clientArea),
 			&DxDraw->HwndRenderTarget);
+	DxDraw->MaxBitmapPixels = DxDraw->HwndRenderTarget->GetMaximumBitmapSize();
 
 	// パラメータ設定
 	TCHAR buf[0x400], param[0x100];
@@ -1008,6 +1010,23 @@ BOOL DxDrawDIB(DXDRAWSTRUCT *DxDraw, BITMAPINFOHEADER *bmiHeader, LPVOID lpBits,
 {
 	ID2D1Bitmap *d2bmp;
 	D2D1_SIZE_U bmpsize;
+
+	// RenderTargetType が D2D1_RENDER_TARGET_TYPE_DEFAULT のときは、
+	// 大きすぎて扱えないことがあるのでソフトレンダリングに切り替える
+	if ( ((UINT32)bmiHeader->biWidth > DxDraw->MaxBitmapPixels) ||
+		 ((UINT32)bmiHeader->biHeight > DxDraw->MaxBitmapPixels) ){
+		if ( DxDraw->RenderTargetType != D2D1_RENDER_TARGET_TYPE_SOFTWARE ){
+			DxDraw->HwndRenderTarget->EndDraw(); // 途中でも終わり
+			ResetDxDraw(DxDraw); // ここでいままでのレンダリングが破棄される
+
+			DxDraw->RenderTargetType = D2D1_RENDER_TARGET_TYPE_SOFTWARE;
+			Sleep(50);
+			InitRenderTarget(DxDraw);
+			// 再レンダリングを指示
+			PostMessage(DxDraw->hWnd, WM_PPXCOMMAND,
+				(LPARAM)(K_raw | K_c | 'L'), 0);
+		}
+	}
 
 	if ( (cache == NULL) || (*cache == NULL) ){ // キャッシュ無し
 		D2D1_BITMAP_PROPERTIES bmpprop;

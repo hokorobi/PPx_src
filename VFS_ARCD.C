@@ -43,9 +43,9 @@ const TCHAR fixime[] = T("*noime%:");
 const TCHAR ShareOpenError[] = MES_ESHO;
 
 #ifndef WINEGCC
-	#define Get_X_unbg GetCustDword(T("X_unbg"), 0)
+	#define Get_X_unbg() GetCustDword(T("X_unbg"), 0)
 #else
-	#define Get_X_unbg 0 // Ç‹Çæ pptrayÇ™Ç»Ç¢ÇÃÇ≈ñ≥å¯Ç…Ç∑ÇÈÅBÅ¶PPC_ARCH.CÇ‡
+	#define Get_X_unbg() 0 // Ç‹Çæ pptrayÇ™Ç»Ç¢ÇÃÇ≈ñ≥å¯Ç…Ç∑ÇÈÅBÅ¶PPC_ARCH.CÇ‡
 #endif
 
 
@@ -1114,7 +1114,7 @@ int DoUnarc(PPXAPPINFO *ppxa, const TCHAR *DllName, HWND hWnd, const TCHAR *para
 		}
 		hWnd = NULL;
 	}else{
-		X_unbg = Get_X_unbg;
+		X_unbg = Get_X_unbg();
 		if ( X_unbg ){
 			STARTUPINFO si;
 			PROCESS_INFORMATION pi;
@@ -1166,7 +1166,7 @@ int DoUnarc(PPXAPPINFO *ppxa, const TCHAR *DllName, HWND hWnd, const TCHAR *para
 				return 1;
 			}
 
-			X_unbg = Get_X_unbg;
+			X_unbg = Get_X_unbg();
 			if ( X_unbg ){
 				VFSOff();
 				return DoUnarc(ppxa, DllName - 1, hWnd, cmd);

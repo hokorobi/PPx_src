@@ -460,7 +460,7 @@ case 'D':
 case 'd':
 
 	*(int *)destp = GetIntNumber((const TCHAR **)&line);
-	destp += *fmt++ - '0';
+	destp += (DWORD_PTR)((UTCHAR)*fmt++ - (UTCHAR)'0');
 	SkipSPC(line);
 	if ( (*fmt == ',') && (*line != ',') && ((UTCHAR)*line >= ' ') ){
 		ErrorItemMes(PCS, GetNoSepMessage(destp, ','), kword, sname);
@@ -1068,7 +1068,11 @@ PPXDLL int PPXAPI PPcustCStore(TCHAR *mem, TCHAR *memmax, int appendmode, TCHAR 
 		}
 	}
 	PCS.Smes += wsprintf(PCS.Smes, TNL);
-	if ( log != NULL ) *log = PCS.SmesBuf;
+	if ( log != NULL ){
+		*log = PCS.SmesBuf;
+	}else{
+		HeapFree(ProcHeap, 0, PCS.SmesBuf);
+	}
 	return result ? (PCS.reloadflag | 1) : 0;
 }
 /*-----------------------------------------------------------------------------
@@ -1568,7 +1572,7 @@ PPXDLL TCHAR * PPXAPI PPcustCDump(void)
 	return PCS.SmesBuf;
 }
 
-void PPcustCDumpPart(PPCUSTSTRUCT *PCS, const TCHAR *str, const TCHAR *sub)
+void PPcustCDumpPart(PPCUSTSTRUCT *PCS, const TCHAR *str, const TCHAR *sub, BOOL idname)
 {
 	const CLABEL *clbl = NULL;
 	BYTE bin[MAXCUSTDATA];
@@ -1620,14 +1624,14 @@ void PPcustCDumpPart(PPCUSTSTRUCT *PCS, const TCHAR *str, const TCHAR *sub)
 				size = GetCustDataSize(str);
 				if ( size > 0 ){
 					GetCustData(str, bin, sizeof(bin));
-					CDsub(PCS, NilStr, bin, size, clbl->flag, clbl->fmt);
+					CDsub(PCS, idname ? str : NilStr, bin, size, clbl->flag, clbl->fmt);
 				}
 			}
 		}else{					// îzóÒçÄñ⁄
 			size = GetCustTableSize(str, sub);
 			if ( size > 0 ){
 				GetCustTable(str, sub, bin, sizeof(bin));
-				CDsub(PCS, NilStr, bin, size, clbl->flag, clbl->fmt);
+				CDsub(PCS, idname ? str : NilStr, bin, size, clbl->flag, clbl->fmt);
 			}
 		}
 	}
@@ -1645,7 +1649,8 @@ void PPcustCDumpWildCard(PPCUSTSTRUCT *PCS, const TCHAR *wildcard)
 		size = EnumCustData(count, name, bin, 0);
 		if ( size < 0 ) break;
 		if ( FilenameRegularExpression(name, &fn) ){
-			PPcustCDumpPart(PCS, name, NULL);
+			PPcustCDumpPart(PCS, name, NULL, TRUE);
+			PCS->Smes += wsprintf(PCS->Smes, TNL);
 		}
 	}
 	FreeFN_REGEXP(&fn);
@@ -1664,7 +1669,7 @@ void PPcustCDumpText(const TCHAR *str, const TCHAR *sub, TCHAR **result)
 	if ( *str == '#' ){
 		PPcustCDumpWildCard(&PCS, str + 1);
 	}else{
-		PPcustCDumpPart(&PCS, str, sub);
+		PPcustCDumpPart(&PCS, str, sub, FALSE);
 	}
 	*result = PCS.SmesBuf;
 }
@@ -1677,13 +1682,16 @@ PPXDLL TCHAR * PPXAPI PPcust(int mode, const TCHAR *param)
 		case PPXCUSTMODE_DUMP_ALL:
 			return PPcustCDump();
 
-		case PPXCUSTMODE_DUMP_PART: {
+		case PPXCUSTMODE_DUMP_PART:
+		case PPXCUSTMODE_DUMP_PART_NOBOM: {
 			PCS.Smes = PCS.SmesBuf = HeapAlloc(ProcHeap, 0, FIRSTDUMPSIZE + SMESSIZE_MARGIN);
 			PCS.SmesLim = PCS.Smes + FIRSTDUMPSIZE / sizeof(TCHAR);
 			PCS.Dnum = 0;
 			PCS.Xmode = PPXCUSTMODE_DUMP_PART;
 #ifdef UNICODE
-			*PCS.Smes++ = 0xfeff;	// UCF2HEADER Çê›íË
+			if ( mode == PPXCUSTMODE_DUMP_PART ){
+				*PCS.Smes++ = 0xfeff;	// UCF2HEADER Çê›íË
+			}
 #endif
 			*PCS.Smes = '\0';
 

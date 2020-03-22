@@ -985,6 +985,7 @@ ERRORCODE MarkEntry(PPC_APPINFO *cinfo, const TCHAR *wildcard, int mode)
 	ENTRYINDEX index;
 	DWORD DirMask;
 	TCHAR buf[CMDLINESIZE];
+	ENTRYCELL *cell;
 
 	if ( TinyCheckCellEdit(cinfo) ) return ERROR_PATH_BUSY;
 
@@ -993,10 +994,26 @@ ERRORCODE MarkEntry(PPC_APPINFO *cinfo, const TCHAR *wildcard, int mode)
 	DirMask = MakeFN_REGEXP(&fn, buf);
 	if ( DirMask & REGEXPF_ERROR ) return ERROR_INVALID_PARAMETER;
 	DirMask = DirMask ? 0 : FILE_ATTRIBUTE_DIRECTORY;
-	for ( index = 0; index < cinfo->e.cellIMax; index++ ){
-		if ( (CEL(index).f.dwFileAttributes & DirMask) ) continue;
-		if ( FinddataRegularExpression(&CEL(index).f, &fn) ){
-			CellMark(cinfo, index, mode);
+	if ( mode < MARK_HIGHLIGHTOFF ){ // ƒ}[ƒN
+		for ( index = 0; index < cinfo->e.cellIMax; index++ ){
+			cell = &CEL(index);
+			if ( (cell->f.dwFileAttributes & DirMask) ) continue;
+			if ( cell->attr & (ECA_PARENT | ECA_THIS) ) continue;
+			if ( FinddataRegularExpression(&cell->f, &fn) ){
+				CellMark(cinfo, index, mode);
+			}
+		}
+	}else{ // highlight
+		BYTE hldata;
+
+		hldata = (BYTE)((mode - MARK_HIGHLIGHTOFF) * ECS_HLBIT);
+		for ( index = 0; index < cinfo->e.cellIMax; index++ ){
+			cell = &CEL(index);
+			if ( (cell->f.dwFileAttributes & DirMask) ) continue;
+			if ( cell->attr & (ECA_PARENT | ECA_THIS) ) continue;
+			if ( FinddataRegularExpression(&cell->f, &fn) ){
+				cell->state = (cell->state & (BYTE)ECS_HLMASK) | hldata;
+			}
 		}
 	}
 	FreeFN_REGEXP(&fn);
@@ -1015,18 +1032,46 @@ ERRORCODE PPC_FindMark(PPC_APPINFO *cinfo, const TCHAR *defmask, int mode)
 
 	mask.attr = 0;
 	mask.file[0] = '\0';
+
 	if ( defmask != NULL ){
+		while ( SkipSpace(&defmask) == '-' ){
+			const TCHAR *ptr = defmask, *more;
+			TCHAR buf[CMDLINESIZE];
+
+			GetOptionParameter(&ptr, buf, (TCHAR **)&more);
+			if ( tstrcmp(buf + 1, T("MARK")) == 0 ){
+				defmask = ptr;
+				mode = MARK_CHECK;
+			}else if ( tstrcmp(buf + 1, T("UNMARK")) == 0 ){
+				defmask = ptr;
+				mode = MARK_REMOVE;
+			}else if ( tstrcmp(buf + 1, T("REVERSEMARK")) == 0 ){
+				defmask = ptr;
+				mode = MARK_REVERSE;
+			}else if ( tstrcmp(buf + 1, T("HIGHLIGHT")) == 0 ){
+				defmask = ptr;
+				if ( Isdigit(*more) ){
+					mode = GetNumber(&more);
+					if ( mode > ECS_HLMAX ) return ERROR_INVALID_PARAMETER;
+					mode += MARK_HIGHLIGHT1 - 1;
+				}else{
+					mode = MARK_HIGHLIGHT1;
+				}
+			}else{
+				break;
+			}
+		}
 		if ( SkipSpace(&defmask) == '|' ){
 			SetExtParam(defmask + 1, mask.file, TSIZEOF(mask.file));
 			defmask = NULL;
 		}
 	}
+	pfs.mode = mode;
 
 	if ( defmask == NULL ){
-		pfs.title = mode ? MES_TFMK : MES_TFUM;
+		pfs.title = (mode != MARK_REMOVE) ? MES_TFMK : MES_TFUM;
 		pfs.mask = &mask;
 		pfs.filename = CEL(cinfo->e.cellN).f.cFileName;
-		pfs.mode = mode;
 		pfs.cinfo = cinfo;
 		result = (int)PPxDialogBoxParam(hInst, MAKEINTRESOURCE(IDD_MASK),
 			cinfo->info.hWnd, FileMaskDialog, (LPARAM)&pfs);
@@ -1034,7 +1079,7 @@ ERRORCODE PPC_FindMark(PPC_APPINFO *cinfo, const TCHAR *defmask, int mode)
 		defmask = mask.file;
 	}
 
-	return MarkEntry(cinfo, defmask, mode);
+	return MarkEntry(cinfo, defmask, pfs.mode);
 }
 
 //-----------------------------------------------------------------------------
@@ -3474,11 +3519,11 @@ ERRORCODE LogDisk(PPC_APPINFO *cinfo)
 		PPXH_DIR_R, PPXH_DIR) <= 0 ){
 		return ERROR_CANCELLED;
 	}
-	SetPPcDirPos(cinfo);
 	if ( VFSFixPath(cinfo->path, buf, cinfo->path, VFSFIX_VFPS) == NULL ){
 		SetPopMsg(cinfo, POPMSG_MSG, MES_EPTH);
 		return ERROR_BAD_COMMAND;
 	}
+	SetPPcDirPos(cinfo);
 	read_entry(cinfo, RENTRY_READ);
 	return NO_ERROR;
 }

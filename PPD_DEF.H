@@ -597,13 +597,15 @@ extern void FillBox(HDC hDC, const RECT *box, HBRUSH hbr);
 extern void PlayWave(const TCHAR *name);
 extern BOOL OpenClipboard2(HWND hWnd);
 
-extern HBRUSH Get3dShadowBrush(void);
-extern HBRUSH Get3dFaceBrush(void);
-extern HBRUSH Get3dHighlightBrush(void);
+extern HBRUSH GetFrameShadowBrush(void);
+extern HBRUSH GetFrameFaceBrush(void);
+extern HBRUSH GetFrameHighlightBrush(void);
 extern HBRUSH GetHighlightBackBrush(void);
 extern HBRUSH GetGrayBackBrush(void);
+extern HBRUSH GetWindowBackBrush(void);
+extern HBRUSH GetStaticBackBrush(void);
 extern void InitSysColors_main(void);
-#define InitSysColors() {if (C_3dFace == C_AUTO) InitSysColors_main();}
+#define InitSysColors() {if (C_FrameFace == C_AUTO) InitSysColors_main();}
 extern void FreeSysColors(void);
 
 //------------------------------------------------------------------ ppd_wild.c

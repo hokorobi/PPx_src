@@ -166,7 +166,7 @@ void ComboDropTarget::ComboDropDDFormat(LPDATAOBJECT pDataObj, DWORD pdwEffect, 
 		case DROPEFFECT_MAKELIST: {
 			TCHAR destpath[VFPS];
 
-			ListDrop(Combo.hWnd, sDrop, TargetPath, destpath);
+			ListDrop(Combo.hWnd, sDrop, TargetPath, destpath, NULL);
 			if ( mTargettype == TARGET_TREE ){
 				::SendMessage(Combo.hTreeWnd, VTM_SETPATH, 0, (LPARAM)TargetPath);
 			}

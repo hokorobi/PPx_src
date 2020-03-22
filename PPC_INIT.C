@@ -929,6 +929,8 @@ void USEFASTCALL CreateScrollBar(PPC_APPINFO *cinfo)
 	HideScrollBar(cinfo);
 }
 
+#define _TBSTYLE_CUSTOMERASE 0x2000
+
 void InitGuiControl(PPC_APPINFO *cinfo)
 {
 	UINT ID = IDW_TOOLCOMMANDS;
@@ -976,7 +978,11 @@ void InitGuiControl(PPC_APPINFO *cinfo)
 	if ( cinfo->combo == 0 ){ // 非一体化時に設定する内容 ---------------------
 		// ツールバー
 		if ( cinfo->X_win & XWIN_TOOLBAR ){
-			cinfo->hToolBarWnd = CreateToolBar(&cinfo->thGuiWork, cinfo->info.hWnd, &ID, T("B_cdef"), PPcPath, 0);
+			if ( UseCCDrawBack == 0 ){
+				UseCCDrawBack = PPxCommonExtCommand(K_DRAWCCBACK, 0) ? 2 : 1;
+			}
+			cinfo->hToolBarWnd = CreateToolBar(&cinfo->thGuiWork, cinfo->info.hWnd, &ID, T("B_cdef"), PPcPath,
+					(UseCCDrawBack > 1) ? _TBSTYLE_CUSTOMERASE : 0);
 			if ( cinfo->hToolBarWnd != NULL ){
 				GetWindowRect(cinfo->hToolBarWnd, &box);
 				cinfo->ToolbarHeight = box.bottom - box.top;

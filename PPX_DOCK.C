@@ -12,6 +12,15 @@
 #include "PPCUI.RH"
 #pragma hdrstop
 
+#ifndef TBSTYLE_CUSTOMERASE
+#define TBSTYLE_CUSTOMERASE 0x2000
+#define CDDS_PREERASE 0x00000003
+#define CDRF_SKIPDEFAULT 0x00000004
+#endif
+#ifndef NM_CUSTOMDRAW
+#define NM_CUSTOMDRAW (NM_FIRST-12)
+#endif
+
 #define EnableAddressBreadCrumbListBar 0
 
 HBITMAP hAddressBMP = NULL;
@@ -1102,9 +1111,15 @@ void CreateDockToolBar(PPXDOCK *dock, const TCHAR *custname, UINT style, int cx)
 	HWND hToolBarWnd;
 	RECT box;
 
+	if ( UseCCDrawBack == 0 ){
+		UseCCDrawBack = PPxCommonExtCommand(K_DRAWCCBACK, 0) ? 2 : 1;
+	}
+
 	rbi.wID = dock->th->top;
 	ThAddString(dock->th, custname);
-	hToolBarWnd = CreateToolBar(dock->th, dock->hWnd, &dock->IDmax, custname, PPcPath, CCS_NODIVIDER);
+	hToolBarWnd = CreateToolBar(dock->th, dock->hWnd, &dock->IDmax, custname,
+		PPcPath,
+		((UseCCDrawBack > 1) ? TBSTYLE_CUSTOMERASE : 0) | CCS_NODIVIDER );
 	if ( hToolBarWnd == NULL ) return;
 
 	SetWindowLongPtr(hToolBarWnd, GWL_STYLE, GetWindowLongPtr(hToolBarWnd, GWL_STYLE) | CCS_NORESIZE);
@@ -1374,6 +1389,12 @@ void CreateDockDriveBar(PPXDOCK *dock, UINT style, int cx)
 	}
 	// •ÒW‰Â”\‚É‚·‚é : CCS_ADJUSTABLE | TBSTYLE_ALTDRAG
 	tstyle = CCS_NODIVIDER | WS_CHILD | WS_VISIBLE | CCS_NOPARENTALIGN | TBSTYLE_FLAT | TBSTYLE_TOOLTIPS | TBSTYLE_LIST;
+
+	if ( UseCCDrawBack == 0 ){
+		UseCCDrawBack = PPxCommonExtCommand(K_DRAWCCBACK, 0) ? 2 : 1;
+	}
+	if ( UseCCDrawBack > 1 ) tstyle |= TBSTYLE_CUSTOMERASE;
+
 	hToolBarWnd = CreateWindowEx(0, TOOLBARCLASSNAME, NULL, tstyle,
 			0, 0, DriveBarIconSize, DriveBarIconSize,
 			dock->hWnd, CHILDWNDID(IDW_DRIVEBAR), hInst, NULL);

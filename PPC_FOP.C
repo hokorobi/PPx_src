@@ -1233,7 +1233,7 @@ ERRORCODE USEFASTCALL MakeEntryMain(PPC_APPINFO *cinfo, int type, TCHAR *name)
 					WriteFile(hFile, filesrc, regsize, &tmp, NULL);
 				}
 				if ( type == NEWCMD_LISTFILE ){ // listfile header ÇèoóÕ
-					WriteFile(hFile, ListFileHeaderStr, ListFileHeaderStrLen, &tmp, NULL);
+					WriteFile(hFile, ListFileHeaderStr, ListFileHeaderSize, &tmp, NULL);
 				}
 				CloseHandle(hFile);
 			}

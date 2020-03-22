@@ -608,30 +608,27 @@ BOOL PPxDialogHelp(HWND hDlg)
 	return TRUE;
 }
 
-void DrawDialogBack(HWND hDlg, HDC hDC)
-{
-	RECT box;
-
-	GetClientRect(hDlg, &box);
-	FillRect(hDC, &box, hWndBackBrush);
-}
-
 #pragma argsused
 PPXDLL BOOL PPXAPI PPxDialogHelper(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	UnUsedParam(wParam); UnUsedParam(lParam);
 
 	switch (message){
-		case WM_ERASEBKGND:
-			if ( hWndBackBrush == NULL ) return FALSE;
-			DrawDialogBack(hDlg, (HDC)wParam);
-			return TRUE;
-/*
+		case WM_CTLCOLORLISTBOX:
+		case WM_CTLCOLOREDIT:
+			if ( hDialogBackBrush == NULL ) return FALSE;
+			SetTextColor((HDC)wParam, C_WindowText);
+			SetBkColor((HDC)wParam, C_WindowBack);
+			return (BOOL)(DWORD_PTR)GetWindowBackBrush(); // WM_CTLCOLORDLG ‚Í DWLP_MSGRESULT ‚ðŽg‚í‚È‚­‚Ä‚à‚æ‚¢
+
+		case WM_CTLCOLORSTATIC:
+		case WM_CTLCOLORBTN:
 		case WM_CTLCOLORDLG:
-			if ( hWndBackBrush == NULL ) return FALSE;
-			SetWindowLongPtr(hDlg, DWLP_MSGRESULT, (DWORD_PTR)hWndBackBrush);
-			return TRUE;
-*/
+			if ( hDialogBackBrush == NULL ) return FALSE;
+			SetTextColor((HDC)wParam, C_WindowText);
+			SetBkColor((HDC)wParam, C_DialogBack);
+			return (BOOL)(DWORD_PTR)hDialogBackBrush; // WM_CTLCOLORDLG ‚Í DWLP_MSGRESULT ‚ðŽg‚í‚È‚­‚Ä‚à‚æ‚¢
+
 		case WM_DESTROY:
 			SetIMEDefaultStatus(hDlg);
 			return FALSE;
@@ -932,6 +929,14 @@ INT_PTR CALLBACK MessageBoxDxProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lP
 		case WM_INITDIALOG:
 			return MessageBoxInitDialog(hDlg, (MESSAGEDATA *)lParam);
 
+		case WM_CTLCOLORSTATIC:
+		case WM_CTLCOLORBTN:
+		case WM_CTLCOLORDLG:
+			if ( hDialogBackBrush == NULL ) return FALSE;
+			SetTextColor((HDC)wParam, C_WindowText);
+			SetBkColor((HDC)wParam, C_DialogBack);
+			return (BOOL)(DWORD_PTR)hDialogBackBrush; // WM_CTLCOLORDLG ‚Í DWLP_MSGRESULT ‚ðŽg‚í‚È‚­‚Ä‚à‚æ‚¢
+
 		case WM_ACTIVATE: {
 			MESSAGEDATA *md;
 
@@ -991,6 +996,7 @@ PPXDLL int PPXAPI PMessageBox(HWND hWnd, const TCHAR *text, const TCHAR *title, 
 #if UseTMessageBox
 	MESSAGEDATA md;
 
+	InitSysColors();
 	md.title = MessageText((title != NULL) ? title : PPxName);
 	if ( text == NULL ){
 		if ( style & MB_ICONQUESTION ) text = MES_QABO;
@@ -1416,32 +1422,38 @@ PPXDLL int PPXAPI GetAccessApplications(const TCHAR *checkpath, TCHAR *text)
 
 void InitSysColors_main(void)
 {
-	C_3dHighlight = GetSysColor(COLOR_BTNHIGHLIGHT);
-	C_3dFace = GetSysColor(COLOR_BTNFACE);
-	C_3dShadow = GetSysColor(COLOR_BTNSHADOW);
-	C_WindowText = GetSysColor(COLOR_WINDOWTEXT);
-	C_WindowBack = GetSysColor(COLOR_WINDOW);
-	C_HighlightText = GetSysColor(COLOR_HIGHLIGHTTEXT);
-	C_HighlightBack = GetSysColor(COLOR_HIGHLIGHT);
-	C_GrayState = GetSysColor(COLOR_GRAYTEXT);
-#if 0
-	hWndBackBrush = Get3dShadowBrush(); //Get3dFaceBrush
-#endif
+	GetCustData(T("C_win"), &C_WindowColors, sizeof(C_WindowColors));
+#define DEFWINCOLOR(Color, Type) if ( Color == C_AUTO ) Color = GetSysColor(Type);
+	DEFWINCOLOR(C_FrameHighlight, COLOR_BTNHIGHLIGHT);
+	DEFWINCOLOR(C_FrameFace, COLOR_BTNFACE);
+	DEFWINCOLOR(C_FrameShadow, COLOR_BTNSHADOW);
+	DEFWINCOLOR(C_WindowText, COLOR_WINDOWTEXT);
+	DEFWINCOLOR(C_WindowBack, COLOR_WINDOW);
+	DEFWINCOLOR(C_HighlightText, COLOR_HIGHLIGHTTEXT);
+	DEFWINCOLOR(C_HighlightBack, COLOR_HIGHLIGHT);
+	DEFWINCOLOR(C_GrayState, COLOR_GRAYTEXT);
+#undef DEFWINCOLOR
+	if ( C_DialogBack != C_AUTO ){
+		hDialogBackBrush = CreateSolidBrush(C_DialogBack);
+		C_StaticBack = C_DialogBack;
+	}else{
+		C_StaticBack = GetSysColor(COLOR_BTNFACE);
+	}
 }
 
 void FreeSysColors(void)
 {
-	if ( h3dHighlight != NULL ){
-		DeleteObject(h3dHighlight);
-		h3dHighlight = NULL;
+	if ( hFrameHighlight != NULL ){
+		DeleteObject(hFrameHighlight);
+		hFrameHighlight = NULL;
 	}
-	if ( h3dFace != NULL ){
-		DeleteObject(h3dFace);
-		h3dFace = NULL;
+	if ( hFrameFace != NULL ){
+		DeleteObject(hFrameFace);
+		hFrameFace = NULL;
 	}
-	if ( h3dShadow != NULL ){
-		DeleteObject(h3dShadow);
-		h3dShadow = NULL;
+	if ( hFrameShadow != NULL ){
+		DeleteObject(hFrameShadow);
+		hFrameShadow = NULL;
 	}
 	if ( hHighlightBack != NULL ){
 		DeleteObject(hHighlightBack);
@@ -1451,43 +1463,49 @@ void FreeSysColors(void)
 		DeleteObject(hGrayBack);
 		hGrayBack = NULL;
 	}
-#if 0
-	if ( hWndBackBrush != NULL ){
-		DeleteObject(hWndBackBrush);
-		hWndBackBrush = NULL;
+	if ( hDialogBackBrush != NULL ){
+		DeleteObject(hDialogBackBrush);
+		hDialogBackBrush = NULL;
 	}
-#endif
-	C_3dFace = C_AUTO;
+	if ( hWindowBackBrush != NULL ){
+		DeleteObject(hWindowBackBrush);
+		hWindowBackBrush = NULL;
+	}
+	if ( hStaticBackBrush != NULL ){
+		DeleteObject(hStaticBackBrush);
+		hStaticBackBrush = NULL;
+	}
+	C_FrameFace = C_AUTO;
 }
 
-HBRUSH Get3dHighlightBrush(void)
+HBRUSH GetFrameHighlightBrush(void)
 {
-	if ( h3dHighlight != NULL ) return h3dHighlight;
-	if ( C_3dFace == C_AUTO ) InitSysColors_main();
-	h3dHighlight = CreateSolidBrush(C_3dHighlight);
-	return h3dHighlight;
+	if ( hFrameHighlight != NULL ) return hFrameHighlight;
+	InitSysColors();
+	hFrameHighlight = CreateSolidBrush(C_FrameHighlight);
+	return hFrameHighlight;
 }
 
-HBRUSH Get3dFaceBrush(void)
+HBRUSH GetFrameFaceBrush(void)
 {
-	if ( h3dFace != NULL ) return h3dFace;
-	if ( C_3dFace == C_AUTO ) InitSysColors_main();
-	h3dFace = CreateSolidBrush(C_3dFace);
-	return h3dFace;
+	if ( hFrameFace != NULL ) return hFrameFace;
+	InitSysColors();
+	hFrameFace = CreateSolidBrush(C_FrameFace);
+	return hFrameFace;
 }
 
-HBRUSH Get3dShadowBrush(void)
+HBRUSH GetFrameShadowBrush(void)
 {
-	if ( h3dShadow != NULL ) return h3dShadow;
-	if ( C_3dFace == C_AUTO ) InitSysColors_main();
-	h3dShadow = CreateSolidBrush(C_3dShadow);
-	return h3dShadow;
+	if ( hFrameShadow != NULL ) return hFrameShadow;
+	if ( C_FrameFace == C_AUTO ) InitSysColors_main();
+	hFrameShadow = CreateSolidBrush(C_FrameShadow);
+	return hFrameShadow;
 }
 
 HBRUSH GetHighlightBackBrush(void)
 {
 	if ( hHighlightBack != NULL ) return hHighlightBack;
-	if ( C_3dFace == C_AUTO ) InitSysColors_main();
+	InitSysColors();
 	hHighlightBack = CreateSolidBrush(C_HighlightBack);
 	return hHighlightBack;
 }
@@ -1495,9 +1513,25 @@ HBRUSH GetHighlightBackBrush(void)
 HBRUSH GetGrayBackBrush(void)
 {
 	if ( hGrayBack != NULL ) return hGrayBack;
-	if ( C_3dFace == C_AUTO ) InitSysColors_main();
+	InitSysColors();
 	hGrayBack = CreateSolidBrush(C_GrayState);
 	return hGrayBack;
+}
+
+HBRUSH GetWindowBackBrush(void)
+{
+	if ( hWindowBackBrush != NULL ) return hWindowBackBrush;
+	InitSysColors();
+	hWindowBackBrush = CreateSolidBrush(C_WindowBack);
+	return hWindowBackBrush;
+}
+
+HBRUSH GetStaticBackBrush(void)
+{
+	if ( hStaticBackBrush != NULL ) return hStaticBackBrush;
+	InitSysColors();
+	hStaticBackBrush = CreateSolidBrush(C_StaticBack);
+	return hStaticBackBrush;
 }
 
 // í‚É EDGE_RAISED
@@ -1508,21 +1542,21 @@ PPXDLL void PPXAPI DrawSeparateLine(HDC hDC, const RECT *box, UINT flags)
 	edgebox = facebox = *box;
 	if ( flags & BF_TOP ){
 		edgebox.bottom = facebox.top = edgebox.top + 1;
-		FillRect(hDC, &edgebox, Get3dHighlightBrush());
+		FillRect(hDC, &edgebox, GetFrameHighlightBrush());
 		edgebox.bottom = box->bottom;
 	}
 	if ( (flags & BF_BOTTOM) && ((facebox.bottom - facebox.top) >= 3) ){
 		edgebox.top = facebox.bottom = edgebox.bottom - 1;
-		FillRect(hDC, &edgebox, Get3dShadowBrush());
+		FillRect(hDC, &edgebox, GetFrameShadowBrush());
 	}
 	if ( flags & BF_LEFT ){
 		edgebox.right = facebox.left = edgebox.left + 1;
-		FillRect(hDC, &edgebox, Get3dHighlightBrush());
+		FillRect(hDC, &edgebox, GetFrameHighlightBrush());
 		edgebox.right = box->right;
 	}
 	if ( (flags & BF_RIGHT) && ((facebox.right - facebox.left) >= 3) ){
 		edgebox.left = facebox.right = edgebox.right - 1;
-		FillRect(hDC, &edgebox, Get3dShadowBrush());
+		FillRect(hDC, &edgebox, GetFrameShadowBrush());
 	}
-	FillRect(hDC, &facebox, Get3dFaceBrush());
+	FillRect(hDC, &facebox, GetFrameFaceBrush());
 }

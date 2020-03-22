@@ -341,11 +341,10 @@ ERRORCODE DoUndll(PPC_APPINFO *cinfo, const TCHAR *destpath, DWORD X_unbg)
 		if ( destpath == NULL ){
 			GetPairPath(cinfo, uud.info.DestPath);
 			CatPath(NULL, uud.info.DestPath, NilStr);
-			if ( PPctInput(cinfo, UnpackTitle, uud.info.DestPath,
-					TSIZEOF(uud.info.DestPath), PPXH_DIR_R, PPXH_DIR) <= 0 ){
+			if ( InputTargetDir(cinfo, UnpackTitle, uud.info.DestPath,
+					TSIZEOF(uud.info.DestPath)) != NO_ERROR ){
 				return ERROR_CANCELLED;
 			}
-			CatPath(NULL, uud.info.DestPath, NilStr);
 		}else{
 			CatPath(uud.info.DestPath, (TCHAR *)destpath, NilStr);
 		}
@@ -955,11 +954,11 @@ ERRORCODE PPcUnpackSelectedEntry(PPC_APPINFO *cinfo, const TCHAR *destpath, cons
 			return NO_ERROR;
 
 		case VFSDT_UN:
-			if ( cinfo->UseArcPathMask != ARCPATHMASK_OFF ){
+			if ( (cinfo->UseArcPathMask != ARCPATHMASK_OFF) ){
 				if ( destpath == NULL ){
-					if ( PPctInput(cinfo, UnpackTitle, dst, TSIZEOF(dst),
-							PPXH_DIR_R, PPXH_DIR) <= 0 ){
-						break;
+					if ( InputTargetDir(cinfo, UnpackTitle, dst,
+							TSIZEOF(dst)) != NO_ERROR ){
+						return ERROR_CANCELLED;
 					}
 					destpath = dst;
 				}
@@ -969,10 +968,9 @@ ERRORCODE PPcUnpackSelectedEntry(PPC_APPINFO *cinfo, const TCHAR *destpath, cons
 
 		case VFSDT_SUSIE:
 			if ( destpath == NULL ){
-				if ( PPctInput(cinfo, UnpackTitle, dst, TSIZEOF(dst),
-						PPXH_DIR_R, PPXH_DIR) <= 0 ){
-					result = ERROR_CANCELLED;
-					break;
+				if ( InputTargetDir(cinfo, UnpackTitle, dst,
+						TSIZEOF(dst)) != NO_ERROR ){
+					return ERROR_CANCELLED;
 				}
 				destpath = dst;
 			}
@@ -1000,10 +998,10 @@ ERRORCODE PPcUnpackSelectedEntry(PPC_APPINFO *cinfo, const TCHAR *destpath, cons
 		}
 
 		case VFSDT_SHN:
-			if ( PPctInput(cinfo,
+			if ( InputTargetDir(cinfo,
 					((action != FileOperationMode_Move) ?
 						StrFopCaption_Copy : StrFopCaption_Move),
-					dst, TSIZEOF(dst), PPXH_DIR_R, PPXH_DIR) <= 0 ){
+					dst, TSIZEOF(dst)) != NO_ERROR ){
 				return ERROR_CANCELLED;
 			}
 			CopyToShnPathFiles(cinfo, dst, (action != FileOperationMode_Move) ?
@@ -1173,11 +1171,10 @@ ERRORCODE PPC_Unpack(PPC_APPINFO *cinfo, const TCHAR *destpath)
 	}else{
 		GetPairPath(cinfo, info.DestPath);
 		CatPath(NULL, info.DestPath, NilStr);
-		if ( PPctInput(cinfo, UnpackTitle, info.DestPath,
-					TSIZEOF(info.DestPath), PPXH_DIR_R, PPXH_DIR) <= 0 ){
+		if ( InputTargetDir(cinfo, UnpackTitle, info.DestPath,
+					TSIZEOF(info.DestPath)) != NO_ERROR ){
 			return ERROR_CANCELLED;
 		}
-		VFSFixPath(NULL, info.DestPath, cinfo->path, VFSFIX_PATH);
 	}
 
 	X_unbg = Get_X_unbg;
@@ -1265,11 +1262,10 @@ ERRORCODE UnpackMenu(PPC_APPINFO *cinfo)
 
 	GetPairPath(cinfo, info.DestPath);
 	CatPath(NULL, info.DestPath, NilStr);
-	if ( PPctInput(cinfo, UnpackTitle, info.DestPath,
-			TSIZEOF(info.DestPath), PPXH_DIR_R, PPXH_DIR) <= 0 ){
+	if ( InputTargetDir(cinfo, UnpackTitle, info.DestPath,
+			TSIZEOF(info.DestPath)) != NO_ERROR ){
 		return ERROR_CANCELLED;
 	}
-	VFSFixPath(NULL, info.DestPath, cinfo->path, VFSFIX_PATH);
 	MakeDirectories(info.DestPath, NULL);
 
 	info.chop = GetCustXDword(T("X_arcdr"), NULL, 0);
@@ -1337,7 +1333,7 @@ DWORD WINAPI HttpThread(PPCGETHTTPSTRUCT *pghs)
 	GetPairPath(cinfo, dst);
 	CatPath(NULL, dst, NilStr);
 
-	if ( PPctInput(cinfo, MES_TCHP, dst, TSIZEOF(dst), PPXH_DIR_R, PPXH_DIR) > 0 ){
+	if ( InputTargetDir(cinfo, MES_TCHP, dst, TSIZEOF(dst)) == NO_ERROR ){
 		MakeDirectories(dst, NULL);
 		files = path + tstrlen(path) + 1;
 

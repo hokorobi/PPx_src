@@ -1,6 +1,6 @@
 @echo off
 rem XVER: 123 or 123p1
-set XVER=171
+set XVER=172
 set RETAIL=1
 set DIR64=PPx64
 rem *** set value ***
@@ -70,6 +70,8 @@ del %DIR64%\*.map > NUL
 copy resource\*.* %DIR64%\resource > NUL
 cmd /c archive.bat x64 %DIR64% %readme%
 
+if %RETAIL%==0 goto :final
+
 md %DIR64%ARM
 md %DIR64%ARM\resource
 copy *.* %DIR64%ARM > NUL
@@ -79,6 +81,7 @@ cmd /c archive.bat arm64 %DIR64%ARM %readme%
 
 
 rem *** final ***
+:final
 perl final.pl
 ppb /c %%u/7-ZIP32.DLL,a -tzip -hide -mx=7 -r ppx%XVER%map.zip *.map %DIR64%\*.map %DIR64%ARM\*.map
 goto :EOF
@@ -91,7 +94,7 @@ call VCARM64.bat
 copy ..\64FILESARM\*.* .
 del *.obj 2> NUL
 del *.zip 2> NUL
-make -DARM -DX64=1 -DRELEASE
+make -DARM -DX64=1 -DRELEASE -DUSEDIRECTX -DUSEDIRECTWRITE
 for %%i in (*.dll) do CT %3 %%i
 for %%i in (*.exe) do CT %3 %%i
 del ..\ppxarm64%XVER%.zip 2> NUL
@@ -140,8 +143,8 @@ rem ** archive **
 :archive
 set ppcommon=PPLIB%arcbit%%tail%.DLL
 set ppc=PPC%tail%.EXE
-if %RETAIL%==1 set ppv=PPV%tail%.EXE
-set ppb=PPB%tail%.EXE
+set ppv=PPV%tail%.EXE
+if %RETAIL%==1 set ppb=PPB%tail%.EXE
 set ppcust=PPCUST%tail%.EXE
 if %RETAIL%==1 set pptray=PPTRAY%tail%.EXE
 if %RETAIL%==1 set ppffix=PPFFIX%tail%.EXE

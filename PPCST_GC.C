@@ -18,6 +18,8 @@
 #define GC_entry	3
 #define GC_hmenu	4
 #define GC_line		5
+#define GC_theme	6  // テーマ用
+#define GC_nocolor	B9 // 色選択無し(GC_theme用)
 #define GC_aoff		B10 // C_AUTO は非表示扱い
 #define GC_ppbItem	B11 // GC_list
 #define GC_sortItem	B12 // GC_table
@@ -33,8 +35,31 @@ typedef struct {
 	int subs;
 } LISTS;
 
+const TCHAR *GCtheme[] = {
+	T("編集前\0before edit"),
+	T("黒(CRT向)\0black for CRT"),
+	T("ダーク(LCD向)\0Dark for LCD"),
+	T("ライト(LCD向)\0Light for LCD"),
+	T("白(CRT向)\0White for CRT"),
+	T("Windows準拠\0OS colors"),
+	NULL};
+
 const TCHAR *GCline[] = {T("通常\0normal"), T("未確定\0gray"), NULL};
 const TCHAR *GCCdisp[] = {T("文字\0text"), T("背景\0back"), NULL};
+const TCHAR *GCwin[] = {
+	T("窓枠明\0Frame light"),
+	T("窓枠表面\0Frame face"),
+	T("窓枠影\0Frame shadow"),
+
+	T("(試)窓背景\0Window face"),
+	T("(試)ダイアログ背景\0(test)Dialog face"),
+
+	T("(試)窓文字\0(test)Window Text"),
+
+	T("(試)選択背景\0(test)Highligh back"),
+	T("(試)選択文字\0(test)Highlight text"),
+
+	T("灰色\0gray"), NULL};
 const TCHAR *GCcapt[] = {
 	T("現在窓 文字\0selected text"), T("現在窓 背景\0selected back"),
 	T("反対窓 文字\0pair text"), T("反対窓 背景\0pair back"),
@@ -84,37 +109,40 @@ const TCHAR *GCbedit[] = {
 	T("選択文字\0selected text"), T("選択背景\0selected back"),
 	T("参照文字\0log text"), T("参照背景\0log back"),
 	T("参照選択文字\0log selected text"), T("参照選択背景\0log selected back"), NULL};
+
 const LISTS GClist[] = {
-	{T("背景色\0back ground"), T("C_back"),	GC_single | GC_auto, NULL, 0},
-	{T("文字 項目名\0message text"),	T("C_mes"),		GC_single | GC_auto, NULL, 0},
-	{T("文字 内容\0value text"),		T("C_info"),	GC_single | GC_auto, NULL, 0},
+	{T("配色テーマ\0Colors theme"), T(""),	GC_theme | GC_nocolor | GC_haveItem, GCtheme, 5},
+	{T("背景色\0back ground"), T("C_back"), GC_single | GC_auto, NULL, 0},
+	{T("文字 項目名\0message text"), T("C_mes"), GC_single | GC_auto, NULL, 0},
+	{T("文字 内容\0value text"), T("C_info"), GC_single | GC_auto, NULL, 0},
 	{T("報告\0response"),	T("C_res"),		GC_list | GC_haveItem, GCCdisp, 2},
 	{T("境界線\0line"),		T("C_line"),	GC_list | GC_haveItem, GCline, 2},
 	{T("ツリー\0tree"),		T("CC_tree"),	GC_list | GC_haveItem, GCCdisp, 2},
-	{T("チップ\0tip window"),		T("C_tip"),		GC_list | GC_haveItem, GCCdisp, 2},
+	{T("チップ\0tip window"),	T("C_tip"),	GC_list | GC_haveItem, GCCdisp, 2},
+	{T("窓枠・ダイアログ\0Frame and Dialog"), T("C_win"),	GC_list | GC_haveItem, GCwin, 9},
 	{T("PPc 拡張子色\0PPc file extension"), T("C_ext"),	GC_table | GC_haveItem | GC_editItem | GC_sortItem, NULL, 0},
-	{T("PPc エントリ文字/属性\0PPc entry text"),	T("C_entry"), GC_list | GC_haveItem, GCentry, 14},
-	{T("PPc エントリ背景/状態\0PPc entry back"),	T("C_eInfo"), GC_list | GC_haveItem, GCeInfo, 21},
-	{T("PPc 情報行1\0PPc info1"), T("XC_inf1"),	GC_list | GC_haveItem, GCCdisp, 2},
-	{T("PPc 情報行2\0PPc info2"), T("XC_inf2"),	GC_list | GC_haveItem, GCCdisp, 2},
+	{T("PPc エントリ文字/属性\0PPc entry text"), T("C_entry"), GC_list | GC_haveItem, GCentry, 14},
+	{T("PPc エントリ背景/状態\0PPc entry back"), T("C_eInfo"), GC_list | GC_haveItem, GCeInfo, 21},
+	{T("PPc 情報行1\0PPc info1"), T("XC_inf1"), GC_list | GC_haveItem, GCCdisp, 2},
+	{T("PPc 情報行2\0PPc info2"), T("XC_inf2"), GC_list | GC_haveItem, GCCdisp, 2},
 //	{T("PPc エントリ"),	T("XC_celD"),	GC_list | GC_haveItem, GCCdisp, 2},
 	{T("ペインタイトル・タブ\0caption, tab"), T("C_capt"),	GC_list | GC_haveItem, GCcapt, 8},
 	{T("ログ、アドレスバー\0log"), T("CC_log"), GC_list | GC_haveItem, GCCdisp, 2},
-	{T("PPv 文字・背景\0PPv text, back"),	T("CV_char"),	GC_list | GC_haveItem, GCchar, 16},
-	{T("PPv 特殊行背景\0PPv ex. line back"),	T("CV_lbak"),	GC_list | GC_haveItem | GC_aoff, GClbak, 3},
-	{T("PPv 末端線\0PPv bound"),	T("CV_boun"),	GC_single,		NULL, 0},
+	{T("PPv 文字・背景\0PPv text, back"), T("CV_char"), GC_list | GC_haveItem, GCchar, 16},
+	{T("PPv 特殊行背景\0PPv ex. line back"), T("CV_lbak"), GC_list | GC_haveItem | GC_aoff, GClbak, 3},
+	{T("PPv 末端線\0PPv bound"),	T("CV_boun"),		GC_single,	NULL, 0},
 	{T("PPv 行カーソル\0PPv underline"), T("CV_lcsr"),	GC_single,	NULL, 0},
-	{T("PPv 行番号\0PPv line number"),	T("CV_lnum"),	GC_list | GC_haveItem, GClnum, 2},
+	{T("PPv 行番号\0PPv line number"),	T("CV_lnum"), GC_list | GC_haveItem, GClnum, 2},
 	{T("PPv 制御文字\0PPv cotrol"),		T("CV_ctrl"),	GC_single,	NULL, 0},
 	{T("PPv 改行文字\0PPv line feed"),	T("CV_lf"),		GC_single,	NULL, 0},
 	{T("PPv タブ文字\0PPv tab"),		T("CV_tab"),	GC_single,	NULL, 0},
 	{T("PPv 全角空白\0PPv wide space"),	T("CV_spc"),	GC_single,	NULL, 0},
 	{T("PPv リンク\0PPv link"),			T("CV_link"),	GC_single,	NULL, 0},
 	{T("PPv タグ\0PPv tag"),			T("CV_syn"),	GC_list | GC_haveItem, GCltag, 3},
-	{T("PPv ハイライト\0PPv highlight"),	T("CV_hili"),	GC_list | GC_haveItem, GChili, 9},
+	{T("PPv ハイライト\0PPv highlight"), T("CV_hili"),	GC_list | GC_haveItem, GChili, 9},
 	{T("PPb 編集時\0PPb edit line"),	T("CB_edit"),	GC_list | GC_haveItem | GC_ppbItem, GCbedit, 4},
-	{T("PPb 実行時\0PPv log"),	T("CB_com"),	GC_list | GC_haveItem | GC_ppbItem, GCCdisp, 2},
-	{T("PPb 色パレット(Vista以降)\0PPb palettes(Vista)"),	T("CB_pals"),	GC_list | GC_haveItem, GCb_pals, 16},
+	{T("PPb 実行時\0PPv log"), T("CB_com"), GC_list | GC_haveItem | GC_ppbItem, GCCdisp, 2},
+	{T("PPb 色パレット(Vista以降)\0PPb palettes(Vista)"), T("CB_pals"), GC_list | GC_haveItem, GCb_pals, 16},
 	{NULL, NULL, 0, NULL, 0}
 };
 
@@ -181,14 +209,20 @@ COLORREF ConsoleColors[CONSOLECOLOR] = {
 // 色詳細ダイアログのユーザ定義色
 #define userColor_SEL 15 // 現在選択している色
 COLORREF userColor[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-int edit_gc = 0;	// IDL_GCTYPE の選択中インデックス
+
+#define GC_THEME 0
+int edit_gc = GC_THEME;	// IDL_GCTYPE の選択中インデックス
 int edit_sgc;		// IDL_GCITEM の選択中インデックス
 
 #define WINDOWSCOLOR 6
-int WinColors[WINDOWSCOLOR] = {COLOR_WINDOWTEXT, COLOR_WINDOW,
-		COLOR_HIGHLIGHTTEXT, COLOR_HIGHLIGHT,
-		COLOR_BTNFACE, COLOR_INACTIVECAPTION
+int WinColors[WINDOWSCOLOR] = {
+	COLOR_WINDOWTEXT, COLOR_WINDOW,
+	COLOR_HIGHLIGHTTEXT, COLOR_HIGHLIGHT,
+	COLOR_BTNFACE, COLOR_INACTIVECAPTION
 };
+
+const TCHAR OldColorWildcard[] = T("&C*,&!C_ext,&!CV_hkey");
+TCHAR *OldColorTheme = NULL;
 
 typedef struct {
 	TCHAR text[VFPS], *textptr;
@@ -198,8 +232,8 @@ typedef struct {
 #define CUSTOFFSETDATA(cust) (const BYTE *)(cust + sizeof(WORD))
 int WINAPI SortColorFunc(const BYTE *cust1, const BYTE *cust2)
 {
-	return	*((DWORD *)(CUSTOFFSETDATA(cust1) + TSTRSIZE((const TCHAR *)CUSTOFFSETDATA(cust1)))) -
-			*((DWORD *)(CUSTOFFSETDATA(cust2) + TSTRSIZE((const TCHAR *)CUSTOFFSETDATA(cust2))));
+	return *((DWORD *)(CUSTOFFSETDATA(cust1) + TSTRSIZE((const TCHAR *)CUSTOFFSETDATA(cust1)))) -
+		   *((DWORD *)(CUSTOFFSETDATA(cust2) + TSTRSIZE((const TCHAR *)CUSTOFFSETDATA(cust2))));
 }
 
 // 使いそうな色を一覧に用意する
@@ -209,7 +243,7 @@ void FixColorList(void)
 
 	// PPx の色から３色用意
 	for ( i = 0 ; i < USERUSEPPXCOLOR ; i++ ){
-		GetCustData(GClist[i].item, &userColor[i], sizeof(COLORREF));
+		GetCustData(GClist[i + 1].item, &userColor[i], sizeof(COLORREF));
 		G_Colors[CL_first + i] = userColor[i];
 	}
 	// Windows の色から6色用意
@@ -239,6 +273,38 @@ void SetColorList(HWND hDlg, COLORREF c)
 		G_Colors[i] = c;
 	}
 	SendDlgItemMessage(hDlg, IDL_GCOLOR, LB_SETCURSEL, (WPARAM)i, 0);
+}
+
+void ResCust(int id)
+{
+	TCHAR *mem;				// カスタマイズ解析/終了位置
+	HRSRC hres;
+	DWORD size;
+
+	hres = FindResource(hInst, MAKEINTRESOURCE(id), RT_RCDATA);
+	#ifdef UNICODE
+	{
+		char *rc;
+		DWORD rsize;
+		UINT cp;
+
+		rsize = SizeofResource(hInst, hres);
+		rc = LockResource(LoadResource(hInst, hres));
+		cp = IsValidCodePage(CP__SJIS) ? CP__SJIS : CP_ACP;
+		size = MultiByteToWideChar(cp, 0, rc, rsize, NULL, 0);
+		mem = HeapAlloc(GetProcessHeap(), 0, TSTROFF(size) + 16);
+		size = MultiByteToWideChar(cp, 0, rc, rsize, mem, size);
+		mem[size] = '\0';
+	}
+	#else
+		size = SizeofResource(hInst, hres);
+		mem = HeapAlloc(GetProcessHeap(), 0, size + 16);
+		memcpy(mem, LockResource(LoadResource(hInst, hres)), size);
+		mem[size] = '\0';
+	#endif
+	PPcustCStore(mem, mem + size, PPXCUSTMODE_STORE, NULL, NULL);
+	HeapFree(GetProcessHeap(), 0, mem);
+	Test();
 }
 
 void CSelectType2(HWND hDlg)
@@ -272,6 +338,26 @@ void CSelectType2(HWND hDlg)
 			SetColorList(hDlg, c);
 			break;
 		}
+		case GC_theme:
+			if ( edit_sgc == 0 ){
+				if ( OldColorTheme != NULL ){
+					TCHAR *mem;
+
+					mem = HeapAlloc(GetProcessHeap(), 0, TSTRSIZE(OldColorTheme));
+					tstrcpy(mem, OldColorTheme);
+					PPcustCStore(mem, mem + tstrlen(mem), PPXCUSTMODE_APPEND, NULL, NULL);
+					HeapFree(GetProcessHeap(), 0, mem);
+					Test();
+					Changed(hDlg);
+				}
+			}else{
+				if ( OldColorTheme == NULL ){
+					OldColorTheme = PPcust(PPXCUSTMODE_DUMP_PART_NOBOM, OldColorWildcard);
+				}
+				ResCust( (edit_sgc - 1) + COLOR_THEME_1);
+				Changed(hDlg);
+			}
+			break;
 	}
 	SetDlgItemText(hDlg, IDE_GCEDIT, NilStr);
 }
@@ -289,7 +375,7 @@ void CSelectType(HWND hDlg)
 	gcl = &GClist[edit_gc];
 
 	flags = gcl->flags;
-	showflag = flags & GC_haveItem;	// アイテム有り
+	showflag = flags & GC_haveItem;	// アイテム有り(IDL_GCITEM有り)
 	ShowDlgWindow(hDlg, IDS_GCITEM, showflag);
 	ShowDlgWindow(hDlg, IDL_GCITEM, showflag);
 	showflag = flags & GC_editItem;	// アイテム追加・登録・ソート
@@ -300,6 +386,10 @@ void CSelectType(HWND hDlg)
 	ShowDlgWindow(hDlg, IDB_GCSORTC, showflag);
 	ShowDlgWindow(hDlg, IDX_GCULINE, flags & GC_ppbItem); // コンソール色
 
+	showflag = !(flags & GC_nocolor);
+	ShowDlgWindow(hDlg, IDL_GCOLOR, showflag);
+	ShowDlgWindow(hDlg, IDB_GCSEL, showflag);
+
 	switch( flags & GC_mask ){
 		case GC_single:{
 			COLORREF c = C_AUTO;
@@ -308,12 +398,17 @@ void CSelectType(HWND hDlg)
 			SetColorList(hDlg, c);
 			break;
 		}
+		case GC_theme:
 		case GC_list:{
 			const TCHAR **list;
 			int i;
 
-			memset(buf, 0, 32 * sizeof(COLORREF));
-			GetCustData(gcl->item, buf, sizeof(buf));
+			if ( (flags & GC_mask) == GC_theme ){
+				memset(buf, 254, 32 * sizeof(COLORREF));
+			}else{
+				memset(buf, 0, 32 * sizeof(COLORREF));
+				GetCustData(gcl->item, buf, sizeof(buf));
+			}
 			SendMessage(hListWnd, LB_RESETCONTENT, 0, 0);
 			for ( list = gcl->sublist, i = 0 ; *list ; list++, i++ ){
 				SendMessage(hListWnd, LB_ADDSTRING, 0, (LPARAM)GetCText(*list));
@@ -380,16 +475,16 @@ COLORREF USEFASTCALL ConColorConvert(COLORREF color)
 
 void SelectColor(HWND hDlg, DWORD index)
 {
-	COLORREF c;
+	COLORREF selc;
 	TCHAR buf[0x4000];
 
 	if ( index >= COLORLIST_COLORS ) return;
-	c = G_Colors[index];
+	selc = G_Colors[index];
 	switch( GClist[edit_gc].flags & GC_mask ){
 		case GC_single:
-			SetCustData(GClist[edit_gc].item, (TCHAR *)&c, sizeof(c));
+			SetCustData(GClist[edit_gc].item, (TCHAR *)&selc, sizeof(selc));
 			SendDlgItemMessage(hDlg, IDL_GCTYPE,
-					LB_SETITEMDATA, (WPARAM)edit_gc, (LPARAM)c);
+					LB_SETITEMDATA, (WPARAM)edit_gc, (LPARAM)selc);
 			InvalidateRect(GetDlgItem(hDlg, IDL_GCTYPE), NULL, FALSE);
 			break;
 
@@ -407,9 +502,9 @@ void SelectColor(HWND hDlg, DWORD index)
 				*dest = 0;
 
 				GetCustData(GClist[edit_gc].item, buf, sizeof(buf));
-				c = ConColorConvert(c);
+				selc = ConColorConvert(selc);
 				for ( i = 0 ; i < CONSOLECOLOR ; i++ ){
-					if ( ConsoleColors[i] == c ) break;
+					if ( ConsoleColors[i] == selc ) break;
 				}
 				if ( i < CONSOLECOLOR ){
 					if ( edit_sgc & 1 ){ // B4-7
@@ -422,7 +517,7 @@ void SelectColor(HWND hDlg, DWORD index)
 					}
 					SetCustData(GClist[edit_gc].item, buf, size);
 				}else{
-					c = (COLORREF)SendDlgItemMessage(hDlg, IDL_GCITEM,
+					selc = (COLORREF)SendDlgItemMessage(hDlg, IDL_GCITEM,
 							LB_GETITEMDATA, (WPARAM)edit_sgc, 0);
 				}
 				CSelectType2(hDlg);
@@ -433,11 +528,11 @@ void SelectColor(HWND hDlg, DWORD index)
 
 				memset(buf, 0xff, sizeof buf);
 				GetCustData(GClist[edit_gc].item, buf, sizeof(buf));
-				((COLORREF *)buf)[edit_sgc] = c;
+				((COLORREF *)buf)[edit_sgc] = selc;
 				SetCustData(GClist[edit_gc].item, buf, size);
 			}
 			SendDlgItemMessage(hDlg, IDL_GCITEM,
-					LB_SETITEMDATA, (WPARAM)edit_sgc, (LPARAM)c);
+					LB_SETITEMDATA, (WPARAM)edit_sgc, (LPARAM)selc);
 			InvalidateRect(GetDlgItem(hDlg, IDL_GCITEM), NULL, FALSE);
 			break;
 		}
@@ -447,10 +542,10 @@ void SelectColor(HWND hDlg, DWORD index)
 
 			SendDlgItemMessage(hDlg, IDL_GCITEM,
 					LB_GETTEXT, (WPARAM)edit_sgc, (LPARAM)buf);
-			SetCustTable(GClist[edit_gc].item, buf, (TCHAR *)&c, sizeof(c));
+			SetCustTable(GClist[edit_gc].item, buf, (TCHAR *)&selc, sizeof(selc));
 
 			SendDlgItemMessage(hDlg, IDL_GCITEM,
-					LB_SETITEMDATA, (WPARAM)edit_sgc, (LPARAM)c);
+					LB_SETITEMDATA, (WPARAM)edit_sgc, (LPARAM)selc);
 			InvalidateRect(GetDlgItem(hDlg, IDL_GCITEM), NULL, FALSE);
 			break;
 	}

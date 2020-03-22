@@ -317,7 +317,8 @@ TCHAR *SearchFileInedMain(ESTRUCT *ED, TCHAR *str, int mode)
 		}
 						// ファイル列挙に成功したため、内容一致を調べる -------
 		if ( ED->cmdsearch & CMDSEARCH_DIRECTORY ){ // dir 属性？
-			if ( !(ff.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ) continue; //C4701ok
+			#pragma warning(suppress:4701)
+			if ( !(ff.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ) continue;
 		}
 		// 部分/roma一致
 		if ( ED->cmdsearch & (CMDSEARCH_FLOAT | CMDSEARCH_ROMA | CMDSEARCH_WILDCARD) ){
@@ -753,6 +754,7 @@ void LineCursor(PPxEDSTRUCT *PES, DWORD mes)
 
 		hDC = GetWindowDC(PES->hWnd);
 		hBrush = (HBRUSH)SendMessage(GetParent(PES->hWnd), WM_CTLCOLOREDIT, (WPARAM)hDC, (LPARAM)PES->hWnd);
+		#pragma warning(suppress:6001) // EM_GETRECT で読み込み
 		topbackup = box.top;
 		box.top += PES->caretY + (PES->caretLY - line + 1) * PES->fontY - 1;
 		box.bottom = box.top + 1;

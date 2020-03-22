@@ -13,8 +13,8 @@
 int CheckCodeTable = 1;
 #endif
 
-static CTCHAR UnitD[] = T("kMGTPE");
-static CTCHAR UnitH[] = T("KMGTPE");
+static CTCHAR UnitD[8] = T("kMGTPEZ");
+static CTCHAR UnitH[8] = T("KMGTPEZ");
 
 										/* エイリアス */
 typedef struct {
@@ -305,7 +305,7 @@ INT_PTR GetNumberA(const char **line)
 	INT_PTR n = 0;
 
 	while( Isdigit(**line) ){
-		n = n * 10 + (BYTE)((BYTE)*(*line)++ - (BYTE)'0');
+		n = n * 10 + (INT_PTR)(BYTE)((BYTE)*(*line)++ - (BYTE)'0');
 	}
 	return n;
 }
@@ -639,6 +639,15 @@ PPXDLL void PPXAPI PutKeyCode(TCHAR *str, int key)
 	}
 }
 
+DWORD DDShift(DWORD low, DWORD high, DWORD shift)
+{
+	if ( shift < 32 ){
+		return (low >> shift) + (high << (32 - shift));
+	}else{
+		return high >> (shift - 32);
+	}
+}
+
 int USEFASTCALL HexFormat(TCHAR *buf, int unit, DWORD low, DWORD high)
 {
 	int shift;
@@ -672,123 +681,175 @@ int USEFASTCALL HexFormat(TCHAR *buf, int unit, DWORD low, DWORD high)
 
 	str 出力先
 -----------------------------------------------------------------------------*/
-PPXDLL void PPXAPI FormatNumber(TCHAR *str, DWORD flag, int length, DWORD low, DWORD high)
+PPXDLL void PPXAPI FormatNumber(TCHAR *str, DWORD flags, int length, DWORD low, DWORD high)
 {
-	TCHAR buf[0x20], unit = '\0', *src, *dest;
-	int l, fixedl;
+	TCHAR buf[0x20], unitname = '\0', *src, *dest;
+	int vlen; // 数値部(数字+',')の実際の長さ
+	int max_vlen; // 数値部の最大長
 
-	fixedl = length;
-	if ( flag & XFN_MUL ) DDmul(low, high, &low, &high);
-	if ( flag & (XFN_UNITSPACE | XFN_MINUNITMASK) ){
-		unit = ' ';
-		fixedl--;
+	max_vlen = length;
+	if ( flags & XFN_MUL ) DDmul(low, high, &low, &high);
+	if ( flags & XFN_UNITSPACE ){ // 単位桁を確保
+		unitname = ' ';
+		max_vlen--;
 	}
-										// カンマ分だけ桁数を減らす
-	if ( flag & XFN_SEPARATOR ) fixedl -= fixedl >> 2;
+										// 桁区切り分だけ桁数を減らす
+	if ( flags & XFN_SEPARATOR ) max_vlen -= max_vlen >> 2; // 4桁毎に桁区切り
 
-	if ( flag & XFN_MINUNITMASK ){
-		int unittype;
-
-		unittype = (flag /* & XFN_MINUNITMASK */) >> XFN_MINUNITSHIFT;
-		AddDD(low, high, (DWORD)(unittype << 10) - 1, 0);
-		for ( ; ; ){
-			l = HexFormat(buf, unittype, low, high);
-			if ( l <= fixedl ) break;
-			unittype++;
-		};
-		unit = UnitH[unittype - 1];
-	}else{
-		if ( high ){
+	// 10進文字列化
+	if ( high != 0 ){
 #ifndef _WIN64 // 32bit
-			DWORD low2, high2;
+		DWORD low2, high2;
 
-			DDwordToDten(low, high, &low2, &high2);
-			l = wsprintf(buf, T("%u%09u"), high2, low2);
+		DDwordToDten(low, high, &low2, &high2);
+		vlen = wsprintf(buf, T("%u%09u"), high2, low2);
 #else // 64bit
-			DWORD_PTR l64;
+		DWORD_PTR l64;
 
-			l64 = (DWORD_PTR)low + ((DWORD_PTR)high << 32);
-			l = wsprintf(buf, T("%I64u"), l64);
+		l64 = (DWORD_PTR)low + ((DWORD_PTR)high << 32);
+		vlen = wsprintf(buf, T("%I64u"), l64);
 #endif
-		}else{
-			l = wsprintf(buf, T("%u"), low);
-		}
+	}else{
+		vlen = wsprintf(buf, T("%u"), low);
 	}
 
-	if ( l > fixedl ){				// 桁が溢れたときは単位付きで処理する
-		int i;
+	// 単位付き処理
+	if ( (vlen > max_vlen) || (flags & XFN_MINUNITMASK) ){
+		int overunits;
+		int minunit;
 
-		if ( unit == '\0' ){		// 単位の文字を確保
-			if ( flag & XFN_SEPARATOR ){ // カンマありの時は桁数を再計算
-				fixedl = length - 1;
-				if ( flag & XFN_UNITSPACE ) fixedl--;
-				fixedl -= fixedl >> 2;
+		if ( unitname == '\0' ){		// 単位の文字を確保
+			if ( flags & XFN_SEPARATOR ){ // カンマありの時は桁数を再計算
+				max_vlen = length - 1;
+				max_vlen -= max_vlen >> 2;
 			}else{
-				fixedl--;
+				max_vlen--;
 			}
 		}
 														// 減らす桁を算出
-		i = (l - fixedl - 1) / 3;
-		if ( flag & (XFN_HEXUNIT | XFN_MINUNITMASK)){
+		overunits = (vlen - max_vlen - 1) / 3; // 単位の数を求める
+		minunit = (flags & XFN_MINUNITMASK) >> XFN_MINUNITSHIFT;
+		if ( minunit > (overunits + 1) ) overunits = minunit - 1;
+
+		if ( flags & XFN_HEXUNIT ){ // 1024単位
+			int deci = 0;
 			// 仮減らし
-			l = HexFormat(buf, i + 1, low, high);
+			vlen = HexFormat(buf, overunits + 1, low, high);
 
-			// 何とか収まるので調整
-			if ( ((fixedl - l) >= 3) && (buf[0] == '9') && (buf[1] < '7') ){
-				i--;
-				l = HexFormat(buf, i + 1, low, high);
+			if ( (flags & XFN_DECIMALPOINT) && (max_vlen >= 4) ){
+				overunits += (vlen - 1) / 3; // 単位の数を求める
+				vlen = HexFormat(buf, overunits + 1, low, high);
+				resetflag(flags,XFN_SEPARATOR);
+				deci = 1;
+			}else if ( (overunits > minunit) && ((max_vlen - vlen) >= 3) && (buf[0] == '9') && (buf[1] < '7') ){ // 何とか収まるので調整
+				overunits--;
+				vlen = HexFormat(buf, overunits + 1, low, high);
 			}
-			unit = UnitH[i];
+			unitname = UnitH[overunits];
+			if ( deci || ((vlen < 2) && (max_vlen >= 2)) ){ // 小数点1桁
+				buf[vlen] = NumberDecimalSeparator;
+				buf[vlen + 1] = (TCHAR)('0' + (((DDShift(low, high,
+						overunits * 10) & 0x3ff) * 10) >> 10));
+				if ( (vlen == 1) && (buf[0] == '0') && (buf[2] == '0') && low ){
+					buf[vlen + 1] = '1';
+				}
+				vlen += 2;
+			}
+			buf[vlen] = '\0';
+		}else{ // 1000単位
+			// 小数桁数を決定
+			if ( (length >= 6) && ((flags & XFN_DECIMALPOINT) || (length <= 7)) ){
+				// 6桁:小数1桁(123.4k) 7以上=小数2桁(123.45k)
+				int deci = (length >= 7) ? 2 : 1;
 
-			if ( (l < 2) && (fixedl >= 2) ){
-				buf[l] = NumberDecimalSeparator;
-				buf[l + 1] = (TCHAR)('0' +
-								((((low >> (i * 10)) & 0x3ff) * 10) >> 10));
-				buf[l + 2] = '\0';
-				l += 2;
+				overunits = (vlen < 7) ? 0 : (vlen - 4) / 3; // 単位の数を求める
+				resetflag(flags,XFN_SEPARATOR);
+				vlen -= (overunits + 1) * 3;
+				if ( vlen <= 0 ){ // 0.xx になる場合
+					if ( deci == 2 ){
+						switch ( vlen ){
+							case 0: // "ab"→"0ab"
+								if ( (buf[0] == '0') && (buf[1] <= '0') ){
+									buf[1] = low ? (TCHAR)'1' : (TCHAR)'0';
+								}
+								buf[2] = buf[1];
+								buf[1] = buf[0];
+								break;
+							case -1: // "a"→"00a"
+								buf[2] = low ? (TCHAR)'1' : buf[0];
+								buf[1] = '0';
+								break;
+							default: // ""→"000"
+								buf[2] = low ? (TCHAR)'1' : (TCHAR)'0';
+								buf[1] = '0';
+						}
+					}else{
+						if ( vlen == 0 ){ // "a"→"0a"
+							if ( buf[0] == '0' ){
+								buf[1] = low ? (TCHAR)'1' : (TCHAR)'0';
+							}else{
+								buf[1] = buf[0];
+							}
+						}else{ // ""→"00"
+							buf[1] = low ? (TCHAR)'1' : (TCHAR)'0';
+						}
+					}
+					buf[0] = '0';
+					vlen = 1;
+				}
+				// 1234 → 12.34 / 12.3 にずらす
+				if ( deci > 1 ) buf[vlen + 2] = buf[vlen + 1]; // 小数2桁
+				buf[vlen + 1] = buf[vlen];
+				buf[vlen] = NumberDecimalSeparator;
+				vlen += deci + 1;
+			}else{ // 小数点無し
+				vlen -= (overunits + 1) * 3;
+				if ( vlen <= 0 ){
+					buf[0] = low ? (TCHAR)'1' : (TCHAR)'0';
+					vlen = 1;
+				}else if ( (vlen < 2) && (max_vlen >= 2) ){
+					buf[vlen + 1] = buf[vlen];
+					buf[vlen] = NumberDecimalSeparator;
+					vlen += 2;
+				}
 			}
-		}else{
-			unit = UnitD[i];
-			l -= (i + 1) * 3;
-			if ( (l < 2) && (fixedl >= 2) ){
-				buf[l + 1] = buf[l];
-				buf[l] = NumberDecimalSeparator;
-				l += 2;
-			}
-			buf[l] = '\0';
+			buf[vlen] = '\0';
+			unitname = UnitD[overunits];
 		}
 	}
 
 	src = buf;
 	dest = str;
-	if ( flag & XFN_RIGHT ){
-		int i;
 
-		i = l;
-		if ( flag & XFN_SEPARATOR ) i += (l - 1) / 3;
-		if ( unit ) i++;
-		for ( ; i < length ; i++ ) *dest++ = ' ';
+	if ( flags & XFN_RIGHT ){ // 右詰用の空白を挿入
+		int leftlen;
+
+		leftlen = vlen;
+		if ( flags & XFN_SEPARATOR ) leftlen += (vlen - 1) / 3;
+		if ( unitname != '\0' ) leftlen++;
+		for ( ; leftlen < length ; leftlen++ ) *dest++ = ' ';
 	}
-	if ( flag & XFN_SEPARATOR ){	// 区切り付きあり
+
+	if ( flags & XFN_SEPARATOR ){	// 区切り付きあり
 		int tag;
 		TCHAR UnitSeparatorChar;
 
-		for ( tag = (l - 1) % 3 + 1; tag ; tag-- ) *dest++ = *src++;
+		for ( tag = (vlen - 1) % 3 + 1; tag ; tag-- ) *dest++ = *src++;
 		UnitSeparatorChar = NumberUnitSeparator;
-		while( *src ){
+		while( *src != '\0' ){
 			*dest++ = UnitSeparatorChar;
 			*dest++ = *src++;
 			*dest++ = *src++;
 			*dest++ = *src++;
 		}
 	}else{
-		while ( *src ) *dest++ = *src++;
+		while ( *src != '\0' ) *dest++ = *src++;
 	}
-	if ( unit ) *dest++ = unit;
-	if ( flag & XFN_LEFT ){
-		int i;
+	if ( unitname != '\0' ) *dest++ = unitname;
+	if ( flags & XFN_LEFT ){ // 左詰用の空白を挿入
+		int leftpos;
 
-		for ( i = l ; i < length ; i++ ) *dest++ = ' ';
+		for ( leftpos = vlen ; leftpos < length ; leftpos++ ) *dest++ = ' ';
 	}
 	*dest = '\0';
 	return;

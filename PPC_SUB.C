@@ -1350,6 +1350,18 @@ int PPctInput(PPC_APPINFO *cinfo, const TCHAR *title, TCHAR *string, int maxlen,
 	return tInputEx(&tinput);
 }
 
+ERRORCODE InputTargetDir(PPC_APPINFO *cinfo, const TCHAR *title, TCHAR *string, int maxlen)
+{
+	if ( PPctInput(cinfo, title, string, maxlen, PPXH_DIR_R, PPXH_DIR) <= 0 ){
+		return ERROR_CANCELLED;
+	}
+	if ( VFSFixPath(NULL, string, cinfo->path, VFSFIX_PATH) == NULL ){
+		SetPopMsg(cinfo, POPMSG_MSG, MES_EPTH);
+		return ERROR_BAD_COMMAND;
+	}
+	return NO_ERROR;
+}
+
 ENTRYINDEX GetFirstMarkCell(PPC_APPINFO *cinfo)
 {
 	ENTRYINDEX celln, last, bottom;
@@ -1420,7 +1432,7 @@ HANDLE USEFASTCALL CreateHandleForListFile(PPC_APPINFO *cinfo, const TCHAR *file
 	if ( hFile == INVALID_HANDLE_VALUE ) return NULL;
 
 	if ( !(flags & WLFC_NOHEADER) ){
-		WriteFile(hFile, ListFileHeaderStr, ListFileHeaderStrLen, &tmp, NULL);
+		WriteFile(hFile, ListFileHeaderStr, ListFileHeaderSize, &tmp, NULL);
 
 		// listfileでないか、listfileでBasePath指定有りのときは、BasePathを出力
 		if ( (cinfo->e.Dtype.mode != VFSDT_LFILE) ||
@@ -2773,6 +2785,24 @@ void EndButtonMenu(void)
 {
 	ButtonMenuTick = (GetAsyncKeyState(VK_LBUTTON) & KEYSTATE_PUSH) ? GetTickCount() : 0;
 }
+
+#ifndef __BORLANDC__
+char *stpcpyA(char *deststr, const char *srcstr)
+{
+	char *destptr = deststr;
+	const char *srcptr = srcstr;
+
+	for(;;){
+		char code;
+
+		code = *srcptr;
+		*destptr = code;
+		if ( code == '\0' ) return destptr;
+		srcptr++;
+		destptr++;
+	}
+}
+#endif
 
 WCHAR *stpcpyW(WCHAR *deststr, const WCHAR *srcstr)
 {

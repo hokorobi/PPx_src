@@ -1011,7 +1011,7 @@ int USEFASTCALL CmpMulti(COMPARESTRUCT *cs)
 								FILE_ATTRIBUTE_HIDDEN(B1)
 								FILE_ATTRIBUTE_READONLY(B0)
 -----------------------------------------------------------------------------*/
-int USEFASTCALL CmpFunc(int di, COMPARESTRUCT *cs)
+int USEFASTCALL CmpFunc(ENTRYINDEX di, COMPARESTRUCT *cs)
 {
 	ENTRYCELL *celld;
 	DWORD dt;
@@ -1196,7 +1196,7 @@ void MergeCellSort(COMPARESTRUCT *cs, const ENTRYINDEX mini, const ENTRYINDEX ma
 void CellSort(PPC_APPINFO *cinfo, XC_SORT *xs)
 {
 	COMPARESTRUCT cs;
-	ENTRYINDEX min, i;
+	ENTRYINDEX minindex, i;
 
 	cs.cinfo = cinfo;
 	if ( FALSE == InitSort(&cs, xs) ) return;
@@ -1211,14 +1211,12 @@ void CellSort(PPC_APPINFO *cinfo, XC_SORT *xs)
 		PreExecuteSort(cinfo, xs->mode.dat[0]);
 	}
 
-	min = 0;
-	while ( CEL(min).attr & (ECA_PARENT | ECA_THIS) ){
-		min++;
-		if ( min >= cinfo->e.cellIMax ){
-			return;
-		}
+	minindex = 0;
+	while ( CEL(minindex).attr & (ECA_PARENT | ECA_THIS) ){
+		minindex++;
+		if ( minindex >= cinfo->e.cellIMax ) return;
 	}
-	for ( i = min ; i < cinfo->e.cellIMax ; i++ ){
+	for ( i = minindex ; i < cinfo->e.cellIMax ; i++ ){
 		DWORD asortkey;
 
 		asortkey = CEL(i).f.dwFileAttributes & cs.MaskAtr;
@@ -1233,16 +1231,16 @@ void CellSort(PPC_APPINFO *cinfo, XC_SORT *xs)
 		CEL(i).attrsortkey = (BYTE)asortkey;
 	}
 
-	if ( cinfo->e.cellIMax > 4000 ){
+	if ( cinfo->e.cellIMax > 4000 ){ // 数が多いので Merge Sort
 		cs.worktbl = PPcHeapAlloc( ( cinfo->e.cellIMax / 2 + 1 ) * sizeof(ENTRYINDEX));
-		MergeCellSort(&cs, min, cinfo->e.cellIMax);
+		MergeCellSort(&cs, minindex, cinfo->e.cellIMax);
 		PPcHeapFree(cs.worktbl);
 
 		if ( cinfo->e.cellIMax > SORTINFOSIZE ){
 			StopPopMsg(cinfo, PMF_DISPLAYMASK);
 		}
-	}else{
-		for ( i = min + 1 ; i < cinfo->e.cellIMax ; i++ ){
+	}else{ // 数が少ないので Insert Sort
+		for ( i = minindex + 1 ; i < cinfo->e.cellIMax ; i++ ){
 			SortCmp(CELt(i), i, &cs);
 		}
 	}
@@ -1407,7 +1405,7 @@ void SetCellInfo(PPC_APPINFO *cinfo, ENTRYCELL *cell, BYTE *extcolor)
 			setflag(cell->attr, ECA_DIR | ECA_THIS);
 			return;
 		}
-		if ( (cell->f.cFileName[1] == '.') && !cell->f.cFileName[2] ){
+		if ( (cell->f.cFileName[1] == '.') && (cell->f.cFileName[2] == '\0') ){
 			cell->type = ECT_UPDIR;
 			setflag(cell->attr, ECA_DIR | ECA_PARENT);
 			return;
@@ -1437,6 +1435,7 @@ void SetCellInfo(PPC_APPINFO *cinfo, ENTRYCELL *cell, BYTE *extcolor)
 		}
 		if ( atr & FILE_ATTRIBUTE_DIRECTORY ){
 			setflag(cell->attr, ECA_DIR);
+			cell->extC = C_entry[ECT_SUBDIR];
 			if ( cell->f.nFileSizeLow | cell->f.nFileSizeHigh ){
 				setflag(cell->attr, ECA_DIRC);
 			}
@@ -1649,7 +1648,7 @@ void UpdateEntry(PPC_APPINFO *cinfo, TCHAR *readpath, int *flag, TCHAR *mask)
 	}
 	cinfo->CellModified = CELLMODIFY_MODIFIED;
 
-	if ( ! (CELdata(0).attr & ECA_GRAY) ){
+	if ( !(CELdata(0).attr & ECA_GRAY) ){
 		ENTRYCELL *cell;
 		int i;
 
@@ -2198,12 +2197,13 @@ void ReadEntryMain(PPC_APPINFO *cinfo, TCHAR *readpath, int *flags, TCHAR *mask)
 			PreExecuteSort(cinfo, sortid);
 		}
 
-		// . と .. をスキップ
-		for ( minc = 0 ; CEL(minc).attr & (ECA_PARENT | ECA_THIS) ; minc++ );
+		for ( minc = 0 ; (minc < cinfo->e.cellIMax) && (CEL(minc).attr & (ECA_PARENT | ECA_THIS)) ; minc++ ); // . と .. をスキップ
 		cs.worktbl = PPcHeapAlloc( ( cinfo->e.cellIMax / 2 + 1 ) * sizeof(ENTRYINDEX));
 		MergeCellSort(&cs, minc, cinfo->e.cellIMax);
 		PPcHeapFree(cs.worktbl);
-		if ( cinfo->e.cellIMax > SORTINFOSIZE ) StopPopMsg(cinfo, PMF_DISPLAYMASK);
+		if ( cinfo->e.cellIMax > SORTINFOSIZE ){
+			StopPopMsg(cinfo, PMF_DISPLAYMASK);
+		}
 	}
 
 	if ( errorcode != ERROR_NO_MORE_FILES ){
@@ -2269,6 +2269,7 @@ void read_entry(PPC_APPINFO *cinfo, int flags)
 	DEBUGLOGC("read_entry start", 0);
 	if ( StartCellEdit(cinfo) ) return;
 
+	cinfo->FreezeType = FREEZE_read_entry;
 	cinfo->StateInfo.state = StateID_Init;
 	cinfo->StateInfo.tick = StartTime = GetTickCount();
 
@@ -2630,6 +2631,7 @@ void read_entry(PPC_APPINFO *cinfo, int flags)
 	}
 #endif
 	DEBUGLOGC("read_entry end", 0);
+	cinfo->FreezeType = FREEZE_NONE;
 }
 //------------------------------------- キャプション用文字列を生成
 void SetCaption(PPC_APPINFO *cinfo)

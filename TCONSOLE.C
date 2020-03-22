@@ -2,7 +2,6 @@
 	Paper Plane bUI								～ コンソールライブラリ ～
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
-//#include <winbase.h>
 #include <wincon.h>
 #include <string.h>
 #include "PPX.H"
