@@ -158,7 +158,7 @@ BOOL ClipMem(TMS_struct *text, int StartLine, int EndLine)
 	if ( last >= VOi->line ) last = VOi->line - 1;
 
 	mti.destbuf = form;
-	mti.srcmax = vo_.file.image + vo_.file.UseSize;
+	mti.srcmax = mtinfo.img + mtinfo.MemSize;
 	mti.writetbl = FALSE;
 	mti.paintmode = FALSE;
 

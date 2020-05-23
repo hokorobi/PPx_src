@@ -1460,7 +1460,7 @@ HICON LoadTreeIcon(VFSTREESTRUCT *VTS, const TCHAR *path, const TCHAR *name)
 		DWORD_PTR result;
 
 		if ( VFSFullPath(buf, (TCHAR *)name, path) == NULL ) return NULL;
-		// C6001OK. SHGFI_ATTR_SPECIFIED ‚ª‚È‚¯‚ê‚Î[in]‚Å‚Í‚È‚¢
+		#pragma warning(suppress:6001) // SHGFI_ATTR_SPECIFIED ‚ª‚È‚¯‚ê‚Î[in]‚Å‚Í‚È‚¢
 		result = SHGetFileInfo(buf, 0, &shfinfo, sizeof(shfinfo),
 				( VTS->X_tree & XTREE_DISABLEOVERLAY ) ?
 				XTREE_DISABLEOVERLAY : (TreeIconSHflag | SHGFI_ADDOVERLAYS) );
@@ -1566,7 +1566,7 @@ BOOL GetTreePath(VFSTREESTRUCT *VTS, HTREEITEM hTreeitem, TCHAR *buf)
 		TCHAR *path;
 
 		path = ThPointerT(&VTS->itemdata, tvi.lParam);
-		if ( (*path == '\0') || (*path == '%') ) return FALSE;
+		if ( (path == NULL) || (*path == '\0') || (*path == '%') ) return FALSE;
 
 		if ( VTS->TreeType == TREETYPE_FOCUSPPC ){
 			wsprintf(tvibuf, T("*focus C%s"), path);
@@ -2396,16 +2396,16 @@ LRESULT CALLBACK TreeProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		case VTM_GETSETTINGS: {
 			TCHAR *param;
+			const TCHAR *item;
 
 			param = (TCHAR *)lParam;
 			switch ( VTS->TreeType ){
 				case TREETYPE_FAVORITE:
-					*param = '%';
-					tstrcpy(param + 1, ThPointerT(&VTS->itemdata, 0) );
-					break;
 				case TREETYPE_VFS:
-					*param = '*';
-					tstrcpy(param + 1, ThPointerT(&VTS->itemdata, 0) );
+					*param = (VTS->TreeType == TREETYPE_FAVORITE) ? (TCHAR)'%' : (TCHAR)'*';
+					item = ThPointerT(&VTS->itemdata, 0);
+					if ( item == NULL ) item = NilStr;
+					tstrcpy(param + 1, item);
 					break;
 				case TREETYPE_PPCLIST:
 					tstrcpy(param, TreePPcListName);
@@ -2724,6 +2724,7 @@ void AddTreeItemFromList(VFSTREESTRUCT *VTS, const TCHAR *list)
 	if ( hParentItem == NULL ){ // ‘I‘ð–³‚µce
 		hParentItem = TVI_ROOT;
 		custname = ThPointerT(&VTS->itemdata, 0);
+		if ( custname == NULL ) custname = NilStr;
 	}else{
 		tvi.hItem = hParentItem;
 		tvi.mask = TVIF_PARAM;

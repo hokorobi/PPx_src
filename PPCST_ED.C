@@ -507,15 +507,19 @@ void UpDownDispFormat(HWND hDlg, int dist)
 {
 	int index, param;
 	TCHAR text[CMDLINESIZE];
+	DWORD shift = GetShiftKey();
 
 	index = (int)SendDlgItemMessage(hDlg, IDL_DFOMAT, LB_GETCURSEL, 0, 0);
 	if ( index == LB_ERR ) return;
 	if ( dist < 0 ){
-		if ( index == 0 ) return;
+		if ( index <= 0 ) return;
+//		if ( shift & K_s ) dist = -min(index , 5);
+		if ( shift & K_c ) dist = -index;
 	}else{
-		if ( (index + 1) >= SendDlgItemMessage(hDlg, IDL_DFOMAT, LB_GETCOUNT, 0, 0) ){
-			return;
-		}
+		int count = SendDlgItemMessage(hDlg, IDL_DFOMAT, LB_GETCOUNT, 0, 0);
+		if ( (index + 1) >= count ) return;
+//		if ( shift & K_s ) dist = min(index , (count - index - 1));
+		if ( shift & K_c ) dist = (count - index - 1);
 	}
 
 	SendDlgItemMessage(hDlg, IDL_DFOMAT, LB_GETTEXT, index, (LPARAM)text);

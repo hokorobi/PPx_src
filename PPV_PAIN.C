@@ -125,6 +125,28 @@ UINT VVTypeToCPlist[VTypeToCPlist_max] = {
 	CP_UTF7,	// VTYPE_UTF7
 };
 
+void LongHex(TCHAR *buf, DDWORDST lsize)
+{
+	if ( lsize.HighPart != 0 ){
+		wsprintf(buf, T("%x%08x"), lsize.HighPart, lsize.LowPart );
+	}else{
+		wsprintf(buf, T("%04x"), lsize.LowPart);
+	}
+}
+
+void HexSize(TCHAR *buf, DDWORDST lsize)
+{
+	TCHAR *p;
+
+	p = buf + tstrlen(buf);
+	*p++ = '[';
+	LongHex(p, lsize);
+	p += tstrlen(p);
+	*p++ = 'H';
+	*p++ = ']';
+	*p = '\0';
+}
+
 void DrawHex(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 {
 	RECT box;
@@ -154,7 +176,7 @@ void DrawHex(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 		if ( IsValidCodePage(codepage) == FALSE ) codepage = 0;
 	}
 
-	of = pps->shift.cy * 16 + pps->drawYtop * 16;
+	of = (pps->shift.cy + pps->drawYtop) * 16;
 										// 背景表示 ===================
 	if ( pps->ps.fErase != FALSE ){
 		// アドレス文字列より左
@@ -180,7 +202,7 @@ void DrawHex(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 				pps->shiftdot.cx,box.top);
 
 		// アドレス部分 -------------------------
-		wsprintf(buf,T("%08X "),of);
+		wsprintf(buf,T("%08X "), of + FileDividePointer.LowPart);
 		if ( !pps->print ){
 			DxSetTextColor(DxDraw, pps->ps.hdc, CV_lnum[0]);
 			DxSetBkColor(DxDraw, pps->ps.hdc, C_back);
@@ -659,7 +681,7 @@ void Paint(HWND hWnd)
 			box.left   = LP.x;
 			box.right  = LP.x += 3;
 			if ( pps.ps.fErase != FALSE ) DxFillBack(DxDraw,pps.ps.hdc,&box,C_BackBrush);
-		}else if ( Mpos >= 0){			// Menu +++++++++++++++++++++++++++++++
+		}else if ( Mpos >= 0 ){			// Menu +++++++++++++++++++++++++++++++
 			int i;
 
 			box.top = 0;
@@ -685,32 +707,50 @@ void Paint(HWND hWnd)
 				box.left = LP.x;
 				if ( pps.ps.fErase != FALSE ) DxFillBack(DxDraw,pps.ps.hdc,&box,C_BackBrush);
 			}
-			LP.x = box.right; // C4701ok,XV.HiddenMenu.item は必ず1以上
+			#pragma warning(suppress:4701) // XV.HiddenMenu.item は必ず1以上
+			LP.x = box.right;
 		}
-		FormatNumber(buf2,XFN_SEPARATOR,26,vo_.file.UseSize, 0);
 		buf3[0] = '\0';
-		if ( FileDivideMode >= FDM_DIV ){
+		if ( FileDivideMode < FDM_NODIVMAX ){
+			FormatNumber(buf2, XFN_SEPARATOR, 26, vo_.file.UseSize, 0);
+			if ( vo_.DModeType == DISPT_HEX ) HexSize(buf2, FileRealSize);
+		}else{
 			TCHAR *p;
 
+			FormatNumber(buf2, XFN_SEPARATOR, 7, vo_.file.UseSize, 0);
 			p = buf2 + tstrlen(buf2);
-			*p++ = '{';
-			FormatNumber(p,XFN_SEPARATOR,26,FileRealSize.LowPart,FileRealSize.HighPart);
-			p += tstrlen(p);
-			*p++ = '}';
-			*p = '\0';
-			if ( FileDivideMode == FDM_DIV2ND ){
-				buf3[0] = '+';
-				FormatNumber(buf3 + 1,XFN_SEPARATOR,7,FileDividePointer.LowPart,FileDividePointer.HighPart);
+			*p++ = '/';
+			FormatNumber(p, XFN_SEPARATOR, 7, FileRealSize.LowPart, FileRealSize.HighPart);
+			if ( vo_.DModeType == DISPT_HEX ) HexSize(p, FileRealSize);
+			buf3[0] = '+';
+			if ( FileTrackPointer.LowPart | FileTrackPointer.HighPart ){
+				if ( vo_.DModeType == DISPT_HEX ){
+					LongHex(buf3, FileTrackPointer);
+				}else{
+					FormatNumber(buf3 + 1, XFN_SEPARATOR, 7, FileTrackPointer.LowPart, FileTrackPointer.HighPart);
+				}
+				tstrcat(buf3, T("(pause read)"));
+				FileTrackPointer.LowPart = FileTrackPointer.HighPart = 0;
+			}else{
+				FormatNumber(buf3 + 1, XFN_SEPARATOR, 7, FileDividePointer.LowPart, FileDividePointer.HighPart);
 			}
 		}
 		switch( vo_.DModeType ){				// Status +++++++++++++++++++++
 			case DISPT_NONE:
 				tstrcpy(buf,vo_.file.typeinfo);
 				break;
-			case DISPT_HEX:
-				wsprintf(buf,T("Type:%s %s Filesize:%s(%XH) TextType:%s"),
-					vo_.file.typeinfo, buf3, buf2, vo_.file.UseSize, VO_textS[VOi->textC]);
+			case DISPT_HEX: {
+				if ( buf3[0] == '+' ){
+					DDWORDST rsize;
+
+					rsize = FileDividePointer;
+					AddDD(rsize.LowPart, rsize.HighPart, (DWORD)VOi->offY * 16, 0);
+					LongHex(buf3, rsize);
+				}
+				wsprintf(buf,T("Address:%sH TextType:%s  Type:%s Filesize:%s"),
+						buf3, VO_textS[VOi->textC],  vo_.file.typeinfo, buf2);
 				break;
+			}
 			case DISPT_TEXT: {
 				int line,maxline;
 				TCHAR LineChar;
@@ -728,10 +768,10 @@ void Paint(HWND hWnd)
 				}
 				if ( VOi->textC >= 0 ){
 					wsprintf(buf,( (BackReader != FALSE) ?
-						T("Type:%s  Filesize:%s %c-Line:%u/(%u)%s TextType:%s") :
-						T("Type:%s  Filesize:%s %c-Line:%u/%u%s TextType:%s")),
-					vo_.file.typeinfo,buf2,
-					LineChar,line,maxline,buf3,VO_textS[VOi->textC]);
+						T("%c-Line:%u/(%u)%s TextType:%s  Type:%s Filesize:%s") :
+						T("%c-Line:%u/%u%s TextType:%s  Type:%s Filesize:%s")),
+						LineChar, line, maxline, buf3, VO_textS[VOi->textC],
+						vo_.file.typeinfo, buf2);
 				}else{
 					buf[0] = '\0';
 				}
@@ -739,8 +779,10 @@ void Paint(HWND hWnd)
 			}
 			case DISPT_DOCUMENT:
 				if ( vo_.DocmodeType == DOCMODE_EMETA ){ // Meta file
-					wsprintf(buf,T("Type:%s  Size:%dx%d Filesize:%s"),
-						vo_.file.typeinfo,vo_.bitmap.ShowInfo->biWidth,vo_.bitmap.ShowInfo->biHeight,buf2);
+					wsprintf(buf,T("Size:%dx%d  Type:%s Filesize:%s"),
+						vo_.bitmap.ShowInfo->biWidth,
+						vo_.bitmap.ShowInfo->biHeight,
+						vo_.file.typeinfo, buf2);
 				}else{
 					int line,maxline;
 					TCHAR LineChar;
@@ -756,31 +798,31 @@ void Paint(HWND hWnd)
 						maxline = VOi->ti[VOi->cline].line - 1;
 						LineChar = 'L';
 					}
-					wsprintf(buf,(T("Type:%s  Filesize:%s %c-Line:%u/%u")),
-						vo_.file.typeinfo,buf2,LineChar,line,maxline);
+					wsprintf(buf,(T("%c-Line:%u/%u  Type:%s Filesize:%s")),
+							LineChar, line, maxline ,vo_.file.typeinfo, buf2);
 				}
 				break;
 			case DISPT_RAWIMAGE:
 			case DISPT_IMAGE: {
 				int i;
 
-				i = wsprintf(buf,T("Type:%s  Size:%dx%d Filesize:%s")
-						T(" Color:%s %dx%d"),vo_.file.typeinfo,
+				i = wsprintf(buf,T("Size:%dx%d(%dx%d) Color:%s"),
 						vo_.bitmap.ShowInfo->biWidth,
 						vo_.bitmap.ShowInfo->biHeight,
-						buf2,
-						GetColorInfo(vo_.bitmap.ShowInfo,buf3),
 						// pixel/m → pixel/inch 変換 (39 = 1000 / 25.4)
 						vo_.bitmap.ShowInfo->biXPelsPerMeter / 39,
-						vo_.bitmap.ShowInfo->biYPelsPerMeter / 39);
+						vo_.bitmap.ShowInfo->biYPelsPerMeter / 39,
+						GetColorInfo(vo_.bitmap.ShowInfo, buf3));
 				if ( vo_.bitmap.transcolor >= 0 ){
 					i += wsprintf(buf + i,T("(transparent)"));
 				}
 				if ( vo_.bitmap.page.max > 1 ){
-					wsprintf(buf + i,T("%3d/%3d"),
+					i += wsprintf(buf + i,T(" Page:%3d/%3d"),
 							vo_.bitmap.page.current + 1,
 							vo_.bitmap.page.max);
 				}
+				wsprintf(buf + i, T("  Type:%s Filesize:%s"),
+						vo_.file.typeinfo, buf2);
 				break;
 			}
 		}

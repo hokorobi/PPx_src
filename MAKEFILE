@@ -230,6 +230,7 @@ $(PPXLIB).DLL:	MAKEFILE	$(PPDOBJ)	PPCOMMON.RES
 |
 !if $(UseBCC)
   $(implib) $& $.
+  -@map2dbg $. > nul
 !endif
 
 CHRTYPE.OBJ:	CHRTYPE.C	$(PPXH)
@@ -277,7 +278,7 @@ PPCOBJ	=	PPCUI.OBJ	PPC_MAIN.OBJ	PPC_CELL.OBJ	PPC_COM.OBJ\
 		PPC_ARCH.OBJ	PPC_DLG.OBJ	FATTIME.OBJ	PPC_CCMP.OBJ\
 		PPC_INIT.OBJ	PPC_WHER.OBJ	PPC_INCS.OBJ\
 		TM_MEM.OBJ	CHRTYPE.OBJ	MD5.OBJ\
-		sha.obj		sha224-256.obj\
+		sha.obj		sha224-256.obj	PPX_64.OBJ\
 		PPX_CV.OBJ	PPX_DOCK.OBJ	PPCOMBOB.OBJ	PPCOMBOP.OBJ\
 		PPCOMBO.OBJ	PPCOMBOS.OBJ
 
@@ -294,6 +295,9 @@ PPC$(W).EXE:	$(COMMON)	$(PPCOBJ)	PPCUI.RES
 !endif
 	PPCUI.RES
 |
+!if $(UseBCC)
+  -@map2dbg $. > nul
+!endif
 PPCUI.OBJ:	PPCUI.C		$(PPCH)
 PPC_MAIN.OBJ:	PPC_MAIN.C	$(PPCH)
 PPC_CCMP.OBJ:	PPC_CCMP.C	$(PPCH)
@@ -343,6 +347,9 @@ PPV$(W).EXE:	$(COMMON)	$(PPVOBJ)	PPVUI.RES
 !endif
 	PPVUI.RES
 |
+!if $(UseBCC)
+  -@map2dbg $. > nul
+!endif
 PPVUI.OBJ:	PPVUI.C		$(PPVH)
 PPV_CLIP.OBJ:	PPV_CLIP.C	$(PPVH)
 PPV_COM.OBJ:	PPV_COM.C	$(PPVH)
@@ -371,6 +378,9 @@ PPB$(W).EXE:	$(COMMON)	$(PPBOBJ)	PPBUI.RES
 !endif
 	PPBUI.RES
 |
+!if $(UseBCC)
+  -@map2dbg $. > nul
+!endif
 PPBUI.OBJ:	PPBUI.C		$(PPXH)		PPB_SUB.C
 #----------------------------------------------------------------------- PPCUST
 PPCUSTOBJ =	PPCUST.OBJ	PPCST_G.OBJ	PPCST_FI.OBJ	PPCST_GR.OBJ\
@@ -385,6 +395,9 @@ PPCUST$(W).EXE:	$(COMMON)	$(PPCUSTOBJ)	PPCUST.RES
 !endif
 	PPCUST.RES
 |
+!if $(UseBCC)
+  -@map2dbg $. > nul
+!endif
 PPCUST.OBJ:	PPCUST.C	$(PPXH)
 PPCUST.RES:	PPXVER.H PPX.RH PPCUST.RC resource/CUSTLIST.CFG resource/CUSTKEY.CFG
 #----------------------------------------------------------------------- PPTRAY
@@ -424,6 +437,9 @@ SETUP.EXE:	$(COMMON)	$(PPSETUPOBJ)	PPSETUP.RES
 !endif
 	PPSETUP.RES
 |
+!if $(UseBCC)
+  -@map2dbg $. > nul
+!endif
 PPSETUP.OBJ :	PPSETUP.C	$(PPXH)	PPSET_IN.C PPSET_DG.C
 PPSETUP.RES :	PPXVER.H	PPX.RH	PPSETUP.RC
 

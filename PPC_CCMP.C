@@ -46,8 +46,16 @@ const TCHAR *CompareDetailMenu[] = {
 	MES_CMPZ, MES_CMPM,
 	NULL}; // 11～
 
+#define CPI_INTERVAL 1000
+typedef struct {
+	DWORD tick;
+	ENTRYINDEX in;
+	PPC_APPINFO *cinfo;
+	TCHAR *path;
+} COMPPROGINFO;
+
 struct COMPAREBINARYSTRUCT {
-	HWND hWnd;
+	COMPPROGINFO *cpi;
 	char *srcbuf, *destbuf;
 	SIZE32_T bufsize;
 	int mode, subdir;
@@ -88,12 +96,36 @@ BOOL PPcCompareSend(PPC_APPINFO *cinfo, COMPAREMARKPACKET *cmp, HWND PairHWnd)
 	}
 	return result;
 }
+
+
+BOOL USEFASTCALL CompareProgress(COMPPROGINFO *cpi)
+{
+	TCHAR buf[32 + VFPS];
+	BOOL result;
+
+	wsprintf(buf, T("%d/%d %s"), cpi->in, cpi->cinfo->e.cellIMax, cpi->path);
+	SetPopMsg(cpi->cinfo, POPMSG_PROGRESSBUSYMSG, buf);
+	UpdateWindow_Part(cpi->cinfo->info.hWnd);
+	if ( IsTrue( result = ReadDirBreakCheck(cpi->cinfo) ) ){
+		SetPopMsg(cpi->cinfo, POPMSG_MSG, MES_BRAK);
+		cpi->in = cpi->cinfo->e.cellIMax;
+	}
+	if ( GetAsyncKeyState(VK_PAUSE) & KEYSTATE_FULLPUSH ){
+		if ( PMessageBox(cpi->cinfo->info.hWnd, NULL, MES_TFCP, MB_QYES) == IDOK ){
+			SetPopMsg(cpi->cinfo, POPMSG_MSG, MES_BRAK);
+			cpi->in = cpi->cinfo->e.cellIMax;
+			result = TRUE;
+		}
+	}
+	return result;
+}
+
 /*----------------------------------------------------------
 	NO_ERROR			一致した
 	ERROR_INVALID_DATA	一致しなかった
 	その他				比較時にエラーが発生した（この時点で終了）
 */
-ERRORCODE PPcCompareExistDirMain(HWND hWnd, const TCHAR *srcpath, WIN32_FIND_DATA *cellN, const TCHAR *destpath)
+ERRORCODE PPcCompareExistDirMain(COMPPROGINFO *cpi, const TCHAR *srcpath, WIN32_FIND_DATA *cellN, const TCHAR *destpath)
 {
 	TCHAR srcname[VFPS], destname[VFPS];
 	ERRORCODE result;
@@ -115,6 +147,20 @@ ERRORCODE PPcCompareExistDirMain(HWND hWnd, const TCHAR *srcpath, WIN32_FIND_DAT
 	for ( ; ; ){
 		if ( !IsRelativeDir(ffdest.cFileName) ){
 			filecount++;
+
+			if ( (filecount & 0x3f) == 0 ){
+				DWORD nowtick;
+				nowtick = GetTickCount();
+
+				if ( (nowtick - cpi->tick) > CPI_INTERVAL ){
+					cpi->tick = nowtick;
+					cpi->path = destname;
+					if ( IsTrue(CompareProgress(cpi)) ){
+						FindClose(hFFdest);
+						return ERROR_CANCELLED;
+					}
+				}
+			}
 		}
 		if ( FALSE == FindNextFile(hFFdest, &ffdest) ) break;
 	}
@@ -142,10 +188,25 @@ ERRORCODE PPcCompareExistDirMain(HWND hWnd, const TCHAR *srcpath, WIN32_FIND_DAT
 					result = ERROR_INVALID_DATA;
 					break;
 				}
-				result = PPcCompareExistDirMain(hWnd, srcname, &ffsrc, destname);
+				result = PPcCompareExistDirMain(cpi, srcname, &ffsrc, destname);
 				if ( result != NO_ERROR ) break;
 			}
+
+			if ( (filecount & 0x3f) == 0 ){
+				DWORD nowtick;
+				nowtick = GetTickCount();
+
+				if ( (nowtick - cpi->tick) > CPI_INTERVAL ){
+					cpi->tick = nowtick;
+					cpi->path = srcname;
+					if ( IsTrue(CompareProgress(cpi)) ){
+						result = ERROR_CANCELLED;
+						break;
+					}
+				}
+			}
 		}
+
 		if ( FALSE == FindNextFile(hFFsrc, &ffsrc) ){
 			if ( filecount ) result = ERROR_INVALID_DATA;
 			break;
@@ -155,19 +216,16 @@ ERRORCODE PPcCompareExistDirMain(HWND hWnd, const TCHAR *srcpath, WIN32_FIND_DAT
 	return result;
 }
 
-BOOL IsBreakCompare(struct COMPAREBINARYSTRUCT *cbs)
+BOOL IsBreakCompare(COMPPROGINFO *cpi)
 {
-	MSG msg;
+	DWORD nowtick;
 
-	if ( !(GetAsyncKeyState(VK_PAUSE) & KEYSTATE_FULLPUSH) ){
-		if ( PeekMessage(&msg, NULL, WM_KEYDOWN, WM_KEYDOWN, PM_NOREMOVE) == FALSE ){
-			return FALSE;
-		}
-		if ( (msg.message != WM_KEYDOWN) || ((int)msg.wParam != VK_PAUSE) ){
-			return FALSE;
-		}
+	nowtick = GetTickCount();
+	if ( (nowtick - cpi->tick) > CPI_INTERVAL ){
+		cpi->tick = nowtick;
+		if ( IsTrue(CompareProgress(cpi)) ) return TRUE;
 	}
-	return (PMessageBox(cbs->hWnd, NULL, MES_TFCP, MB_QYES) == IDOK);
+	return FALSE;
 }
 
 ERRORCODE PPcCompareBinary(struct COMPAREBINARYSTRUCT *cbs, const TCHAR *srcpath, WIN32_FIND_DATA *cellN, const TCHAR *destpath, WIN32_FIND_DATA *cellp)
@@ -193,9 +251,15 @@ ERRORCODE PPcCompareBinary(struct COMPAREBINARYSTRUCT *cbs, const TCHAR *srcpath
 			if ( hFFdest == INVALID_HANDLE_VALUE ){
 				return ERROR_INVALID_DATA;
 			}
+			cbs->cpi->path = destname;
 			for ( ; ; ){
-				if ( !IsRelativeDir(ffdest.cFileName) ){
-					filecount++;
+				if ( !IsRelativeDir(ffdest.cFileName) ) filecount++;
+
+				if ( (filecount & 0x3f) == 0 ){
+					if( IsBreakCompare(cbs->cpi) ){
+						FindClose(hFFdest);
+						return ERROR_CANCELLED;
+					}
 				}
 				if ( FALSE == FindNextFile(hFFdest, &ffdest) ) break;
 			}
@@ -221,6 +285,7 @@ ERRORCODE PPcCompareBinary(struct COMPAREBINARYSTRUCT *cbs, const TCHAR *srcpath
 							srcname, &ffsrc, destname, &ffdest);
 					if ( result != NO_ERROR ) break;
 				}
+
 				if ( FALSE == FindNextFile(hFFsrc, &ffsrc) ){
 					if ( filecount ) result = ERROR_INVALID_DATA;
 					break;
@@ -260,6 +325,7 @@ ERRORCODE PPcCompareBinary(struct COMPAREBINARYSTRUCT *cbs, const TCHAR *srcpath
 		return result;
 	}
 	result = NO_ERROR;
+	cbs->cpi->path = cellN->cFileName; // srcname,destname はSHA内で破壊される
 	if ( cbs->mode == CMP_BINARY ){ // CMP_BINARY
 		for ( ; ; ){
 			if ( FALSE == ReadFile(hSrc, cbs->srcbuf, cbs->bufsize, &srcsize, NULL) ){
@@ -278,7 +344,7 @@ ERRORCODE PPcCompareBinary(struct COMPAREBINARYSTRUCT *cbs, const TCHAR *srcpath
 				break;
 			}
 
-			if ( IsBreakCompare(cbs) ){
+			if ( IsBreakCompare(cbs->cpi) ){
 				result = ERROR_CANCELLED;
 				break;
 			}
@@ -295,7 +361,7 @@ ERRORCODE PPcCompareBinary(struct COMPAREBINARYSTRUCT *cbs, const TCHAR *srcpath
 			if ( srcsize == 0 ) break;
 			SHA1Input(&sha1, (uint8_t *)cbs->srcbuf, srcsize);
 
-			if ( IsBreakCompare(cbs) ){
+			if ( IsBreakCompare(cbs->cpi) ){
 				result = ERROR_CANCELLED;
 				break;
 			}
@@ -312,7 +378,7 @@ ERRORCODE PPcCompareBinary(struct COMPAREBINARYSTRUCT *cbs, const TCHAR *srcpath
 				if ( destsize == 0 ) break;
 				SHA1Input(&sha1, (uint8_t *)cbs->destbuf, destsize);
 
-				if ( IsBreakCompare(cbs) ){
+				if ( IsBreakCompare(cbs->cpi) ){
 					result = ERROR_CANCELLED;
 					break;
 				}
@@ -330,19 +396,20 @@ ERRORCODE PPcCompareBinary(struct COMPAREBINARYSTRUCT *cbs, const TCHAR *srcpath
 	return result;
 }
 
-ERRORCODE PPcCompareBinaryMain(HWND hWnd, int mode, int subdir, const TCHAR *srcpath, WIN32_FIND_DATA *cellN, const TCHAR *destpath, WIN32_FIND_DATA *cellp)
+ERRORCODE PPcCompareBinaryMain(COMPPROGINFO *cpi, int mode, int subdir, WIN32_FIND_DATA *cellN, const TCHAR *destpath, WIN32_FIND_DATA *cellp)
 {
 	struct COMPAREBINARYSTRUCT cbs;
 	ERRORCODE result;
 
 	GetAsyncKeyState(VK_PAUSE); // 読み捨て(最下位bit対策)
-	cbs.hWnd = hWnd;
-	cbs.bufsize = GetNT_9xValue(1 * MB, 256 * KB); // NT:1Mbytes / 9x:256kbytes
+	cbs.cpi = cpi;
+					// 2000以降:1Mbytes / 9x,NT4:256kbytes
+	cbs.bufsize = (OSver.dwMajorVersion >= 5) ? (1 * MB) : (256 * KB);
 	cbs.srcbuf = PPcHeapAlloc(cbs.bufsize);
 	cbs.destbuf = PPcHeapAlloc(cbs.bufsize);
 	cbs.mode = mode;
 	cbs.subdir = subdir;
-	result = PPcCompareBinary(&cbs, srcpath, cellN, destpath, cellp);
+	result = PPcCompareBinary(&cbs, cpi->cinfo->RealPath, cellN, destpath, cellp);
 	PPcHeapFree(cbs.srcbuf);
 	PPcHeapFree(cbs.destbuf);
 	return result;
@@ -358,19 +425,6 @@ void MessageMatchEntry(HWND hWnd, HWND hPairWnd, DWORD PairLoadCounter, TCHAR *f
 	SendMessage(hPairWnd, WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&copydata);
 }
 
-BOOL USEFASTCALL CompareProgress(PPC_APPINFO *cinfo, int in)
-{
-	TCHAR buf[1000];
-	BOOL result;
-
-	wsprintf(buf, T("%d/%d"), in, cinfo->e.cellIMax);
-	SetPopMsg(cinfo, POPMSG_PROGRESSBUSYMSG, buf);
-	UpdateWindow_Part(cinfo->info.hWnd);
-	if ( IsTrue( result = ReadDirBreakCheck(cinfo) ) ){
-		SetPopMsg(cinfo, POPMSG_MSG, MES_BRAK);
-	}
-	return result;
-}
 //------------------------------------------------------------------ 比較メイン
 BOOL PPcCompareMain(PPC_APPINFO *cinfo, HWND hPairWnd, COMPAREMARKPACKET *cmp)
 {
@@ -382,8 +436,8 @@ BOOL PPcCompareMain(PPC_APPINFO *cinfo, HWND hPairWnd, COMPAREMARKPACKET *cmp)
 	DWORD PairLoadCounter;
 	DWORD dirmask, unmarkmask;
 	int subdir;
-	DWORD tick;
 	BOOL SimpleDir; // ファイル名がディレクトリ内で一意かどうか(速度最適化用)
+	COMPPROGINFO cpi;
 
 	mode = cmp->mode;
 	PairLoadCounter = cmp->LoadCounter;
@@ -422,7 +476,8 @@ BOOL PPcCompareMain(PPC_APPINFO *cinfo, HWND hPairWnd, COMPAREMARKPACKET *cmp)
 		StopPopMsg(cinfo, PMF_DISPLAYMASK);
 	}
 										// 比較準備 ---------------------------
-	tick = GetTickCount();
+	cpi.cinfo = cinfo;
+	cpi.tick = GetTickCount();
 	cells = sizeL / sizeof(ENTRYCELL);
 	pairbase = paircell;
 	// 相対指定を除去
@@ -444,14 +499,14 @@ BOOL PPcCompareMain(PPC_APPINFO *cinfo, HWND hPairWnd, COMPAREMARKPACKET *cmp)
 										// 比較ループ -------------------------
 
 	if ( mode & CMPWITHOUT_EXT ){
-		ENTRYINDEX in, ip;
+		ENTRYINDEX ip;
 		int extoffset;
 
-		for ( in = 0 ; in < cinfo->e.cellIMax ; in++ ){
+		for ( cpi.in = 0 ; cpi.in < cinfo->e.cellIMax ; cpi.in++ ){
 			TCHAR *nowname, *pairname;
 			ENTRYCELL *cellN, *cellp;
 
-			cellN = &CEL(in);
+			cellN = &CEL(cpi.in);
 			if ( cellN->state < ECS_NORMAL ) continue; // SysMsgやDeletedはだめ
 			if ( cellN->attr & (ECA_PARENT | ECA_THIS) ) continue;
 			if ( cellN->f.dwFileAttributes & unmarkmask ) continue;
@@ -465,12 +520,10 @@ BOOL PPcCompareMain(PPC_APPINFO *cinfo, HWND hPairWnd, COMPAREMARKPACKET *cmp)
 				if ( cellp->f.dwFileAttributes & unmarkmask ) continue;
 
 				nowtick = GetTickCount();
-				if ( (nowtick - tick) > 1000 ){
-					tick = nowtick;
-					if ( IsTrue(CompareProgress(cinfo, in)) ){
-						in = cinfo->e.cellIMax;
-						break;
-					}
+				if ( (nowtick - cpi.tick) > CPI_INTERVAL ){
+					cpi.tick = nowtick;
+					cpi.path = cellN->f.cFileName;
+					if ( IsTrue(CompareProgress(&cpi)) ) break;
 				}
 				pairname = FindLastEntryPoint(cellp->f.cFileName);
 				if ( tstrnicmp(nowname, pairname, extoffset) ) continue; // 名前不一致
@@ -487,17 +540,17 @@ BOOL PPcCompareMain(PPC_APPINFO *cinfo, HWND hPairWnd, COMPAREMARKPACKET *cmp)
 						continue;
 					}
 				}
-				CellMark(cinfo, in, MARK_CHECK);
+				CellMark(cinfo, cpi.in, MARK_CHECK);
 			}
 		}
 	}else if ( mode != CMP_SIZEONLY ){
-		ENTRYINDEX in, ip;
+		ENTRYINDEX ip;
 
-		for ( in = 0 ; in < cinfo->e.cellIMax ; in++ ){
+		for ( cpi.in = 0 ; cpi.in < cinfo->e.cellIMax ; cpi.in++ ){
 			TCHAR *nowname, *pairname;
 			ENTRYCELL *cellN, *cellp;
 
-			cellN = &CEL(in);
+			cellN = &CEL(cpi.in);
 			if ( cellN->state < ECS_NORMAL ) continue; // SysMsgやDeletedはだめ
 			if ( cellN->attr & (ECA_PARENT | ECA_THIS) ) continue;
 			if ( cellN->f.dwFileAttributes & unmarkmask ) continue;
@@ -510,12 +563,10 @@ BOOL PPcCompareMain(PPC_APPINFO *cinfo, HWND hPairWnd, COMPAREMARKPACKET *cmp)
 				if ( cellp->f.dwFileAttributes & unmarkmask ) continue;
 
 				nowtick = GetTickCount();
-				if ( (nowtick - tick) > 1000 ){
-					tick = nowtick;
-					if ( IsTrue(CompareProgress(cinfo, in)) ){
-						in = cinfo->e.cellIMax;
-						break;
-					}
+				if ( (nowtick - cpi.tick) > CPI_INTERVAL ){
+					cpi.tick = nowtick;
+					cpi.path = cellN->f.cFileName;
+					if ( IsTrue(CompareProgress(&cpi)) ) break;
 				}
 				pairname = FindLastEntryPoint(cellp->f.cFileName);
 				if ( tstricmp(nowname, pairname) ) continue;
@@ -533,58 +584,58 @@ BOOL PPcCompareMain(PPC_APPINFO *cinfo, HWND hPairWnd, COMPAREMARKPACKET *cmp)
 					case CMP_TIME:				// old(反対窓 TimeStamp)
 						if ( FuzzyCompareFileTime(&cellN->f.ftLastWriteTime,
 								&cellp->f.ftLastWriteTime) < 0){
-							CellMark(cinfo, in, MARK_CHECK);
+							CellMark(cinfo, cpi.in, MARK_CHECK);
 						}
 						break;
 					case CMP_NEW | CMPDOWN:	// new(現在窓 new file)
 					case CMP_TIME | CMPDOWN:	// new(現在窓 TimeStamp)
 						if ( FuzzyCompareFileTime(&cellN->f.ftLastWriteTime,
 								&cellp->f.ftLastWriteTime) > 0){
-							CellMark(cinfo, in, MARK_CHECK);
+							CellMark(cinfo, cpi.in, MARK_CHECK);
 						}
 						break;
 
 					case CMP_EXIST | CMPDOWN:	// Exist(現在窓 Exist)
 						if ( cellN->f.dwFileAttributes & subdir) break;
-						CellMark(cinfo, in, MARK_CHECK);
+						CellMark(cinfo, cpi.in, MARK_CHECK);
 						break;
 					case CMP_EXIST:				// Exist(反対窓 Exist)
 						if ( cellN->f.dwFileAttributes & subdir){
 							if ( NO_ERROR != PPcCompareExistDirMain(
-									cinfo->info.hWnd, cinfo->RealPath,
+									&cpi, cinfo->RealPath,
 									&cellN->f, pairpath) ){
 								break;
 							}
 							MessageMatchEntry(cinfo->info.hWnd, hPairWnd,
 									PairLoadCounter, cellp->f.cFileName);
 						}
-						CellMark(cinfo, in, MARK_CHECK);
+						CellMark(cinfo, cpi.in, MARK_CHECK);
 						break;
 
 					case CMP_SIZE:				// small size(反対窓 FileSize)
 					case CMP_SIZE | CMPDOWN:	// large size(現在窓 FileSize)
 						if ( (cellN->f.nFileSizeHigh != cellp->f.nFileSizeHigh) ||
 							 (cellN->f.nFileSizeLow != cellp->f.nFileSizeLow) ){
-							CellMark(cinfo, in, MARK_CHECK);
+							CellMark(cinfo, cpi.in, MARK_CHECK);
 						}
 						break;
 
 					case CMP_LARGE:				// small size(反対窓 FileSize)
 						if ( cellN->f.nFileSizeHigh == cellp->f.nFileSizeHigh){
 							if (cellN->f.nFileSizeLow < cellp->f.nFileSizeLow){
-								CellMark(cinfo, in, MARK_CHECK);
+								CellMark(cinfo, cpi.in, MARK_CHECK);
 							}
 						}else if (cellN->f.nFileSizeHigh < cellp->f.nFileSizeHigh){
-							CellMark(cinfo, in, MARK_CHECK);
+							CellMark(cinfo, cpi.in, MARK_CHECK);
 						}
 						break;
 					case CMP_LARGE | CMPDOWN:	// large size(現在窓 FileSize)
 						if ( cellN->f.nFileSizeHigh == cellp->f.nFileSizeHigh){
 							if (cellN->f.nFileSizeLow > cellp->f.nFileSizeLow){
-								CellMark(cinfo, in, MARK_CHECK);
+								CellMark(cinfo, cpi.in, MARK_CHECK);
 							}
 						}else if (cellN->f.nFileSizeHigh > cellp->f.nFileSizeHigh){
-							CellMark(cinfo, in, MARK_CHECK);
+							CellMark(cinfo, cpi.in, MARK_CHECK);
 						}
 						break;
 
@@ -598,7 +649,7 @@ BOOL PPcCompareMain(PPC_APPINFO *cinfo, HWND hPairWnd, COMPAREMARKPACKET *cmp)
 						if ( cellN->f.nFileSizeLow != cellp->f.nFileSizeLow ){
 							break;
 						}
-						CellMark(cinfo, in, MARK_CHECK);
+						CellMark(cinfo, cpi.in, MARK_CHECK);
 						break;
 
 					case CMP_BINARY | CMPDOWN:	// Same Binary(現在窓)
@@ -611,22 +662,19 @@ BOOL PPcCompareMain(PPC_APPINFO *cinfo, HWND hPairWnd, COMPAREMARKPACKET *cmp)
 						ERRORCODE result;
 												// SysMsgやDeletedなのでだめ
 						if ( cellp->state < ECS_NORMAL ) break;
-						result = PPcCompareBinaryMain(cinfo->info.hWnd, mode,
-								subdir,
-								cinfo->RealPath, &cellN->f, pairpath, &cellp->f);
+						result = PPcCompareBinaryMain(&cpi, mode, subdir,
+								&cellN->f, pairpath, &cellp->f);
 						if ( result == NO_ERROR ){
-							CellMark(cinfo, in, MARK_CHECK);
+							CellMark(cinfo, cpi.in, MARK_CHECK);
 							MessageMatchEntry(cinfo->info.hWnd, hPairWnd,
 									PairLoadCounter, cellp->f.cFileName);
 							break;
 						}
-						if ( result == ERROR_INVALID_DATA ) break;
-						in = cinfo->e.cellIMax;
-						if ( result == ERROR_CANCELLED ){
-							SetPopMsg(cinfo, POPMSG_MSG, MES_BRAK);
-						}else{
-							PPErrorBox(cinfo->info.hWnd, cellp->f.cFileName, result);
+						if ( (result == ERROR_INVALID_DATA) || (result == ERROR_CANCELLED) ){
+							break;
 						}
+						cpi.in = cinfo->e.cellIMax;
+						PPErrorBox(cinfo->info.hWnd, cellp->f.cFileName, result);
 						break;
 					}
 //					default:	// 不明動作は処理しない
@@ -651,17 +699,17 @@ BOOL PPcCompareMain(PPC_APPINFO *cinfo, HWND hPairWnd, COMPAREMARKPACKET *cmp)
 														// new file
 			if ( (ip == 0) &&
 				((mode == (CMP_NEW | CMPDOWN)) || (mode == CMP_NEWONLY) || (mode == (CMP_NEWONLY | CMPDOWN))) ){
-				CellMark(cinfo, in, MARK_CHECK);
+				CellMark(cinfo, cpi.in, MARK_CHECK);
 			}
 		}
-	}else{
-		ENTRYINDEX in, ip;
+	}else{ // CMP_SIZEONLY
+		ENTRYINDEX ip;
 		int hilight = 0;
 
-		for ( in = 0 ; in < cinfo->e.cellIMax ; in++ ){
+		for ( cpi.in = 0 ; cpi.in < cinfo->e.cellIMax ; cpi.in++ ){
 			ENTRYCELL *cellN, *cellp;
 
-			cellN = &CEL(in);
+			cellN = &CEL(cpi.in);
 			if ( cellN->state < ECS_NORMAL ) continue; // SysMsgやDeletedはだめ
 			if ( cellN->attr & (ECA_PARENT | ECA_THIS) ) continue;
 			if ( cellN->f.dwFileAttributes & unmarkmask ) continue;
@@ -673,12 +721,10 @@ BOOL PPcCompareMain(PPC_APPINFO *cinfo, HWND hPairWnd, COMPAREMARKPACKET *cmp)
 				if ( cellp->f.dwFileAttributes & unmarkmask ) continue;
 
 				nowtick = GetTickCount();
-				if ( (nowtick - tick) > 1000 ){
-					tick = nowtick;
-					if ( IsTrue(CompareProgress(cinfo, in)) ){
-						in = cinfo->e.cellIMax;
-						break;
-					}
+				if ( (nowtick - cpi.tick) > CPI_INTERVAL ){
+					cpi.tick = nowtick;
+					cpi.path = cellN->f.cFileName;
+					if ( IsTrue(CompareProgress(&cpi)) ) break;
 				}
 
 				if ( (cellN->f.nFileSizeHigh == cellp->f.nFileSizeHigh) &&
@@ -692,7 +738,7 @@ BOOL PPcCompareMain(PPC_APPINFO *cinfo, HWND hPairWnd, COMPAREMARKPACKET *cmp)
 					}
 					hilight = (hilight & 3) + 1;
 					cellN->state = (BYTE)((cellN->state & ECS_HLMASK) + (hilight * ECS_HLBIT));
-					CellMark(cinfo, in, MARK_CHECK);
+					CellMark(cinfo, cpi.in, MARK_CHECK);
 					MessageMatchEntry(cinfo->info.hWnd, hPairWnd,
 							PairLoadCounter, cellp->f.cFileName);
 				}

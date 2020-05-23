@@ -824,6 +824,7 @@ typedef enum {
 #define MES_TABN	T("TABN|&New tab")
 #define MES_TABP	T("TABP|new &Pane")
 #define MES_TABR	T("TABR|c&Olor")
+#define MES_TABS	T("TABS|clo&Sed PPc")
 #define MES_TABW	T("TABW|s&Wap pane")
 #define MES_TACL	T("TACL|close le&Ft")
 #define MES_TACP	T("TACP|close p&Ane")

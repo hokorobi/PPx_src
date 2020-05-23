@@ -75,7 +75,7 @@ void PPvDrawText(PAINTSTRUCT *ps, PPVPAINTSTRUCT *pps)
 	bg = (bg == CV__defback) ? C_WHITE : CV_char[bg];
 
 	mti.destbuf = buf;
-	mti.srcmax = vo_.file.image + vo_.file.UseSize;
+	mti.srcmax = mtinfo.img + mtinfo.MemSize;
 	mti.writetbl = FALSE;
 	mti.paintmode = TRUE;
 

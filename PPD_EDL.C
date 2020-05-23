@@ -895,19 +895,31 @@ void PPeRunas(PPxEDSTRUCT *PES, TCHAR *cmdline)
 	}
 }
 
-void WideWindowByKey(PPxEDSTRUCT *PES, int offset)
+void WideWindowByKey(PPxEDSTRUCT *PES, int offsetW, int offsetH)
 {
 	RECT box;
 	HWND hWnd;
 
-	if ( !(PES->flags & PPXEDIT_LINEEDIT) ) return;
+	if ( !(PES->flags & (PPXEDIT_LINEEDIT | PPXEDIT_ENABLE_SIZE_CHANGE)) ){
+		return;
+	}
 	hWnd = GetParentCaptionWindow(PES->hWnd);
 	GetWindowRect(hWnd, &box);
+
 	box.right -= box.left;
-	if ( (offset > 0) || (box.right > 64) ){
-		box.right += offset * WIDEDELTA;
+	if ( (offsetW < 0) && (box.right < (WIDEDELTA * 2)) ) offsetW = 0;
+
+	box.bottom -= box.top;
+	if ( (!(PES->flags & PPXEDIT_ENABLE_HEIGHT_CHANGE)) ||
+		 ((offsetH < 0) && (box.bottom < (int)(PES->fontY * 2))) ){
+		offsetH = 0;
+	}
+	if ( offsetW || offsetH ){
+		box.right += offsetW * WIDEDELTA;
+		box.bottom += offsetH * PES->fontY;
+
 		SetWindowPos(hWnd, NULL, 0, 0,
-				box.right, box.bottom - box.top, SWP_NOZORDER | SWP_NOMOVE);
+				box.right, box.bottom, SWP_NOZORDER | SWP_NOMOVE);
 	}
 }
 
@@ -2298,9 +2310,12 @@ void USEFASTCALL EnterFix(PPxEDSTRUCT *PES)
 {
 	TCHAR buf[CMDLINESIZE];
 
+	buf[0] = '\0';
 	GetWindowText(PES->hWnd, buf, TSIZEOF(buf));
 	WriteHistory(PES->list.WhistID, buf, 0, NULL);
 	CloseLineList(PES);
+	// WM_CHAR の 13 (Enter) を廃棄
+	PeekMessage((MSG *)buf, PES->hWnd, WM_CHAR, WM_CHAR, PM_REMOVE);
 }
 
 /*-----------------------------------------------------------------------------
@@ -2347,7 +2362,7 @@ BOOL USEFASTCALL CtrlESCFix(PPxEDSTRUCT *PES)
 
 	if ( hParentWnd == NULL ) return FALSE;
 	if ( PES->flags & PPXEDIT_WANTENTER ){
-		PostMessage(hParentWnd, WM_COMMAND, TMAKELPARAM(0, 27), (LPARAM)PES->hWnd);
+		PostMessage(hParentWnd, WM_COMMAND, TMAKELPARAM(0, VK_ESCAPE), (LPARAM)PES->hWnd);
 		return TRUE;
 	}
 	// ダイアログで ESC を押したあとに WM_CHAR が来るケース対応
@@ -2534,11 +2549,17 @@ case K_a | K_lf:			// &[←]
 case K_a | K_ri:			// &[→]
 	MoveWindowByKey(GetParentCaptionWindow(PES->hWnd), 1, 0);
 	break;
+case K_a | K_s | K_up:		// &\[↑]
+	WideWindowByKey(PES, 0, -1);
+	break;
+case K_a | K_s | K_dw:		// &\[↓]
+	WideWindowByKey(PES, 0, 1);
+	break;
 case K_a | K_s | K_lf:		// &\[←]
-	WideWindowByKey(PES, -1);
+	WideWindowByKey(PES, -1, 0);
 	break;
 case K_a | K_s | K_ri:		// &\[→]
-	WideWindowByKey(PES, 1);
+	WideWindowByKey(PES, 1, 0);
 	break;
 //-----------------------------------------------
 case K_s | K_esc:	// \[ESC]
@@ -2740,10 +2761,12 @@ case K_c | K_s | K_v | VK_OEM_MINUS: // US[-/_] JIS[-/=]
 	ChangeOpaqueWindow(PES->hWnd, -1);
 	break;
 
-case K_cr:		//
+case K_cr:
 	if ( PES->flags & PPXEDIT_WANTENTER ){
 		CloseLineList(PES);
-		PostMessage(GetParent(PES->hWnd), WM_COMMAND, TMAKELPARAM(0, 13), (LPARAM)PES->hWnd);
+		PostMessage(GetParent(PES->hWnd), WM_COMMAND, TMAKELPARAM(0, VK_RETURN), (LPARAM)PES->hWnd);
+		// WM_CHAR の 13 (Enter) を廃棄
+		PeekMessage((MSG *)buf, PES->hWnd, WM_CHAR, WM_CHAR, PM_REMOVE);
 		break;
 	}
 	// 再度 enter を入力し、閉じたりさせる(WM_GETDLGCODEを一旦通過しているので、ダイアログを閉じたりすることは現時点ではもうできないため)

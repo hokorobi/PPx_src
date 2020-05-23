@@ -492,17 +492,20 @@ void EItemUpDown(HWND hDlg, int offset)
 	TCHAR label[MAX_PATH], para[0x8000];
 	const TCHAR *key;
 	int size, index;
+	DWORD shift = GetShiftKey();
 
 	key = EtcLabels[seltree - ETCID].key;
 
 	index = (int)SendDlgItemMessage(hDlg, IDL_EXITEM, LB_GETCURSEL, 0, 0);
 	if ( offset < 0 ){
 		if ( index <= 0 ) return;
+		if ( shift & K_c ) offset = -index;
 	}else{
+		int count = SendDlgItemMessage(hDlg, IDL_EXITEM, LB_GETCOUNT, 0, 0);
+
 		if ( index < 0 ) return;
-		if ((index + 1) >=SendDlgItemMessage(hDlg, IDL_EXITEM, LB_GETCOUNT, 0, 0)){
-			return;
-		}
+		if ( (index + 1) >= count ) return;
+		if ( shift & K_c ) offset = (count - index - 1);
 	}
 	size = EnumCustTable(index, key, label, para, sizeof(para));
 	if ( size < 0 ) return;

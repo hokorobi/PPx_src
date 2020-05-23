@@ -417,20 +417,21 @@ void VistaProperties(const TCHAR *filename, ThSTRUCT *text)
 	}
 
 	if ( *filename != '#' ){
-#pragma warning(suppress: 6011) // InitPropSys Ç≈ DSHGetPropertyStoreFromParsingName Ç™èâä˙âª
+#pragma warning(suppress: 6011) // Å¶ÇP InitPropSys Ç≈ DSHGetPropertyStoreFromParsingName Ç™èâä˙âª
 		hr = DSHGetPropertyStoreFromParsingName(propfilename, NULL, GPS_BESTEFFORT, XIID_IPropertyStore, reinterpret_cast<void**>(&ps));
 	}else{
 		hr = E_FAIL;
 	}
 	if ( FAILED(hr) ){
 		LPITEMIDLIST pidl = PathToPidl(filename);
-		hr = DSHGetPropertyStoreFromIDList(pidl, GPS_BESTEFFORT, XIID_IPropertyStore, reinterpret_cast<void**>(&ps));
+		hr = DSHGetPropertyStoreFromIDList(pidl, GPS_BESTEFFORT, XIID_IPropertyStore, reinterpret_cast<void**>(&ps)); // Å¶ÇQ
 		FreePIDL(pidl);
 	}
 
 	if ( SUCCEEDED(hr) ){
 		DWORD propcount;
 
+		#pragma warning(suppress:4701) // succeed ÇÃÇ∆Ç´ÇÕÅ¶ÇPÇ©Å¶ÇQÇ™ê¨å˜ÇÃéûÇæÇØ
 		hr = ps->GetCount(&propcount);
 		if ( SUCCEEDED(hr) && propcount ){
 			ThCatString(text, T("Columns:\r\n"));

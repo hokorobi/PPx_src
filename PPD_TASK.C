@@ -1379,6 +1379,7 @@ void JobListButtonUp(HWND hWnd, LPARAM lParam)
 	if ( (index < 0) || HIWORD(index) ) return;
 
 	CallWindowProc(OldJobProc, hWnd, LB_GETITEMRECT, 0, (LPARAM)&box);
+	#pragma warning(suppress:6001) // ‘O‚Ìs‚Å‰Šú‰»
 	height = box.bottom - box.top;
 	if ( (height * SHOWJOBBUTTON_MINRATE) < (box.right - box.left) ){
 		int x = LOSHORTINT(lParam);

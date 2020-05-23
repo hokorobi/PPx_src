@@ -287,8 +287,14 @@ case 'P':
 			GETDLLPROCT(hWinmm, sndPlaySound);
 		}
 		if ( DsndPlaySound != NULL ){
-			DsndPlaySound((LPCTSTR)vo_.file.image,
-					SND_ASYNC | SND_NODEFAULT | SND_MEMORY);
+			if ( PlayWave ){
+				PlayWave = FALSE;
+				DsndPlaySound(NULL, 0);
+			}else{
+				PlayWave = TRUE;
+				DsndPlaySound((LPCTSTR)vo_.file.image,
+						SND_ASYNC | SND_NODEFAULT | SND_MEMORY);
+			}
 		}
 	}
 	break;
@@ -440,7 +446,7 @@ case 'L':
 //----------------------------------------------- top
 case K_s | K_Pup:
 	if ( (VOsel.cursor != FALSE) && (vo_.DModeBit & VO_dmode_SELECTABLE) ){
-		MoveCsrkey(0, 1-VO_sizeY, TRUE);
+		MoveCsrkey(0, 1 - VO_sizeY, TRUE);
 		break;
 	}
 	// K_c | K_home ‚Ö
@@ -500,8 +506,8 @@ case '<':
 	break;
 
 case '?':
-	LongText = !LongText;
-	SetPopMsg(POPMSG_NOLOGMSG, LongText ? T("RawText") : T("NormalText") );
+	LineCount = !LineCount;
+	SetPopMsg(POPMSG_NOLOGMSG, LineCount ? T("RawText") : T("NormalText") );
 	WmWindowPosChanged(hWnd);
 	InvalidateRect(hWnd, NULL, TRUE);
 	break;
@@ -513,7 +519,11 @@ case K_s | K_up:
 	}
 case K_Pup:
 case K_s | K_space:
-	MoveCsrkey(0, 1-VO_sizeY, FALSE);
+	MoveCsrkey(0, 1 - VO_sizeY, FALSE);
+	break;
+case K_c | K_up:
+case K_c | K_s | K_up:
+	MoveCsrkey(0, (VO_maxY > (VO_sizeY * 0x80)) ? -(VO_maxY >> 7) : -VO_sizeY, FALSE);
 	break;
 //----------------------------------------------- page down
 case K_s | K_dw:
@@ -525,6 +535,9 @@ case K_Pdw:
 case K_space:
 	MoveCsrkey(0, VO_sizeY-1, FALSE);
 	break;
+case K_c | K_dw:
+case K_c | K_s | K_dw:
+	MoveCsrkey(0, (VO_maxY > (VO_sizeY * 0x80)) ? (VO_maxY >> 7) : VO_sizeY, FALSE);
 //----------------------------------------------- left
 case K_s | K_home:
 	MoveCsrkey(-VOsel.now.x.offset, 0, ( (VOsel.cursor != FALSE) && (vo_.DModeBit & VO_dmode_SELECTABLE) ) );

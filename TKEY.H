@@ -376,7 +376,7 @@ typedef struct {
 	HWND hWnd;
 	int offsetx, offsety, mode;
 } SCW_REQSIZE;
-#define KCW_panecommand	0xba50		// ウィンドウサイズ変更依頼通知 lParam : param
+#define KCW_panecommand	0xba50		// *pane コマンド
 #define KCW_addressbar	0xba51		// addressbar にフォーカス設定
 #define KCW_dock		0xba52		// *Dock コマンド実行 HI(wParam), lParam:chr
 #define KCW_ready		0xba53		// 全窓の初期化完了の通知、lP:HWND

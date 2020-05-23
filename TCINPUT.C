@@ -543,6 +543,10 @@ void ReverseText(int len)
 	WriteConsoleOutputAttribute(hStdout, temp, len, incsearch.pos, &tempsize);
 }
 
+#define INCSEARCH_DELETE_LETTER	0
+#define INCSEARCH_NEXT	1
+#define INCSEARCH_FIRST	2
+
 BOOL ScrIncSearch(int next)
 {
 	COORD pos;
@@ -551,9 +555,9 @@ BOOL ScrIncSearch(int next)
 
 	pos = incsearch.pos;
 	oldlen = incsearch.len;
-	if ( next ){ // 1: éüÇåüçı
+	if ( next != INCSEARCH_DELETE_LETTER ){ // 1: éüÇåüçı
 		pos.X++;
-		if ( next == 2 ) pos.X = pos.Y = 0; // 2: ç≈èâÇ©ÇÁåüçı
+		if ( next == INCSEARCH_FIRST ) pos.X = pos.Y = 0; // 2: ç≈èâÇ©ÇÁåüçı
 	}else{
 		oldlen--; // 0: ÇPï∂éöçÌèú
 	}
@@ -1194,6 +1198,7 @@ void TconCommonCommand(int key)
 			SetCustTable(T("_WinPos"), buf, &WinPos, sizeof(WinPos));
 			break;
 
+		case K_v | K_s | VK_F10:
 		case K_v | VK_APPS: {
 			int index = PPbContextMenu();
 			if ( index > 0 ) TconCommonCommand(index);
@@ -1343,19 +1348,28 @@ void EditModeCommand(int key)
 
 		case K_c | K_s | 'M':
 		case K_s | K_cr: {			// Shift+CR:GUIàÍçsï“èW
-			TINPUT tinput;
+			if ( IsConsoleOnWindow() ){
+				TINPUT tinput;
 
-			tinput.hOwnerWnd= hMainWnd;
-			tinput.hRtype	= histype;
-			tinput.hWtype	= histype;
-			tinput.title	= T("PPb");
-			tinput.buff		= EditText;
-			tinput.size		= CMDLINESIZE;
-			tinput.flag		= TIEX_TOP;
-			if ( tInputEx(&tinput) > 0 ){
-				EdX = 0;
-				SelStart = SelEnd = 0;
-				eflag = TCI_TI_DRAW;
+				tinput.hOwnerWnd= hMainWnd;
+				tinput.hRtype	= histype;
+				tinput.hWtype	= histype;
+				tinput.title	= T("PPb");
+				tinput.buff		= EditText;
+				tinput.size		= CMDLINESIZE;
+				tinput.flag		= TIEX_TOP;
+				if ( tInputEx(&tinput) > 0 ){
+					EdX = 0;
+					SelStart = SelEnd = 0;
+					eflag = TCI_TI_DRAW;
+				}
+			}else{
+				DWORD dtmp;
+				COORD pos;
+
+				pos.X = 0;
+				pos.Y = (SHORT)(screen.info.dwCursorPosition.Y + 2);
+				WriteConsoleOutputCharacter(hStdout, T("no window"), 9, pos, &dtmp);
 			}
 			break;
 		}
@@ -1778,8 +1792,8 @@ void ScrollModeCommand(int key)
 		case K_F3: // åüçı
 		case K_tab:
 			if ( incsearch.len == 0 ) break;
-			if ( ScrIncSearch(1) == FALSE ){
-				ScrIncSearch(2);
+			if ( ScrIncSearch(INCSEARCH_NEXT) == FALSE ){
+				ScrIncSearch(INCSEARCH_FIRST);
 			}
 			return;
 
@@ -1804,7 +1818,9 @@ void ScrollModeCommand(int key)
 				if ( (size_t)incsearch.len < (TSIZEOF(incsearch.text) - 1) ){
 					incsearch.text[incsearch.len++] = (TCHAR)key;
 					incsearch.text[incsearch.len] = '\0';
-					if ( ScrIncSearch(0) == FALSE ) incsearch.len--;
+					if ( ScrIncSearch(INCSEARCH_DELETE_LETTER) == FALSE ){
+						incsearch.len--;
+					}
 				}
 			}
 			return;

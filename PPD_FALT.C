@@ -253,7 +253,8 @@ THREADSTRUCT *GetThreadInfoFromID(THREADSTRUCT **prev, DWORD ThreadID)
 		prevT = pT;
 		// 次が消滅していないか調べる
 		if ( IsTrue(IsBadReadPtr(pT->next, sizeof(THREADSTRUCT))) ){
-			pT = pT->next = NULL;
+			pT->next = NULL;
+			pT = NULL;
 			break;
 		}
 	}
@@ -880,6 +881,7 @@ DWORD WINAPI PPxUnhandledExceptionFilterMain(ExceptionData *EP)
 		if ( DSymCleanup != NULL ) DSymCleanup(hProcess);
 
 		hCloseThread = EP->hThread;
+#pragma warning(suppress:6258) // 異常スレッドの強制終了
 		TerminateThread(hCloseThread, 0);
 		CloseHandle(hCloseThread);
 		return 0;
@@ -1155,6 +1157,7 @@ void CPUinfo(void)
 						CloseHandle(hThread);
 					}
 				}
+				#pragma warning(suppress:6001) // メモなので不定値でも問題ない
 				wsprintf(buf, T("%d(%s) Tflag:%x Ewait:%x Eflag:%x %u\r\n"),
 					ThreadData.th32ThreadID,
 					tstr,

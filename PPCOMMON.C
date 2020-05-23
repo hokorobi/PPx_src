@@ -106,7 +106,7 @@ BOOL InitProcessDLL(void)
 	*(tstrrchr(DLLpath, '\\') + 1) = '\0';
 	ProcHeap = GetProcessHeap();
 	WM_PPXCOMMAND = RegisterWindowMessageA(PPXCOMMAND_WM);
-	TempPath[0] = '\0';
+	ProcTempPath[0] = '\0';
 	{
 		TCHAR *p;
 		DWORD i = 0;

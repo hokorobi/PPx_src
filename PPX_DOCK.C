@@ -672,7 +672,7 @@ void MakeDriveImage(HDC hMDC, int driveno, TCHAR *drivepath)
 {
 	HICON driveicon;
 
-	wsprintf(drivepath, T("%c:\\"), driveno + 'A');
+	if ( driveno != 26 ) wsprintf(drivepath, T("%c:\\"), driveno + 'A');
 
 	EnterCriticalSection(&SHGetFileInfoSection);
 	driveicon = LoadFileIcon(drivepath, FILE_ATTRIBUTE_DIRECTORY, SHGFI_ICON, DriveBarIconSize, NULL);
@@ -698,7 +698,7 @@ void ListDrives(HWND hToolBarWnd)
 	hDC = GetDC(hToolBarWnd);
 	hMDC = CreateCompatibleDC(hDC);
 
-	hBmp = CreateCompatibleBitmap(hDC, DriveBarIconSize * 26, DriveBarIconSize);
+	hBmp = CreateCompatibleBitmap(hDC, DriveBarIconSize * 27, DriveBarIconSize);
 	hOldBmp = SelectObject(hMDC, hBmp);
 	SetProp(hToolBarWnd, RMENUSTR_DRIVES, hBmp);
 
@@ -733,6 +733,15 @@ void ListDrives(HWND hToolBarWnd)
 		SendMessage(hToolBarWnd, TB_ADDBUTTONS, 1, (LPARAM)&tb);
 	}
 
+	MakeDriveImage(hMDC, 26, PPcPath);
+	tb.fsState = TBSTATE_ENABLED;
+	tb.iBitmap = 26;
+	tb.idCommand = IDW_DRIVES + 31;
+	tb.fsStyle = BTNS_SHOWTEXT;
+	tb.dwData = 0;
+	tb.iString = SendMessage(hToolBarWnd, TB_ADDSTRING, 0, (LPARAM)T("PC"));
+	SendMessage(hToolBarWnd, TB_ADDBUTTONS, 1, (LPARAM)&tb);
+
 	SelectObject(hMDC, hOldBmp);
 	DeleteDC(hMDC);
 	ReleaseDC(hToolBarWnd, hDC);
@@ -753,11 +762,19 @@ BOOL GetDriveBarPath(int id, TCHAR *path)
 void PushDriveButton(PPXDOCKS *docks, int id)
 {
 	TCHAR buf[32];
+	PPC_APPINFO *cinfo;
 
-	if ( docks->t.cinfo == NULL ) return;
+	cinfo = docks->t.cinfo;
+	if ( cinfo == NULL ) return;
+	if ( id == (IDW_DRIVES + 31) ){
+		GetMessagePosPoint(cinfo->PopupPos);
+		cinfo->PopupPosType = PPT_SAVED;
+		SendMessage(cinfo->info.hWnd, WM_PPXCOMMAND, (WPARAM)(K_raw | K_s | 'L'), 0);
+		return;
+	}
 	wsprintf(buf, T("%c%%j"), EXTCMD_CMD);
 	if ( FALSE != GetDriveBarPath(id, buf + 3) ){
-		SendMessage(docks->t.cinfo->info.hWnd, WM_PPCEXEC, (WPARAM)buf, TMAKELPARAM(0, 0));
+		SendMessage(cinfo->info.hWnd, WM_PPCEXEC, (WPARAM)buf, TMAKELPARAM(0, 0));
 	}
 }
 
@@ -837,6 +854,7 @@ void DockInputBarExecute(REBARINPUT *ri)
 
 	cmdline[0] = '\0';
 	SendMessage(ri->hEditWnd, WM_GETTEXT, CMDLINESIZE, (LPARAM)cmdline);
+	WriteHistory(PPXH_COMMAND, cmdline, 0, NULL);
 
 	cinfo = ri->dockinfo.dock->cinfo;
 	if ( cinfo != NULL ){
@@ -982,7 +1000,7 @@ int SaveReBar(PPXDOCK *dock)
 void ModifyReBar(PPXDOCK *dock)
 {
 	if ( SaveReBar(dock) <= 0 ){
-		DestroyWindow(dock->hWnd);
+		PostMessage(dock->hWnd, WM_CLOSE, 0, 0);
 		dock->hWnd = NULL;
 		dock->client.bottom = 0;
 	}
@@ -1451,6 +1469,7 @@ void CreateDockInputBar(PPXDOCK *dock, UINT style, int cx, const TCHAR *name)
 	ri->dockinfo.dock = dock;
 	name += RMENUSTR_INPUT_LEN;
 	GetCommandParameter(&name, ri->KeyCustName, TSIZEOF(ri->KeyCustName));
+	if ( ri->KeyCustName[0] != 'K' ) ri->KeyCustName[0] = '\0';
 
 	rbi.cxMinChild = rbi.cyMinChild = GetBarHeight(dock);
 
@@ -1799,8 +1818,8 @@ BOOL DockCommands(HWND hWnd, PPXDOCK *dock, int mode, const TCHAR *name)
 		case dock_delete:
 			hChildWnd = GetBarWnd(dock, name, &index);
 			if ( hChildWnd == NULL ) return FALSE;
-			DestroyWindow(hChildWnd);
 			SendMessage(dock->hWnd, RB_DELETEBAND, index, 0);
+			PostMessage(hChildWnd, WM_CLOSE, 0, 0);
 			ModifyReBar(dock);
 			return TRUE;
 

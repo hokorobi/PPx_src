@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug DirectWrite|ARM">
@@ -593,6 +593,7 @@
     <ClCompile Include="..\..\PPC_SUBT.C" />
     <ClCompile Include="..\..\PPC_WHER.C" />
     <ClCompile Include="..\..\PPC_WIND.C" />
+    <ClCompile Include="..\..\PPX_64.C" />
     <ClCompile Include="..\..\PPX_CV.C" />
     <ClCompile Include="..\..\PPX_DOCK.C" />
     <ClCompile Include="..\..\PPX_DRAW.CPP" />
@@ -612,6 +613,7 @@
     <ClInclude Include="..\..\PPC_SUBT.H" />
     <ClInclude Include="..\..\PPX.H" />
     <ClInclude Include="..\..\PPXVER.H" />
+    <ClInclude Include="..\..\PPX_64.H" />
     <ClInclude Include="..\..\PPX_CV.H" />
     <ClInclude Include="..\..\PPX_DOCK.H" />
     <ClInclude Include="..\..\PPX_DRAW.H" />

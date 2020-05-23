@@ -405,6 +405,7 @@ GVAR const TCHAR CacheErrorTitle[] GPARAM(T("Dir Cache save error"));
 DLLGVAR const TCHAR StrShortcutExt[] DLLGPARAM(T(ShortcutExt));
 
 GVAR const TCHAR StrRegFolder[] GPARAM(T("Folder")); // レジストリのフォルダの設定名
+GVAR const TCHAR RegDeviceNamesStr[] GPARAM(T("SYSTEM\\CurrentControlSet\\Control\\Session Manager\\DOS Devices")); // subst の記録
 
 //================================================================ Customize 系
 //------------------------------------------------------------ 表示書式の初期値

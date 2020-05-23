@@ -112,6 +112,7 @@ void CheckSmes(_Inout_ PPCUSTSTRUCT *PCS, size_t req_len)
 			PCS->Smes = PCS->SmesBuf; // ‚Æ‚è‚ ‚¦‚¸‚ ‚Ó‚ê‚È‚¢‚æ‚¤‚É‚µ‚Ä‚¨‚­
 			return;
 		}
+#pragma warning(suppress:6001) // ŒëŒŸo
 		PCS->Smes = newptr + (PCS->Smes - PCS->SmesBuf);
 		PCS->SmesBuf = newptr;
 		PCS->SmesLim = newptr + size / sizeof(TCHAR);

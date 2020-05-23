@@ -221,7 +221,8 @@ LRESULT PPeWmCreate(HWND hWnd)
 	SendMessage(PES->hEWnd, WM_SETFONT, (WPARAM)PES->hBoxFont, TRUE);
 										// EditBox ÇÃägí£ -------------
 	PPxRegistExEdit(NULL, PES->hEWnd, 0x100000, NULL, 0, 0,
-			PPXEDIT_USEALT | PPXEDIT_WANTEVENT | PPXEDIT_NOWORDBREAK);
+			PPXEDIT_USEALT | PPXEDIT_WANTEVENT | PPXEDIT_NOWORDBREAK |
+			PPXEDIT_ENABLE_SIZE_CHANGE );
 										// K_ppe Çìoò^ ---
 	SendMessage(PES->hEWnd, WM_PPXCOMMAND, KE_setkeya, (LPARAM)K_ppe);
 	if ( IsExistCustTable(K_ppe, T("FIRSTEVENT")) &&
@@ -486,13 +487,13 @@ PPXDLL HWND PPXAPI PPEui(HWND hPWnd, const TCHAR *title, const TCHAR *text)
 			 (deftext[4] == '|') ){ // xxxx| Ç»ÇÁÅAà íuçƒåª
 			memcpy(PES->PosName, title, TSTROFF(4));
 			PES->PosName[4] = '\0';
-			if ( NO_ERROR == GetCustTable(T("_WinPos"), PES->PosName, &WinPos, sizeof(WinPos)) ){
+			if ( NO_ERROR == GetCustTable(T("_WinPos"), PES->PosName, &WinPos, sizeof(WinPos)) ){ // Å¶ÇQ
 				modify = 2;
 			}
 		}
-		if ( modify == 0 ) GetWindowRect(hPPeWnd, &WinPos.pos);
+		if ( modify == 0 ) GetWindowRect(hPPeWnd, &WinPos.pos); // Å¶ÇP
 		GetDesktopRect(hFWnd, &deskbox);
-		// C4701ok (modifyÇ≈ëŒâû)
+		#pragma warning(suppress:4701) // modify == 0 Ç»ÇÁÅ¶ÇPÅAÇªÇÍà»äOÇ»ÇÁÅ¶ÇQ
 		if ( (WinPos.pos.left < deskbox.left) ||
 			 (WinPos.pos.left >= deskbox.right) ){
 			WinPos.pos.left = deskbox.left;

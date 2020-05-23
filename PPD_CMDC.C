@@ -2126,7 +2126,7 @@ void CmdPPbSet(EXECSTRUCT *Z, const TCHAR *param, const TCHAR *data)
 	tstrcat(butptr + 6, T("="));
 	if ( data != NULL ) tstrcat(butptr + 6, data);
 	ComExecEx(Z->hWnd, butptr, GetZCurDir(Z), &Z->useppb, Z->flags, &Z->ExitCode);
-
+#pragma warning(suppress:6001) // if ì‡Ç≈ïœçX
 	if ( butptr != fixbuf ) HeapFree(DLLheap, 0, allocbuf);
 }
 

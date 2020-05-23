@@ -216,6 +216,10 @@ extern void PPcCRMenuOnMenu(PPC_APPINFO *cinfo, PPCMENUINFO *cminfo);
 extern void WINAPI DirTypeDelayLoad(DelayLoadMenuStruct *DelayMenus);
 extern void DoActionMenu(PPC_APPINFO *cinfo, HMENU hMenu, UINT index, ENTRYINDEX target, ThSTRUCT *THmenu, PPXMENUDATAINFO *pmdi, DWORD extmenuID);
 
+#ifdef _SHLOBJ_H_
+extern BOOL RPIDL2DisplayNameOf(TCHAR *name, LPSHELLFOLDER sfolder, LPCITEMIDLIST pidl);
+#endif
+
 //------------------------------------------------------------------ ppc_datr.c
 extern int CnvDateTime(TCHAR *pack, TCHAR *date, TCHAR *time, const FILETIME *ftime);
 extern ERRORCODE PPC_attribute(PPC_APPINFO *cinfo);

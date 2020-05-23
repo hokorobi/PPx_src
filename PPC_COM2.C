@@ -1212,6 +1212,7 @@ ERRORCODE PPC_PathJump(PPC_APPINFO *cinfo)
 }
 //-----------------------------------------------------------------------------
 // ドライブジャンプ
+
 HMENU MakeDriveJumpMenu(PPC_APPINFO *cinfo, HMENU hPopupMenu, DWORD *index, ThSTRUCT *TH, BOOL advanced)
 {
 	TCHAR buf[VFPS], rpath[VFPS];
@@ -1232,6 +1233,10 @@ HMENU MakeDriveJumpMenu(PPC_APPINFO *cinfo, HMENU hPopupMenu, DWORD *index, ThST
 		wsprintf(buf, T("Network\\%c"), (TCHAR)(i + 'A'));
 		rpath[0] = '\0';
 		GetRegString(HKEY_CURRENT_USER, buf, RMPATHSTR, rpath, TSIZEOF(rpath));
+		if ( rpath[0] == '\0' ){
+			wsprintf(buf, T("%c:"), (TCHAR)(i + 'A'));
+			GetRegString(HKEY_LOCAL_MACHINE, RegDeviceNamesStr, buf, rpath, TSIZEOF(rpath));
+		}
 		if ( (drv & LSBIT) || rpath[0] ){
 			#define BUFDRVTAIL (buf + DRIVEOFF + 3)
 			#ifdef WINEGCC
@@ -1245,6 +1250,10 @@ HMENU MakeDriveJumpMenu(PPC_APPINFO *cinfo, HMENU hPopupMenu, DWORD *index, ThST
 
 				if ( ((DefDriveList >> i) & LSBIT) == 0 ){
 					tstrcat(BUFDRVTAIL, T(" *"));
+				}
+				if ( (tstrlen(rpath) > 5) && (rpath[2] == '?') ){
+					tstrcat(BUFDRVTAIL, T(" "));
+					tstrcat(BUFDRVTAIL, rpath + 4);
 				}
 
 				if ( (X_dlf[1] & XDLF_DISPFREE) && (tstrcmp(buf + DRIVEOFF, T("Floppy")) != 0) ){
@@ -1275,23 +1284,86 @@ HMENU MakeDriveJumpMenu(PPC_APPINFO *cinfo, HMENU hPopupMenu, DWORD *index, ThST
 		}
 		drv = drv >> 1;
 	}
+
+	{ // MTP デバイス列挙
+		LPITEMIDLIST idl;
+		LPSHELLFOLDER pSF;
+		LPENUMIDLIST pEID;
+		LPMALLOC pMA;
+
+		pSF = VFPtoIShell(NULL, T("#17:\\"), NULL);
+		if ( pSF != NULL ){
+			SHGetMalloc(&pMA);
+
+			if ( S_OK == pSF->lpVtbl->EnumObjects(pSF, NULL,
+				(OSver.dwMajorVersion >= 6) ?
+				ENUMOBJECTSFORFOLDERFLAG_VISTA : ENUMOBJECTSFORFOLDERFLAG_XP,
+				&pEID) ){ // S_FALSE のときは、pEID = NULL
+				for ( ; ; ){
+					DWORD getsi;
+
+					if ( pEID->lpVtbl->Next(pEID, 1, &idl, &getsi) != S_OK ){
+						break;
+					}
+					if ( getsi == 0 ) break;
+
+					if ( IsTrue(RPIDL2DisplayNameOf(buf, pSF, idl)) ){
+						// ::{xxx} ライブラリ
+						// \\?\usb#vid_… MTP
+						// X: drive
+						if ( (buf[0] == '\\') && (buf[2] == '?') ){
+							if ( IsTrue(PIDL2DisplayNameOf(rpath, pSF, idl)) ){
+								wsprintf(buf, T("%s\tmtp:"), rpath);
+								AppendMenuString(hPopupMenu, *index, buf);
+								(*index)++;
+								if ( TH != NULL ){
+									wsprintf(buf, T("#17:\\%s"), rpath);
+									ThAddString(TH, buf);
+								}
+							}
+						}
+					}
+					pMA->lpVtbl->Free(pMA, idl);
+				}
+				pEID->lpVtbl->Release(pEID);
+			}
+			pMA->lpVtbl->Release(pMA);
+			pSF->lpVtbl->Release(pSF);
+		}
+	}
 	return hPopupMenu;
+	#undef DRIVEOFF
 }
 
 void USEFASTCALL PPC_DriveJumpMain(PPC_APPINFO *cinfo, TCHAR *menubuf)
 {
-	DWORD X_dlf[2] = {0, 0};
 	TCHAR newpath[VFPS];
 
 	SetPPcDirPos(cinfo);
-	GetCustData(Str_X_dlf, &X_dlf, sizeof(X_dlf));
-	if ( X_dlf[1] & XDLF_ROOTJUMP ){
-		menubuf[2] = '\\';
-		menubuf[3] = '\0';
-	} else{
-		menubuf[2] = '\0';
+
+	#ifdef WINEGCC
+		if ( *menubuf == '&' ) menubuf++;
+	#endif
+
+	if ( menubuf[1] == ':' ){ // drive "x:..."
+		DWORD X_dlf[2] = {0, 0};
+
+		GetCustData(Str_X_dlf, &X_dlf, sizeof(X_dlf));
+		if ( X_dlf[1] & XDLF_ROOTJUMP ){
+			menubuf[2] = '\\';
+			menubuf[3] = '\0';
+		} else{
+			menubuf[2] = '\0';
+		}
+		VFSFixPath(NULL, menubuf, cinfo->path, VFSFIX_VFPS);
+	}else{ // mtp "mtpname"
+		TCHAR *p;
+
+		p = tstrchr(menubuf, '\t');
+		if ( p != NULL ) *p = '\0';
+		wsprintf(newpath, T("#17:\\%s"), menubuf);
+		tstrcpy(menubuf, newpath);
 	}
-	VFSFixPath(NULL, menubuf, cinfo->path, VFSFIX_VFPS);
 	tstrcpy(newpath, cinfo->path);
 	if ( DirChk(menubuf, newpath) ) tstrcpy(newpath, menubuf);
 	if ( cinfo->ChdirLock == FALSE ){
@@ -1337,7 +1409,7 @@ ERRORCODE PPC_DriveJump(PPC_APPINFO *cinfo, BOOL advanced)
 		GetMenuString(hMenu, i, buf, TSIZEOF(buf), MF_BYCOMMAND);
 		DestroyMenu(hMenu);
 
-		PPC_DriveJumpMain(cinfo, buf + DRIVEOFF);
+		PPC_DriveJumpMain(cinfo, buf);
 		return NO_ERROR;
 	} else{
 		DestroyMenu(hMenu);
@@ -3519,11 +3591,12 @@ ERRORCODE LogDisk(PPC_APPINFO *cinfo)
 		PPXH_DIR_R, PPXH_DIR) <= 0 ){
 		return ERROR_CANCELLED;
 	}
-	if ( VFSFixPath(cinfo->path, buf, cinfo->path, VFSFIX_VFPS) == NULL ){
+	if ( VFSFixPath(NULL, buf, cinfo->path, VFSFIX_VFPS) == NULL ){
 		SetPopMsg(cinfo, POPMSG_MSG, MES_EPTH);
 		return ERROR_BAD_COMMAND;
 	}
 	SetPPcDirPos(cinfo);
+	tstrcpy(cinfo->path, buf);
 	read_entry(cinfo, RENTRY_READ);
 	return NO_ERROR;
 }

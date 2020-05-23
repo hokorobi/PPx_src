@@ -436,6 +436,7 @@ HWND InitCombo(PPCSTARTPARAM *psp)
 	SIZE windowsize = { 640, 400 };
 	HMENU hMenuBar = NULL;
 	DWORD tmp[2];
+	int index;
 
 	if ( Combo.hWnd != NULL ){
 		if ( Combo.hWnd != BADHWND ) return Combo.hWnd;
@@ -456,6 +457,11 @@ HWND InitCombo(PPCSTARTPARAM *psp)
 
 	Combo.base = PPcHeapAlloc(sizeof(COMBOITEMSTRUCT) * 2);
 	Combo.show = PPcHeapAlloc(sizeof(COMBOPANES) * Combo_Max_Show);
+	Combo.CloededItems = 10;
+	Combo.closed = PPcHeapAlloc(sizeof(CLOSEDPPC) * Combo.CloededItems);
+	for ( index = 0; index < Combo.CloededItems; index++ ){
+		Combo.closed[index].ID[0] = '\0';
+	}
 
 	ComboCust();
 									// ウィンドウ生成 -------------------------
@@ -1265,6 +1271,11 @@ void WmComboDestroy(BOOL EndSession)
 	DeleteObject(Combo.Font.handle);
 	if ( Combo.cfs.hFont != NULL ) DeleteObject(Combo.cfs.hFont);
 	if ( X_combos[0] & CMBS_NOMENU ) DestroyMenu(ComboDMenu.hMenuBarMenu);
+	if ( Combo.closed != NULL ){
+		PPcHeapFree(Combo.closed);
+		Combo.closed = NULL;
+	}
+
 	PostWindowClosed();
 // 現在の所、終了時の異常終了を避けるため、意図的にリーク。
 //	PPcHeapFree(Combo.show);

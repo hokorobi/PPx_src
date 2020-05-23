@@ -46,19 +46,22 @@ enum {
 #define VCODE_COLOR_SIZE 3
 #define VCODE_FCOLOR_SIZE 5
 
+// VT_TABLE.attrs
 #define VTTF_TOP B0 // 行頭を含む
 // #define VTTF_END B1 // 行末を含む
 #define VTTF_TAG B2 // タグ表示の途中
 #define VTTF_LINK B3 // リンク表示の途中
 #define VTTF_HIGHLIGHT B4 // ハイライト有り
+#define VTTF_BASEOFFMASK (B6 | B7) // base64 のスキップ数
+#define VTTF_BASEOFFSHIFT 6 // base64 のスキップ数
 
 #pragma pack(push, 1)
 typedef struct {
 	BYTE *ptr;	// 表示開始位置
 	BYTE Fclr;	// 前景色
 	BYTE Bclr;	// 背景色
-	BYTE type;	// 表示形式 VTYPE_xxx
-	BYTE attrs; // VTTF_xxx
+	BYTE type;	// 表示形式 VTYPE_
+	BYTE attrs; // VTTF_
 	DWORD line;	// 論理行数
 } VT_TABLE;
 #pragma pack(pop)
@@ -188,9 +191,10 @@ typedef BOOL (APIENTRY *impPPRINTDLG)(LPPRINTDLG);
 typedef struct {
 	DISPT dtype;	// 表示形式
 	int T_code;		// テキスト表示形式
-	int T_siso;		// siso 処理
+	int T_siso;		// si/so 処理
 	int T_esc;		// esc 処理
-	int T_tag;		// tag 処理
+	int T_mime;		// mime 処理
+	int T_tag;		// html/xml tag 処理
 	int T_show_css;	// css 表示
 	int T_show_script;	// script 表示
 	int T_tab;		// タブ桁数
@@ -269,6 +273,12 @@ typedef struct {
 
 		TCHAR typeinfo[VFPS]; // 種別名の表示テキスト
 		TCHAR source[CMDLINESIZE]; // 元のファイル名
+		struct {
+			BYTE *image; // ファイルの中身
+			HGLOBAL mapH;	// メモリハンドル
+			DWORD UseSize; // image で使用しているサイズ
+			DWORD ImageSize; // メモリ確保時に使用する現在の確保メモリ
+		} other;
 	} file;
 	struct {
 		// 行毎の情報
@@ -370,7 +380,7 @@ typedef struct {
 #define HISTOPT_TEXTOPT_FLAGSHIFT 24
 #define HISTOPT_IMAGEOPT_FLAGSHIFT 24
 
-#define HISTOPT_TEXTOPT_QUOTED	B0	// VO_Tquoted
+#define HISTOPT_TEXTOPT_MIME	B0	// VO_Tmime
 #define HISTOPT_TEXTOPT_ESC		B1	// VO_Tesc
 #define HISTOPT_TEXTOPT_TAGMASK	(B4 | B5)	// VO_Ttag(flag位置注意)
 #define HISTOPT_TEXTOPT_TAGSHIFT	4	// VO_Ttag(flag位置注意)

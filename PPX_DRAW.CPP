@@ -905,7 +905,7 @@ void DxDrawText(DXDRAWSTRUCT *DxDraw, HDC hDC, const TCHAR *str, int len, RECT *
 		#define DRAWLEN len
 		#define DRAWSTR str
 
-		if ( len == -1 ) len = strlenW(str);
+		if ( len < 0 ) len = strlenW(str);
 	#else
 		WCHAR DRAWSTR[0x200];
 		int DRAWLEN = MultiByteToWideChar(CP_ACP, 0, str, len, DRAWSTR, TSIZEOFW(DRAWSTR) );

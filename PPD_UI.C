@@ -285,7 +285,8 @@ PPXDLL void USECDECL XMessage(HWND hWnd, const TCHAR *title, UINT type, const TC
 					ltime.wMilliseconds, MessageType[type]);
 			WriteFile(hFile, temp, TSTRLENGTH32(temp), &size, NULL);
 												// 内容を出力 -----------------
-			len = TSTRLENGTH32(buf); // C6001 XM_DUMPLOG, size = 0 の時に。無視
+			#pragma warning(suppress:6001) // XM_DUMPLOG, size = 0 の時に。無視
+			len = TSTRLENGTH32(buf);
 			if ( (len > 4) && (buf[(len / sizeof(TCHAR)) - 2] == '\r') ){
 				len -= sizeof(TCHAR) * 2;
 			}

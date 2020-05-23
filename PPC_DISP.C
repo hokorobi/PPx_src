@@ -672,7 +672,7 @@ void SetFileNameTipMain(PPC_APPINFO *cinfo, HDC hDC, const TCHAR *filep, int nwi
 				hOldFont = SelectObject(hDC, cinfo->hBoxFont);
 			}
 		#endif
-		// nwid Ç…é˚Ç‹ÇÈï∂éöêîÇ∆ÅAëSëÃÇÃÉsÉNÉZÉãïùÇéZèo
+		// Å¶ÇP nwid Ç…é˚Ç‹ÇÈï∂éöêîÇ∆ÅAëSëÃÇÃÉsÉNÉZÉãïùÇéZèo
 		GetTextExtentExPoint(hDC, filep, length,
 				nwid * cinfo->fontX, &result, NULL, &textsize);
 		wbox.left = 0;
@@ -685,6 +685,7 @@ void SetFileNameTipMain(PPC_APPINFO *cinfo, HDC hDC, const TCHAR *filep, int nwi
 	}
 	if ( !(cinfo->Tip.states & STIP_CMD_NOW) ){
 		if ( cinfo->Tip.X_stip_mode == stip_mode_filename ){
+			#pragma warning(suppress:4701) // stip_mode_filename != stip_mode_preview Ç»ÇÃÇ≈ïKÇ∏Å¶ÇPÇé¿çs
 			if ( result < ext ){ // ÉGÉìÉgÉäñºÇ™ÇÕÇ›èoÇ∑Ç∆Ç´ÇæÇØï\é¶
 				setflag( cinfo->Tip.states, STIP_CMD_DELAY );
 			}else{ // ï\é¶ÇÃïKóvÇ™ñ≥Ç¢
@@ -2297,6 +2298,33 @@ int CCharWide(WCHAR c) //Ç‡Ç§è≠Çµê≥ÇµÇ≠Ç∑ÇÈÇ»ÇÁ GetStringTypeEx C3_HALFWIDTH Ç≈Å
 }
 #endif
 
+const TCHAR * FindDispLastEntry(const TCHAR *src)
+{
+	const TCHAR *rp, *tp;
+	TCHAR rpchr;
+
+	rp = src;
+	rpchr = *rp;
+	if ( (rpchr == '/') || (rpchr == '\\') ){
+		rp++;
+		rpchr = *rp;
+	}
+	tp = rp;
+	for (;;) {
+		if ( rpchr == '\0' ) break;
+		if ( (rpchr == '\\') || (rpchr == '/') ){
+			if ( *(tp + 1) != '\0' ) rp = tp;
+#ifndef UNICODE
+		}else{
+			if ( Iskanji(rpchr) ) tp++;
+#endif
+		}
+		tp++;
+		rpchr = *tp;
+	}
+	return rp;
+}
+
 /* éwíËïùÇâzÇ¶ÇÈï∂éöóÒÇéZèoÇ∑ÇÈ ---------------------------------------------
 	sisize : ï\é¶ëŒè€ÇÃï∂éöóÒí∑
 	size  : ï\é¶ïù
@@ -2311,16 +2339,24 @@ int LimStrcpy(PPC_APPINFO *cinfo, TCHAR *buf, LPCTSTR *drawptr, const TCHAR *nam
 		return name_len;
 	}
 								// ÇÕÇ›èoÇ∑Ç∆Ç´ -------------------------------
-							// Ç´ÇËÇ™Ç¢Ç¢ÉpÉXãÊêÿÇËÇåüçıÇµÅAÇªÇ±ÇêÊì™Ç…Ç∑ÇÈ
+							// ç≈å„ÇÃÉpÉXãÊêÿÇËÇåüçıÇµÅAÇªÇ±ÇêÊì™Ç…Ç∑ÇÈ
 	sp = nameptr;
 	if ( cinfo->e.Dtype.mode != VFSDT_DLIST ){
-		sp = VFSFindLastEntry(sp);
-		name_len -= sp - nameptr;
-		if ( maxwidth >= name_len ){
-			*drawptr = sp;
-			return name_len;
+		int slen;
+		const TCHAR *spd;
+
+		spd = FindDispLastEntry(sp);
+		slen = name_len - (spd - nameptr);
+		if ( slen > 0 ){
+			if ( maxwidth >= slen ){
+				*drawptr = spd;
+				return slen;
+			}
+			sp = spd;
+			name_len = slen;
 		}
 	}
+
 	if ( IsTrue(UsePFont) ){ // ÉvÉçÉ|Å[ÉVÉáÉiÉãÉtÉHÉìÉgÇÕDrawTextÇ‹Ç©Çπ
 		*drawptr = sp;
 		return name_len;
@@ -2641,7 +2677,7 @@ void PaintFilename(DISPSTRUCT *disp, const BYTE *fmt, int Xe)
 			if ( !(disp->cell->attr & (ECA_PARENT | ECA_THIS)) ){
 				TCHAR *extp;
 
-				extp = tstrrchr(fileptr + 1, '.');
+				extp = tstrrchr(VFSFindLastEntry(fileptr + 1), '.');
 				if ( extp != NULL ) extoffset = extp - fileptr;
 			}
 		}
@@ -2675,8 +2711,8 @@ void PaintFilename(DISPSTRUCT *disp, const BYTE *fmt, int Xe)
 				int extlen;
 
 				if ( *fileptr != '\0' ){
-					extp = tstrrchr(fileptr + 1, '.');
-					if ( extp != NULL ){
+					extp = fileptr + extoffset;
+					if ( *extp == '.' ){
 						extlen = tstrlen(extp);
 
 						if ( nwid == DE_FN_ALL_WIDTH ){

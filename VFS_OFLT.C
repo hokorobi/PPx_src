@@ -98,23 +98,35 @@ int DeleteFootTag(TCHAR *name, const TCHAR *tag, size_t taglen)
 
 ERRORCODE LFNfilter(struct FopOption *opt, TCHAR *src)
 {
-	TCHAR *name;
+	TCHAR *name, *extptr;
+	TCHAR orgname[MAX_PATH], orgext[MAX_PATH];
 
-	name = FindLastEntryPoint(src);
 	if ( opt->UseNameFilter & NameFilter_Use ){
 		BOOL UseRenum = FALSE;
 
+		name = FindLastEntryPoint(src);
+		extptr = name + FindExtSeparator(name);
+		tstrcpy(orgext, extptr);
 		// Rename
 		if ( opt->UseNameFilter & NameFilter_Rename ){
 			if ( opt->rexps != NULL ){	// 正規表現による加工
+				if ( opt->fop.filter & VFSFOP_FILTER_NOEXTFILTER ){
+					*extptr = '\0';
+				}
 				if ( RegularExpressionReplace(opt->rexps, name, name, VFPS - (name - src) ) == NULL ){
 					return ERROR_CANCELLED;
+				}
+				if ( opt->fop.filter & VFSFOP_FILTER_NOEXTFILTER ){
+					tstrcat(name, orgext);
 				}
 				if ( FindPathSeparator(src) != NULL ) UseRenum = TRUE; // RENAME_NUMBERING
 			}else if ( opt->UseNameFilter & NameFilter_ExtractName ){ // マクロ展開
 				FILENAMEINFOSTRUCT finfo;
 				const TCHAR *format;
 
+				if ( opt->fop.filter & VFSFOP_FILTER_NOEXTFILTER ){
+					*extptr = '\0';
+				}
 				finfo.info.Function = (PPXAPPINFOFUNCTION)FilenameInfoFunc;
 				finfo.info.Name = STR_FOP;
 				finfo.info.RegID = NilStr;
@@ -124,22 +136,26 @@ ERRORCODE LFNfilter(struct FopOption *opt, TCHAR *src)
 				if ( NO_ERROR != PP_ExtractMacro(NULL, &finfo.info, NULL, format, name, XEO_NOEDIT | XEO_EXTRACTEXEC) ){
 					return ERROR_CANCELLED;
 				}
+				if ( opt->fop.filter & VFSFOP_FILTER_NOEXTFILTER ){
+					tstrcat(name, orgext);
+				}
 				if ( FindPathSeparator(src) != NULL ) UseRenum = TRUE; // RENAME_NUMBERING
 			}else {	// ワイルドカードによる加工
-				TCHAR *tailptr, *extptr;
-				TCHAR orgname[MAX_PATH], orgext[MAX_PATH];
+				TCHAR *tailptr;
 												// Split
-				extptr = name + FindExtSeparator(name);
 				memcpy(orgname, name, TSTROFF(extptr - name));
 				orgname[extptr - name] = '\0';
-				tstrcpy(orgext, extptr);
 
 				// ファイル名部
 				extptr = opt->rename + FindExtSeparator(opt->rename);
 				tailptr = RenameFilter(name, orgname, opt->rename, extptr, &UseRenum);
 				// 拡張子部
-				tailptr = RenameFilter(tailptr, orgext, extptr, extptr + tstrlen(extptr), &UseRenum);
-				*tailptr = '\0';
+				if ( *extptr != '\0' ){
+					tailptr = RenameFilter(tailptr, orgext, extptr, extptr + tstrlen(extptr), &UseRenum);
+					*tailptr = '\0';
+				}else{
+					tstrcpy(tailptr, orgext);
+				}
 			}
 		}
 		if ( opt->fop.delspc ){ // 空白等を削除
@@ -307,16 +323,18 @@ ERRORCODE LFNfilter(struct FopOption *opt, TCHAR *src)
 				CharLower(src); // 小文字化
 			}
 		}
+	}else{
+		name = src;
 	}
-	// 末尾の空白・拡張子を除去
+	// 末尾の空白・ピリオドを除去
 	{
-		TCHAR *p;
+		TCHAR *ptr;
 
-		p = name + tstrlen(name);
-		while ( p > name){
-			p--;
-			if ( (*p != ' ') && (*p != '.') ) break;
-			*p = '\0';
+		ptr = name + tstrlen(name);
+		while ( ptr > name ){
+			ptr--;
+			if ( (*ptr != ' ') && (*ptr != '.') ) break;
+			*ptr = '\0';
 		}
 	}
 	return NO_ERROR;

@@ -679,6 +679,7 @@ void TreeFunction(EXECSTRUCT *Z, const TCHAR *param) // %*tree
 	POINT pos;
 	MSG msg;
 	DWORD X_tree[5];
+	RECT deskbox;
 	int dpi;
 
 	*Z->dst = '\0';
@@ -700,6 +701,27 @@ void TreeFunction(EXECSTRUCT *Z, const TCHAR *param) // %*tree
 	GetCustData(StrX_tree, X_tree, sizeof(X_tree));
 //	if ( X_tree[3] < 100 ) X_tree[3] = 100; // Windows‘¤‚Åˆ—‚³‚ê‚é
 	if ( X_tree[4] < 100 ) X_tree[4] = 100;
+
+	GetDesktopRect(hParentWnd, &deskbox);
+	if ( (int)X_tree[3] >= (deskbox.right - deskbox.left) ){
+		X_tree[3] = deskbox.right - deskbox.left;
+	}
+	if ( (pos.x + (int)X_tree[3]) > deskbox.right ){
+		pos.x = deskbox.right - X_tree[3];
+	}
+	if ( pos.x < deskbox.left ){
+		pos.x = deskbox.left;
+	}
+
+	if ( (int)X_tree[4] >= (deskbox.bottom - deskbox.top) ){
+		X_tree[4] = deskbox.bottom - deskbox.top;
+	}
+	if ( (pos.y + (int)X_tree[4]) > deskbox.bottom ){
+		pos.y = deskbox.bottom - X_tree[4];
+	}
+	if ( pos.y < deskbox.top ){
+		pos.y = deskbox.top;
+	}
 
 	// ì¬
 	hTreeWnd = CreateWindow(TreeClassStr, ZGetTitleName(Z),

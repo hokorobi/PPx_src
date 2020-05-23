@@ -15,7 +15,7 @@
 
 DWORD X_fstff;
 impFindFirstFile DFindFirstFile = LoadFindFirstFile;
-DefineWinAPI(HANDLE,FindFirstFileEx,(LPCTSTR lpFileName,DWORD fInfoLevelId,LPVOID lpFindFileData,DWORD fSearchOp,LPVOID lpSearchFilter,DWORD dwAdditionalFlags)) = NULL;
+DefineWinAPI(HANDLE, FindFirstFileEx, (LPCTSTR lpFileName, DWORD fInfoLevelId, LPVOID lpFindFileData, DWORD fSearchOp, LPVOID lpSearchFilter, DWORD dwAdditionalFlags)) = NULL;
 
 #ifndef FindExSearchNameMatch
 	#define FindExSearchNameMatch 0
@@ -40,7 +40,7 @@ DefineWinAPI(HANDLE,FindFirstFileEx,(LPCTSTR lpFileName,DWORD fInfoLevelId,LPVOI
 #define DGetFileAttributesW GetFileAttributesW
 #define DCreateFileW CreateFileW
 
-#define CheckWideFunctionMacro(funcname,filename,errresult) if ( FALSE == CheckWideFunctionW(filename)){ return errresult; }
+#define CheckWideFunctionMacro(funcname, filename, errresult) if ( FALSE == CheckWideFunctionW(filename)){ return errresult; }
 
 BOOL CheckWideFunctionW(const TCHAR *filename)
 {
@@ -55,19 +55,19 @@ BOOL CheckWideFunctionW(const TCHAR *filename)
 	return TRUE;
 }
 #else
-DefineWinAPI(BOOL,MoveFileW,(LPCWSTR,LPCWSTR)) = INVALID_VALUE(impMoveFileW);
-DefineWinAPI(BOOL,CreateDirectoryW,(LPCWSTR,LPSECURITY_ATTRIBUTES)) = INVALID_VALUE(impCreateDirectoryW);
-DefineWinAPI(BOOL,CreateDirectoryExW,(LPCWSTR,LPCWSTR,LPSECURITY_ATTRIBUTES)) = INVALID_VALUE(impCreateDirectoryExW);
-DefineWinAPI(BOOL,RemoveDirectoryW,(LPCWSTR)) = INVALID_VALUE(impRemoveDirectoryW);
-DefineWinAPI(BOOL,DeleteFileW,(LPCWSTR)) = INVALID_VALUE(impDeleteFileW);
-DefineWinAPI(BOOL,SetFileAttributesW,(LPCWSTR,DWORD)) = INVALID_VALUE(impSetFileAttributesW);
-DefineWinAPI(DWORD,GetFileAttributesW,(LPCWSTR)) = INVALID_VALUE(impGetFileAttributesW);
-DefineWinAPI(HANDLE,CreateFileW,(LPCWSTR,DWORD,DWORD,LPSECURITY_ATTRIBUTES,DWORD,DWORD,HANDLE)) = INVALID_VALUE(impCreateFileW);
-DefineWinAPI(HANDLE,FindFirstFileW,(LPCWSTR,LPWIN32_FIND_DATAW)) = INVALID_VALUE(impFindFirstFileW);
+DefineWinAPI(BOOL, MoveFileW, (LPCWSTR, LPCWSTR)) = INVALID_VALUE(impMoveFileW);
+DefineWinAPI(BOOL, CreateDirectoryW, (LPCWSTR, LPSECURITY_ATTRIBUTES)) = INVALID_VALUE(impCreateDirectoryW);
+DefineWinAPI(BOOL, CreateDirectoryExW, (LPCWSTR, LPCWSTR, LPSECURITY_ATTRIBUTES)) = INVALID_VALUE(impCreateDirectoryExW);
+DefineWinAPI(BOOL, RemoveDirectoryW, (LPCWSTR)) = INVALID_VALUE(impRemoveDirectoryW);
+DefineWinAPI(BOOL, DeleteFileW, (LPCWSTR)) = INVALID_VALUE(impDeleteFileW);
+DefineWinAPI(BOOL, SetFileAttributesW, (LPCWSTR, DWORD)) = INVALID_VALUE(impSetFileAttributesW);
+DefineWinAPI(DWORD, GetFileAttributesW, (LPCWSTR)) = INVALID_VALUE(impGetFileAttributesW);
+DefineWinAPI(HANDLE, CreateFileW, (LPCWSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES, DWORD, DWORD, HANDLE)) = INVALID_VALUE(impCreateFileW);
+DefineWinAPI(HANDLE, FindFirstFileW, (LPCWSTR, LPWIN32_FIND_DATAW)) = INVALID_VALUE(impFindFirstFileW);
 
-#define CheckWideFunctionMacro(funcname,filename,errresult) if ( FALSE == CheckWideFunctionA((void *)&(D ## funcname),#funcname,filename)){ return errresult; }
+#define CheckWideFunctionMacro(funcname, filename, errresult) if ( FALSE == CheckWideFunctionA((void *)&(D ## funcname), #funcname, filename)){ return errresult; }
 
-BOOL CheckWideFunctionA(void **function,const char *funcname,const TCHAR *filename)
+BOOL CheckWideFunctionA(void **function, const char *funcname, const TCHAR *filename)
 {
 	ERRORCODE error;
 
@@ -78,7 +78,7 @@ BOOL CheckWideFunctionA(void **function,const char *funcname,const TCHAR *filena
 		return FALSE;
 	}
 	if ( *function == INVALID_HANDLE_VALUE ){
-		*function = GetProcAddress(hKernel32,funcname);
+		*function = GetProcAddress(hKernel32, funcname);
 	}
 	if ( *function == NULL ){
 		SetLastError(error);
@@ -89,13 +89,13 @@ BOOL CheckWideFunctionA(void **function,const char *funcname,const TCHAR *filena
 #endif
 
 #if !defined(_WIN64) || defined(WINEGCC)
-DefineWinAPI(BOOL,CopyFileExW,(LPCWSTR ExistingFileName,LPCWSTR NewFileName,LPPROGRESS_ROUTINE ProgressRoutine,LPVOID Data,LPBOOL Cancel,DWORD CopyFlags)) = INVALID_VALUE(impCopyFileExW);
-DefineWinAPI(BOOL,MoveFileWithProgressW,(LPCWSTR ExistingFileName,LPCWSTR NewFileName,LPPROGRESS_ROUTINE ProgressRoutine,LPVOID Data,DWORD Flags)) = INVALID_VALUE(impMoveFileWithProgressW);
+DefineWinAPI(BOOL, CopyFileExW, (LPCWSTR ExistingFileName, LPCWSTR NewFileName, LPPROGRESS_ROUTINE ProgressRoutine, LPVOID Data, LPBOOL Cancel, DWORD CopyFlags)) = INVALID_VALUE(impCopyFileExW);
+DefineWinAPI(BOOL, MoveFileWithProgressW, (LPCWSTR ExistingFileName, LPCWSTR NewFileName, LPPROGRESS_ROUTINE ProgressRoutine, LPVOID Data, DWORD Flags)) = INVALID_VALUE(impMoveFileWithProgressW);
 
-BOOL LoadWideFunction(FARPROC *function,char *funcname)
+BOOL LoadWideFunction(FARPROC *function, char *funcname)
 {
 	if ( *function == INVALID_VALUE(FARPROC) ){
-		*function = GetProcAddress(hKernel32,funcname);
+		*function = GetProcAddress(hKernel32, funcname);
 	}
 	if ( *function == NULL ){
 		SetLastError(ERROR_FILENAME_EXCED_RANGE);
@@ -105,7 +105,7 @@ BOOL LoadWideFunction(FARPROC *function,char *funcname)
 }
 #endif
 
-BOOL USEFASTCALL ConvertWideFileName(WCHAR *widename,const TCHAR *multiname)
+BOOL USEFASTCALL ConvertWideFileName(WCHAR *widename, const TCHAR *multiname)
 {
 	// C:\name\name		Å®	\\?\C:\name\name
 	// \\name\name\name	Å®	\\?\UNC\name\name\name
@@ -120,8 +120,8 @@ BOOL USEFASTCALL ConvertWideFileName(WCHAR *widename,const TCHAR *multiname)
 		*widename++ = 'C';
 	}
 #ifndef UNICODE
-	if ( 0 == MultiByteToWideChar(CP_ACP,MB_PRECOMPOSED,
-							multiname,-1,widename,VFPS) ){
+	if ( 0 == MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED,
+							multiname, -1, widename, VFPS) ){
 		SetLastError(ERROR_FILENAME_EXCED_RANGE);
 		return FALSE;
 	}
@@ -133,13 +133,13 @@ BOOL USEFASTCALL ConvertWideFileName(WCHAR *widename,const TCHAR *multiname)
 			SetLastError(ERROR_FILENAME_EXCED_RANGE);
 			return FALSE;
 		}
-		memcpy(widename,multiname,TSTROFF(size + 1));
+		memcpy(widename, multiname, TSTROFF(size + 1));
 	}
 #endif
 	return TRUE;
 }
 
-VFSDLL BOOL PPXAPI CopyFileExL(const TCHAR *ExistingFileName,const TCHAR *NewFileName,LPPROGRESS_ROUTINE ProgressRoutine,LPVOID Data,LPBOOL Cancel,DWORD CopyFlags)
+VFSDLL BOOL PPXAPI CopyFileExL(const TCHAR *ExistingFileName, const TCHAR *NewFileName, LPPROGRESS_ROUTINE ProgressRoutine, LPVOID Data, LPBOOL Cancel, DWORD CopyFlags)
 {
 	WCHAR wideexistingname[EXTENDVFPS];
 	WCHAR widenewname[EXTENDVFPS];
@@ -148,28 +148,28 @@ VFSDLL BOOL PPXAPI CopyFileExL(const TCHAR *ExistingFileName,const TCHAR *NewFil
 	#ifndef UNICODE
 		(WinType == WINTYPE_9x) ||
 	#endif
-		(FALSE == LoadWideFunction((FARPROC *)&DCopyFileExW,"CopyFileExW")) ){
+		(FALSE == LoadWideFunction((FARPROC *)&DCopyFileExW, "CopyFileExW")) ){
 		if ( ProgressRoutine != NULL ){
 			SetLastError(ERROR_INVALID_FUNCTION);
 			return FALSE;
 		}
-		return CopyFile(ExistingFileName,NewFileName,
+		return CopyFile(ExistingFileName, NewFileName,
 				(CopyFlags & COPY_FILE_FAIL_IF_EXISTS) ? TRUE : FALSE);
 	}
 #else
 	#define DCopyFileExW CopyFileExW
 #endif
-	if ( FALSE == ConvertWideFileName(wideexistingname,ExistingFileName) ){
+	if ( FALSE == ConvertWideFileName(wideexistingname, ExistingFileName) ){
 		return FALSE;
 	}
-	if ( FALSE == ConvertWideFileName(widenewname,NewFileName) ){
+	if ( FALSE == ConvertWideFileName(widenewname, NewFileName) ){
 		return FALSE;
 	}
-	return DCopyFileExW(wideexistingname,widenewname,
-			ProgressRoutine,Data,Cancel,CopyFlags);
+	return DCopyFileExW(wideexistingname, widenewname,
+			ProgressRoutine, Data, Cancel, CopyFlags);
 }
 
-VFSDLL BOOL PPXAPI MoveFileWithProgressL(const TCHAR *ExistingFileName,const TCHAR *NewFileName,LPPROGRESS_ROUTINE ProgressRoutine,LPVOID Data,DWORD Flags)
+VFSDLL BOOL PPXAPI MoveFileWithProgressL(const TCHAR *ExistingFileName, const TCHAR *NewFileName, LPPROGRESS_ROUTINE ProgressRoutine, LPVOID Data, DWORD Flags)
 {
 	BOOL result;
 	WCHAR wideexistingname[EXTENDVFPS];
@@ -177,31 +177,31 @@ VFSDLL BOOL PPXAPI MoveFileWithProgressL(const TCHAR *ExistingFileName,const TCH
 
 #ifndef _WIN64
 	if ( FALSE == LoadWideFunction(
-			(FARPROC *)&DMoveFileWithProgressW,"MoveFileWithProgressW") ){
-		result = MoveFile(ExistingFileName,NewFileName);
+			(FARPROC *)&DMoveFileWithProgressW, "MoveFileWithProgressW") ){
+		result = MoveFile(ExistingFileName, NewFileName);
 		if ( IsTrue(result) ) return result;
 	}else
 #else
 	#define DMoveFileWithProgressW MoveFileWithProgressW
 #endif
 	{
-		if ( FALSE == ConvertWideFileName(wideexistingname,ExistingFileName) ){
+		if ( FALSE == ConvertWideFileName(wideexistingname, ExistingFileName) ){
 			return FALSE;
 		}
-		if ( FALSE == ConvertWideFileName(widenewname,NewFileName) ){
+		if ( FALSE == ConvertWideFileName(widenewname, NewFileName) ){
 			return FALSE;
 		}
-		result = DMoveFileWithProgressW(wideexistingname,widenewname,
-				ProgressRoutine,Data,Flags);
+		result = DMoveFileWithProgressW(wideexistingname, widenewname,
+				ProgressRoutine, Data, Flags);
 		if ( IsTrue(result) ) return result;
 	}
 
-	if ( !memcmp(ExistingFileName,StrAux,StrAuxSize) ){
+	if ( !memcmp(ExistingFileName, StrAux, StrAuxSize) ){
 		ERRORCODE errorcode;
 		const TCHAR *newptr;
 
 		newptr = NewFileName;
-		if ( !memcmp(newptr,StrAux,StrAuxSize) ){
+		if ( !memcmp(newptr, StrAux, StrAuxSize) ){
 			newptr += 4;
 			if ( *newptr == '/' ){
 				while ( *newptr == '/' ) newptr++;
@@ -212,16 +212,16 @@ VFSDLL BOOL PPXAPI MoveFileWithProgressL(const TCHAR *ExistingFileName,const TCH
 				if ( *newptr == '\\' ) newptr++;
 			}
 		}
-		errorcode = FileOperationAux(T("rename"),ExistingFileName,NilStr,newptr);
+		errorcode = FileOperationAux(T("rename"), ExistingFileName, NilStr, newptr);
 		if ( errorcode == NO_ERROR ) return TRUE;
 		SetLastError(errorcode);
 		return FALSE;
 	}
 
-	if ( !memcmp(ExistingFileName,StrFtp,StrFtpSize) ){
+	if ( !memcmp(ExistingFileName, StrFtp, StrFtpSize) ){
 		ERRORCODE errorcode;
 
-		errorcode = MoveFtpFile(ExistingFileName,NewFileName);
+		errorcode = MoveFtpFile(ExistingFileName, NewFileName);
 		if ( errorcode == NO_ERROR ) return TRUE;
 		SetLastError(errorcode);
 		return FALSE;
@@ -237,65 +237,66 @@ VFSDLL BOOL PPXAPI MoveFileWithProgressL(const TCHAR *ExistingFileName,const TCH
 		}
 	}
 #ifndef UNICODE
-	if ( FALSE == LoadWideFunction((FARPROC *)&DMoveFileW,"MoveFileW") ){
+	if ( FALSE == LoadWideFunction((FARPROC *)&DMoveFileW, "MoveFileW") ){
 		return FALSE;
 	}
 #endif
-	if ( FALSE == ConvertWideFileName(wideexistingname,ExistingFileName) ){
+	if ( FALSE == ConvertWideFileName(wideexistingname, ExistingFileName) ){
 		return FALSE;
 	}
-	if ( FALSE == ConvertWideFileName(widenewname,NewFileName) ){
+	if ( FALSE == ConvertWideFileName(widenewname, NewFileName) ){
 		return FALSE;
 	}
-	return DMoveFileW(wideexistingname,widenewname);
+	return DMoveFileW(wideexistingname, widenewname);
 }
 
-VFSDLL BOOL PPXAPI CreateDirectoryL(const TCHAR *FileName,LPSECURITY_ATTRIBUTES sa)
+VFSDLL BOOL PPXAPI CreateDirectoryL(const TCHAR *FileName, LPSECURITY_ATTRIBUTES sa)
 {
 	WCHAR widename[EXTENDVFPS];
 	BOOL result;
 
-	result = CreateDirectory(FileName,sa);
+	result = CreateDirectory(FileName, sa);
 	if ( IsTrue(result) ){
-		SHChangeNotify(SHCNE_MKDIR,SHCNF_PATH,FileName,NULL);
+		SHChangeNotify(SHCNE_MKDIR, SHCNF_PATH, FileName, NULL);
 		return TRUE;
 	}
 
-	CheckWideFunctionMacro(CreateDirectoryW,FileName,FALSE);
+	CheckWideFunctionMacro(CreateDirectoryW, FileName, FALSE);
 
-	if ( FALSE == ConvertWideFileName(widename,FileName) ){
+	if ( FALSE == ConvertWideFileName(widename, FileName) ){
 		return FALSE;
 	}
-	return DCreateDirectoryW(widename,sa);
+	return DCreateDirectoryW(widename, sa);
 }
 
-BOOL CreateDirectoryExL(const TCHAR *FileName,const TCHAR *FileName2,LPSECURITY_ATTRIBUTES sa)
+BOOL CreateDirectoryExL(const TCHAR *FileName, const TCHAR *FileName2, LPSECURITY_ATTRIBUTES sa)
 {
 	WCHAR widename[EXTENDVFPS];
 	WCHAR widename2[EXTENDVFPS];
 	BOOL result;
 	ERRORCODE error;
 
-	result = CreateDirectoryEx(FileName,FileName2,sa);
+	result = CreateDirectoryEx(FileName, FileName2, sa);
 	if ( IsTrue(result) ){
-		SHChangeNotify(SHCNE_MKDIR,SHCNF_PATH,FileName,NULL);
+		SHChangeNotify(SHCNE_MKDIR, SHCNF_PATH, FileName, NULL);
 		return TRUE;
 	}
 
 	error = GetLastError();
-	if ( (tstrlen(FileName) < MAX_PATH) && (tstrlen(FileName2) < MAX_PATH) ){
+	if ( (error != ERROR_FILENAME_EXCED_RANGE) &&
+		 (tstrlen(FileName) < MAX_PATH) && (tstrlen(FileName2) < MAX_PATH) ){
 		SetLastError(error);
 		return FALSE;
 	}
 	SetLastError(ERROR_FILENAME_EXCED_RANGE);
-	CheckWideFunctionMacro(CreateDirectoryExW,FileName,FALSE);
-	if ( FALSE == ConvertWideFileName(widename,FileName) ){
+	CheckWideFunctionMacro(CreateDirectoryExW, FileName, FALSE);
+	if ( FALSE == ConvertWideFileName(widename, FileName) ){
 		return FALSE;
 	}
-	if ( FALSE == ConvertWideFileName(widename2,FileName2) ){
+	if ( FALSE == ConvertWideFileName(widename2, FileName2) ){
 		return FALSE;
 	}
-	return DCreateDirectoryExW(widename,widename2,sa);
+	return DCreateDirectoryExW(widename, widename2, sa);
 }
 
 VFSDLL BOOL PPXAPI RemoveDirectoryL(const TCHAR *FileName)
@@ -305,9 +306,9 @@ VFSDLL BOOL PPXAPI RemoveDirectoryL(const TCHAR *FileName)
 
 	result = RemoveDirectory(FileName);
 	if ( IsTrue(result) ) return TRUE;
-	CheckWideFunctionMacro(RemoveDirectoryW,FileName,FALSE);
+	CheckWideFunctionMacro(RemoveDirectoryW, FileName, FALSE);
 
-	if ( FALSE == ConvertWideFileName(widename,FileName) ){
+	if ( FALSE == ConvertWideFileName(widename, FileName) ){
 		return FALSE;
 	}
 	return DRemoveDirectoryW(widename);
@@ -330,30 +331,30 @@ VFSDLL BOOL PPXAPI DeleteFileL(const TCHAR *FileName)
 		return FALSE;
 	}
 #ifndef UNICODE
-	if ( FALSE == LoadWideFunction((FARPROC *)&DDeleteFileW,"DeleteFileW") ){
+	if ( FALSE == LoadWideFunction((FARPROC *)&DDeleteFileW, "DeleteFileW") ){
 		return FALSE;
 	}
 #endif
-	if ( FALSE == ConvertWideFileName(widename,FileName) ){
+	if ( FALSE == ConvertWideFileName(widename, FileName) ){
 		return FALSE;
 	}
 	return DDeleteFileW(widename);
 }
 
-VFSDLL BOOL PPXAPI SetFileAttributesL(const TCHAR *FileName,DWORD attributes)
+VFSDLL BOOL PPXAPI SetFileAttributesL(const TCHAR *FileName, DWORD attributes)
 {
 	WCHAR widename[EXTENDVFPS];
 	BOOL result;
 
-	result = SetFileAttributes(FileName,attributes);
+	result = SetFileAttributes(FileName, attributes);
 	if ( IsTrue(result) ) return result;
 
-	CheckWideFunctionMacro(SetFileAttributesW,FileName,FALSE);
+	CheckWideFunctionMacro(SetFileAttributesW, FileName, FALSE);
 
-	if ( FALSE == ConvertWideFileName(widename,FileName) ){
+	if ( FALSE == ConvertWideFileName(widename, FileName) ){
 		return FALSE;
 	}
-	return DSetFileAttributesW(widename,attributes);
+	return DSetFileAttributesW(widename, attributes);
 }
 
 VFSDLL DWORD PPXAPI GetFileAttributesL(const TCHAR *FileName)
@@ -364,59 +365,59 @@ VFSDLL DWORD PPXAPI GetFileAttributesL(const TCHAR *FileName)
 	result = GetFileAttributes(FileName);
 	if ( result != BADATTR ) return result;
 
-	CheckWideFunctionMacro(GetFileAttributesW,FileName,BADATTR);
+	CheckWideFunctionMacro(GetFileAttributesW, FileName, BADATTR);
 
-	if ( FALSE == ConvertWideFileName(widename,FileName) ){
+	if ( FALSE == ConvertWideFileName(widename, FileName) ){
 		return BADATTR;
 	}
 	return DGetFileAttributesW(widename);
 }
 
-VFSDLL HANDLE PPXAPI CreateFileL(const TCHAR *FileName,DWORD Access,DWORD ShareMode,LPSECURITY_ATTRIBUTES SecurityAttributes,DWORD CreationDisposition,DWORD FlagsAndAttributes,HANDLE hTemplateFile)
+VFSDLL HANDLE PPXAPI CreateFileL(const TCHAR *FileName, DWORD Access, DWORD ShareMode, LPSECURITY_ATTRIBUTES SecurityAttributes, DWORD CreationDisposition, DWORD FlagsAndAttributes, HANDLE hTemplateFile)
 {
 	HANDLE hFile;
 	WCHAR widename[EXTENDVFPS];
 
-	hFile = CreateFile(FileName,Access,ShareMode,SecurityAttributes,
-			CreationDisposition,FlagsAndAttributes,hTemplateFile);
+	hFile = CreateFile(FileName, Access, ShareMode, SecurityAttributes,
+			CreationDisposition, FlagsAndAttributes, hTemplateFile);
 	if ( hFile != INVALID_HANDLE_VALUE ) return hFile;
 
-	CheckWideFunctionMacro(CreateFileW,FileName,INVALID_HANDLE_VALUE);
+	CheckWideFunctionMacro(CreateFileW, FileName, INVALID_HANDLE_VALUE);
 
-	if ( FALSE == ConvertWideFileName(widename,FileName) ){
+	if ( FALSE == ConvertWideFileName(widename, FileName) ){
 		return INVALID_HANDLE_VALUE;
 	}
-	return DCreateFileW(widename,Access,ShareMode,SecurityAttributes,
-			CreationDisposition,FlagsAndAttributes,hTemplateFile);
+	return DCreateFileW(widename, Access, ShareMode, SecurityAttributes,
+			CreationDisposition, FlagsAndAttributes, hTemplateFile);
 }
 
-HANDLE USEFASTCALL FindFirstFileLs(const TCHAR *dir,WIN32_FIND_DATA *findfile)
+HANDLE USEFASTCALL FindFirstFileLs(const TCHAR *dir, WIN32_FIND_DATA *findfile)
 {
 	WCHAR widename[EXTENDVFPS];
 #ifndef UNICODE
 	WIN32_FIND_DATAW findfilew;
 	HANDLE hFile;
 #endif
-	if ( FALSE == ConvertWideFileName(widename,dir) ){
+	if ( FALSE == ConvertWideFileName(widename, dir) ){
 		return INVALID_HANDLE_VALUE;
 	}
 #ifndef UNICODE
-	if ( FALSE == LoadWideFunction((FARPROC *)&DFindFirstFileW,"FindFirstFileW") ){
+	if ( FALSE == LoadWideFunction((FARPROC *)&DFindFirstFileW, "FindFirstFileW") ){
 		return INVALID_HANDLE_VALUE;
 	}
-	hFile = DFindFirstFileW(widename,&findfilew);
+	hFile = DFindFirstFileW(widename, &findfilew);
 	if ( hFile != INVALID_HANDLE_VALUE ){
-		memcpy(findfile,&findfilew,
+		memcpy(findfile, &findfilew,
 				(4 * sizeof(DWORD)) + (3 * sizeof(FILETIME)));
-		WideCharToMultiByte(CP_ACP,0,
-				findfilew.cFileName,-1,findfile->cFileName,VFPS,NULL,NULL);
-		WideCharToMultiByte(CP_ACP,0,
-				findfilew.cAlternateFileName,-1,
-				findfile->cAlternateFileName,VFPS,NULL,NULL);
+		WideCharToMultiByte(CP_ACP, 0,
+				findfilew.cFileName, -1, findfile->cFileName, VFPS, NULL, NULL);
+		WideCharToMultiByte(CP_ACP, 0,
+				findfilew.cAlternateFileName, -1,
+				findfile->cAlternateFileName, VFPS, NULL, NULL);
 	}
 	return hFile;
 #else
-	return DFindFirstFile(widename,findfile);
+	return DFindFirstFile(widename, findfile);
 #endif
 }
 
@@ -425,35 +426,35 @@ VFSDLL HANDLE PPXAPI FindFirstFileL(_In_z_ const TCHAR *dir,_Out_ WIN32_FIND_DAT
 	HANDLE hFF;
 	ERRORCODE errorcode;
 
-	hFF = DFindFirstFile(dir,findfile);
+	hFF = DFindFirstFile(dir, findfile);
 	if ( hFF != INVALID_HANDLE_VALUE ) return hFF;
 
 	errorcode = GetLastError();
 	if ( (errorcode == ERROR_FILENAME_EXCED_RANGE) || (tstrlen(dir) >= MAX_PATH) ){
-		return FindFirstFileLs(dir,findfile);
+		return FindFirstFileLs(dir, findfile);
 	}else{
 		return INVALID_HANDLE_VALUE;
 	}
 }
 
-HANDLE WINAPI FindFirstFileUseEx(const TCHAR *lpFileName,WIN32_FIND_DATA *FindFileData)
+HANDLE WINAPI FindFirstFileUseEx(const TCHAR *lpFileName, WIN32_FIND_DATA *FindFileData)
 {
-	return DFindFirstFileEx(lpFileName,(X_fstff >= 2) ? FindExInfoBasic : 0,
-			FindFileData,FindExSearchNameMatch,NULL,FIND_FIRST_EX_LARGE_FETCH);
+	return DFindFirstFileEx(lpFileName, (X_fstff >= 2) ? FindExInfoBasic : 0,
+			FindFileData, FindExSearchNameMatch, NULL, FIND_FIRST_EX_LARGE_FETCH);
 }
 
-HANDLE WINAPI LoadFindFirstFile(const TCHAR *lpFileName,WIN32_FIND_DATA *FindFileData)
+HANDLE WINAPI LoadFindFirstFile(const TCHAR *lpFileName, WIN32_FIND_DATA *FindFileData)
 {
-	GETDLLPROCT(hKernel32,FindFirstFile);
+	GETDLLPROCT(hKernel32, FindFirstFile);
 	if ( WinType >= WINTYPE_7 ){
-		X_fstff = GetCustDword(T("X_fstff"),1);
+		X_fstff = GetCustDword(T("X_fstff"), 1);
 		if ( X_fstff ){
-			GETDLLPROCT(hKernel32,FindFirstFileEx);
+			GETDLLPROCT(hKernel32, FindFirstFileEx);
 			if ( DFindFirstFileEx != NULL ){
 				DFindFirstFile = FindFirstFileUseEx;
 			}
 		}
 	}
-	return DFindFirstFile(lpFileName,FindFileData);
+	return DFindFirstFile(lpFileName, FindFileData);
 }
 

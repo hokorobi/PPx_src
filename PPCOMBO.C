@@ -1362,6 +1362,7 @@ LRESULT USEFASTCALL KCW_EntryCombo(HWND hEntryWnd, DWORD type)
 			cws->cinfo = (PPC_APPINFO *)GetWindowLongPtr(hEntryWnd, GWLP_USERDATA);
 			if ( cws->cinfo != NULL ){
 				const TCHAR *ptr;
+				int index;
 
 				wsprintf(id, T("%s_tabcolor"), (cws->cinfo->RegSubIDNo < 0) ? cws->cinfo->RegID : cws->cinfo->RegSubCID);
 				value[0] = '\0';
@@ -1371,6 +1372,13 @@ LRESULT USEFASTCALL KCW_EntryCombo(HWND hEntryWnd, DWORD type)
 					cws->tabtextcolor = GetNumber(&ptr);
 					if ( *ptr == ',' ) ptr++;
 					cws->tabbackcolor = GetNumber(&ptr);
+				}
+
+				for ( index = 0; index < Combo.CloededItems; index++ ){
+					if ( !tstrcmp(Combo.closed[index].ID, cws->cinfo->RegSubCID) ){
+						Combo.closed[index].ID[0] = '\0'; // •Â‚¶‚½ID‚ğÄ—˜—p
+						break;
+					}
 				}
 			}
 		}

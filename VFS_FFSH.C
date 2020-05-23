@@ -438,7 +438,10 @@ ERRORCODE VFSFF_SHN(const TCHAR *vpath, FF_SHN *vshn, WIN32_FIND_DATA *findfile,
 	// \\ネットワーク全体\Microsoft Windows Network は↓で時間が掛かる
 	hr = pSF->lpVtbl->EnumObjects(pSF, hWnd, enumflags, &vshn->pEID);
 	if ( hr != S_OK ){ // S_FALSE のときは、pEID = NULL
-		if ( hr == E_INVALIDARG ){ // IDL キャッシュの異常の可能性→キャッシュを強制削除して再試行
+#ifndef COR_E_FILENOTFOUND
+  #define COR_E_FILENOTFOUND 0x80070002
+#endif
+		if ( (hr == E_INVALIDARG) || (hr == COR_E_FILENOTFOUND) ){ // IDL キャッシュの異常の可能性→キャッシュを強制削除して再試行
 			if ( DeleteCustData(IdlCacheName) == 0 ){
 				pSF->lpVtbl->Release(pSF);
 				vshn->pMA->lpVtbl->Release(vshn->pMA);

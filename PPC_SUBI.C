@@ -668,7 +668,7 @@ void DrawOverlayIcon(OverlayClassTable **LayPtr, HBITMAP targetbmp, const TCHAR 
 
 	if ( LayPtr != NULL ){
 		UseLayPtr = (OverlayClass **)LayPtr;
-	} else{
+	} else{ // LayPtr == NULL Å¶ÇP
 		TempOC = NULL;
 		UseLayPtr = &TempOC;
 	}
@@ -720,6 +720,7 @@ void DrawOverlayIcon(OverlayClassTable **LayPtr, HBITMAP targetbmp, const TCHAR 
 		}
 		#undef tfname
 	}
+	#pragma warning(suppress:4701) // ïKÇ∏Å¶ÇP
 	if ( LayPtr == NULL ) FreeOverlayClass(TempOC);
 }
 

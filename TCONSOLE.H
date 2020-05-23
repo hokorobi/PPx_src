@@ -117,7 +117,7 @@ extern HANDLE hStdin, hStdout;
 extern CALLBACKMODULEENTRY KeyHookEntry;		// キー入力拡張モジュール
 extern void ConChangeFontSize(SHORT delta);
 extern void tInitCustomize(void);
-
+extern BOOL IsConsoleOnWindow(void);
 #ifndef FROM_LEFT_1ST_BUTTON_PRESSED
 #define FROM_LEFT_1ST_BUTTON_PRESSED B0
 #define RIGHTMOST_BUTTON_PRESSED B1

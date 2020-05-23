@@ -612,8 +612,8 @@ HILIGHTKEYWORD *LoadDefaultHighlight(ThSTRUCT *mem, const TCHAR *filename, const
 		sizeW = (strlenW(bufW) + 1) * sizeof(WCHAR);
 #endif
 									// 保存する
-		size = sizeof(HILIGHTKEYWORD) + sizeW +((sizeA + 1) & 0xfffe);
-		ThSize(mem, size);
+		size = sizeof(HILIGHTKEYWORD) + sizeW + ((sizeA + 1) & 0xfffe);
+		ThSize(mem, size + sizeof(HILIGHTKEYWORD *));
 		hks = (HILIGHTKEYWORD *)ThLast(mem);
 		hks->next = (HILIGHTKEYWORD *)(LONG_PTR)size;
 		hks->ascii = (const char *)(size_t)(sizeW);
@@ -641,7 +641,7 @@ void LoadHighlight(VFSFILETYPE *vft)
 	int colorcount = 0;
 
 	if ( X_hkey != NULL ) HeapFree( PPvHeap, 0, X_hkey );
-	X_hkey = NULL;
+	X_hkey = hks = NULL;
 	ThInit(&mem);
 
 	// 一時ハイライト設定を取得
@@ -670,8 +670,8 @@ void LoadHighlight(VFSFILETYPE *vft)
 		color = CV_hili[colorcount + 1];
 		colorcount = (colorcount + 1) & 7;
 									// 保存する
-		size = sizeof(HILIGHTKEYWORD) + sizeW +((sizeA + 1) & 0xfffe);
-		ThSize(&mem, size);
+		size = sizeof(HILIGHTKEYWORD) + sizeW + ((sizeA + 1) & 0xfffe);
+		ThSize(&mem, size + sizeof(HILIGHTKEYWORD *));
 		hks = (HILIGHTKEYWORD *)ThLast(&mem);
 		hks->next = (HILIGHTKEYWORD *)(LONG_PTR)size;
 		hks->ascii = (const char *)(size_t)(sizeW);
@@ -697,14 +697,10 @@ void LoadHighlight(VFSFILETYPE *vft)
 	// ハイライト最終処理
 	if ( hks != NULL ) hks->next = NULL;
 
-	X_hkey = (HILIGHTKEYWORD *)mem.bottom;
-	if ( X_hkey != NULL ){
-									// ポインタを正規化する
-		char *bottom;
+	if ( mem.bottom != NULL ){				// ポインタを正規化する
 		HILIGHTKEYWORD *hks;
 
-		bottom = mem.bottom;
-		X_hkey = hks = (HILIGHTKEYWORD *)bottom;
+		hks = X_hkey = (HILIGHTKEYWORD *)mem.bottom;
 		for ( ;; ){
 			hks->ascii = (const char *)(char *)((char *)hks + sizeof(HILIGHTKEYWORD) + (size_t)hks->ascii);
 			hks->wide = (const WCHAR *)(char *)((char *)hks + sizeof(HILIGHTKEYWORD));
@@ -728,7 +724,7 @@ void SetHighlight(PPV_APPINFO *vinfo)
 	LoadHighlight(&vft);
 	InvalidateRect(vinfo->info.hWnd, NULL, TRUE);
 }
-
+#if 0
 // テキストインデックスの補正
 //void FixTextIndex(VT_TABLE *ti, DWORD_PTR offset)
 void FixTextIndex(DWORD_PTR offset)
@@ -745,7 +741,7 @@ void FixTextIndex(DWORD_PTR offset)
 		ti++;
 	}
 }
-
+#endif
 void ImageRealloc(DWORD reqsize)
 {
 	HGLOBAL mapH, newH;
@@ -756,7 +752,7 @@ void ImageRealloc(DWORD reqsize)
 	mapH = vo_.file.mapH;
 	GlobalUnlock(mapH);
 
-	if ( reqsize >= 0x80000000 ){
+	if ( reqsize >= 0x80000000 ){ // 最大値を2Gまでに
 		asize = 0x80000000;
 	}else{
 		asize = vo_.file.ImageSize * 2;
@@ -891,7 +887,9 @@ void CALLBACK BackReaderProc(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTim
 	starttime = GetTickCount();
 	if ( ReadingStream != READ_NONE ){ // ファイルの読み込み
 		if ( ReadData(starttime) == FALSE ){	// 読み込み中
-			mtinfo.MemSize = vo_.file.UseSize;
+			if ( (vo_.DModeType != DISPT_DOCUMENT) || (vo_.file.other.image == NULL) ){
+				mtinfo.MemSize = vo_.file.UseSize;
+			}
 		}else{						// 読み込み完了
 			DWORD olddt;
 
@@ -1099,9 +1097,9 @@ int VD_u_html(void)
 	return -1;
 }
 //-------------------------------------
-int VD_quoted(void)
+int VD_mail(void)
 {
-	VO_Tquoted = 1;
+	VO_Tmime = 1;
 	return -1;
 }
 //-------------------------------------
@@ -1159,6 +1157,45 @@ int VD_word8(void)
 	mtinfo.MemSize = vo_.file.UseSize - off;
 	MakeIndexTable(MIT_FIRST, MIT_PARAM_DOCUMENT);
 	return 0;
+}
+//-------------------------------------
+int VD_wordx(void)
+{
+	if ( vo_.file.other.image == NULL ){
+		TCHAR arcfile[VFPS], fname[VFPS];
+		DWORD result, sizeL, sizeH;
+		HANDLE hFile;
+		HANDLE mapH;
+		BYTE *image;
+
+		tstrcpy(arcfile, vo_.file.name);
+		tstrcpy(fname, T("\\word\\document.xml"));
+		hFile = CreateFileL(arcfile, GENERIC_READ,
+				FILE_SHARE_WRITE | FILE_SHARE_READ, NULL,
+				OPEN_EXISTING,
+				FILE_FLAG_SEQUENTIAL_SCAN,
+				NULL);
+		result = VFSGetArchivefileImage(vinfo.info.hWnd, hFile, arcfile, fname,
+				&sizeL, &sizeH, &mapH, &image);
+		if ( result == NO_ERROR ){
+			vo_.file.other.image = image;
+			vo_.file.other.mapH = mapH;
+			vo_.file.other.UseSize = vo_.file.other.ImageSize = sizeL;
+		}
+	}
+	if ( vo_.file.other.image != NULL ){
+		vo_.SupportTypeFlags = VO_type_ALLDOCUMENT;
+		VO_I[DISPT_DOCUMENT].textC = VTYPE_UTF8;
+		VOi->img = vo_.file.other.image;
+		VO_Tesc = 0;
+		VO_Ttag = 1;
+
+		mtinfo.MemSize = vo_.file.other.UseSize;
+		MakeIndexTable(MIT_FIRST, MIT_PARAM_DOCUMENT);
+		return 0;
+	}else{ // 取得失敗時
+		return -1;
+	}
 }
 //-------------------------------------
 int VD_oasys(void)
@@ -1230,7 +1267,7 @@ int VD_text(void)
 	return -1;
 }
 
-#define CODEFUNCMAX 19
+#define CODEFUNCMAX 20
 typedef struct {
 	int (*func)(void);
 } VD_CODEFUNCINIT;
@@ -1239,8 +1276,8 @@ const VD_CODEFUNCINIT Vd_codefuncinit[CODEFUNCMAX] = {
 	{VD_systemcp},	{VD_jis},		{VD_unicode},	{VD_html},
 	{VD_rtf},		{VD_word7},		{VD_oasys},		{VD_unitext},
 	{VD_unicodeB},	{VD_unitextB},	{VD_utf8},		{VD_c},
-	{VD_emf},		{VD_word8},		{VD_quoted},	{VD_xml},
-	{VD_u_html},	{VD_officezip},	{VD_text}
+	{VD_emf},		{VD_word8},		{VD_mail},		{VD_xml},
+	{VD_u_html},	{VD_officezip},	{VD_text},		{VD_wordx},
 };
 
 #define IOCTL_CDROM_GET_DRIVE_GEOMETRY 0x0002404C
@@ -1749,8 +1786,8 @@ void PPVGetHist(void)
 
 					VOi->textC = *(bp + 2);
 					bpflags = *(bp + 3);
-					if ( bpflags & HISTOPT_TEXTOPT_QUOTED ){
-						VO_Tquoted = 1;
+					if ( bpflags & HISTOPT_TEXTOPT_MIME ){
+						VO_Tmime = 1;
 					}
 					if ( bpflags & HISTOPT_TEXTOPT_ESC ){
 						VO_Tesc = 0;
@@ -1804,6 +1841,44 @@ void PPVGetHist(void)
 
 void SetOpts(VIEWOPTIONS *viewopts)
 {
+	if ( viewopts->dtype == DISPT_DOCUMENT ){
+		TCHAR cmd[CMDLINESIZE];
+		TCHAR tempfile[VFPS];
+
+		cmd[0] = '\0';
+		ThGetString(NULL, StrDocFilterCmd, cmd, CMDLINESIZE);
+		if ( cmd[0] != '\0' ){
+			tstrcpy(tempfile, T("tempfile.txt"));
+			MakeTempEntry(VFPS, tempfile, FILE_ATTRIBUTE_LABEL);
+			ThSetString(NULL, T("TempFile"), tempfile);
+			if ( PP_ExtractMacro(vinfo.info.hWnd, &vinfo.info, NULL, cmd, NULL, XEO_SEQUENTIAL) == NO_ERROR ){
+				TCHAR *mem, *text, *maxptr;
+				ERRORCODE result;
+
+				result = LoadTextImage(tempfile, &mem, &text, &maxptr);
+				if ( result == NO_ERROR ){
+					DeleteFileL(tempfile);
+					vo_.file.other.UseSize = vo_.file.other.ImageSize =
+							(maxptr - text) * sizeof(TCHAR);
+					vo_.file.other.mapH = GlobalAlloc(GMEM_MOVEABLE, vo_.file.other.ImageSize);
+					if ( vo_.file.other.mapH != NULL ){
+						VOi->img = vo_.file.other.image = (BYTE *)GlobalLock(vo_.file.other.mapH);
+						memcpy(vo_.file.other.image, text, vo_.file.other.ImageSize);
+						vo_.SupportTypeFlags = VO_type_ALLDOCUMENT;
+						mtinfo.MemSize = vo_.file.other.UseSize;
+#ifdef UNICODE
+						VO_I[DISPT_DOCUMENT].textC = VTYPE_UNICODE;
+#else
+						VO_I[DISPT_DOCUMENT].textC = VTYPE_SYSTEMCP;
+#endif
+						MakeIndexTable(MIT_FIRST, MIT_PARAM_DOCUMENT);
+					}
+					HeapFree(GetProcessHeap(), 0, text);
+				}
+			}
+		}
+	}
+
 	if ( (viewopts->dtype >= 0) &&
 		 ((vo_.SupportTypeFlags >> (viewopts->dtype - 1)) & LSBIT) ){
 		vo_.DModeType = viewopts->dtype;
@@ -1824,6 +1899,7 @@ void SetOpts(VIEWOPTIONS *viewopts)
 	}
 	if ( viewopts->T_siso >= 0 ) VO_Tmode = viewopts->T_siso;
 	if ( viewopts->T_esc  >= 0 ) VO_Tesc = viewopts->T_esc;
+	if ( viewopts->T_mime >= 0 ) VO_Tmime = viewopts->T_mime;
 	if ( viewopts->T_tag  >= 0 ) VO_Ttag = viewopts->T_tag;
 	if ( viewopts->T_show_css  >= 0 ) VO_Tshow_css = viewopts->T_show_css;
 	if ( viewopts->T_show_script  >= 0 ) VO_Tshow_script = viewopts->T_show_script;
@@ -1957,6 +2033,15 @@ void InitViewObject(VIEWOPTIONS *viewopts, TCHAR *type)
 				// mtinfo.MemSize
 				MakeIndexTable(MIT_FIRST, MIT_PARAM_DOCUMENT);
 			}else{
+				if ( vo_.file.other.image != NULL ){ // ●仮コード(wordx特化)
+					if ( vo_.file.other.image != mtinfo.img ){
+						VOi->img = vo_.file.other.image;
+						mtinfo.MemSize = vo_.file.other.UseSize;
+						VO_Tesc = 0;
+						VO_Ttag = 1;
+						MakeIndexTable(MIT_FIRST, MIT_PARAM_DOCUMENT);
+					}
+				}
 				vo_.DModeBit = vo_.DocmodeType;
 			}
 			break;
@@ -2060,6 +2145,7 @@ void InitViewObject(VIEWOPTIONS *viewopts, TCHAR *type)
 		viewopt_opentime.T_code = VOi->textC;
 		viewopt_opentime.T_siso = VO_Tmode;
 		viewopt_opentime.T_esc  = VO_Tesc;
+		viewopt_opentime.T_mime  = VO_Tmime;
 		viewopt_opentime.T_tag  = VO_Ttag;
 		viewopt_opentime.T_tab  = -1;
 		viewopt_opentime.T_width  = VOi->width;
@@ -2619,42 +2705,6 @@ void CheckType(void)
 				vo_.SupportTypeFlags = VO_type_ALLTEXT;
 			}
 		}
-#if 0
-		if ( tstrcmp(vft.type, T(":DOCX")) == 0 ){
-			TCHAR arcfile[VFPS], fname[VFPS];
-			DWORD result, sizeL, sizeH;
-			HWND hDWnd;
-			HANDLE hFile;
-			HANDLE mapH;
-			BYTE *image;
-
-			tstrcpy(arcfile, vo_.file.name);
-			tstrcpy(fname, T("\\word\\document.xml"));
-			hDWnd = vinfo.info.hWnd;
-			hFile = CreateFileL(arcfile, GENERIC_READ,
-						FILE_SHARE_WRITE | FILE_SHARE_READ, NULL,
-						OPEN_EXISTING,
-						FILE_FLAG_SEQUENTIAL_SCAN,
-						NULL);
-			result = VFSGetArchivefileImage(hDWnd, hFile, arcfile, fname,
-				&sizeL, &sizeH, &mapH, &image);
-			if ( result == NO_ERROR ){
-				vo_.SupportTypeFlags = VO_type_ALLDOCUMENT;
-				SetAllTextCode(VTYPE_UTF8);
-				vo_.text.document.ptr = mtinfo.img = VOi->img = image;
-				vo_.text.document.mapH = mapH;
-				mtinfo.MemSize = sizeL;
-				VO_Ttag = 2;
-				vft.dtype = DISPT_DOCUMENT;
-				MakeIndexTable(MIT_FIRST, MIT_PARAM_DOCUMENT);
-/*
-				vo_.file.UseSize = sizeL;
-				vo_.file.mapH = mapH;
-				vo_.file.image = image;
-*/
-			}
-		}
-#endif
 		PPVGetHist();
 		InitViewObject(VO_opt, vft.type);
 
@@ -2678,7 +2728,6 @@ void CheckType(void)
 
 void FollowOpenView(PPV_APPINFO *vinfo)
 {
-
 	OpenEntryNow = 1;
 	if ( X_tray & X_tray_PPv ){
 		SetWindowLongPtr(vinfo->info.hWnd, GWL_STYLE, GetWindowLongPtr(vinfo->info.hWnd, GWL_STYLE) & ~WS_MINIMIZE);

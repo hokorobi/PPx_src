@@ -387,7 +387,8 @@ void CreateFWriteLogWindow(FOPSTRUCT *FS)
 			ES_AUTOVSCROLL | ES_NOHIDESEL | ES_LEFT | ES_MULTILINE,
 			box.left, box.top, box.right, box.bottom, FS->hDlg,
 			CHILDWNDID(IDE_FOP_LOG), DLLhInst, 0);
-	PPxRegistExEdit(NULL, hWnd, 0x100000, NULL, 0, 0, PPXEDIT_NOWORDBREAK);
+	PPxRegistExEdit(NULL, hWnd, 0x100000, NULL, 0, 0,
+			PPXEDIT_NOWORDBREAK | PPXEDIT_ENABLE_SIZE_CHANGE);
 	SendMessage(hWnd, WM_SETFONT, SendMessage(FS->hDlg, WM_GETFONT, 0, 0), TRUE);
 	*FS->hLogWnd = hWnd;
 	SetWindowY(FS, 0); // 大きさ調整＆表示
@@ -743,7 +744,7 @@ const TCHAR *SameAction_Srclist[] = {
 	SameAction_link,
 };
 
-void ChangeEntryActionHelp(FOPSTRUCT *FS, BY_HANDLE_FILE_INFORMATION *srcfinfo, BY_HANDLE_FILE_INFORMATION *dstfinfo)
+void ChangeEntryActionHelp(FOPSTRUCT *FS, BY_HANDLE_FILE_INFORMATION *srcfinfo, BY_HANDLE_FILE_INFORMATION *dstfinfo, DWORD dstattr)
 {
 	TCHAR buf[VFPS], *lastp;
 	const TCHAR *srcmemo = NULL, *dstmemo = NULL;
@@ -794,10 +795,11 @@ void ChangeEntryActionHelp(FOPSTRUCT *FS, BY_HANDLE_FILE_INFORMATION *srcfinfo, 
 	if ( srcmemo == NULL ){
 		srcmemo = SameAction_Srclist[FS->opt.fop.mode];
 	}
+	// コピー元の更新
 	GetDlgItemText(FS->hDlg, IDS_FOP_SRCTITLE, buf, VFPS);
 	lastp = tstrrchr(buf , '(');
 	if ( lastp != NULL ) *lastp = '\0';
-	tstrcpy(buf + tstrlen(buf), MessageText(srcmemo));
+	tstrcat(buf, MessageText(srcmemo));
 	SetDlgItemText(FS->hDlg, IDS_FOP_SRCTITLE, buf);
 
 	if ( dstmemo == NULL ){
@@ -809,10 +811,15 @@ void ChangeEntryActionHelp(FOPSTRUCT *FS, BY_HANDLE_FILE_INFORMATION *srcfinfo, 
 			dstmemo = SameAction_overwrite;
 		}
 	}
+	// コピー先の更新
 	GetDlgItemText(FS->hDlg, IDS_FOP_DESTTITLE, buf, VFPS);
 	lastp = tstrrchr(buf , '(');
 	if ( lastp != NULL ) *lastp = '\0';
-	tstrcpy(buf + tstrlen(buf), MessageText(dstmemo));
+	tstrcat(buf, MessageText(dstmemo));
+	if ( (dstattr & FILE_ATTRIBUTE_REPARSE_POINT) || (dstfinfo->nNumberOfLinks >= 2) ){
+		tstrcat(buf, MessageText(T("[link]")));
+	}
+
 	SetDlgItemText(FS->hDlg, IDS_FOP_DESTTITLE, buf);
 }
 
@@ -823,21 +830,27 @@ ERRORCODE SameNameAction(FOPSTRUCT *FS, HANDLE dstH, BY_HANDLE_FILE_INFORMATION 
 	struct FopOption *opt = &FS->opt;
 	ERRORCODE result;	// 負の時はスキップ
 	TCHAR pathbuf[VFPS];
+	DWORD dstattr;
 
 										// 処理先情報の取得 -------------------
-	if ( dstH != NULL ){
+	if ( dstH != NULL ){ // 処理先ファイル有り／存在しない
 		if( GetFileInformationByHandle(dstH, dstfinfo) == FALSE ){
 			memset(dstfinfo, 0, sizeof(BY_HANDLE_FILE_INFORMATION));
-			dstfinfo->dwFileAttributes = BADATTR;
+//			dstfinfo->dwFileAttributes = 0;
 		}
 		CloseHandle(dstH);
 	}
+	// 処理先ファイルの属性（リパースポイント属性を取得）
+	dstattr = GetFileAttributesL(dst);
+	if ( dstattr == BADATTR ) dstattr = dstfinfo->dwFileAttributes;
+
+	// 処理先ファイルがあるが、開けなかった
 	if ( (dstH == NULL)
 	#ifndef UNICODE
 		|| (WinType == WINTYPE_9x)
 	#endif
 	){
-		dstfinfo->dwFileAttributes = GetFileAttributesL(dst);
+		dstfinfo->dwFileAttributes = dstattr;
 	}
 										// 同一ファイルなら名前変更に切替 -----
 	if ( (srcfinfo->dwVolumeSerialNumber == dstfinfo->dwVolumeSerialNumber) &&
@@ -925,7 +938,7 @@ ERRORCODE SameNameAction(FOPSTRUCT *FS, HANDLE dstH, BY_HANDLE_FILE_INFORMATION 
 				if ( (now_same != opt->fop.same) || (FS->opt.fop.flags != now_flags) ){
 					now_same = opt->fop.same;
 					now_flags = FS->opt.fop.flags;
-					ChangeEntryActionHelp(FS, srcfinfo, dstfinfo);
+					ChangeEntryActionHelp(FS, srcfinfo, dstfinfo, dstattr);
 				}
 				if( (int)GetMessage(&msg, NULL, 0, 0) <= 0 ){
 					FS->state = FOP_TOBREAK;
@@ -1063,8 +1076,16 @@ ERRORCODE SameNameAction(FOPSTRUCT *FS, HANDLE dstH, BY_HANDLE_FILE_INFORMATION 
 		}
 
 		// 上書きするファイルが書き込み禁止等ならそれを解除
-		if ( dstfinfo->dwFileAttributes & OPENERRORATTRIBUTES ){
+		if ( dstattr & OPENERRORATTRIBUTES ){
 			SetFileAttributesL(dst, FILE_ATTRIBUTE_NORMAL);
+		}
+		// 上書きするファイルがシンボリックリンク・ハードリンクなら解除
+		if ( (result == ACTION_OVERWRITE) &&
+			 ((dstattr & FILE_ATTRIBUTE_REPARSE_POINT) ||
+			  (dstfinfo->nNumberOfLinks >= 2)) ){
+			if ( DeleteFileL(dst) == FALSE ){
+				return GetLastError();
+			}
 		}
 	}
 	return result;

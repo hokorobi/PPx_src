@@ -72,7 +72,7 @@ const TCHAR *OptionNames[] = {
 	T("POPUP"),
 //50
 	T("SETPARENT"),
-//	T("FILECASE"),
+	T("MIME"),
 	NULL
 };
 
@@ -193,6 +193,7 @@ void InitViewOptions(VIEWOPTIONS *viewopts)
 	viewopts->T_code = -1;
 	viewopts->T_siso = -1;
 	viewopts->T_esc = -1;
+	viewopts->T_mime = -1;
 	viewopts->T_tag = -1;
 	viewopts->T_show_css = -1;
 	viewopts->T_show_script = -1;
@@ -401,9 +402,9 @@ BOOL CheckParam(VIEWOPTIONS *viewopts, const TCHAR *param, TCHAR *filename)
 			case 50:			//	"setparent:hwnd"
 				hLastViewReqWnd = (HWND)GetNumber((const TCHAR **)&more);
 				break;
-//			case 50:			//	filecase
-//				FileCase = CheckSubParam(more, OffOn, 1);
-//				break;
+			case 51:			//	"MIME:OFF", "MIME:ON",
+				viewopts->T_mime = CheckSubParam(more, OffOn, 1);
+				break;
 			default:
 				XMessage(NULL, NULL, XM_GrERRld, MES_EUOP, buf);
 		}

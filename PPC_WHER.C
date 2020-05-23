@@ -449,7 +449,6 @@ INT_PTR CALLBACK WhereDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	return TRUE;
 }
 
-// "filename", "alternate", A:atr, C:create, L:access, W:write, S:size, comment
 void WriteFF(HANDLE hFile, WIN32_FIND_DATA *ff, const TCHAR *name)
 {
 	TCHAR buf[VFPS + 900], *dest;
@@ -471,10 +470,31 @@ void WriteFF(HANDLE hFile, WIN32_FIND_DATA *ff, const TCHAR *name)
 			ff->ftLastWriteTime.dwHighDateTime,
 			ff->ftLastWriteTime.dwLowDateTime,
 			ff->nFileSizeHigh, ff->nFileSizeLow);
-
 	*dest ++ = '\r';
 	*dest ++ = '\n';
 	WriteFile(hFile, buf, TSTROFF32(dest - buf), &tmp, NULL);
+}
+
+void WriteFF_name(HANDLE hFile, WIN32_FIND_DATA *ff, const TCHAR *name)
+{
+	TCHAR buf[VFPS + 8], *dest;
+	DWORD tmp;
+
+	dest = tstpcpy(buf, name);
+	if ( ff->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) *dest++ = '\\';
+	*dest++ = '\r';
+	*dest++ = '\n';
+	WriteFile(hFile, buf, TSTROFF32(dest - buf), &tmp, NULL);
+}
+
+// "filename", "alternate", A:atr, C:create, L:access, W:write, S:size, comment
+void WriteFF2(HANDLE hFile, WIN32_FIND_DATA *ff, const TCHAR *name, int wlfc_flags)
+{
+	if ( wlfc_flags == 0 ){
+		WriteFF(hFile, ff, name);
+	}else{
+		WriteFF_name(hFile, ff, name);
+	}
 }
 
 void CheckText(WHEREDIALOG *Pws, HANDLE hFile, const TCHAR *name, WIN32_FIND_DATA *ff)
@@ -483,18 +503,18 @@ void CheckText(WHEREDIALOG *Pws, HANDLE hFile, const TCHAR *name, WIN32_FIND_DAT
 		if ( Pws->exmode == WDEXM_COLUMNMIN ){
 			if ( IsTrue(ColumnMatch(Pws, name, ff, &Pws->str)) ){
 				Pws->hitcount++;
-				WriteFF(hFile, ff, name + Pws->baselen);
+				WriteFF2(hFile, ff, name + Pws->baselen, Pws->wlfc_flags);
 			}
 		}else if ( IsTrue(TipMatch(name, &Pws->str)) ){
 			Pws->hitcount++;
-			WriteFF(hFile, ff, name + Pws->baselen);
+			WriteFF2(hFile, ff, name + Pws->baselen, Pws->wlfc_flags);
 		}
 	}else{
 		if ( !ff->nFileSizeHigh &&
 			 (ff->nFileSizeLow < Pws->imgsize) &&
 			 IsTrue(FileMatch(name, &Pws->str)) ){
 			Pws->hitcount++;
-			WriteFF(hFile, ff, name + Pws->baselen);
+			WriteFF2(hFile, ff, name + Pws->baselen, Pws->wlfc_flags);
 		}
 	}
 }
@@ -530,7 +550,7 @@ ERRORCODE WhereIsDirComment(TCHAR *dir, WHEREDIALOG *pws, HANDLE hFile)
 					if ( hFF != INVALID_HANDLE_VALUE ){
 						FindClose(hFF);
 						pws->hitcount++;
-						WriteFF(hFile, &ff, name + pws->baselen);
+						WriteFF2(hFile, &ff, name + pws->baselen, pws->wlfc_flags);
 					}
 				}
 			}
@@ -594,9 +614,9 @@ ERRORCODE WhereIsDir(const TCHAR *dir, WHEREDIALOG *pws, HANDLE hFile)
 					if ( (name[MAX_PATH] != '\0') && !memcmp(name, pws->src, TSTRLENGTH(pws->src)) ){
 						TCHAR *p = name + tstrlen(pws->src); // 共通パスを省略して名前を少し縮める
 						if ( *p == '\\' ) p++;
-						WriteFF(hFile, &ff, p);
+						WriteFF2(hFile, &ff, p, pws->wlfc_flags);
 					}else{
-						WriteFF(hFile, &ff, name + pws->baselen);
+						WriteFF2(hFile, &ff, name + pws->baselen, pws->wlfc_flags);
 					}
 				}
 			}
@@ -644,7 +664,7 @@ ERRORCODE WhereIsDirEx(TCHAR *dir, WHEREDIALOG *pws, HANDLE hFile)
 					CheckText(pws, hFile, name, &ff);
 				}else{
 					pws->hitcount++;
-					WriteFF(hFile, &ff, name + pws->baselen);
+					WriteFF2(hFile, &ff, name + pws->baselen, pws->wlfc_flags);
 				}
 			}
 		}
@@ -679,7 +699,7 @@ DWORD_PTR USECDECL SearchReportModuleFunction(WHEREISAPPINFO *winfo, DWORD cmdID
 
 	if ( cmdID == PPXCMDID_REPORTSEARCH_FDATA ){
 		name = ((WIN32_FIND_DATA *)uptr)->cFileName;
-		WriteFF(winfo->hFile, (WIN32_FIND_DATA *)uptr, name);
+		WriteFF2(winfo->hFile, (WIN32_FIND_DATA *)uptr, name, winfo->pws->wlfc_flags);
 	}else if ( (cmdID == PPXCMDID_REPORTSEARCH) ||
 		 (cmdID == PPXCMDID_REPORTSEARCH_FILE) ||
 		 (cmdID == PPXCMDID_REPORTSEARCH_DIRECTORY) ){
@@ -731,22 +751,25 @@ ERRORCODE WhereIsMain(PPC_APPINFO *cinfo, WHEREDIALOG *Pws)
 	hFile = CreateFileL(templistfile, GENERIC_WRITE, 0,
 			NULL, CREATE_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if ( hFile == INVALID_HANDLE_VALUE ) return GetLastError();
-	WriteFile(hFile, ListFileHeaderStr, ListFileHeaderSize, &tmp, NULL);
 
-	VFSFixPath(temp, Pws->src, cinfo->path, fixflags);
-	if ( GetFileAttributesL(temp) != BADATTR ){
-		WriteFile(hFile, BHEADER, SIZEOFTSTR(BHEADER), &tmp, NULL);
-		WriteFile(hFile, temp, TSTRLENGTH32(temp), &tmp, NULL);
-		WriteFile(hFile, BTHEADER, SIZEOFTSTR(BTHEADER), &tmp, NULL);
+	if ( Pws->wlfc_flags == 0 ){
+		WriteFile(hFile, ListFileHeaderStr, ListFileHeaderSize, &tmp, NULL);
+
+		VFSFixPath(temp, Pws->src, cinfo->path, fixflags);
+		if ( GetFileAttributesL(temp) != BADATTR ){
+			WriteFile(hFile, BHEADER, SIZEOFTSTR(BHEADER), &tmp, NULL);
+			WriteFile(hFile, temp, TSTRLENGTH32(temp), &tmp, NULL);
+			WriteFile(hFile, BTHEADER, SIZEOFTSTR(BTHEADER), &tmp, NULL);
+		}
+
+		tmp = wsprintf(temp, T(";Search=-type:%d -marked:%s -dir:%s -subdir:%s -vfs:%s -path:\"%s\" -mask:\"%s\" -mask2:\"%s\" -text:\"%s\"\r\n"),
+			Pws->exmode,
+			GetSWstr(Pws->marks), GetSWstr(Pws->dir),
+			GetSWstr(Pws->sdir), GetSWstr(Pws->vfs),
+			Pws->src, Pws->file1, Pws->file2, Pws->str.string
+		);
+		WriteFile(hFile, temp, TSTROFF(tmp), &tmp, NULL);
 	}
-
-	tmp = wsprintf(temp, T(";Search=-type:%d -marked:%s -dir:%s -subdir:%s -vfs:%s -path:\"%s\" -mask:\"%s\" -mask2:\"%s\" -text:\"%s\"\r\n"),
-		Pws->exmode,
-		GetSWstr(Pws->marks), GetSWstr(Pws->dir),
-		GetSWstr(Pws->sdir), GetSWstr(Pws->vfs),
-		Pws->src, Pws->file1, Pws->file2, Pws->str.string
-	);
-	WriteFile(hFile, temp, TSTROFF(tmp), &tmp, NULL);
 
 	if ( Pws->exmode == WDEXM_MODULE ){
 		PPXMSEARCHSTRUCT msearch;
@@ -811,7 +834,7 @@ ERRORCODE WhereIsMain(PPC_APPINFO *cinfo, WHEREDIALOG *Pws)
 							CheckText(Pws, hFile, temp, &cell->f);
 						}else{
 							Pws->hitcount++;
-							WriteFF(hFile, &cell->f, temp);
+							WriteFF2(hFile, &cell->f, temp, Pws->wlfc_flags);
 						}
 					}
 				}
@@ -868,13 +891,9 @@ ERRORCODE WhereIs(PPC_APPINFO *cinfo, int mode)
 		// Shell's Namespace だったら仮想モードに移行
 	if ( cinfo->RealPath[0] == '?' ) mode = TRUE;
 	Pws = &cinfo->Pws;
-	if ( mode < 0 ){
-		mode -= WHERE_NOSRCINIT;
-	}else{
-		tstrcpy(Pws->src, cinfo->path);
-	}
-	Pws->vfs = mode;
+
 	if ( Pws->cinfo == NULL ){	// 新規の場合は初期化
+		Pws->cinfo = cinfo;
 		Pws->file1[0] = '\0';
 		Pws->file2[0] = '\0';
 		Pws->str.string[0] = '\0';
@@ -882,16 +901,23 @@ ERRORCODE WhereIs(PPC_APPINFO *cinfo, int mode)
 		Pws->dir = FALSE;
 		Pws->sdir = FILE_ATTRIBUTE_DIRECTORY;
 		Pws->exmode = WDEXM_PLAINTEXT;
-		Pws->listfilename = NULL;
 		ThInit(&Pws->thEcdata);
 	}
-	Pws->cinfo = cinfo;
+	if ( mode < 0 ){ // WhereIsCommand 経由
+		mode -= WHERE_NOSRCINIT;
+	}else{ // キーコマンド
+		tstrcpy(Pws->src, cinfo->path);
+		Pws->readlistfile = TRUE;
+		Pws->appendmode = FALSE;
+		Pws->wlfc_flags = 0;
+		Pws->listfilename = NULL;
+	}
+	Pws->vfs = mode;
+
 	if ( PPxDialogBoxParam(hInst, MAKEINTRESOURCE(IDD_WHERE),
 			cinfo->info.hWnd, WhereDialogProc, (LPARAM)Pws) <= 0 ){
 		return ERROR_CANCELLED;
 	}
-	Pws->readlistfile = TRUE;
-	Pws->appendmode = FALSE;
 	return WhereIsMain(cinfo, Pws);
 }
 
@@ -918,6 +944,7 @@ ERRORCODE WhereIsCommand(PPC_APPINFO *cinfo, const TCHAR *param, BOOL usedialog)
 	ws.listfilename = NULL;
 	ws.readlistfile = TRUE;
 	ws.appendmode = FALSE;
+	ws.wlfc_flags = 0;
 	code = SkipSpace(&param);
 	if ( (code != '-') && (code != '/') ){
 		GetCommandParameterDual(&param, ws.src, TSIZEOF(ws.src));
@@ -981,6 +1008,11 @@ ERRORCODE WhereIsCommand(PPC_APPINFO *cinfo, const TCHAR *param, BOOL usedialog)
 			}
 			if ( tstrcmp(paramtmp + 1, T("MARKED")) == 0 ){
 				ws.marks = GetOnOffOption(more, TRUE);
+				continue;
+			}
+			if ( tstrcmp(paramtmp + 1, T("NAME")) == 0 ){
+				ws.readlistfile = FALSE;
+				ws.wlfc_flags = WLFC_NAMEONLY;
 				continue;
 			}
 			if ( tstrcmp(paramtmp + 1, T("LISTFILE")) == 0 ){

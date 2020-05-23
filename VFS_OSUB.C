@@ -72,6 +72,7 @@ ERRORCODE CopySecurity(FOPSTRUCT *FS, const TCHAR *src, const TCHAR *dst)
 	DWORD size, error;
 	PSECURITY_DESCRIPTOR psd;
 
+	size = 0;
 	GetFileSecurity(src, FS->opt.security, NULL, 0, &size);
 	psd = HeapAlloc(DLLheap, 0, size);
 	if ( psd == NULL ) goto error;
@@ -391,8 +392,9 @@ ERRORCODE FileOperationReparse(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWOR
 	TCHAR orgsrc[VFPS];
 	TCHAR text[CMDLINESIZE];
 
-	GetReparsePath(src, orgsrc);
-	if ( FS->reparsemode != FOPR_UNKNOWN ){
+	if ( GetReparsePath(src, orgsrc) == 0 ){
+		return ERROR_FILE_NOT_FOUND; // Žæ“¾Ž¸”s
+	}else if ( FS->reparsemode != FOPR_UNKNOWN ){
 		action = FS->reparsemode;
 	}else{
 		wsprintf(text, T("%s ( %s )"), src, orgsrc);

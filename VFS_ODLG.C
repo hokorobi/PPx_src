@@ -472,6 +472,11 @@ BOOL GetFopOptions(const TCHAR *param, FOPSTRUCT *FS)
 			continue;
 		}
 
+		if ( !tstrcmp( buf + 1, T("RENAMEEXT")) ){
+			fop->filter = CheckParamFlag(&more, fop->filter, VFSFOP_FILTER_NOEXTFILTER, TRUE);
+			continue;
+		}
+
 		if ( !tstrcmp( buf + 1, T("RENAMEFILE")) ){
 			fop->filter = CheckParamFlag(&more, fop->filter, VFSFOP_FILTER_NOFILEFILTER, TRUE);
 			continue;
@@ -1035,6 +1040,8 @@ void LoadControlData(FOPSTRUCT *FS)
 			// フィルタ対象
 			CheckDlgButton(hDlg, IDX_FOP_FILEFIX,
 						!(FOP->filter & VFSFOP_FILTER_NOFILEFILTER));
+			CheckDlgButton(hDlg, IDX_FOP_EXTFIX,
+						!(FOP->filter & VFSFOP_FILTER_NOEXTFILTER));
 			CheckDlgButton(hDlg, IDX_FOP_DIRFIX,
 						!(FOP->filter & VFSFOP_FILTER_NODIRFILTER));
 			// 起動ページ
@@ -1183,7 +1190,7 @@ void InitControlData(FOPSTRUCT *FS, int id)
 				hFocusWnd = FS->hDstED = PPxRegistExEdit(FS->info,
 						GetDlgItem(FS->hDlg, IDC_FOP_DESTDIR), VFPS, NilStr,
 						PPXH_DIR_R, PPXH_DIR, // PPXEDIT_WANTEVENT |
-						PPXEDIT_REFTREE | PPXEDIT_SINGLEREF);
+						PPXEDIT_REFTREE | PPXEDIT_SINGLEREF | PPXEDIT_ENABLE_WIDTH_CHANGE);
 				#ifndef UNICODE
 					if ( WinType == WINTYPE_9x ){
 						EnableDlgWindow(FS->hDlg, IDX_FOP_SCOPY, FALSE);
@@ -1200,7 +1207,7 @@ void InitControlData(FOPSTRUCT *FS, int id)
 				hFocusWnd = PPxRegistExEdit(FS->info,
 						GetDlgItem(FS->hDlg, IDE_FOP_RENAME),
 						TSIZEOFSTR(FS->opt.rename), NilStr,
-						PPXH_NAME_R, PPXH_FILENAME, 0);
+						PPXH_NAME_R, PPXH_FILENAME, PPXEDIT_ENABLE_WIDTH_CHANGE);
 													// 番号
 				PPxRegistExEdit(FS->info,
 						GetDlgItem(FS->hDlg, IDE_FOP_RENUM),
@@ -1407,7 +1414,9 @@ void FopDialogInit(HWND hDlg, FILEOPERATIONDLGBOXINITPARAMS *fopip)
 	FS->opt.fopflags = FOPop->flags;
 	FS->opt.hReturnWnd = FOPop->hReturnWnd;
 	FS->opt.CopyBuf = NULL;
-	FS->opt.CopyBufSize = 2 * 1024; // 2Mbytes
+	FS->opt.X_cbsz.CopyBufSize = 2 * 1024; // 2Mbytes
+	FS->opt.X_cbsz.EnablePPxBurstSize = 0; // off
+	FS->opt.X_cbsz.DisableApiCacheSize = 64 * 1024; // 64Mbytes
 	FS->opt.erroraction = 0;
 	FS->opt.errorretrycount = 1;
 	FS->opt.rexps = NULL;
@@ -1465,8 +1474,8 @@ void FopDialogInit(HWND hDlg, FILEOPERATIONDLGBOXINITPARAMS *fopip)
 	}
 	if ( FOPop->flags & VFSFOP_SPECIALDEST ) FS->FixDest = TRUE;
 
-	GetCustData(T("X_cbsz"), &FS->opt.CopyBufSize, sizeof(FS->opt.CopyBufSize));
-	FS->opt.CopyBufSize = ((FS->opt.CopyBufSize * 1024) + 0xffff) & 0xffff0000;
+	GetCustData(T("X_cbsz"), &FS->opt.X_cbsz, sizeof(FS->opt.X_cbsz));
+	FS->opt.X_cbsz.CopyBufSize = ((FS->opt.X_cbsz.CopyBufSize * 1024) + 0xffff) & 0xffff0000;
 
 	InvalidateRect(hDlg, NULL, TRUE);
 
@@ -1613,6 +1622,10 @@ void OperationResult(FOPSTRUCT *FS, BOOL result)
 
 	if ( (FS->NoAutoClose == FALSE) || (FS->opt.fop.flags & VFSFOP_OPTFLAG_LOGRWAIT)){
 		ActionInfo(FS->opt.hReturnWnd, FS->info, AJI_COMPLETE, T("fop")); // 通知
+
+		if ( (FS->opt.hReturnWnd != NULL) && (GetFocus() != NULL) && IsWindow(FS->opt.hReturnWnd) ){
+			SetForegroundWindow(FS->opt.hReturnWnd);
+		}
 		EndDialog(FS->hDlg, result);
 	}else{ // NoAutoClose か、ログ表示しているなら閉じない
 		HWND hDlg = FS->hDlg, hCancel;
@@ -1653,7 +1666,7 @@ void FopClose(HWND hDlg)
 		FS->Cancel = TRUE;
 		return;
 	}
-	if ( (FS->opt.hReturnWnd != NULL) && (GetFocus() != NULL) ){
+	if ( (FS->opt.hReturnWnd != NULL) && (GetFocus() != NULL) && IsWindow(FS->opt.hReturnWnd) ){
 		SetForegroundWindow(FS->opt.hReturnWnd);
 	}
 	if ( (FS->state == FOP_READY) || (FS->state == FOP_END) ){
@@ -1902,6 +1915,9 @@ void FopCommands(HWND hDlg, WPARAM wParam, LPARAM lParam)
 
 		case IDX_FOP_FILEFIX:
 			SetNegFlagButton(lParam, &FS->opt.fop.filter, VFSFOP_FILTER_NOFILEFILTER);
+			break;
+		case IDX_FOP_EXTFIX:
+			SetNegFlagButton(lParam, &FS->opt.fop.filter, VFSFOP_FILTER_NOEXTFILTER);
 			break;
 		case IDX_FOP_DIRFIX:
 			SetNegFlagButton(lParam, &FS->opt.fop.filter, VFSFOP_FILTER_NODIRFILTER);

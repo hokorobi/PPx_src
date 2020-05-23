@@ -915,15 +915,15 @@ class CIFileOperationProgressSink : public xIFileOperationProgressSink
 
 	STDMETHOD(FinishOperations)(HRESULT) { XMessage(NULL,NULL,XM_DbgLOG,T("Fin IFO")); return S_OK; };
 	STDMETHOD(PreRenameItem)(DWORD flags, xIShellItem *, LPCWSTR) { XMessage(NULL,NULL,XM_DbgLOG,T("PreRen %x"),flags); return S_OK; };
-	STDMETHOD(PostRenameItem)(DWORD flags, xIShellItem *psiItem, LPCWSTR pszNewName, HRESULT hrRename, xIShellItem *psiNewlyCreated) { XMessage(NULL,NULL,XM_DbgLOG,T("PostRen %x %x"),flags, hrRename); return S_OK; };
-	STDMETHOD(PreMoveItem)(DWORD dwFlags, xIShellItem *psiItem, xIShellItem *psiDestinationFolder, LPCWSTR pszNewName) { return S_OK; };
-	STDMETHOD(PostMoveItem)(DWORD flags, xIShellItem *psiItem, xIShellItem *psiDestinationFolder, LPCWSTR pszNewName, HRESULT hrMove, xIShellItem *psiNewlyCreated) { XMessage(NULL,NULL,XM_DbgLOG,T("PostMove %x %x"),flags, hrMove); return S_OK; };
-	STDMETHOD(PreCopyItem)(DWORD dwFlags, xIShellItem *psiItem, xIShellItem *psiDestinationFolder, LPCWSTR pszNewName) { return S_OK; };
-	STDMETHOD(PostCopyItem)(DWORD flags, xIShellItem *psiItem, xIShellItem *psiDestinationFolder, LPCWSTR pszNewName, HRESULT hrCopy, xIShellItem *psiNewlyCreated) { XMessage(NULL,NULL,XM_DbgLOG,T("PostCopy %x %x"),flags, hrCopy); return S_OK; };
-	STDMETHOD(PreDeleteItem)(DWORD dwFlags, xIShellItem *psiItem) { return S_OK; };
-	STDMETHOD(PostDeleteItem)(DWORD dwFlags, xIShellItem *psiItem, HRESULT hrDelete, xIShellItem *psiNewlyCreated) { return S_OK; };
-	STDMETHOD(PreNewItem)(DWORD dwFlags, xIShellItem *psiDestinationFolder, LPCWSTR pszNewName) { return S_OK; };
-	STDMETHOD(PostNewItem)(DWORD dwFlags, xIShellItem *psiDestinationFolder, LPCWSTR pszNewName, LPCWSTR pszTemplateName, DWORD dwFileAttributes, HRESULT hrNew, xIShellItem *psiNewItem) { return S_OK; };
+	STDMETHOD(PostRenameItem)(DWORD flags, xIShellItem * /*Item*/, LPCWSTR /*NewName*/, HRESULT hrRename, xIShellItem * /*NewlyCreated*/) { XMessage(NULL,NULL,XM_DbgLOG,T("PostRen %x %x"),flags, hrRename); return S_OK; };
+	STDMETHOD(PreMoveItem)(DWORD /*Flags*/, xIShellItem * /*Item*/, xIShellItem * /*DestinationFolder*/, LPCWSTR /*NewName*/) { return S_OK; };
+	STDMETHOD(PostMoveItem)(DWORD flags, xIShellItem * /*Item*/, xIShellItem * /*DestinationFolder*/, LPCWSTR /*NewName*/, HRESULT hrMove, xIShellItem * /*NewlyCreated*/) { XMessage(NULL,NULL,XM_DbgLOG,T("PostMove %x %x"),flags, hrMove); return S_OK; };
+	STDMETHOD(PreCopyItem)(DWORD /*Flags*/, xIShellItem * /*Item*/, xIShellItem * /*DestinationFolder*/, LPCWSTR /*NewName*/) { return S_OK; };
+	STDMETHOD(PostCopyItem)(DWORD flags, xIShellItem * /*Item*/, xIShellItem * /*DestinationFolder*/, LPCWSTR /*NewName*/, HRESULT hrCopy, xIShellItem * /*NewlyCreated*/) { XMessage(NULL,NULL,XM_DbgLOG,T("PostCopy %x %x"),flags, hrCopy); return S_OK; };
+	STDMETHOD(PreDeleteItem)(DWORD /*Flags*/, xIShellItem * /*Item*/) { return S_OK; };
+	STDMETHOD(PostDeleteItem)(DWORD /*Flags*/, xIShellItem * /*Item*/, HRESULT /*Delete*/, xIShellItem * /*NewlyCreated*/) { return S_OK; };
+	STDMETHOD(PreNewItem)(DWORD /*Flags*/, xIShellItem * /*DestinationFolder*/, LPCWSTR /*NewName*/) { return S_OK; };
+	STDMETHOD(PostNewItem)(DWORD /*Flags*/, xIShellItem * /*DestinationFolder*/, LPCWSTR /*NewName*/, LPCWSTR /*TemplateName*/, DWORD /*FileAttributes*/, HRESULT /*New*/, xIShellItem * /*NewItem*/) { return S_OK; };
 	STDMETHOD(UpdateProgress)(UINT iWorkTotal, UINT iWorkSoFar) { XMessage(NULL,NULL,XM_DbgLOG,T("Prog %d %d"),iWorkTotal, iWorkSoFar); return S_OK; };
 	STDMETHOD(ResetTimer)(void) { XMessage(NULL,NULL,XM_DbgLOG,T("ResetTimer")); return S_OK; };
 	STDMETHOD(PauseTimer)(void) { XMessage(NULL,NULL,XM_DbgLOG,T("PauseTimer"));return S_OK; };

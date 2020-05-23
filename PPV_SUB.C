@@ -32,7 +32,7 @@ const TCHAR *dtype[] = {T("?D"), T("XD"), T("YD"), T("ZD")};
 const TCHAR *utype[] = {T("?"), T("X"), T("Y"), T("Z")};
 
 const TCHAR StrTcodeESC[] = T("ESC");
-const TCHAR StrTcodeQuoted[] = T("quoted");
+const TCHAR StrTcodeMIME[] = T("MIME");
 const TCHAR StrTcodeTag[] = T("<tag>");
 
 const TCHAR StrTcodeSelLines[] = MES_TXSL;
@@ -573,8 +573,6 @@ void FixChangeMode(HWND hWnd)
 -----------------------------------------------------------------------------*/
 void SetPopMsg(ERRORCODE err, const TCHAR *msg)
 {
-	RECT FAR rect;
-
 	if ( msg != NULL ){
 		tstrcpy(PopMsgStr, MessageText(msg));
 	}else{
@@ -582,11 +580,7 @@ void SetPopMsg(ERRORCODE err, const TCHAR *msg)
 	}
 	PopMsgFlag = PMF_WAITKEY | PMF_PROGRESS;
 
-	rect.left	= 0;
-	rect.top	= 0;
-	rect.right	= WndSize.cx;
-	rect.bottom	= fontY - 1;
-	InvalidateRect(vinfo.info.hWnd, &rect, FALSE);	// 更新指定
+	InvalidateRect(vinfo.info.hWnd, &BoxStatus, TRUE);
 
 	if ( !(err & POPMSG_NOLOGFLAG) ){
 		if ( X_evoc == 1 ){
@@ -826,16 +820,15 @@ void PPvAddDisplayTypeMenu(HMENU hPopupMenu, BOOL extend)
 
 void GetDivMax(DDWORDST *divptr)
 {
-	DDWORDST temp;
+	if ( (FileRealSize.HighPart != 0) || (FileRealSize.LowPart >= X_wsiz) ){
+		DWORD lastsize;
 
-	for (;;){
-		temp = *divptr;
-		AddDD(temp.LowPart, temp.HighPart, X_wsiz, 0);
-		if ( (temp.HighPart > FileRealSize.HighPart) ||
-			 ((temp.HighPart == FileRealSize.HighPart) && (temp.LowPart > FileRealSize.LowPart)) ){
-			break;
-		}
-		*divptr = temp;
+		*divptr = FileRealSize;
+		lastsize = X_wsiz - 0x100;
+		SubDD(divptr->LowPart, divptr->HighPart, lastsize, 0);
+		divptr->LowPart &= 0xffffff00; // アドレス正規化
+	}else{
+		divptr->LowPart = 0;
 	}
 }
 
@@ -939,7 +932,7 @@ HMENU TextCodeMenu(BOOL SelectMode)
 			}
 			AppendMenu(hPopupMenu, MF_SEPARATOR, 0, NULL);
 			AppendMenuCheckString(hPopupMenu, MENUID_ESCSWITCH, StrTcodeESC, VO_Tesc);
-			AppendMenuCheckString(hPopupMenu, MENUID_QUOTEDSWITCH, StrTcodeQuoted, VO_Tquoted);
+			AppendMenuCheckString(hPopupMenu, MENUID_MIMESWITCH, StrTcodeMIME, VO_Tmime);
 			AppendMenuCheckString(hPopupMenu, MENUID_TAGSWITCH, StrTcodeTag, VO_Ttag == 1);
 		}
 	}
@@ -987,8 +980,8 @@ ERRORCODE PPV_TextCode(HWND hWnd, int defaultindex)
 				VO_CodePage = 0;	// ISO-8859 等で変更することがあるため
 				break;
 
-			case MENUID_QUOTEDSWITCH: // quoted text
-				VO_Tquoted = VO_Tquoted ? 0 : 1;
+			case MENUID_MIMESWITCH: // MIME text
+				VO_Tmime = VO_Tmime ? 0 : 1;
 				break;
 
 			case MENUID_TAGSWITCH: // html tag
@@ -1061,7 +1054,7 @@ void SetScrollBar(void)
 				VO_maxX += (XV_lleft + fontX - 1) / fontX;
 			}
 
-			VO_maxY = LongText ? LONGTEXTWIDTH : (VOi->line + TAILMARGIN);
+			VO_maxY = LineCount == LC_READY ? (VOi->line + TAILMARGIN) : LONGTEXTWIDTH ;
 
 			VO_sizeX = (WndSize.cx / fontX);
 			VO_sizeY = ((BoxView.bottom - BoxView.top) / LineY + 1);
@@ -1132,48 +1125,75 @@ void SetScrollBar(void)
 	sinfo.nMax	= VO_maxX;
 	SetScrollInfo(vinfo.info.hWnd, SB_HORZ, &sinfo, TRUE);
 
-	if ( LongText ){
+	if ( (FileDivideMode >= FDM_DIV) && (vo_.DModeBit & VO_dmode_TEXTLIKE) ){ // 分割表示
+		DWORD pos, posmax, npos;
+		DDWORDST rsize;
+
+		rsize = FileRealSize;
+		if ( (rsize.HighPart != 0) || (rsize.LowPart >= X_wsiz) ){
+			DWORD lastsize;
+
+			lastsize = (X_wsiz - 1) & 0xffffff00;
+			SubDD(rsize.LowPart, rsize.HighPart, lastsize, 0);
+		}else{ // X_wsiz に収まるファイルサイズ
+			rsize.LowPart = 0;
+		}
 		sinfo.nPage	= 1;
 		sinfo.nMin	= 0;
-		sinfo.nPos	= VOi->offY;
-
-/*
-		FileDividePointer.LowPart
-
-		if ( FileRealSize.u.HighPart || (FileRealSize.u.LowPart & 0xffff0000) ){
-						// 0x0200 0000 0000(2TB) ～ 0x1ff ffff ffff ffff(128P)
-			if ( FileRealSize.u.HighPart >= 0x200 ){
-				per = (FileDividePointer.u.HighPart * 100) / FileRealSize.u.HighPart;
-			}else{		// 0x0200 0000(32M) ～ 0x1ff ffff ffff(2TB)
-				per = ( ((((DWORD)FileDividePointer.u.HighPart) << 16) |
-						(FileDividePointer.u.LowPart >> 16)) * 100) /
-					  ( ((((DWORD)FileRealSize.u.HighPart) << 16) |
-						(FileRealSize.u.LowPart >> 16)) );
+		sinfo.nMax	= 0x4000;
+		if ( (rsize.HighPart != 0) || (rsize.LowPart >= 0x80000000) ){
+			if ( rsize.HighPart >= 0x10000 ){ // 0xXXXX XXXX ???? ????
+				pos = FileDividePointer.HighPart;
+				posmax = rsize.HighPart;
+				npos = 0; // 精度不足
+			}else{ // 0x0000 XXXX XXXX ????
+				pos = (FileDividePointer.HighPart << 16) |
+					  (FileDividePointer.LowPart >> 16);
+				posmax = (rsize.HighPart << 16) |
+						 (rsize.LowPart >> 16);
+				npos = (X_wsiz >= 0x10000) ?
+						CalcMulDiv(VOi->offY, X_wsiz >> 16, VO_maxY) : 0;
 			}
 		}else{
-			if ( FileRealSize.u.LowPart > 0x10000 ){
-				per = (FileDividePointer.u.LowPart * 0x10000) / FileRealSize.u.LowPart;
-
-				// 0x0000 0001      ～  0x0000 ffff(64K)
-			if ( FileRealSize.u.LowPart ){
-				per = (FileDividePointer.u.LowPart * 0x10000) / FileRealSize.u.LowPart;
-			}else{							// 0x0000 0000
-				per = 0;
+			// 0x0000 0000 XXXX XXXX
+			if ( rsize.LowPart != 0 ){
+				pos = FileDividePointer.LowPart;
+				posmax = rsize.LowPart;
+			}else{
+				pos = 0;
+				posmax = 1;
 			}
+			npos = CalcMulDiv(VOi->offY, X_wsiz, VO_maxY);
 		}
-*/
+		sinfo.nPos = CalcMulDiv(pos + npos, sinfo.nMax, posmax);
 	}else{
-		sinfo.nPage	= VO_sizeY;
-		sinfo.nMin	= VO_minY;
+		sinfo.nMax = VO_maxY;
 		sinfo.nPos	= VOi->offY;
+		if ( LineCount != LC_READY ){ // 行計算完了前
+			sinfo.nPage	= 1;
+			sinfo.nMin	= 0;
+		}else{ // 行計算済み
+			sinfo.nPage	= VO_sizeY;
+			sinfo.nMin	= VO_minY;
+		}
 	}
-	sinfo.nMax = VO_maxY;
 	SetScrollInfo(vinfo.info.hWnd, SB_VERT, &sinfo, TRUE);
 }
 //----------------------------------------------------------------------------
 void USEFASTCALL MoveCsr(int x, int y, BOOL detailmode)
 {
 	RECT box;
+
+	if ( (y != 0) && (FileDivideMode >= FDM_DIV) && (vo_.DModeBit & VO_dmode_TEXTLIKE) ){
+		if ( (y > 0) && (y < VO_sizeY) && (VOi->offY == (VO_maxY - VO_sizeY)) ){
+			DivChange(1);
+			return;
+		}
+		if ( (y < 0) && (y > -VO_sizeY) && (VOi->offY == VO_minY) ){
+			DivChange(-1);
+			return;
+		}
+	}
 
 	x += VOi->offX;
 	y += VOi->offY;
@@ -1274,6 +1294,10 @@ void CloseViewObject(void)
 {
 	VO_INFO *tmpVOi;
 
+	if ( PlayWave ){
+		PlayWave = FALSE;
+		DsndPlaySound(NULL, 0);
+	}
 	if ( BackReader != FALSE ) KillTimer(vinfo.info.hWnd, TIMERID_READLINE);
 	if ( hReadStream != NULL ){
 		CloseHandle(hReadStream);
@@ -1312,7 +1336,7 @@ void CloseViewObject(void)
 				addbin.info |= (vo_.bitmap.rotate & 3) << HISTOPT_IMAGEOPT_FLAGSHIFT;
 			}else{
 				addbin.info |= VOi->textC << HISTOPT_TEXTOPT_CODESHIFT;
-				if ( VO_Tquoted ) setflag(addbin.info, HISTOPT_TEXTOPT_QUOTED << HISTOPT_TEXTOPT_FLAGSHIFT);
+				if ( VO_Tmime ) setflag(addbin.info, HISTOPT_TEXTOPT_MIME << HISTOPT_TEXTOPT_FLAGSHIFT);
 				if ( !VO_Tesc ) setflag(addbin.info, HISTOPT_TEXTOPT_ESC << HISTOPT_TEXTOPT_FLAGSHIFT);
 				setflag(addbin.info, (((VO_Ttag & 3) + 1) << (HISTOPT_TEXTOPT_TAGSHIFT + HISTOPT_TEXTOPT_FLAGSHIFT)));
 			}
@@ -1422,7 +1446,7 @@ void CloseViewObject(void)
 	VO_Ttag = 0;
 	VO_Tshow_script = 1;
 	VO_Tshow_css = 1;
-	VO_Tquoted = 0;
+	VO_Tmime = 0;
 	VO_CodePage = 0;
 	XV_lleft = 0;
 	viewopt_opentime.dtype = -1;
@@ -1442,9 +1466,17 @@ void CloseViewObject(void)
 			XMessage(NULL, NULL, XM_FaERRld, T("vo.file:free error"));
 		}
 	}
+	if ( vo_.file.other.mapH != NULL ){
+		GlobalUnlock(vo_.file.other.mapH);
+		if ( GlobalFree(vo_.file.other.mapH) != NULL ){
+			XMessage(NULL, NULL, XM_FaERRld, T("vo.file.other:free error"));
+		}
+	}
 
 	vo_.file.mapH = NULL;
 	vo_.file.image = NULL;
+	vo_.file.other.mapH = NULL;
+	vo_.file.other.image = NULL;
 
 	if ( vo_.bitmap.bits.mapH != NULL ){
 		LocalUnlock(vo_.bitmap.bits.mapH);
@@ -2447,7 +2479,7 @@ void ConvertMain(void)
 		XV_bctl[2] = 0;
 
 		mti.destbuf = (BYTE *)buf;
-		mti.srcmax = vo_.file.image + vo_.file.UseSize;
+		mti.srcmax = mtinfo.img + mtinfo.MemSize; // vo->file.image + vo->file.UseSize;
 		mti.writetbl = FALSE;
 		mti.paintmode = FALSE;
 
@@ -2777,24 +2809,34 @@ void ViewfileContextMenu(HWND hWnd)
 
 void DivChange(int offset)
 {
+	DWORD rate;
+
 	if ( (FileDivideMode < FDM_NODIVMAX) || !(vo_.DModeBit & VO_dmode_ENABLEBACKREAD) ){
 		return;
 	}
+	rate = X_wsiz - 0x100;
 	if ( offset >= 0 ){
 		DDWORDST temp;
 
 		temp = FileDividePointer;
-		AddDD(temp.LowPart, temp.HighPart, X_wsiz, 0);
+		AddDD(temp.LowPart, temp.HighPart, rate, 0);
 		if ( (temp.HighPart > FileRealSize.HighPart) ||
-			 ((temp.HighPart == FileRealSize.HighPart) && (temp.LowPart > FileRealSize.LowPart)) ){
+			 ((temp.HighPart == FileRealSize.HighPart) && (temp.LowPart >= FileRealSize.LowPart)) ){
 			return;
 		}
 		FileDividePointer = temp;
+		VOi->offY = 0;
 	}else{
 		if ( !(FileDividePointer.LowPart | FileDividePointer.HighPart) ){
 			return;
 		}
-		SubDD(FileDividePointer.LowPart, FileDividePointer.HighPart, X_wsiz, 0);
+		if ( (FileDividePointer.HighPart == 0) &&
+			 (FileDividePointer.LowPart < X_wsiz) ){
+			FileDividePointer.LowPart = 0;
+		}else{
+			SubDD(FileDividePointer.LowPart, FileDividePointer.HighPart, rate, 0);
+		}
+		VOi->offY = 0x7ffffffe;
 	}
 	PPvReload(&vinfo);
 }

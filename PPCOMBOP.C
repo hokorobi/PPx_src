@@ -864,6 +864,7 @@ int GetTabItemIndex(HWND hWnd, int tabwndindex)
 #define CMENU_SWAPPANE		12
 #define CMENU_SAVEWIDTH		13
 #define CMENU_KEYSELECT		14
+#define CMENU_CLOSEDLIST	30000
 #define CMENU_ADDITEMS		100
 
 void SetTabColor(int baseindex)
@@ -1003,6 +1004,31 @@ void SwapPane(int targetpane)
 	SortComboWindows(SORTWIN_LAYOUTPAIN);
 }
 
+void AddClosedList(HMENU hMenu)
+{
+	TCHAR buf[VFPS + 16];
+	int index, id, count = 0;
+	HMENU hSubMenu = CreatePopupMenu();
+
+	id = Combo.ClosedIndex - 1;
+	for ( index = 0; index < Combo.CloededItems; index++, id-- ){
+		if ( id < 0 ) id = Combo.CloededItems - 1;
+		if ( Combo.closed[id].ID[0] != '\0' ){
+			int offset;
+
+			offset = wsprintf(buf, T("%s : "), Combo.closed[id].ID + 1);
+			GetCustTable(T("_Path"), Combo.closed[id].ID, buf + offset, VFPS);
+			AppendMenuString(hSubMenu, CMENU_CLOSEDLIST + id, buf);
+			count++;
+		}
+	}
+	if ( count > 0 ){
+		AppendMenu(hMenu, MF_EPOP, (UINT_PTR)hSubMenu, MessageText(MES_TABS));
+	}else{
+		DestroyMenu(hSubMenu);
+	}
+}
+
 BOOL TabMenu(HWND hTabWnd, int baseindex, int targetpane, POINT *pos)
 {
 	HMENU hMenu;
@@ -1010,7 +1036,7 @@ BOOL TabMenu(HWND hTabWnd, int baseindex, int targetpane, POINT *pos)
 	HWND hPaneWnd = NULL;
 	ThSTRUCT thMenuData;
 	POINT temppos;
-	TCHAR buf[64];
+	TCHAR buf[VFPS + 32];
 	DWORD exid = CMENU_ADDITEMS;
 
 	if ( baseindex >= Combo.BaseCount ) return FALSE;
@@ -1074,6 +1100,7 @@ BOOL TabMenu(HWND hTabWnd, int baseindex, int targetpane, POINT *pos)
 				 &Combo.base[baseindex].cinfo->info : NULL,
 				Combo.hWnd, hMenu, &exid, T("M_tabc"), &thMenuData);
 
+		AddClosedList(hMenu);
 		AppendMenuString(hMenu, CMENU_CLOSE, MES_TABC);
 	}else{
 		AppendMenuString(hMenu, CMENU_NEWPANE, MES_TABP);
@@ -1083,6 +1110,7 @@ BOOL TabMenu(HWND hTabWnd, int baseindex, int targetpane, POINT *pos)
 		if ( hTabWnd != NULL ){
 			AppendMenuString(hMenu, CMENU_KEYSELECT, MES_TABK);
 		}
+		AddClosedList(hMenu);
 		if ( Combo.ShowCount >= 2 ){
 			AppendMenuString(hMenu, CMENU_SWAPPANE, MES_TABW);
 			AppendMenuString(hMenu, !(X_combos[0] & CMBS_TABEACHITEM) ?
@@ -1117,6 +1145,12 @@ BOOL TabMenu(HWND hTabWnd, int baseindex, int targetpane, POINT *pos)
 		}
 	}
 	menuindex = TrackPopupMenu(hMenu, TPM_TDEFAULT, pos->x, pos->y, 0, Combo.hWnd, NULL);
+	if ( menuindex >= CMENU_CLOSEDLIST ){
+		tstrcpy(buf, T("-bootid: "));
+		GetMenuString(hMenu, menuindex, buf + 8, VFPS + 8, MF_BYCOMMAND);
+		*tstrchr(buf, ' ') = '\0';
+		CreateNewTabParam(showindex, -1, buf);
+	}
 	DestroyMenu(hMenu);
 	switch (menuindex){
 		case CMENU_NEWTAB:
@@ -1199,6 +1233,7 @@ BOOL TabMenu(HWND hTabWnd, int baseindex, int targetpane, POINT *pos)
 			break;
 
 		default:
+			if ( menuindex >= CMENU_CLOSEDLIST ) break;
 			if ( menuindex >= CMENU_ADDITEMS ){
 				const TCHAR *command;
 
@@ -1378,6 +1413,11 @@ void DestroyedPaneWindow(HWND hComboWnd, HWND hPaneWnd)
 	if ( comboDocks.t.cinfo == cinfo ){
 		comboDocks.t.cinfo = NULL;
 		comboDocks.b.cinfo = NULL;
+	}
+
+	if ( (Combo.closed != NULL) && (Combo.CloededItems > 0) ){
+		tstrcpy(Combo.closed[Combo.ClosedIndex++].ID, cinfo->RegSubCID);
+		if ( Combo.ClosedIndex >= Combo.CloededItems ) Combo.ClosedIndex = 0;
 	}
 
 	if ( showindex >= 0 ){						// ï\é¶ÉyÉCÉìÇ©ÇÁçÌèú ---------

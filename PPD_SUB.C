@@ -125,6 +125,7 @@ HANDLE SpinThreadAliveCheck(void)
 		hThread = DOpenThread(THREAD_QUERY_INFORMATION,
 				FALSE, Sm->UsePPxSync.ThreadID);
 		if ( hThread != NULL ) CloseHandle(hThread); // スレッドは有効
+#pragma warning(suppress:6001) // 真偽の判断のみに使用
 		return hThread;
 	}else{
 		return INVALID_HANDLE_VALUE;
@@ -713,7 +714,7 @@ void MakeUserfilename(TCHAR *dst, const TCHAR *src, const TCHAR *idname)
 	wsprintf(dst, T("%s%sDEF.DAT"), DLLpath, src);
 	if ( GetFileAttributes(dst) != BADATTR ) return;
 
-	if ( !GetRegString(HKEY_CURRENT_USER, idname, src, dst, TSIZEOF(dst)) ){
+	if ( !GetRegString(HKEY_CURRENT_USER, idname, src, dst, MAX_PATH) ){
 		TCHAR *p;
 		DWORD t;
 
@@ -1423,7 +1424,7 @@ BOOL MakeTempEntrySub(TCHAR *tempath, DWORD attribute)
 		p += Ismulti(*p) ? 2 : 1;
 	}
 
-	CatPath(tempath, TempPath, buf);
+	CatPath(tempath, ProcTempPath, buf);
 	GetUniqueEntryName(tempath);
 	if ( attribute & FILE_ATTRIBUTE_DIRECTORY ){
 		return CreateDirectory(tempath, NULL);
@@ -1436,14 +1437,16 @@ PPXDLL BOOL PPXAPI MakeTempEntry(DWORD bufsize, TCHAR *tempath, DWORD attribute)
 	DWORD seed;
 	int pathlen, i;
 
-	if ( TempPath[0] == '\0' ){
-		GetTempPath(MAX_PATH, TempPath);
-		if ( MakeTempEntry(MAX_PATH, TempPath, FILE_ATTRIBUTE_DIRECTORY) == FALSE ){
-			tstrcpy(TempPath, StrDummyTempPath); // TempPath が生成できなかったので、決め打ちでディレクトリを決める
+	if ( ProcTempPath[0] == '\0' ){
+		GetTempPath(MAX_PATH, ProcTempPath);
+		if ( ProcTempPath[0] == '\0' ) tstrcpy(ProcTempPath, DLLpath);
+
+		if ( MakeTempEntry(MAX_PATH, ProcTempPath, FILE_ATTRIBUTE_DIRECTORY) == FALSE ){
+			tstrcpy(ProcTempPath, StrDummyTempPath); // ProcTempPath が生成できなかったので、決め打ちでディレクトリを決める
 		}
 	}
 	// 2: "\\" と "\n" 8:filename 4:ext
-	if ( (tstrlen(TempPath) + ( 2 + 8 + 4 )) >= (size_t)bufsize ){
+	if ( (tstrlen(ProcTempPath) + ( 2 + 8 + 4 )) >= (size_t)bufsize ){
 		if ( bufsize >= TSIZEOF(StrDummyTempPath) ){
 			tstrcpy(tempath, StrDummyTempPath);
 		}
@@ -1454,7 +1457,7 @@ PPXDLL BOOL PPXAPI MakeTempEntry(DWORD bufsize, TCHAR *tempath, DWORD attribute)
 		return MakeTempEntrySub(tempath, attribute);
 	}
 
-	CatPath(tempath, TempPath, NilStr);
+	CatPath(tempath, ProcTempPath, NilStr);
 
 	if ( attribute & FILE_ATTRIBUTE_COMPRESSED ){
 		resetflag(attribute, FILE_ATTRIBUTE_COMPRESSED);
@@ -1486,7 +1489,7 @@ PPXDLL BOOL PPXAPI MakeTempEntry(DWORD bufsize, TCHAR *tempath, DWORD attribute)
 		result = GetLastError();
 
 		if ( result == ERROR_PATH_NOT_FOUND ){
-			if ( CreateDirectory(TempPath, NULL) == FALSE ) break;
+			if ( CreateDirectory(ProcTempPath, NULL) == FALSE ) break;
 			continue;
 		}
 		if ( result != ERROR_FILE_EXISTS ){
@@ -1548,7 +1551,7 @@ BOOL CALLBACK GetWindowFromPointProc(HWND hWnd, LPARAM gc)
 
 	if ( !IsWindowVisible(hWnd) ) return TRUE; // HIDE状態
 	GetWindowRect(hWnd, &box);
-	if (PtInRect(&box, ((struct GETCHILD *)gc)->pos) &&
+	if ( PtInRect(&box, ((struct GETCHILD *)gc)->pos) &&
 			(((struct GETCHILD *)gc)->box.left   <= box.left  ) &&
 			(((struct GETCHILD *)gc)->box.top    <= box.top   ) &&
 			(((struct GETCHILD *)gc)->box.right  >= box.right ) &&

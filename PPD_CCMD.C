@@ -485,9 +485,9 @@ PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd, LPARAM lParam, WORD key)
 				FreeLibrary(hComctl32);
 				hComctl32 = NULL;
 			}
-			if ( TempPath[0] != '\0' ){
-				DeleteDirectories(TempPath, FALSE);
-				TempPath[0] = '\0';
+			if ( ProcTempPath[0] != '\0' ){
+				DeleteDirectories(ProcTempPath, FALSE);
+				ProcTempPath[0] = '\0';
 			}
 			FreePPx();
 			break;

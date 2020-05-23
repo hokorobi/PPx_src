@@ -137,6 +137,17 @@ BOOL SearchStr(PPxEDSTRUCT *PES, int mode)
 	findstr = PES->findrep->findtext;
 
 	if ( (mode == EDITDIST_DIALOG) || (findstr[0] == '\0') ){
+		DWORD firstC, lastC;
+
+		SendMessage(PES->hWnd, EM_GETSEL, (WPARAM)&firstC, (LPARAM)&lastC);
+		if ( firstC != lastC ){
+			TEXTSEL ts;
+
+			if ( IsTrue(SelectEditStrings(PES, &ts, TEXTSEL_CHAR)) ){
+				if ( tstrlen(ts.word) < VFPS ) tstrcpy(findstr, ts.word);
+			}
+		}
+
 		if ( tInput(PES->hWnd, T("Find string"), findstr,
 				TSIZEOF(PES->findrep->findtext) - 1, PPXH_SEARCH, PPXH_SEARCH) <= 0 ){
 			return FALSE;
@@ -317,7 +328,7 @@ TCHAR *SearchFileInedMain(ESTRUCT *ED, TCHAR *str, int mode)
 		}
 						// ファイル列挙に成功したため、内容一致を調べる -------
 		if ( ED->cmdsearch & CMDSEARCH_DIRECTORY ){ // dir 属性？
-			#pragma warning(suppress:4701)
+			#pragma warning(suppress:4701 6001)
 			if ( !(ff.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ) continue;
 		}
 		// 部分/roma一致
@@ -516,14 +527,24 @@ BOOL USEFASTCALL SelectEditStringsS(PPxEDSTRUCT *PES, TEXTSEL *ts, int mode)
 		top = end = ts->text + ts->cursor.start;
 		switch ( mode ){
 			case TEXTSEL_CHAR:	// Del
-				#ifdef UNICODE
-					end += 1;
-				#else
-					end += Chrlen(*end);
-				#endif
+				if ( *end == 0xd ){
+					end++;
+					if ( *end == 0xa ) end++;
+				}else{
+					#ifdef UNICODE
+						end++;
+					#else
+						end += Chrlen(*end);
+					#endif
+				}
 				break;
 			case TEXTSEL_BACK:	// BS
-				top -= bchrlen(ts->text, top - ts->text);
+				if ( (ts->text < top) && ( *(top - 1) == 0xa ) ){
+					top--;
+					if ( (ts->text < top) && ( *(top - 1) == 0xd ) ) top--;
+				}else{
+					top -= bchrlen(ts->text, top - ts->text);
+				}
 				break;
 			case TEXTSEL_WORD:	// Word
 				while( (UTCHAR)*end > ' ' ) end++;

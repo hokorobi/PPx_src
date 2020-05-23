@@ -380,6 +380,9 @@ typedef DWORD ERRORCODE;	// Win32API のエラーコード(GetLastError)
 // ↑ dstL -= srcL;dstL + srcL;if ( C flag ) dstH--; と最適化される
 // #  dstL -= srcL;if ( C flag ) dstH--; と最適化されると嬉しいのだが(^^;
 
+#define ShiftDivDD(srcL, srcH, rshift)\
+	((DWORD)( ((DWORD)srcL >> rshift) | ((DWORD)srcH << (32 - rshift)) ))
+
 // 指定したメモリをセキュリティ目的で消去する
 #define ClearMemory(ptr, size) memset((ptr), 0, (size));*(volatile char *)(ptr) = *(volatile char *)(ptr);
 

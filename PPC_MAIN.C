@@ -1220,6 +1220,7 @@ void WMMouseMove(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 	if ( (cinfo->oldmousemvpos.x == pos.x) &&
 		 (cinfo->oldmousemvpos.y == pos.y) ){
 		if ( cinfo->MouseStat.mode != MOUSEMODE_DRAG ) return;
+		// ※２
 	}else{
 		cinfo->oldmousemvpos = pos;
 
@@ -1230,7 +1231,7 @@ void WMMouseMove(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 
 		posType = GetItemTypeFromPoint(cinfo, &pos, &itemNo);
 
-		if ( X_poshl != 0 ){ // マウスカーソル上のエントリ背景色変更
+		if ( X_poshl != 0 ){ // ※１ マウスカーソル上のエントリ背景色変更
 //			setflag(cinfo->Tip.mode, STIP_SHOWTAILAREA);
 			if ( (posType >= PPCR_CELLMARK) ){
 				pn = itemNo;
@@ -1359,7 +1360,8 @@ void WMMouseMove(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 			cinfo->MouseDragPoint = pos;
 			CalcDragTarget(cinfo, &pos, &area);
 			MarkDragArea(cinfo, &area, MARK_REVERSE);
-			if ( ((X_poshl != 0) && (pn == -2)) || (oldmarks != cinfo->e.markC) ){ // C4701ok
+		#pragma warning(suppress:4701) // X_poshl != 0 のときは ※１で pn 設定、※２は通過しない
+			if ( ((X_poshl != 0) && (pn == -2)) || (oldmarks != cinfo->e.markC) ){
 				Repaint(cinfo);
 				UpdateWindow(cinfo->info.hWnd);
 			}

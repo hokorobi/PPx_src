@@ -58,7 +58,7 @@ struct ComboList {	// コンボボックス処理用リストボックス
 	FILLTEXTFILE filltext_user;	// ユーザ指定用
 };
 
-// 内部で使用する PPXEDIT_ 。原則として B30 から順番に使用する
+// 内部で使用する PPXEDIT_ 。B20-B30 まで使用可能
 
 #define PPXEDIT_LINEEDIT	B27	// 一行編集ダイアログ上で使用
 #define PPXEDIT_TEXTEDIT	B28	// テキスト編集(MULTILINE)

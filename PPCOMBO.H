@@ -51,6 +51,10 @@ typedef struct {
 } COMBOPANES;
 
 typedef struct {
+	TCHAR ID[REGEXTIDSIZE];
+} CLOSEDPPC;
+
+typedef struct {
 	HWND hWnd;	// Combo 親ウィンドウ(INVALID_HANDLE_VALUE:終了中)
 	HWND hAddressWnd;
 	HWND hTreeWnd;
@@ -101,6 +105,9 @@ typedef struct {
 		HBRUSH hBrush;
 		AREA box;
 	} Report;
+
+	CLOSEDPPC *closed;
+	int CloededItems, ClosedIndex;
 } COMBOSTRUCT;
 
 extern COMBOSTRUCT Combo;

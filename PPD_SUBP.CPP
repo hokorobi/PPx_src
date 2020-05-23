@@ -327,6 +327,8 @@ PPXDLL void PPXAPI GetColumnExtMenu(ThSTRUCT *thEcdata, const TCHAR *targetpath,
 				continue;
 			}
 			LPWSTR dname, cname;
+
+#pragma warning(suppress:6001) // 誤検出(IN 不要)
 			if ( SUCCEEDED(pd->GetDisplayName(&dname)) ){
 				#undef title
 				#ifndef UNICODE
@@ -350,6 +352,7 @@ PPXDLL void PPXAPI GetColumnExtMenu(ThSTRUCT *thEcdata, const TCHAR *targetpath,
 				::ThAppend(thEcdata, &newcndi, sizeof(newcndi));
 
 				if ( hMenu != NULL ){
+#pragma warning(suppress:6001) // 誤検出(IN 不要)
 					if ( SUCCEEDED(pd->GetCanonicalName(&cname)) && (cname != NULL) ){
 						WCHAR *grouplast = strrchrW(cname, '.');
 						if ( grouplast == NULL ){
@@ -419,7 +422,6 @@ HRESULT GetLink(HWND hWnd, const TCHAR *LinkFile, TCHAR *Original)
 {
 	HRESULT hres;
 	IShellLink *psl;
-	WIN32_FIND_DATA ff;
 										// IShellLink interface を取得
 	hres = ::CoCreateInstance(XCLSID_ShellLink, NULL,
 			CLSCTX_INPROC_SERVER, XIID_IShellLink, (LPVOID *)&psl);
@@ -439,6 +441,9 @@ HRESULT GetLink(HWND hWnd, const TCHAR *LinkFile, TCHAR *Original)
 			if ( SUCCEEDED(hres) ){
 				hres = psl->Resolve(hWnd, SLR_ANY_MATCH);
 				if ( SUCCEEDED(hres) ){
+					WIN32_FIND_DATA ff;
+
+					#pragma warning(suppress:6001) // 誤検出
 					hres = psl->GetPath(Original, MAX_PATH, &ff, SLGP_UNCPRIORITY);
 					if ( FAILED(hres) || (Original[0] == '\0') ){
 						LPITEMIDLIST idl;

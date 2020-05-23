@@ -129,7 +129,7 @@
 #define IDX_LOGINRE		0x701d
 #define IDS_LOGINUSER	0x701e
 #define IDS_LOGINPASS	0x701f
-//-------------------------------------- File Operation 702x - 707x
+//-------------------------------------- File Operation 7020 - 707f
 #define IDD_FOP			0x7020	// ID
 								// 共通コントロール -----
 #define IDB_FOP_GENERAL	0x705e	// 一般タブ
@@ -200,6 +200,7 @@
 #define IDX_FOP_AROFF	0x704f	// Auto Readonly off VFSFOP_OPTFLAG_AUTOROFF
 
 #define IDX_FOP_JOINBATCH	0x7072	// VFSFOP_OPTFLAG_JOINBATCH
+#define IDX_FOP_EXTFIX		0x7078	// VFSFOP_FILTER_NOEXTFILTER
 #define IDX_FOP_FILEFIX		0x7052	// VFSFOP_FILTER_NOFILEFILTER
 #define IDX_FOP_DIRFIX		0x7053	// VFSFOP_FILTER_NODIRFILTER
 #define IDX_FOP_1STSHEET	0x7051	// firstsheet
@@ -226,21 +227,23 @@
 #define IDX_QDALL		0x7062
 #define IDB_QDADDLIST	0x7063
 
-//============================================================== CUST 74xx-77xx
-//									74xx
+//============================================================== CUST 7400-77ff
+//								common	7400-740f
 #define IDB_TEST		0x7400
 //#define IDB_INSMAC	0x7401
 //#define IDD_BLANK		0x7402
 #define IDD_CMDTREE		0x7402
-//-------------------------------------- list
+//								config text
 #define DEFKEYLIST		0x740e	// CUSTKEY.CFG
 #define DEFCUSTLIST		0x740f	// CUSTLIST.CFG
 
+//-------------------------------------- color text 74a0-74af
 #define COLOR_THEME_1	0x74a0
 #define COLOR_THEME_2	0x74a1
 #define COLOR_THEME_3	0x74a2
 #define COLOR_THEME_4	0x74a3
 #define COLOR_THEME_5	0x74a4
+
 //------------------------------------------------------------- File tab
 #define IDD_INFO		0x7410
 #define IDD_INFOE		0x7420
@@ -405,8 +408,8 @@
 #define IDE_FIXMAX		0x761a
 
 //=============================================================== PPC 78xx-7bxx
-#define ID_PPC			0x7bff
-//-------------------------------------- Attribute
+// #define ID_PPC			0x7bff
+//-------------------------------------- Attribute 7800-7837
 #define IDD_ATR			0x7800
 					// 変更する属性
 #define IDX_ATR_ATR		0x7801
@@ -452,8 +455,10 @@
 #define IDX_ATR_OY		0x7825
 #define IDX_ATR_OI		0x7827
 
-//-------------------------------------- Disk information
+//-------------------------------------- Disk information 7838-787f
 #define IDD_DSKI		0x7840
+
+// 0x7841-0x784e : static text
 #define IDS_DSKI_DN		0x7851	// Drive name
 #define IDE_DSKI_VN		0x7852	// Volume
 #define IDS_DSKI_DT		0x7853	// Disk type
@@ -470,6 +475,10 @@
 #define IDS_DSKI_CUS	0x785c	// Used
 #define IDS_DSKI_CFS	0x785d	// Free
 #define IDS_DSKI_CTS	0x785e	// Total
+						// size rate 7838-783f
+#define IDS_DSKI_RUS	0x783d	// Used space
+#define IDS_DSKI_RFS	0x783e	// Free space
+#define IDS_DSKI_RRF	0x783f	// Free space(real)
 
 #define IDS_DSKI_MF		0x785f	// MaxFileLength
 						// flags
@@ -498,7 +507,7 @@
 #define IDS_DSKI_SPARSE_VDL			0x7876
 #define IDS_DSKI_DAX_VOLUME			0x7877
 
-//-------------------------------------- FileMask
+//-------------------------------------- FileMask // 7880-78bf
 #define IDD_MASK		0x7880
 #define IDX_MASK_DIR	0x7881
 #define IDX_MASK_RTM	0x7882
@@ -507,7 +516,7 @@
 #define IDX_MASK_WORDMATCH	0x7885
 //#define IDX_MASK_THIS	0x7885
 //#define IDX_MASK_CMT	0x7885
-//-------------------------------------- FileJump
+//-------------------------------------- FileJump // 78c0-78cf
 #define IDD_EJUMP		0x78c0
 #define IDB_PREV		0x78c2
 #define IDB_NEXT		0x78c3
@@ -515,7 +524,7 @@
 #define IDX_FRONT		0x78c5
 #define IDX_MODE		0x78c6
 #define IDB_FINDTYPE	0x78c7
-//-------------------------------------- Window
+//-------------------------------------- Window // 78d0-78df
 #define IDD_CWINDOW		0x78d0
 #define IDX_CWIN_DBL	0x78d1
 #define IDX_CWIN_CLO	0x78d2
@@ -529,7 +538,7 @@
 #define IDX_CWIN_FP		0x78da
 #define IDX_CWIN_FUD	0x78db
 #define IDX_CWIN_CMB	0x78dc
-//-------------------------------------- Sort
+//-------------------------------------- Sort // 78e0-78ef
 #define IDD_SORT		0x78e0
 #define IDC_SORT_TYPE1	0x78e1
 #define IDX_SORT_CASE	0x78e2
@@ -546,7 +555,7 @@
 #define IDX_SORT_REV1	0x78ed
 #define IDX_SORT_REV2	0x78ee
 #define IDX_SORT_REV3	0x78ef
-//-------------------------------------- Whereis
+//-------------------------------------- Whereis // 78f0-78ff
 #define IDD_WHERE		0x78f0
 #define IDS_WHERE_SRC	0x78f1
 #define IDC_WHERE_SRC	0x78f2
@@ -562,10 +571,10 @@
 #define IDX_WHERE_SDIR	0x78fc
 #define IDX_WHERE_VFS	0x78fd
 #define IDS_WHERE_STR	0x78fe
-//-------------------------------------- Compare mark
+//-------------------------------------- Compare mark // 7900-790f
 #define IDD_CMARK		0x7900
 #define IDC_TYPE		0x7901
-//-------------------------------------- Property General Page
+//-------------------------------------- Property General Page // 7910-791f
 #define IDD_PROPGENERAL	0x7910
 #define IDS_ICON		0x7911
 #define IDE_FILENAME	0x7912

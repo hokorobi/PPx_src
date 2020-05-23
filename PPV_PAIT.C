@@ -111,7 +111,7 @@ void PaintText(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 	MAKETEXTINFO mti;
 	VT_TABLE raw_vt;
 
-	if ( !LongText ){
+	if ( LineCount == LC_READY ){
 		NowY = pps->drawYtop + VOi->offY;
 		if ( NowY >= VOi->line  ){
 			if ( pps->ps.fErase != FALSE ){
@@ -160,7 +160,7 @@ void PaintText(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 			line = 0;
 		}
 		for ( y = pps->drawYtop ; y <= pps->drawYbottom ; y++ ){
-			if ( ((y + VOi->offY) >= VOi->line) && !LongText ){ // ‹ós
+			if ( ((y + VOi->offY) >= VOi->line) && (LineCount == LC_READY)){ // ‹ós
 				if ( pps->ps.fErase != FALSE ){
 					box.top = y * LineY + pps->view.top;
 					box.bottom = (pps->drawYbottom + 1) * LineY + pps->view.top;
@@ -244,7 +244,7 @@ void PaintText(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 	normalfont = XV_unff ? hUnfixedFont : hBoxFont;
 
 	mti.destbuf = buf;
-	mti.srcmax = vo->file.image + vo->file.UseSize;
+	mti.srcmax = mtinfo.img + mtinfo.MemSize;
 	mti.writetbl = FALSE;
 	mti.paintmode = TRUE;
 
@@ -266,7 +266,7 @@ void PaintText(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 			if ( (CV_lbak[0] != C_AUTO) &&
 				 (ShowTextLineFlags & SHOWTEXTLINE_OLDTEXT) &&
 				 TailModeFlags ){
-				if ( (showy <= OldTailLine) && !LongText ){
+				if ( (showy <= OldTailLine) && (LineCount == LC_READY) ){
 					pps->si.bg = CV_char[VOi->ti[showy].Bclr];
 					if ( showy < OldTailLine ){
 						pps->si.bg = GetLineMarkColor(pps->si.bg, CV_lbak[0]);
@@ -274,7 +274,7 @@ void PaintText(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 				}
 			}
 
-			if ( (CV_lbak[2] != C_AUTO) && !LongText ){
+			if ( (CV_lbak[2] != C_AUTO) && (LineCount == LC_READY) ){
 				int bki;
 
 				for ( bki = BookmarkID_1st ; bki <= MaxBookmark ; bki++ ){
@@ -304,7 +304,7 @@ void PaintText(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 			textfont = normalfont;
 			DxSelectFont(DxDraw, XV_unff ? 1 : 0);
 
-			if ( !LongText ){
+			if ( (LineCount == LC_READY) ){
 				if ( VOi->ti[showy].type == VTYPE_IBM ){
 					textfont = GetIBMFont();
 				}else if ( VOi->ti[showy].type == VTYPE_ANSI ){
@@ -322,7 +322,7 @@ void PaintText(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 					}
 				#endif
 			}
-			if ( LongText ){
+			if ( LineCount != LC_READY ){
 				raw_vt.ptr = MakeDispText(&mti, &raw_vt);
 			}else{
 				VOi->MakeText(&mti, &VOi->ti[showy]);

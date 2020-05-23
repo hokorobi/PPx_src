@@ -592,6 +592,38 @@ void tFillChr(int x1, int y1, int x2, int y2, TCHAR chr)
 	}
 }
 
+#ifdef UNICODE
+	#define CONBOX_H_BAR  '-'
+	#define CONBOX_V_BAR  L"|"
+	#define CONBOX_LT  '+'
+	#define CONBOX_RT  '+'
+	#define CONBOX_LB  '+'
+	#define CONBOX_RB  '+'
+/*
+	#define CONBOX_H_BAR  0x2501
+	#define CONBOX_V_BAR  L"|"
+	#define CONBOX_LT  0x250f
+	#define CONBOX_RT  0x2513
+	#define CONBOX_LB  0x2517
+	#define CONBOX_RB  0x251b
+*/
+#else
+	#define CONBOX_H_BAR  '-'
+	#define CONBOX_V_BAR  "|"
+	#define CONBOX_LT  '+'
+	#define CONBOX_RT  '+'
+	#define CONBOX_LB  '+'
+	#define CONBOX_RB  '+'
+/*	Shift_JIS
+	#define CONBOX_H_BAR  '\6'
+	#define CONBOX_V_BAR  "\5"
+	#define CONBOX_LT  '\1'
+	#define CONBOX_RT  '\2'
+	#define CONBOX_LB  '\3'
+	#define CONBOX_RB  '\4'
+*/
+#endif
+
 /*--------------------------------------
 	ボックスを描く
 --------------------------------------*/
@@ -608,25 +640,25 @@ void tBox(int x1, int y1, int x2, int y2)
 		xy.Y = (SHORT)i;
 		xy.X = (SHORT)x1;
 		SetConsoleCursorPosition(hStdout, xy);
-		WriteConsole(hStdout, T("\5"), 1, &dummy, NULL);
+		WriteConsole(hStdout, CONBOX_V_BAR, 1, &dummy, NULL);
 		xy.X = (SHORT)x2;
 		SetConsoleCursorPosition(hStdout, xy);
-		WriteConsole(hStdout, T("\5"), 1, &dummy, NULL);
+		WriteConsole(hStdout, CONBOX_V_BAR, 1, &dummy, NULL);
 	}
 
-	for ( i = 1 ; i < (x2 - x1) ; i++)	tmp[i] = 6;
-	tmp[i++] = 0;
+	for ( i = 1 ; i < (x2 - x1) ; i++)	tmp[i] = CONBOX_H_BAR;
+	tmp[i++] = '\0';
 										// 上
 	xy.X = (SHORT)x1;
 	xy.Y = (SHORT)y1;
-	tmp[0] = 1;
-	tmp[i - 1] = 2;
+	tmp[0] = CONBOX_LT;
+	tmp[i - 1] = CONBOX_RT;
 	SetConsoleCursorPosition(hStdout, xy);
 	WriteConsole(hStdout, tmp, i, &dummy, NULL);
-										// 下
+										// 下角
 	xy.Y = (SHORT)y2;
-	tmp[0] = 3;
-	tmp[i - 1] = 4;
+	tmp[0] = CONBOX_LB;
+	tmp[i - 1] = CONBOX_RB;
 	SetConsoleCursorPosition(hStdout, xy);
 	WriteConsole(hStdout, tmp, i, &dummy, NULL);
 }
@@ -669,6 +701,30 @@ void tRestore(int x1, int y1, int x2, int y2, CHAR_INFO **ptr)
 	HeapFree( GetProcessHeap(), 0, *ptr);
 }
 
+BOOL IsConsoleOnWindow(void)
+{
+	HWND hWnd1, hWnd2;
+
+	// 他にWindowがない→画面に割り当てられていない場合は、FALSE
+	hWnd1 = GetWindow(hMainWnd, GW_HWNDFIRST);
+	hWnd2 = GetWindow(hMainWnd, GW_HWNDLAST);
+	if ( (hWnd1 == hWnd2) && ((hWnd1 == NULL) || (hWnd1 == hMainWnd)) ){
+		return FALSE;
+	}
+
+	// full screen であれば FALSE (XP/2003 以前)
+	if ( DGetConsoleDisplayMode == INVALID_HANDLE_VALUE ){
+		GETDLLPROC(hKernel32, GetConsoleDisplayMode);
+	}
+	if ( DGetConsoleDisplayMode != NULL ){
+		DWORD displaymode;
+
+		if ( DGetConsoleDisplayMode(&displaymode) == FALSE ) return FALSE;
+		if ( displaymode & CONSOLE_FULLSCREEN_HARDWARE ) return FALSE;
+	}
+	return TRUE;
+}
+
 int Select(TMENU *tmenu)
 {
 	INPUT_RECORD key;
@@ -686,26 +742,19 @@ int Select(TMENU *tmenu)
 	TMENU *t;
 	POINT oldpos;
 
-	if ( DGetConsoleDisplayMode == INVALID_HANDLE_VALUE ){
-		GETDLLPROC(hKernel32, GetConsoleDisplayMode);
-	}
-	if ( DGetConsoleDisplayMode != NULL ){
-		DWORD displaymode;
+	if ( IsConsoleOnWindow() ){
+		HMENU hMenu;
 
-		if ( IsTrue(DGetConsoleDisplayMode(&displaymode)) &&
-			!(displaymode & CONSOLE_FULLSCREEN_HARDWARE) ){
-			HMENU hMenu;
-
-			hMenu = CreatePopupMenu();
-			while ( tmenu->mes != NULL ){
-				AppendMenu(hMenu, MF_ES, tmenu->id, MessageText(tmenu->mes));
-				tmenu++;
-			}
-			k = (int)PPxCommonExtCommand(K_CPOPMENU, (WPARAM)hMenu);
-			DestroyMenu(hMenu);
-			return k;
+		hMenu = CreatePopupMenu();
+		while ( tmenu->mes != NULL ){
+			AppendMenu(hMenu, MF_ES, tmenu->id, MessageText(tmenu->mes));
+			tmenu++;
 		}
+		k = (int)PPxCommonExtCommand(K_CPOPMENU, (WPARAM)hMenu);
+		DestroyMenu(hMenu);
+		return k;
 	}
+
 	GetConsoleWindowInfo(hStdout, &oldinfo);
 	GetConsoleCursorInfo(hStdout, &oldcsr);
 	tCsrMode(-1);

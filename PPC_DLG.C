@@ -4,6 +4,7 @@
 #include "WINAPI.H"
 #include "PPX.H"
 #include "VFS.H"
+#include "PPX_64.H"
 #include "PPC_STRU.H"
 #include "PPC_FUNC.H"
 #pragma hdrstop
@@ -315,28 +316,82 @@ INT_PTR CALLBACK WindowDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam
 }
 
 // Disk[I]nfo -----------------------------------------------------------------
+void SetDriveSizeItem(HWND hDlg, UINT bytes, UINT rate, ULARGE_INTEGER *value, ULARGE_INTEGER *total)
+{
+	TCHAR buf[VFPS];
+	DWORD sizeL, sizeH, totalper;
+
+	FormatNumber(buf, XFN_SEPARATOR, 18, value->u.LowPart, value->u.HighPart);
+	SetDlgItemText(hDlg, bytes, buf);
+
+	sizeL = value->u.LowPart;
+	sizeH = value->u.HighPart;
+
+	if ( (total->u.LowPart & 0xfe000000) || total->u.HighPart ){
+		if ( total->u.HighPart >= 0x200 ){
+			if ( sizeH & 0xfe000000 ){ // 128P over
+				totalper = ((sizeH >> 16) * 100) / (total->u.HighPart >> 16);
+			}else{ // 0x0200 0000 0000(2TB) Å` 0x1ff ffff ffff ffff(128P)
+				totalper = (sizeH * 100) / total->u.HighPart;
+			}
+		}else{	// 0x0200 0000(32M) Å` 0x1ff ffff ffff(2TB)
+			totalper =
+					( ((((DWORD)sizeH) << 16) | (sizeL >> 16)) * 100) /
+					( ((((DWORD)total->u.HighPart) << 16) |
+						(total->u.LowPart >> 16)) );
+		}
+	}else{		// 0x0000 0001      Å`  0x01ff ffff(32M)
+		if ( total->u.LowPart ){
+			totalper = (sizeL * 100) / total->u.LowPart;
+		}else{	// 0x0000 0000
+			totalper = 100;
+		}
+	}
+	wsprintf(buf, T("%d%%"), totalper);
+	SetDlgItemText(hDlg, rate, buf);
+}
+
 INT_PTR CALLBACK DiskinfoDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch(iMsg){
 		case WM_INITDIALOG: {
 			TCHAR drv[VFPS], vname[MAX_PATH + 1], fs[MAX_PATH], buf[VFPS];
 			const TCHAR *typep;
-			int i;
+			int cluster;
 			DWORD i1, i2, i3, i4, BpC;
 			ULARGE_INTEGER UserFree, Total, Free;
 			PPC_APPINFO *cinfo;
 
 			cinfo = (PPC_APPINFO *)lParam;
-			Total.u.LowPart = 0;
-			Total.u.HighPart = 0;
+			Total.u.LowPart = Total.u.HighPart = 0;
 
 			CenterPPcDialog(hDlg, cinfo);
 			LocalizeDialogText(hDlg, IDD_DSKI);
 			GetDriveName(drv, cinfo->RealPath);
+
 			SetDlgItemText(hDlg, IDS_DSKI_DN, drv);
+			if ( Isalpha(drv[0]) ){
+				wsprintf(vname, T("Network\\%c"), drv[0]);
+				buf[0] = fs[0] = '\0';
+				GetRegString(HKEY_CURRENT_USER, vname, RMPATHSTR, fs, TSIZEOF(fs));
+				if ( fs[0] != '\0' ){
+					wsprintf(buf, T("%s (%s)"), drv, fs);
+				}else{
+					wsprintf(vname, T("%c:"), drv[0]);
+					GetRegString(HKEY_LOCAL_MACHINE, RegDeviceNamesStr, vname, fs, TSIZEOF(fs));
+					if ( (tstrlen(fs) > 5) && (fs[2] == '?') ){
+						wsprintf(buf, T("%s (%s)"), drv, fs + 4);
+					}
+				}
+				if ( buf[0] != '\0' ){
+					SetDlgItemText(hDlg, IDS_DSKI_DN, buf);
+				}
+			}
 
 			if ( IsTrue(GetVolumeInformation(drv, vname, MAX_PATH,
 					&i1, &i2, &i3, fs, MAX_PATH)) ){
+				int i;
+
 				SetDlgItemText(hDlg, IDE_DSKI_VN, vname );
 				EnableDlgWindow(hDlg, IDB_APPLY, FALSE);
 				wsprintf(buf, T("%04X-%04X"), HIWORD(i1), LOWORD(i1));
@@ -353,15 +408,16 @@ INT_PTR CALLBACK DiskinfoDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lPar
 					}
 				}
 			}
-			BpC = i = i1 = i2 = i3 = i4 = 0;
+			BpC = cluster = i1 = i2 = i3 = i4 = 0;
 			if ( IsTrue(GetDiskFreeSpace(drv, &i1, &i2, &i3, &i4)) ){
 
-				i = 1;
+				cluster = 1;
 				BpC = i1 * i2;
 
 				FormatNumber(buf, XFN_SEPARATOR | XFN_MUL, 18, i3, BpC);
 				SetDlgItemText(hDlg, IDS_DSKI_NFS, buf);
-				FormatNumber(buf, XFN_SEPARATOR | XFN_MUL, 18, i4, BpC);
+
+				DDmul(BpC, i4, &Total.u.LowPart, &Total.u.HighPart);
 			}
 			if (
 #ifndef UNICODE
@@ -369,21 +425,17 @@ INT_PTR CALLBACK DiskinfoDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lPar
 #endif
 					DGetDiskFreeSpaceEx(GetNT_9xValue(cinfo->RealPath, drv),
 							&UserFree, &Total, &Free) ){
-				i = 1;
-				FormatNumber(buf, XFN_SEPARATOR, 18,
-					UserFree.u.LowPart, UserFree.u.HighPart);
-				SetDlgItemText(hDlg, IDS_DSKI_NFS, buf);
-				FormatNumber(buf, XFN_SEPARATOR, 18,
-					Free.u.LowPart, Free.u.HighPart);
-				SetDlgItemText(hDlg, IDS_DSKI_NRF, buf);
-				FormatNumber(buf, XFN_SEPARATOR, 18,
-					Total.u.LowPart, Total.u.HighPart);
+				cluster = 1;
+				SetDriveSizeItem(hDlg, IDS_DSKI_NFS, IDS_DSKI_RFS, &UserFree, &Total);
+				SetDriveSizeItem(hDlg, IDS_DSKI_NRF, IDS_DSKI_RRF, &Free, &Total);
 			}
-			if ( i ){
+			if ( cluster ){
+				FormatNumber(buf, XFN_SEPARATOR, 18,
+						Total.u.LowPart, Total.u.HighPart);
 				SetDlgItemText(hDlg, IDS_DSKI_NTS, buf);
 
-				FormatNumber(buf, XFN_SEPARATOR | XFN_MUL, 18, i4 - i3, BpC);
-				SetDlgItemText(hDlg, IDS_DSKI_NUS, buf);
+				DDmul(BpC, i4 - i3, &UserFree.u.LowPart, &UserFree.u.HighPart);
+				SetDriveSizeItem(hDlg, IDS_DSKI_NUS, IDS_DSKI_RUS, &UserFree, &Total);
 
 				FormatNumber(buf, XFN_SEPARATOR, 18, i2, 0);
 				SetDlgItemText(hDlg, IDS_DSKI_NBS, buf);
@@ -434,7 +486,7 @@ INT_PTR CALLBACK DiskinfoDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lPar
 					break;
 
 				case IDB_APPLY:
-					if (IsWindowEnabled((HWND)lParam)){
+					if ( IsWindowEnabled((HWND)lParam) ){
 						TCHAR dir[MAX_PATH], vname[MAX_PATH];
 
 						GetDlgItemText(hDlg, IDS_DSKI_DN, dir, MAX_PATH);

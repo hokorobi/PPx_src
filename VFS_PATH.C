@@ -32,12 +32,19 @@ HWND PasswordDialogWnd = NULL;
 -----------------------------------------------------------------------------*/
 VFSDLL int PPXAPI FindExtSeparator(const TCHAR *src)
 {
-	TCHAR *p;
+	const TCHAR *ptr, *findptr = NULL;
+	TCHAR type;
 
-	if ( *src == '\0' ) return 0;
-	p = tstrrchr(src + 1, '.');
-	if ( p != NULL ) return ToSIZE32_T(p - src);
-	return tstrlen32(src);
+	ptr = src;
+	if ( *ptr == '\0' ) return 0;
+	ptr++;
+	for ( ; ; ){
+		type = *ptr;
+		if ( type == '\0' ) break;
+		if ( type == '.' ) findptr = ptr;
+		ptr++;
+	}
+	return ToSIZE32_T( ((findptr != NULL) ? findptr : ptr) - src);
 }
 /*-----------------------------------------------------------------------------
 	次のパス区切りを取得する		※パス区切りは「\」のみ
@@ -48,8 +55,8 @@ VFSDLL TCHAR * PPXAPI FindPathSeparator(const TCHAR *src)
 		TCHAR type;
 
 		type = *src;
-		if ( (type == '\\') || (type == '/') ) return (TCHAR *)src;
 		if ( type == '\0' ) return NULL;
+		if ( (type == '\\') || (type == '/') ) return (TCHAR *)src;
 #ifndef UNICODE
 		if ( Iskanji(type) ) src++;
 #endif

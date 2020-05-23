@@ -481,18 +481,18 @@ typedef struct {
 #define WDEXM_MODULE 5
 typedef struct {
 	TCHAR src[VFPS];
-	TCHAR file1[VFPS];
-	TCHAR file2[VFPS];
-	WHERESTRING str;
+	TCHAR file1[VFPS]; // keep
+	TCHAR file2[VFPS]; // keep
+	WHERESTRING str; // keep
 	int pausecount; // 操作割り込み間隔のカウンタ
 	DWORD hitcount;
 	HWND hWnd;
 	HWND hEdWnd;
-	BOOL marks;
-	BOOL dir;
-	DWORD sdir;	// 0 か FILE_ATTRIBUTE_DIRECTORY で判断
+	BOOL marks; // keep
+	BOOL dir; // keep
+	DWORD sdir; // keep, 0 か FILE_ATTRIBUTE_DIRECTORY で判断
 	BOOL vfs;
-	DWORD exmode; // 検索対象 WDEXM_xx
+	DWORD exmode; // keep,検索対象 WDEXM_xx
 	BOOL readlistfile; // 終了後読み込み
 	BOOL appendmode; // 直接挿入
 
@@ -500,10 +500,11 @@ typedef struct {
 	DWORD OldTime; // 経過表示用
 	DWORD imgsize; // X_wsiz の値
 	struct tagPPC_APPINFO *cinfo;
-	ThSTRUCT thEcdata;
+	ThSTRUCT thEcdata; // カラム情報記憶用
 	int indexEc; // 使用するカラム拡張
 	DWORD baselen; // パスの省略可能な長さ
 	const TCHAR *listfilename; // 出力するlistfile
+	int wlfc_flags;
 } WHEREDIALOG;
 
 typedef struct {
@@ -757,6 +758,7 @@ typedef struct tagPPC_APPINFO {
 	int			PopMsgTimer;	// PMF_WAITTIMER のカウンタ
 	int			PopMsgFlag;
 											// 内部動作
+	//	#define MARKMASK_DIR 0x10 // 誤動作する
 		#define MARKMASK_FILE 0xf
 		#define MARKMASK_DIRFILE 0x1f
 	int			MarkMask;			// マークする属性

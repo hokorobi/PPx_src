@@ -521,6 +521,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\PPX_64.C"
+				>
+			</File>
+			<File
 				RelativePath="..\..\PPX_CV.C"
 				>
 			</File>
@@ -588,6 +592,14 @@
 			</File>
 			<File
 				RelativePath="..\..\sha.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\PPX_64.H"
+				>
+			</File>
+			<File
+				RelativePath="..\..\PPX_CV.H"
 				>
 			</File>
 			<File

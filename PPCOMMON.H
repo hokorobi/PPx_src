@@ -693,7 +693,10 @@ extern PPXDLL int PPXAPI tInputEx(TINPUT *tinput);
 #define PPXEDIT_INSTRSEL	B12	// "|"による範囲指定を有効にする
 #define PPXEDIT_NOWORDBREAK	B13	// ES_MULTILINE時に、単語の途中で改行する(Vista以降)
 #define PPXEDIT_LINE_MULTI	B14	// １行編集の複数行版(要ES_MULTILINE)
-// B16 以降は内部で利用
+#define PPXEDIT_ENABLE_WIDTH_CHANGE B15	// サイズ変更キーを有効に
+#define PPXEDIT_ENABLE_HEIGHT_CHANGE B16	// サイズ変更キーを有効に
+#define PPXEDIT_ENABLE_SIZE_CHANGE (B15 | B16)	// サイズ変更キーを有効に
+// B20 以降は内部で利用
 //-----------------------------------------------------------------------------
 extern PPXDLL HWND PPXAPI PPxRegistExEdit(PPXAPPINFO *info, HWND hED, int maxlen, const TCHAR *defstr, WORD rHist, WORD wHist, int flags);
 //---------------------------------------------------- ファイル検索

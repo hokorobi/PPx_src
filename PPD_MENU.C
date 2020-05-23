@@ -573,7 +573,15 @@ int TTrackPopupMenu(EXECSTRUCT *Z, HMENU hMenu, PPXMENUINFO *xminfo)
 		GetPopupPoint(Z, &nps.pos);
 		hWnd = Z->hWnd;
 	}else{
+		RECT WndBox;
+
+		GetWindowRect(GetForegroundWindow(), &WndBox);
 		GetCursorPos(&nps.pos);
+		if ( PtInRect(&WndBox, nps.pos) == FALSE ){
+			nps.pos.x = (WndBox.left + WndBox.right) / 2;
+			nps.pos.y = (WndBox.top + WndBox.bottom) / 2;
+		}
+		xminfo = NULL;
 		hWnd = NULL;
 	}
 	if ( hWnd != NULL ){
@@ -882,7 +890,6 @@ PPXDLL HMENU PPXAPI PP_AddMenu(PPXAPPINFO *ParentInfo, HWND hWnd, HMENU hMenu, D
 	HMENU hTmpMenu;
 	DWORD size;
 	int headersize = 0;
-
 
 	if ( *Cname == '<' ){
 		const TCHAR *lastptr;

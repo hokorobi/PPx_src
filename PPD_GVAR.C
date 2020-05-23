@@ -141,7 +141,7 @@ GVAR TCHAR DLLpath[MAX_PATH];	// DLL の所在地
 GVAR HANDLE ProcHeap;			// DLL の GetProcessHeap 値
 #define DLLheap ProcHeap		// DLL内のHeap(現在はGetProcessHeap)
 GVAR UINT  WM_PPXCOMMAND;		// WM_PPXCOMMAND の登録値
-GVAR TCHAR TempPath[MAX_PATH];	// このプロセス専用のテンポラリパス
+GVAR TCHAR ProcTempPath[MAX_PATH];	// このプロセス専用のテンポラリパス
 GVAR TCHAR SyncTag[16];			// 同期オブジェクト名に使用する "PPXxxxxx"
 
 //-------------------------------------------------------------------- 共有資源

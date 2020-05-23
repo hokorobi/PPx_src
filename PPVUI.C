@@ -5,6 +5,7 @@
 #include <shlobj.h>
 #include "PPX.H"
 #include "VFS.H"
+#include "PPX_64.H"
 #include "PPVUI.RH"
 #include "PPV_STRU.H"
 #include "PPV_FUNC.H"
@@ -298,7 +299,7 @@ int CalcTextXPoint(int ParamX, int csrY, int istate)
 	XV_bctl[2] = 0;
 
 	mti.destbuf = (BYTE *)buf;
-	mti.srcmax = vo_.file.image + vo_.file.UseSize;
+	mti.srcmax = mtinfo.img + mtinfo.MemSize; // vo->file.image + vo->file.UseSize;
 	mti.writetbl = FALSE;
 	mti.paintmode = FALSE;
 
@@ -877,7 +878,9 @@ void CALLBACK DragProc(HWND hWnd, UINT msg, UINT_PTR id, DWORD work)
 			if ( oldline != VOsel.now.y.line ){
 				RECT box;
 
-				if ( VOsel.linemode == FALSE ) InvalidateRect(hWnd, NULL, FALSE);
+				if ( VOsel.linemode == FALSE ){
+					InvalidateRect(hWnd, NULL, FALSE);
+				}
 				VOsel.linemode = X_vzs;
 				box.left = 0;
 				box.right = WndSize.cx;
@@ -1570,9 +1573,92 @@ void USEFASTCALL PPvWmHscroll(HWND hWnd, WORD scrollcode)
 	if ( VOsel.cursor != FALSE ) SetCursorCaret(&VOsel.now);
 }
 
-void USEFASTCALL PPvWmVscroll(HWND hWnd, WORD scrollcode) // 垂直スクロール
+void DDmul6432(DWORD src1L, DWORD src1H, DWORD src2, DWORD *destL, DWORD *destM, DWORD *destH)
+{
+	DWORD tmpM;
+
+	DDmul(src1L, src2, destL, destM);
+	DDmul(src1H, src2, &tmpM, destH);
+	AddDD(*destM, *destH, tmpM, 0);
+}
+
+// ※mul div は16bit範囲に限定
+void MulDiv6416(DWORD *destL, DWORD *destH, DWORD mul, DWORD div)
+{
+	DWORD tmpL, tmpM, tmpH, tmp;
+
+	DDmul6432(*destL, *destH, mul, &tmpL, &tmpM, &tmpH);
+//	*destH = tmpH / div;
+	tmp = (tmpM >> 16) | ((tmpH % div) << 16);
+	*destH = (tmp / div) << 16;
+	tmp = (tmpM & 0xffff) | ((tmp % div) << 16);
+	*destH |= tmp / div;
+	tmp = (tmpL >> 16) | ((tmp % div) << 16);
+	*destL = (tmp / div) << 16;
+	tmp = (tmpL & 0xffff) | ((tmp % div) << 16);
+	*destL |= tmp / div;
+}
+
+void USEFASTCALL PPvWmVscroll(HWND hWnd, WORD scrollcode, WORD range) // 垂直スクロール
 {
 	int delta = 0;
+	SCROLLINFO scri;
+
+	if ( (FileDivideMode >= FDM_DIV) && (vo_.DModeBit & VO_dmode_TEXTLIKE) ){
+		switch ( scrollcode ){
+										// 一番上 .............................
+			case SB_TOP:
+				if ( !(FileDividePointer.LowPart | FileDividePointer.HighPart) ){
+					return;
+				}
+				FileDividePointer.LowPart = FileDividePointer.HighPart = 0;
+				PPvReload(&vinfo);
+				return;
+										// 一番下 .............................
+			case SB_BOTTOM:
+				GetDivMax(&FileDividePointer);
+				VOi->offY = 0;
+				PPvReload(&vinfo);
+				return;
+										// 特定位置まで移動中 .................
+			case SB_THUMBTRACK:
+				//SB_THUMBPOSITION へ続く
+										// 特定位置まで移動 ...................
+			case SB_THUMBPOSITION:
+			{
+				DDWORDST divpos;
+
+				divpos = FileRealSize;
+				if ( (divpos.HighPart != 0) || (divpos.LowPart >= X_wsiz) ){
+					SubDD(divpos.LowPart, divpos.HighPart, X_wsiz - 1, 0);
+				}else{
+					divpos.LowPart = 0;
+				}
+				MulDiv6416(&divpos.LowPart, &divpos.HighPart, range, 0x4000);
+
+				if ( (divpos.HighPart == 0) &&
+					 (divpos.LowPart >= FileDividePointer.LowPart) &&
+					 (divpos.LowPart < (FileDividePointer.LowPart + X_wsiz)) ){
+					delta = CalcMulDiv(VO_maxY, (divpos.LowPart - FileDividePointer.LowPart), X_wsiz);
+					MoveCsr(0, delta - VOi->offY, FALSE);
+					if ( VOsel.cursor != FALSE ) SetCursorCaret(&VOsel.now);
+					return;
+				}
+				if ( scrollcode == SB_THUMBTRACK ){
+					FileTrackPointer = divpos;
+					InvalidateRect(vinfo.info.hWnd, &BoxStatus, TRUE);
+					return;
+				}
+				if ( vo_.DModeBit == DOCMODE_HEX ){ // アドレス正規化
+					divpos.LowPart &= 0xffffff00;
+				}
+				FileDividePointer = divpos;
+				VOi->offY = 0;
+				PPvReload(&vinfo);
+				return;
+			}
+		}
+	}
 
 	switch ( scrollcode ){
 										// 一番上 .............................
@@ -1603,9 +1689,7 @@ void USEFASTCALL PPvWmVscroll(HWND hWnd, WORD scrollcode) // 垂直スクロール
 		case SB_THUMBTRACK:
 			//SB_THUMBPOSITION へ続く
 										// 特定位置まで移動 ...................
-		case SB_THUMBPOSITION:{
-			SCROLLINFO scri;
-
+		case SB_THUMBPOSITION:
 			scri.cbSize = sizeof(scri);
 			scri.fMask = SIF_ALL | SIF_TRACKPOS;
 			GetScrollInfo(hWnd, SB_VERT, &scri);
@@ -1627,7 +1711,6 @@ void USEFASTCALL PPvWmVscroll(HWND hWnd, WORD scrollcode) // 垂直スクロール
 				}
 			}
 			break;
-		}
 
 		case SB_ENDSCROLL:
 			if ( detailmode ){
@@ -1842,7 +1925,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 							// 垂直スクロール
 		case WM_VSCROLL:
-			PPvWmVscroll(hWnd, LOWORD(wParam));
+			PPvWmVscroll(hWnd, LOWORD(wParam), HIWORD(wParam));
 			break;
 							// 水平スクロール
 		case WM_HSCROLL:

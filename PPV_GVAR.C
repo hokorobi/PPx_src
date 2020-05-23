@@ -59,7 +59,7 @@
 #define MENUID_TYPE_LAST	0xc7ec //
 #define MENUID_KANAMODE		0xc7f0 // - 0xc7f2 カナ切り替え
 #define MENUID_ESCSWITCH	0xc7f3 // エスケープシーケンス解釈
-#define MENUID_QUOTEDSWITCH	0xc7f4 // quoted解釈
+#define MENUID_MIMESWITCH	0xc7f4 // MIME解釈
 #define MENUID_TAGSWITCH	0xc7f5 // TAG解釈
 #define MENUID_SELECTEDCODE	0xc7f6 // 選択範囲の変更
 #define MENUID_ALLCODE		0xc7f7 // 全範囲の変更
@@ -169,7 +169,7 @@ GVAR int VO_Tesc;	//GPARAM(1);
 GVAR int VO_Ttag;	//GPARAM(1); // 0:未処理 1:隠す 2:ハイライト
 GVAR int VO_Tshow_script;	//GPARAM(1);
 GVAR int VO_Tshow_css;	//GPARAM(1);
-GVAR int VO_Tquoted;	//GPARAM(0);
+GVAR int VO_Tmime;	//GPARAM(0);
 GVAR VIEWOPTIONS *VO_opt, VO_optdata;
 GVAR int VO_CodePage GPARAM(0);
 GVAR BOOL VO_CodePageChanged; // テキスト中のコードページ指定による変更済
@@ -188,11 +188,9 @@ typedef enum {
 GVAR FDM FileDivideMode GPARAM(FDM_NODIV);
 
 GVAR DDWORDST FileRealSize;
-GVAR DDWORDST FileDividePointer
-#ifndef GLOBALEXTERN
-={0, 0}
-#endif
-;
+GVAR DDWORDST FileDividePointer GPARAM2(0,0);
+GVAR DDWORDST FileTrackPointer  GPARAM2(0,0);
+
 
 GVAR DWORD X_lspc GPARAM(0);
 
@@ -200,8 +198,6 @@ GVAR VO_INFO VO_I[DISPT_MAX], *VOi GPARAM(VO_I);
 
 GVAR VIEWOPTIONS viewopt_def; // 初期値オプション
 GVAR VIEWOPTIONS viewopt_opentime; // ファイルを開いたときに適用しているオプション
-
-// GVAR BOOL FileCase GPARAM(FALSE);
 
 #define PRINTMODE_OFF	0
 #define PRINTMODE_ONE	1
@@ -268,6 +264,7 @@ GVAR impPPRINTDLG PPrintDlg GPARAM(NULL);
 DLLGVAR HMODULE hWinmm DLLGPARAM(NULL);
 GVAR ValueWinAPI(sndPlaySound) GPARAM(NULL);
 GVAR ValueWinAPI(NotifyWinEvent) GPARAM(DummyNotifyWinEvent);
+GVAR BOOL PlayWave GPARAM(FALSE);
 
 // /convert 関連
 GVAR int convert GPARAM(0);	// 1:text convert
@@ -476,8 +473,11 @@ DLLGVAR int TouchMode DLLGPARAM(0);
 DLLGVAR int X_pmc[4] DLLGPARAM({X_pmc_defvalue});
 
 
+#define LC_READY	0	// 行カウント済み
+#define LC_NOCOUNT	1	// 行カウントなし
 
-GVAR int LongText GPARAM(0); // 開発中
+GVAR int LineCount GPARAM(LC_READY); // 開発中
+
 // 印刷 -----------------------------------------------------------------------
 GVAR PRINTINFO PrintInfo
 #ifndef GLOBALEXTERN

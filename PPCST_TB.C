@@ -2360,15 +2360,18 @@ void ItemUpDown(HWND hDlg, TABLEINFO *tinfo, int offset)
 {
 	TCHAR label[MAX_PATH], para[CMDLINESIZE * 11];
 	int size, newpos;
+	DWORD shift = GetShiftKey();
 
 	if ( offset < 0 ){
 		if ( tinfo->index_alc <= 0 ) return;
+		if ( shift & K_c ) offset = -tinfo->index_alc;
 	}else{
 		int maxi;
 
 		maxi = ListView_GetItemCount(tinfo->hLVAlcWnd) - 2;
 		if ( tinfo->index_alc < 0 ) return;
 		if ( tinfo->index_alc >= maxi ) return;
+		if ( shift & K_c ) offset = maxi - tinfo->index_alc;
 	}
 	newpos = tinfo->index_alc + offset;
 

@@ -307,6 +307,7 @@ PPXDLL BOOL PPXAPI FreeBMP(_Inout_ HTBMP *hTbmp)
 	if ( (hTbmp == NULL) || (hTbmp->DIB == NULL) ) return FALSE;
 	if ( hTbmp->hPalette != NULL) DeleteObject(hTbmp->hPalette);
 	if ( hTbmp->dibfile != NULL ) HeapFree(GetProcessHeap(), 0, hTbmp->dibfile);
+#pragma warning(suppress:6001) // ŒëŒŸo
 	if ( hTbmp->info != NULL ){
 		LocalUnlock(hTbmp->info);
 		LocalFree(hTbmp->info);

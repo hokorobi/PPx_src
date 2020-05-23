@@ -514,7 +514,6 @@ HANDLE FindFirstAsync(HWND hWnd, LPARAM lParam, const TCHAR *path, WIN32_FIND_DA
 	if ( !(*flags & RENTRYI_ASYNCREAD) ){ // ”ñ“¯Šúˆ—‚ğs‚í‚È‚¢‚Ì‚Å’Êí“Ç‚ğs‚¤
 		HANDLE hFind;
 
-
 #if TIMEOUTCHECKSW
 		tick = GetTickCount();
 #endif
@@ -540,7 +539,6 @@ HANDLE FindFirstAsync(HWND hWnd, LPARAM lParam, const TCHAR *path, WIN32_FIND_DA
 				if ( p2 == NULL ) p2 = p + tstrlen(p);
 				p = p2;
 			}
-
 			drivesize = TSTROFF32(p - path);
 		}
 	}

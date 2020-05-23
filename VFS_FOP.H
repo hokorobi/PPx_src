@@ -126,6 +126,7 @@ enum { // mode の内容
 #define VFSFOP_FILTER_NOFILEFILTER	B1
 #define VFSFOP_FILTER_NODIRFILTER	B2
 #define VFSFOP_FILTER_EXTRACTNAME	B3
+#define VFSFOP_FILTER_NOEXTFILTER	B4
 
 #define SECURITY_FLAG_NONE 0
 #define SECURITY_FLAG_SCOPY (OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION)
@@ -188,7 +189,11 @@ struct FopOption {
 	int burst;		// バーストモードなら真
 	DWORD erroraction;		// エラー時の対処方法
 	DWORD errorretrycount;	// エラー時の再試行回数
-	DWORD CopyBufSize;
+	struct { // 全て K 単位
+		DWORD CopyBufSize;
+		DWORD EnablePPxBurstSize;
+		DWORD DisableApiCacheSize;
+	} X_cbsz;
 	SECURITY_INFORMATION security;
 };
 

@@ -401,7 +401,7 @@ void GetFmacroString(DWORD flag, TCHAR *src, TCHAR *dest)
 
 	if ( flag & FMOPT_USESFN ) GetShortPathName(src, src, VFPS);
 	if ( flag & (FMOPT_FILEEXT | FMOPT_FILENOEXT) ){
-		attr = GetFileAttributes(src); // dir により拡張子処理をするかどうか
+		attr = GetFileAttributes(src); // ※１ dir により拡張子処理をするかどうか
 	}
 	if ( (flag & (FMOPT_FILENAME | FMOPT_DIR)) !=
 			(FMOPT_FILENAME | FMOPT_DIR) ){ // フルパスでないときの処理
@@ -412,6 +412,7 @@ void GetFmacroString(DWORD flag, TCHAR *src, TCHAR *dest)
 				TCHAR *p;
 
 				p = VFSFindLastEntry(src);
+				#pragma warning(suppress:4701) // ここは、"flag & FMOPT_FILEEXT"のため、必ず※１済み
 				if ( (attr == BADATTR) || !(attr & FILE_ATTRIBUTE_DIRECTORY) ||
 						GetCustDword(T("XC_sdir"), 0) ){
 					if ( *p != '\0' ) p++;

@@ -1368,6 +1368,7 @@ ERRORCODE RangeCommand(PPC_APPINFO *cinfo, const TCHAR *params) // *range
 	#define MARKOFFSET -2
 	ENTRYINDEX start = NO_MARK_ID, end = NO_MARK_ID, index;
 	int mode = MARK_CHECK + MARKOFFSET; // 0< マーク関係、0>:highlight
+	int MarkMask = MARKMASK_DIRFILE;
 	TCHAR parambuf[CMDLINESIZE], paramtmp[VFPS], code;
 	const TCHAR *more, *opt, *param;
 
@@ -1410,6 +1411,10 @@ ERRORCODE RangeCommand(PPC_APPINFO *cinfo, const TCHAR *params) // *range
 			index = GetCellIndexFromCellData(cinfo, cinfo->e.markLast);
 		}else if ( tstricmp(opt, T("POINT")) == 0 ){
 			index = cinfo->e.cellPoint;
+//		}else if ( tstricmp(opt, T("DIR")) == 0 ){
+//			MarkMask = MARKMASK_DIR;
+		}else if ( tstricmp(opt, T("FILE")) == 0 ){
+			MarkMask = MARKMASK_FILE;
 		}else if ( tstricmp(opt, T("MARKED")) == 0 ){
 			start = ENDMARK_ID;
 		}else if ( tstricmp(opt, T("MARK")) == 0 ){
@@ -1449,7 +1454,7 @@ ERRORCODE RangeCommand(PPC_APPINFO *cinfo, const TCHAR *params) // *range
 		ENTRYINDEX i;
 		ENTRYCELL *cell;
 
-		cinfo->MarkMask = MARKMASK_DIRFILE;
+		cinfo->MarkMask = MarkMask;
 		if ( start == ENDMARK_ID ){
 			if ( mode == MARK_CHECK + MARKOFFSET ) return NO_ERROR; // 何も起きない
 			// MARK_UNMARK / MARK_REVERSE →マークが全て消える
@@ -1468,17 +1473,22 @@ ERRORCODE RangeCommand(PPC_APPINFO *cinfo, const TCHAR *params) // *range
 		ENTRYCELL *cell;
 		int work;
 
+		MarkMask ^= MARKMASK_DIRFILE;
 		hldata = (BYTE)(mode * ECS_HLBIT);
 		if ( start == ENDMARK_ID ){
 			InitEnumMarkCell(cinfo, &work);
 			while ( (cell = EnumMarkCell(cinfo, &work)) != NULL ){
 				if ( cell->state < ECS_NORMAL ) continue; // SysMsgやDeletedなのでだめ
-				cell->state = (cell->state & (BYTE)ECS_HLMASK) | hldata;
+				if ( !(cell->f.dwFileAttributes & MarkMask) ){
+					cell->state = (cell->state & (BYTE)ECS_HLMASK) | hldata;
+				}
 			}
 		}else{
 			for ( i = start ; i <= end ; i++ ){
 				cell = &CEL(i);
-				cell->state = (cell->state & (BYTE)ECS_HLMASK) | hldata;
+				if ( !(cell->f.dwFileAttributes & MarkMask) ){
+					cell->state = (cell->state & (BYTE)ECS_HLMASK) | hldata;
+				}
 			}
 		}
 	}

@@ -310,8 +310,9 @@ ERRORCODE DlgCopyFile(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD srcattr
 	int append = 0;	// 追加なら !0
 	int deldst = 1;	// コピー先を削除する必要があるなら !0
 	int fixdstatr= 0;	// コピー先属性を修復する必要があるなら !0
-	DWORD filemode;
+	DWORD SrcBurstFlag, DstBurstFlag;
 	int avtry;
+	DWORD FileKiroSize;
 
 	struct FopOption *opt;
 
@@ -320,7 +321,7 @@ ERRORCODE DlgCopyFile(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD srcattr
 
 	buffersize = filebuffersize;
 	errorretrycount = FS->opt.errorretrycount;
-	filemode = FS->opt.burst ? FILE_FLAG_NO_BUFFERING : 0;
+	SrcBurstFlag = DstBurstFlag = FS->opt.burst ? FILE_FLAG_NO_BUFFERING : 0;
 	PeekMessageLoopSub(FS);
 	if ( FS->state != FOP_BUSY ){
 		PeekMessageLoop(FS);
@@ -418,7 +419,7 @@ ERRORCODE DlgCopyFile(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD srcattr
 	}
 										// コピー元を開く ---------------------
 	avtry = FS->opt.errorretrycount;
-	while ( (srcH = CreateFile_OpenSource(src, filemode)) == INVALID_HANDLE_VALUE ){
+	while ( (srcH = CreateFile_OpenSource(src, SrcBurstFlag)) == INVALID_HANDLE_VALUE ){
 		int result;
 		BOOL OldNoAutoClose;
 
@@ -472,10 +473,13 @@ ERRORCODE DlgCopyFile(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD srcattr
 	if ( GetFileInformationByHandle(srcH, &srcfinfo) == FALSE ){
 		error = FOPERROR_GETLASTERROR;
 	}
-/*------------------------------------------
-NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
-で参照すると属性が正しく得られないための処置
-------------------------------------------*/
+	FileKiroSize = (srcfinfo.nFileSizeHigh >> 10) ?
+			FFD : ShiftDivDD(srcfinfo.nFileSizeLow, srcfinfo.nFileSizeHigh, 10);
+
+	/*------------------------------------------
+	NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
+	で参照すると属性が正しく得られないための処置
+	------------------------------------------*/
 	if ( srcfinfo.dwFileAttributes != srcattr ){
 		HANDLE hFF;
 		WIN32_FIND_DATA ff;
@@ -490,6 +494,16 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 			srcfinfo.nFileSizeLow = ff.nFileSizeLow;
 		}
 	}
+	if ( (FS->opt.X_cbsz.EnablePPxBurstSize != 0) &&
+		 !SrcBurstFlag &&
+		 (FileKiroSize >= FS->opt.X_cbsz.EnablePPxBurstSize) ){
+		CloseHandle(srcH);
+		SrcBurstFlag = DstBurstFlag = FILE_FLAG_NO_BUFFERING;
+		srcH = CreateFile_OpenSource(src, SrcBurstFlag);
+		if ( srcH == INVALID_HANDLE_VALUE ){
+			error = FOPERROR_GETLASTERROR;
+		}
+	}
 
 // CreateFile (open) →見つけた → CreateFile (create) で再作成
 	avtry = FS->opt.errorretrycount;
@@ -497,8 +511,9 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 									// 同名ファイルがあるか確認する
 		// ※ これで得たハンドルを再利用しても、属性、拡張属性を変更できない
 		//    ため、再利用せずに廃棄する。
-		dstH = CreateFileL(dst, GENERIC_READ, FILE_SHARE_WRITE | FILE_SHARE_READ,
-					NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | filemode,NULL);
+		dstH = CreateFileL(dst, GENERIC_READ,
+				FILE_SHARE_WRITE | FILE_SHARE_READ,
+				NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | DstBurstFlag, NULL);
 
 		// 存在するけど開けなかった
 		if ( dstH == INVALID_HANDLE_VALUE ){
@@ -585,7 +600,7 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 			}
 
 			if ( srcH == INVALID_HANDLE_VALUE ){	// 再オープン
-				srcH = CreateFile_OpenSource(src, filemode);
+				srcH = CreateFile_OpenSource(src, SrcBurstFlag);
 			}
 		}
 		break;
@@ -599,7 +614,7 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 
 		wsprintf((TCHAR *)filebuffer, T("%u%c"), opt->fop.divide_num, opt->fop.divide_unit);
 		ptr = (const TCHAR *)filebuffer;
-		GetSizeNumber( &ptr, &div.divsize.u.LowPart, &div.divsize.u.HighPart);
+		GetSizeNumber(&ptr, &div.divsize.u.LowPart, &div.divsize.u.HighPart);
 		div.use = TRUE;
 		div.leftsize = div.divsize;
 		if ( (srcfinfo.nFileSizeHigh > div.leftsize.u.HighPart) ||
@@ -632,15 +647,16 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 	if ( WinType != WINTYPE_9x )
 	#endif
 	{
-		while ( (error == NO_ERROR) && !div.count && !append && !FS->opt.burst){
+		while ( (error == NO_ERROR) && !div.count && !append && !SrcBurstFlag){
 			DWORD flags = 0;
 
 			FS->Cancel = FALSE;
 			if ( FS->opt.fop.flags & VFSFOP_OPTFLAG_ALLOWDECRYPT ){
 				setflag(flags, COPY_FILE_ALLOW_DECRYPTED_DESTINATION);
 			}
-			if ( (WinType >= WINTYPE_VISTA) && ((srcfinfo.nFileSizeHigh != 0) ||
-				  (srcfinfo.nFileSizeLow >= (64 * MB)) ) ){
+			if ( (WinType >= WINTYPE_VISTA) &&
+				 ((FS->opt.X_cbsz.DisableApiCacheSize != 0) &&
+				  (FileKiroSize >= FS->opt.X_cbsz.DisableApiCacheSize)) ){
 				setflag(flags, COPY_FILE_NO_BUFFERING);
 			}
 
@@ -663,7 +679,6 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 						error = ERROR_CANCELLED;
 					}else{
 						DWORD attr;
-
 
 						attr = GetFileAttributesL(dst);
 								// ディレクトリに対してコピーしようとした
@@ -744,7 +759,7 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 					break;
 				}
 				buffersize = 512;
-//		FS->opt.burst = 0; バーストモードにしてシステム介入をさけた方がいいかも。
+//		SrcBurstFlag = 0; バーストモードにしてシステム介入をさけた方がいいかも。
 				error = NO_ERROR;	// 強制コピー処理へ
 				break;
 			}
@@ -753,28 +768,28 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 //=========================================================================
 	while ( (error == NO_ERROR) && (done == DONE_NO) ){
 		if ( buffersize != 512 ){
-			if ( FS->opt.CopyBufSize && (FS->opt.CopyBuf == NULL) ){
+			if ( (FS->opt.X_cbsz.CopyBufSize != 0) && (FS->opt.CopyBuf == NULL) ){
 				FS->opt.CopyBuf = VirtualAlloc(NULL,
-						FS->opt.CopyBufSize, MEM_COMMIT, PAGE_READWRITE);
-				if (FS->opt.CopyBuf == NULL){
+						FS->opt.X_cbsz.CopyBufSize, MEM_COMMIT, PAGE_READWRITE);
+				if ( FS->opt.CopyBuf == NULL ){
 					FWriteErrorLogs(FS,NilStr, T("Alloc Buffer"), PPERROR_GETLASTERROR);
 				}
 			}
 			if ( FS->opt.CopyBuf != NULL ){
 				filebuf = FS->opt.CopyBuf;
-				buffersize = FS->opt.CopyBufSize;
+				buffersize = FS->opt.X_cbsz.CopyBufSize;
 				break;
 			}
-			FS->opt.CopyBufSize = 0;
+			FS->opt.X_cbsz.CopyBufSize = 0;
 		}
-//		FS->opt.burst = 0;
+//		SrcBurstFlag = 0;
 		filebuf = filebuffer +
 				(buffersize - (ALIGNMENT_BITS(filebuffer) & (buffersize - 1)) );
 		break;
 	}
 	oldtick = GetTickCount();
 	readstep = writestep = min(32 * KB, buffersize);
-	if ( append ) filemode = 0;	// Append時はバーストモード使用不可
+	if ( append ) DstBurstFlag = 0;	// Append時はバーストモード使用不可
 
 	avtry = FS->opt.errorretrycount;
 	while ( (error == NO_ERROR) && (done == DONE_NO) ){
@@ -783,7 +798,7 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 		if ( div.count ) wsprintf(dsttail, T(".%03d"), div.count - 1);
 		dstH = CreateFileL(dst, GENERIC_READ | GENERIC_WRITE, 0,NULL,
 				dst1st ? (append ? OPEN_ALWAYS : CREATE_ALWAYS) : CREATE_NEW,
-				dstatr | FILE_FLAG_SEQUENTIAL_SCAN | filemode,
+				dstatr | FILE_FLAG_SEQUENTIAL_SCAN | DstBurstFlag,
 				(
 	#ifndef UNICODE
 					(WinType != WINTYPE_9x) &&
@@ -824,7 +839,7 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 			if ( div.use == FALSE ){
 				curpos.u.HighPart = srcfinfo.nFileSizeHigh;
 				curpos.u.LowPart = srcfinfo.nFileSizeLow;
-				if ( FS->opt.burst ){
+				if ( DstBurstFlag ){
 					AddDD(curpos.u.LowPart, curpos.u.HighPart, SECTORSIZE - 1, 0);
 					curpos.u.LowPart &= ~(SECTORSIZE - 1);
 				}
@@ -863,7 +878,7 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 											// 読み込み
 			if ( readsize == 0 ){
 				// バーストモード時、最後の読み込みは読込サイズを控えめにする
-				if ( FS->opt.burst &&
+				if ( SrcBurstFlag &&
 					 (CopyLeft.u.HighPart == 0) &&
 					 (CopyLeft.u.LowPart < buffersize) ){
 					buffersize =
@@ -944,7 +959,7 @@ NEC PC98x1用Windows95～機種不問Win9x間でネットワーク経由
 			}
 			// バーストモード時の、最終書き込みのための処理
 			// ※クラスタ単位で書き込んだ後、サイズ調整を行う
-			if ( (readsize != buffersize) && FS->opt.burst ){
+			if ( (readsize != buffersize) && DstBurstFlag ){
 				DWORD tmp;
 
 				if ( WriteFile(dstH, filebufp, buffersize, &writesize,NULL)

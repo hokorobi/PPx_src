@@ -29,6 +29,7 @@ BOOL SjisToEUCjp(char **text, DWORD *size)
 			maxsize += ThNextAllocSizeM(maxsize);
 			newbottom = HeapReAlloc(DLLheap, 0, bottom, maxsize);
 			if ( newbottom == NULL ) break;
+#pragma warning(suppress:6001) // サイズ計算のみに使用
 			top = newbottom + (top - bottom);
 			bottom = newbottom;
 		}
