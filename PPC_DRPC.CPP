@@ -24,46 +24,16 @@
 #pragma hdrstop
 
 UINT_PTR comboscrolltimerID = 0;
-/*
-int comboscrollcount;
-POINT oldcombopos;
-*/
+
 //==============================================================
 void CALLBACK ComboDDTimerProc(HWND, UINT, UINT_PTR, DWORD)
 {
 	POINT pos; // ,cpos;
 	HWND hTargetWnd, hTargetWnd2;
-/*
-	int x = GetSystemMetrics(SM_CXDRAG);
-	int y = GetSystemMetrics(SM_CYDRAG);
-	int tabpane;
-*/
+
 	::GetCursorPos(&pos);
-/*
-	cpos.x = pos.x - oldcombopos.x;
-	cpos.y = pos.y - oldcombopos.y;
-	if ( (cpos.x < -x) || (cpos.x > x) || (cpos.y < -y) || (cpos.y > y) ){
-		comboscrollcount = 0;
-	}
-	oldcombopos = pos;
-*/
 	hTargetWnd = ::WindowFromPoint(pos);
 	hTargetWnd2 = ::GetParent(hTargetWnd);
-/*
-	for ( tabpane = 0 ; tabpane < Combo.Tabs ; tabpane++ ){
-		if ( hTargetWnd == Combo.show[tabpane].tab.hWnd ){
-			comboscrollcount++;
-			if ( comboscrollcount > (1500 / TIMER_DRAGSCROLL) ){
-				cpos = pos;
-				ScreenToClient(hTargetWnd, &cpos);
-				PostMessage(hTargetWnd, WM_LBUTTONDOWN, 0, TMAKELPARAM(cpos.x, cpos.y));
-				PostMessage(hTargetWnd, WM_LBUTTONUP, 0, TMAKELPARAM(cpos.x, cpos.y));
-			}
-			return;
-		}
-	}
-	comboscrollcount = 0;
-*/
 	if ( (hTargetWnd == Combo.hTreeWnd) || (hTargetWnd2 == Combo.hTreeWnd) ){
 		::SendMessage(Combo.hTreeWnd, VTM_SCROLL, 0, 0);
 	}
@@ -74,12 +44,11 @@ void CmbSetDDScroll(BOOL reg)
 {
 	if ( IsTrue(reg) ){	// “o˜^
 		if ( ((Combo.hTreeWnd != NULL) || Combo.Tabs) && !comboscrolltimerID){
-//			comboscrollcount = 0;
 			comboscrolltimerID = SetTimer(Combo.hWnd,
 				TIMERID_COMBODRAGSCROLL, TIMER_DRAGSCROLL, ComboDDTimerProc);
 		}
 	}else{					// “o˜^‰ðœ
-		if (comboscrolltimerID){
+		if ( comboscrolltimerID != 0 ){
 			KillTimer(Combo.hWnd, TIMERID_COMBODRAGSCROLL);
 			comboscrolltimerID = 0;
 		}
@@ -209,7 +178,7 @@ STDMETHODIMP ComboDropTarget::Drop(LPDATAOBJECT pDataObj, DWORD, POINTL pt, LPDW
 	DWORD orgEffect = *pdwEffect;
 
 	CmbSetDDScroll(FALSE);
-	if ( QueryDrop(mKeyState, &pt, pdwEffect) == S_OK ){
+	if ( QueryDrop(mKeyState | B30, &pt, pdwEffect) == S_OK ){
 		GetDropFormat(DDtype, pDataObj);
 
 		if ( (mTargettype == TARGET_TOOLBAR) || (mTargettype == TARGET_TREE) || (mTargettype == TARGET_PPC) ){
@@ -262,7 +231,7 @@ STDMETHODIMP ComboDropTarget::Drop(LPDATAOBJECT pDataObj, DWORD, POINTL pt, LPDW
 				}else if ( mTargettype == TARGET_PPC ){
 					ComboDropDDFormat(pDataObj, *pdwEffect, mTargetPath);
 				}
-			TMS_kill(&files);
+				TMS_kill(&files);
 			}
 		}
 		return S_OK;
@@ -302,24 +271,26 @@ STDMETHODIMP ComboDropTarget::QueryDrop(DWORD grfKeyState, POINTL *pt, DWORD *pd
 												// ƒcƒŠ[ƒEƒBƒ“ƒhƒE =======
 	if ( (hTargetWnd == Combo.hTreeWnd) || (hTargetWnd2 == Combo.hTreeWnd) ){
 		if ( IsTrue(QueryDrop_Tree(Combo.hTreeWnd, pt, pdwEffect)) ) return S_OK;
-	}else  if (hTargetWnd == Combo.Report.hWnd){
+	}else  if ( hTargetWnd == Combo.Report.hWnd ){
 		mTargettype = TARGET_REPORT;
 		mDefAction = DROPEFFECT_LINK;
-	}else if (hTargetWnd == Combo.hAddressWnd){
+	}else if ( hTargetWnd == Combo.hAddressWnd ){
 		mTargettype = TARGET_ADDR;
 		mDefAction = DROPEFFECT_LINK;
 	}else{
 		PPC_APPINFO *cinfo;
 
 		cinfo = ::GetComboTarget(hTargetWnd, &cpos);
-		if ( cinfo != NULL ){
+		if ( cinfo == NULL ){
+			if ( grfKeyState & B30 ) return E_INVALIDARG;
+		}else{
 			tstrcpy(mTargetPath, (cinfo->e.Dtype.mode != VFSDT_LFILE) ? cinfo->RealPath : cinfo->path);
 			mTargettype = TARGET_PPC;
 			SetDirectoryDefAction();
 		}
 	}
 
-	if (::GetDDEffect(FILE_ATTRIBUTE_DIRECTORY, grfKeyState, pdwEffect, mDefAction)){
+	if ( ::GetDDEffect(FILE_ATTRIBUTE_DIRECTORY, grfKeyState, pdwEffect, mDefAction) ){
 		return S_OK;
 	}
 

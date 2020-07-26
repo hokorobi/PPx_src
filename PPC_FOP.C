@@ -57,14 +57,6 @@ typedef struct {
 
 void PPcDeleteFile(PPC_APPINFO *cinfo, DWORD *X_wdel);
 
-#if !NODLL
-IID XIID_IFileOperation = xIID_IFileOperation;
-CLSID XCLSID_IFileOperation = xCLSID_IFileOperation;
-#else
-extern IID XIID_IFileOperation;
-extern CLSID XCLSID_IFileOperation;
-#endif
-
 #define FO__NEWFOLDER	5 // 新規作成
 #ifndef SFOERROR_OK
 	#define SFOERROR_OK		0
@@ -185,7 +177,7 @@ int SxFileOperation(PPC_APPINFO *cinfo, SHFILEOPSTRUCT *fileop)
 				}
 			}else{ // shn
 				PPcEnumInfoFunc('C', buf, &enumwork);
-				if ( *buf == '\0' ) break;
+//				if ( *buf == '\0' ) break;
 				if ( IsParentDir(buf) == FALSE ){
 					VFSFullPath(NULL, buf, cinfo->path);
 				}
@@ -264,13 +256,23 @@ void SHFileOperationFix(PPC_APPINFO *cinfo)
 	}
 }
 
+DWORD GetFopOption(const TCHAR *action)
+{
+	VFSFOP_OPTIONS fop;
+
+	fop.flags = 123;
+	GetCustTable(T("X_fopt"), action, &fop, sizeof(VFSFOP_OPTIONS));
+	return fop.flags;
+}
+
 //-----------------------------------------------------------------------------
 // ファイルの複写
 ERRORCODE PPC_ExplorerCopy(PPC_APPINFO *cinfo, BOOL move)
 {
-	TCHAR dst[VFPS], destest[VFPS];
+	TCHAR dst[VFPS];
 	SHFILEOPSTRUCT fileop;
 	const TCHAR *modestr;
+	int mode;
 
 	modestr = !move ? StrFopCaption_Copy : StrFopCaption_Move;
 	if ( (cinfo->e.Dtype.mode == VFSDT_SUSIE) ||
@@ -292,15 +294,19 @@ ERRORCODE PPC_ExplorerCopy(PPC_APPINFO *cinfo, BOOL move)
 	}
 
 	VFSFixPath(NULL, dst, cinfo->path, VFSFIX_VFPS);
-	VFSGetRealPath(NULL, destest, dst);
-	if ( (destest[0] != '\0') && (GetFileAttributesL(dst) == BADATTR) ){
+	mode = VFSPT_UNKNOWN;
+	VFSGetDriveType(dst, &mode, NULL);
+
+	if ( ((mode == VFSPT_DRIVE) || (mode == VFSPT_UNC)) && (GetFileAttributesL(dst) == BADATTR) ){
 		ERRORCODE result;
 
 		result = GetLastError();
 		if ( result != ERROR_NOT_READY ){
-			if ( PMessageBox(cinfo->info.hWnd, MES_QCRD,
+			if ( !(GetFopOption(T("copy")) & VFSFOP_OPTFLAG_NOWCREATEDIR) ){
+				if ( PMessageBox(cinfo->info.hWnd, MES_QCRD,
 						T("File operation warning"), MB_OKCANCEL) != IDOK ){
-				return ERROR_CANCELLED;
+					return ERROR_CANCELLED;
+				}
 			}
 			result = MakeDirectories(dst, NULL);
 		}
@@ -813,7 +819,9 @@ ERRORCODE PPC_Rename(PPC_APPINFO *cinfo, BOOL continuous)
 
 	if ( continuous && (cinfo->e.markC > 0) ){
 		nextcell = IsCEL_Marked(0) ? 0 : DownSearchMarkCell(cinfo, 0);
-		if ( nextcell >= 0 ) MoveCellCsr(cinfo, nextcell - cinfo->e.cellN, NULL);
+		if ( nextcell >= 0 ){
+			MoveCellCsr(cinfo, nextcell - cinfo->e.cellN, NULL);
+		}
 	} else if ( (CEL(cinfo->e.cellN).state < ECS_NORMAL) ||
 		(CEL(cinfo->e.cellN).type <= ECT_LABEL) ){
 		return ERROR_BAD_COMMAND;
@@ -868,6 +876,7 @@ ERRORCODE PPC_Rename(PPC_APPINFO *cinfo, BOOL continuous)
 	} else if ( result > 0 ){
 		return NO_ERROR;
 	} else{
+		RefleshStatusLine(cinfo); // 処理中表示が残ることがあるので追加
 		return ERROR_CANCELLED;
 	}
 }
@@ -984,8 +993,9 @@ ERRORCODE PPC_MakeDir(PPC_APPINFO *cinfo)
 						DataObject = (IDataObject *)GetPathInterface(
 							cinfo->info.hWnd, target, &IID_IDataObject, NULL);
 						if ( DataObject != NULL ){
-							if ( SUCCEEDED(PPcCopyToDropTarget(DataObject, DropTarget,
-								FALSE, cinfo->info.hWnd, DROPEFFECT_MOVE)) ){
+							if ( SUCCEEDED(PPcCopyToDropTarget(DataObject,
+									DropTarget, DROPTYPE_LEFT, cinfo->info.hWnd,
+									DROPEFFECT_MOVE)) ){
 								result = NO_ERROR;
 							}
 							DataObject->lpVtbl->Release(DataObject);

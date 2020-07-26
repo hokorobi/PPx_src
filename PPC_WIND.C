@@ -1109,10 +1109,6 @@ DefineWinAPI(HRESULT, DwmGetWindowAttribute, (HWND, DWORD, PVOID, DWORD)) = NULL
 ExternWinAPI(HRESULT, DwmGetWindowAttribute, (HWND, DWORD, PVOID, DWORD));
 #endif
 
-#ifndef DWMWA_EXTENDED_FRAME_BOUNDS
-  #define DWMWA_EXTENDED_FRAME_BOUNDS 9
-#endif
-
 void JointWindowMain(PPC_APPINFO *cinfo, HWND PairHWnd)
 {
 	WINDOWPLACEMENT nwp, owp;
@@ -1134,7 +1130,7 @@ void JointWindowMain(PPC_APPINFO *cinfo, HWND PairHWnd)
 	}
 	if ( (DDwmGetWindowAttribute != INVALID_VALUE(impDwmGetWindowAttribute)) &&
 		SUCCEEDED(DDwmGetWindowAttribute(cinfo->info.hWnd, DWMWA_EXTENDED_FRAME_BOUNDS, &owp.rcNormalPosition, sizeof(RECT))) ){
-		if ( owp.rcNormalPosition.left > nwp.rcNormalPosition.left ){ // 実体の枠がウィンドウの枠より小さい（Windows10）
+		if ( owp.rcNormalPosition.left > nwp.rcNormalPosition.left ){ // 実体の枠がウィンドウの枠より小さい（Windows8/10）
 			fixX = (nwp.rcNormalPosition.left - owp.rcNormalPosition.left) +
 				  -(nwp.rcNormalPosition.right - owp.rcNormalPosition.right);
 			fixY = (nwp.rcNormalPosition.top - owp.rcNormalPosition.top) +

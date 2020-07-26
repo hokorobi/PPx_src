@@ -643,7 +643,7 @@ DWORD WINAPI PPxUnhandledExceptionFilterMain(ExceptionData *EP)
 
 	THREADSTRUCT *tstruct;
 
-	TCHAR exceptionbuf[256], stackinfo[SHOWSTACKSBUFSIZE + 16], *stackptr;
+	TCHAR exceptionbuf[256], stackinfo[SHOWSTACKSBUFSIZE + 0x100], *stackptr;
 	const TCHAR **Msg = msgstringsE;
 	const TCHAR *Comment = NilStr;
 	int result = 0;
@@ -819,11 +819,13 @@ DWORD WINAPI PPxUnhandledExceptionFilterMain(ExceptionData *EP)
 	}
 	{
 		DWORD tick = GetTickCount();
+		int off = 0;
 
-		if ( (tick - StartTick) < 3000 ) tstrcat(stackinfo, T("(B)"));
-		if ( (tick - CustTick) < 3000 ) tstrcat(stackinfo, T("(C)"));
-		if ( NowExit ) tstrcat(stackinfo, T("(E)"));
-		if ( Sm->NowShutdown ) tstrcat(stackinfo, T("(S)"));
+		if ( (tick - StartTick) < 3000 ) stackinfo[off++] = 'B';
+		if ( Sm->NowShutdown ) stackinfo[off++] = 'S';
+		if ( NowExit ) stackinfo[off++] = 'E';
+		if ( (tick - CustTick) < 3000 ) stackinfo[off++] = 'C';
+		if ( off > 0 ) stackinfo[off] = '>';
 	}
 
 	// PPxスレッド以外であり、PPx 以外の実行ファイルで、PPxが関与していないならエラー処理をしない
@@ -1020,7 +1022,7 @@ int ShowErrorDialog(const TCHAR **Msg, int msgtype, const TCHAR *threadtext, con
 	int result;
 	DWORD OSsubver;
 
-	if ( OSver.dwMajorVersion >= 10 ){
+	if ( WinType >= WINTYPE_10 ){
 		const TCHAR *ptr;
 
 		msgbuf[0] = '\0';

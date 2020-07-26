@@ -7,7 +7,6 @@
 extern "C" {
 #endif
 
-#define TEXTBUFSIZE 0x800
 #define MAX_MOVE_X 0x3fffffff  // X方向に移動可能な最大値
 #include "TM_MEM.H"
 #include "PPX_CV.H"
@@ -17,6 +16,8 @@ extern "C" {
 
 #define DEFAULTCOLS	80	// テキストの標準表示桁数
 #define DEFAULTTAB	8	// テキストの標準タブ桁数
+
+#define PPV_MAX_VIEWSIZE ValueX3264( ((DWORD)1 * GB), ((DWORD)2 * GB) )
 
 typedef struct {
 	void	*ptr;		// 共有メモリへのポインタ
@@ -46,6 +47,24 @@ enum {
 #define VCODE_COLOR_SIZE 3
 #define VCODE_FCOLOR_SIZE 5
 
+
+#define MAXLINELENGTH 0x800 // 1行の最大長
+#define DISPTEXTBUFSIZE MAXLINELENGTH // 表示用内部コードバッファの大きさ ※ MAXLINELENGTH 以上
+
+typedef struct {
+	BYTE *buff; // 使用するバッファへのポインタ(確保済み/一時確保)
+	DWORD size; // 使用できる大きさ
+	BOOL use; // 使用中か否か
+} DISPTEXTBUFSTRUCT;
+
+typedef struct {
+	BYTE *srcmax;
+	BYTE *destbuf;
+	DWORD destsize;
+	BOOL writetbl;
+	BOOL paintmode;
+} MAKETEXTINFO;
+
 // VT_TABLE.attrs
 #define VTTF_TOP B0 // 行頭を含む
 // #define VTTF_END B1 // 行末を含む
@@ -65,13 +84,6 @@ typedef struct {
 	DWORD line;	// 論理行数
 } VT_TABLE;
 #pragma pack(pop)
-
-typedef struct {
-	BYTE *destbuf;
-	BYTE *srcmax;
-	BOOL writetbl;
-	BOOL paintmode;
-} MAKETEXTINFO;
 
 typedef struct {
 	int			offX, offY;		// 表示開始位置
@@ -188,6 +200,16 @@ typedef struct {
 } PPVVAR;
 typedef BOOL (APIENTRY *impPPRINTDLG)(LPPRINTDLG);
 
+enum {
+	VSHOW_SDI = 0,	// SDI 表示
+	VSHOW_ONWINDOW,		// 親ウィンドウに重ねて表示
+	VSHOW_ONPAIRWINDOW,	// 親ウィンドウの反対ウィンドウに重ねて表示
+	VSHOW_ONMAINWINDOW,	// 親ウィンドウが所属する主ウィンドウに重ねて表示
+	VSHOW_INWINDOW,		// 親ウィンドウの子ウィンドウ
+	VSHOW_INPAIRWINDOW,	// 親ウィンドウの反対ウィンドウの子ウィンドウ
+	VSHOW_INMAINWINDOW,	// 親ウィンドウが所属する主ウィンドウの子ウィンドウ
+};
+
 typedef struct {
 	DISPT dtype;	// 表示形式
 	int T_code;		// テキスト表示形式
@@ -273,6 +295,12 @@ typedef struct {
 
 		TCHAR typeinfo[VFPS]; // 種別名の表示テキスト
 		TCHAR source[CMDLINESIZE]; // 元のファイル名
+		#define SOURCEFROM_NONE 0
+		#define SOURCEFROM_FILENAME 1 // ファイル名より
+		#define SOURCEFROM_BASEURL_REL 2 // ファイル中 base hrefより(相対指定)
+		#define SOURCEFROM_GETADDR 3 // ファイル中 GET/CONNECTより ※ BASEURL より後に判断される
+		#define SOURCEFROM_BASEURL 4 // ファイル中 base hrefより
+		int sourcefrom; // source の由来
 		struct {
 			BYTE *image; // ファイルの中身
 			HGLOBAL mapH;	// メモリハンドル

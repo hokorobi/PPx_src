@@ -238,13 +238,13 @@ VFSDLL TCHAR * PPXAPI VFSGetDriveType(_In_z_ const TCHAR *vfp, _Out_opt_ int *re
 			break;
 
 		case 'h':
-										// http: ?
+										// http:// ?
 			if ( !memcmp(vfp + 1, StrHttp + 1, TSTROFF(7 - 1)) ){
 				vfp = FindSepPtr(vfp + 7);
 				Mode = VFSPT_HTTP;
 				goto fin;
 			}
-										// https: ?
+										// https:// ?
 			if ( !memcmp(vfp + 1, StrHttps + 1, TSTROFF(8 - 1)) ){
 				vfp = FindSepPtr(vfp + 8);
 				Mode = VFSPT_HTTP;
@@ -776,13 +776,16 @@ VFSDLL TCHAR * PPXAPI VFSFullPath(_Out_writes_opt_z_(VFPS) TCHAR *dst, TCHAR *sr
 						clp = tstrchr(cl + 1, '/');
 						if ( clp == NULL ) break;
 					}
+				}else{ // http:// だけなので、最後の「/」を指すように
+					if ( (curp - curtmp) <= 8 ) curp--;
 				}
 			}
 			*cl = '\0';
 		}else if ( cmode == VFSPT_UNC ){
 			curp = GetUncRootPtr(curp);
-			if ( curp == (curtmp + 2) ) curp--;	// \\ の時は補正
+			if ( curp == (curtmp + 2) ) curp--;	// \\ の時は最後の「\」を指すように
 		}
+		// カレント末尾がセパレータならスキップ、なければ追加
 		if ( *curp == sep ){
 			curp++;
 		}else if ( *curp == '\0' ){
@@ -988,8 +991,9 @@ VFSDLL ERRORCODE PPXAPI MakeDirectories(const TCHAR *dst, const TCHAR *src)
 			if ( result == NO_ERROR ) return NO_ERROR;
 		}
 		// FILE_ATTRIBUTE_VIRTUAL のときは、ERROR_INVALID_PARAMETER がでる
+		// Samba で ERROR_INVALID_LEVEL がでる
 		if ( (src != NULL) &&
-			 ((result == ERROR_ACCESS_DENIED) || (result == ERROR_INVALID_PARAMETER)) ){
+			 ((result == ERROR_ACCESS_DENIED) || (result == ERROR_INVALID_PARAMETER) || (result == ERROR_INVALID_LEVEL)) ){
 			result = NO_ERROR;
 			if ( CreateDirectoryL(dst, NULL) == FALSE ) result = GetLastError();
 		}
@@ -1001,7 +1005,7 @@ VFSDLL ERRORCODE PPXAPI MakeDirectories(const TCHAR *dst, const TCHAR *src)
 				if ( src != NULL ){
 					tstrcpy(shortsrcbuf, src);
 					wp = VFSFindLastEntry(shortsrcbuf);
-					if ( *wp ) *wp = 0;
+					if ( *wp != '\0' ) *wp = '\0';
 					shortsrc = shortsrcbuf;
 				}
 				result = MakeDirectories(shortdst, shortsrc);

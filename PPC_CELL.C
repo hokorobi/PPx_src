@@ -268,7 +268,10 @@ BOOL CellLook(PPC_APPINFO *cinfo, int IsFileRead)
 			}
 		}else
 #endif
-		if ( VFSFullPath(cinfo->path, CellFileName(cell), cinfo->path) == NULL ){
+		if ( VFSFullPath(cinfo->path, CellFileName(cell),
+				( (cinfo->e.Dtype.mode == VFSDT_LFILE) &&
+				  (cinfo->e.Dtype.BasePath[0] != '\0') ) ?
+					cinfo->e.Dtype.BasePath : cinfo->path ) == NULL ){
 			SetPopMsg(cinfo, POPMSG_GETLASTERROR, NULL);
 			return TRUE;
 		}
@@ -584,6 +587,7 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo, int offset, const CURSORMOVER *cm)
 	int limit, flag = 0;
 	int scroll, OcellN;
 	BOOL CellFix = TRUE;
+	BOOL PointMode = FALSE;
 
 	DEBUGLOGC("MoveCellCsr start (Focus:%x)", GetFocus());
 
@@ -600,14 +604,17 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo, int offset, const CURSORMOVER *cm)
 		PPxCommonExtCommand(K_SENDREPORT, (WPARAM)T("under cellN"));
 	}
 										// カスタマイズ関係の情報を用意 -------
-	if ( cm == NULL ){
+	if ( cm <= CMOVER_POINT ){
+		if ( cm == CMOVER_POINT ) PointMode = TRUE;
 		cm = XC_page ? &DefCM_scroll : &DefCM_page;
 	}
 	PageEntries = cinfo->cel.Area.cx * cinfo->cel.Area.cy;
 	if ( PageEntries > cinfo->e.cellIMax ) PageEntries = cinfo->e.cellIMax;
 	if ( cm->outw_type == OUTTYPE_LINESCROLL ){
 		limit = 1;
-		if ( cinfo->cel.Area.cy > (XC_smar * 3) ) limit += XC_smar;
+		if ( !PointMode && (cinfo->cel.Area.cy > (XC_smar * 3)) ){
+			limit += XC_smar;
+		}
 		scroll = 1;
 	}else{
 		limit = 0;
@@ -760,7 +767,7 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo, int offset, const CURSORMOVER *cm)
 		}
 		break;
 	}
-	while ( NcellN >= cinfo->e.cellIMax ){	// 最大値------------------------------
+	while ( NcellN >= cinfo->e.cellIMax ){	// 最大値--------------------------
 		if ( (NcellWMin + PageEntries) < cinfo->e.cellIMax ){
 			NcellN = cinfo->e.cellIMax - 1;
 			break;
@@ -1003,7 +1010,7 @@ BOOL MoveCellCsr(PPC_APPINFO *cinfo, int offset, const CURSORMOVER *cm)
 			}
 		}
 	}else{	// 選択基準位置を更新
-		if ( offset ){
+		if ( offset != 0 ){
 			cinfo->e.cellNref = cinfo->e.cellN;
 		}
 	}

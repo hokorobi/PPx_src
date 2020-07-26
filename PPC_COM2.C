@@ -96,7 +96,7 @@ enum {
 	CM_WINHASH,
 	CM_EXT = 0x1000, // 必ず最後
 
-	CM_MEMOEX0
+//	CM_MEMOEX0
 };
 
 const TCHAR *CommentsMenu[] = {
@@ -1648,6 +1648,14 @@ void SetCommentUseFlag(PPC_APPINFO *cinfo, DWORD CommentID)
 	setflag(cinfo->UseCommentsFlag, (1 << CommentID));
 }
 
+void SetCommentErrorMessage(COMMENTENUMINFO *cei, ERRORCODE result)
+{
+	TCHAR text[VFPS];
+
+	PPErrorMsg(text, result);
+	SetComment_CommentEnum(cei, text);
+}
+
 ERRORCODE SetHashComment(PPC_APPINFO *cinfo, COMMENTENUMINFO *cei, int type, DWORD CommentID, TCHAR *files, JOBINFO *jinfo)
 {
 	TCHAR text[VFPS];
@@ -1711,7 +1719,7 @@ ERRORCODE SetHashComment(PPC_APPINFO *cinfo, COMMENTENUMINFO *cei, int type, DWO
 		hFile = CreateFileL(cei->name, GENERIC_READ, FILE_SHARE_READ, NULL,
 				OPEN_EXISTING, openflag, NULL);
 		if ( hFile == INVALID_HANDLE_VALUE ){
-			SetComment_CommentEnum(cei, T("open error"));
+			SetCommentErrorMessage(cei, PPERROR_GETLASTERROR);
 			continue;
 		}
 		if ( asyncmode ){
@@ -1730,19 +1738,27 @@ ERRORCODE SetHashComment(PPC_APPINFO *cinfo, COMMENTENUMINFO *cei, int type, DWO
 							AddDD(ovr.Offset, ovr.OffsetHigh, readsize[readid], 0);
 							readid ^= 1;
 							if ( datastate[readid] == data_empty ) continue;
-							break;
 						}
-					}else if ( asyncmode && (GetLastError() == ERROR_IO_PENDING) ){
-						datastate[readid] = data_read;
-						if ( datastate[readid ^ 1] == data_have ){ // 他の作業ができる
-							break;
-						}
-						continue;
+						break;
 					}else{
-						SetComment_CommentEnum(cei, T("read error"));
+						ERRORCODE result;
+
+						result = GetLastError();
+						if ( result == ERROR_HANDLE_EOF ){
+							datastate[readid] = data_have;
+							readsize[readid] = 0;
+							break;
+						}
+						if ( asyncmode && (result == ERROR_IO_PENDING) ){
+							datastate[readid] = data_read;
+							if ( datastate[readid ^ 1] == data_have ){ // 他の作業ができる
+								break;
+							}
+							continue;
+						}
+						SetCommentErrorMessage(cei, result);
 						goto readbreak;
 					}
-					break;
 
 				case data_read: // 読み込み中→完了しているかを確認
 					// 他の作業ができるなら、待機しない
@@ -1754,11 +1770,20 @@ ERRORCODE SetHashComment(PPC_APPINFO *cinfo, COMMENTENUMINFO *cei, int type, DWO
 						readid ^= 1;
 						if ( datastate[readid] == data_empty ) continue;
 						break;
-					}else if ( (datastate[readid ^ 1] == data_have) &&
-						(GetLastError() == ERROR_IO_PENDING) ){
-						break; // 未完了、他の作業へ
 					}else{
-						SetComment_CommentEnum(cei, T("read error"));
+						ERRORCODE result;
+
+						result = GetLastError();
+						if ( result == ERROR_HANDLE_EOF ){
+							datastate[readid] = data_have;
+							readsize[readid] = 0;
+							break;
+						}
+						if ( (datastate[readid ^ 1] == data_have) &&
+							 (result == ERROR_IO_PENDING) ){
+							break; // 未完了、他の作業へ
+						}
+						SetCommentErrorMessage(cei, result);
 						goto readbreak;
 					}
 				// dafault / data_have なら、他の作業をする
@@ -2915,7 +2940,7 @@ void OpenExplorer(PPC_APPINFO *cinfo)
 {
 	const TCHAR *cmd;
 
-	if ( (OSver.dwMajorVersion >= 7) ||
+	if ( (OSver.dwMajorVersion > 6) ||
 		((OSver.dwMajorVersion == 6) && (OSver.dwMinorVersion > 0)) ){
 		cmd = StrInvokeExplorer3; // Win7以降
 	} else if ( (OSver.dwMajorVersion >= 5) ||

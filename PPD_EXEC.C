@@ -381,6 +381,7 @@ void PopupErrorCodeMessage(HWND hWnd, const TCHAR *title, ERRORCODE code)
 BOOL ComExecEx(HWND hOwner, const TCHAR *line, const TCHAR *path, int *useppb, int flags, DWORD *ExitCode)
 {
 	int ID = -1;
+
 		// 自前 or 自分がコンソール なら自前
 	if ( flags & (XEO_NOUSEPPB | XEO_CONSOLE) ){
 		if ( !(flags & XEO_NOPIPERDIR) &&
@@ -736,7 +737,7 @@ BOOL ComExecSelf(HWND hOwner, const TCHAR *execarg, const TCHAR *path, int flags
 	}
 									// LineStaticBuf で足りないならメモリ確保
 	linelen = tstrlen(LineStaticBuf) + tstrlen(param) + MAX_PATH;
-	if ( linelen > (CMDLINESIZE + MAX_PATH) ){
+	if ( linelen > TSIZEOF(LineStaticBuf) ){
 		LineBuf = HeapAlloc(DLLheap, 0, TSTROFF(linelen));
 		if ( LineBuf == NULL ) return FALSE;
 		tstrcpy(LineBuf, LineStaticBuf);
@@ -927,19 +928,20 @@ int GetE2(TCHAR *fname)
 
 	ext = VFSFindLastEntry(fname);
 	ext += FindExtSeparator(ext);
-
 										// 拡張子からキーを求める -------------
 	if ( ERROR_SUCCESS != RegOpenKeyEx(HKEY_CLASSES_ROOT, ext, 0, KEY_READ, &hExt) ){
-		RegOpenKeyEx(HKEY_CLASSES_ROOT, WildCard_All, 0, KEY_READ, &hExt);
+		if ( ERROR_SUCCESS != RegOpenKeyEx(HKEY_CLASSES_ROOT, WildCard_All, 0, KEY_READ, &hExt) ){
+			return type; // 調べることができないので OS に任せる
+		}
 	}
-	Bsize = sizeof appN;					// 拡張子の識別子
+	Bsize = sizeof appN - TSTROFF(7);			// 拡張子の識別子
 	if ( ERROR_SUCCESS ==
 			RegQueryValueEx(hExt, NilStr, NULL, NULL, (LPBYTE)appN, &Bsize) ){
 		tstrcat(appN, T("\\shell"));
 										// アプリケーションのシェル -----------
 		if ( ERROR_SUCCESS ==
 				RegOpenKeyEx(HKEY_CLASSES_ROOT, appN, 0, KEY_READ, &hAP)){
-			Bsize = sizeof defN;
+			Bsize = sizeof defN - TSTROFF(9);
 			defN[0] = '\0';
 			RegQueryValueEx(hAP, NilStr, NULL, NULL, (LPBYTE)defN, &Bsize);
 			if ( defN[0] == '\0' ) tstrcpy(defN, ShellVerb_open); // の指定が無い
@@ -984,17 +986,18 @@ int GetE2(TCHAR *fname)
 -----------------------------------------------------------------------------*/
 int GetExecTypeFileOnly(TCHAR *name)
 {
-	int type = GTYPE_DATA;
-	DWORD tmp;
-	WORD wp;
 	HANDLE hFile;						// 確認中のファイル
-	BYTE header[0x200];
 										// ファイルの先頭を取得する -----------
 	hFile = CreateFileL(name, GENERIC_READ, FILE_SHARE_WRITE | FILE_SHARE_READ,
 					NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if ( hFile != INVALID_HANDLE_VALUE ){
+		int type = GTYPE_DATA;
+
 		for ( ; ; ){
+			WORD wp;
+			DWORD tmp;
 			TCHAR *p;
+			BYTE header[0x200];
 
 			if ( FALSE ==
 					ReadFile(hFile, header, sizeof(IMAGE_DOS_HEADER), &tmp, NULL)){
@@ -1003,14 +1006,14 @@ int GetExecTypeFileOnly(TCHAR *name)
 			}
 							// MS EXE header を確認			データ、batch、com
 			if ( (tmp < sizeof(IMAGE_DOS_HEADER)) ||
-			  (((IMAGE_DOS_HEADER *)header)->e_magic != IMAGE_DOS_SIGNATURE) ){
+				 (((IMAGE_DOS_HEADER *)header)->e_magic != IMAGE_DOS_SIGNATURE) ){
 				type = GetE2(name);
 				break;
 			}
 							// 拡張子の確認
 			p = tstrrchr(name, '.');
 			if ( p == NULL ) break;
-			if ( tstricmp(p + 1, T("COM")) && tstricmp(p + 1, T("EXE")) && tstricmp(p + 1, T("SCR")) ){
+			if ( tstricmp(p + 1, T("COM")) && tstricmp(p + 1, T("EXE")) && tstricmp(p + 1, T("SCR")) ){ // com/exe/scr 以外は DATA 扱い
 				break;
 			}
 
@@ -1080,17 +1083,14 @@ int GetExecTypeDirOnly(TCHAR *name, int flag)
 	return GTYPE_ERROR;
 }
 
-void FileNameCopy(TCHAR *dest, TCHAR *src)
+void FileNameCopy(TCHAR *dest, const TCHAR *src)
 {
 	if ( dest == NULL ) return;
 	if ( tstrchr(src, ' ') != NULL ){
-		int len;
-
 		*dest++ = '\"';
-		len = tstrlen32(src);
-		memcpy(dest, src, TSTROFF(len));
-		*(dest + len) = '\"';
-		*(dest + len + 1) = '\0';
+		dest = tstpcpy(dest, src);
+		*(dest + 0) = '\"';
+		*(dest + 1) = '\0';
 	}else{
 		tstrcpy(dest, src);
 	}
@@ -1117,7 +1117,8 @@ PPXDLL int PPXAPI GetExecType(LPCTSTR *name, TCHAR *fpath, const TCHAR *path)
 			lastp = tstrchr(p, '\"');
 		}else{
 			lastp = p;
-			while( (*lastp != '\0') && (*lastp != ' ') && (*lastp != '\t') ){
+			// \0 \t \r \n ' ' 以外
+			while( ((UTCHAR)*lastp > '\xd') && (*lastp != ' ') ){
 				lastp++;
 			}
 		}
@@ -1154,7 +1155,7 @@ PPXDLL int PPXAPI GetExecType(LPCTSTR *name, TCHAR *fpath, const TCHAR *path)
 		}
 		if ( *p == '.') setflag(flag, ET_EXT);
 #ifndef UNICODE
-		if ( IskanjiA(*p) && (*(p+1)) ) p++;
+		if ( IskanjiA(*p) && (*(p + 1) != '\0') ) p++;
 #endif
 	}
 										// カレントディレクトリで検索 =========

@@ -201,6 +201,9 @@ PPXCMDS.C:	ppxcmds.pl
 #-------------------------------------------------------------------------- PPC
 PPCH	=	$(PPXH) PPCUI.RH PPX_DRAW.H PPX_CV.H PPX_DOCK.H PPC_STRU.H\
 		PPC_GVAR.C PPC_FUNC.H PPC_DISP.H
+ifeq ($(strip $(NoDll)),0)
+PPCOBJX	=	PPX_64.o
+endif
 PPCOBJ	=	PPCUI.o		PPC_MAIN.o	PPC_CELL.o	PPC_COM.o\
 		PPC_COM2.o	PPC_WIND.o	PPC_DIRA.o	PPC_DIR.o\
 		PPC_DISP.o	PPC_PAIN.o	PPX_DRAW.o\
@@ -212,7 +215,7 @@ PPCOBJ	=	PPCUI.o		PPC_MAIN.o	PPC_CELL.o	PPC_COM.o\
 		PPC_ARCH.o	PPC_DLG.o	FATTIME.o	PPC_CCMP.o\
 		PPC_INIT.o	PPC_WHER.o	PPC_INCS.o\
 		TM_MEM.o	CHRTYPE.o	MD5.o\
-		sha.o		sha224-256.o	PPX_64.o\
+		sha.o		sha224-256.o	$(PPCOBJX)\
 		PPX_CV.o	PPX_DOCK.o	PPCOMBOB.o	PPCOMBOP.o\
 		PPCOMBO.o	PPCOMBOS.o
 

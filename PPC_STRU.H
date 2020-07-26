@@ -332,6 +332,7 @@ typedef struct {
 	B15		1:サブディレクトリ内も比較
 */
 #define CMP_DETAIL  1	// 詳細メニュー
+#define CMP_1HASH 10
 #define CMP_1WINDOW 11
 #define CMP_2WINDOW 21
 #define CMPTYPEMASK 0x7f
@@ -341,7 +342,6 @@ typedef struct {
 #define CMPDOWN			B7 // コマンド実行元窓、コマンド処理窓の反対窓
 #define CMPSUBDIR		B15 // サブディレクトリ以下
 #define CMPWAIT			B31 // 実行完了まで待つ、なければ非同期
-#define CMP_1HASH 999
 enum {
 	CMP_1SIZE = CMP_1WINDOW, CMP_1COMMENT, CMP_1END
 };
@@ -350,7 +350,7 @@ enum {
 	CMP_SAMESIZETIME, CMP_BINARY, CMP_SIZEONLY, CMP_NEWONLY, CMP_SHA1,
 	CMP_2END
 };
-// ↓ +1 は、CMP_EXIST | CMPWITHOUT_EXT 分
+// ↓ +1 は、CMP_2END(CMP_EXIST | CMPWITHOUT_EXT) 分
 #define CMP2TYPES (CMP_2END - CMP_2WINDOW + 1)	 // ２窓間比較方法の数
 
 #define USEWINHASH 0
@@ -466,13 +466,6 @@ typedef struct {
 	int nPos;
 } OLDSCROLLPOS;
 
-typedef struct {
-	int mode;
-	TCHAR string[VFPS];
-	FN_REGEXP fn;
-} WHERESTRING;
-
-
 #define WDEXM_UNKNOWN 0
 #define WDEXM_PLAINTEXT 1
 #define WDEXM_COMMENT 2
@@ -480,32 +473,43 @@ typedef struct {
 #define WDEXM_COLUMNMIN 4
 #define WDEXM_MODULE 5
 typedef struct {
-	TCHAR src[VFPS];
-	TCHAR file1[VFPS]; // keep
-	TCHAR file2[VFPS]; // keep
-	WHERESTRING str; // keep
-	int pausecount; // 操作割り込み間隔のカウンタ
-	DWORD hitcount;
-	HWND hWnd;
-	HWND hEdWnd;
-	BOOL marks; // keep
-	BOOL dir; // keep
-	DWORD sdir; // keep, 0 か FILE_ATTRIBUTE_DIRECTORY で判断
-	BOOL vfs;
-	DWORD exmode; // keep,検索対象 WDEXM_xx
-	BOOL readlistfile; // 終了後読み込み
-	BOOL appendmode; // 直接挿入
-
-	FN_REGEXP fn1, fn2;
-	DWORD OldTime; // 経過表示用
-	DWORD imgsize; // X_wsiz の値
 	struct tagPPC_APPINFO *cinfo;
-	ThSTRUCT thEcdata; // カラム情報記憶用
+	BOOL marked; // -marked
+	BOOL dir; // -dir
+	DWORD sdir; // -subdir, 0 か FILE_ATTRIBUTE_DIRECTORY で判断
+	DWORD exmode; // -type, 検索対象 WDEXM_xx
+	TCHAR mask1[VFPS]; // -mask1
+	TCHAR mask2[VFPS]; // -mask2
+	TCHAR text[VFPS]; // -text
+} WHERESETTINGS;
+
+typedef struct {
+	HWND hWnd; // WhereIsMain only
+	HWND hEdWnd; // dialog only
+
+	const TCHAR *listfilename; // -listfile, 出力するlistfile
+	TCHAR srcpath[VFPS]; // -path
+
+	DWORD hitcount; // WhereIsMain only
+	DWORD OldTime; // 経過表示用 WhereIsMain only
+	DWORD imgsize; // X_wsiz の値 WhereIsMain only
+	DWORD baselen; // パスの省略可能な長さ WhereIsMain only
+
+	int pausecount; // 操作割り込み間隔のカウンタ WhereIsMain only
 	int indexEc; // 使用するカラム拡張
-	DWORD baselen; // パスの省略可能な長さ
-	const TCHAR *listfilename; // 出力するlistfile
-	int wlfc_flags;
-} WHEREDIALOG;
+	int wlfc_flags; // -name, -utf8, -utf8bom
+
+	BOOL readlistfile; // -search, 終了後読み込み
+//	BOOL appendmode; // 直接挿入
+	BOOL vfs; // -vfs
+	BOOL UseFnText; // -text で 単純一致 / 正規表現
+
+	ThSTRUCT thEcdata; // カラム情報記憶用
+
+	FN_REGEXP fn1, fn2; // -mask1,-mask2 WhereIsMain only
+	FN_REGEXP fnText; // -text(正規表現時)
+	WHERESETTINGS st;
+} WHERESTRUCT;
 
 typedef struct {
 	CRITICAL_SECTION section;	// ref を変更するときにシリアライズする為に使用
@@ -835,6 +839,16 @@ typedef struct tagPPC_APPINFO {
 	int			KeyChar;		// WM_KEYUP 中は 1
 	ENTRYINDEX	cellNbeforePush;	// クリック前のcellNの値
 
+#define DDPAGEMODE_NONE 0
+#define DDPAGEMODE_LIST 1
+#define DDPAGEMODE_TREE 2
+#define DDPAGEMODE_DIR_ENTER 3 // ホバーによる移動
+#define DDPAGEMODE_DIR_COUNTDOWN (DDPAGEMODE_DIR_ENTER + 5) // カウントダウン開始
+							// ホバーによる移動検知の開始
+#define DDPAGEMODE_DIR_DEFWAIT 5000
+#define DDPAGEMODE_DIR_FIRSTWAIT (DDPAGEMODE_DIR_ENTER + ((X_ddex.DDenterTime - 1) / TIMER_DRAGSCROLL))
+#define DDPAGEMODE_DIR_NEXTWAIT (DDPAGEMODE_DIR_FIRSTWAIT + (3000 / TIMER_DRAGSCROLL))
+
 	int			DDpagemode, DDpage;
 	UINT_PTR	ddtimer_id;
 
@@ -852,7 +866,7 @@ typedef struct tagPPC_APPINFO {
 	SIZE XC_ifix_size;	// 情報行アイコンの大きさ
 	int X_lspc, X_lspcOrg;
 
-	WHEREDIALOG	Pws;			// Where is の内容
+	WHERESETTINGS WhereIsSettings;	// Where is の設定
 	volatile int FDirWrite;		// ディレクトリ更新要求管理
 	HGLOBAL		CLIPDATAS[CLIPTYPES];	// クリップボードにコピーする内容
 	DWORD		X_win;			// ウィンドウ関連のカスタマイズ
@@ -977,6 +991,46 @@ typedef struct {
 	DWORD LoadCounter;
 } SENDSETCOMMENT;
 
+// AutoD&D や SHN copy で使用するコピー方法
+#define DROPTYPE_LEFT 0
+#define DROPTYPE_RIGHT B0
+#define DROPTYPE_HOOK B1
+#define DROPTYPE_POST B2
+#define DROPTYPE_COM B3
+
+#ifdef _SHLOBJ_H_
+#ifndef SHCNRF_ShellLevel
+#if defined(__BORLANDC__) || defined(__GNUC__)
+typedef struct _SHChangeNotifyEntry
+{
+	LPCITEMIDLIST pidl;
+	BOOL fRecursive;
+} SHChangeNotifyEntry;
+#endif
+#define SHCNRF_ShellLevel 0x0002
+#define SHCNRF_NewDelivery 0x8000
+#endif
+
+#ifdef _WIN64
+#define DSHChangeNotifyRegister SHChangeNotifyRegister
+#define DSHChangeNotifyDeregister SHChangeNotifyDeregister
+#define DSHChangeNotification_Lock SHChangeNotification_Lock
+#define DSHChangeNotification_Unlock SHChangeNotification_Unlock
+#else
+ExternWinAPI(ULONG, SHChangeNotifyRegister, (HWND hwnd, int fSources, LONG fEvents, UINT wMsg, int cEntries, const SHChangeNotifyEntry *pshcne));
+ExternWinAPI(BOOL, SHChangeNotifyDeregister, (unsigned long ulID));
+ExternWinAPI(HANDLE, SHChangeNotification_Lock, (HANDLE hChange, DWORD dwProcId, LPITEMIDLIST **pppidl, LONG *plEvent));
+ExternWinAPI(BOOL, SHChangeNotification_Unlock, (HANDLE hLock));
+#endif
+#endif
+
+typedef struct tagWriteTextStruct {
+	HANDLE hFile;
+	BOOL (WINAPI *Write)(struct tagWriteTextStruct *sts, const TCHAR *text, size_t textlen);
+	int wlfc_flags;
+} WriteTextStruct;
+extern BOOL WINAPI WriteTextNative(WriteTextStruct *sts, const TCHAR *text, size_t textlen);
+extern BOOL WINAPI WriteTextUTF8(WriteTextStruct *sts, const TCHAR *text, size_t textlen);
 
 #ifndef SORT_DIGITSASNUMBERS
 #define SORT_DIGITSASNUMBERS 0x08 // Win7
@@ -1020,9 +1074,13 @@ typedef struct {
 #define WLFC_SYSMSG		B4	// システムメッセージを出力する
 #define WLFC_MARKEDONLY	B5	// マーク付きのみ出力
 #define WLFC_NOHEADER	B6	// ヘッダ無し
+#define WLFC_UTF8		B7	// UTF-8
+#define WLFC_BOM		B8	// unicode BOM
 
 #define WLFC_COMMAND_DEFAULT	(WLFC_DETAIL | WLFC_OPTIONSTR | WLFC_COMMENT)
 #define WLFC_WRITEDIR_DEFAULT	(WLFC_DETAIL | WLFC_OPTIONSTR | WLFC_COMMENT)
+#define FormatResetWLFC(flags) (((flags) & ~(WLFC_NAMEONLY | WLFC_OPTIONSTR | WLFC_COMMENT)) )
+
 /*
 #define WLF_NORMAL 0 // 全エントリ、マーク情報無し
 #define WLF_MARKEDENTRY 1 // マークしたエントリのみ、マーク情報無し
@@ -1035,6 +1093,10 @@ typedef struct {
 	PPC_APPINFO *cinfo;
 	XC_SORT *xc;
 } PPCSORTDIALOGPARAM;
+
+typedef struct {
+	DWORD DDenterTime;
+} DDEXSETTINGS;
 
 extern LOADWINAPISTRUCT OLEAUT32APIS[];
 extern HANDLE hOleaut32;
@@ -1072,6 +1134,9 @@ extern const TCHAR *SortItems[];
 #ifndef HDN_ITEMSTATEICONCLICK
 #define HDN_ITEMSTATEICONCLICK  (HDN_FIRST-16)
 #endif
+
+extern IID XIID_IFileOperation;
+extern CLSID XCLSID_IFileOperation;
 
 #define GLOBALEXTERN
 #include "PPC_GVAR.C"

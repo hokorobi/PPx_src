@@ -100,9 +100,8 @@ int GetEntryDepth(const TCHAR *src, const TCHAR **last)
 
 	rp = VFSGetDriveType(src, NULL, NULL);	// ドライブ指定をスキップ
 	if ( rp == NULL ) rp = src;	// ドライブ指定が無い
-	if ( *rp ){				// root なら *rp == 0
-		if ( (*rp == '\\') || (*rp == '/') ) rp++;
-		tp = FindPathSeparator(rp);
+	if ( *rp != '\0' ){ // root なら *rp == 0
+		tp = FindPathSeparator( ((*rp == '\\') || (*rp == '/')) ? rp + 1 : rp);
 		if ( tp != NULL ){
 			do {
 				depth++;
@@ -111,7 +110,7 @@ int GetEntryDepth(const TCHAR *src, const TCHAR **last)
 			} while( tp != NULL);
 		}
 	}
-	if ( last != NULL ) *last = ((*rp == '\\') || (*rp == '/'))  ? rp : NULL;
+	if ( last != NULL ) *last = ((*rp == '\\') || (*rp == '/')) ? rp : NULL;
 	return depth;
 }
 
@@ -255,7 +254,10 @@ int GetItemTypeFromPoint(PPC_APPINFO *cinfo, POINT *pos, ENTRYINDEX *ItemNo)
 
 	x = pos->x;
 	y = pos->y;
-	if ( (y < 0) || (x < 0) ) return PPCR_UNKNOWN;	// 範囲外
+	if ( (y < 0) || (x < 0) ||
+		 (x >= cinfo->wnd.Area.cx) || (y >= cinfo->wnd.Area.cy) ){
+		return PPCR_UNKNOWN;	// 範囲外
+	}
 
 									// Path / Status line =================
 	if ( y < cinfo->BoxStatus.top ) return PPCR_PATH;	// Path line
@@ -282,7 +284,8 @@ int GetItemTypeFromPoint(PPC_APPINFO *cinfo, POINT *pos, ENTRYINDEX *ItemNo)
 		x -= cinfo->BoxEntries.left;
 #if FREEPOSMODE
 		{
-			int i, tx, ty;
+			ENTRYINDEX i;
+			int tx, ty;
 			POINT *cpos;
 
 			// ●1.1x -1 を足す必要がある問題を調べること！
@@ -382,7 +385,8 @@ int GetItemTypeFromPoint(PPC_APPINFO *cinfo, POINT *pos, ENTRYINDEX *ItemNo)
 									HGDIOBJ hOldFont;
 									hOldFont = SelectObject(hDC, cinfo->hBoxFont);
 
-									GetTextExtentPoint32(hDC, CEL(cell).f.cFileName,
+									GetTextExtentPoint32(hDC,
+											CEL(cell).f.cFileName,
 											CEL(cell).ext, &boxsize);
 									namewidth = boxsize.cx + ((cinfo->fontX * 3) / 2) + MARKOVERX;
 									SelectObject(hDC, hOldFont);	// フォント
@@ -390,8 +394,12 @@ int GetItemTypeFromPoint(PPC_APPINFO *cinfo, POINT *pos, ENTRYINDEX *ItemNo)
 								}else{
 									namewidth = (CEL(cell).ext + 1) * cinfo->fontX + MARKOVERX;
 								}
-								if ( namewidth < (cinfo->fontX * 2) ) namewidth = (cinfo->fontX * 2);
-								if ( namewidth < ranges.TouchWidth ) namewidth = ranges.TouchWidth;
+								if ( namewidth < (cinfo->fontX * 2) ){
+									namewidth = (cinfo->fontX * 2);
+								}
+								if ( namewidth < ranges.TouchWidth ){
+									namewidth = ranges.TouchWidth;
+								}
 								if ( x < namewidth ) rc = PPCR_CELLTEXT;
 							}else{
 								rc = PPCR_CELLTEXT;
@@ -455,8 +463,7 @@ void SetReportTextMain(HWND hLogWnd, const TCHAR *text)
 	DWORD lines;
 	DWORD lP, wP;
 
-	// XM_INFOlog
-	if ( X_log & B14 ) XMessage(NULL, NULL, 14, T("%s"), text);
+	if ( X_log & B14 ) XMessage(NULL, NULL, XM_INFOlog, T("%s"), text);
 
 	lines = SendMessage(hLogWnd, EM_GETLINECOUNT, 0, 0);
 	if ( lines > LOGLINES_MAX ){
@@ -1414,12 +1421,36 @@ ENTRYINDEX DownSearchMarkCell(PPC_APPINFO *cinfo, ENTRYINDEX cellindex)
 	}
 }
 
-HANDLE USEFASTCALL CreateHandleForListFile(PPC_APPINFO *cinfo, const TCHAR *filename, int flags)
+BOOL WINAPI WriteTextNative(WriteTextStruct *sts, const TCHAR *text, size_t textlen)
+{
+	DWORD tmp;
+
+	return WriteFile(sts->hFile, text, TSTROFF(textlen), &tmp, NULL);
+}
+
+BOOL WINAPI WriteTextUTF8(WriteTextStruct *sts, const TCHAR *text, size_t textlen)
+{
+	DWORD tmp;
+	int len;
+	char utf8text[CMDLINESIZE * 5];
+
+#ifdef UNICODE
+	len = WideCharToMultiByte(CP_UTF8, 0, text, textlen, utf8text, sizeof(utf8text), NULL, NULL);
+#else
+	WCHAR utf16text[CMDLINESIZE * 2];
+
+	len = MultiByteToWideChar(CP_ACP, 0, text, textlen, utf16text, TSIZEOFW(utf16text));
+	len = WideCharToMultiByte(CP_UTF8, 0, utf16text, len, utf8text, sizeof(utf8text), NULL, NULL);
+#endif
+	if ( len <= 0 ) return (textlen > 0) ? FALSE : TRUE;
+	return WriteFile(sts->hFile, utf8text, len, &tmp, NULL);
+}
+
+BOOL USEFASTCALL CreateHandleForListFile(PPC_APPINFO *cinfo, WriteTextStruct *sts, const TCHAR *filename, int flags)
 {
 	TCHAR buf[VFPS + 32], *p;
 	int len;
 	DWORD tmp;
-	HANDLE hFile;
 
 	p = tstrstr(filename, T("::listfile"));
 	if ( p != NULL ){
@@ -1427,12 +1458,21 @@ HANDLE USEFASTCALL CreateHandleForListFile(PPC_APPINFO *cinfo, const TCHAR *file
 		buf[p - filename] = '\0';
 		filename = buf;
 	}
-	hFile = CreateFileL(filename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
+	sts->hFile = CreateFileL(filename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
 			FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-	if ( hFile == INVALID_HANDLE_VALUE ) return NULL;
+	if ( sts->hFile == INVALID_HANDLE_VALUE ) return FALSE;
+	sts->wlfc_flags = flags;
+	sts->Write = (flags & WLFC_UTF8) ? WriteTextUTF8 : WriteTextNative;
 
+	if ( flags & WLFC_BOM ){
+		WriteFile(sts->hFile, ListFileHeaderStr8, sizeof(UTF8HEADER) - 1, &tmp, NULL);
+	}
 	if ( !(flags & WLFC_NOHEADER) ){
-		WriteFile(hFile, ListFileHeaderStr, ListFileHeaderSize, &tmp, NULL);
+		if ( flags & WLFC_UTF8 ){
+			WriteFile(sts->hFile, ListFileHeaderStrA, ListFileHeaderSizeA, &tmp, NULL);
+		}else{
+			WriteFile(sts->hFile, ListFileHeaderStr, ListFileHeaderSize, &tmp, NULL);
+		}
 
 		// listfileでないか、listfileでBasePath指定有りのときは、BasePathを出力
 		if ( (cinfo->e.Dtype.mode != VFSDT_LFILE) ||
@@ -1441,16 +1481,15 @@ HANDLE USEFASTCALL CreateHandleForListFile(PPC_APPINFO *cinfo, const TCHAR *file
 					( (cinfo->e.Dtype.mode == VFSDT_LFILE) &&
 					(cinfo->e.Dtype.BasePath[0] != '\0') ) ?
 					cinfo->e.Dtype.BasePath : cinfo->path,  cinfo->e.Dtype.mode);
-			WriteFile(hFile, buf, TSTROFF(len), &tmp, NULL);
+			sts->Write(sts, buf, len);
 		}
 	}
-	return hFile;
+	return TRUE;
 }
 
-BOOL WriteLFcell(HANDLE hFile, PPC_APPINFO *cinfo, ENTRYCELL *cell, int flags)
+BOOL WriteLFcell(PPC_APPINFO *cinfo, WriteTextStruct *sts, ENTRYCELL *cell)
 {
 	TCHAR buf[VFPS + CMDLINESIZE], *dest;
-	DWORD tmp;
 	int len;
 
 	dest = buf;
@@ -1459,7 +1498,7 @@ BOOL WriteLFcell(HANDLE hFile, PPC_APPINFO *cinfo, ENTRYCELL *cell, int flags)
 	memcpy(dest, cell->f.cFileName, len);
 	dest += len / sizeof(TCHAR);
 
-	if ( flags & WLFC_NAMEONLY ){
+	if ( sts->wlfc_flags & WLFC_NAMEONLY ){
 		*dest++ = '\"';
 	}else{
 		dest += wsprintf(dest, ListFileFormatStr,
@@ -1473,11 +1512,11 @@ BOOL WriteLFcell(HANDLE hFile, PPC_APPINFO *cinfo, ENTRYCELL *cell, int flags)
 				cell->f.nFileSizeHigh, cell->f.nFileSizeLow);
 	}
 
-	if ( (flags & WLFC_WITHMARK) && IsCellPtrMarked(cell) ){
+	if ( (sts->wlfc_flags & WLFC_WITHMARK) && IsCellPtrMarked(cell) ){
 		CopyAndSkipString(dest, LFMARK_STR);
 	}
 
-	if ( (cell->comment != EC_NOCOMMENT) && (flags & WLFC_COMMENT) ){
+	if ( (cell->comment != EC_NOCOMMENT) && (sts->wlfc_flags & WLFC_COMMENT) ){
 		TCHAR *ptr;
 
 		ptr = ThPointerT(&cinfo->EntryComments, cell->comment);
@@ -1496,7 +1535,7 @@ BOOL WriteLFcell(HANDLE hFile, PPC_APPINFO *cinfo, ENTRYCELL *cell, int flags)
 		*dest++ = '\"';
 	}
 
-	if ( flags & WLFC_OPTIONSTR ){
+	if ( sts->wlfc_flags & WLFC_OPTIONSTR ){
 		CopyAndSkipString(dest, LFSIZE_STR);
 		FormatNumber(dest, 0, 26, cell->f.nFileSizeLow, cell->f.nFileSizeHigh);
 		dest += tstrlen(dest);
@@ -1510,17 +1549,18 @@ BOOL WriteLFcell(HANDLE hFile, PPC_APPINFO *cinfo, ENTRYCELL *cell, int flags)
 
 	*dest++ = '\r';
 	*dest++ = '\n';
-	return WriteFile(hFile, buf, TSTROFF32(dest - buf), &tmp, NULL);
+	return sts->Write(sts, buf, dest - buf);
 }
 
 // キャッシュ・内部向けListFileを出力…エントリ読み込み順で出力
 BOOL WriteListFileForRaw(PPC_APPINFO *cinfo, const TCHAR *filename)
 {
-	HANDLE hFile;
+	WriteTextStruct sts;
 	ENTRYDATAOFFSET offset;
 
-	hFile = CreateHandleForListFile(cinfo, filename, WLFC_DETAIL);
-	if ( hFile == NULL ) return FALSE;
+	if ( FALSE == CreateHandleForListFile(cinfo, &sts, filename, WLFC_DETAIL | WLFC_COMMENT) ){
+		return FALSE;
+	}
 
 	for ( offset = 0 ; offset < cinfo->e.cellDataMax ; offset++ ){
 		ENTRYCELL *cell;
@@ -1528,22 +1568,19 @@ BOOL WriteListFileForRaw(PPC_APPINFO *cinfo, const TCHAR *filename)
 		cell = &CELdata(offset);
 		if ( cell->attr & (ECA_PARENT | ECA_THIS) ) continue;
 		if ( cell->state == ECS_DELETED ) continue;
-		if ( WriteLFcell(hFile, cinfo, cell, WLFC_DETAIL | WLFC_COMMENT) == FALSE ){
-			break;
-		}
+		if ( WriteLFcell(cinfo, &sts, cell) == FALSE ) break;
 	}
-	CloseHandle(hFile);
+	CloseHandle(sts.hFile);
 	return TRUE;
 }
 
 // ユーザ向けListFileを出力…表示エントリ順で出力
 void WriteListFileForUser(PPC_APPINFO *cinfo, const TCHAR *filename, int wlfc_flags)
 {
-	HANDLE hFile;
-	int i;
+	WriteTextStruct sts;
+	ENTRYINDEX i;
 
-	hFile = CreateHandleForListFile(cinfo, filename, wlfc_flags);
-	if ( hFile == NULL ){
+	if ( FALSE == CreateHandleForListFile(cinfo, &sts, filename, wlfc_flags) ){
 		SetPopMsg(cinfo, POPMSG_GETLASTERROR, NULL);
 		return;
 	}
@@ -1559,9 +1596,9 @@ void WriteListFileForUser(PPC_APPINFO *cinfo, const TCHAR *filename, int wlfc_fl
 		if ( (wlfc_flags & WLFC_MARKEDONLY) && !IsCellPtrMarked(cell) ){
 			continue;
 		}
-		if ( WriteLFcell(hFile, cinfo, cell, wlfc_flags) == FALSE ) break;
+		if ( WriteLFcell(cinfo, &sts, cell) == FALSE ) break;
 	}
-	CloseHandle(hFile);
+	CloseHandle(sts.hFile);
 	return;
 }
 
@@ -2379,7 +2416,7 @@ void DoChooseResult(PPC_APPINFO *cinfo, TCHAR *Param)
 			break;
 
 		case CHOOSEMODE_DD:
-			StartAutoDD(cinfo, hChooseWnd, NULL, AUTODD_LEFT | AUTODD_HOOK);
+			StartAutoDD(cinfo, hChooseWnd, NULL, DROPTYPE_LEFT | DROPTYPE_HOOK);
 			break;
 
 		case CHOOSEMODE_CON_UTF8:
@@ -2553,7 +2590,10 @@ void JumpPathEntry(PPC_APPINFO *cinfo, const TCHAR *newpath, DWORD flags)
 	TCHAR *p, path[VFPS];
 	TCHAR cmdline[CMDLINESIZE];
 
-	VFSFullPath(path, (TCHAR *)newpath, cinfo->path);
+	VFSFullPath(path, (TCHAR *)newpath,
+			( (cinfo->e.Dtype.mode == VFSDT_LFILE) &&
+			  (cinfo->e.Dtype.BasePath[0] != '\0') ) ?
+				cinfo->e.Dtype.BasePath : cinfo->path );
 	if ( IsTrue(cinfo->ChdirLock) ){
 		wsprintf(cmdline, T("/k *jumppath \"%s\" /entry /nolock"), path);
 		if ( cinfo->combo != 0 ){

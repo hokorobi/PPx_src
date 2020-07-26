@@ -57,7 +57,7 @@ BYTE *VD_oasys_mdt(MAKETEXTINFO *mti,VT_TABLE *tbl)
 	BYTE *text;		// “Ç‚Ýž‚ÝˆÊ’u
 	int cnt;
 	WORD code,backup = 0;
-	BYTE *dest = mti->destbuf,*dmax = mti->destbuf + TEXTBUFSIZE;
+	BYTE *dest = mti->destbuf, *dmax = mti->destbuf + mti->destsize;
 	BYTE *srcmax = mti->srcmax;
 
 	text = tbl->ptr;

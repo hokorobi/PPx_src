@@ -17,6 +17,25 @@ const TCHAR StrTotal[] = T("Total:");
 const TCHAR StrCache[] = T("(cache:%d%%)");
 const TCHAR StrPPc[] = T("Paper Plane cUI (c)TORO");
 
+void PaintEnterState(PPC_APPINFO *cinfo, PAINTSTRUCT *ps)
+{
+	TCHAR buf[3];
+
+#ifdef UNICODE
+	buf[0] = (WCHAR)0x21b5;
+#else
+	buf[0] = 'v';
+#endif
+	buf[1] = (TCHAR)(cinfo->DDpagemode - DDPAGEMODE_DIR_ENTER + '0');
+	buf[2] = '\0';
+	DxSetTextColor(cinfo->DxDraw, ps->hdc, C_res[0]);		// 文字色
+	DxSetBkColor(cinfo->DxDraw, ps->hdc, C_res[1]);
+	DxMoveToEx(cinfo->DxDraw, ps->hdc,
+			cinfo->MouseStat.PushClientPoint.x,
+			cinfo->MouseStat.PushClientPoint.y - cinfo->fontY);
+	DxTextOutBack(cinfo->DxDraw, ps->hdc, buf, 2);
+}
+
 void PaintPathBar(PPC_APPINFO *cinfo, PAINTSTRUCT *ps)
 {
 	COLORREF bg;
@@ -821,6 +840,11 @@ void Paint(PPC_APPINFO *cinfo)
 #endif
 		memset(&cinfo->DrawTargetCell, 0, sizeof(cinfo->DrawTargetCell));
 	}
+// ホバー表示
+	if ( (cinfo->DDpagemode >= DDPAGEMODE_DIR_ENTER) && (cinfo->DDpagemode <= DDPAGEMODE_DIR_COUNTDOWN) ){
+		PaintEnterState(cinfo, &ps);
+	}
+
 // 最下部分：余白 -----------------------------------------------------
 	IfGDImode(ps.hdc) {
 		if ( cinfo->bg.X_WallpaperType == 0 ){

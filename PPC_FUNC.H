@@ -36,11 +36,6 @@ extern BOOL FixPPcWindowList(MAINWINDOWSTRUCT *mws, BOOL final);
 extern int GetPPcSubID(const TCHAR *idstr, TCHAR *dest);
 
 //------------------------------------------------------------------ ppc_add.c
-#define AUTODD_COM B3
-#define AUTODD_POST B2
-#define AUTODD_HOOK B1
-#define AUTODD_RIGHT B0
-#define AUTODD_LEFT 0
 extern void AutoDDDialog(PPC_APPINFO *cinfo, const TCHAR *src, DWORD droptype);
 extern ERRORCODE StartAutoDD(PPC_APPINFO *cinfo, HWND hTargetWnd, const TCHAR *src, DWORD droptype);
 
@@ -76,6 +71,7 @@ extern ERRORCODE DirChk(const TCHAR *name, TCHAR *dest);
 #define MARK_REVERSE	-1
 extern void CellMark(PPC_APPINFO *cinfo, ENTRYINDEX cell, int markmode);
 extern void USEFASTCALL ResetMark(PPC_APPINFO *cinfo, ENTRYCELL *cell);
+#define CMOVER_POINT ((const CURSORMOVER *)(DWORD_PTR)1)
 extern BOOL MoveCellCsr(PPC_APPINFO *cinfo, ENTRYINDEX offset, const CURSORMOVER *cm);
 extern BOOL IsFileDir(PPC_APPINFO *cinfo, const TCHAR *filename, TCHAR *newpath, TCHAR *newjumpname, HMENU hPopupMenu);
 extern void GetCellRealFullName(PPC_APPINFO *cinfo, ENTRYCELL *cell, TCHAR *dest);
@@ -240,7 +236,7 @@ extern void MaskPathMain(PPC_APPINFO *cinfo, int defaultdepth, const TCHAR *defa
 
 // 編集モードのブロックに使う
 extern int StartCellEdit(PPC_APPINFO *cinfo);
-#define EndCellEdit(cinfo) cinfo->edit.ref--
+#define EndCellEdit(cinfo) {if ( cinfo->edit.ref > 0 ) cinfo->edit.ref--;}
 
 #define RENTRY_READ		0	// おまかせで読み込み
 #define RENTRY_UPDATE	B0	// 最新情報で更新
@@ -615,8 +611,10 @@ extern int USEFASTCALL FindCellFormatImagePosition(BYTE *fmt);
 
 extern void TerminateFopThreadCheck(PPC_APPINFO *cinfo);
 //------------------------------------------------------------------ ppc_wher.c
-extern ERRORCODE WhereIs(PPC_APPINFO *cinfo, int mode);
-extern ERRORCODE WhereIsCommand(PPC_APPINFO *cinfo, const TCHAR *param, BOOL mode);
+#define WHEREIS_NORMAL 0
+#define WHEREIS_INVFS 1
+extern ERRORCODE WhereIsDialog(PPC_APPINFO *cinfo, int mode);
+extern ERRORCODE WhereIsCommand(PPC_APPINFO *cinfo, const TCHAR *param, BOOL usedialog);
 extern void WriteFF(HANDLE hFile, WIN32_FIND_DATA *ff, const TCHAR *name);
 extern const TCHAR *ZGetParam(const TCHAR *(*ptr), TCHAR *buf);
 extern void ButtonHelpMenu(PPC_APPINFO *cinfo, HWND hDlg, HWND hButtonWnd, UINT editID, int type);

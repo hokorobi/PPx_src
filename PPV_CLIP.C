@@ -120,11 +120,11 @@ BOOL ClipHexMem(TMS_struct *text, int StartLine, int EndLine)
 BOOL ClipMem(TMS_struct *text, int StartLine, int EndLine)
 {
 	#ifdef UNICODE
-		WCHAR wbuf[TEXTBUFSIZE];
+		WCHAR wbuf[MAXLINELENGTH];
 	#else
-		char abuf[TEXTBUFSIZE];
+		char abuf[MAXLINELENGTH];
 	#endif
-	BYTE form[TEXTBUFSIZE], *p;
+	BYTE *p;
 	int off;
 	int first, last;
 	int XV_bctl3bk;
@@ -157,7 +157,7 @@ BOOL ClipMem(TMS_struct *text, int StartLine, int EndLine)
 	}
 	if ( last >= VOi->line ) last = VOi->line - 1;
 
-	mti.destbuf = form;
+	InitMakeTextInfo(&mti);
 	mti.srcmax = mtinfo.img + mtinfo.MemSize;
 	mti.writetbl = FALSE;
 	mti.paintmode = FALSE;
@@ -167,7 +167,7 @@ BOOL ClipMem(TMS_struct *text, int StartLine, int EndLine)
 		int CharX;
 
 		VOi->MakeText(&mti, &VOi->ti[off]);
-		p = form;
+		p = mti.destbuf;
 
 		CharX = 0;
 		while ( *p != VCODE_END ) switch (*p){ // VCODE_SWITCH
@@ -200,7 +200,7 @@ BOOL ClipMem(TMS_struct *text, int StartLine, int EndLine)
 				}
 
 			#ifdef UNICODE
-				AnsiToUnicode(src, wbuf, TEXTBUFSIZE);
+				AnsiToUnicode(src, wbuf, TSIZEOFW(wbuf));
 				TMS_set(text, wbuf);
 				text->p -= 2;
 			#else
@@ -302,6 +302,8 @@ BOOL ClipMem(TMS_struct *text, int StartLine, int EndLine)
 				break;
 		}
 	}
+	ReleaseMakeTextInfo(&mti);
+
 	// ––”ö‚Ì‰üs‚ðíœ
 	if ( text->tm.p == NULL ) return FALSE;
 	if ( *(TCHAR *)(char *)((char *)text->tm.p + text->p - sizeof(TCHAR)) == '\n' ){
@@ -518,13 +520,13 @@ void MakeURIs(HMENU hMenu, int index)
 		texttop = (char *)VOi->ti[VOsel.now.y.line + 1].ptr;
 	}
 	maxptr = (char *)VOi->ti[VOi->cline].ptr;
-
+#if 0
 	if ( GetAsyncKeyState(0xF0 /*VK_CAPITAL*/) & KEYSTATE_PUSH ){
 		XMessage(NULL, NULL, XM_DbgLOG, T("MakeURI bottom:%x top:%x cline:%d max:%x  Base:%s"), textbottom, texttop, VOi->cline, maxptr, vo_.file.source);
 		URIDUMP(textbottom, texttop, T("top"));
 		URIDUMP(textbottom, texttop, T("max"));
 	}
-
+#endif
 	for ( p = textbottom ; p < maxptr ; ){
 		UCHAR code;
 
@@ -581,6 +583,7 @@ void MakeURIs(HMENU hMenu, int index)
 				if ( *p == '\\' ) use = URI_PATH;
 				if ( *p == ':' ) use = URI_URL;
 				if ( *p == '/' ) use = URI_URL;
+				if ( (*p == '.') && Isalpha(*(p + 1)) ) use = URI_URL;
 				if ( *p == '@' ) use = URI_MAIL;
 			}
 		}else{
@@ -593,7 +596,7 @@ void MakeURIs(HMENU hMenu, int index)
 			start = NULL;
 			use = URI_NO;
 #ifndef UNICODE
-			if (IskanjiA(*p) && *(p + 1)) p++;
+			if ( IskanjiA(*p) && (*(p + 1) != '\0') ) p++;
 #endif
 		}
 		p++;

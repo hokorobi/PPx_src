@@ -1138,7 +1138,7 @@ BOOL IsShn_UnpackCheck(PPC_APPINFO *cinfo)
 			return TRUE;
 		}
 		if ( VFSFullPath(namebuf, CellFileName(cell), cinfo->path) != NULL ){
-			if ( VFSGetRealPath(cinfo->info.hWnd,  namebuf,  namebuf) == FALSE ){
+			if ( VFSGetRealPath(cinfo->info.hWnd, namebuf, namebuf) == FALSE ){
 				return FALSE;
 			}
 		}

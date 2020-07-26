@@ -399,6 +399,7 @@ ERRORCODE FileDirectory(TCHAR *fname, VFSFINDFIRST *VFF, WIN32_FIND_DATA *findfi
 	CloseHandle(hFile); // ネットワークだと、ここで時間が掛かることがある
 										// List File --------------------------
 	if ( !memcmp(header, LHEADER, sizeof(LHEADER) - 1) ||
+		 !memcmp(header, UTF8HEADER LHEADER, sizeof(LHEADER) - 1 + 3) ||
 		 !memcmp(header + 2, L";ListFile\r\n",
 		 					sizeof(L";ListFile\r\n") - sizeof(WCHAR)) ){
 		if ( *subdir != '\0' ) return ERROR_INVALID_DRIVE;

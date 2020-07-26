@@ -713,7 +713,13 @@ void Paint(HWND hWnd)
 		buf3[0] = '\0';
 		if ( FileDivideMode < FDM_NODIVMAX ){
 			FormatNumber(buf2, XFN_SEPARATOR, 26, vo_.file.UseSize, 0);
-			if ( vo_.DModeType == DISPT_HEX ) HexSize(buf2, FileRealSize);
+			if ( vo_.DModeType == DISPT_HEX ){
+				HexSize(buf2, FileRealSize);
+				wsprintf(buf3, T("%04x"),
+						(VOsel.cursor != FALSE) ?
+								((VOsel.now.y.line * 16) + (VOsel.now.x.offset / HEXNWIDTH)) :
+								(VOi->offY * 16) );
+			}
 		}else{
 			TCHAR *p;
 
@@ -723,14 +729,14 @@ void Paint(HWND hWnd)
 			FormatNumber(p, XFN_SEPARATOR, 7, FileRealSize.LowPart, FileRealSize.HighPart);
 			if ( vo_.DModeType == DISPT_HEX ) HexSize(p, FileRealSize);
 			buf3[0] = '+';
-			if ( FileTrackPointer.LowPart | FileTrackPointer.HighPart ){
+			if ( IsTrue(EnableFileTrackPointer) ){
 				if ( vo_.DModeType == DISPT_HEX ){
 					LongHex(buf3, FileTrackPointer);
 				}else{
 					FormatNumber(buf3 + 1, XFN_SEPARATOR, 7, FileTrackPointer.LowPart, FileTrackPointer.HighPart);
 				}
 				tstrcat(buf3, T("(pause read)"));
-				FileTrackPointer.LowPart = FileTrackPointer.HighPart = 0;
+				EnableFileTrackPointer = FALSE;
 			}else{
 				FormatNumber(buf3 + 1, XFN_SEPARATOR, 7, FileDividePointer.LowPart, FileDividePointer.HighPart);
 			}
@@ -742,9 +748,13 @@ void Paint(HWND hWnd)
 			case DISPT_HEX: {
 				if ( buf3[0] == '+' ){
 					DDWORDST rsize;
+					DWORD line;
 
+					line = (VOsel.cursor != FALSE) ?
+							(DWORD)((VOsel.now.y.line * 16) + (VOsel.now.x.offset / HEXNWIDTH)) :
+							(DWORD)(VOi->offY * 16);
 					rsize = FileDividePointer;
-					AddDD(rsize.LowPart, rsize.HighPart, (DWORD)VOi->offY * 16, 0);
+					AddDD(rsize.LowPart, rsize.HighPart, line, 0);
 					LongHex(buf3, rsize);
 				}
 				wsprintf(buf,T("Address:%sH TextType:%s  Type:%s Filesize:%s"),
@@ -794,8 +804,12 @@ void Paint(HWND hWnd)
 						maxline = VOi->cline;
 						LineChar = 'Y';
 					}else{				// ˜_—s”Ô†
-						line = VOi->ti[line].line;
-						maxline = VOi->ti[VOi->cline].line - 1;
+						if ( VOi->ti != NULL ){
+							line = VOi->ti[line].line;
+							maxline = VOi->ti[VOi->cline].line - 1;
+						}else{
+							maxline = VOi->cline;
+						}
 						LineChar = 'L';
 					}
 					wsprintf(buf,(T("%c-Line:%u/%u  Type:%s Filesize:%s")),

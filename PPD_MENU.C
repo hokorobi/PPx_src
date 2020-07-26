@@ -257,7 +257,6 @@ void GetEjectMenu(PPXAPPINFO *info, HMENU hMenuDest, ThSTRUCT *thMenuData, DWORD
 	UINT drivetype;
 	PPXCMDENUMSTRUCT work;
 
-//	if ( OSver.dwMajorVersion < 6 ) return;
 	path[0] = '\0';
 	PPxEnumInfoFunc(info, '1', path, &work);
 	if ( (path[0] == '\0') || (path[1] != ':') ) return;
@@ -414,7 +413,7 @@ LRESULT NullPopupMenuEdit(HWND hWnd, HMENU hMenu, DWORD index, int flags)
 	}else{ // キーボードの場合
 		RECT box;
 
-		GetWindowRect(FindWindow(T("#32768"), NULL), &box); // メニューウィンドウ
+		GetWindowRect(FindWindow(T(WNDCLASS_POPUPMENU), NULL), &box); // メニューウィンドウ
 		pos.x = (box.left + box.right) / 2;
 		pos.y = (box.top + box.bottom) / 2;
 	}

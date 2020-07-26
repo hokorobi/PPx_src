@@ -50,7 +50,7 @@ case '&': // •ñ
 #endif
 //----------------------------------------------- D&D
 case K_c | 'D':
-	AutoDDDialog(cinfo, NULL, AUTODD_HOOK | AUTODD_LEFT);
+	AutoDDDialog(cinfo, NULL, DROPTYPE_HOOK | DROPTYPE_LEFT);
 	break;
 //----------------------------------------------- Attribute
 case 'A':
@@ -111,10 +111,10 @@ case K_s | 'F':
 //----------------------------------------------- File find
 case K_c | 'F':
 case K_F3:
-	if ( (OSver.dwMajorVersion >= 7) ||
+	if ( (OSver.dwMajorVersion > 6) ||
 		 ((OSver.dwMajorVersion == 6) && (OSver.dwMinorVersion > 0)) ||
 		 (PPcSHContextMenu(cinfo, StrThisDir, StrInvokeFind) == FALSE) ){
-		return WhereIs(cinfo, 0);
+		return WhereIsDialog(cinfo, WHEREIS_NORMAL);
 	}
 	break;
 //----------------------------------------------- Swap
@@ -255,10 +255,10 @@ case K_s | 'W':
 	break;
 //----------------------------------------------- Where is
 case K_c | 'W':
-	return WhereIs(cinfo, 0);
+	return WhereIsDialog(cinfo, WHEREIS_NORMAL);
 //----------------------------------------------- Where is archive
 case K_c | K_s | 'W':
-	return WhereIs(cinfo, 1);
+	return WhereIsDialog(cinfo, WHEREIS_INVFS);
 //----------------------------------------------- Cut Files
 case K_c | 'X':
 	ClipFiles(cinfo, DROPEFFECT_MOVE, CFT_FILE | CFT_TEXT);

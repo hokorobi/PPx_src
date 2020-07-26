@@ -152,6 +152,30 @@
 
 // 通信用
 #define KE__FREE	0xbf00			// hook 解除指令用
+#define K_GETPPXAPPINFOX86A 0xbf01	// PPXAPPINFO を取得 (x86 MultiByte)
+#define K_GETPPXAPPINFOX86W 0xbf02	// (x86 UNICODE)
+#define K_GETPPXAPPINFOX64 0xbf03	// (x64)
+#define K_GETPPXAPPINFOARM32 0xbf04	// (ARM32)
+#define K_GETPPXAPPINFOARM64 0xbf05	// (ARM64)
+
+#ifdef _M_ARM
+ #define K_GETPPXAPPINFO K_GETPPXAPPINFOARM32
+#endif
+#ifdef _M_ARM64
+ #define K_GETPPXAPPINFO K_GETPPXAPPINFOARM64
+#endif
+#ifndef K_GETPPXAPPINFO
+ #ifdef _WIN64
+  #define K_GETPPXAPPINFO K_GETPPXAPPINFOX64
+ #else
+  #ifdef UNICODE
+   #define K_GETPPXAPPINFO K_GETPPXAPPINFOX86W
+  #else
+   #define K_GETPPXAPPINFO K_GETPPXAPPINFOX86A
+  #endif
+ #endif
+#endif
+
 #define K_ENDATTR	0xbf10			// Attribute変更終了通知
 #define K_ENDCOPY	0xbf11			// Copy終了通知
 #define K_ENDDEL	0xbf12			// Delete終了通知

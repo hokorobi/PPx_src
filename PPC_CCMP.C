@@ -36,7 +36,8 @@ COMPAREMENUSTRUCT CompareMenu[] = {
 	{NULL, 0}
 };
 
-const TCHAR *CompareDetailMenu[] = {
+#define DETAILMENU_ITEMS 13
+const TCHAR *CompareDetailMenu[DETAILMENU_ITEMS] = {
 	// CMP_2
 	MES_CMPN, MES_CMPT, MES_CMPE, MES_CMPS, MES_CMPL, // 1Å`
 	MES_CMPA, MES_CMPB, MES_CMPI, MES_CMPW, MES_CMP1, // 5Å`
@@ -44,7 +45,14 @@ const TCHAR *CompareDetailMenu[] = {
 	MES_CMPF,
 	// CMP_1
 	MES_CMPZ, MES_CMPM,
-	NULL}; // 11Å`
+}; // 11Å`
+
+const int CompareDetailIndex[DETAILMENU_ITEMS] = {
+	CMP_NEW, CMP_TIME, CMP_EXIST, CMP_SIZE, CMP_LARGE,
+	CMP_SAMESIZETIME, CMP_BINARY, CMP_SIZEONLY, CMP_NEWONLY, CMP_SHA1,
+	CMP_EXIST | CMPWITHOUT_EXT,
+	CMP_1SIZE, CMP_1COMMENT
+};
 
 #define CPI_INTERVAL 1000
 typedef struct {
@@ -942,16 +950,17 @@ ERRORCODE PPcCompare(PPC_APPINFO *cinfo, int mode)
 		mode = PPcTrackPopupMenu(cinfo, hMenu);
 		DestroyMenu(hMenu);
 	}
-	if ( mode == CMP_1HASH ){
+	mode_type = mode & CMPTYPEMASK;
+	if ( mode_type == CMP_1HASH ){
 		CompareHashFromClipBoard(cinfo, 1);
 		return NO_ERROR;
-	}else if ( mode == CMP_DETAIL ){
+	}else if ( mode_type == CMP_DETAIL ){
 		mode = CompareDetailDialog(cinfo->info.hWnd, hPairWnd);
 		if ( mode < 0 ) mode = 0;
+		mode_type = mode & CMPTYPEMASK;
 	}else if ( mode ){
 		if ( !(mode & (CMPMARKMASK << CMPMARKSHIFT)) ) mode |= 0x700; // ëÆê´ï‚ê≥
 	}
-	mode_type = mode & CMPTYPEMASK;
 	if ( mode_type >= CMP_2WINDOW ){
 		COMPAREMARKPACKET cmp;
 
@@ -974,10 +983,8 @@ ERRORCODE PPcCompare(PPC_APPINFO *cinfo, int mode)
 int GetCMarkMode(HWND hDlg)
 {
 	int mode = (int)SendMessage(hDlg, CB_GETCURSEL, 0, 0);
-	mode += (mode >= CMP2TYPES) ? (CMP_1WINDOW - CMP2TYPES) : CMP_2WINDOW;
-	if ( mode >= CMP_2END ){
-		mode = CMP_EXIST | CMPWITHOUT_EXT;
-	}
+
+	if ( mode >= 0 ) mode = (int)SendMessage(hDlg, CB_GETITEMDATA, (WPARAM)mode ,0);
 	return mode;
 }
 
@@ -996,19 +1003,22 @@ INT_PTR CALLBACK CompareDetailDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM
 {
 	switch(iMsg){
 		case WM_INITDIALOG: {
-			const TCHAR **dmp = CompareDetailMenu;
+			int index = 0;
 
 			CenterWindow(hDlg);
 			LocalizeDialogText(hDlg, IDD_CMARK);
 			SetWindowLongPtr(hDlg, DWLP_USER, (LONG_PTR)lParam);
 
 			if ( (HWND)lParam == NULL ){ // îΩëŒÇ»ÇµÅHÅ®ÇQëãånÇÉXÉLÉbÉv
-				dmp += CMP2TYPES;
+				index = CMP2TYPES;
 			}
 
-			for ( ; *dmp != NULL ; dmp++ ){
-				SendDlgItemMessage(hDlg, IDC_TYPE,
-						CB_ADDSTRING, 0, (LPARAM)MessageText(*dmp) );
+			for ( ; index < DETAILMENU_ITEMS ; index++ ){
+				int id;
+
+				id = SendDlgItemMessage(hDlg, IDC_TYPE,
+						CB_ADDSTRING, 0, (LPARAM)MessageText(CompareDetailMenu[index]) );
+				SendDlgItemMessage(hDlg, IDC_TYPE, CB_SETITEMDATA, (WPARAM)id, (LPARAM)CompareDetailIndex[index]);
 			}
 
 			SendDlgItemMessage(hDlg, IDC_TYPE, CB_SETCURSEL, 0, 0);

@@ -100,6 +100,26 @@ VOID CALLBACK HoverTipTimerProc(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dw
 	return;
 }
 
+void PPcReceiveChangeNotify(PPC_APPINFO *cinfo, HANDLE hChange, DWORD dwProcId)
+{
+	LONG EventType;
+	HANDLE hNotifyLock;
+	LPITEMIDLIST *pidl_list;
+	DWORD eventflags = SUBT_FOLDERCHANGE;
+
+	hNotifyLock = DSHChangeNotification_Lock(hChange, dwProcId, &pidl_list, &EventType);
+	if ( hNotifyLock != NULL ){
+		DSHChangeNotification_Unlock(hNotifyLock);
+
+		// ドライブが無くなったら、監視を止める
+		if ( EventType & (SHCNE_MEDIAREMOVED | SHCNE_DRIVEREMOVED | SHCNE_NETUNSHARE | SHCNE_SERVERDISCONNECT) ){
+			eventflags = SUBT_STOPDIRCHECK;
+		}
+	}
+	setflag(cinfo->SubTCmdFlags, eventflags);
+	SetEvent(cinfo->SubT_cmd);
+}
+
 void ReuseFix(PPCSTARTPARAM *psp)
 {
 	int singlecount = 0;
@@ -400,10 +420,70 @@ void CALLBACK DDTimerProc(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 	UnUsedParam(uMsg); UnUsedParam(idEvent); UnUsedParam(dwTime);
 
 	cinfo = (PPC_APPINFO *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
-	if ( !cinfo->DDpagemode ){
+	if ( cinfo->DDpagemode == DDPAGEMODE_LIST ){
 		MoveWinOff(cinfo, cinfo->DDpage);
-	}else{
+	}else if ( cinfo->DDpagemode > DDPAGEMODE_DIR_ENTER ){
+		cinfo->DDpagemode--;
+		if ( cinfo->DDpagemode <= DDPAGEMODE_DIR_COUNTDOWN ){
+			RECT box;
+
+			box.left = cinfo->MouseStat.PushClientPoint.x;
+			box.right = box.left + cinfo->fontX * 3;
+			box.top = cinfo->MouseStat.PushClientPoint.y - cinfo->fontY;
+			box.bottom = box.top + cinfo->fontY;
+			InvalidateRect(cinfo->info.hWnd, &box, TRUE);
+			if ( (cinfo->DDpagemode == DDPAGEMODE_DIR_ENTER) &&
+				 (cinfo->DDpage > 0) ){
+				cinfo->e.cellN = cinfo->DDpage - 1;
+				ForceDataObject();
+				PostMessage(cinfo->info.hWnd, WM_PPXCOMMAND, KC_Edir, 0);
+				cinfo->DDpagemode = DDPAGEMODE_DIR_NEXTWAIT;
+			}
+		}
+	}else if ( (cinfo->DDpagemode == DDPAGEMODE_TREE) && (cinfo->hTreeWnd != NULL) ){
 		SendMessage(cinfo->hTreeWnd, VTM_SCROLL, 0, 0);
+	}
+}
+
+int SetDDScroll2(PPC_APPINFO *cinfo, POINT *pos)
+{
+	ENTRYINDEX cellno;
+
+	if ( GetItemTypeFromPoint(cinfo, pos, &cellno) == PPCR_CELLTEXT ){
+		if ( CEL(cellno).f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ){
+			if ( cinfo->DDpagemode >= DDPAGEMODE_DIR_ENTER ){
+				int dx, dy;
+				int x = GetSystemMetrics(SM_CXDRAG);
+				int y = GetSystemMetrics(SM_CYDRAG);
+
+				dx = pos->x - cinfo->MouseStat.PushClientPoint.x;
+				dy = pos->y - cinfo->MouseStat.PushClientPoint.y;
+
+				if ( (dx < -x) || (dx > x) || (dy < -y) || (dy > y) ){
+					// 移動したので、待機をリセット
+					cinfo->DDpagemode = DDPAGEMODE_NONE;
+					InvalidateRect(cinfo->info.hWnd, NULL, TRUE);
+				}
+			}
+			if ( (cinfo->MousePush == MOUSE_NONE) &&
+				 (cinfo->DDpagemode < DDPAGEMODE_DIR_ENTER) ){
+				cinfo->DDpagemode = DDPAGEMODE_DIR_FIRSTWAIT;
+				cinfo->MouseStat.PushClientPoint = *pos;
+			}
+			return cellno + 1;
+		}
+	}
+	return 0;
+}
+
+void StopDDScroll(PPC_APPINFO *cinfo)
+{
+	if ( cinfo->ddtimer_id == 0 ) return;
+	KillTimer(cinfo->info.hWnd, TIMERID_DRAGSCROLL);
+	cinfo->ddtimer_id = 0;
+	if ( cinfo->DDpagemode >= DDPAGEMODE_DIR_ENTER ){
+		cinfo->DDpagemode = DDPAGEMODE_NONE;
+		InvalidateRect(cinfo->info.hWnd, NULL, TRUE);
 	}
 }
 
@@ -412,32 +492,37 @@ void SetDDScroll(PPC_APPINFO *cinfo, POINT *pos)
 	int ddpage = 0;
 
 	if ( pos != NULL ){
-		if ( (cinfo->MousePush == MOUSE_MARK) ||
-			 (pos->x >= cinfo->BoxEntries.left) ){
-
-			cinfo->DDpagemode = 0;
-			if ( cinfo->ScrollBarHV == SB_HORZ ){ // 水平
-				if ( pos->x < (cinfo->BoxEntries.left + cinfo->fontX * 2) ){
-					ddpage = -cinfo->cel.Area.cy;
-				}else if ( pos->x >
-							(cinfo->BoxEntries.right - (cinfo->fontX * 2)) ){
-					ddpage = cinfo->cel.Area.cy;
-				}
-			}else{ // 垂直
-				if ( pos->y < (cinfo->BoxEntries.top + cinfo->fontY * 2) ){
-					ddpage = pos->y - (cinfo->BoxEntries.top + cinfo->fontY*2);
-				}else if ( pos->y >
-							(cinfo->BoxEntries.bottom - (cinfo->fontY * 2)) ){
-					ddpage = pos->y -
-							(cinfo->BoxEntries.bottom - (cinfo->fontY * 2));
-				}
-				ddpage /= (cinfo->fontY / 4);
-			}
-		}else{
-			cinfo->DDpagemode = 1;
+		if ( pos->x < cinfo->BoxEntries.left ){ // Tree 判定
 			ddpage = 1;
+			cinfo->DDpagemode = DDPAGEMODE_TREE;
+		}else if ( cinfo->ScrollBarHV == SB_HORZ ){ // 水平
+			if ( pos->x < (cinfo->BoxEntries.left + cinfo->fontX * 2) ){
+				ddpage = -cinfo->cel.Area.cy;
+				cinfo->DDpagemode = DDPAGEMODE_LIST;
+			}else if ( pos->x >
+						(cinfo->BoxEntries.right - (cinfo->fontX * 2)) ){
+				ddpage = cinfo->cel.Area.cy;
+				cinfo->DDpagemode = DDPAGEMODE_LIST;
+			}else{
+				ddpage = SetDDScroll2(cinfo, pos);
+			}
+		}else{ // 垂直
+			#define SCROLLV_RATE(delta) ((pos->y - (delta)) / (cinfo->fontY / 4))
+
+			if ( pos->x < cinfo->BoxEntries.right ){
+				if ( pos->y < (cinfo->BoxEntries.top + cinfo->fontY) ){
+					ddpage = SCROLLV_RATE(cinfo->BoxEntries.top + cinfo->fontY);
+					cinfo->DDpagemode = DDPAGEMODE_LIST;
+				}else if ( pos->y > (cinfo->BoxEntries.bottom - cinfo->fontY) ){
+					ddpage = SCROLLV_RATE(cinfo->BoxEntries.bottom - cinfo->fontY);
+					cinfo->DDpagemode = DDPAGEMODE_LIST;
+				}else{
+					ddpage = SetDDScroll2(cinfo, pos);
+				}
+			}
 		}
 	}
+
 	if ( ddpage != 0 ){
 		cinfo->DDpage = ddpage;
 		if ( cinfo->ddtimer_id == 0 ){
@@ -445,10 +530,7 @@ void SetDDScroll(PPC_APPINFO *cinfo, POINT *pos)
 					TIMERID_DRAGSCROLL, TIMER_DRAGSCROLL, DDTimerProc);
 		}
 	}else{
-		if ( cinfo->ddtimer_id != 0 ){
-			KillTimer(cinfo->info.hWnd, TIMERID_DRAGSCROLL);
-			cinfo->ddtimer_id = 0;
-		}
+		StopDDScroll(cinfo);
 	}
 }
 
@@ -940,7 +1022,7 @@ void DoubleClickMouse(PPC_APPINFO *cinfo, LPARAM lParam)
 	TCHAR click[3];
 
 	if ( cinfo->MouseStat.PushButton <= MOUSEBUTTON_CANCEL ) return;
-	KillTimer(cinfo->info.hWnd, TIMERID_DRAGSCROLL);
+	StopDDScroll(cinfo);
 	if ( GetFocus() != cinfo->info.hWnd ) return;
 
 	if ( (cinfo->MouseStat.PushClientPoint.x < 0) ||
@@ -982,7 +1064,7 @@ void DoubleClickMouse(PPC_APPINFO *cinfo, LPARAM lParam)
 
 void USEFASTCALL WmCapturechanged(PPC_APPINFO *cinfo)
 {
-	KillTimer(cinfo->info.hWnd, TIMERID_DRAGSCROLL);
+	StopDDScroll(cinfo);
 	if ( cinfo->MousePush == MOUSE_MARK ){
 		SetDDScroll(cinfo, NULL);
 		cinfo->DrawTargetFlags = DRAWT_ALL;
@@ -1158,9 +1240,13 @@ void UpMouse(PPC_APPINFO *cinfo, int button, int oldmode, WPARAM wParam, LPARAM 
 				return;
 			}
 		}
-		// 単独左クリック解除時にマークを一つにする
 		if ( (cinfo->PushArea == PPCR_CELLTEXT) ||
 			 (cinfo->PushArea == PPCR_INFOICON)){
+			// 単独左クリック解除時に上下端に位置するなら隙間を空ける
+			if ( XC_page && (cinfo->cel.Area.cy > (XC_smar * 3)) ){
+				MoveCellCsr(cinfo, 0, NULL);
+			}
+			// 単独左クリック解除時にマークを一つにする
 			if ( XC_msel[0] && !(wParam & (MK_SHIFT | MK_CONTROL)) ){
 				ExplorerTypeMark_solo(cinfo, wParam, cinfo->e.cellN);
 			}
@@ -1187,7 +1273,7 @@ void UpMouse(PPC_APPINFO *cinfo, int button, int oldmode, WPARAM wParam, LPARAM 
 	if ( (button == MOUSEBUTTON_R) &&
 		 ((cinfo->PushArea == PPCR_CELLTEXT) ||
 		  (cinfo->PushArea == PPCR_INFOICON)) ){
-		MoveCellCsr(cinfo, newMpos - cinfo->e.cellN, NULL);
+		MoveCellCsr(cinfo, newMpos - cinfo->e.cellN, CMOVER_POINT);
 
 		// マーク無しで、単独右クリック解除時にマークを一つにする
 		if ( XC_msel[0] && !(wParam & (MK_SHIFT | MK_CONTROL)) ){
@@ -1486,7 +1572,7 @@ void USEFASTCALL WmMouseDown(PPC_APPINFO *cinfo, WPARAM wParam)
 				return;
 #else
 				cinfo->MousePush = MOUSE_DnDCHECK;
-				MoveCellCsr(cinfo, itemno - cinfo->e.cellN, NULL);
+				MoveCellCsr(cinfo, itemno - cinfo->e.cellN, CMOVER_POINT);
 #endif
 			}
 			return;
@@ -1719,6 +1805,9 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 {
 	DEBUGLOGC("WmPPxCommand %4x", wParam);
 	switch (LOWORD(wParam)){
+		case K_GETPPXAPPINFO:
+			return (LRESULT)cinfo;
+
 		case KC_POPTENDFIX:
 			SetPopMsg(cinfo, POPMSG_MSG, T("PPcFile: Fixed Thread terminate lock"));
 			break;
@@ -2689,9 +2778,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			ForceSetForegroundWindow(hWnd);
 			break;
 
-		case WM_PPCFOLDERCHANGE: // SHChangeNotifyRegister 通知
-			setflag(cinfo->SubTCmdFlags, SUBT_FOLDERCHANGE);
-			SetEvent(cinfo->SubT_cmd);
+		case WM_PPCFOLDERCHANGE: // SHChangeNotifyRegister / IDrop 通知
+			PPcReceiveChangeNotify(cinfo, (HANDLE)wParam, (DWORD)lParam);
 			break;
 
 		case WM_PPCSETCOMMENT: {

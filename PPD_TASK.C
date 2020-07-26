@@ -15,14 +15,11 @@ COLORREF CJ_log[2];
 ValueWinAPI(SetDllDirectory) = INVALID_VALUE(impSetDllDirectory);
 DefineWinAPI(HRESULT, SetCurrentProcessExplicitAppUserModelID, (const WCHAR *AppID)) = NULL;
 
-#ifdef _WIN64
-	#define PLATFORMAPPID T("6")
+
+#ifdef UNICODE
+	#define PLATFORMAPPID ValueX3264(T("W"), T("6"))
 #else
-	#ifdef UNICODE
-		#define PLATFORMAPPID T("W")
-	#else
-		#define PLATFORMAPPID T("A")
-	#endif
+	#define PLATFORMAPPID T("A")
 #endif
 
 WNDPROC OldJobProc;

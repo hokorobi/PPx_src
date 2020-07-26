@@ -283,7 +283,10 @@ ERRORCODE DlgCopyDir(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD srcattr)
 			}else if ( (mderror != ERROR_ALREADY_EXISTS) &&
 					   (mderror != ERROR_INVALID_NAME) ){
 				// エントリが存在していないことを確認する
-				if ( GetFileAttributesL(dst) == BADATTR ) return mderror;
+				if ( GetFileAttributesL(dst) == BADATTR ){
+					FWriteErrorLogs(FS, src, T("Destdir create"), mderror);
+					return mderror;
+				}
 			}
 			if ( (mderror != ERROR_ALREADY_EXISTS) ||
 				 ((FS->opt.fop.AtrMask & 7) != 7) ){

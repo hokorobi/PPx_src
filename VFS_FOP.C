@@ -247,8 +247,8 @@ ERRORCODE FileOperationSourceFtp(FOPSTRUCT *FS, HINTERNET *hFTP, const TCHAR *sr
 			DeleteFileL(dst);
 		}
 	}
-	if ( DFtpGetFile(hFTP[FTPHOST], srcentry, dst, FALSE, FILE_ATTRIBUTE_ARCHIVE,
-			FTP_TRANSFER_TYPE_BINARY | INTERNET_FLAG_DONT_CACHE, 0) == FALSE ){
+	if ( DFtpGetFile(hFTP[FTPHOST], srcentry, dst, FALSE,
+			FILE_ATTRIBUTE_ARCHIVE, FTP_TRANSFER_TYPE_BINARY | INTERNET_FLAG_DONT_CACHE, 0) == FALSE ){
 		result = GetInetError();
 		if ( result == ERROR_REQ_NOT_ACCEP ){ // ディレクトリの可能性
 			TCHAR name[VFPS];
@@ -298,6 +298,7 @@ ERRORCODE FileOperationSourceFtp(FOPSTRUCT *FS, HINTERNET *hFTP, const TCHAR *sr
 		if ( FS->opt.fop.mode == FOPMODE_MOVE ){
 			DFtpDeleteFile(hFTP[FTPHOST], srcentry);
 		}
+		FS->progs.info.donefiles++;
 		FopLog(FS, srcentry, dst, LOG_COPY);
 		return NO_ERROR;
 	}
@@ -338,11 +339,12 @@ ERRORCODE FileOperationDestinationFtp(FOPSTRUCT *FS, HINTERNET *hFTP, const TCHA
 		return result;
 	}
 
-	if ( DFtpPutFile(hFTP[FTPHOST], src, dstentry, FTP_TRANSFER_TYPE_BINARY, 0)
-																== FALSE ){
+	if ( DFtpPutFile(hFTP[FTPHOST], src, dstentry,
+			FTP_TRANSFER_TYPE_BINARY, 0) == FALSE ){
 		return GetInetError();
 	}else{
 		if ( FS->opt.fop.mode == FOPMODE_MOVE ) DeleteFileL(src);
+		FS->progs.info.donefiles++;
 		FopLog(FS, src, dstentry, LOG_COPY);
 		return NO_ERROR;
 	}
@@ -551,6 +553,7 @@ void FullDisplayProgress(struct _ProgressWndInfo *Progs, LARGE_INTEGER TotalTran
 {
 	DWORD tick;
 	TCHAR buf[VFPS + 256], pbuf[VFPS + 256];
+	int off;
 
 	tick = GetTickCount();
 				// over flow 問題は考慮せず
@@ -580,11 +583,27 @@ void FullDisplayProgress(struct _ProgressWndInfo *Progs, LARGE_INTEGER TotalTran
 			}
 		}
 
-		wsprintf(buf, T("\x1b%c%c%2d/%d marks  %d/%d files"),
+		off = wsprintf(buf, T("\x1b%c%c%2d/%d marks  %d/%d files"),
 				per + 1,
 				Progs->info.busybar,
 				Progs->info.mark, Progs->info.markall,
 				Progs->info.donefiles, Progs->info.filesall);
+		switch ( Progs->showtype ){
+			case 0: {
+				DWORD sizeL, sizeH;
+
+				sizeL = Progs->info.donesize.l;
+				sizeH = Progs->info.donesize.h;
+				AddDD(sizeL, sizeH,
+						TotalTransSize.u.LowPart, TotalTransSize.u.HighPart);
+
+				buf[off++] = ' ';
+				FormatNumber(buf + off, XFN_DECIMALPOINT, 7, sizeL, sizeH);
+				tstrcat(buf + off, T(" done"));
+				break;
+			}
+		}
+
 		SetWindowText(Progs->hProgressWnd, buf);
 		Progs->info.busybar++;
 		if ( Progs->info.busybar > 10 ) Progs->info.busybar = 1;
@@ -1388,6 +1407,8 @@ BOOL Fop_ShellNameSpace(FOPSTRUCT *FS, const TCHAR *srcDIR, const TCHAR *dstDIR)
 
 	if ( result == FALSE ){
 		XMessage(FS->hDlg, STR_FOP, XM_FaERRd, T("Operation fault"));
+	}else{
+		FS->progs.info.donefiles = MAX32;
 	}
 	FS->DestroyWait = TRUE; // メディアプレイヤーへ処理を行うとき、メッセージポンプをしばらく動かす対策を有効にする
 fin:
@@ -1601,6 +1622,7 @@ BOOL FileImageOperation(FOPSTRUCT *FS, TCHAR *srcDIR, const TCHAR *dstDIR)
 		default:
 			return FALSE;
 	}
+	FS->progs.info.donefiles = MAX32;
 	ReleaseStartMutex(FS);
 	EndOperation(FS);
 	return TRUE;
@@ -1863,6 +1885,7 @@ BOOL OperationStart(FOPSTRUCT *FS)
 
 	FS->errorcount = 0;
 	memset(&FS->progs.info, 0, sizeof(FS->progs.info));
+	FS->progs.showtype = 0;
 	FS->flat = FS->opt.fop.flags & VFSFOP_OPTFLAG_FLATMODE;
 	FS->BackupDirCreated = FALSE;
 	FS->reparsemode = FOPR_UNKNOWN;
@@ -2304,8 +2327,10 @@ BOOL OperationStart(FOPSTRUCT *FS)
 			mainresult = FileOperationDestinationFtp(FS, hFTP, srcPath, fileptr);
 		}else if ( srctype == VFSPT_AUXOP ){
 			mainresult = FileOperationAux(/*FS, */T("get"), srcDIR, fileptr, dstPath);
+			if ( mainresult == NO_ERROR ) FS->progs.info.donefiles++;
 		}else if ( dsttype == VFSPT_AUXOP ){
 			mainresult = FileOperationAux(/*FS, */T("store"), dstDIR, srcPath, fileptr);
+			if ( mainresult == NO_ERROR ) FS->progs.info.donefiles++;
 		}else{
 			DWORD attr;
 

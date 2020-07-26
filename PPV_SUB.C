@@ -17,6 +17,7 @@ TCHAR ReceivedParam[CMDLINESIZE];
 
 void SetimgD(HWND hWnd, int newD);
 int SetFindString(char *strbin);
+VT_TABLE ti_dummy = { (BYTE *)"", 0, 0, 0, 0, 0};
 
 #define PPCLC_XWIN 4 // ～ +32
 
@@ -88,8 +89,8 @@ void MoveCursor(int *param)
 		// Y
 		case 1:
 			MoveCsr(0, param[1] * VO_stepY, FALSE);
-			// break なし
-		case 0:
+			// falls through to 0
+		case 0: // falls through to 3
 		case 3:
 			deltaY = param[1] * VO_stepY;
 			break;
@@ -99,8 +100,8 @@ void MoveCursor(int *param)
 		// X
 		case 5:
 			MoveCsr(param[1] * VO_stepX, 0, FALSE);
-			// break なし
-		case 4:
+			// falls through to 5
+		case 4: // falls through to 7
 		case 7:
 			deltaX = param[1] * VO_stepX;
 			break;
@@ -110,8 +111,8 @@ void MoveCursor(int *param)
 		// Y page
 		case 9:
 			MoveCsr(0, param[1] * (VO_sizeY-1), FALSE);
-			// break なし
-		case 8:
+			// falls through to 8
+		case 8: // falls through to 11
 		case 11:
 			deltaY = param[1] * (VO_sizeY-1);
 			break;
@@ -121,8 +122,8 @@ void MoveCursor(int *param)
 		// Y deci page
 		case 13:
 			MoveCsr(0, param[1] * (VO_sizeY-1) / 10, FALSE);
-			// break なし
-		case 12:
+			// falls through to 12
+		case 12: // falls through to 15
 		case 15:
 			deltaY = param[1] * (VO_sizeY-1) / 10;
 			break;
@@ -133,8 +134,8 @@ void MoveCursor(int *param)
 		// X page
 		case 17:
 			MoveCsr(param[1] * (VO_sizeX-1), 0, FALSE);
-			// break なし
-		case 16:
+			// falls through to 17
+		case 16: // falls through to 19
 		case 19:
 			deltaX = param[1] * (VO_sizeX-1);
 			break;
@@ -144,8 +145,8 @@ void MoveCursor(int *param)
 		// X deci page
 		case 21:
 			MoveCsr(param[1] * (VO_sizeX-1) / 10, 0, FALSE);
-			// break なし
-		case 20:
+			// falls through to 20
+		case 20: // falls through to 23
 		case 23:
 			deltaX = param[1] * (VO_sizeX-1) / 10;
 			break;
@@ -223,13 +224,13 @@ DWORD_PTR USECDECL PPxGetIInfo(PPV_APPINFO *vinfo, DWORD cmdID, PPXAPPINFOUNION 
 				if ( *uptr->enums.buffer != '\0' ) break;
 			}
 		}
-
+		// falls through to 'C'
 		case 'C': // %C
 			if ( uptr->enums.enumID == -1 ){
 				*uptr->enums.buffer = '\0';
 				break;
 			}
-			// 'R' へ
+		// falls through to 'R'
 		case 'R': { // %R
 			const TCHAR *p;
 
@@ -536,7 +537,7 @@ void PPvLayoutCommand(void)
 		if ( i == PPCLC_XWIN + 4 ){	// toolbar
 			InitGui();
 		}
-		if ( i == PPCLC_XWIN + 8 ){
+		if ( i == PPCLC_XWIN + 8 ){ // titlebar
 			SetWindowLong(vinfo.info.hWnd, GWL_STYLE,
 					GetWindowLong(vinfo.info.hWnd, GWL_STYLE) ^
 							(WS_OVERLAPPEDWINDOW ^ WS_NOTITLEOVERLAPPED));
@@ -1066,9 +1067,8 @@ void SetScrollBar(void)
 			if ( (vo_.DModeType != DISPT_DOCUMENT) || (vo_.DocmodeType != DOCMODE_EMETA) ){
 				break;
 			}
-			// DISPT_IMAGE へ(DOCMODE_EMETAのときだけ)
-
-		case DISPT_IMAGE:
+			// falls through to DISPT_IMAGE (DOCMODE_EMETAのときだけ)
+		case DISPT_IMAGE: // falls through to DISPT_RAWIMAGE
 		case DISPT_RAWIMAGE:
 			if ( vo_.DModeType != DISPT_RAWIMAGE ){
 				if ( XV.img.AspectRate != 0 ){
@@ -1294,8 +1294,8 @@ void CloseViewObject(void)
 {
 	VO_INFO *tmpVOi;
 
-	if ( PlayWave ){
-		PlayWave = FALSE;
+	if ( UsePlayWave ){
+		UsePlayWave = FALSE;
 		DsndPlaySound(NULL, 0);
 	}
 	if ( BackReader != FALSE ) KillTimer(vinfo.info.hWnd, TIMERID_READLINE);
@@ -1434,6 +1434,7 @@ void CloseViewObject(void)
 	if ( LineY < 1 ) LineY = 1;
 
 	vo_.file.source[0] = '\0';
+	vo_.file.sourcefrom = SOURCEFROM_NONE;
 	tstrcpy(vo_.file.typeinfo, T("Unknown"));
 	vo_.SupportTypeFlags = 0;
 	vo_.DModeType = DISPT_NONE;
@@ -1542,7 +1543,7 @@ void CloseViewObject(void)
 			tmpVOi->reading = TRUE;
 			tmpVOi->tab = DEFAULTTAB;
 			tmpVOi->img = NULL;
-			tmpVOi->ti = NULL;
+			tmpVOi->ti = &ti_dummy;
 			tmpVOi->MakeText = MakeDispText;
 			tmpVOi++;
 		}
@@ -1572,7 +1573,8 @@ void SetimgD(HWND hWnd, int newD)
 
 	if ( newD == 100 ) newD = IMGD_NORMAL;
 	XV.img.imgD[0] = newD;
-	SetCustTable(T("XV_imgD"), RegCID, &XV.img.imgD, sizeof(XV.img.imgD));
+	SetCustTable(T("XV_imgD"), (hViewParentWnd == NULL) ? RegCID : StrRegEmbed,
+			&XV.img.imgD, sizeof(XV.img.imgD));
 
 	oldVO_maxX = max(VO_maxX, 1);
 	oldVO_maxY = max(VO_maxY, 1);
@@ -1890,6 +1892,7 @@ void PPvReceiveRequest(HWND hWnd)
 		ForceSetForegroundWindow(hWnd);
 		SetFocus(hWnd);
 	}
+	FixShowRectByShowStyle(NULL, NULL);
 	if ( vo_.DModeBit != DOCMODE_NONE ) UpdateWindow_Part(hWnd);
 }
 
@@ -2422,13 +2425,13 @@ BOOL PPvSave(HWND hWnd)
 //-----------------------------------------------------------------------------
 // テキスト変換
 
-void EucWrite(HANDLE hF, char *str)
+void EucWrite(HANDLE hF, BYTE *str)
 {
 	DWORD size;
 	BYTE buf[0x1000], *p, code1;
 
 	if ( convert == 1){
-		WriteFile(hF, str, strlen32(str), &size, NULL);
+		WriteFile(hF, str, strlen32((const char *)str), &size, NULL);
 		return;
 	}
 	p = buf;
@@ -2470,7 +2473,7 @@ void ConvertMain(void)
 		return;
 	}
 	if ( vo_.DModeBit == DOCMODE_TEXT ){
-		char buf[TEXTBUFSIZE], *p;
+		BYTE *p;
 		DWORD size, off;
 		int XV_bctl3bk;
 		MAKETEXTINFO mti;
@@ -2478,26 +2481,28 @@ void ConvertMain(void)
 		XV_bctl3bk = XV_bctl[2];
 		XV_bctl[2] = 0;
 
-		mti.destbuf = (BYTE *)buf;
+		InitMakeTextInfo(&mti);
 		mti.srcmax = mtinfo.img + mtinfo.MemSize; // vo->file.image + vo->file.UseSize;
 		mti.writetbl = FALSE;
 		mti.paintmode = FALSE;
 
 		for ( off = 0 ; off < (DWORD)VOi->line ; off++ ){
 			VOi->MakeText(&mti, &VOi->ti[off]);
-			p = buf;
+			p = mti.destbuf;
 
 			while ( *p != VCODE_END ) switch(*p){ // VCODE_SWITCH
 				case VCODE_CONTROL:
+					// falls through to VCODE_ASCII
 				case VCODE_ASCII:	// Text 表示 ---------------------
 					EucWrite(hF, p + 1);
-					p += strlen(p + 1) + 2;
+					p += strlen((const char *)p + 1) + 2;
 					break;
 
 				case VCODE_UNICODEF:
 					p++;
+					// falls through to VCODE_UNICODE
 				case VCODE_UNICODE:{	// Text 表示 -----------------
-					char buf2[0x1000];
+					BYTE buf2[0x1000];
 
 					p++;
 					WideCharToMultiByte(CP_ACP, 0,
@@ -2513,6 +2518,7 @@ void ConvertMain(void)
 					break;
 
 				case VCODE_FCOLOR:			// F Color ---------------
+					// falls through to VCODE_BCOLOR
 				case VCODE_BCOLOR:			// B Color ---------------
 					p += 1 + sizeof(COLORREF);
 					break;
@@ -2528,7 +2534,8 @@ void ConvertMain(void)
 
 				case VCODE_RETURN:			// return -----------------
 					p++;
-				case VCODE_PAGE:
+					// falls through to VCODE_PAGE
+				case VCODE_PAGE: // falls through to VCODE_PARA
 				case VCODE_PARA:
 					WriteFile(hF, "\r\n", 2, &size, NULL);
 					p++;
@@ -2539,11 +2546,12 @@ void ConvertMain(void)
 					break;
 
 				default:		// 未定義コード ----------------------
-					p = "";
+					p = (BYTE *)"";
 					break;
 			}
 		}
 		XV_bctl[2] = XV_bctl3bk;
+		ReleaseMakeTextInfo(&mti);
 	}
 	CloseHandle(hF);
 }
@@ -2613,9 +2621,22 @@ void InitCursorMode(HWND hWnd, BOOL initpos)
 void PPvMinimize(HWND hWnd)
 {
 	if ( hViewParentWnd != NULL ){
+#if 1
 		SetFocus(GetParent(GetParent(hViewParentWnd)));
 		hViewReqWnd = NULL;
 		return;
+#else
+		HWND hParent;
+
+		hParent = GetParent(GetParent(hViewParentWnd));
+		if ( hParent != NULL ){
+			SetFocus(hParent);
+		}else{
+			PostMessage(hWnd, WM_CLOSE, 0, 0);
+		}
+		hViewReqWnd = NULL;
+		return;
+#endif
 	}
 
 	if ( (hViewReqWnd != NULL) && (IsIconic(hViewReqWnd) == FALSE) ){
@@ -2851,7 +2872,7 @@ int USEFASTCALL FixedWidthRange(int cols)
 			cols = ((BoxView.right - BoxView.left) / fontX) - 1 - XV_lleft / fontX;
 			if ( cols < 2 ) cols = 2;
 		}else if ( cols == WIDTH_NOWARP ){
-			cols = TEXTBUFSIZE;
+			cols = MAXLINELENGTH;
 		}else{
 			cols = DEFAULTCOLS;
 		}

@@ -1574,37 +1574,41 @@ void OperationResult(FOPSTRUCT *FS, BOOL result)
 		if ( FS->opt.fop.flags & VFSFOP_OPTFLAG_LOGWINDOW ){
 			TCHAR *p = buf, *mes;
 
-			if ( IsTrue(FS->Cancel) ){
-				mes = MES_FLCA;
+			if ( FS->progs.info.donefiles == MAX32 ){
+				tstrcpy(buf, MessageText(MES_COMP));
 			}else{
-				if ( FS->progs.info.donefiles == 0 ){
-					mes = MES_FLNO;
-				}else if (
-					((FS->progs.info.filesall == 0) || (FS->progs.info.donefiles == FS->progs.info.filesall)) &&
-					(FS->progs.info.LEskips == 0) && (FS->progs.info.EXskips == 0) &&
-					(FS->progs.info.errors == 0) ){
-					mes = MES_FLAC;
+				if ( IsTrue(FS->Cancel) ){
+					mes = MES_FLCA;
 				}else{
-					mes = MES_FLPC;
+					if ( FS->progs.info.donefiles == 0 ){
+						mes = MES_FLNO;
+					}else if (
+						((FS->progs.info.filesall == 0) || (FS->progs.info.donefiles == FS->progs.info.filesall)) &&
+						(FS->progs.info.LEskips == 0) && (FS->progs.info.EXskips == 0) &&
+						(FS->progs.info.errors == 0) ){
+						mes = MES_FLAC;
+					}else{
+						mes = MES_FLPC;
+					}
 				}
+				p += wsprintf(p, T("%s:%d"), MessageText(mes), FS->progs.info.donefiles);
+				if ( FS->progs.info.filesall ){
+					p += wsprintf(p, T("/%d"), FS->progs.info.filesall);
+				}
+				if ( FS->progs.info.LEskips ){
+					p += wsprintf(p, T(" %s:%d"), MessageText(MES_FLLS),
+							FS->progs.info.LEskips);
+				}
+				if ( FS->progs.info.EXskips ){
+					p += wsprintf(p, T(" %s:%d"), MessageText(MES_FLEX),
+							FS->progs.info.EXskips);
+				}
+				if ( FS->progs.info.errors ){
+					p += wsprintf(p, T(" %s:%d"), MessageText(MES_FLER),
+							FS->progs.info.errors);
+				}
+				tstrcpy(p, T("\r\n"));
 			}
-			p += wsprintf(p, T("%s:%d"), MessageText(mes), FS->progs.info.donefiles);
-			if ( FS->progs.info.filesall ){
-				p += wsprintf(p, T("/%d"), FS->progs.info.filesall);
-			}
-			if ( FS->progs.info.LEskips ){
-				p += wsprintf(p, T(" %s:%d"), MessageText(MES_FLLS),
-						FS->progs.info.LEskips);
-			}
-			if ( FS->progs.info.EXskips ){
-				p += wsprintf(p, T(" %s:%d"), MessageText(MES_FLEX),
-						FS->progs.info.EXskips);
-			}
-			if ( FS->progs.info.errors ){
-				p += wsprintf(p, T(" %s:%d"), MessageText(MES_FLER),
-						FS->progs.info.errors);
-			}
-			tstrcpy(p, T("\r\n"));
 			FopLog(FS, buf, NULL, LOG_STRING);
 		}
 

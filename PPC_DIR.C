@@ -140,7 +140,7 @@ void MaskPathMain(PPC_APPINFO *cinfo, int defaultdepth, const TCHAR *defaultpath
 
 		filename = CELdata(offset).f.cFileName;
 
-		if ( (CELdata(offset).f.nFileSizeHigh | CELdata(offset).f.nFileSizeLow) == 0 ){ // ディレクトリの可能性
+		if ( (CELdata(offset).f.nFileSizeHigh | CELdata(offset).f.nFileSizeLow) == 0 ){ // ディレクトリ( name\ )の可能性
 			TCHAR *tmpname, *namep;
 
 			tmpname = CELdata(offset).f.cFileName;

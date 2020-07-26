@@ -195,7 +195,7 @@ BOOL CreateDxDraw(DXDRAWSTRUCT **DxDrawPtr, HWND hWnd)
 		return FALSE;
 	}
 
-	if ( ((OSver.dwMajorVersion << 16) | OSver.dwMinorVersion) >= 0x60003 ){
+	if ( MAKE_WINTYPE(OSver) >= WINTYPE_81 ){
 		TextOption = D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT;
 	}else{
 		TextOption = D2D1_DRAW_TEXT_OPTIONS_NONE;
@@ -307,42 +307,42 @@ void InitRenderTarget(DXDRAWSTRUCT *DxDraw)
 	ptr = buf;
 	for (;;){
 		// Gamma
-		if ( GetCommandParameter(&ptr, param, TSIZEOF(param)) == '\0') break;
+		if ( GetCommandParameter(&ptr, param, TSIZEOF(param)) == '\0' ) break;
 		if ( Isdigit(param[0]) ){
 			pptr = param;
 			Gamma = static_cast<float>(GetNumber(&pptr)) / 100.0f;
 		}
 		NextParameter(&ptr);
 		// EnhancedContrast
-		if ( GetCommandParameter(&ptr, param, TSIZEOF(param)) == '\0') break;
+		if ( GetCommandParameter(&ptr, param, TSIZEOF(param)) == '\0' ) break;
 		if ( Isdigit(param[0]) ){
 			pptr = param;
 			EnhancedContrast = static_cast<float>(GetNumber(&pptr)) / 100.0f;
 		}
 		NextParameter(&ptr);
 		// grayscaleEnhancedContrast // IDWriteFactory2 , Win8.1
-		if ( GetCommandParameter(&ptr, param, TSIZEOF(param)) == '\0') break;
+		if ( GetCommandParameter(&ptr, param, TSIZEOF(param)) == '\0' ) break;
 		NextParameter(&ptr);
 		// ClearTypeLevel
-		if ( GetCommandParameter(&ptr, param, TSIZEOF(param)) == '\0') break;
+		if ( GetCommandParameter(&ptr, param, TSIZEOF(param)) == '\0' ) break;
 		if ( Isdigit(param[0]) ){
 			pptr = param;
 			ClearTypeLevel = static_cast<float>(GetNumber(&pptr)) / 100.0f;
 		}
 		NextParameter(&ptr);
 		// RenderingMode
-		if ( GetCommandParameter(&ptr, param, TSIZEOF(param)) == '\0') break;
+		if ( GetCommandParameter(&ptr, param, TSIZEOF(param)) == '\0' ) break;
 		if ( Isdigit(param[0]) ){
 			pptr = param;
 			RenderingMode = static_cast<DWRITE_RENDERING_MODE>(GetNumber(&pptr));
 		}
 		// gridFitMode // IDWriteFactory2 , Win8.1
-		if ( GetCommandParameter(&ptr, param, TSIZEOF(param)) == '\0') break;
+		if ( GetCommandParameter(&ptr, param, TSIZEOF(param)) == '\0' ) break;
 		// COLOR_FONT
-		if ( GetCommandParameter(&ptr, param, TSIZEOF(param)) == '\0') break;
+		if ( GetCommandParameter(&ptr, param, TSIZEOF(param)) == '\0' ) break;
 		if ( Isdigit(param[0]) ){
 			if ( (param[0] == '1') &&
-				 (((OSver.dwMajorVersion << 16) | OSver.dwMinorVersion) >= 0x60003) ){
+				 (MAKE_WINTYPE(OSver) >= WINTYPE_81) ){
 				TextOption = D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT;
 			}else{
 				TextOption = D2D1_DRAW_TEXT_OPTIONS_NONE;
@@ -869,7 +869,7 @@ void DxDrawText(DXDRAWSTRUCT *DxDraw, HDC hDC, const TCHAR *str, int len, RECT *
 			const TCHAR *strp;
 
 			strp = str;
-			while ( *strp == ' ' ){
+			while ( (slen > 0) && (*strp == ' ') ){
 				strp++;
 				slen--;
 			}
@@ -888,7 +888,7 @@ void DxDrawText(DXDRAWSTRUCT *DxDraw, HDC hDC, const TCHAR *str, int len, RECT *
 					DeleteObject(hBackBrush);
 				}
 				MoveToEx(hDC, drawX, box->top, NULL);
-				TextOut(hDC, drawX, box->top, strp, len);
+				TextOut(hDC, drawX, box->top, strp, slen);
 				return;
 			}
 		}

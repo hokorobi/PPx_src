@@ -123,3 +123,4 @@ return
 maxlength
 deletehistory
 deletecust
+goto

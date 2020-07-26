@@ -73,12 +73,15 @@ const TCHAR *OptionNames[] = {
 //50
 	T("SETPARENT"),
 	T("MIME"),
+	T("SHOWSTYLE"),
 	NULL
 };
 
 const TCHAR *TagOffOn[] = { T("OFF"), T("ON"), T("TAG"), NULL };
 const TCHAR *OffOn[] = { T("OFF"), T("ON"), NULL };
 const TCHAR *AutoOffOn[] = { T("AUTO"), T("OFF"), T("ON"), NULL };
+const TCHAR *ListStyle[] = { T("SDI"), T("ONPARENT"), T("ONPAIR"), T("ONMAINWND"), T("INPARENT"), T("INPAIR"), T("INMAINWND"), NULL };
+
 const TCHAR *NameFirst = NULL, *NameLast = NULL;
 const TCHAR DefCID[] = T("VA");
 
@@ -165,6 +168,12 @@ PPXINMENUBAR ppvbar[] = {
 	{T("&Help"), barHelp},
 	{NULL, NULL}
 };
+
+#if !NODLL
+DefineWinAPI(HRESULT, DwmGetWindowAttribute, (HWND, DWORD, PVOID, DWORD)) = NULL;
+#else
+ExternWinAPI(HRESULT, DwmGetWindowAttribute, (HWND, DWORD, PVOID, DWORD));
+#endif
 
 int CheckSubParam(TCHAR *param, const TCHAR *list[], int defvalue)
 {
@@ -405,6 +414,9 @@ BOOL CheckParam(VIEWOPTIONS *viewopts, const TCHAR *param, TCHAR *filename)
 			case 51:			//	"MIME:OFF", "MIME:ON",
 				viewopts->T_mime = CheckSubParam(more, OffOn, 1);
 				break;
+			case 52:			//	"showstyle:sdi/onwnd/onmainwnd/inwnd/inmainwnd",
+				ShowStyle = CheckSubParam(more, ListStyle, 1);
+				break;
 			default:
 				XMessage(NULL, NULL, XM_GrERRld, MES_EUOP, buf);
 		}
@@ -531,9 +543,9 @@ BOOL InitializePPv(int *result)
 		SetMenu(vinfo.info.hWnd,
 				(X_win & XWIN_MENUBAR) ? DynamicMenu.hMenuBarMenu : NULL);
 		ShowWindow(vinfo.info.hWnd, show);
+		FixShowRectByShowStyle(NULL, hLastViewReqWnd);
 		UpdateWindow(vinfo.info.hWnd);
 		if ( X_IME == 1 ) PostMessage(vinfo.info.hWnd, WM_PPXCOMMAND, K_IMEOFF, 0);
-//		SetIMEDefaultStatus(vinfo.info.hWnd);
 		DragAcceptFiles(vinfo.info.hWnd, TRUE);
 
 		SetCurrentDirectory(PPvPath);
@@ -692,6 +704,7 @@ void PPvLoadCust(void)
 	GetCustData (T("X_scrm"),	&X_scrm, sizeof(X_scrm));
 	GetCustData (T("X_IME"),	&X_IME, sizeof(X_IME));
 	GetCustData (T("X_swmt"),	&X_swmt, sizeof(X_swmt));
+	GetCustData (T("X_vpos"),	&ShowStyle, sizeof(ShowStyle));
 	AutoColor	(T("C_back"),	&C_back, COLOR_WINDOW);
 	GetCustData (T("C_line"),	&C_line, sizeof(C_line));
 	AutoColor	(T("C_mes"),	&C_mes, COLOR_WINDOWTEXT);
@@ -721,10 +734,14 @@ void PPvLoadCust(void)
 	CV_char[CV__highlight] = CV_hili[0];
 	GetCustData (T("CV_lcsr")	, &CV_lcsr, sizeof(CV_lcsr));
 
+	XV.img.MagMode = IMGD_MM_FULLSCALE;
+	XV.img.imgD[0] = IMGD_AUTOWINDOWSIZE;
 	if ( hViewParentWnd == NULL ){
-		XV.img.MagMode = IMGD_MM_FULLSCALE;
 		GetCustTableCID(T("XV_imgD"), RegCID, &XV.img.imgD, sizeof(XV.img.imgD));
+	}else{
+		GetCustTable(T("XV_imgD"), StrRegEmbed, &XV.img.imgD, sizeof(XV.img.imgD));
 	}
+
 	GetCustData (T("XV_dds")	, &X_dds, sizeof(X_dds));
 	GetCustData (T("X_awhel")	, &X_awhel, sizeof(X_awhel));
 	GetCustData (T("XV_bctl")	, &XV_bctl, sizeof(XV_bctl));
@@ -825,6 +842,61 @@ void ClosePPv(void)
 	FreeOffScreen(&BackScreen);
 }
 
+BOOL FixShowRectByShowStyle(RECT *openbox, HWND hParentTargetWnd)
+{
+	RECT wndbox, visiblebox;
+
+	if ( ShowStyle <= VSHOW_SDI ) return FALSE;
+	if ( hParentTargetWnd == NULL ){
+		if ( openbox != NULL ) return FALSE;
+		hParentTargetWnd = (hViewReqWnd != NULL) ? hViewReqWnd : hViewParentWnd;
+		if ( hParentTargetWnd == NULL ) return FALSE;
+	}
+
+	if ( (ShowStyle == VSHOW_ONPAIRWINDOW) || (ShowStyle == VSHOW_INPAIRWINDOW) ){
+		HWND hPairWnd;
+
+		hPairWnd = (HWND)SendMessage(hParentTargetWnd, WM_PPXCOMMAND, KC_GETSITEHWND, (LPARAM)KC_GETSITEHWND_PAIR);
+		if ( hPairWnd != NULL ) hParentTargetWnd = hPairWnd;
+	}else if ( (ShowStyle == VSHOW_ONMAINWINDOW) || (ShowStyle == VSHOW_INMAINWINDOW) ){
+		for (;;){
+			HWND hParentWnd;
+
+			hParentWnd = GetParent(hParentTargetWnd);
+			if ( hParentWnd == NULL ) break;
+			hParentTargetWnd = hParentWnd;
+		}
+	}
+	GetWindowRect(hParentTargetWnd, &wndbox);
+	if ( openbox != NULL ){
+		*openbox = wndbox;
+	}else{
+		if ( DDwmGetWindowAttribute == NULL ){
+			HANDLE hDWMAPI = LoadLibrary(T("DWMAPI.DLL"));
+
+			if ( hDWMAPI != NULL ){
+				GETDLLPROC(hDWMAPI, DwmGetWindowAttribute);
+			}
+			if ( DDwmGetWindowAttribute == NULL ){
+				DDwmGetWindowAttribute = INVALID_VALUE(impDwmGetWindowAttribute);
+			}
+		}
+		if ( (DDwmGetWindowAttribute != INVALID_VALUE(impDwmGetWindowAttribute)) &&
+			SUCCEEDED(DDwmGetWindowAttribute(vinfo.info.hWnd, DWMWA_EXTENDED_FRAME_BOUNDS, &visiblebox, sizeof(visiblebox))) ){
+			if ( visiblebox.left > winS.left ){ // 実体の枠がウィンドウの枠より小さい（Windows8/10）
+				wndbox.left -= visiblebox.left - winS.left;
+				wndbox.top -= visiblebox.top - winS.top;
+				wndbox.right -= visiblebox.right - winS.right;
+				wndbox.bottom -= visiblebox.bottom - winS.bottom;
+			}
+			SetWindowPos(vinfo.info.hWnd, NULL, wndbox.left, wndbox.top,
+					wndbox.right - wndbox.left, wndbox.bottom - wndbox.top,
+					SWP_NOACTIVATE | SWP_NOZORDER);
+		}
+	}
+	return TRUE;
+}
+
 void InitPPvWindow(void)
 {
 	const TCHAR *p;
@@ -916,6 +988,7 @@ void InitPPvWindow(void)
 	if ( hViewParentWnd == NULL ){
 		style = (X_win & XWIN_NOTITLE) ? WS_NOTITLEOVERLAPPED : WS_OVERLAPPEDWINDOW;
 		hUseParentWnd = hCommonWnd;
+		FixShowRectByShowStyle(&WinPos.pos, hLastViewReqWnd);
 	}else{
 		if ( ParentPopup == FALSE ){ // -parent(preview用途)
 			GetClientRect(hViewParentWnd, &WinPos.pos);
@@ -926,7 +999,7 @@ void InitPPvWindow(void)
 			style = WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
 			hUseParentWnd = hViewParentWnd;
 			setflag(X_win, XWIN_HIDESCROLL);
-			XV.img.MagMode = IMGD_AUTOWINDOWSIZE;
+
 			viewopt_def.I_animate = 1;
 		}else{ // -popup(埋め込み用途)
 			GetWindowRect(hViewParentWnd, &WinPos.pos);

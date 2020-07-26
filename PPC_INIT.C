@@ -1714,6 +1714,7 @@ void InitFont(PPC_APPINFO *cinfo)
 	hOldFont = SelectObject(hDC, cinfo->hBoxFont);
 										// ƒtƒHƒ“ƒgî•ñ‚ð“üŽè
 	UsePFont = GetAndFixTextMetrics(hDC, &tm);
+	UseDrawText = UsePFont || EllipsisType;
 	cinfo->fontX = tm.tmAveCharWidth;
 
 	cinfo->X_lspc = 0;

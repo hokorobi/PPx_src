@@ -13,12 +13,14 @@
 	#define CODETYPESTRING "MultiByte"
 #endif
 #ifdef _WIN64
+	#define ValueX3264(value32, value64) value64
 	#ifdef _M_ARM64
 		#define BITSTRING "ARM64"
 	#else
 		#define BITSTRING "x64"
 	#endif
 #else
+	#define ValueX3264(value32, value64) value32
 	#ifdef _M_ARM
 		#define BITSTRING "ARM32"
 	#else
@@ -27,6 +29,7 @@
 #endif
 
 //--------------------------------------------------------- 定数
+#define MAKE_WINTYPE(OSversion) (((OSversion).dwMajorVersion << 16) | (WORD)(OSversion).dwMinorVersion)
 //#define WINTYPE_95	0x40000
 //#define WINTYPE_98	0x4000a
 //#define WINTYPE_98SE	0x4000a
@@ -94,6 +97,10 @@
 #define INVALID_VALUE(type) ((type)(LONG_PTR)-1)
 
 #define T_DEFAULTFONTSIZE -13 // 約10point
+
+#define WNDCLASS_DIALOG "#32770"
+#define WNDCLASS_POPUPMENU "#32768"
+
 //--------------------------------------------------------- ビット演算用
 #define LSBIT	1 // 最下位ビット
 #define B0		1
@@ -197,29 +204,29 @@
 #endif
 #ifndef WINEGCC
 	#define strlenW(ptr) wcslen(ptr)
-	#define strcpyW(dst, src) wcscpy(dst, src)
+	#define strcpyW(dst, src) wcscpy((dst), (src))
 	#ifdef __BORLANDC__		// Boland 用定義
-		#define stpcpyA(dst, src) stpcpy(dst, src)
+		#define stpcpyA(dst, src) stpcpy((dst), (src))
 	#else
 		extern char *stpcpyA(char *dst, const char *src);
 	#endif
 	extern WCHAR *stpcpyW(WCHAR *dst, const WCHAR *src);
-	#define strcatW(dst, src) wcscat(dst, src)
-	#define strcmpW(str1, str2) wcscmp(str1, str2)
-	#define stricmpW(str1, str2) _wcsicmp(str1, str2)
-	#define strnicmpW(str1, str2, size) _wcsnicmp(str1, str2, size)
+	#define strcatW(dst, src) wcscat((dst), (src))
+	#define strcmpW(str1, str2) wcscmp((str1), (str2))
+	#define stricmpW(str1, str2) _wcsicmp((str1), (str2))
+	#define strnicmpW(str1, str2, size) _wcsnicmp((str1), (str2), (size))
 	#define strchrW wcschr
 	#define strrchrW wcsrchr
 	#define strstrW wcsstr
 	#define struprW _wcsupr
 #else // Wine on Linux
 	#define strlenW(ptr) (size_t)lstrlenW(ptr)
-	#define strcpyW(dst, src) lstrcpyW(dst, src)
+	#define strcpyW(dst, src) lstrcpyW((dst), (src))
 	extern WCHAR *stpcpyW(WCHAR *dst, const WCHAR *src);
-	#define strcatW(dst, src) lstrcatW(dst, src)
-	#define strcmpW(str1, str2) lstrcmpW(str1, str2)
-	#define stricmpW(str1, str2) lstrcmpiW(str1, str2)
-	#define strnicmpW(str1, str2, size) (CompareStringW(GetUserDefaultLCID(), NORM_IGNORECASE, str1, size, str2, size) - 2)
+	#define strcatW(dst, src) lstrcatW((dst), (src))
+	#define strcmpW(str1, str2) lstrcmpW((str1), (str2))
+	#define stricmpW(str1, str2) lstrcmpiW((str1), (str2))
+	#define strnicmpW(str1, str2, size) (CompareStringW(GetUserDefaultLCID(), NORM_IGNORECASE, (str1), (size), (str2), (size)) - 2)
 	extern WCHAR *strchrW(const WCHAR *text, WCHAR findchar);
 	extern WCHAR *strrchrW(const WCHAR *text, WCHAR findchar);
 	extern WCHAR *strstrW(const WCHAR *text1, const WCHAR *text2);
@@ -237,11 +244,11 @@
 
 	#define tWinMain	wWinMain
 	#define tstrlen(ptr)	strlenW(ptr)
-	#define tstrcpy(dst, src)	strcpyW(dst, src)
-	#define tstpcpy(dst, src)	stpcpyW(dst, src)
-	#define tstrcat(dst, src)	strcatW(dst, src)
-	#define tstrcmp(str1, str2)	strcmpW(str1, str2)
-	#define tstricmp(str1, str2)	stricmpW(str1, str2)
+	#define tstrcpy(dst, src)	strcpyW((dst), (src))
+	#define tstpcpy(dst, src)	stpcpyW((dst), (src))
+	#define tstrcat(dst, src)	strcatW((dst), (src))
+	#define tstrcmp(str1, str2)	strcmpW((str1), (str2))
+	#define tstricmp(str1, str2)	stricmpW((str1), (str2))
 	#define tstrnicmp	strnicmpW
 	#define tstrchr	strchrW
 	#define tstrrchr	strrchrW
@@ -252,10 +259,10 @@
 	#define TSTROFF(size)	((size) * sizeof(TCHAR))
 	#define TSIZEOF(size)	TSIZEOFW(size)
 	#define CF_TTEXT	CF_UNICODETEXT
-	#define strcpyToA(dest, src, size) UnicodeToAnsi(src, dest, size)
-	#define strcpyToW(dest, src, size) strcpyW(dest, src)
-	#define strcpyAToT(dest, src, size) AnsiToUnicode(src, dest, size)
-	#define strcpyWToT(dest, src, size) strcpyW(dest, src)
+	#define strcpyToA(dest, src, size) UnicodeToAnsi((src), (dest), (size))
+	#define strcpyToW(dest, src, size) strcpyW((dest), (src))
+	#define strcpyAToT(dest, src, size) AnsiToUnicode((src), (dest), (size))
+	#define strcpyWToT(dest, src, size) strcpyW((dest), (src))
 	#define TinyCharUpper(chr) TinyCharUpperW(chr)
 	#define TinyCharLower(chr) TinyCharLowerW(chr)
 #else
@@ -266,11 +273,11 @@
 
 	#define tWinMain	WinMain
 	#define tstrlen(ptr)	strlen(ptr)
-	#define tstrcpy(dst, src)	strcpy(dst, src)
-	#define tstpcpy(dst, src)	stpcpyA(dst, src)
-	#define tstrcat(dst, src)	strcat(dst, src)
-	#define tstrcmp(str1, str2)	strcmp(str1, str2)
-	#define tstricmp(str1, str2)	stricmp(str1, str2)
+	#define tstrcpy(dst, src)	strcpy((dst), (src))
+	#define tstpcpy(dst, src)	stpcpyA((dst), (src))
+	#define tstrcat(dst, src)	strcat((dst), (src))
+	#define tstrcmp(str1, str2)	strcmp((str1), (str2))
+	#define tstricmp(str1, str2)	stricmp((str1), (str2))
 	#define tstrnicmp	strnicmp
 	#define tstrchr	strchr
 	#define tstrrchr	strrchr
@@ -281,10 +288,10 @@
 	#define TSTROFF(size)	(size)
 	#define TSIZEOF(size)	TSIZEOFA(size)
 	#define CF_TTEXT	CF_TEXT
-	#define strcpyToA(dest, src, size) strcpy(dest, src)
-	#define strcpyToW(dest, src, size) AnsiToUnicode(src, dest, size)
-	#define strcpyAToT(dest, src, size) strcpy(dest, src)
-	#define strcpyWToT(dest, src, size) UnicodeToAnsi(src, dest, size)
+	#define strcpyToA(dest, src, size) strcpy((dest), (src))
+	#define strcpyToW(dest, src, size) AnsiToUnicode((src), (dest), (size))
+	#define strcpyAToT(dest, src, size) strcpy((dest), (src))
+	#define strcpyWToT(dest, src, size) UnicodeToAnsi((src), (dest), (size))
 	#define TinyCharUpper(chr) TinyCharUpperA(chr)
 	#define TinyCharLower(chr) TinyCharLowerA(chr)
 #endif
@@ -309,10 +316,10 @@
 #define TSTRLENGTH32(ptr) ToSIZE32_T(TSTRLENGTH(ptr))
 
 // ※いずれも、戻り値は、'\0'付きの文字長、destsizeに収まらないときは、入る分だけ(\0無)入って、0 を返す
-#define AnsiToUnicode(ansi, unicode, destsize) MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, ansi, -1, unicode, destsize)
-#define UnicodeToAnsi(unicode, ansi, destsize) WideCharToMultiByte(CP_ACP, 0, unicode, -1, ansi, destsize, NULL, NULL)
-#define Utf8ToUnicode(utf8, unicode, destsize) MultiByteToWideChar(CP_UTF8, 0, utf8, -1, unicode, destsize)
-#define UnicodeToUtf8(unicode, utf8, destsize) WideCharToMultiByte(CP_UTF8, 0, unicode, -1, utf8, destsize, NULL, NULL)
+#define AnsiToUnicode(ansi, unicode, destsize) MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, (ansi), -1, (unicode), (destsize))
+#define UnicodeToAnsi(unicode, ansi, destsize) WideCharToMultiByte(CP_ACP, 0, (unicode), -1, (ansi), (destsize), NULL, NULL)
+#define Utf8ToUnicode(utf8, unicode, destsize) MultiByteToWideChar(CP_UTF8, 0, (utf8), -1, (unicode), (destsize))
+#define UnicodeToUtf8(unicode, utf8, destsize) WideCharToMultiByte(CP_UTF8, 0, (unicode), -1, (utf8), (destsize), NULL, NULL)
 
 #define TNL		T("\r\n")
 
@@ -359,15 +366,15 @@ typedef DWORD ERRORCODE;	// Win32API のエラーコード(GetLastError)
 	#define min(a, b)	(((a) <	(b)) ? (a) : (b))	//	小さいほうを返す
 #endif
 #define LPARAMtoPOINT(pos, lParam) {(pos).x=(int)(short)LOWORD(lParam);(pos).y=(int)(short)HIWORD(lParam);}
-#define GetMessagePosPoint(pos) {DWORD dpos = GetMessagePos();LPARAMtoPOINT(pos, dpos);}
+#define GetMessagePosPoint(pos) {DWORD dpos = GetMessagePos();LPARAMtoPOINT((pos), (dpos));}
 #define LOSHORTINT(lp) ((int)(short)LOWORD(lp))
 #define HISHORTINT(lp) ((int)(short)HIWORD(lp))
 #define CHILDWNDID(id) ((HMENU)(DWORD_PTR)(UINT)(id))
 
-#define Message(mes)	MessageBox(NULL, mes, NULL, MB_OK)
-#define MessageA(mes)	MessageBoxA(NULL, mes, NULL, MB_OK)
-#define MessageW(mes)	MessageBoxW(NULL, mes, NULL, MB_OK)
-#define Messagef(fmt, mes)	{TCHAR T__[999];wsprintf(T__, T(fmt), mes);Message(T__);}
+#define Message(mes)	MessageBox(NULL, (mes), NULL, MB_OK)
+#define MessageA(mes)	MessageBoxA(NULL, (mes), NULL, MB_OK)
+#define MessageW(mes)	MessageBoxW(NULL, (mes), NULL, MB_OK)
+#define Messagef(fmt, mes)	{TCHAR T__[999];wsprintf(T__, T(fmt), (mes));Message(T__);}
 #define TMAKEWPARAM(low, high) ((WORD)(low) | ((WORD)(high) << 16))
 #define TMAKELPARAM(low, high) ((WORD)(low) | ((WORD)(high) << 16))
 #define SkipSPC(ptr)	{while ((*(ptr) == ' ') || (*(ptr) == '\t')) (ptr)++;}
@@ -381,25 +388,25 @@ typedef DWORD ERRORCODE;	// Win32API のエラーコード(GetLastError)
 // #  dstL -= srcL;if ( C flag ) dstH--; と最適化されると嬉しいのだが(^^;
 
 #define ShiftDivDD(srcL, srcH, rshift)\
-	((DWORD)( ((DWORD)srcL >> rshift) | ((DWORD)srcH << (32 - rshift)) ))
+	((DWORD)( ((DWORD)(srcL) >> (rshift)) | ((DWORD)(srcH) << (32 - (rshift))) ))
 
 // 指定したメモリをセキュリティ目的で消去する
 #define ClearMemory(ptr, size) memset((ptr), 0, (size));*(volatile char *)(ptr) = *(volatile char *)(ptr);
 
-#define DwordAlignment(value) ((value + 3) & 0xfffffffc)
+#define DwordAlignment(value) (((value) + 3) & 0xfffffffc)
 
 // 指定したbit数における DWORD アライメントに揃えた大きさを得る(DIB幅計算用)
-#define DwordBitSize(bits) (((bits + 31) & 0xffffffe0) >> 3)
+#define DwordBitSize(bits) ((((bits) + 31) & 0xffffffe0) >> 3)
 
 // 相対ディレクトリかどうかを判定する
-#define IsRelativeDir(path) ((path[0] == '.') && ((path[1] == '\0') || ((path[1] == '.') && (path[2] == '\0'))))
-#define IsParentDir(path) ((path[0] == '.') && (path[1] == '.') && (path[2] == '\0'))
+#define IsRelativeDir(path) (((path)[0] == '.') && (((path)[1] == '\0') || (((path)[1] == '.') && ((path)[2] == '\0'))))
+#define IsParentDir(path) (((path)[0] == '.') && ((path)[1] == '.') && ((path)[2] == '\0'))
 #define TypedefWinAPI(retvar, name, param) typedef retvar (WINAPI *imp ## name) param
 #define DefineWinAPI(retvar, name, param) typedef retvar (WINAPI *imp ## name) param; imp ## name D ## name
 #define ExternWinAPI(retvar, name, param) typedef retvar (WINAPI *imp ## name) param; extern imp ## name D ## name
 #define ValueWinAPI(name) imp ## name D ## name
-#define GETDLLPROC(handle, name) D ## name = (imp ## name)GetProcAddress(handle, #name);
-#define GETDLLPROCT(handle, name) D ## name = (imp ## name)GetProcAddress(handle, #name TAPITAIL);
+#define GETDLLPROC(handle, name) D ## name = (imp ## name)GetProcAddress((handle), #name);
+#define GETDLLPROCT(handle, name) D ## name = (imp ## name)GetProcAddress((handle), #name TAPITAIL);
 
 #ifdef __cplusplus
 	#define POINTERCAST(type, value) (reinterpret_cast<type>(value))
@@ -448,10 +455,10 @@ typedef DWORD ERRORCODE;	// Win32API のエラーコード(GetLastError)
 #endif
 //-------------------------------------------------------- (古い)SDKで無い定義
 #ifdef WINEGCC
-	#define memicmp(src1, src2, size) (CompareStringA(GetUserDefaultLCID(), NORM_IGNORECASE, src1, size, src2, size) - 2)
+	#define memicmp(src1, src2, size) (CompareStringA(GetUserDefaultLCID(), NORM_IGNORECASE, (src1), (size), (src2), (size)) - 2)
 
 	#define stricmp lstrcmpiA
-	#define strnicmp(str1, str2, size) (CompareStringA(GetUserDefaultLCID(), NORM_IGNORECASE, str1, size, str2, size) - 2)
+	#define strnicmp(str1, str2, size) (CompareStringA(GetUserDefaultLCID(), NORM_IGNORECASE, (str1), (size), (str2), (size)) - 2)
 	#define strupr(src) CharUpperA(src)
 	#define strlwr CharLowerA
 //	#define ImmAssociateContext(hWnd, hIMC) // 定義されていない
@@ -478,7 +485,7 @@ typedef DWORD ERRORCODE;	// Win32API のエラーコード(GetLastError)
 	#define PTRPRINTFORMAT PTRPRINTFORMAT32
 	#define PTRLEN 8
 	#define MAXLPARAM ((LPARAM)MAX32)
-	#define CalcMulDiv(int_x, int_y, int_div) MulDiv(int_x, int_y, int_div)
+	#define CalcMulDiv(int_x, int_y, int_div) MulDiv((int_x), (int_y), (int_div))
 #else
 	#define PTRBYTELEN 8
 	#define PTRMAX PTRMAX64
@@ -486,7 +493,7 @@ typedef DWORD ERRORCODE;	// Win32API のエラーコード(GetLastError)
 	#define PTRPRINTFORMAT PTRPRINTFORMAT64
 	#define PTRLEN PTRLEN64
 	#define MAXLPARAM ((LPARAM)MAX64)
-	#define CalcMulDiv(int_x, int_y, int_div) ((int)(__int64)(((__int64)int_x * (__int64)int_y) / (__int64)int_div))
+	#define CalcMulDiv(int_x, int_y, int_div) ((int)(__int64)(((__int64)(int_x) * (__int64)(int_y)) / (__int64)(int_div)))
 #endif
 #ifndef GetWindowLongPtr
 	typedef DWORD DWORD_PTR;
@@ -525,6 +532,9 @@ typedef DWORD ERRORCODE;	// Win32API のエラーコード(GetLastError)
 	#define WM_DWMCOMPOSITIONCHANGED 0x031E
 	//HRESULT WINAPI DwmIsCompositionEnabled(BOOL* pfEnabled);
 #endif
+#ifndef DWMWA_EXTENDED_FRAME_BOUNDS
+  #define DWMWA_EXTENDED_FRAME_BOUNDS 9
+#endif
 
 // クリップボードフォーマット
 #ifndef CFSTR_SHELLURL
@@ -557,6 +567,10 @@ typedef DWORD ERRORCODE;	// Win32API のエラーコード(GetLastError)
 #endif
 #ifndef WM_MOUSEHWHEEL
 	#define WM_MOUSEHWHEEL 0x20e
+#endif
+#ifndef MK_XBUTTON1
+	#define MK_XBUTTON1 0x0020
+	#define MK_XBUTTON2 0x0040
 #endif
 
 #ifndef VK_XBUTTON1

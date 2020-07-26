@@ -861,7 +861,7 @@ int CSitem(PPCUSTSTRUCT *PCS,
 		TCHAR *max)		// ファイル内容の末端
 {
 	if ( !(clbl->flag & fT) ){		// 単純 -----------------------------------
-		if ( *clbl->fmt != sepC){
+		if ( *clbl->fmt != sepC ){
 			ErrorItemMes(PCS, MES_ESEP, kword, NULL);
 			return TRUE;
 		}
@@ -1109,6 +1109,7 @@ void CDsub(PPCUSTSTRUCT *PCS, const TCHAR *name, BYTE *bin, int size, WORD flag,
 											// パラメータ表示
 	while( *fmt ){
 		if ( bin >= binend ) break;
+		if ( (PCS->Smes + SMESSIZE_MARGIN) >= PCS->SmesLim ) CheckSmes(PCS, 0);
 		switch( *fmt++ ){
 			// C:色 -----------------------------------------------------------
 			case 'C':
@@ -1335,19 +1336,47 @@ void CDsub(PPCUSTSTRUCT *PCS, const TCHAR *name, BYTE *bin, int size, WORD flag,
 /*-----------------------------------------------------------------------------
 	カスタマイズ(書き出し)項目処理
 -----------------------------------------------------------------------------*/
+void AddCommentText(PPCUSTSTRUCT *PCS, const TCHAR *comment, const TCHAR *tail)
+{
+	TCHAR *Smes, *SmesLim;
+
+	SmesLim = PCS->SmesLim;
+	Smes = PCS->Smes;
+	for (;;){
+		TCHAR c;
+
+		c = *comment;
+		if ( c != '\0' ){
+			*Smes++ = c;
+			comment++;
+			if ( (Smes + SMESSIZE_MARGIN) < SmesLim ) continue;
+			PCS->Smes = Smes;
+			CheckSmes(PCS, 0);
+			SmesLim = PCS->SmesLim;
+			Smes = PCS->Smes;
+		} else { // c == '\0'
+			if ( tail == NULL ) break;
+			comment = tail;
+			tail = NULL;
+		}
+	}
+	*Smes = '\0';
+	PCS->Smes = Smes;
+}
+
 void CDitem(PPCUSTSTRUCT *PCS, const CLABEL *clbl)
 {
 	TCHAR sname[VFPS];
 	BYTE bin[MAXCUSTDATA];
-	int size;
+	int datasize;
 
-	size = GetCustDataSize(clbl->name);
-	if ( size < 0 ){								// 未登録 ---------
+	datasize = GetCustDataSize(clbl->name);
+	if ( datasize < 0 ){							// 未登録 ---------
 		if ( clbl->flag & (fInternal | fHide | fOld) ) return; // 書き出さない
 
 		if ( !(clbl->flag & fT) ){		// 単純
-			PCS->Smes += wsprintf(PCS->Smes,
-					T("%s\t= %s")TNL, clbl->name, clbl->comment);
+			PCS->Smes += wsprintf(PCS->Smes, T("%s\t= "), clbl->name);
+			AddCommentText(PCS, clbl->comment, TNL);
 		}else{							// 配列
 			sname[0] = '\0';
 			GetCustTable(T("#Comment"), clbl->name, sname, TSTROFF(MAX_PATH));
@@ -1355,16 +1384,15 @@ void CDitem(PPCUSTSTRUCT *PCS, const CLABEL *clbl)
 			if ( (sname[0] == '\0') && (*clbl->comment == '\0') ){
 				tstrcpy(sname, DefCommentStr);
 			}
-			PCS->Smes += wsprintf(PCS->Smes, T("%s\t= {%s%s") TNL T("}")TNL,
-					clbl->name, sname, clbl->comment);
+			PCS->Smes += wsprintf(PCS->Smes, T("%s\t= {%s"), clbl->name, sname);
+			AddCommentText(PCS, clbl->comment, TNL T("}") TNL );
 		}
 	}else{											// 登録済み -------
 		if ( clbl->flag & fInternal ) return;	 // 書き出さない
 		if ( !(clbl->flag & fT) ){		// 単純
 			GetCustData(clbl->name, bin, sizeof(bin));
-			CDsub(PCS, clbl->name, bin, size, clbl->flag, clbl->fmt);
-			PCS->Smes = tstpcpy(PCS->Smes, clbl->comment);
-			PCS->Smes += wsprintf(PCS->Smes, TNL);
+			CDsub(PCS, clbl->name, bin, datasize, clbl->flag, clbl->fmt);
+			AddCommentText(PCS, clbl->comment, TNL);
 		}else{							// 配列
 			int scnt;
 
@@ -1375,9 +1403,11 @@ void CDitem(PPCUSTSTRUCT *PCS, const CLABEL *clbl)
 			if ( (sname[0] == '\0') && (*clbl->comment == '\0') ){
 				tstrcpy(sname, DefCommentStr);
 			}
-			PCS->Smes += wsprintf(PCS->Smes, T("%s\t= {%s%s")TNL,
-									clbl->name, sname, clbl->comment);
+			PCS->Smes += wsprintf(PCS->Smes, T("%s\t= {%s"), clbl->name, sname);
+			AddCommentText(PCS, clbl->comment, TNL);
 			for ( ; ; ){
+				int size;
+
 				size = EnumCustTable(scnt, clbl->name, sname, bin, sizeof(bin));
 				if ( 0 > size ) break;
 				CDsub(PCS, sname, bin, size, clbl->flag, clbl->fmt);
@@ -1512,10 +1542,7 @@ PPXDLL TCHAR * PPXAPI PPcustCDump(void)
 	while ( clbl->name ){
 		switch ( *clbl->name ){
 			case 0:						// Comment ----------------------------
-				CheckSmes(&PCS, SMESSIZE_MES);
-				tstrcpy(PCS.Smes, clbl->comment);
-				PCS.Smes += tstrlen(PCS.Smes);
-				PCS.Smes += wsprintf(PCS.Smes, TNL);
+				AddCommentText(&PCS, clbl->comment, TNL);
 				break;
 
 			case 1:						// ユーザメニュー ---------------------

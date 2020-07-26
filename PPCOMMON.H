@@ -1156,8 +1156,11 @@ extern PPXDLL void PPXAPI FreeFN_REGEXP(FN_REGEXP *fn);
 #define ISEA_ALPHA		B0	// 現在未定義
 #define ISEA_ROMA		B1	// migemoでローマ字検索
 #define ISEA_FLOAT		B16	// 部分一致検索が有効
-#define ISEA_FNAME		B24	// ファイルネームを検索
-#define ISEA_COMMENT	B25	// コメントを検索
+#define ISEA_FNAME		B24	// ファイル名を検索(PPc[J]/\[J]内部使用)
+#define ISEA_COMMENT	B25	// コメントを検索(PPc[J]/\[J]内部使用)
+#define ISEA_FNAME_EXT	B26	// ファイル名時、拡張子も検索(PPc[J]/\[J]内部使用)
+#define ISEA_COMMENTEX	B27	// 拡張コメントを検索(PPc[J]/\[J]内部使用)
+#define ISEA_COLUMNS	B28	// カラム拡張を検索(PPc[J]/\[J]内部使用)
 extern PPXDLL BOOL PPXAPI SearchRomaString(const TCHAR *text, const TCHAR *searchstr, DWORD mode, DWORD_PTR *handle);
 
 //================================================================ スレッド管理
@@ -1266,7 +1269,7 @@ extern PPXDLL void PPXAPI XBeep(UINT type);
 
 hWnd, title:	ダイアログを表示する時の親ウィンドウ, タイトル
 
-type:種別
+type:種別 ※ X_log & (1 << type) が true のとき、表示・ロギングする
 	0-7:ダイアログ表示+ログ  8-15:ログのみ
 		1,  9:一般エラー表示
 		2, 10:重要でないエラー表示
@@ -1291,6 +1294,7 @@ message:出力文字列, % 対応
 
 // ログ
 #define XM_FaERRl	8	// 致命的エラー
+#define XM_INFOlog	14	// 好意で出力する情報/作業完了
 #define XM_ETCl		15	// その他
 
 // ダイアログ表示
@@ -1499,11 +1503,12 @@ typedef struct tagPPXMKEYHOOKSTRUCT {
 
 // PPXMEVENT_SEARCH - 検索モジュール
 #define PPXH_SEARCH_NAMEONLY B16 // PPXMEVENT_SEARCH 用追加指定。ファイル名情報のみを要求する(一行編集の補完処理用)
+#define PPXMSEARCH_SHORTRESULT 100 // 短時間で結果を返すときの maxresults
 typedef struct tagPPXMSEARCHSTRUCT {
 	const WCHAR *keyword; // 検索文字列
 	DWORD searchtype; // 検索種別。ヒストリの PPXH_ の値が格納される。
 	DWORD maxresults; // 最大検索件数。主に自動補完のために検索時間を
-		// 短縮するために用いるので、MAX32 でないとき(大体100位)は
+		// 短縮するために用いるので、MAX32 でないとき(PPXMSEARCH_SHORTRESULT)は
 		// 短時間(0.1秒程度)で結果を返すようにする
 } PPXMSEARCHSTRUCT;
 

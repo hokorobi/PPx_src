@@ -53,7 +53,7 @@ BOOL CheckComputerActive(const TCHAR *fname, size_t strsize)
 	ERRORCODE result;
 
 	// Vista ˆÈ~‚Í‹p‚Á‚Ä’x‚­‚È‚é‚Ì‚Åƒ`ƒFƒbƒN‚µ‚È‚¢
-	if ( OSver.dwMajorVersion >= 6 ) return TRUE;
+	if ( WinType >= WINTYPE_VISTA ) return TRUE;
 
 	if ( LoadNetFunctions() == FALSE ) return FALSE;
 

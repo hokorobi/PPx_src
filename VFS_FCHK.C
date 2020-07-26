@@ -1734,7 +1734,6 @@ void GetExeVerInfo(const TCHAR *fname, VFSFILETYPE *result, IMAGE_NT_HEADERS32 *
 
 ERRORCODE vfd_EXE(const TCHAR *fname, const char *image, DWORD size, const char *header, VFSFILETYPE *result)
 {
-	const TCHAR *p;
 	TCHAR buf[MAX_PATH];
 //	TCHAR option[MAX_PATH];
 
@@ -1750,6 +1749,7 @@ ERRORCODE vfd_EXE(const TCHAR *fname, const char *image, DWORD size, const char 
 								// 拡張子で種別を決定 -------------------------
 	{
 		struct EXEEXTTYPESTURCT *eet = ExeExtTypes;
+		const TCHAR *p;
 
 		p = VFSFindLastEntry(fname);
 		p += FindExtSeparator(p);
@@ -1766,6 +1766,14 @@ ERRORCODE vfd_EXE(const TCHAR *fname, const char *image, DWORD size, const char 
 		}
 	}
 								// 対象OSで種別を決定 -------------------------
+	if ( (size > 0x400) && !memcmp(image + 0x288, "_winzip_", 8) ){
+		if ( result->flags & VFSFT_TYPE ) tstrcpy(result->type, T(":PKZIP"));
+		if ( result->flags & VFSFT_TYPETEXT ){
+			tstrcpy(result->typetext, T("PKZIP archive"));
+		}
+		if ( result->flags & VFSFT_EXT ) tstrcpy(result->ext, T("zip"));
+		return ERROR_MORE_DATA;
+	}
 	{
 		DWORD offset;
 
@@ -2219,12 +2227,13 @@ AH(0, 4, "TH2", NULL,		":TH2",		"PPx History file", "DAT", DT_scp),
 AH(0, 6, "PPxCFG", NULL,	":XCFG",	"PPx configuration file", "CFG", DT_text),
 AH(0, 9, UTF8HEADER "PPxCFG", NULL, ":XCFG", "PPx configuration file", "CFG", DT_utf8),
 AH(0, 14, "\xff\xfeP\0P\0x\0C\0F\0G", NULL, ":XCFG", "PPx configuration file", "CFG", DT_utextL),
-AH(0, sizeof(LHEADER)-3, LHEADER, NULL, ":XLF", "PPx list file", "txt", DT_scp),
+AH(0, sizeof(LHEADER) - 3 + 3, UTF8HEADER LHEADER, NULL, ":XLF", "PPx list file", "txt", DT_utf8),
+AH(0, sizeof(LHEADER) - 3, LHEADER, NULL, ":XLF", "PPx list file", "txt", DT_scp),
 AH(2, 18, ";\0L\0i\0s\0t\0F\0i\0l\0e", NULL, ":XLF", "PPx list file", "txt", DT_utextL),
 AH(0, 9, "'!*script", NULL,	":XVBS",	"PPx script(vbs)", "vbs", DT_scp),
 AH(0, 9, "#!*script", NULL,	":XPLS",	"PPx script(pls)", "pls", DT_scp),
 AH(0, 10, "//!*script", NULL,	":XJS",		"PPx script(js)", "js", DT_scp),
-AH(0, 13, UTF8HEADER "//!*script", NULL,	":XJS",		"PPx script(js)", "js", DT_text),
+AH(0, 13, UTF8HEADER "//!*script", NULL,	":XJS",		"PPx script(js)", "js", DT_utf8),
 										// Text -------------------------------
 AH(0, 2, UCF2HEADER, NULL,	":UTEXT",	"UNICODE text", "txt", DT_utextL),
 AH(0, 4, "\xd\x0\xa\0x0", NULL, ":UTEXT", "UNICODE text", "txt", DT_utf16L),
@@ -2458,7 +2467,7 @@ VFSDLL DWORD PPXAPI ReadFileHeader(HANDLE hFile, BYTE *header, DWORD headersize)
 	if ( ReadFile(hFile, header, min(headersize, VFS_TINYREADSIZE), &fsize, NULL) == FALSE ){
 		fsize = 0;
 	}
-	moreread = headersize - fsize;
+	moreread = headersize - fsize; // headersize は必ず fsize 以上
 	// EXE ヘッダなら、末尾に書庫があるか調べる
 	if ( (fsize >= VFS_TINYREADSIZE) && (*header == 'M') && (*(header+1) == 'Z') ){
 		DWORD offset;
@@ -2470,8 +2479,7 @@ VFSDLL DWORD PPXAPI ReadFileHeader(HANDLE hFile, BYTE *header, DWORD headersize)
 		if ( offset < (fsize - 0x300) ){ // 書庫ファイルなら大抵ヘッダが小さめ
 			xhdr = (IMAGE_NT_HEADERS32 *)(header + offset);
 			LastSection = IMAGE_FIRST_SECTION(xhdr) + xhdr->FileHeader.NumberOfSections - 1;
-			if ( fsize >
-				((BYTE *)LastSection - header + sizeof(IMAGE_SECTION_HEADER))){
+			if ( fsize > ((BYTE *)LastSection - header + sizeof(IMAGE_SECTION_HEADER)) ){
 			size = LastSection->PointerToRawData + LastSection->SizeOfRawData;
 			GetFileInformationByHandle(hFile, &finfo);
 			// EXEヘッダが示すサイズが末尾+署名分のサイズより大きい
@@ -2479,12 +2487,12 @@ VFSDLL DWORD PPXAPI ReadFileHeader(HANDLE hFile, BYTE *header, DWORD headersize)
 					// EXEが1000h単位に揃えられていない?
 					(finfo.nFileSizeLow != ((size + 0xfff) & 0xfffff000)) ){
 				// EXEフォーマット末尾より後ろの一部分も取得
-				if ( MAX32 != SetFilePointer(hFile, size, NULL, FILE_BEGIN)){
+				if ( MAX32 != SetFilePointer(hFile, size, NULL, FILE_BEGIN) ){
 					ReadFile(hFile, header + VFS_TINYREADSIZE, VFS_ARCREADSIZE, &fsize, NULL);
 					// EXEフォーマット途中を取得
 					SetFilePointer(hFile, VFS_TINYREADSIZE, NULL, FILE_BEGIN);
 					fsize += VFS_TINYREADSIZE;
-					moreread = headersize - fsize;
+					if ( headersize > fsize ) moreread = headersize - fsize;
 				}
 			}
 			}
@@ -2494,7 +2502,9 @@ VFSDLL DWORD PPXAPI ReadFileHeader(HANDLE hFile, BYTE *header, DWORD headersize)
 			 !((*header == 0x33) && (*(header+1) == 0xed) && (*(header+2) == 0x90)) &&
 			 !((*header == '\0') && ((*(header+1) == '\0') || (*(header+1) == 0xff))) &&
 			 !((*header == 'E') && (*(header+1) == 'R')) ){ // ISO 以外?
-			moreread = VFS_GENERALREADSIZE - fsize;
+			if ( headersize > VFS_GENERALREADSIZE ){
+				moreread = VFS_GENERALREADSIZE - fsize;
+			}
 		}
 	}
 	if ( moreread ){
@@ -2509,20 +2519,20 @@ VFSDLL DWORD PPXAPI ReadFileHeader(HANDLE hFile, BYTE *header, DWORD headersize)
 // Windows が保持している拡張子名から種類を示す文字列を得る -------------------
 VFSDLL BOOL PPXAPI VFSCheckFileByExt(const TCHAR *FileName, TCHAR *result)
 {
-	const TCHAR *p;
+	const TCHAR *ptr;
 	TCHAR buf[VFPS];
 	int err = FALSE;
 
-	if (result) *result = 0;
-	p = VFSFindLastEntry(FileName);
-	p += FindExtSeparator(p);
-	if (!*p) return FALSE;
+	if ( result != NULL ) *result = '\0';
+	ptr = VFSFindLastEntry(FileName);
+	ptr += FindExtSeparator(ptr);
+	if ( *ptr == '\0' ) return FALSE;
 										// 拡張子からキーを求める -------------
-	if (GetRegString(HKEY_CLASSES_ROOT, p, NilStr, buf, TSIZEOF(buf))){
+	if ( GetRegString(HKEY_CLASSES_ROOT, ptr, NilStr, buf, TSIZEOF(buf)) ){
 										// アプリケーションのシェル -----------
 		if ( !GetRegString(HKEY_CLASSES_ROOT, buf, NilStr,
 				result ? result : buf, TSIZEOF(buf)) ){
-			if ( result != NULL ) tstrcpy(result, buf);
+			if ( result != NULL ) tstrcpy(result, buf); // max VFPS
 		}
 		err = TRUE;
 	}

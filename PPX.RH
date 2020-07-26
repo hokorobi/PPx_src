@@ -521,7 +521,7 @@
 #define IDB_PREV		0x78c2
 #define IDB_NEXT		0x78c3
 #define IDB_MARK		0x78c4
-#define IDX_FRONT		0x78c5
+//#define IDX_FRONT		0x78c5 1.74îpé~
 #define IDX_MODE		0x78c6
 #define IDB_FINDTYPE	0x78c7
 //-------------------------------------- Window // 78d0-78df

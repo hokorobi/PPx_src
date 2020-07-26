@@ -130,6 +130,7 @@ BOOL OperationStartListFile(FOPSTRUCT *FS, const TCHAR *srcDIR, TCHAR *dstDIR)
 				WriteFFA(hFile, &ff, src);
 			}
 		}
+		FS->progs.info.donefiles++;
 	}
 	CloseHandle(hFile);
 
@@ -364,6 +365,7 @@ BOOL ImgExtractImage(FOPSTRUCT *FS, HANDLE hFile, const TCHAR *srcPath, const TC
 		DeleteFileL(path);
 		return FALSE;
 	}
+	FS->progs.info.donefiles++;
 	return TRUE;
 }
 

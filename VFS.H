@@ -180,6 +180,7 @@ typedef struct {
 #define FILE_ATTRIBUTEX_LF_COMMENT	B26	// ListFileでコメント有り。PPx独自拡張
 #define FILE_ATTRIBUTEX_FOLDER	B27	// ファイルフォルダなどを表す。PPx独自拡張
 #define FILE_ATTRIBUTEX_VIRTUAL	B28	// 仮想エントリを表す。PPx独自拡張
+		// SHN で WIN32_FIND_DATA でないエントリ。
 #define FILE_ATTRIBUTEX_NODETAIL	B29	// ファイル名以外の情報がない。独自拡張
 #define FILE_ATTRIBUTEX_MESSAGE (FILE_ATTRIBUTE_LABEL | FILE_ATTRIBUTE_TEMPORARY)	// Listfile内限定。メッセージエントリ
 
@@ -592,6 +593,7 @@ typedef struct tagUNDLL{				// 呼出し用 ---------------------------
 
 #define UNDLLFLAG_32bit					B0	// 32bit版
 #define UNDLLFLAG_64bit					B1	// 64bit版
+#define UNDLLFLAG_nativebit				ValueX3264(UNDLLFLAG_32bit, UNDLLFLAG_64bit)
 #define UNDLLFLAG_DISABLE_DIR			B3	// ディレクトリ表示に使用しない
 #define UNDLLFLAG_DISABLE_UNPACK		B4	// 展開に使用しない
 #define UNDLLFLAG_DISABLE_PACK			B5	// 圧縮に使用しない

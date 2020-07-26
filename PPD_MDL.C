@@ -382,7 +382,7 @@ void LoadModuleList(void)
 		ThInit(&Thmodule);
 		ThInit(&Thmodule_str);
 		CatPath(dir, DLLpath, T("PPX*.DLL"));
-											// 検索 -------------------------------
+										// 検索 -------------------------------
 		hFF = FindFirstFileL(dir, &ff);
 		if ( hFF != INVALID_HANDLE_VALUE ){
 			do{
@@ -418,6 +418,19 @@ BOOL LoadModuleFile(HWND hWnd, MODULESTRUCT *mdll, DWORD types)
 	mdll->hDLL = LoadLibrary(
 			(TCHAR *)(Thmodule_str.bottom + mdll->DllNameOffset));
 	if ( mdll->hDLL == NULL ) goto loaderror;
+
+	if ( tstricmp((TCHAR *)(Thmodule_str.bottom + mdll->DllNameOffset),
+			ValueX3264(T("PPXETS32.DLL"), T("PPXETS64.DLL"))) == 0 ){
+		// ETC module は旧版だとマルチスレッド対応していないので使用しない
+		if ( FindResource(mdll->hDLL, MAKEINTRESOURCE(PPXRCDATA_CUSTOMIZE_LIST), RT_RCDATA) == NULL ){
+			FreeLibrary(mdll->hDLL);
+			mdll->hDLL = NULL;
+			mdll->types = MODULE_NOLOAD;
+			LeaveCriticalSection(&ThreadSection);
+			return FALSE;
+		}
+	}
+
 	mdll->ModuleEntry = (tagCommandModuleEntry)
 			GetProcAddress(mdll->hDLL, "ModuleEntry");
 	if ( mdll->ModuleEntry != NULL ){
@@ -456,9 +469,6 @@ loaderror:
 	}
 	return FALSE;
 }
-
-
-
 
 UTCHAR GetParameter(LPCTSTR *commandline, TCHAR *param, size_t paramlen)
 {

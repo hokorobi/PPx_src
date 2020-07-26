@@ -155,8 +155,8 @@ INT_PTR CALLBACK SetTypeDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam
 						if ( AdminCheck() == ADMINMODE_NOADMIN ){ // UAC êßå¿èÛë‘
 							SMessage(MessageStr[MSG_RUNAS]);
 							XX_instdestM = IDR_SELCOPY;
-							XX_link_menu	= 0;
-							XX_link_cmenu	= 1;
+							XX_link_menu	= 1;
+							XX_link_cmenu	= 0;
 						}
 					}
 					SetWindowLongPtr(hDlg, DWLP_MSGRESULT,

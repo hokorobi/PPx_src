@@ -506,6 +506,7 @@ BOOL OpenFromFile(PPxEDSTRUCT *PES, int openmode, const TCHAR *fname)
 	}
 	if ( (textimage == NULL) && (openmode != PPE_OPEN_MODE_INSERT) ){
 		textimage = HeapAlloc(ProcHeap, HEAP_ZERO_MEMORY, 4);
+		memsize = 4;
 	}
 	SendMessage(PES->hWnd, WM_SETREDRAW, FALSE, 0);
 										// •¶ŽšƒR[ƒh”»•Ê••ÏŠ·

@@ -51,12 +51,12 @@ int PrintMain(HDC hDC, RECT *PrintRect, int pageno, PRINTINFO *pinfo);
 
 void PPvDrawText(PAINTSTRUCT *ps, PPVPAINTSTRUCT *pps)
 {
-	int			y, startY, i;
-	BYTE		buf[TEXTBUFSIZE], *ptr;
-	COLORREF	fg, bg;
-	POINT		LP;
-	RECT		box;
-	HFONT		font;
+	int y, startY, i;
+	BYTE *ptr;
+	COLORREF fg, bg;
+	POINT LP;
+	RECT box;
+	HFONT font;
 	int XV_bctl3bk;
 	MAKETEXTINFO mti;
 
@@ -74,7 +74,7 @@ void PPvDrawText(PAINTSTRUCT *ps, PPVPAINTSTRUCT *pps)
 	bg = VOi->ti[pps->drawYtop + pps->shift.cy].Bclr;
 	bg = (bg == CV__defback) ? C_WHITE : CV_char[bg];
 
-	mti.destbuf = buf;
+	InitMakeTextInfo(&mti);
 	mti.srcmax = mtinfo.img + mtinfo.MemSize;
 	mti.writetbl = FALSE;
 	mti.paintmode = TRUE;
@@ -95,7 +95,7 @@ void PPvDrawText(PAINTSTRUCT *ps, PPVPAINTSTRUCT *pps)
 			SelectObject(ps->hdc, font);
 
 			VOi->MakeText(&mti, &VOi->ti[startY]);
-			ptr = buf;
+			ptr = mti.destbuf;
 		}
 		while( *ptr != VCODE_END ){
 			switch(*ptr++){ // VCODE_SWITCH
@@ -187,6 +187,7 @@ void PPvDrawText(PAINTSTRUCT *ps, PPVPAINTSTRUCT *pps)
 		}
 		GetCurrentPositionEx(ps->hdc, &LP);
 	}
+	ReleaseMakeTextInfo(&mti);
 	SetTextAlign(ps->hdc, TA_LEFT | TA_TOP | TA_NOUPDATECP);	// CP ‚ð–³Œø‚É
 	XV_bctl[2] = XV_bctl3bk;
 }

@@ -1,6 +1,6 @@
 @echo off
 rem XVER: 123 or 123p1
-set XVER=173
+set XVER=174
 set RETAIL=1
 set DIR64=PPx64
 rem *** set value ***

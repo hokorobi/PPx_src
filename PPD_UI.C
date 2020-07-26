@@ -14,9 +14,6 @@ HMODULE hWinmm = NULL;
 HMODULE hShcore = NULL;
 
 DefineWinAPI(HRESULT, DwmGetWindowAttribute, (HWND, DWORD, PVOID, DWORD)) = NULL;
-#ifndef DWMWA_EXTENDED_FRAME_BOUNDS
-  #define DWMWA_EXTENDED_FRAME_BOUNDS 9
-#endif
 
 typedef enum xMONITOR_DPI_TYPE {
 	xMDT_EFFECTIVE_DPI = 0,
@@ -135,7 +132,7 @@ const MESSAGEITEMS MessageRetryCancel_NoTrans[] = { // UsePPx で使うため、多言語
 const MESSAGEITEMS MessageAbortRetryRenameIgnore[] = {
 	{MES_IMAB, IDABORT},
 	{MES_IMRE, IDRETRY},
-	{T("7068|Rename file on dest.(&V)"), IDX_FOP_ADDNUMDEST},
+	{MESN_REND, IDX_FOP_ADDNUMDEST},
 	{MES_IMIG, IDIGNORE},
 	{NULL, 0}
 };
@@ -151,7 +148,7 @@ const MESSAGEITEMS *MessageTypes[] = {
 	MessageAbortRetryRenameIgnore	// 11, MB_PPX_ABORTRETRYRENAMEIGNORE
 };
 
-const TCHAR MessageAllReactionStr[] = T("7062|&Use all reaction");
+const TCHAR MessageAllReactionStr[] = MESN_UARE;
 const TCHAR CriticalTitle[] = T("Paper Plane xUI");
 
 HMODULE hIEframe = NULL;
@@ -506,7 +503,7 @@ PPXDLL void PPXAPI MoveWindowByKey(HWND hWnd, int offx, int offy)
 	}
 	if ( (DDwmGetWindowAttribute != INVALID_VALUE(impDwmGetWindowAttribute)) &&
 		SUCCEEDED(DDwmGetWindowAttribute(hWnd, DWMWA_EXTENDED_FRAME_BOUNDS, &desktop, sizeof(desktop))) ){
-		if ( desktop.left > box.left ){ // 実体の枠がウィンドウの枠より小さい（Windows10）
+		if ( desktop.left > box.left ){ // 実体の枠がウィンドウの枠より小さい（Windows8/10）
 			fixX = box.left - desktop.left;
 			box.left -= fixX;
 			fixY = box.top - desktop.top;

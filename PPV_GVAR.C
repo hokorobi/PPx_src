@@ -80,11 +80,13 @@ GVAR const TCHAR StrUser32DLL[] GPARAM(T("USER32.DLL"));
 GVAR const TCHAR StrKernel32DLL[] GPARAM(T("KERNEL32.DLL"));
 GVAR const TCHAR *StrLoading;
 GVAR DWORD StrLoadingLength;
+GVAR const TCHAR StrRegEmbed[] GPARAM(T("VEMB"));
 
-GVAR HMENU hDispTypeMenu	GPARAM(NULL);
+GVAR HMENU hDispTypeMenu GPARAM(NULL);
 GVAR int FontDPI GPARAM(DEFAULT_WIN_DPI);
 
 GVAR BOOL Embed GPARAM(FALSE); // ウィンドウ埋め込み
+GVAR int ShowStyle GPARAM(VSHOW_SDI); // VSHOW_
 
 GVAR const TCHAR StrDocFilterCmd[] GPARAM(T("FilterCmd"));
 GVAR const TCHAR StrDocFilteredTextPath[] GPARAM(T("FilteredText"));
@@ -190,7 +192,7 @@ GVAR FDM FileDivideMode GPARAM(FDM_NODIV);
 GVAR DDWORDST FileRealSize;
 GVAR DDWORDST FileDividePointer GPARAM2(0,0);
 GVAR DDWORDST FileTrackPointer  GPARAM2(0,0);
-
+GVAR BOOL EnableFileTrackPointer  GPARAM(FALSE);
 
 GVAR DWORD X_lspc GPARAM(0);
 
@@ -264,7 +266,7 @@ GVAR impPPRINTDLG PPrintDlg GPARAM(NULL);
 DLLGVAR HMODULE hWinmm DLLGPARAM(NULL);
 GVAR ValueWinAPI(sndPlaySound) GPARAM(NULL);
 GVAR ValueWinAPI(NotifyWinEvent) GPARAM(DummyNotifyWinEvent);
-GVAR BOOL PlayWave GPARAM(FALSE);
+GVAR BOOL UsePlayWave GPARAM(FALSE);
 
 // /convert 関連
 GVAR int convert GPARAM(0);	// 1:text convert
@@ -477,6 +479,11 @@ DLLGVAR int X_pmc[4] DLLGPARAM({X_pmc_defvalue});
 #define LC_NOCOUNT	1	// 行カウントなし
 
 GVAR int LineCount GPARAM(LC_READY); // 開発中
+GVAR DISPTEXTBUFSTRUCT GlobalTextBuf
+#ifndef GLOBALEXTERN
+= { NULL, 0, FALSE}
+#endif
+;
 
 // 印刷 -----------------------------------------------------------------------
 GVAR PRINTINFO PrintInfo

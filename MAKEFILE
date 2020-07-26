@@ -190,6 +190,7 @@ PPXH	= PPX.H PPX.RH PPCOMMON.H CHRTYPE.H TOROWIN.H TKEY.H
 COMMON	= MAKEFILE PPCOMMON.H VFS.H
 #------------------------------------------------------ PPX.OBJ(code‘ÌŒnØŠ·—p)
 $(PPXLIB)$(TAIL).OBJ:
+  -@if not exist %temp% echo temp error1
   -@del *.obj 2> nul
   -@del *.res 2> nul
   -@if exist %CSM% del %CSM%\*.CSM
@@ -220,6 +221,7 @@ $(PPXLIB).DLL:	MAKEFILE	$(PPDOBJ)	PPCOMMON.RES
   -@WINCLOSE PaperPlaneCombo
   -@WINCLOSE PaperPlaneCUI$(W)
   $(closeall)
+  -@if not exist %temp% echo temp error2
   $(linkdll) @&&|
 	$(C0DLL) $(PPDOBJ)
 	$(linkout)$.
@@ -285,6 +287,7 @@ PPCOBJ	=	PPCUI.OBJ	PPC_MAIN.OBJ	PPC_CELL.OBJ	PPC_COM.OBJ\
 PPC$(W).EXE:	$(COMMON)	$(PPCOBJ)	PPCUI.RES
   -@WINCLOSE PaperPlaneCombo
   -@WINCLOSE PaperPlaneCUI$(W)
+  -@if not exist %temp% echo temp error3
   $(linkexe) @&&|
 	$(C0GUI) $(PPCOBJ)
 	$(linkout)$.

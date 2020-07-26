@@ -105,6 +105,9 @@ void GetSelectText(TCHAR *destptr)
 LRESULT PPvPPxCommand(PPV_APPINFO *vinfo, WPARAM wParam, LPARAM lParam)
 {
 	switch ( LOWORD(wParam) ){
+		case K_GETPPXAPPINFO:
+			return (LRESULT)vinfo;
+
 		case K_EXTRACT:
 			return ReceiveExtractCall(&vinfo->info, wParam, lParam);
 
@@ -231,9 +234,9 @@ LRESULT PPvNotify(NMHDR *nmh)
 #define CPosX ParamX	// istate == SELPOSCHANGE_PIX Ç»ÇÁÅAÉ|ÉCÉìÉgXç¿ïW
 int CalcTextXPoint(int ParamX, int csrY, int istate)
 {
-	char buf[TEXTBUFSIZE], *p;
+	char *p;
 #ifdef UNICODE
-	TCHAR wbuf[TEXTBUFSIZE];
+	TCHAR wbuf[MAXLINELENGTH];
 #endif
 	int charX = 0;	// åªç›ÇÃ offset
 	int MaxcX = MAX_MOVE_X; // ç≈ëÂoffset
@@ -298,7 +301,7 @@ int CalcTextXPoint(int ParamX, int csrY, int istate)
 	XV_bctl3bk = XV_bctl[2];
 	XV_bctl[2] = 0;
 
-	mti.destbuf = (BYTE *)buf;
+	InitMakeTextInfo(&mti);
 	mti.srcmax = mtinfo.img + mtinfo.MemSize; // vo->file.image + vo->file.UseSize;
 	mti.writetbl = FALSE;
 	mti.paintmode = FALSE;
@@ -323,8 +326,8 @@ int CalcTextXPoint(int ParamX, int csrY, int istate)
 	}
 	hOldFont = SelectObject(hDC, hUseFont);
 
-	p = buf;
-	while( *p != VCODE_END ) switch(*p++){ // VCODE_SWITCH
+	p = (char *)mti.destbuf;
+	while ( *p != VCODE_END ) switch (*p++){ // VCODE_SWITCH
 		case VCODE_ASCII: 	// ASCII Text ---------------------------------
 		case VCODE_CONTROL: // êßå‰ï∂éö ---------------------------------
 #ifdef UNICODE
@@ -333,7 +336,7 @@ int CalcTextXPoint(int ParamX, int csrY, int istate)
 
 			alength = strlen32(p);
 			// ÉtÉHÉìÉgÉäÉìÉNëŒçÙÇÃÇΩÇﬂÅAàÍíUUNICODEÇ…Ç∑ÇÈ
-			wlength = MultiByteToWideChar(CP_ACP, 0, p, alength, wbuf, TEXTBUFSIZE);
+			wlength = MultiByteToWideChar(CP_ACP, 0, p, alength, wbuf, TSIZEOFW(wbuf));
 
 			if ( istate != SELPOSCHANGE_PIX ){ // ÉJÅ[É\Éãà⁄ìÆÅFï∂éöóÒì‡Ç…Ç¢ÇÈ
 				if ( (charX <= MaxcX) && ((charX + alength) >= MaxcX) ){
@@ -561,6 +564,7 @@ int CalcTextXPoint(int ParamX, int csrY, int istate)
 			break;
 	}
 fin:
+	ReleaseMakeTextInfo(&mti);
 	SelectObject(hDC, hOldFont);
 	ReleaseDC(vinfo.info.hWnd, hDC);
 
@@ -1646,6 +1650,7 @@ void USEFASTCALL PPvWmVscroll(HWND hWnd, WORD scrollcode, WORD range) // êÇíºÉXÉ
 				}
 				if ( scrollcode == SB_THUMBTRACK ){
 					FileTrackPointer = divpos;
+					EnableFileTrackPointer = TRUE;
 					InvalidateRect(vinfo.info.hWnd, &BoxStatus, TRUE);
 					return;
 				}
@@ -1745,6 +1750,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	WinPos.show = (BYTE)nShowCmd;
 	PPvHeap = GetProcessHeap();
 
+	GlobalTextBuf.size = DISPTEXTBUFSIZE;
+	GlobalTextBuf.buff = HeapAlloc(PPvHeap, 0, GlobalTextBuf.size);
+
 	if ( InitializePPv(&result) == FALSE ) return result;
 	PPxCommonExtCommand(K_TBB_INIT, 1);
 #if USEDELAYCURSOR || SHOWFRAMERATE
@@ -1761,6 +1769,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
+
+	HeapFree(PPvHeap, 0, GlobalTextBuf.buff);
 
 	if ( hComdlg32 != NULL ) FreeLibrary(hComdlg32);
 	if ( hWinmm != NULL ) FreeLibrary(hWinmm);

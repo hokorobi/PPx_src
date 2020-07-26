@@ -61,6 +61,45 @@ STDMETHODIMP_(ULONG) CImpIDataObject::Release(void)
 	return tempCount;
 }
 
+void CImpIDataObject::OnCache(void)
+{
+	TCHAR backpath[VFPS];
+
+	// 未展開 && マウスボタンが離れていたら展開する
+	if ( (m_arcmode == TRUE) &&
+		!((::GetAsyncKeyState(VK_LBUTTON) |
+			::GetAsyncKeyState(VK_RBUTTON)) & KEYSTATE_PUSH) ){
+		m_arcmode = -1;
+		PPcUnpackForAction(m_cinfo, m_arctemp, UFA_EXTRACT);
+	}
+
+	if ( IsTrue(m_arcmode) ){
+		m_cinfo->UnpackFix = TRUE;
+		tstrcpy(backpath, m_cinfo->RealPath);
+		tstrcpy(m_cinfo->RealPath, m_arctemp);
+	}
+	for ( int i = 0; i < m_cFormatsAvailable; i++ ){
+		if ( m_strStgMedium[i].tymed == 0 ){
+			if ( m_strFormatEtc[i].cfFormat == CF_xSHELLIDLIST ){
+				m_strStgMedium[i].hGlobal = ::CreateShellIdList(m_cinfo);
+			} else if ( m_strFormatEtc[i].cfFormat == CF_HDROP ){
+				m_strStgMedium[i].hGlobal = ::CreateHDrop(m_cinfo);
+			} else if ( m_strFormatEtc[i].cfFormat == CF_TTEXT ){
+				m_strStgMedium[i].hGlobal = ::CreateHText(m_cinfo);
+			}else{
+				continue;
+			}
+			m_strStgMedium[i].tymed = TYMED_HGLOBAL;
+			m_strStgMedium[i].pUnkForRelease = NULL;
+
+		}
+	}
+	if ( IsTrue(m_arcmode) ){
+		m_cinfo->UnpackFix = FALSE;
+		tstrcpy(m_cinfo->RealPath, backpath);
+	}
+}
+
 //------------------------------------- 主要部分 ------------------------------
 STDMETHODIMP CImpIDataObject::GetData(LPFORMATETC pFE, LPSTGMEDIUM pSM)
 {
@@ -75,7 +114,7 @@ STDMETHODIMP CImpIDataObject::GetData(LPFORMATETC pFE, LPSTGMEDIUM pSM)
 				m_arcmode = -1;
 				PPcUnpackForAction(m_cinfo, m_arctemp, UFA_EXTRACT);
 			}
-			if ( m_strStgMedium[i].tymed ){
+			if ( m_strStgMedium[i].tymed != 0 ){
 				pSM->tymed = m_strStgMedium[i].tymed;
 				pSM->pUnkForRelease = m_strStgMedium[i].pUnkForRelease;
 
@@ -95,7 +134,6 @@ STDMETHODIMP CImpIDataObject::GetData(LPFORMATETC pFE, LPSTGMEDIUM pSM)
 
 				if ( (UINT)pFE->cfFormat == CF_xSHELLIDLIST ){
 					pSM->hGlobal = ::CreateShellIdList(m_cinfo);
-
 				} else if ( pFE->cfFormat == CF_HDROP ){
 					pSM->hGlobal = ::CreateHDrop(m_cinfo);
 				} else if ( pFE->cfFormat == CF_TTEXT ){

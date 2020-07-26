@@ -85,6 +85,7 @@
 
 #define LOGLINES_MAX 3000		// 共用ログの最大行数
 #define LOGLINES_DELETE 1000	// 削除するときに残す行数
+#define DEF_X_svsz (10000000)	// 10M ※lowsp なら 4000000
 // ============================================================================
 #if 0
 #define DEBUGLOGF(message, param) XMessage(NULL, NULL, XM_DbgLOG, T(message), param)
@@ -247,6 +248,102 @@ typedef struct {
 #define PPC_HIGHLIGHT_COLORS 7
 #define PPV_HIGHLIGHT_COLORS 8
 
+//------------------------------------- *file 関連
+#pragma pack(push, 1)
+typedef struct {			// カスタマイズ内容(X_fopt)
+							// Same Name Action -------------------------------
+	int		sameSW;			// (ALL&W)同名ファイルの対処方法が設定済みなら !0
+	int		same;			// 同名ファイルの対処方法 FOPSAME_ 関連
+							// Name Filter ------------------------------------
+	int		chrcase;		// 1:大文字化 2:小文字化
+	int		sfn;			// 1:8.3
+	int		delspc;			// !0:空白削除
+	DWORD	filter;			// VFSFOP_FILTER_
+							// Attributes -------------------------------------
+	DWORD	AtrMask;		// And 指定用
+	DWORD	AtrFlag;		// Or 指定用
+							// Etc --------------------------------------------
+	int		mode;			// FOPMODE_ 関連
+	DWORD	flags;			// VFSFOP_OPTFLAG_ 関連
+	char	aall;			// !0:auto all check
+	BYTE	firstsheet;		// 始めに開くシート FOPTAB_
+	char	useburst;		// バーストモード
+	BYTE	divide_unit;	// 分割大きさの単位
+	DWORD	divide_num;		// 分割大きさ
+	TCHAR	str[VFPS];		// ASCIIZs  1st:Dest 2nd:Rename 3rt:S.num
+} VFSFOP_OPTIONS;
+#pragma pack(pop)
+
+enum { // same の内容
+	FOPSAME_NEWDATE = 0,
+	FOPSAME_RENAME,
+	FOPSAME_OVERWRITE,
+	FOPSAME_SKIP,
+	FOPSAME_ARCHIVE,
+	FOPSAME_ADDNUMBER,
+	FOPSAME_APPEND,
+	FOPSAME_SIZE,
+	FOPSAME_MAX
+};
+enum { // mode の内容
+	FOPMODE_MOVE = 0,
+	FOPMODE_COPY,
+	FOPMODE_MIRROR,
+	FOPMODE_SHORTCUT,
+	FOPMODE_LINK,
+	FOPMODE_DELETE,
+	FOPMODE_UNDO,
+	FOPMODE_SYMLINK,
+	FOPMODE_MAX
+};
+// flags の内容
+#define VFSFOP_OPTFLAG_SKIPERROR	B0	// 軽微エラーの無視
+#define VFSFOP_OPTFLAG_FLATMODE		B1	// 平坦化
+#define VFSFOP_OPTFLAG_AUTOROFF		B2	// ReadOnlyの自動解除
+#define VFSFOP_OPTFLAG_BACKUPOLD	B3	// 削除・上書きファイルの保存
+
+#define VFSFOP_OPTFLAG_UNDOLOG		B4	// Undo用ログを出力
+#define VFSFOP_OPTFLAG_LOGWINDOW	B5	// ログウィンドウに経過表示
+#define VFSFOP_OPTFLAG_LOGRWAIT		B6	// ログ表示したときに結果表示待機しない
+#define VFSFOP_OPTFLAG_QSTART		B7	// 順序待ちしない
+
+#define VFSFOP_OPTFLAG_NOCOUNT		B8	// カウントしない
+#define VFSFOP_OPTFLAG_SECURITY		B9	// セキュリティコピー
+#define VFSFOP_OPTFLAG_SACL			B10	// 監査コピー
+#define VFSFOP_OPTFLAG_LOWPRI		B11	// 優先順位を低くする
+
+#define VFSFOP_OPTFLAG_NOWCREATEDIR	B12	// ディレクトリ作成警告無し
+#define VFSFOP_OPTFLAG_PREVENTSLEEP	B13	// スリープ抑制
+#define VFSFOP_OPTFLAG_ALLOWDECRYPT	B14	// 暗号化非対応ドライブへの暗号化ファイルのコピーを許可
+#define VFSFOP_OPTFLAG_NOWDELEXIST	B15	// サブディレクトリ内の存在警告なし
+
+#define VFSFOP_OPTFLAG_KEEPDIR		B16	// 作成元の階層を再現(srcがListFileの時)
+#define VFSFOP_OPTFLAG_JOINBATCH	B17	// 分割時に元に戻す為のバッチを生成
+#define VFSFOP_OPTFLAG_ADDNUMDEST	B18	// 上書きファイル元の名前変更
+#define VFSFOP_OPTFLAG_NOFIRSTEXIST	B19	// 開始時に処理先存在チェックをしない
+
+#define VFSFOP_OPTFLAG_SYMCOPY_SHIFT	20
+#define VFSFOP_OPTFLAG_SYMCOPY_SYM	B20	// シンボリックリンクのリンク コピー
+#define VFSFOP_OPTFLAG_SYMCOPY_FILE	B21	// シンボリックリンクのファイル コピー
+#define VFSFOP_OPTFLAG_SYMDEL_SHIFT	22
+#define VFSFOP_OPTFLAG_SYMDEL_SYM	B22	// シンボリックリンクを解除
+#define VFSFOP_OPTFLAG_SYMDEL_FILE	B23	// シンボリックリンク内ファイルを削除
+
+#define VFSFOP_OPTFLAG_WAIT_CLOSE	B24	// 移動時使用終了を待つ
+#define VFSFOP_OPTFLAG_IFILEOP		B25	// IFileOperation を使用する
+
+//#define VFSFOP_OPTFLAG_DELDELAY		// 未 Delaymode
+//#define VFSFOP_OPTFLAG_SUBSTREAM		// 未 サブストリームも必ず処理
+//#define VFSFOP_OPTFLAG_NOSUBSTREAM	// 未 サブストリームも必ず処理
+// 未 FLATMODE/BACKUPOLD dir名付加
+
+// filter の内容
+#define VFSFOP_FILTER_DELNUM		B0
+#define VFSFOP_FILTER_NOFILEFILTER	B1
+#define VFSFOP_FILTER_NODIRFILTER	B2
+#define VFSFOP_FILTER_EXTRACTNAME	B3
+#define VFSFOP_FILTER_NOEXTFILTER	B4
+
 //------------------------------------- PPb 関連
 #define PPBBOOTSYNC "PPbS" // PPbの起動時同期に使用するイベント名
 
@@ -370,10 +467,16 @@ typedef enum {
 //------------------------------------- 言語切り替え可能なメッセージ
 #define MESTEXTIDLEN 4
 #define MES_IDD_FOP	T("7020|")
+#define MESN_UARE	T("7062|&Use all reaction")
+#define MESN_REND	T("7068|Rename file on dest.(&V)")
+#define MESN_FRONT	T("78C5|&Front")
+#define MESN_ROMA	T("78C6|R&oma")
+
 #define MES_ACET	T("ACET|\n, and %d application")
 #define MES_ADHD	T("ADHD|This file is using by applications;\n")
 #define MES_ADTE	T("ADTE|Enter a title")
 #define MES_AICP	T("AICP|Add check pattern")
+#define MES_ASTL	T("ASTL|Add start list")
 #define MES_BRAK	T("BRAK|Job breaked")
 #define MES_BREX	T("BREX|Need regexp library")
 #define MES_BUSY	T("BUSY|Busy...")
@@ -599,9 +702,11 @@ typedef enum {
 
 #define MES_IPAG	T("IPAG|multi page")
 #define MES_ISEA	T("ISEA|Incremental search mode")
-#define MES_ITCM	T("ITCM|&T:comment")
-#define MES_ITFC	T("ITFC|&T:file+c")
-#define MES_ITFN	T("ITFN|&T:filename")
+#define MES_ITCM	T("ITCM|Comment(&C)")
+#define MES_ITFE	T("ITFE|name ext.(&E)")
+#define MES_ITFN	T("ITFN|Filename(&N)")
+#define MES_ITMA	T("ITMA|All Mark(&A)")
+#define MES_ITMO	T("ITMO|Check Mark(&M)")
 
 #define MES_JLER	T("JLER|ERROR>")
 #define MES_JLEX	T("JLEX|exec>")
@@ -916,6 +1021,8 @@ typedef enum {
 //#define NOES	any mach 1.28廃止
 //#define ERED	Read error 1.28廃止
 //#define 7883	一時設定 1.70 ボタン→ボタンメニューに変更
+//#define 78C5	前方一致&F 1.74 廃止
+//#define ITFC	file+c 1.74 廃止
 
 /* 初期カスタマイズ内で使用している項目
 	MES_CDAT	MES_CDCM	MES_CDD1	MES_CDD2	MES_CDFN	MES_CDI1	.

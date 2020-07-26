@@ -1240,9 +1240,9 @@ void MakeListFileCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 				continue;
 			}
 		}// ƒIƒvƒVƒ‡ƒ“
-		switch ( GetStringCommand(&param, T("NORMAL\0") T("MARKED\0") T("MARKTAG\0") T("NAME\0") T("BASIC\0") T("COMMENT\0") T("MESSAGE\0") T("NOHEADER\0")) ){
-			case 0:
-				flags = WLFC_COMMAND_DEFAULT;
+		switch ( GetStringCommand(&param, T("NORMAL\0") T("MARKED\0") T("MARKTAG\0") T("NAME\0") T("BASIC\0") T("COMMENT\0") T("MESSAGE\0") T("NOHEADER\0") T("UTF8\0") T("UTF8BOM\0")) ){
+			case 0: // normal
+				flags = FormatResetWLFC(flags) | WLFC_COMMAND_DEFAULT;
 				break;
 
 			case 1: // marked
@@ -1254,11 +1254,11 @@ void MakeListFileCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 				break;
 
 			case 3: // name
-				flags = WLFC_NAMEONLY;
+				flags = FormatResetWLFC(flags) | WLFC_NAMEONLY;
 				break;
 
 			case 4: // basic
-				flags = 0;
+				flags = FormatResetWLFC(flags) | WLFC_DETAIL;
 				break;
 
 			case 5: // comment
@@ -1273,6 +1273,13 @@ void MakeListFileCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 				flags |= WLFC_NOHEADER;
 				break;
 
+			case 8: // utf8
+				flags |= WLFC_UTF8;
+				break;
+
+			case 9: // utf8bom
+				flags |= WLFC_UTF8 | WLFC_BOM;
+				break;
 		}
 		if ( NextParameter(&param) == FALSE ) break;
 	}
@@ -1642,6 +1649,21 @@ void MaskPathCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 	read_entry(cinfo, mode ? RENTRY_USEPATHMASK : RENTRY_NOUSEPATHMASK);
 }
 
+void PPcEllipsisType(PPC_APPINFO *cinfo, const TCHAR *param) // *ellipsis
+{
+	int mode;
+
+	mode = GetStringCommand(&param, T("END\0") T("TOP\0") T("MID\0"));
+	if ( mode < 0 ){ // toggle
+		EllipsisType++;
+		if ( EllipsisType > 2 ) EllipsisType = 0;
+	}else{
+		EllipsisType = mode;
+	}
+	UseDrawText = UsePFont || EllipsisType;
+	InvalidateRect(cinfo->info.hWnd, NULL, TRUE);
+}
+
 void CacheCommand(PPC_APPINFO *cinfo, const TCHAR *param) // *cache
 {
 	int mode;
@@ -1656,12 +1678,12 @@ void CacheCommand(PPC_APPINFO *cinfo, const TCHAR *param) // *cache
 
 	LoadLs(cinfo->path, &ls);
 
-	if ( mode == -1 ){
+	if ( mode == -1 ){ // toggle
 		ls.dset.flags = (WORD)((ls.dset.flags & ~DSET_ASYNCREAD) ^ DSET_CACHEONLY);
 		mode = (ls.dset.flags & DSET_CACHEONLY) ? 1 : 0;
-	}else if ( mode == 2 ){
+	}else if ( mode == 2 ){ // async
 		ls.dset.flags = (WORD)((ls.dset.flags & ~DSET_CACHEONLY) | DSET_ASYNCREAD);
-	}else if ( mode ){
+	}else if ( mode ){ // on
 		ls.dset.flags = (WORD)((ls.dset.flags & ~DSET_ASYNCREAD) | DSET_CACHEONLY);
 	}else{
 		resetflag(ls.dset.flags, DSET_CACHEONLY);
@@ -1685,7 +1707,7 @@ ERRORCODE AutoDragDropCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 	TCHAR paramtmp[VFPS];
 	const TCHAR *src = NULL;
 	HWND hWnd;
-	DWORD droptype = AUTODD_HOOK | AUTODD_LEFT;
+	DWORD droptype = DROPTYPE_HOOK | DROPTYPE_LEFT;
 
 	if ( ('\0' == GetCommandParameter(&param, paramtmp, TSIZEOF(paramtmp))) || (paramtmp[0] == '\0') ){
 		hWnd = NULL;
@@ -1705,7 +1727,7 @@ ERRORCODE AutoDragDropCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 	if ( IsTrue(NextParameter(&param)) ){
 		if ( (*param == 'R') || (*param == 'r') ){
 			param++;
-			droptype = AUTODD_HOOK | AUTODD_RIGHT;
+			droptype = DROPTYPE_HOOK | DROPTYPE_RIGHT;
 		}
 		if ( IsTrue(NextParameter(&param)) ){
 			GetCommandParameter(&param, paramtmp, TSIZEOF(paramtmp));
@@ -2447,6 +2469,8 @@ ERRORCODE PPcGetIInfo_Command(PPC_APPINFO *cinfo, PPXAPPINFOUNION *uptr)
 			PPcDockCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str, T("EXECINARC")) ){
 			OnArcPathMode(cinfo);
+		}else if ( !tstrcmp(uptr->str, T("ELLIPSIS")) ){
+			PPcEllipsisType(cinfo, param);
 		}else if ( !tstrcmp(uptr->str, T("ENTRYTIP")) ){
 			PPcEntryTip(cinfo, param);
 		}else if ( !tstrcmp(uptr->str, T("IE")) ){

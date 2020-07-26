@@ -1684,7 +1684,7 @@ BOOL DockDropBar(PPC_APPINFO *cinfo, PPXDOCK *dock, const TCHAR *name)
 
 	hChildWnd = GetBarChild(dock, name);
 	if ( hChildWnd == NULL ) return FALSE;
-	StartAutoDD(cinfo, hChildWnd, NULL, AUTODD_LEFT);
+	StartAutoDD(cinfo, hChildWnd, NULL, DROPTYPE_LEFT);
 	return TRUE;
 }
 

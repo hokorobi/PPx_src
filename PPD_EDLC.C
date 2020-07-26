@@ -11,14 +11,13 @@
 #include "CALC.H"
 #pragma hdrstop
 
-#define AllowTick 100 // 補完列挙を中止する時間
+#define OnAllowTick 100 // 補完列挙を中止する時間
 #define ThreadAllowTick 3000 // 補完列挙を中止する時間(スレッド使用時)
-#define CompListItems 100 // 一覧表示する数
-#define ModuleCompItems 100 // Search Module に補完用検索を指示する数
+#define CompListItems 100 // 一覧表示する最大数
 
 struct {
 	DWORD showtime, stoptime;
-} X_flto = { AllowTick, 0};
+} X_flto = { OnAllowTick, 0};
 
 /*
 	コンボボックスモード
@@ -214,7 +213,7 @@ BOOL MakeCompleteList(HWND hWnd, PPxEDSTRUCT *PES)
 			if ( ptr == NULL ) break;
 			SendMessage(hWnd, LB_ADDSTRING, 0, (LPARAM)ptr);
 			samelen = CheckSamelen(buf2, ptr);
-			if ( (GetTickCount() - starttime) > AllowTick ){
+			if ( (GetTickCount() - starttime) > OnAllowTick ){
 				SendMessage(hWnd, LB_ADDSTRING, 0, (LPARAM)T("more..."));
 				break;
 			}
@@ -1520,7 +1519,7 @@ void ModuleSearch(PPxEDSTRUCT *PES, LISTADDINFO *list, TCHAR *first, size_t firs
 	msearch.keyword = msg;
 #endif
 	msearch.searchtype = PES->list.WhistID | PES->list.RhistID | PPXH_SEARCH_NAMEONLY;
-	msearch.maxresults = ModuleCompItems;
+	msearch.maxresults = PPXMSEARCH_SHORTRESULT;
 	smca.info.Function = (PPXAPPINFOFUNCTION)SearchCReportModuleFunction;
 	smca.info.Name = T("Edit");
 	smca.info.RegID = NilStr;
@@ -1691,7 +1690,7 @@ DWORD WINAPI KeyStepFillMain(KEYSTEPFILLMAIN_INFO *ksfinfo)
 		if ( (DWORD)SendMessage(hWnd, WM_GETTEXT,
 				CMDLINESIZE, (LPARAM)&linebuf) >= CMDLINESIZE ){
 			DWORD getlen = (DWORD)SendMessage(hWnd, WM_GETTEXTLENGTH, 0, 0);
-			if ( (getlen >= 0x20000) || (OSver.dwMajorVersion < 6) ) goto fin2;
+			if ( (getlen >= 0x20000) || (WinType < WINTYPE_VISTA) ) goto fin2;
 			line = (TCHAR *)HeapAlloc(DLLheap, 0, TSTROFF(getlen) + CMDLINESIZE);
 			if ( line == NULL ) goto fin2;
 			SendMessage(hWnd, WM_GETTEXT, getlen + 8, (LPARAM)line);
@@ -1928,6 +1927,9 @@ fin2:
 
 void CancelListThread(PPxEDSTRUCT *PES)
 {
+	#define ThreadChkSleepTime 20
+	int WaitTimer = 8000 / ThreadChkSleepTime;
+
 	PES->ActiveListThreadID = 0;
 
 	for ( ;; ){
@@ -1940,7 +1942,8 @@ void CancelListThread(PPxEDSTRUCT *PES)
 //			TranslateMessage(&msg); // wm_char 不要
 			DispatchMessage(&msg);
 		}
-		Sleep(20);
+		Sleep(ThreadChkSleepTime);
+		if ( --WaitTimer <= 0 ) break;
 	}
 }
 
@@ -1997,8 +2000,8 @@ void KeyStepFill(PPxEDSTRUCT *PES, BOOL histmode)
 		GetCustData(T("X_flto"), &X_flto, sizeof(X_flto));
 
 		#ifndef _WIN64
-		if ( OSver.dwMajorVersion < 5 ) {
-			X_flto.stoptime = AllowTick;
+		if ( WinType < WINTYPE_2000 ) {
+			X_flto.stoptime = OnAllowTick;
 		}else
 		#endif
 		{
@@ -2008,7 +2011,7 @@ void KeyStepFill(PPxEDSTRUCT *PES, BOOL histmode)
 
 	#ifndef WINEGCC
 	#ifndef _WIN64
-	if ( OSver.dwMajorVersion >= 5 ) // 次の行に続く
+	if ( WinType >= WINTYPE_2000 ) // 次の行に続く
 	#endif
 	{
 		HANDLE hThread;

@@ -101,8 +101,8 @@ void DrawSymbol(PAINTSTRUCT *ps, HFONT *nowfont, RECT *box, const char *ansi, co
 void PaintText(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 {
 	int y, CharX;
-	BYTE buf[TEXTBUFSIZE], *drawp;
-	WCHAR wbuf[TEXTBUFSIZE];
+	BYTE *drawp;
+	WCHAR wbuf[MAXLINELENGTH];
 	POINT LP, FP;
 	int Rx;
 	RECT box;
@@ -178,8 +178,8 @@ void PaintText(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 				newline = y + VOi->offY + 1;
 			}
 			DxSetTextColor(DxDraw, pps->ps.hdc, (line == newline) ? CV_lnum[1] : CV_lnum[0]);
-			DxTextOutRel(DxDraw, pps->ps.hdc, (TCHAR *)buf,
-				wsprintf((TCHAR *)buf, T("%5d "), newline) );
+			DxTextOutRel(DxDraw, pps->ps.hdc, (TCHAR *)wbuf,
+				wsprintf((TCHAR *)wbuf, T("%5d "), newline) );
 			line = newline;
 
 			if ( y == pps->drawYtop ){
@@ -243,7 +243,7 @@ void PaintText(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 	}
 	normalfont = XV_unff ? hUnfixedFont : hBoxFont;
 
-	mti.destbuf = buf;
+	InitMakeTextInfo(&mti);
 	mti.srcmax = mtinfo.img + mtinfo.MemSize;
 	mti.writetbl = FALSE;
 	mti.paintmode = TRUE;
@@ -327,7 +327,7 @@ void PaintText(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 			}else{
 				VOi->MakeText(&mti, &VOi->ti[showy]);
 			}
-			drawp = buf;
+			drawp = mti.destbuf;
 		}
 
 		while( *drawp != VCODE_END ){
@@ -392,7 +392,7 @@ void PaintText(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 						int wlength;
 
 						wlength = MultiByteToWideChar(CP_LATIN1, 0,
-								(LPCSTR)drawp, length, wbuf, TEXTBUFSIZE);
+								(LPCSTR)drawp, length, wbuf, TSIZEOFW(wbuf));
 						DrawSelectedTextW(pps->ps.hdc, &pps->si, (WCHAR *)wbuf, wlength, CharX, y);
 #endif
 					}else if ( VO_CodePage && VO_CodePageValid ){
@@ -400,7 +400,7 @@ void PaintText(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 						// UTF7/8を表示するには、フラグ指定をなくす必要がある
 						// UTF7/8指定はコード変換専用のようだ
 						wlength = MultiByteToWideChar(VO_CodePage, 0,
-								(LPCSTR)drawp, length, wbuf, TEXTBUFSIZE);
+								(LPCSTR)drawp, length, wbuf, TSIZEOFW(wbuf));
 						DrawSelectedTextW(pps->ps.hdc, &pps->si, (WCHAR *)wbuf, wlength, CharX, y);
 
 					}else{
@@ -661,6 +661,7 @@ void PaintText(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 			DeleteObject(hB);
 		}
 	}
+	ReleaseMakeTextInfo(&mti);
 	DxSetTextAlign(pps->ps.hdc, TA_LEFT | TA_TOP | TA_NOUPDATECP);	// CP を無効に
 }
 
@@ -700,7 +701,7 @@ void DrawSelectedTextW(HDC hDC, SELINFO *si, WCHAR *text, int length, int charX,
 	}
 
 	left = ( offsetY != VOsel.bottomOY ) ? 0 : VOsel.bottom.x.offset;
-	right = ( offsetY != VOsel.topOY ) ? TEXTBUFSIZE : VOsel.top.x.offset;
+	right = ( offsetY != VOsel.topOY ) ? MAXLINELENGTH : VOsel.top.x.offset;
 									// 選択範囲より左…非選択で表示
 	if ( (charX + length) <= left ){
 		DxSetTextColor(DxDraw, hDC, si->fg);
@@ -757,9 +758,9 @@ void TextFixOut(HDC hDC, char *str, int len)
 #ifdef UNICODE
 	{ // ※ 欧文フォントを使っていると、日本語フォントをフォントリンクで
 	  //    指定しても全て欧文フォントが使用されるのでUNICODEに変換する
-		WCHAR wbuf[TEXTBUFSIZE];
+		WCHAR wbuf[MAXLINELENGTH];
 
-		len = MultiByteToWideChar(CP_ACP, 0, str, len, wbuf, TEXTBUFSIZE);
+		len = MultiByteToWideChar(CP_ACP, 0, str, len, wbuf, TSIZEOFW(wbuf));
 		DxTextOutRelW(DxDraw, hDC, wbuf, len);
 	}
 	return;
@@ -805,7 +806,7 @@ void DrawSelectedTextA(HDC hDC, SELINFO *si, char *text, int length, int charX, 
 	}
 
 	left = ( offsetY != VOsel.bottomOY ) ? 0 : VOsel.bottom.x.offset;
-	right = ( offsetY != VOsel.topOY ) ? TEXTBUFSIZE : VOsel.top.x.offset;
+	right = ( offsetY != VOsel.topOY ) ? MAXLINELENGTH : VOsel.top.x.offset;
 									// 選択範囲より左…非選択で表示
 	if ( (charX + length) <= left ){
 		DxSetTextColor(DxDraw, hDC, si->fg);

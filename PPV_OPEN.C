@@ -538,11 +538,58 @@ GetDWORDfunc InitTIFF(GETPAGESTRUCT *gpage)
 	return GetDword;
 }
 
-HILIGHTKEYWORD *LoadDefaultHighlight(ThSTRUCT *mem, const TCHAR *filename, const TCHAR *ext)
+BOOL AddHighlight(ThSTRUCT *mem, const TCHAR *keyword, COLORREF color, int extend)
+{
+	HILIGHTKEYWORD *hks;
+
+	int sizeA, sizeW;
+	size_t bsize;
+#define HKEYMAX 100
+#ifdef UNICODE
+	#define strA bufA
+	#define strW keyword
+	char bufA[HKEYMAX];
+#else
+	#define strA keyword
+	#define strW bufW
+	WCHAR bufW[HKEYMAX];
+#endif
+									// 文字コードを２つ用意
+#ifdef UNICODE
+	UnicodeToAnsi(keyword, bufA, HKEYMAX);
+	bufA[HKEYMAX - 1] = '\0';
+	sizeA = strlen32(bufA) + 1;
+	sizeW = (strlenW32(keyword) + 1) * sizeof(WCHAR);
+#else
+	AnsiToUnicode(keyword, bufW, HKEYMAX);
+	bufW[HKEYMAX - 1] = '\0';
+	sizeA = strlen(keyword) + 1;
+	sizeW = (strlenW(bufW) + 1) * sizeof(WCHAR);
+#endif
+									// 保存する
+	bsize = sizeof(HILIGHTKEYWORD) + sizeW + ((sizeA + 1) & 0xfffe);
+	if ( ThSize(mem, bsize) != FALSE ){
+		hks = (HILIGHTKEYWORD *)ThLast(mem);
+		hks->next = (HILIGHTKEYWORD *)(LONG_PTR)bsize;
+		hks->ascii = (const char *)(size_t)(sizeW);
+		hks->wide = 0;
+		hks->color = color;
+		hks->extend = extend;
+		memcpy((char *)(hks + 1) + sizeW, strA, sizeA);
+		memcpy((char *)(hks + 1), strW, sizeW);
+		mem->top += bsize;
+		return TRUE;
+	}else{ // 確保失敗
+		return FALSE;
+	}
+#undef strA
+#undef strW
+}
+
+BOOL LoadDefaultHighlight(ThSTRUCT *mem, const TCHAR *filename, const TCHAR *ext)
 {
 	TCHAR tmp[0x400];
 	const TCHAR *tmpp;
-	HILIGHTKEYWORD *hks = NULL;
 	int count = 0;
 	int check = 0;
 
@@ -561,25 +608,18 @@ HILIGHTKEYWORD *LoadDefaultHighlight(ThSTRUCT *mem, const TCHAR *filename, const
 		if ( check ) break;
 		count++;
 	}
-	if ( check == 0 ) return NULL; // 該当無し
+	if ( check == 0 ) return FALSE; // 該当無し
 
 	tmp[0] = '\0';
 	EnumCustTable(count, T("CV_hkey"), tmp, tmp, sizeof(tmp));
-	if ( tmp[0] == '\0' ) return NULL; // 中身無し
+	if ( tmp[0] == '\0' ) return FALSE; // 中身無し
 
 	tmpp = tmp;
 	for ( ;; ){
 		TCHAR *nextp;
-		int sizeA, sizeW, size, color, extend;
-#ifdef UNICODE
-		#define strA bufA
-		#define strW tmpp
-		char bufA[100];
-#else
-		#define strA tmpp
-		#define strW bufW
-		WCHAR bufW[100];
-#endif
+		COLORREF color;
+		int extend;
+
 		nextp = tstrchr(tmpp, '\n');
 		if ( nextp != NULL ) *nextp++ = '\0';
 		if ( *tmpp == '\0' ) break;
@@ -601,35 +641,12 @@ HILIGHTKEYWORD *LoadDefaultHighlight(ThSTRUCT *mem, const TCHAR *filename, const
 									// 色を取得
 		color = GetColor(&tmpp, TRUE);
 		if ( SkipSpace(&tmpp) == ',' ) tmpp++;
-									// キーワードを取得 & 文字コードを２つ用意
-#ifdef UNICODE
-		UnicodeToAnsi(tmpp, bufA, 100);
-		sizeA = strlen32(bufA) + 1;
-		sizeW = (strlenW32(tmpp) + 1) * sizeof(WCHAR);
-#else
-		AnsiToUnicode(tmpp, bufW, 100);
-		sizeA = strlen(tmpp) + 1;
-		sizeW = (strlenW(bufW) + 1) * sizeof(WCHAR);
-#endif
-									// 保存する
-		size = sizeof(HILIGHTKEYWORD) + sizeW + ((sizeA + 1) & 0xfffe);
-		ThSize(mem, size + sizeof(HILIGHTKEYWORD *));
-		hks = (HILIGHTKEYWORD *)ThLast(mem);
-		hks->next = (HILIGHTKEYWORD *)(LONG_PTR)size;
-		hks->ascii = (const char *)(size_t)(sizeW);
-		hks->wide = 0;
-		hks->color = color;
-		hks->extend = extend;
-		memcpy((char *)(hks + 1) + sizeW, strA, sizeA);
-		memcpy((char *)(hks + 1), strW, sizeW);
-		mem->top += size;
 
+		if ( AddHighlight(mem, tmpp, color, extend) == FALSE ) break;
 		if ( nextp == NULL ) break;
 		tmpp = nextp;
 	}
-	return hks;
-#undef strA
-#undef strW
+	return TRUE;
 }
 
 void LoadHighlight(VFSFILETYPE *vft)
@@ -641,46 +658,17 @@ void LoadHighlight(VFSFILETYPE *vft)
 	int colorcount = 0;
 
 	if ( X_hkey != NULL ) HeapFree( PPvHeap, 0, X_hkey );
-	X_hkey = hks = NULL;
+	X_hkey = NULL;
 	ThInit(&mem);
 
 	// 一時ハイライト設定を取得
 	textp = ThGetString(NULL, T("Highlight"), NULL, 0);
 	if ( textp != NULL ) while ( GetLineParam(&textp, buf) >= ' ' ){
-		int sizeA, sizeW, size, color;
-#ifdef UNICODE
-		#define strA bufA
-		#define strW buf
-		char bufA[100];
-#else
-		#define strA buf
-		#define strW bufW
-		WCHAR bufW[100];
-#endif
-									// キーワードを取得 & 文字コードを２つ用意
-#ifdef UNICODE
-		UnicodeToAnsi(buf, bufA, 100);
-		sizeA = strlen32(bufA) + 1;
-		sizeW = (strlenW32(buf) + 1) * sizeof(WCHAR);
-#else
-		AnsiToUnicode(buf, bufW, 100);
-		sizeA = strlen(buf) + 1;
-		sizeW = (strlenW(bufW) + 1) * sizeof(WCHAR);
-#endif
+		COLORREF color;
+
 		color = CV_hili[colorcount + 1];
 		colorcount = (colorcount + 1) & 7;
-									// 保存する
-		size = sizeof(HILIGHTKEYWORD) + sizeW + ((sizeA + 1) & 0xfffe);
-		ThSize(&mem, size + sizeof(HILIGHTKEYWORD *));
-		hks = (HILIGHTKEYWORD *)ThLast(&mem);
-		hks->next = (HILIGHTKEYWORD *)(LONG_PTR)size;
-		hks->ascii = (const char *)(size_t)(sizeW);
-		hks->wide = 0;
-		hks->color = color;
-		hks->extend = HILIGHTKEYWORD_R;
-		memcpy((char *)(hks + 1) + sizeW, strA, sizeA);
-		memcpy((char *)(hks + 1), strW, sizeW);
-		mem.top += size;
+		if ( AddHighlight(&mem, buf, color, HILIGHTKEYWORD_R) == FALSE ) break;
 	}
 
 	// デフォルトのハイライト設定を取得
@@ -688,25 +676,32 @@ void LoadHighlight(VFSFILETYPE *vft)
 	ext = fname + FindExtSeparator(fname);
 	if ( *ext == '.' ) ext++;
 
-	if ( (hks = LoadDefaultHighlight(&mem, fname, ext)) == NULL ){
-		if ( (vft->type[0] == '\0') || ((hks = LoadDefaultHighlight(&mem, NULL, vft->type)) == NULL) ){
-			hks = LoadDefaultHighlight(&mem, NULL, T("*"));
+	if ( LoadDefaultHighlight(&mem, fname, ext) == FALSE ){
+		if ( (vft->type[0] == '\0') || (LoadDefaultHighlight(&mem, NULL, vft->type) == FALSE) ){
+			LoadDefaultHighlight(&mem, NULL, T("*"));
 		}
 	}
-
 	// ハイライト最終処理
-	if ( hks != NULL ) hks->next = NULL;
+	hks = (HILIGHTKEYWORD *)mem.bottom;
+	if ( hks != NULL ){				// ポインタを正規化する
+		HILIGHTKEYWORD *hkslast;
 
-	if ( mem.bottom != NULL ){				// ポインタを正規化する
-		HILIGHTKEYWORD *hks;
-
-		hks = X_hkey = (HILIGHTKEYWORD *)mem.bottom;
+		if ( mem.top < sizeof(HILIGHTKEYWORD) ){
+			ThFree(&mem);
+			return;
+		}
+		hkslast = (HILIGHTKEYWORD *)ThLast(&mem);
+		X_hkey = hks;
 		for ( ;; ){
-			hks->ascii = (const char *)(char *)((char *)hks + sizeof(HILIGHTKEYWORD) + (size_t)hks->ascii);
 			hks->wide = (const WCHAR *)(char *)((char *)hks + sizeof(HILIGHTKEYWORD));
-			if ( hks->next == NULL ) break;
+			hks->ascii = (const char *)(char *)((char *)hks + sizeof(HILIGHTKEYWORD) + (size_t)hks->ascii);
 			hks->next = (HILIGHTKEYWORD *)(char *)((char *)hks + (size_t)hks->next);
-			hks = hks->next;
+			if ( hks->next < hkslast ){
+				hks = hks->next;
+				continue;
+			}
+			hks->next = NULL;
+			break;
 		}
 	}
 }
@@ -1387,6 +1382,7 @@ HANDLE vOpenFile(const TCHAR *filename, const TCHAR **wp, const TCHAR **dllp)
 							memcpy(vo_.file.image, textimage, memsize);
 							memset(vo_.file.image + memsize, 0, FILEBUFMARGIN);
 							tstrcpy(vo_.file.source, filename);
+							vo_.file.sourcefrom = SOURCEFROM_FILENAME;
 							FileDivideMode = FDM_FORCENODIV;
 
 							vo_.file.ImageSize = memsize;
@@ -1540,6 +1536,7 @@ BOOL OpenViewHttp(const TCHAR *filename)
 	FileRealSize.LowPart = vo_.file.UseSize = datasize;
 	FileRealSize.HighPart = 0;
 	tstrcpy(vo_.file.source, filename);
+	vo_.file.sourcefrom = SOURCEFROM_FILENAME;
 	return TRUE;
 }
 
@@ -1645,7 +1642,7 @@ BOOL OpenViewFile(const TCHAR *filename, int flags)
 	}
 
 	if ( flags & PPV_HEADVIEW ){
-		DWORD X_svsz = 2097152;
+		DWORD X_svsz = DEF_X_svsz;
 
 		GetCustData(T("X_svsz"), &X_svsz, sizeof(X_svsz));
 		if ( vo_.file.UseSize > X_svsz ){
@@ -1666,7 +1663,7 @@ BOOL OpenViewFile(const TCHAR *filename, int flags)
 
 		if ( (FileDivideMode >= FDM_DIV2ND) ||
 			 FileRealSize.HighPart ||
-			 (FileRealSize.LowPart >= ((DWORD)1 * GB)) ){
+			 (FileRealSize.LowPart >= PPV_MAX_VIEWSIZE) ){
 			result = IDYES;
 		}else if ( FileDivideMode == FDM_FORCENODIV ){
 			result = IDNO;

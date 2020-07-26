@@ -287,11 +287,11 @@ case 'P':
 			GETDLLPROCT(hWinmm, sndPlaySound);
 		}
 		if ( DsndPlaySound != NULL ){
-			if ( PlayWave ){
-				PlayWave = FALSE;
+			if ( UsePlayWave ){
+				UsePlayWave = FALSE;
 				DsndPlaySound(NULL, 0);
 			}else{
-				PlayWave = TRUE;
+				UsePlayWave = TRUE;
 				DsndPlaySound((LPCTSTR)vo_.file.image,
 						SND_ASYNC | SND_NODEFAULT | SND_MEMORY);
 			}

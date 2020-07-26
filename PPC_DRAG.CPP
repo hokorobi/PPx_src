@@ -169,22 +169,24 @@ void MarkDragArea(PPC_APPINFO *cinfo, RECT *area, int markmode)
 				indexmax -= cinfo->cel.Area.cy;
 			}
 		}
+		if ( index < 0 ) index = 0;
+		if ( indexmax >= cinfo->e.cellIMax ) indexmax = cinfo->e.cellIMax - 1;
 
 		for ( ; index <= indexmax ; index++){
 #if FREEPOSMODE
-			if ( (index >= 0) && (index < cinfo->e.cellIMax) && (CEL(index).pos.x == NOFREEPOS) ){
-#else
-			if ( (index >= 0) && (index < cinfo->e.cellIMax) ){
-#endif
+			if ( CEL(index).pos.x == NOFREEPOS ){
 				CellMark(cinfo, index, markmode);
 			}
+#else
+			CellMark(cinfo, index, markmode);
+#endif
 		}
 	}
 #else // 箱形選択
-	for ( ; box.left <= box.right ; box.left += cinfo->cel.Area.cy){
+	for ( ; box.left <= box.right ; box.left += cinfo->cel.Area.cy ){
 		ENTRYINDEX index, y;
 
-		for ( y = box.top ; y <= box.bottom ; y++){
+		for ( y = box.top ; y <= box.bottom ; y++ ){
 			index = cinfo->cellWMin + box.left + y;
 #if FREEPOSMODE
 			if ( (index >= 0) && (index < cinfo->e.cellIMax) && (CEL(index).pos.x == NOFREEPOS) ){
@@ -208,7 +210,7 @@ void MoreDrag(PPC_APPINFO *cinfo)
 	DWORD XC_mdd = 1;
 
 	GetCustData(T("XC_mdd"), &XC_mdd, sizeof(XC_mdd));
-	if ( !XC_mdd ) return;
+	if ( XC_mdd == 0 ) return;
 
 	::GetCursorPos(&pos);
 	hTargetWnd = ::WindowFromPoint(pos);
@@ -312,6 +314,17 @@ struct PPcDataObject {
 	int count;
 };
 
+PPcDataObject DragDataObject = {NULL, NULL, NULL, NULL, 0};
+BOOL DragData_ChangedDir = FALSE;
+
+void ForceDataObject(void)
+{
+	if ( DragDataObject.DataObject == NULL ) return;
+
+	DragData_ChangedDir = TRUE;
+	DragDataObject.CDataObject->OnCache();
+}
+
 void DestroyPPcDataObject(PPcDataObject &pdo)
 {
 	if ( pdo.DataObject != NULL ){
@@ -326,10 +339,12 @@ void DestroyPPcDataObject(PPcDataObject &pdo)
 		pdo.pSF->Release();
 		HeapFree( hProcessHeap, 0, pdo.pidls);
 	}
+	pdo.DataObject = NULL;
 }
 
 BOOL CreatePPcDataObject(PPC_APPINFO *cinfo, PPcDataObject &pdo, const TCHAR *src)
 {
+	DragData_ChangedDir = FALSE;
 	pdo.DataObject = NULL;
 	pdo.CDataObject = NULL;
 	pdo.pSF = NULL;
@@ -385,6 +400,7 @@ BOOL CreatePPcDataObject(PPC_APPINFO *cinfo, PPcDataObject &pdo, const TCHAR *sr
 			fe.cfFormat = CF_HDROP;
 			pdo.CDataObject->SetData(&fe, &stm, TRUE);
 		}
+
 		if ( GetCustXDword(T("X_tdd"), NULL, 1) ){	// CF_TEXT 形式
 			fe.cfFormat = CF_TTEXT;
 			pdo.CDataObject->SetData(&fe, &stm, TRUE);
@@ -396,24 +412,24 @@ BOOL CreatePPcDataObject(PPC_APPINFO *cinfo, PPcDataObject &pdo, const TCHAR *sr
 
 void PPcDragFile(PPC_APPINFO *cinfo)
 {
-	PPcDataObject pdo;
 	HRESULT result;
 	DWORD dwEffect;
 
 	if ( !cinfo->e.markC && (CEL(cinfo->e.cellN).type <= 3) ) return;
+	GetCustData(T("X_ddex"), &X_ddex, sizeof(X_ddex));
 
-	if ( IsTrue(CreatePPcDataObject(cinfo, pdo, NULL)) ){ // D&D 本体を実行
+	if ( IsTrue(CreatePPcDataObject(cinfo, DragDataObject, NULL)) ){ // D&D 本体を実行
 		CImpIDropSource *CDropSource;
 
 		CDropSource = new CImpIDropSource;
 		::SelfDD_hWnd = cinfo->info.hWnd;
 		::SelfDD_Dtype = cinfo->e.Dtype.mode;
-		result = ::DoDragDrop(pdo.DataObject, CDropSource,
+		result = ::DoDragDrop(DragDataObject.DataObject, CDropSource,
 				DROPEFFECT_COPY | DROPEFFECT_MOVE | DROPEFFECT_LINK |
 				DROPEFFECT_SCROLL, &dwEffect);
 		::SelfDD_hWnd = NULL;
 		CDropSource->Release();
-		DestroyPPcDataObject(pdo);
+		DestroyPPcDataObject(DragDataObject);
 
 			// ドラッグ成功 & アクション無し→テキストボックスD&Dをチャレンジ
 		if ( (result == DRAGDROP_S_DROP) && !dwEffect ){
@@ -438,7 +454,7 @@ void * GetPathInterface(HWND hWnd, const TCHAR *name, REFIID riid, const TCHAR *
 	return ifptr;
 }
 #endif
-HRESULT PPcCopyToDropTarget(IDataObject *DataObject, IDropTarget *DropTarget, BOOL droptype, HWND hTargetWnd, DWORD alloweffect)
+HRESULT PPcCopyToDropTarget(IDataObject *DataObject, IDropTarget *DropTarget, DWORD droptype, HWND hTargetWnd, DWORD alloweffect)
 {
 	POINT pos = { 0, 0 };
 	POINTL posl;
@@ -446,7 +462,7 @@ HRESULT PPcCopyToDropTarget(IDataObject *DataObject, IDropTarget *DropTarget, BO
 	DWORD keystate;
 	HRESULT result;
 
-	if ( droptype ){
+	if ( droptype & DROPTYPE_RIGHT ){
 		keystate = MK_RBUTTON;
 		if ( hTargetWnd != NULL ) SetForegroundWindow(hTargetWnd);
 	}else{
@@ -459,7 +475,7 @@ HRESULT PPcCopyToDropTarget(IDataObject *DataObject, IDropTarget *DropTarget, BO
 
 	dropeffect = alloweffect;
 	result = DropTarget->DragEnter(DataObject, keystate, posl, &dropeffect);
-	if ( FAILED(result) ) goto fin;
+	if ( FAILED(result) ) goto error;
 
 	if ( (dropeffect & alloweffect) == 0 ){
 		dropeffect = alloweffect = DROPEFFECT_COPY | DROPEFFECT_MOVE | DROPEFFECT_LINK;
@@ -473,11 +489,11 @@ HRESULT PPcCopyToDropTarget(IDataObject *DataObject, IDropTarget *DropTarget, BO
 			}
 		}
 		result = DropTarget->DragEnter(DataObject, keystate, posl, &dropeffect);
-		if ( FAILED(result) ) goto fin;
+		if ( FAILED(result) ) goto error;
 	}
 	dropeffect = alloweffect;
 	result = DropTarget->DragOver(keystate, posl, &dropeffect);
-	if ( FAILED(result) ) goto fin;
+	if ( FAILED(result) ) goto error;
 
 	if ( (dropeffect & alloweffect) == 0 ){
 		result = E_FAIL;
@@ -485,36 +501,34 @@ HRESULT PPcCopyToDropTarget(IDataObject *DataObject, IDropTarget *DropTarget, BO
 		dropeffect = alloweffect;
 		result = DropTarget->Drop(DataObject, keystate, posl, &dropeffect);
 	}
-fin:
+error:
 	if ( FAILED(result) ) PPErrorBox(hTargetWnd, NULL, result);
 	return result;
 }
 
 BOOL CopyToShnPathFiles(PPC_APPINFO *cinfo, const TCHAR *destpath, DWORD alloweffect)
 {
-	PPcDataObject pdo;
 	IDropTarget *DropTarget;
 
-	if ( CreatePPcDataObject(cinfo, pdo, NULL) == FALSE ) return FALSE;
+	if ( CreatePPcDataObject(cinfo, DragDataObject, NULL) == FALSE ) return FALSE;
 	DropTarget = (IDropTarget *)GetPathInterface(cinfo->info.hWnd, destpath, IID_IDropTarget, cinfo->path);
 	if ( DropTarget == NULL ) goto finl;
-	PPcCopyToDropTarget(pdo.DataObject, DropTarget, FALSE, NULL, alloweffect);
+	PPcCopyToDropTarget(DragDataObject.DataObject, DropTarget, DROPTYPE_LEFT, NULL, alloweffect);
 	DropTarget->Release();
 finl:
-	DestroyPPcDataObject(pdo);
+	DestroyPPcDataObject(DragDataObject);
 	return TRUE;
 }
 
 // DLL hook を利用した Auto D&D を行う
-BOOL AutoDD_UseDLL(PPC_APPINFO *cinfo, HWND hTargetWnd, const TCHAR *src, BOOL droptype)
+BOOL AutoDD_UseDLL(PPC_APPINFO *cinfo, HWND hTargetWnd, const TCHAR *src, DWORD droptype)
 {
-	PPcDataObject pdo;
 	IUnknown *UnknownCOM = NULL;
 	IDropTarget *DropTarget = NULL;
 	int trycount = 3;
 	BOOL result = FALSE;
 
-	if ( CreatePPcDataObject(cinfo, pdo, src) == FALSE ) return FALSE;
+	if ( CreatePPcDataObject(cinfo, DragDataObject, src) == FALSE ) return FALSE;
 	if ( hOleaut32 == NULL ){
 		hOleaut32 = LoadWinAPI("OLEAUT32.DLL", NULL, OLEAUT32APIS, LOADWINAPI_LOAD);
 		if ( hOleaut32 == NULL ) return FALSE;
@@ -539,8 +553,8 @@ BOOL AutoDD_UseDLL(PPC_APPINFO *cinfo, HWND hTargetWnd, const TCHAR *src, BOOL d
 		goto errorfin;
 	}
 
-	PPcCopyToDropTarget(pdo.DataObject, DropTarget, droptype, hTargetWnd,
-			DROPEFFECT_COPY | DROPEFFECT_MOVE | DROPEFFECT_LINK);
+	PPcCopyToDropTarget(DragDataObject.DataObject, DropTarget, droptype,
+			hTargetWnd, DROPEFFECT_COPY | DROPEFFECT_MOVE | DROPEFFECT_LINK);
 	result = TRUE;
 errorfin:
 	if ( DropTarget != NULL ) DropTarget->Release();
@@ -551,7 +565,7 @@ errorfin:
 	SendMessage(hTargetWnd, WM_PPXCOMMAND, KC_REVOKEADDPROC, 0);
 	PPxCommonExtCommand(KC_UNHOOKADDPROC, (WPARAM)hTargetWnd);
 finl:
-	DestroyPPcDataObject(pdo);
+	DestroyPPcDataObject(DragDataObject);
 	return result;
 }
 
@@ -582,10 +596,9 @@ void ExecSendTo(PPC_APPINFO *cinfo, const TCHAR *cmd)
 					if ( SUCCEEDED(::CoCreateInstance(hid, NULL,
 							CLSCTX_INPROC_SERVER, IID_IDropTarget,
 							(LPVOID *)&pDropTarget)) ){
-						PPcDataObject pdo;
-						if ( IsTrue(CreatePPcDataObject(cinfo, pdo, NULL)) ){
-							result = PPcCopyToDropTarget(pdo.DataObject, pDropTarget, FALSE, NULL, DROPEFFECT_COPY);
-							DestroyPPcDataObject(pdo);
+						if ( IsTrue(CreatePPcDataObject(cinfo, DragDataObject, NULL)) ){
+							result = PPcCopyToDropTarget(DragDataObject.DataObject, pDropTarget, DROPTYPE_LEFT, NULL, DROPEFFECT_COPY);
+							DestroyPPcDataObject(DragDataObject);
 						}
 						pDropTarget->Release();
 					}

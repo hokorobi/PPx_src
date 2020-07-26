@@ -543,45 +543,127 @@ void ReverseText(int len)
 	WriteConsoleOutputAttribute(hStdout, temp, len, incsearch.pos, &tempsize);
 }
 
-#define INCSEARCH_DELETE_LETTER	0
+#define INCSEARCH_LETTER	0
 #define INCSEARCH_NEXT	1
 #define INCSEARCH_FIRST	2
+#define INCSEARCH_ONSCREEN	3
+#define INCSEARCH_BACK	4
+#define INCSEARCH_LAST	5
 
 BOOL ScrIncSearch(int next)
 {
 	COORD pos;
-	TCHAR temptext[TSIZEOF(incsearch.text)];
-	int oldlen;
+	TCHAR *temptext;
+	int oldlen, posX, lastY;
+	DWORD getlen;
 
-	pos = incsearch.pos;
+	pos.X = 0;
+	pos.Y = incsearch.pos.Y;
+	posX = incsearch.pos.X;
 	oldlen = incsearch.len;
-	if ( next != INCSEARCH_DELETE_LETTER ){ // 1: 次を検索
-		pos.X++;
-		if ( next == INCSEARCH_FIRST ) pos.X = pos.Y = 0; // 2: 最初から検索
-	}else{
-		oldlen--; // 0: １文字削除
+	temptext = HeapAlloc( GetProcessHeap(), 0, TSTROFF(screen.info.dwSize.X) + sizeof(incsearch.text));
+	if ( temptext == NULL ) return FALSE;
+	if ( next >= INCSEARCH_BACK ){
+		if ( next == INCSEARCH_LAST ){
+			posX = 0;
+			pos.Y = screen.info.dwSize.Y;
+		}
+		posX--;
+		if ( posX < 0 ){
+			pos.Y--;
+			posX = (SHORT)(screen.info.dwSize.X - 1);
+		}
+		for ( ; pos.Y >= 0 ; pos.Y-- ){
+			getlen = screen.info.dwSize.X + TSIZEOF(incsearch.text) - 1;
+			if ( ReadConsoleOutputCharacter(
+					hStdout, temptext, getlen, pos, &getlen) ){
+				temptext[getlen] = '\0';
+				#ifdef UNICODE
+					if ( posX > 0 ) posX = GetMouseX(0, posX, temptext);
+				#endif
+				for ( ; posX >= 0 ; posX-- ){
+					if ( memicmp(temptext + posX, incsearch.text, TSTROFF(incsearch.len)) == 0 ){
+						goto found;
+					}
+				}
+			}
+			posX = (SHORT)(screen.info.dwSize.X - 1);
+
+			if ( WaitForSingleObject(hStdin, 0) == WAIT_OBJECT_0 ) break;
+		}
+		goto fault;
 	}
 
-	for ( ; pos.Y < screen.info.dwSize.Y ; pos.Y++ ){
-		for ( ; pos.X < screen.info.dwSize.X ; pos.X++ ){
-			DWORD temp;
-
-			if ( FALSE == ReadConsoleOutputCharacter(
-					hStdout, temptext, incsearch.len, pos, &temp) ){
-				break;
-			}
-			temptext[incsearch.len] = '\0';
-			if ( tstricmp(incsearch.text, temptext) == 0 ){
-				if ( oldlen ) ReverseText(oldlen);
-				incsearch.pos = pos;
-				MoveCursorS(pos.X - sinfo.cx, pos.Y - sinfo.cy, 0);
-				ReverseText(incsearch.len);
-				return TRUE;
+	if ( next != INCSEARCH_LETTER ){ // 次を検索
+		posX++;
+		lastY = screen.info.dwSize.Y;
+		if ( next == INCSEARCH_FIRST ) posX = pos.Y = 0; // 最初から検索
+		if ( next == INCSEARCH_ONSCREEN ){ // 画面内で検索
+			posX = 0;
+			pos.Y = screen.info.srWindow.Top;
+			lastY = screen.info.srWindow.Bottom;
+		}
+	}else{ // INCSEARCH_LETTER
+		if ( incsearch.len == 1 ){ // 検索開始
+			if ( sinfo.cy == sinfo.BackupY ){ // 編集行なら画面左上
+				posX = 0;
+				pos.Y = screen.info.srWindow.Top;
+			}else{ // カーソル移動済みならその場から
+				posX = (SHORT)sinfo.cx;
+				pos.Y = (SHORT)sinfo.cy;
 			}
 		}
-		pos.X = 0;
+		oldlen--; // 反転消すときは1文字減らす
+		lastY = screen.info.srWindow.Bottom;
 	}
+
+	for ( ; pos.Y < lastY ; pos.Y++ ){
+		getlen = screen.info.dwSize.X + TSIZEOF(incsearch.text) - 1;
+		if ( ReadConsoleOutputCharacter(
+				hStdout, temptext, getlen, pos, &getlen) == FALSE ){
+			break;
+		}
+		temptext[getlen] = '\0';
+		if ( getlen >= (DWORD)screen.info.dwSize.X ){
+			getlen = (DWORD)screen.info.dwSize.X;
+		}
+		#ifdef UNICODE
+			if ( posX > 0 ) posX = GetMouseX(0, posX, temptext);
+		#endif
+		for ( ; posX < (SHORT)getlen ; posX++ ){
+			if ( memicmp(temptext + posX, incsearch.text, TSTROFF(incsearch.len)) == 0 ){
+				goto found;
+			}
+		}
+		posX = 0;
+
+		if ( WaitForSingleObject(hStdin, 0) == WAIT_OBJECT_0 ) break;
+	}
+fault:
+	HeapFree(GetProcessHeap(), 0, temptext);
 	return FALSE;
+found:
+	if ( oldlen ) ReverseText(oldlen);
+#ifdef UNICODE
+	{
+		int x = 0, fixedx = 0;
+
+		for (;;){
+			if ( x >= posX ) break;
+			fixedx += (temptext[x] >= 0x100) ? 2 : 1;
+			x++;
+		}
+		posX = fixedx;
+		incsearch.pos.X = (SHORT)fixedx;
+	}
+#else
+	incsearch.pos.X = (SHORT)posX;
+#endif
+	incsearch.pos.Y = pos.Y;
+	MoveCursorS(posX - sinfo.cx, pos.Y - sinfo.cy, 0);
+	ReverseText(incsearch.len);
+	HeapFree(GetProcessHeap(), 0, temptext);
+	return TRUE;
 }
 
 /*-----------------------------
@@ -1797,8 +1879,16 @@ void ScrollModeCommand(int key)
 			}
 			return;
 
+		case K_s | K_F3: // 検索
+		case K_s | K_tab:
+			if ( incsearch.len == 0 ) break;
+			if ( ScrIncSearch(INCSEARCH_BACK) == FALSE ){
+				ScrIncSearch(INCSEARCH_LAST);
+			}
+			return;
+
 		case K_bs:
-			if ( incsearch.len != 0 ){
+			if ( incsearch.len > 0 ){
 				ReverseText(incsearch.len);
 				incsearch.len--;
 				ReverseText(incsearch.len);
@@ -1814,12 +1904,16 @@ void ScrollModeCommand(int key)
 			key &= 0xff | K_v | K_e | K_c | K_a;	/* shift 情報を破棄 */
 			if ( (' ' <= key) && (key < 0x100) ){
 			#endif
-				if ( incsearch.len == 0 ) incsearch.pos.X = incsearch.pos.Y = 0;
 				if ( (size_t)incsearch.len < (TSIZEOF(incsearch.text) - 1) ){
 					incsearch.text[incsearch.len++] = (TCHAR)key;
 					incsearch.text[incsearch.len] = '\0';
-					if ( ScrIncSearch(INCSEARCH_DELETE_LETTER) == FALSE ){
-						incsearch.len--;
+					if ( ScrIncSearch(INCSEARCH_LETTER) == FALSE ){
+						if ( ScrIncSearch(INCSEARCH_ONSCREEN) == FALSE ){
+							if ( ScrIncSearch(INCSEARCH_FIRST) == FALSE ){
+								incsearch.len--;
+								incsearch.text[incsearch.len] = '\0';
+							}
+						}
 					}
 				}
 			}

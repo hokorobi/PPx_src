@@ -401,7 +401,7 @@ void Start_InitTreeViewItems(VFSTREESTRUCT *VTS, const TCHAR *param)
 	if ( ((VTS->TreeType == TREETYPE_DIRECTORY) ||
 		  (VTS->TreeType == TREETYPE_VFS) )
 	#ifndef _WIN64
-		  && ( OSver.dwMajorVersion >= 5 ) // 次の行に続く
+		  && ( WinType >= WINTYPE_2000 ) // 次の行に続く
 	#endif
 	){
 		HANDLE hThread;
@@ -450,7 +450,7 @@ void Start_TreeSetDirPath(VFSTREESTRUCT *VTS, const TCHAR *param)
 	if ( ((VTS->TreeType == TREETYPE_DIRECTORY) ||
 		  (VTS->TreeType == TREETYPE_VFS) )
 	#ifndef _WIN64
-		  && ( OSver.dwMajorVersion >= 5 ) // 次の行に続く
+		  && ( WinType >= WINTYPE_2000 ) // 次の行に続く
 	#endif
 	){
 		HANDLE hThread;
@@ -1438,7 +1438,7 @@ HICON LoadTreeIcon(VFSTREESTRUCT *VTS, const TCHAR *path, const TCHAR *name)
 
 			pEI->lpVtbl->GetIconLocation(pEI, 0, iconname, MAX_PATH, &index, &flags);
 			if ( flags & GIL_NOTFILENAME ){
-				if ( OSver.dwMajorVersion < 6 ){
+				if ( WinType < WINTYPE_VISTA ){
 					HICON hSmallIcon;
 
 					if ( SUCCEEDED(pEI->lpVtbl->Extract(pEI, iconname, index,
@@ -1857,7 +1857,7 @@ void Start_ExpandTree(VFSTREESTRUCT *VTS, HTREEITEM hTreeitem)
 	if ( ((VTS->TreeType == TREETYPE_DIRECTORY) ||
 		  (VTS->TreeType == TREETYPE_VFS)			)
 	#ifndef _WIN64
-		  && ( OSver.dwMajorVersion >= 5 ) // 次の行に続く
+		  && ( WinType >= WINTYPE_2000 ) // 次の行に続く
 	#endif
 	){
 		HANDLE hThread;
@@ -2940,7 +2940,7 @@ BOOL InitTreeViewItems(VFSTREESTRUCT *VTS, const TCHAR *param)
 			COLORREF bkcolor;
 
 			VTS->hImage = DImageList_Create(TreeIconSize, TreeIconSize, 24/* | ILC_MASK*/, 32, 0);
-			bkcolor = (OSver.dwMajorVersion >= 5) ? TreeView_GetBkColor(hTWnd) : C_AUTO;
+			bkcolor = (WinType >= WINTYPE_2000) ? TreeView_GetBkColor(hTWnd) : C_AUTO;
 			if ( bkcolor == C_AUTO ) bkcolor = C_WindowBack;
 			DImageList_SetBkColor(VTS->hImage, bkcolor);
 			hIcon = LoadDefaultDirTreeIcon();

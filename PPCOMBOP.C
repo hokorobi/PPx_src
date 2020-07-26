@@ -505,6 +505,7 @@ LRESULT CALLBACK TabHookProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	TABHOOKSTRUCT *THS;
 
 	THS = (TABHOOKSTRUCT *)GetProp(hWnd, THSPROP);
+	if ( THS == NULL ) return DefWindowProc(hWnd, iMsg, wParam, lParam);
 	switch(iMsg){
 		case WM_DESTROY: {
 			WNDPROC hOldProc;
@@ -1415,7 +1416,7 @@ void DestroyedPaneWindow(HWND hComboWnd, HWND hPaneWnd)
 		comboDocks.b.cinfo = NULL;
 	}
 
-	if ( (Combo.closed != NULL) && (Combo.CloededItems > 0) ){
+	if ( (Combo.closed != NULL) && (Combo.CloededItems > 0) && (cinfo != NULL) ){
 		tstrcpy(Combo.closed[Combo.ClosedIndex++].ID, cinfo->RegSubCID);
 		if ( Combo.ClosedIndex >= Combo.CloededItems ) Combo.ClosedIndex = 0;
 	}
@@ -2053,6 +2054,17 @@ HWND DeletePane(int showindex)
 PPC_APPINFO *GetComboTarget(HWND hTargetWnd, POINT *pos)
 {
 	int baseindex, tabpane;
+	HWND hWnd;
+
+	hWnd = hTargetWnd;
+	for (;;){
+		if ( hWnd == NULL ) break;
+		if ( hWnd == Combo.hWnd ) break;
+
+		// Combo でないのに Caption →別用途のダイアログか Capture window
+		if ( GetWindowLongPtr(hWnd, GWL_STYLE) & WS_CAPTION ) return NULL;
+		hWnd = GetParent(hWnd);
+	}
 
 	for ( tabpane = 0 ; tabpane < Combo.Tabs ; tabpane++ ){
 		if ( hTargetWnd == Combo.show[tabpane].tab.hWnd ){

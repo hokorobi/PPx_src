@@ -42,6 +42,11 @@ UINT cfURL;
 #endif
 const TCHAR DupOptionStr[] = T("/same:5 /sameall:1");
 
+#if !NODLL
+IID XIID_IFileOperation = xIID_IFileOperation;
+CLSID XCLSID_IFileOperation = xCLSID_IFileOperation;
+#endif
+
 	// このウィンドウへのドラッグを処理するための IDropTarget
 
 struct ExtensionsStruct {
@@ -386,7 +391,7 @@ void DDMenu(HWND hWnd, POINTL *pt, DWORD *pdwEffect, DWORD orgEffect, DWORD key,
 {
 	HMENU hMenu = NULL;
 
-	if ( cinfo && (Cell != DDCELL_CONTROL) && (::SelfDD_hWnd == hWnd) ){ // 同じ窓上で D&D
+	if ( cinfo && (Cell != DDCELL_CONTROL) && (::DragData_ChangedDir == FALSE) && (::SelfDD_hWnd == hWnd) ){ // 同じ窓上で D&D
 #if FREEPOSMODE
 		if ( Cell < 0 ){
 			MoveFreeCellPosition(cinfo, pt);
@@ -689,7 +694,7 @@ BOOL GetDropData(LPDATAOBJECT pDataObj, TMS_struct *files)
 
 void LinkDrop(HWND hWnd, TCHAR *sDrop, TCHAR *targetpath)
 {
-	while(*sDrop){
+	while ( *sDrop != '\0' ){
 		TCHAR link[VFPS], *p, drv[VFPS];
 		const TCHAR *u;
 
@@ -699,7 +704,7 @@ void LinkDrop(HWND hWnd, TCHAR *sDrop, TCHAR *targetpath)
 			p = drv;
 			while ( *p == '\\' ) p++;
 			u = p;
-			while (*p && (*p != '\\') && (*p != ':') ) p++;
+			while ( (*p != '\0') && (*p != '\\') && (*p != ':') ) p++;
 			*p = '\0';
 			if ( *u == '\0' ) u = T("link");
 		}
@@ -1054,6 +1059,7 @@ STDMETHODIMP CDropTarget::DragEnter(LPDATAOBJECT pDataObj, DWORD grfKeyState, PO
 	mTitem = 0;
 	mDefAction = DROPEFFECT_NONE;
 	mDropModeFlags = 0;
+	mKeyState = grfKeyState;
 #if FREEPOSMODE
 	mCellPos.x = NOFREEPOS;
 #endif
@@ -1086,11 +1092,42 @@ STDMETHODIMP CDropTarget::DragOver(DWORD grfKeyState, POINTL pt, LPDWORD pdwEffe
 	::ScreenToClient(mCinfo->info.hWnd, &pos);
 	SetDDScroll(mCinfo, &pos);
 
+		if ( GetAsyncKeyState(VK_XBUTTON1) & KEYSTATE_PUSH ){
+			setflag(grfKeyState, MK_XBUTTON1);
+		}
+		if ( GetAsyncKeyState(VK_XBUTTON2) & KEYSTATE_PUSH ){
+			setflag(grfKeyState, MK_XBUTTON2);
+		}
+		// 第4ボタンを放した→updir
+		if ( (mKeyState & MK_XBUTTON1) && !(grfKeyState & MK_XBUTTON1) ){
+			mKeyState = grfKeyState;
+			mCinfo->DDpagemode = DDPAGEMODE_NONE;
+			ForceDataObject();
+			PostMessage(mCinfo->info.hWnd, WM_PPXCOMMAND, K_raw | K_bs, 0);
+			return S_OK;
+		}
+		// 中/第5ボタンを放した
+		if ( ((mKeyState & MK_MBUTTON) && !(grfKeyState & MK_MBUTTON)) ||
+			 ((mKeyState & MK_XBUTTON2) && !(grfKeyState & MK_XBUTTON2)) ){
+			ENTRYINDEX cellno;
+
+			mKeyState = grfKeyState;
+			if ( GetItemTypeFromPoint(mCinfo, &pos, &cellno) == PPCR_CELLTEXT ){
+				if ( mCEL(cellno).f.dwFileAttributes & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTEX_FOLDER) ){
+					mCinfo->DDpagemode = DDPAGEMODE_NONE;
+					mCinfo->e.cellN = cellno;
+					ForceDataObject();
+					PostMessage(mCinfo->info.hWnd, WM_PPXCOMMAND, KC_Edir, 0);
+				}
+			}
+			return S_OK;
+		}
+		mKeyState = grfKeyState;
+
 	if ( mShnDropTarget != NULL ){
 		return mShnDropTarget->DragOver(grfKeyState, pt, pdwEffect);
 	}
 
-	mKeyState = grfKeyState;
 	return QueryDrop(grfKeyState, &pt, pdwEffect);
 }
 
@@ -1116,7 +1153,6 @@ STDMETHODIMP CDropTarget::DragLeave(void)
 		mShnDropTarget->Release();
 		mShnDropTarget = NULL;
 	}
-
 	return S_OK;
 }
 /*-----------------------------------------------------------------------------
@@ -1216,14 +1252,14 @@ BOOL CDropTarget::DropDDFormat(LPDATAOBJECT pDataObj, POINTL *pt, DWORD dwEffect
 		}
 //=============================================================================
 		case DROPEFFECT_SWAP: {	// swap
-			int c;
+			ENTRYINDEX c;
 			POINT pos;
 
 			pos.x = pt->x;
 			pos.y = pt->y;
 			::ScreenToClient(mCinfo->info.hWnd, &pos);
 			if ( GetItemTypeFromPoint(mCinfo, &pos, &c) == PPCR_CELLTEXT ){
-				int cell, maxc;
+				ENTRYINDEX cell, maxc;
 
 				maxc = mCinfo->e.cellIMax + mCinfo->e.cellStack - 1;
 				cell = mCELt(mCinfo->e.cellN);
@@ -1539,6 +1575,181 @@ STDMETHODIMP CDropTarget::DropUrl(LPDATAOBJECT pDataObj)
 }
 #endif
 
+#if 0
+typedef struct {
+	LPIDA pIdA;
+	PPC_APPINFO *cinfo;
+	const TCHAR *TargetPath;
+	DWORD pdwEffect;
+} PIDLCOPYDATA;
+
+DWORD WINAPI DropPidlCopyThread(PIDLCOPYDATA *pcd)
+{
+	HRESULT result = S_OK;
+	xIFileOperation *ifo;
+	xIShellItem *destShellItem = NULL;
+	HMODULE hShell32;
+	DefineWinAPI(HRESULT, SHCreateItemFromIDList, (LPITEMIDLIST, REFIID, void **));
+	DefineWinAPI(HRESULT, SHCreateItemFromParsingName, (PCWSTR, IBindCtx *, REFIID, void **));
+
+	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+
+	if ( FAILED(CoCreateInstance(XCLSID_IFileOperation, NULL, CLSCTX_ALL, XIID_IFileOperation, (void **)&ifo)) ){
+		return E_INVALIDARG;
+	}
+	ifo->SetOwnerWindow(pcd->cinfo->info.hWnd);
+	ifo->SetOperationFlags(0);
+
+	hShell32 = GetModuleHandle(StrShell32DLL);
+	GETDLLPROC(hShell32, SHCreateItemFromIDList);
+	GETDLLPROC(hShell32, SHCreateItemFromParsingName);
+#ifdef UNICODE
+	#define destdirW pcd->TargetPath
+#else
+	WCHAR destdirW[VFPS];
+	AnsiToUnicode(pcd->TargetPath, destdirW, VFPS);
+#endif
+	if ( FAILED(DSHCreateItemFromParsingName(destdirW, NULL, XIID_IShellItem, (void**)&destShellItem)) ){
+		LPITEMIDLIST pidl;
+
+		destShellItem = NULL;
+		pidl = PathToPidl(pcd->TargetPath);
+		if ( pidl != NULL ){
+			if ( FAILED(DSHCreateItemFromIDList(pidl, XIID_IShellItem, (void**)&destShellItem)) ){
+				destShellItem = NULL;
+			}
+			FreePIDL(pidl);
+		}
+	}
+	#undef destnameW
+
+	if ( destShellItem != NULL ){
+		LPIDA pIdA = pcd->pIdA;
+		DWORD count, i;
+
+		count = pIdA->cidl;
+		for ( i = 0 ; i < count ; i++ ){
+			LPITEMIDLIST pItemPidl;
+			xIShellItem *srcShellItem;
+
+			pItemPidl = (LPITEMIDLIST)((BYTE *)(pIdA) + pIdA->aoffset[i + 1]);
+
+			if ( SUCCEEDED(DSHCreateItemFromIDList(pItemPidl, XIID_IShellItem, (void**)&srcShellItem)) ){
+				// ●現在、->xxxItem で失敗する。MTA だから？
+				if ( pcd->pdwEffect == DROPEFFECT_MOVE ){
+					result = ifo->MoveItem(srcShellItem, destShellItem, NULL, NULL);
+				}else{
+					result = ifo->CopyItem(srcShellItem, destShellItem, NULL, NULL);
+				}
+				srcShellItem->Release();
+				if ( FAILED(result) ) break;
+			}
+		}
+		if ( SUCCEEDED(result) ){ // 実行
+			result = ifo->PerformOperations();
+		}
+		destShellItem->Release();
+	}
+	ifo->Release();
+	if ( FAILED(result) ) PPErrorBox(NULL, NULL, result);
+
+	CoUninitialize();
+	return result;
+}
+
+STDMETHODIMP CDropTarget::DropPidlCopy(LPDATAOBJECT pDataObj, DWORD pdwEffect)
+{
+	PIDLCOPYDATA pcd;
+	HANDLE hThread;
+	DWORD tmp;
+	STGMEDIUM medium;
+
+	pcd.pIdA = (LPIDA)GetGlobalData(pDataObj, CF_xSHELLIDLIST, &medium);
+	pcd.cinfo = mCinfo;
+	pcd.TargetPath = mTargetPath;
+	pcd.pdwEffect = pdwEffect;
+
+	hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)DropPidlCopyThread, (void *)&pcd, 0, &tmp);
+	WaitForSingleObject(hThread, INFINITE);
+	CloseHandle(hThread);
+	::ReleaseStgMedium(&medium);
+	return S_OK;
+}
+
+#else
+STDMETHODIMP CDropTarget::DropPidlCopy(LPDATAOBJECT pDataObj, DWORD pdwEffect)
+{
+	HRESULT result = S_OK;
+	xIFileOperation *ifo;
+	xIShellItem *destShellItem = NULL;
+	STGMEDIUM medium;
+	HMODULE hShell32;
+	DefineWinAPI(HRESULT, SHCreateItemFromIDList, (LPITEMIDLIST, REFIID, void **));
+	DefineWinAPI(HRESULT, SHCreateItemFromParsingName, (PCWSTR, IBindCtx *, REFIID, void **));
+
+	if ( FAILED(CoCreateInstance(XCLSID_IFileOperation, NULL, CLSCTX_ALL, XIID_IFileOperation, (void **)&ifo)) ){
+		return E_INVALIDARG;
+	}
+	ifo->SetOwnerWindow(mCinfo->info.hWnd);
+	ifo->SetOperationFlags(0);
+
+	hShell32 = GetModuleHandle(StrShell32DLL);
+	GETDLLPROC(hShell32, SHCreateItemFromIDList);
+	GETDLLPROC(hShell32, SHCreateItemFromParsingName);
+#ifdef UNICODE
+	#define destdirW mTargetPath
+#else
+	WCHAR destdirW[VFPS];
+	AnsiToUnicode(mTargetPath, destdirW, VFPS);
+#endif
+	if ( FAILED(DSHCreateItemFromParsingName(destdirW, NULL, XIID_IShellItem, (void**)&destShellItem)) ){
+		LPITEMIDLIST pidl;
+
+		destShellItem = NULL;
+		pidl = PathToPidl(mTargetPath);
+		if ( pidl != NULL ){
+			if ( FAILED(DSHCreateItemFromIDList(pidl, XIID_IShellItem, (void**)&destShellItem)) ){
+				destShellItem = NULL;
+			}
+			FreePIDL(pidl);
+		}
+	}
+	#undef destnameW
+
+	if ( destShellItem != NULL ){
+		LPIDA pIdA = (LPIDA)GetGlobalData(pDataObj, CF_xSHELLIDLIST, &medium);
+		DWORD count, i;
+
+		count = pIdA->cidl;
+		for ( i = 0 ; i < count ; i++ ){
+			LPITEMIDLIST pItemPidl;
+			xIShellItem *srcShellItem;
+
+			pItemPidl = (LPITEMIDLIST)((BYTE *)(pIdA) + pIdA->aoffset[i + 1]);
+
+			if ( SUCCEEDED(DSHCreateItemFromIDList(pItemPidl, XIID_IShellItem, (void**)&srcShellItem)) ){
+				// ●現在、->xxxItem で失敗する。MTA だから？
+				if ( pdwEffect == DROPEFFECT_MOVE ){
+					result = ifo->MoveItem(srcShellItem, destShellItem, NULL, NULL);
+				}else{
+					result = ifo->CopyItem(srcShellItem, destShellItem, NULL, NULL);
+				}
+				srcShellItem->Release();
+				if ( FAILED(result) ) break;
+			}
+		}
+		if ( SUCCEEDED(result) ){ // 実行
+			result = ifo->PerformOperations();
+		}
+		::ReleaseStgMedium(&medium);
+		destShellItem->Release();
+	}
+	ifo->Release();
+	if ( FAILED(result) ) PPErrorBox(NULL, NULL, result);
+	return result;
+}
+#endif
+
 STDMETHODIMP CDropTarget::DropPidlLink(LPDATAOBJECT pDataObj, DWORD pdwEffect)
 {
 	STGMEDIUM medium;
@@ -1637,7 +1848,30 @@ STDMETHODIMP CDropTarget::DropPidlLink(LPDATAOBJECT pDataObj, DWORD pdwEffect)
 		}
 	}
 	pRoot->Release();
+	::ReleaseStgMedium(&medium);
 	return S_OK;
+}
+
+// 表示中のダイアログへのドロップができるように判別する
+BOOL IsNonPPcWindow(PPC_APPINFO *cinfo, POINTL pt)
+{
+	POINT cpos;
+	HWND hTargetWnd;
+
+	cpos.x = pt.x;
+	cpos.y = pt.y;
+	hTargetWnd = ::WindowFromPoint(cpos);
+	for (;;){
+		if ( hTargetWnd == NULL ) return TRUE;
+		if ( hTargetWnd == cinfo->info.hWnd ) break;
+		if ( hTargetWnd == Combo.hWnd ) break;
+
+		if ( GetWindowLongPtr(hTargetWnd, GWL_STYLE) & WS_CAPTION ){
+			return TRUE; // ダイアログと思われるのでここではDrop無
+		}
+		hTargetWnd = ::GetParent(hTargetWnd);
+	}
+	return FALSE;
 }
 
 STDMETHODIMP CDropTarget::Drop(LPDATAOBJECT pDataObj, DWORD grfKeyState, POINTL pt, LPDWORD pdwEffect)
@@ -1666,13 +1900,15 @@ STDMETHODIMP CDropTarget::Drop(LPDATAOBJECT pDataObj, DWORD grfKeyState, POINTL 
 		}
 	}
 	#endif
+	// 表示中のダイアログへのドロップができるように判別する
+	if ( IsNonPPcWindow(mCinfo, pt) ) return E_INVALIDARG;
 
 	if ( mShnDropTarget != NULL ){
 		HRESULT result = mShnDropTarget->Drop(pDataObj, grfKeyState, pt, pdwEffect);
 		mShnDropTarget->Release();
 		mShnDropTarget = NULL;
 		if ( SUCCEEDED(result) ){
-			PostMessage(mCinfo->info.hWnd, WM_PPXCOMMAND, K_c | K_F5, 0);
+			PostMessage(mCinfo->info.hWnd, WM_PPCFOLDERCHANGE, 0, 0);
 		}
 		return result;
 	}
@@ -1713,7 +1949,12 @@ STDMETHODIMP CDropTarget::Drop(LPDATAOBJECT pDataObj, DWORD grfKeyState, POINTL 
 					return S_OK;
 				}
 			}
-			if ( mDDtype.pidl ) return DropPidlLink(pDataObj, *pdwEffect);
+			if ( mDDtype.pidl ){
+				if ( (*pdwEffect == DROPEFFECT_COPY) || (*pdwEffect == DROPEFFECT_MOVE) ){
+					return DropPidlCopy(pDataObj, *pdwEffect);
+				}
+				return DropPidlLink(pDataObj, *pdwEffect);
+			}
 #if USE_URLDROP
 			if ( mDDtype.url ) return DropUrl(pDataObj);
 #endif
@@ -1796,8 +2037,8 @@ STDMETHODIMP CDropTarget::QueryDrop(DWORD grfKeyState, POINTL *pt, DWORD *pdwEff
 		 (hTargetWnd2 == mCinfo->hTreeWnd) ){	// ツリーウィンドウ =======
 		if ( IsTrue(QueryDrop_Tree(mCinfo->hTreeWnd, pt, pdwEffect)) ) return S_OK;
 												// メインウィンドウ ===========
-	}else{
-		int celltype, edge;			// ポイント対象を求める
+	}else{			// ポイント対象を求める
+		int celltype, edge;
 		ENTRYINDEX cellno;
 
 		::ScreenToClient(mCinfo->info.hWnd, &cpos);
@@ -1823,7 +2064,7 @@ STDMETHODIMP CDropTarget::QueryDrop(DWORD grfKeyState, POINTL *pt, DWORD *pdwEff
 
 		}
 #endif
-		if ( !((celltype == PPCR_CELLTEXT) || (celltype == PPCR_INFOICON)) ){
+		if ( !((celltype == PPCR_CELLTEXT) || (celltype == PPCR_INFOICON) || (celltype == PPCR_CELLTAIL)) ){
 			cellno = -1;
 		}
 		if ( cellno >= 0 ){

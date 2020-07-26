@@ -24,11 +24,11 @@ const TCHAR menuidstr[] = T("%M_Ccr,");
 const TCHAR ExtTableID[] = T("E_cr");
 
 const TCHAR CcrEditParam[] = T("%Ob *ppcust /:M_Ccr");
-const TCHAR MES_MCRCstr[] = MES_MCRC;
-const TCHAR MES_MCRDstr[] = MES_MCRD;
-const TCHAR MES_MCREstr[] = MES_MCRE;
-const TCHAR MES_MCRXstr[] = MES_MCRX;
-const TCHAR MES_MEMDstr[] = MES_MEMD;
+const TCHAR strMES_MCRC[] = MES_MCRC;
+const TCHAR strMES_MCRD[] = MES_MCRD;
+const TCHAR strMES_MCRE[] = MES_MCRE;
+const TCHAR strMES_MCRX[] = MES_MCRX;
+const TCHAR strMES_MEMD[] = MES_MEMD;
 CRMENUSTACKCHECK DummyCrmCheck;
 
 #define CRMOM_DEFAULTSELECT 1
@@ -425,6 +425,7 @@ void WINAPI CRmenuDelayLoad(DelayLoadMenuStruct *DelayMenus)
 		}
 		AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
 	}
+	AppendMenuString(hMenu, CRID_LISTSTART, MES_ASTL);
 	AppendMenuString(hMenu, CRID_SELECTEXE, MES_REGP);
 
 	DelayMenus->hMenu = INVALID_HANDLE_VALUE; // 再度呼ばれないようにする
@@ -941,26 +942,26 @@ void RegisterAction(PPC_APPINFO *cinfo, HMENU hMenu, PPCMENUINFO *cminfo, BOOL a
 	// 選択肢の保存 =====================================================
 	// メニュー選択のみ or CRID_EXTMENU / CRID_OPENWITH / CRID_SENDTO / CRID_NEWENTRY / CRID_EXTCMD
 	if ( !always || (cminfo->x.index >= CRID_EXTMENU) ){
-		const TCHAR *p;
+		const TCHAR *cmdp;
 		TCHAR *dest;
 
 		// いくつかの内蔵機能は自動登録をさせない
-		GetMenuDataMacro2(p, &cminfo->x.th, cminfo->x.index - CRID_EXTMENU);
-		if ( p != NULL ){
-			if ( (*p == '%') && (*(p + 1) == 'K') ){ // %K
+		GetMenuDataMacro2(cmdp, &cminfo->x.th, cminfo->x.index - CRID_EXTMENU);
+		if ( cmdp != NULL ){
+			if ( (*cmdp == '%') && (*(cmdp + 1) == 'K') ){ // %K
 				// \@K
-				if ( (*(p + 3) == '\\') && (*(p + 4) == '@') && (*(p + 5) == 'D')){
+				if ( (*(cmdp + 3) == '\\') && (*(cmdp + 4) == '@') && (*(cmdp + 5) == 'D')){
 					return;
 				}
 				// @^X @^C @C @M @D @R
-				if ( *(p + 3) == '@' ){
-					if ( (*(p + 4) == '^') && ((*(p + 5) == 'X') || (*(p + 5) == 'C') || (*(p + 5) == 'V')) ){
+				if ( *(cmdp + 3) == '@' ){
+					if ( (*(cmdp + 4) == '^') && ((*(cmdp + 5) == 'X') || (*(cmdp + 5) == 'C') || (*(cmdp + 5) == 'V')) ){
 						return;
 					}
-					if ( tstrchr(T("CMDR"), *(p + 4)) != NULL ) return;
+					if ( tstrchr(T("CMDR"), *(cmdp + 4)) != NULL ) return;
 				}
 			}
-			if ( memcmp(p + 1, T("*sendto"), 7 * sizeof(TCHAR)) == 0 ) return;
+			if ( memcmp(cmdp + 1, T("*sendto"), 7 * sizeof(TCHAR)) == 0 ) return;
 		}
 
 		param[0] = EXTCMD_CMD;
@@ -971,6 +972,8 @@ void RegisterAction(PPC_APPINFO *cinfo, HMENU hMenu, PPCMENUINFO *cminfo, BOOL a
 		GetMenuString(hMenu, cminfo->x.index, dest, VFPS - 20, MF_BYCOMMAND);
 		if ( *dest == '\0' ) return;
 		if ( tstrchr(dest, '\t') ){
+			const TCHAR *p;
+
 			dest--;	// " を除去
 			p = tstrchr(dest, '&');
 			if ( p != NULL ){	// ショートカット有り
@@ -1064,6 +1067,15 @@ void DoActionMenu_NewTab(PPC_APPINFO *cinfo, ENTRYINDEX cellindex)
 	param[0] = '\"';
 	VFSFullPath(param + 1, CEL(cellindex).f.cFileName, cinfo->path);
 	CallPPcParam(Combo.hWnd, param);
+}
+
+void DoActionMenu_AddStartList(PPC_APPINFO *cinfo, ENTRYINDEX cellindex)
+{
+	TCHAR param[CMDLINESIZE], buf[CMDLINESIZE];
+
+	VFSFullPath(buf, CEL(cellindex).f.cFileName, cinfo->RealPath);
+	wsprintf(param, T("*file !copy,\"%s\",\"#11:\\\",-mode:3"), buf);
+	PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, param, NULL, 0);
 }
 
 void DoActionMenu_SelectExe(PPC_APPINFO *cinfo, ENTRYINDEX cellindex)
@@ -1222,6 +1234,10 @@ void DoActionMenu(PPC_APPINFO *cinfo, HMENU hMenu, UINT crID, ENTRYINDEX cellind
 		DoActionMenu_SelectExe(cinfo, cellindex);
 		return;
 	}
+	if ( crID == CRID_LISTSTART ){	// スタートメニュー／画面の一覧に登録
+		DoActionMenu_AddStartList(cinfo, cellindex);
+		return;
+	}
 	DxSetMotion(cinfo->DxDraw, DXMOTION_Launch);
 	if ( crID >= CRID_OPENWITH ){
 		DoActionMenu_OpenWith(cinfo, hMenu, crID, cellindex, pmdi);
@@ -1268,19 +1284,19 @@ void PPcCRMenuOnMenu(PPC_APPINFO *cinfo, PPCMENUINFO *cminfo)
 	hMenu = CreatePopupMenu();
 	if ( ((DWORD)cminfo->x.index < cminfo->extitemID) ||
 		 ((cminfo->x.index >= CRID_EXTCMD) && (cminfo->x.index < CRID_NEWTAB))){
-		AppendMenuString(hMenu, CRMOM_DEFAULTSELECT, MES_MCRDstr);
-		AppendMenuString(hMenu, CRMOM_DEFAULTEXECUTE, MES_MCREstr);
+		AppendMenuString(hMenu, CRMOM_DEFAULTSELECT, strMES_MCRD);
+		AppendMenuString(hMenu, CRMOM_DEFAULTEXECUTE, strMES_MCRE);
 
 		if ( (cminfo->x.index >= CRID_EXTMENU) &&
 			 ((DWORD)cminfo->x.index < cminfo->extitemID) ){
-			AppendMenuString(hMenu, CRMOM_MODIFYITEM, MES_MEMDstr);
+			AppendMenuString(hMenu, CRMOM_MODIFYITEM, strMES_MEMD);
 		}
 		AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
 	}
 
-	AppendMenuString(hMenu, CRMOM_ADDEXTITEM, MES_MCRXstr);
-	AppendMenuString(hMenu, CRMOM_ADDCOMMONITEM, MES_MCRCstr);
-	TinyGetMenuPopPos(FindWindow(T("#32768"), NULL), &pos);
+	AppendMenuString(hMenu, CRMOM_ADDEXTITEM, strMES_MCRX);
+	AppendMenuString(hMenu, CRMOM_ADDCOMMONITEM, strMES_MCRC);
+	TinyGetMenuPopPos(FindWindow(T(WNDCLASS_POPUPMENU), NULL), &pos);
 	index = TrackPopupMenu(hMenu, TPM_TDEFAULT | TPM_RECURSE,
 			pos.x, pos.y, 0, cinfo->info.hWnd, NULL);
 

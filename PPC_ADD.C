@@ -96,12 +96,17 @@ DWORD WINAPI DDThread(DDTHREADSTRUCT *dts)
 	GetWindowRect(hTargetWnd, &box);
 	ClientToScreen(hTargetWnd, &cpos);
 	pos.x = (box.left + box.right) / 2 - 1;
-	pos.y = box.top + (((cpos.y - box.top) * 2) / 5);
+	pos.y = box.top + (((cpos.y - box.top) * 2) / 5) + 5;
 	if ( wait ) for ( wait = 20 ; wait ; wait-- ){
+		HWND hPointWnd;
+
 		SetMouseCursor(pos.x, pos.y);
 		Sleep(100);
-		if ( WindowFromPoint(pos) == hTargetWnd ) break;
+		hPointWnd = WindowFromPoint(pos);
+		if ( hPointWnd == hTargetWnd ) break;
+		if ( GetParent(hPointWnd) == hTargetWnd ) break;
 		pos.x++;
+		pos.y++;
 	}
 									// タイトルバー上でクリック解除
 	if ( wait ){
@@ -124,7 +129,7 @@ HGLOBAL FileToHDrop(const TCHAR *filename, const TCHAR *path)
 	TMS_struct files = {{NULL, 0, NULL}, 0};
 	DROPFILES *dp;
 
-	if (path[0] == '?') return NULL;
+	if ( path[0] == '?' ) return NULL;
 
 	TMS_reset(&files);
 	if (TM_check(&files.tm, sizeof(DROPFILES)) == FALSE) goto memerror;
@@ -187,7 +192,7 @@ ERRORCODE StartAutoDD(PPC_APPINFO *cinfo, HWND hTargetWnd, const TCHAR *src, DWO
 
 	if ( src != NULL ){
 		// File Manager(Win3.1) 形式 D&D
-		if ( !(droptype & AUTODD_COM) && (GetWindowLongPtr(hTargetWnd, GWL_EXSTYLE) & WS_EX_ACCEPTFILES) ){
+		if ( !(droptype & DROPTYPE_COM) && (GetWindowLongPtr(hTargetWnd, GWL_EXSTYLE) & WS_EX_ACCEPTFILES) ){
 			HGLOBAL hG;
 
 			SetForegroundWindow(hTargetWnd);
@@ -197,7 +202,7 @@ ERRORCODE StartAutoDD(PPC_APPINFO *cinfo, HWND hTargetWnd, const TCHAR *src, DWO
 //			GlobalFree(hG);	←不要なので入れる必要なし
 			return NO_ERROR;
 		}
-		return AutoDD_UseDLL(cinfo, hTargetWnd, src, droptype & ~AUTODD_HOOK) ?
+		return AutoDD_UseDLL(cinfo, hTargetWnd, src, droptype & ~DROPTYPE_HOOK) ?
 				NO_ERROR : ERROR_CAN_NOT_COMPLETE;
 	}
 
@@ -218,7 +223,7 @@ ERRORCODE StartAutoDD(PPC_APPINFO *cinfo, HWND hTargetWnd, const TCHAR *src, DWO
 		return NO_ERROR;
 	}
 	// File Manager(Win3.1) 形式 D&D
-	if ( !(droptype & AUTODD_COM) && (GetWindowLongPtr(hTargetWnd, GWL_EXSTYLE) & WS_EX_ACCEPTFILES) ){
+	if ( !(droptype & DROPTYPE_COM) && (GetWindowLongPtr(hTargetWnd, GWL_EXSTYLE) & WS_EX_ACCEPTFILES) ){
 		HGLOBAL hG;
 
 		SetForegroundWindow(hTargetWnd);
@@ -236,8 +241,8 @@ ERRORCODE StartAutoDD(PPC_APPINFO *cinfo, HWND hTargetWnd, const TCHAR *src, DWO
 		int wait;
 		DDTHREADSTRUCT *dts;
 
-		if ( droptype & AUTODD_HOOK ){
-			if ( IsTrue(AutoDD_UseDLL(cinfo, hTargetWnd, src, droptype & ~AUTODD_HOOK)) ){
+		if ( droptype & DROPTYPE_HOOK ){
+			if ( IsTrue(AutoDD_UseDLL(cinfo, hTargetWnd, src, droptype & ~DROPTYPE_HOOK)) ){
 				return NO_ERROR; // 直接 D&D に成功
 			}
 		}
@@ -259,7 +264,7 @@ ERRORCODE StartAutoDD(PPC_APPINFO *cinfo, HWND hTargetWnd, const TCHAR *src, DWO
 		dts = PPcHeapAlloc(sizeof(DDTHREADSTRUCT));
 		dts->cinfo = cinfo;
 		dts->hTargetWnd = hTargetWnd;
-		if ( droptype & AUTODD_RIGHT ){
+		if ( droptype & DROPTYPE_RIGHT ){
 			dts->ButtonDown = MOUSEEVENTF_RIGHTDOWN;
 			dts->ButtonUp = MOUSEEVENTF_RIGHTUP;
 		}else{
@@ -362,8 +367,8 @@ void SetListItem(HWND hWnd, struct ddwndstruct *dds, SETLISTSTRUCT *parent)
 	if ( (style & WS_VISIBLE) &&
 		((GetProp(hWnd, OLDDnDPropName) != NULL) ||
 		 (GetWindowLongPtr(hWnd, GWL_EXSTYLE) & WS_EX_ACCEPTFILES) ||
+//		 (tstricmp(classname, T("ApplicationFrameWindow")) == 0) || // UWP用。しかし、その後の DLL注入 / mouse_event / SendInput が使用できない。
 		 (!(style & ES_READONLY) && (tstricmp(classname, T("EDIT")) == 0)) ) ){
-
 		if ( (parent != NULL) && (parent->hParent == NULL) ){ // 親未作成
 			parent->tvi.lParam = (LPARAM)hWnd; // ウィンドウハンドル無し→子使用
 			parent->tvi.iImage = parent->tvi.iSelectedImage = 1;
@@ -615,12 +620,12 @@ void WndTreeKey(PPC_APPINFO *cinfo, WORD key)
 				src = (const TCHAR *)GetWindowLongPtr(cinfo->dds.hTreeWnd, WLP_SOURCE);
 
 				if ( GetAsyncKeyState(VK_CONTROL) & KEYSTATE_PUSH ){
-					resetflag(type, AUTODD_HOOK);
+					resetflag(type, DROPTYPE_HOOK);
 				}
 
 				if ( (GetAsyncKeyState(VK_SHIFT) & KEYSTATE_PUSH) ||
 					 (key & K_s) ){
-					setflag(type, AUTODD_RIGHT);
+					setflag(type, DROPTYPE_RIGHT);
 				}
 
 				StartAutoDD(cinfo, hTargetWnd, src, type);
@@ -653,22 +658,22 @@ void WndTreeKey(PPC_APPINFO *cinfo, WORD key)
 				}
 				AppendMenuString(hPopMenu, 2, T("D&&D hook"));
 				AppendMenuString(hPopMenu, 3, T("D&&D emulate"));
-				AppendMenuCheckString(hPopMenu, 4, T("Right D&&D"), type & AUTODD_RIGHT);
+				AppendMenuCheckString(hPopMenu, 4, T("Right D&&D"), type & DROPTYPE_RIGHT);
 				TinyGetMenuPopPos(cinfo->dds.hTreeWnd, &pos);
 				index = TrackPopupMenu(hPopMenu, TPM_TDEFAULT, pos.x, pos.y, 0, cinfo->dds.hTreeWnd, NULL);
 				DestroyMenu(hPopMenu);
 				switch ( index ){
 					case 1:
-						setflag(type, AUTODD_POST);
+						setflag(type, DROPTYPE_POST);
 						break;
 					case 2:
-						setflag(type, AUTODD_COM | AUTODD_HOOK);
+						setflag(type, DROPTYPE_COM | DROPTYPE_HOOK);
 						break;
 					case 3:
-						setflag(type, AUTODD_COM);
+						setflag(type, DROPTYPE_COM);
 						break;
 					case 4:
-						type ^= AUTODD_RIGHT;
+						type ^= DROPTYPE_RIGHT;
 						SetWindowLong(cinfo->dds.hTreeWnd, WL_DROPTYPE, type);
 						WndTreeKey(cinfo, K_apps);
 						return;

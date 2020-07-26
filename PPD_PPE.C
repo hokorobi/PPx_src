@@ -346,7 +346,7 @@ LRESULT CALLBACK PPeProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			return PPeWmCreate(hWnd);
 /*
 		case WM_NCCREATE:
-			if ( (X_dss & DSS_COMCTRL) && (OSver.dwMajorVersion >= 10) ){
+			if ( (X_dss & DSS_COMCTRL) && (WinType >= WINTYPE_10) ){
 				PPxCommonCommand(hWnd, 0, K_ENABLE_NC_SCALE);
 			}
 			return 1;

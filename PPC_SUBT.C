@@ -64,24 +64,7 @@ void USEFASTCALL IObreak(PPC_APPINFO *cinfo)
 	}
 }
 
-#ifndef SHCNRF_ShellLevel
-#if defined(__BORLANDC__) || defined(__GNUC__)
-typedef struct _SHChangeNotifyEntry
-{
-	LPCITEMIDLIST pidl;
-	BOOL fRecursive;
-} SHChangeNotifyEntry;
-#endif
-#define SHCNRF_ShellLevel 0x0002
-#define SHCNRF_NewDelivery 0x8000
-#endif
-
-#ifdef _WIN64
-#define DSHChangeNotifyRegister SHChangeNotifyRegister
-#define DSHChangeNotifyDeregister SHChangeNotifyDeregister
-#define DSHChangeNotification_Lock SHChangeNotification_Lock
-#define DSHChangeNotification_Unlock SHChangeNotification_Unlock
-#else
+#ifndef _WIN64
 #if !NODLL
 DefineWinAPI(ULONG, SHChangeNotifyRegister, (HWND hwnd, int fSources, LONG fEvents, UINT wMsg, int cEntries, const SHChangeNotifyEntry *pshcne));
 DefineWinAPI(BOOL, SHChangeNotifyDeregister, (unsigned long ulID));
@@ -96,11 +79,6 @@ LOADWINAPISTRUCT SHChangeNotifyDLL[] = {
 	{NULL, NULL}
 };
 #else
-ExternWinAPI(ULONG, SHChangeNotifyRegister, (HWND hwnd, int fSources, LONG fEvents, UINT wMsg, int cEntries, const SHChangeNotifyEntry *pshcne));
-ExternWinAPI(BOOL, SHChangeNotifyDeregister, (unsigned long ulID));
-ExternWinAPI(HANDLE, SHChangeNotification_Lock, (HANDLE hChange, DWORD dwProcId, LPITEMIDLIST **pppidl, LONG *plEvent));
-ExternWinAPI(BOOL, SHChangeNotification_Unlock, (HANDLE hLock));
-
 extern LOADWINAPISTRUCT SHChangeNotifyDLL[];
 #endif
 #endif
@@ -123,7 +101,7 @@ void SetShellChangeNotification(PPC_APPINFO *cinfo)
 		pSF->lpVtbl->Release(pSF);
 		req_entry.fRecursive = FALSE;
 		cinfo->ShNotifyID = DSHChangeNotifyRegister(cinfo->info.hWnd,
-				SHCNRF_ShellLevel | SHCNRF_NewDelivery, // 何処が変わったかは不要
+				SHCNRF_ShellLevel | SHCNRF_NewDelivery, // 何処が変わったかは不要だが、メッセージが送信されなくなるので付与
 				SHCNE_RENAMEITEM | SHCNE_CREATE | SHCNE_DELETE |
 				SHCNE_MKDIR | SHCNE_RMDIR | SHCNE_UPDATEDIR |
 				SHCNE_MEDIAINSERTED | SHCNE_MEDIAREMOVED |

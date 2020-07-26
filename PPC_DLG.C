@@ -316,38 +316,52 @@ INT_PTR CALLBACK WindowDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam
 }
 
 // Disk[I]nfo -----------------------------------------------------------------
-void SetDriveSizeItem(HWND hDlg, UINT bytes, UINT rate, ULARGE_INTEGER *value, ULARGE_INTEGER *total)
+DWORD CalRate(ULARGE_INTEGER *value, ULARGE_INTEGER *total)
 {
-	TCHAR buf[VFPS];
 	DWORD sizeL, sizeH, totalper;
-
-	FormatNumber(buf, XFN_SEPARATOR, 18, value->u.LowPart, value->u.HighPart);
-	SetDlgItemText(hDlg, bytes, buf);
 
 	sizeL = value->u.LowPart;
 	sizeH = value->u.HighPart;
 
-	if ( (total->u.LowPart & 0xfe000000) || total->u.HighPart ){
-		if ( total->u.HighPart >= 0x200 ){
-			if ( sizeH & 0xfe000000 ){ // 128P over
-				totalper = ((sizeH >> 16) * 100) / (total->u.HighPart >> 16);
-			}else{ // 0x0200 0000 0000(2TB) Å` 0x1ff ffff ffff ffff(128P)
-				totalper = (sizeH * 100) / total->u.HighPart;
+	if ( (total->u.LowPart & 0xffe00000) || total->u.HighPart ){
+		if ( total->u.HighPart >= 0x20 ){
+			if ( sizeH & 0xffffe000 ){ // 64T over
+				if ( sizeH & 0xffe00000 ){ // 16P over
+					totalper = ((sizeH >> 12) * 1000) / (total->u.HighPart >> 12);
+				}else{ // 64T over
+					totalper = (sizeH * 1000) / total->u.HighPart;
+				}
+			}else{ // 0x0004 0000 0000(16GB) Å` 0x3fff ffff ffff(64T)
+
+				totalper =
+						( ((((DWORD)sizeH) << 8) | (sizeL >> 24)) * 1000) /
+						( ((((DWORD)total->u.HighPart) << 8) |
+							(total->u.LowPart >> 24)) );
 			}
-		}else{	// 0x0200 0000(32M) Å` 0x1ff ffff ffff(2TB)
+		}else{	// 0x0040 0000(4M) Å` 0x3 ffff ffff(16G)
 			totalper =
-					( ((((DWORD)sizeH) << 16) | (sizeL >> 16)) * 100) /
-					( ((((DWORD)total->u.HighPart) << 16) |
-						(total->u.LowPart >> 16)) );
+					( ((((DWORD)sizeH) << 20) | (sizeL >> 12)) * 1000) /
+					( ((((DWORD)total->u.HighPart) << 20) |
+						(total->u.LowPart >> 12)) );
 		}
-	}else{		// 0x0000 0001      Å`  0x01ff ffff(32M)
+	}else{		// 0x0000 0001      Å`  0x003f ffff(4M)
 		if ( total->u.LowPart ){
-			totalper = (sizeL * 100) / total->u.LowPart;
+			totalper = (sizeL * 1000) / total->u.LowPart;
 		}else{	// 0x0000 0000
-			totalper = 100;
+			totalper = 1000;
 		}
 	}
-	wsprintf(buf, T("%d%%"), totalper);
+	return totalper;
+}
+
+void SetDriveSizeItem(HWND hDlg, UINT bytes, UINT rate, ULARGE_INTEGER *value, int rate_value)
+{
+	TCHAR buf[VFPS];
+
+	FormatNumber(buf, XFN_SEPARATOR, 18, value->u.LowPart, value->u.HighPart);
+	SetDlgItemText(hDlg, bytes, buf);
+
+	wsprintf(buf, T("%d.%d%%"), rate_value / 10, rate_value % 10);
 	SetDlgItemText(hDlg, rate, buf);
 }
 
@@ -410,13 +424,9 @@ INT_PTR CALLBACK DiskinfoDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lPar
 			}
 			BpC = cluster = i1 = i2 = i3 = i4 = 0;
 			if ( IsTrue(GetDiskFreeSpace(drv, &i1, &i2, &i3, &i4)) ){
-
 				cluster = 1;
 				BpC = i1 * i2;
-
-				FormatNumber(buf, XFN_SEPARATOR | XFN_MUL, 18, i3, BpC);
-				SetDlgItemText(hDlg, IDS_DSKI_NFS, buf);
-
+				DDmul(BpC, i3, &UserFree.u.LowPart, &UserFree.u.HighPart);
 				DDmul(BpC, i4, &Total.u.LowPart, &Total.u.HighPart);
 			}
 			if (
@@ -426,16 +436,20 @@ INT_PTR CALLBACK DiskinfoDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lPar
 					DGetDiskFreeSpaceEx(GetNT_9xValue(cinfo->RealPath, drv),
 							&UserFree, &Total, &Free) ){
 				cluster = 1;
-				SetDriveSizeItem(hDlg, IDS_DSKI_NFS, IDS_DSKI_RFS, &UserFree, &Total);
-				SetDriveSizeItem(hDlg, IDS_DSKI_NRF, IDS_DSKI_RRF, &Free, &Total);
+				SetDriveSizeItem(hDlg, IDS_DSKI_NRF, IDS_DSKI_RRF,
+						&Free, CalRate(&Free, &Total));
 			}
 			if ( cluster ){
+				int free_rate;
+
+				free_rate = CalRate(&UserFree, &Total);
+				SetDriveSizeItem(hDlg, IDS_DSKI_NFS, IDS_DSKI_RFS, &UserFree, free_rate);
+				DDmul(BpC, i4 - i3, &UserFree.u.LowPart, &UserFree.u.HighPart);
+				SetDriveSizeItem(hDlg, IDS_DSKI_NUS, IDS_DSKI_RUS, &UserFree, 1000 - free_rate);
+
 				FormatNumber(buf, XFN_SEPARATOR, 18,
 						Total.u.LowPart, Total.u.HighPart);
 				SetDlgItemText(hDlg, IDS_DSKI_NTS, buf);
-
-				DDmul(BpC, i4 - i3, &UserFree.u.LowPart, &UserFree.u.HighPart);
-				SetDriveSizeItem(hDlg, IDS_DSKI_NUS, IDS_DSKI_RUS, &UserFree, &Total);
 
 				FormatNumber(buf, XFN_SEPARATOR, 18, i2, 0);
 				SetDlgItemText(hDlg, IDS_DSKI_NBS, buf);

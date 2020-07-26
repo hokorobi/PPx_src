@@ -145,7 +145,7 @@ PPXDLL int PPXAPI GetExtentionMenu(HMENU hSubMenu, const TCHAR *ext, PPXMENUDATA
 						minfo.dwTypeData = (TCHAR *)MessageText(playstr);
 					}else if ( !tstrcmp(keyN, T("runas")) ){
 						minfo.dwTypeData = (TCHAR *)MessageText(
-								(OSver.dwMajorVersion >= 6) ?
+								(WinType >= WINTYPE_VISTA) ?
 								runasV6str : runasV5str);
 					}
 				}else{

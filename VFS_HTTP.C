@@ -278,7 +278,7 @@ VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr, ThSTRUCT *th)
 #ifdef UNICODE
 	hWSOCK32 = LoadWinAPI("WS2_32.dll", NULL, WINSOCKDLL, LOADWINAPI_LOAD_ERRMSG);
 #else
-	hWSOCK32 = LoadWinAPI((OSver.dwMajorVersion >= 5) ?
+	hWSOCK32 = LoadWinAPI((WinType >= WINTYPE_2000) ?
 		"WS2_32.dll" : "WSOCK32.DLL", NULL, WINSOCKDLL, LOADWINAPI_LOAD_ERRMSG);
 #endif
 	if ( hWSOCK32 == NULL ) return FALSE;
@@ -482,7 +482,7 @@ VFSDLL BOOL PPXAPI GetImageByHttp(const TCHAR *urladr, ThSTRUCT *th)
 		if ( hSsleay32 != NULL ){
 			if ( getdir == url ){ // proxy
 				int getlen;
-				wsprintfA(buf, "CONNECT %s:%d HTTP/1.0\r\n", host, getport);
+				wsprintfA(buf, "CONNECT %s:%d HTTP/1.1\r\n", host, getport);
 				ThCatStringA(th, buf);
 				errorcode = wsPuts(&ssock, buf);
 				if ( errorcode != NO_ERROR ){

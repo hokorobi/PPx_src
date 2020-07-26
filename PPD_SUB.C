@@ -829,9 +829,28 @@ PPXDLL ERRORCODE PPXAPI ExecKeyCommand(const EXECKEYCOMMANDSTRUCT *ekcs, PPXAPPI
 	IME の状態を設定する
 	status		0:IME off	1:IME on	2:IME onなら固定入力に切り換え(予定)
 -----------------------------------------------------------------------------*/
+#define xIS_DEFAULT 0
+#define xIS_DIGITS 28
+#define xIS_NUMBER 29 // カンマ付き数値
+#define xIS_ONECHAR 30 // ANSI character, codepage 1252
 PPXDLL void PPXAPI SetIMEStatus(HWND hWnd, int status)
 {
+#if 0
+	HMODULE hMSCTF;
+	DefineWinAPI(HRESULT, SetInputScope, (HWND, int));
+
+	hMSCTF = GetModuleHandle(T("msctf.dll"));
+	if ( hMSCTF != NULL ){
+		GETDLLPROC(hMSCTF, SetInputScope);
+		if ( DSetInputScope != NULL ){
+			DSetInputScope(hWnd, status ? xIS_DEFAULT : xIS_ONECHAR);
+			XMessage(NULL,NULL,XM_DbgLOG,T("SetInputScope"));
+			return;
+		}
+	}
+#endif
 #if !defined(WINEGCC)
+{
 	HIMC hIMC;
 															// IME を強制解除
 	hIMC = ImmGetContext(hWnd);
@@ -851,6 +870,7 @@ PPXDLL void PPXAPI SetIMEStatus(HWND hWnd, int status)
 //		}
 		ImmReleaseContext(hWnd, hIMC);
 	}
+}
 #endif
 }
 
@@ -1332,6 +1352,9 @@ int FixTextImage(const char *src, DWORD memsize, TCHAR **dest, int usecp)
 	cp = (charcode < VTypeToCPlist_max) ? VTypeToCPlist[charcode] : charcode;
 	flags = (cp == CP_UTF8) ? 0 : MB_PRECOMPOSED;
 #ifdef UNICODE
+	if ( (cp != CP_UTF8) && !IsValidCodePage(cp) ){
+		cp = VTYPE_SYSTEMCP;
+	}
 	size = MultiByteToWideCharU8(cp, flags, src, -1, NULL, 0);
 	*dest = HeapAlloc(ProcHeap, 0, TSTROFF(size));
 	if ( *dest == NULL ){
@@ -1348,7 +1371,8 @@ int FixTextImage(const char *src, DWORD memsize, TCHAR **dest, int usecp)
 	return -charcode;
 
 #else // Multibyte
-	if ( charcode == VTYPE_SYSTEMCP ){
+	if ( (charcode == VTYPE_SYSTEMCP) || // 変換不要
+		 ((cp != CP_UTF8) && (cp != CP__UTF16L) && (cp != CP__UTF16B) && !IsValidCodePage(cp)) ){ // 変換不可
 		*dest = (char *)src;
 		return charcode;
 	}else{

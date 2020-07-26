@@ -221,12 +221,7 @@ VFSDLL void PPXAPI VFSOn(int mode)
 				p += tstrlen(p) + 1;
 
 				uD->flags = *(DWORD *)p;
-				#ifdef _WIN64 // 32/64bit”Å‚Í‚»‚ê‚¼‚ê—p‚Ì‚ð“Ç‚Ýž‚Þ
-				if ( uD->flags & UNDLLFLAG_64bit )
-				#else
-				if ( uD->flags & UNDLLFLAG_32bit )
-				#endif
-				{
+				if ( uD->flags & ValueX3264(UNDLLFLAG_32bit, UNDLLFLAG_64bit) ){
 					p += sizeof(DWORD) / sizeof(TCHAR);
 					uD->knowntype = *(int *)p;
 					p += sizeof(int) / sizeof(TCHAR);
@@ -514,6 +509,7 @@ VFSDLL int PPXAPI VFSCheckDir(const TCHAR *filename, BYTE *header, DWORD hsize, 
 
 	// -------------------------------- ListFile
 	if ( !memcmp(header, LHEADER, sizeof(LHEADER) - 1) ||
+		 !memcmp(header, UTF8HEADER LHEADER, sizeof(LHEADER) - 1 + 3) ||
 		 !memcmp(header + 2, L";ListFile\r\n", sizeof(L";ListFile\r\n") - sizeof(WCHAR)) ){
 		if ( MenuMode == 0 ) return VFSDT_LFILE;
 		if ( MenuMode == MenuMode_Dir ){
@@ -1392,7 +1388,21 @@ BOOL VFS_check_7Zip(UN_DLL *uD, VUCHECKSTRUCT *vcs)
 BOOL VFS_check_ZIP(UN_DLL *uD, VUCHECKSTRUCT *vcs)
 {
 	VFSUnWildCheckTemplate;
+/*
+	if ( GetAsyncKeyState(VK_SHIFT) & KEYSTATE_PUSH ){
+		return VFSUnCheckMainFunction(uD, vcs);
+	}
+*/
 	VFSUnCheckTemplate(0, 8, 'P', (*(p+1) == 'K') && (*(p+2) == 3) && (*(p+3) == 4) );
+#if 0
+	{
+		BYTE *header;
+		header = vcs->header;
+		if ( (vcs->fsize > 0x400) && (*header == 'M') && (*(header + 1) == 'Z') && !memcmp(header + 0x288, "_winzip_", 8) ){
+			return VFSUnCheckMainFunction(uD, vcs);
+		}
+	}
+#endif
 	return FALSE;
 }
 //--------------------------------------------------------------- UnDLL TAR

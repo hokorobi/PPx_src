@@ -550,8 +550,6 @@ extern char *usertypes;
 //------------------------------------------------------------------ vfs_fop.c
 extern TCHAR *MakeFOPlistFromPPx(PPXAPPINFO *info/*, int flag*/);
 extern TCHAR *MakeFOPlistFromParam(const TCHAR *param, const TCHAR *path);
-//------------------------------------------------------------------ vfs_oimg.c
-extern BOOL NotifyFileSize(HANDLE hFile, DWORD sizeL, DWORD sizeH);
 
 //------------------------------------------------------------------ vfs_ffp.c
 extern BOOL LoadNetFunctions(void);
@@ -568,6 +566,12 @@ extern BOOL CreateDirectoryExL(const TCHAR *FileName, const TCHAR *FileName2, LP
 TypedefWinAPI(HANDLE, FindFirstFile, (const TCHAR *lpFileName, WIN32_FIND_DATA *FindFileData));
 extern impFindFirstFile DFindFirstFile;
 HANDLE WINAPI LoadFindFirstFile(const TCHAR *lpFileName, WIN32_FIND_DATA *FindFileData);
+//------------------------------------------------------------------ vfs_oimg.c
+extern BOOL NotifyFileSize(HANDLE hFile, DWORD sizeL, DWORD sizeH);
+
+//------------------------------------------------------------------ vfs_olnk.c
+extern ERRORCODE FOPMakeShortCut(const TCHAR *src, TCHAR *dst, BOOL directory, BOOL test);
+
 //------------------------------------------------------------------ vfs_path.c
 extern BOOL IsRelativeDirectory(const TCHAR *path);
 extern BOOL IsParentDirectory(const TCHAR *path);

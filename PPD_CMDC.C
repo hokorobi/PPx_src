@@ -1046,14 +1046,15 @@ void CmdChopDirectory(EXECSTRUCT *Z, const TCHAR *param)
 }
 
 #ifdef UNICODE
-	#ifdef _WIN64
-		#define UHNAME T("ppx64")
+	#ifndef _M_ARM64
+		#define UHNAME ValueX3264(T("ppw"), T("ppx64"))
 	#else
-		#define UHNAME T("ppw")
+		#define UHNAME T("ppxarm64")
 	#endif
 #else
 	#define UHNAME T("ppx")
 #endif
+const TCHAR CheckUpdateURL[] = CHECKVERSIONURL T("?exe=PPx&ver=") T(FileProp_Version) T("&name=") UHNAME;
 
 const TCHAR CheckUpdateErrorMsg[] = MES_XUUE;
 const TCHAR CheckUpdateNoupdMsg[] = MES_XUUN;
@@ -1227,9 +1228,7 @@ void CmdCheckUpdate(EXECSTRUCT *Z, const TCHAR *param)
 		if ( IntervalUpdateCheck(ptr) == FALSE ) return;
 		Update_CheckUpdateInterval(); // ●とりあえずここに
 	}
-
-	GetImageByHttp(CHECKVERSIONURL T("?exe=PPx&ver=") T(FileProp_Version)
-			T("&name=") UHNAME, &th);
+	GetImageByHttp(CheckUpdateURL, &th);
 	force = tstrchr(param, 'f');
 	bottom = strstr(th.bottom, "\n>");
 	if ( bottom != NULL ){
@@ -1385,6 +1384,26 @@ void CmdAddHistory(const TCHAR *param)
 
 	if ( buf[0] != '\0' ){
 		WriteHistory(HistWriteTypeflag[ptr - HistType], buf, 0, NULL);
+	}
+}
+
+void CmdGoto(EXECSTRUCT *Z, const TCHAR *param)
+{
+	TCHAR *ptr, label[128];
+
+	GetCommandParameter(&param, label + 2, TSIZEOF(label) - 2);
+	if ( label[2] == '\0' ){
+		label[0] = '\0';
+	}else{
+		label[0] = '%';
+		label[1] = 'm';
+	}
+	ptr = tstrstr(Z->src, label);
+	if ( ptr != NULL ){
+		Z->src = ptr;
+	}else{
+		XMessage(NULL, NULL, XM_GrERRld, T("*Goto label %s not found."), label);
+		Z->result = ERROR_INVALID_PARAMETER;
 	}
 }
 
@@ -2768,7 +2787,7 @@ void ZExec(EXECSTRUCT *Z)
 			実行したプロセスでIMEを完全に使用できないようにする。
 			ただし、ウィンドウを作成する前に実行しないと機能しないので、
 			コマンドの公開はしていない。*/
-		case CID_NOIME: {
+		case CID_NOIME:{
 			DefineWinAPI(BOOL, ImmDisableIme, (DWORD));
 			GETDLLPROC(GetModuleHandle(T("IMM32.DLL")), ImmDisableIme);
 			if ( DImmDisableIme != NULL ) DImmDisableIme((DWORD)-1);
@@ -2869,6 +2888,9 @@ void ZExec(EXECSTRUCT *Z)
 		case CID_MAXLENGTH:
 			Z->LongResultLen = GetDigitNumber32u((const TCHAR **)&param);
 			setflag(Z->status, ST_LONGRESULT);
+			break;
+		case CID_GOTO:
+			CmdGoto(Z,param);
 			break;
 										// *jumpentry
 		case CID_JUMPENTRY:

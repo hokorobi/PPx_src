@@ -1451,6 +1451,25 @@ BYTE GetLineParamA(const char **str, TCHAR *param)
 #define TGetLineParam GetLineParam
 #endif
 
+void GetBaseUrl(const char *src, BYTE *tagend)
+{
+	const char *up;
+	TCHAR url[VFPS];
+
+	up = strchr(src, '=');
+	if ( (up != NULL) && (up < (char *)tagend) &&
+		 ((vo_.file.source[0] == '\0') || (vo_.file.sourcefrom < SOURCEFROM_BASEURL)) ){
+		up++;
+		TGetLineParam(&up, url);
+		VFSFullPath(vo_.file.source, url, vo_.file.source);
+		vo_.file.sourcefrom = SOURCEFROM_BASEURL;
+		if ( vo_.file.source[0] == '\0' ){
+			tstrcpy(vo_.file.source + 1, url);
+			vo_.file.sourcefrom = SOURCEFROM_BASEURL_REL;
+		}
+	}
+}
+
 BOOL USEFASTCALL CheckTopSpace(TEXTCODEINFO *tci)
 {
 	BYTE *dest;
@@ -1597,19 +1616,11 @@ BOOL DecodeHtmlTag(TEXTCODEINFO *tci)
 			}
 		}
 
-		// <base なら vo_.file.source を取得する
+		// <base href なら vo_.file.source を取得する
 		if ( !strcmp(tagname, "base") ){
 			if ( !offsw ){
 				SkipSepA(&s);
-				if ( upper(*s) == 'H' ){
-					const char *up;
-
-					up = strchr(s, '=');
-					if ( (up != NULL) && (up < (char *)tagend) ){
-						up++;
-						TGetLineParam(&up, vo_.file.source);
-					}
-				}
+				if ( upper(*s) == 'H' ) GetBaseUrl(s, tagend);
 				offsw = 1;
 			}
 		}
@@ -2261,11 +2272,24 @@ int GetHexNumberA(const char **ptr)
 	return n;
 }
 
+void GetGetAddr(BYTE *linep, const TCHAR *method)
+{
+	TCHAR buf[VFPS];
+
+	TGetLineParam((const char **)&linep, buf);
+	VFSFullPath(NULL, buf, method);
+	if ( vo_.file.sourcefrom == SOURCEFROM_BASEURL_REL ){
+		VFSFullPath(vo_.file.source, vo_.file.source + 1, buf);
+	}else{
+		tstrcpy(vo_.file.source, buf);
+	}
+	vo_.file.sourcefrom = SOURCEFROM_GETADDR;
+}
+
 int MakeIndexTable(int mode, int param)
 {
 	VMEM *vo;
 	BYTE *of, *vmax;			// 参照中のイメージと最大値
-	BYTE buf[TEXTBUFSIZE];
 	int next;				// 次のメモリ確保行
 	int line;				// 処理行数
 	int count;
@@ -2301,7 +2325,7 @@ int MakeIndexTable(int mode, int param)
 
 		count = 4000;
 		line = 0;
-		mtinfo.vo = vo = param == MIT_PARAM_TEXT ? &vo_.text.text : &vo_.text.document;
+		mtinfo.vo = vo = (param == MIT_PARAM_TEXT) ? &vo_.text.text : &vo_.text.document;
 		of = VOi->img;
 		vmax = of + mtinfo.MemSize;
 
@@ -2330,7 +2354,7 @@ int MakeIndexTable(int mode, int param)
 		((VT_TABLE *)vo->ptr)->line = 1;
 	}
 
-	mti.destbuf = buf;
+	InitMakeTextInfo(&mti);
 	mti.srcmax = vmax;
 	mti.writetbl = TRUE;
 	mti.paintmode = FALSE;
@@ -2346,12 +2370,14 @@ int MakeIndexTable(int mode, int param)
 			if ( hTmp == NULL ){
 				VO_error(PPERROR_GETLASTERROR);
 				VOi->reading = FALSE;
+				ReleaseMakeTextInfo(&mti);
 				return -1;
 			}
 			vo->mapH = hTmp;
 			if ( (vo->ptr = GlobalLock(vo->mapH)) == NULL ){
 				VO_error(PPERROR_GETLASTERROR);
 				VOi->reading = FALSE;
+				ReleaseMakeTextInfo(&mti);
 				return -1;
 			}
 		}
@@ -2378,20 +2404,12 @@ int MakeIndexTable(int mode, int param)
 		BYTE *linep;
 
 		linep = ((VT_TABLE *)vo->ptr)[2 - 1].ptr;
-		if ( linep != NULL ){
+		if ( (linep != NULL) && (vo_.file.sourcefrom < SOURCEFROM_GETADDR) ){
 			if ( !memcmp(linep , "GET ", 4) ){
-				linep += 4;
-				tstrcpy(vo_.file.source, T("http://"));
-				TGetLineParam((const char **)&linep, vo_.file.source + 7);
+				GetGetAddr(linep + 4, T("http://"));
 			}
 			if ( !memcmp(linep , "CONNECT ", 8) ){
-				TCHAR *cp;
-
-				linep += 8;
-				tstrcpy(vo_.file.source, T("https://"));
-				TGetLineParam((const char **)&linep, vo_.file.source + 8);
-				cp = tstrrchr(vo_.file.source + 8, ':');
-				if ( cp != NULL ) *cp = '\0';
+				GetGetAddr(linep + 8, T("https://"));
 			}
 		}
 	}
@@ -2412,6 +2430,8 @@ int MakeIndexTable(int mode, int param)
 		if ( (VOi->line < line) || (of >= vmax) ) VOi->line = line;
 	}
 	VOi->ti = (VT_TABLE *)vo->ptr;
+
+	ReleaseMakeTextInfo(&mti);
 	return line;
 }
 //-----------------------------------------------------------------------------
@@ -2578,6 +2598,29 @@ void SetUchar(TEXTCODEINFO *tci, DWORD code)
 	}
 }
 #endif
+
+void InitMakeTextInfo(MAKETEXTINFO *mti)
+{
+	if ( GlobalTextBuf.use == FALSE ){ // 共用があいているなら利用
+		GlobalTextBuf.use = TRUE;
+		mti->destsize = GlobalTextBuf.size;
+		mti->destbuf = GlobalTextBuf.buff;
+	}else{
+		XMessage(NULL,NULL,XM_DbgLOG,T("local buff"));
+		mti->destsize = DISPTEXTBUFSIZE;
+		mti->destbuf = HeapAlloc(PPvHeap, 0, mti->destsize);
+	}
+}
+
+void ReleaseMakeTextInfo(MAKETEXTINFO *mti)
+{
+	if ( mti->destbuf == GlobalTextBuf.buff ){  // 共用なら解放
+		GlobalTextBuf.use = FALSE;
+	}else{
+		HeapFree(PPvHeap, 0, mti->destbuf);
+	}
+}
+
 /*-----------------------------------------------------------------------------
 	表示用文字列を作成する
 	tbl:	各種情報（次の行の情報を保存するので、少なくとも２以上の配列）
@@ -2594,7 +2637,7 @@ BYTE *MakeDispText(MAKETEXTINFO *mti, VT_TABLE *tbl)
 	tci.extlast = NULL;
 	tci.cnt = VOi->width;
 	tci.extcnt = 0;
-	tci.destmax = tci.dest + TEXTBUFSIZE - 16;
+	tci.destmax = tci.dest + mti->destsize - 16;
 	tci.vcode = VCODE_END;
 	tci.paintmode = mti->paintmode;
 
@@ -3041,8 +3084,13 @@ BYTE *MakeDispText(MAKETEXTINFO *mti, VT_TABLE *tbl)
 			}
 		}
 	}
-		if ( (VOi->defwidth == WIDTH_NOWARP) && (ScrollWidth < (TEXTBUFSIZE - tci.cnt)) ) {
-			ScrollWidth = TEXTBUFSIZE - tci.cnt;
+		if ( VOi->defwidth == WIDTH_NOWARP ){
+			int minScrollWidth;
+
+			minScrollWidth = mti->destsize - tci.cnt;
+			if ( ScrollWidth < minScrollWidth ) {
+				ScrollWidth = minScrollWidth;
+			}
 		}
 	}
 	CloseVcode(&tci);

@@ -122,6 +122,8 @@ typedef struct tag_bregexp {
 	int nparens;
 } BREGEXP;
 
+#define BREGEXP_MAX_ERROR_MESSAGE_LEN 80
+
 int (USECDECL *BMatch)(const char *str, const char *target, const char *targetendp, BREGEXP **rxp, char *msg) = NULL;
 int (USECDECL *BSubst)(char *str, char *target, char *targetendp, BREGEXP **rxp, char *msg);
 int (USECDECL *BTrans)(char *str, char *target, char *targetendp, BREGEXP **rxp, char *msg);
@@ -1954,7 +1956,7 @@ const char *RegExp_CopyReturnA(char *dest, const WCHAR *result, size_t dest_bufl
 
 const TCHAR *RegularExpressionMatch_bregexp(RXPREPLACESTRING *rxps, TCHAR *target, TCHAR *dest, size_t dest_buflen)
 {
-	TCHAR msg[VFPS];
+	TCHAR msg[BREGEXP_MAX_ERROR_MESSAGE_LEN];
 
 	if ( DBMatch != NULL ){ // bregonig
 		int result;
@@ -2183,7 +2185,7 @@ void FreeRegularExpressionReplace(RXPREPLACESTRING *rxps)
 const TCHAR *RegularExpressionReplace(RXPREPLACESTRING *rxps, TCHAR *target, TCHAR *dest, size_t dest_buflen)
 {
 	if ( rxps->mode <= RXMODE_BREGEXP_MAX ){	// BRegExp(s/tr/h)
-		TCHAR msg[VFPS];
+		TCHAR msg[BREGEXP_MAX_ERROR_MESSAGE_LEN];
 
 		if ( rxps->mode == RXMODE_BREGEXP_H ){ // h
 			return RegularExpressionMatch_bregexp(rxps, target, dest, dest_buflen);
@@ -2199,8 +2201,19 @@ const TCHAR *RegularExpressionReplace(RXPREPLACESTRING *rxps, TCHAR *target, TCH
 				count = DBTrans(rxps->string_rb, target,
 						target + tstrlen(target), &rxps->bonip, msg);
 			}
-			if ( (count <= 0) || (rxps->bonip == NULL) || (rxps->bonip->outp == NULL) ){
-				return RegExp_CopyReturn(dest, target, dest_buflen);
+			if ( count <= 0 ){
+				if ( count == 0 ){ // no match ... Œ³‚Ì•¶Žš—ñ
+					return RegExp_CopyReturn(dest, target, dest_buflen);
+				}else{ // error
+					*dest = '*';
+					tstrlimcpy(dest + 1, msg, dest_buflen);
+					return dest;
+				}
+				// ‹ó•¶Žš—ñ
+			}else if ( (rxps->bonip == NULL) || (rxps->bonip->outp == NULL) ){
+				*dest = '\0';
+				return dest;
+				// Œ‹‰Ê—L‚è
 			}else{
 				return RegExp_CopyReturn(dest, rxps->bonip->outp, dest_buflen);
 			}
@@ -2225,8 +2238,23 @@ const TCHAR *RegularExpressionReplace(RXPREPLACESTRING *rxps, TCHAR *target, TCH
 				count = BTrans(renameA, targetA, targetA + strlen(targetA),
 						&rxps->bregp, (char *)msg);
 			}
-			if ( (count <= 0) || (rxps->bregp == NULL) || (rxps->bregp->outp == NULL) ){
-				return RegExp_CopyReturn(dest, target, dest_buflen);
+			if ( count <= 0 ){
+				if ( count == 0 ){ // no match ... Œ³‚Ì•¶Žš—ñ
+					return RegExp_CopyReturn(dest, target, dest_buflen);
+				}else{ // error
+#ifdef UNICODE
+					tstrcpy(dest, L"*bregexp error");
+#else
+					*dest = '*';
+					tstrlimcpy(dest + 1, msg, dest_buflen);
+#endif
+					return dest;
+				}
+				// ‹ó•¶Žš—ñ
+			}else if ( (rxps->bregp == NULL) || (rxps->bregp->outp == NULL) ){
+				*dest = '\0';
+				return dest;
+				// Œ‹‰Ê—L‚è
 			}else{
 #ifdef UNICODE
 				int len;

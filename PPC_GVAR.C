@@ -179,7 +179,8 @@ extern "C" {
 #define CRID_EXTCMD			(IDW_INTERNALMIN + 0x2c00)	// •W€Šg’£Žq•Ê‚Ì‘I‘ðŽˆ
 #define CRID_EXTCMD_MAX		(CRID_EXTCMD + 0x1ff)
 
-#define CRID_NEWTAB		(IDW_INTERNALMAX - 2)	// V‹Kƒ^ƒu
+#define CRID_LISTSTART	(IDW_INTERNALMAX - 3) // ƒXƒ^[ƒg‚Ì‘S‚Ä‚É’Ç‰Á
+#define CRID_NEWTAB		(IDW_INTERNALMAX - 2) // V‹Kƒ^ƒu
 #define CRID_SELECTEXE	(IDW_INTERNALMAX - 1) // Open With ‚Å‘I‘ð
 #define CRID_MAX		IDW_INTERNALMAX // 2fff
 
@@ -226,6 +227,12 @@ GVAR HWND SelfDD_hWnd GPARAM(NULL);	// Ž©•ª‚ªƒhƒ‰ƒbƒOƒI[ƒi[‚È‚ç‚»‚Ì hWnd ‚ª“ü‚
 GVAR int SelfDD_Dtype GPARAM(0);
 
 GVAR BOOL UsePFont GPARAM(FALSE);	// ƒvƒƒ|[ƒVƒ‡ƒiƒ‹ƒtƒHƒ“ƒg‚©‚Ç‚¤‚©
+
+	// ƒtƒ@ƒCƒ‹–¼‚âƒJƒ‰ƒ€“™‚Ì•\Ž¦‚ÉŽg‚¤Œ`Ž®
+GVAR int EllipsisType GPARAM(0);
+	// ƒtƒ@ƒCƒ‹–¼‚Ì•\Ž¦‚É DrawText ‚ðŽg—p‚·‚é‚©
+	// ¦ ƒvƒƒ|[ƒVƒ‡ƒiƒ‹ƒtƒHƒ“ƒg‚©AÈ—ª•\Ž¦‚Ì•ÏX‚ðs‚Á‚Ä‚¢‚é‚Æ‚«‚É—LŒø
+GVAR UINT UseDrawText GPARAM(FALSE);
 
 GVAR HWND hCommonLog GPARAM(NULL);			// ‹¤—pƒƒO
 GVAR TCHAR *CommonLogBackup GPARAM(NULL);	// ‹¤—pƒƒO‚Ì“à—eƒoƒbƒNƒAƒbƒv(cust)
@@ -314,11 +321,6 @@ GVAR const TCHAR StrUser32DLL[] GPARAM(T("USER32.DLL"));
 GVAR const TCHAR StrKernel32DLL[] GPARAM(T("KERNEL32.DLL"));
 GVAR const TCHAR StrShell32DLL[] GPARAM(T("SHELL32.DLL"));
 //================================================================ DATA
-GVAR const TCHAR *IncTypeString[4]
-#ifndef GLOBALEXTERN
- = { NilStr, MES_ITFN, MES_ITCM, MES_ITFC };
-#endif
-;
 GVAR const TCHAR *DirString;
 GVAR int DirStringLength;
 GVAR const TCHAR StrThisDir[] GPARAM(T("."));
@@ -529,7 +531,7 @@ GVAR DWORD XC_isea[3]
 ;
 
 GVAR int XC_gmod GPARAM(0);
-GVAR DWORD X_svsz GPARAM(2 * MB);
+GVAR DWORD X_svsz GPARAM(DEF_X_svsz);
 GVAR BOOL X_wnam GPARAM(1);
 GVAR BOOL XC_szcm GPARAM(0);
 GVAR int XC_exem GPARAM(0);
@@ -554,6 +556,7 @@ GVAR int X_lddm[3]
 = {-1, 1, 0}
 #endif
 ;
+GVAR DDEXSETTINGS X_ddex GPARAM({DDPAGEMODE_DIR_DEFWAIT});
 
 GVAR int XC_ifix GPARAM(0);
 GVAR int X_dsst[2] GPARAM2(DSMD_REGID, DSMD_TEMP);
@@ -748,8 +751,8 @@ GVAR ICONCACHESTRUCT CacheIcon
 GVAR int CacheIconsX, CacheIconsY;
 GVAR BOOL Use_X_icnl GPARAM(FALSE);
 //-------------------------------------- ŠJ”­’†
-GVAR BOOL exdset GPARAM(FALSE);
-GVAR int UseCCDrawBack GPARAM(0);
+GVAR BOOL exdset GPARAM(FALSE); // XC_dset ‚ÅAƒƒCƒ‹ƒhƒJ[ƒh‚â SHNŽw’è‚ð—LŒø‚É
+GVAR int UseCCDrawBack GPARAM(0); // ƒc[ƒ‹ƒo[“™‚Ìƒ_[ƒNƒ‚[ƒh‘Î‰ž
 
 #ifdef __cplusplus
 }

@@ -444,19 +444,19 @@ VFSDLL BOOL PPXAPI VFSGetRealPath(HWND hWnd, TCHAR *path, const TCHAR *vfs)
 
 	pSF = VFPtoIShell(hWnd, vfs, &idl);
 	if ( pSF == NULL ){ // 最後のエントリがbindできないと思われるので試行する
-		TCHAR c;
+		TCHAR code;
 
 		tstrcpy(tempdir, vfs);
 		ptr = VFSFindLastEntry(tempdir);
-		if ( (c = *ptr) == '\0' ) goto error; // エントリがない
+		if ( (code = *ptr) == '\0' ) goto error; // エントリがない
 		*ptr = '\0';
 		pSF = VFPtoIShell(hWnd, tempdir, &idl); // 最終エントリ以外で取得
 		if ( pSF == NULL ) goto error;
 									// 最終エントリを処理
-		if ( c == '\\' ){
+		if ( code == '\\' ){
 			ptr++;
 		}else{
-			*ptr = c;
+			*ptr = code;
 		}
 		idl2 = BindIShellAndFname(pSF, ptr);
 		if ( idl2 == NULL ){
@@ -525,14 +525,30 @@ LRESULT CALLBACK C2Proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
-void InvokeMenu(CONTEXTMENUS *cms, CMINVOKECOMMANDINFO *cmi)
+#define INVOKE_PINTOSTART 9901
+BOOL InvokeMenuError(HWND hWnd, HMENU hMenu, int idCmd, HRESULT hres)
+{
+	TCHAR item[VFPS];
+
+	if ( GetMenuString(hMenu, idCmd, item, VFPS, MF_BYCOMMAND) > 0 ){
+		if ( (tstrstr(item, T("Pin to Start")) != NULL) ||
+			 ((tstrstr(item, T("スタート")) != NULL) &&
+			  (tstrstr(item, T("ピン")) != NULL)) ){
+			return INVOKE_PINTOSTART;
+		}
+	}
+	PPErrorBox(hWnd, NULL, hres);
+	return TRUE;
+}
+
+HRESULT InvokeMenu(CONTEXTMENUS *cms, CMINVOKECOMMANDINFO *cmi)
 {
 	if ( cms->cm3 != NULL ){
-		cms->cm3->lpVtbl->InvokeCommand(cms->cm3, cmi);
+		return cms->cm3->lpVtbl->InvokeCommand(cms->cm3, cmi);
 	}else if ( cms->cm2 != NULL ){
-		cms->cm2->lpVtbl->InvokeCommand(cms->cm2, cmi);
+		return cms->cm2->lpVtbl->InvokeCommand(cms->cm2, cmi);
 	}else{
-		cms->cm->lpVtbl->InvokeCommand(cms->cm, cmi);
+		return cms->cm->lpVtbl->InvokeCommand(cms->cm, cmi);
 	}
 }
 /*-----------------------------------------------------------------------------
@@ -558,7 +574,6 @@ VFSDLL BOOL PPXAPI SHContextMenu(HWND hWnd, LPPOINT lppt, LPSHELLFOLDER lpsfPare
 		#define SetIntresVerb(cmd) cmi.lpVerb = cmd
 	#endif
 	CONTEXTMENUS cms;
-	int idCmd;
 	HWND hCWnd = NULL;
 	HMENU hMenu;
 	BOOL result = FALSE;
@@ -642,6 +657,8 @@ VFSDLL BOOL PPXAPI SHContextMenu(HWND hWnd, LPPOINT lppt, LPSHELLFOLDER lpsfPare
 				if ( SUCCEEDED(lr) ) result = TRUE;
 			}else{
 										// ContextMemu 用ウィンドウを作成 -----
+				int idCmd;
+
 				c2Class.hCursor   = LoadCursor(NULL, IDC_ARROW);
 				c2Class.hInstance = DLLhInst;
 				RegisterClass(&c2Class);
@@ -653,11 +670,16 @@ VFSDLL BOOL PPXAPI SHContextMenu(HWND hWnd, LPPOINT lppt, LPSHELLFOLDER lpsfPare
 				idCmd = TrackPopupMenu(hMenu, TPM_TDEFAULT,
 						lppt->x, lppt->y, 0, hCWnd, NULL);
 										// ContextMemu の項目を実行 --------
-				if ( idCmd > 0 ){
-					SetIntresVerb((LPTSTR)MAKEINTRESOURCE(idCmd - BASEINDEX));
-					InvokeMenu(&cms, CMISTRUCT &cmi);
-				}
 				result = TRUE;
+				if ( idCmd > 0 ){
+					HRESULT hres;
+
+					SetIntresVerb((LPTSTR)MAKEINTRESOURCE(idCmd - BASEINDEX));
+					hres = InvokeMenu(&cms, CMISTRUCT &cmi);
+					if ( FAILED(hres) ){
+						result = InvokeMenuError(hWnd, hMenu, idCmd, hres);
+					}
+				}
 			}
 		}
 		DestroyMenu(hMenu);
@@ -760,6 +782,20 @@ error:
 	path + entry	ファイル名
 	lppt			popupmenu の表示位置
 -----------------------------------------------------------------------------*/
+void TinyRegisterStartmenu(const TCHAR *path, const TCHAR *entry)
+{
+	TCHAR LinkedFile[VFPS], DestPath[VFPS], *last;
+
+	VFSFullPath(LinkedFile, (TCHAR *)entry, path);
+	VFSGetRealPath(NULL, DestPath, T("#11:\\"));
+
+	last = VFSFindLastEntry(entry);
+	if ( *last == '\\' ) last++;
+	CatPath(NULL, DestPath, last);
+	FOPMakeShortCut(LinkedFile, DestPath, GetFileAttributesL(LinkedFile) & FILE_ATTRIBUTE_DIRECTORY, FALSE);
+}
+
+
 VFSDLL BOOL PPXAPI VFSSHContextMenu(HWND hWnd, LPPOINT pos, const TCHAR *path, const TCHAR *entry, const TCHAR *cmd)
 {
 	LPITEMIDLIST idl;
@@ -772,6 +808,7 @@ VFSDLL BOOL PPXAPI VFSSHContextMenu(HWND hWnd, LPPOINT pos, const TCHAR *path, c
 	result = SHContextMenu(hWnd, pos, pSF, &idl, 1, cmd);
 	FreePIDL(idl);
 	pSF->lpVtbl->Release(pSF);
+	if ( result == INVOKE_PINTOSTART ) TinyRegisterStartmenu(path, entry);
 	return result;
 }
 

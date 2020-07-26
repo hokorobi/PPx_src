@@ -83,7 +83,7 @@ BOOL InitProcessDLL(void)
 	GetVersionEx(&OSver);
 
 	If_WinNT_Block {
-		WinType = (OSver.dwMajorVersion << 16) | (WORD)OSver.dwMinorVersion;
+		WinType = MAKE_WINTYPE(OSver);
 	}
 	#if !defined(_WIN64) && defined(UNICODE)
 		if ( OSver.dwPlatformId != VER_PLATFORM_WIN32_NT ){
@@ -118,7 +118,7 @@ BOOL InitProcessDLL(void)
 	hKernel32 = GetModuleHandle(T("KERNEL32.DLL"));
 
 	#ifndef _WIN64
-		if ( OSver.dwMajorVersion >= 6 ){
+		if ( WinType >= WINTYPE_VISTA ){
 			GETDLLPROC(hKernel32, AddVectoredExceptionHandler);
 			GETDLLPROC(hKernel32, RemoveVectoredExceptionHandler);
 		}

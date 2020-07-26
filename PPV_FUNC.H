@@ -49,6 +49,7 @@ extern void ClosePPv(void);
 extern void InitSymbolFont(HDC hDC);
 extern HFONT GetIBMFont(void);
 extern HFONT GetANSIFont(void);
+extern BOOL FixShowRectByShowStyle(RECT *wndbox, HWND hParentTargetWnd);
 
 //------------------------------------------------------------------ ppv_open.c
 extern void InitViewObject(VIEWOPTIONS *viewopt, TCHAR *type);
@@ -148,6 +149,8 @@ extern LRESULT WmGetObject(WPARAM wParam);
 extern void FreeAccServer(void);
 
 //------------------------------------------------------------------ ppv_text.c
+extern void InitMakeTextInfo(MAKETEXTINFO *mti);
+extern void ReleaseMakeTextInfo(MAKETEXTINFO *mti);
 extern BYTE *MakeDispText(MAKETEXTINFO *mti, VT_TABLE *tbl);
 
 #define MIT_FIRST  0

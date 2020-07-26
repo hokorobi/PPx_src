@@ -159,6 +159,8 @@ DefineWinAPI(HRESULT, AtlAxGetControl, (HWND, IUnknown **)) = NULL;
 #define TIPTEXTLENGTH 0x400
 
 const TCHAR FileTipClass[] = T("PPcTip");
+#define GEN_DRAW_FLAGS (DT_NOPREFIX | DT_SINGLELINE | DT_END_ELLIPSIS)
+#define NAME_DRAW_FLAGS (GEN_DRAW_FLAGS | DT_NOCLIP)
 #define TIP_DRAW_FLAGS (DT_LEFT | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL | DT_EXPANDTABS)
 LRESULT CALLBACK TipWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -950,7 +952,7 @@ void DrawNumber(DISPSTRUCT *disp, const TCHAR *str, int len)
 		disp->backbox.left = disp->Xd;
 		disp->backbox.right = disp->Xd + len * disp->fontX;
 		DxDrawText(disp->DxDraw, disp->hDC, str, len, &disp->backbox,
-			DT_RIGHT | DT_NOPREFIX | DT_SINGLELINE);
+				DT_RIGHT | DT_NOPREFIX | DT_SINGLELINE);
 	} else{
 		DxTextOutRel(disp->DxDraw, disp->hDC, str, len);
 	}
@@ -1349,7 +1351,7 @@ void DrawColumn(DISPSTRUCT *disp, DISPFMT_COLUMN *dfc)
 		disp->backbox.left = disp->Xd;
 		disp->backbox.right = disp->Xd + len * disp->fontX;
 		DxDrawText(disp->DxDraw, disp->hDC, text, displen, &disp->backbox,
-			DT_RIGHT | DT_NOPREFIX | DT_SINGLELINE | DT_END_ELLIPSIS);
+				GEN_DRAW_FLAGS | DT_RIGHT);
 	#endif
 	} else{
 	#if !defined(UNICODE) && !defined(USEDIRECTX)
@@ -1361,7 +1363,7 @@ void DrawColumn(DISPSTRUCT *disp, DISPFMT_COLUMN *dfc)
 			disp->backbox.left = disp->Xd;
 			disp->backbox.right = disp->Xd + fmtlen * disp->fontX;
 			DxDrawText(disp->DxDraw, disp->hDC, text, -1, &disp->backbox,
-				DT_LEFT | DT_NOPREFIX | DT_SINGLELINE | DT_END_ELLIPSIS);
+					GEN_DRAW_FLAGS);
 		}
 	}
 	DxGetCurrentPositionEx(disp->DxDraw, disp->hDC, &disp->LP);
@@ -1640,7 +1642,7 @@ void PaintImageIcon(DISPSTRUCT *disp, const BYTE *fmt, int CheckM, int Ytop, int
 
 		// ※ DrawTextもSetTextAlignの影響を受ける
 		DxDrawText(disp->DxDraw, hDC, disp->cell->f.cFileName, -1, &box,
-			DT_NOCLIP | DT_NOPREFIX | DT_SINGLELINE | DT_PATH_ELLIPSIS);
+				NAME_DRAW_FLAGS);
 
 		if ( !disp->NoBack ){
 			DxGetCurrentPositionEx(disp->DxDraw, hDC, &disp->LP);
@@ -2357,38 +2359,73 @@ int LimStrcpy(PPC_APPINFO *cinfo, TCHAR *buf, LPCTSTR *drawptr, const TCHAR *nam
 		}
 	}
 
-	if ( IsTrue(UsePFont) ){ // プロポーショナルフォントはDrawTextまかせ
+	if ( IsTrue(UsePFont) && (EllipsisType == 0) ){ // プロポーショナルフォントはDrawTextまかせ
 		*drawptr = sp;
 		return name_len;
 	}
-							// 末尾を省略
 	*drawptr = buf;
 	diend = buf + maxwidth - 1;
-	while ( buf < diend ){
-	#ifdef UNICODE
-		WCHAR c;
-		c = *sp++;
-		*buf++ = c;
-		if ( CCharWide(c) > 1 ){
-			if ( buf == diend ){
-				*(buf - 1) = '.';
-				break;
-			}
-			diend--;
-			maxwidth--;
+	if ( EllipsisType != 0 ){ // 前部・両端を省略
+		if ( maxwidth >= 4 ){
+			*buf++ = '.';
+			*buf++ = '.';
+			name_len += 2;
+			diend -= 2;
 		}
-	#else
-		if ( IskanjiA(*buf++ = *sp++) ){
-			if ( buf == diend ){
-				*(buf - 1) = '.';
-				break;
-			}
-			*buf++ = *sp++;
+		name_len -= maxwidth;
+		if ( EllipsisType == 2 ){ // 両端のときは前部の省略量を半分に
+			name_len /= 2;
 		}
-	#endif
+
+		while ( name_len > 0 ){
+		#ifdef UNICODE
+			WCHAR c;
+			c = *sp++;
+			if ( CCharWide(c) > 1 ){
+				sp++;
+				name_len--;
+			}
+		#else
+			if ( IskanjiA(*sp++) ){
+				sp++;
+				name_len--;
+			}
+		#endif
+			name_len--;
+		}
+		if ( EllipsisType == 1 ){
+			tstrcpy(buf, sp);
+			maxwidth += name_len; // name_len は 0 か -1
+		}
 	}
-	*buf = '.';
-	*(buf + 1) = '\0';
+
+	if ( EllipsisType != 1 ){ // 両端・末尾を省略
+		while ( buf < diend ){
+		#ifdef UNICODE
+			WCHAR c;
+			c = *sp++;
+			*buf++ = c;
+			if ( CCharWide(c) > 1 ){
+				if ( buf == diend ){
+					*(buf - 1) = '.';
+					break;
+				}
+				diend--;
+				maxwidth--;
+			}
+		#else
+			if ( IskanjiA(*buf++ = *sp++) ){
+				if ( buf == diend ){
+					*(buf - 1) = '.';
+					break;
+				}
+				*buf++ = *sp++;
+			}
+		#endif
+		}
+		*buf = '.';
+		*(buf + 1) = '\0';
+	}
 	return maxwidth;
 }
 
@@ -2644,7 +2681,7 @@ void PaintMultiLineFilename(DISPSTRUCT *disp, const BYTE *fmt)
 			disp->backbox.left = disp->Xd;
 			disp->backbox.right = disp->Xd + widthpixel;
 			DxDrawText(disp->DxDraw, disp->hDC, filep, length, &disp->backbox,
-				DT_NOCLIP | DT_NOPREFIX | DT_SINGLELINE | DT_END_ELLIPSIS);
+					NAME_DRAW_FLAGS);
 
 			SetDelayEntryTip(disp, disp->cell->f.cFileName, nwid, disp->cell->ext);
 
@@ -2804,13 +2841,12 @@ void PaintFilename(DISPSTRUCT *disp, const BYTE *fmt, int Xe)
 	}
 	drawlen = LimStrcpy(cinfo, disp->buf, &dispf, fileptr, extoffset, nwid);
 #ifndef UNICODE
-	if ( IsTrue(UsePFont) ){
+	if ( IsTrue(UseDrawText) ){
 #endif
 		disp->backbox.left = disp->Xd;
 		disp->backbox.right = disp->Xd + nwid * disp->fontX;
 
-		DxDrawText(disp->DxDraw, disp->hDC, dispf, drawlen, &disp->backbox,
-			DT_NOCLIP | DT_NOPREFIX | DT_SINGLELINE | DT_END_ELLIPSIS);
+		DxDrawText(disp->DxDraw, disp->hDC, dispf, drawlen, &disp->backbox, NAME_DRAW_FLAGS);
 #ifndef UNICODE
 	} else{
 		DxTextOutRel(disp->DxDraw, disp->hDC, dispf, drawlen);
@@ -2900,8 +2936,7 @@ void PaintFilename(DISPSTRUCT *disp, const BYTE *fmt, int Xe)
 		disp->backbox.left = disp->LP.x;
 		disp->backbox.right = disp->Xd;
 
-		DxDrawText(disp->DxDraw, disp->hDC, dispf, drawlen, &disp->backbox,
-			DT_NOCLIP | DT_NOPREFIX | DT_SINGLELINE | DT_END_ELLIPSIS);
+		DxDrawText(disp->DxDraw, disp->hDC, dispf, drawlen, &disp->backbox, NAME_DRAW_FLAGS);
 #ifndef UNICODE
 	} else{
 		DxTextOutBack(disp->DxDraw, disp->hDC, dispf, drawlen);
@@ -3532,8 +3567,7 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 						disp.backbox.left = disp.Xd;
 						disp.backbox.right = disp.Xd + *fmt * disp.fontX;
 						DxDrawText(disp.DxDraw, disp.hDC, cmtptr, -1,
-							&disp.backbox,
-							DT_LEFT | DT_NOPREFIX | DT_SINGLELINE | DT_END_ELLIPSIS);
+							&disp.backbox, GEN_DRAW_FLAGS);
 					}
 				}
 				DxGetCurrentPositionEx(disp.DxDraw, hDC, &disp.LP);

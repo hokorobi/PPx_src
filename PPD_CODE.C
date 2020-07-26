@@ -195,7 +195,7 @@ label s_ekey[EKEY_MAX + 1] = {
 	{NilStr, 0}
 };
 
-COLORLABEL guicolor[] = {
+COLORLABEL guicolor[color_s] = {
 	{T("_BLA"), C_BLACK},
 	{T("_BLU"), C_BLUE},
 	{T("_RED"), C_RED},
@@ -441,11 +441,9 @@ PPXDLL BOOL PPXAPI GetSizeNumber(LPCTSTR *ptr, DWORD *Low, DWORD *High)
 			break;
 	}
 	if ( scaleL == 0 ){
-#ifdef _WIN64
-		if ( High != NULL ) *High = (DWORD)(INT_PTR)(basesize >> 32);
-#else
-		if ( High != NULL ) *High = 0;
-#endif
+		if ( High != NULL ){
+			*High = ValueX3264(0, (DWORD)(INT_PTR)(basesize >> 32));
+		}
 		*Low = (DWORD)basesize;
 	}else{
 		DWORD sizeL, sizeH;

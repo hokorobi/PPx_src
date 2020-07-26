@@ -291,7 +291,7 @@ LRESULT CALLBACK TrayWindow(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				 (lParam == WM_XBUTTONDBLCLK) ){
 				HWND hMenuWnd;
 
-				hMenuWnd = FindWindow(T("#32768"), NULL);
+				hMenuWnd = FindWindow(T(WNDCLASS_POPUPMENU), NULL);
 				if ( hMenuWnd != NULL ) PostMessage(hMenuWnd, WM_CLOSE, 0, 0);
 			}
 			PostMessage(hWnd, WM_COMMAND, lParam, 0); // ‚¨‚Ü‚¶‚È‚¢‚P

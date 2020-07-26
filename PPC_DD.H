@@ -34,15 +34,16 @@ extern int GetCellNoFromPoint(POINTL pos, int *flag);
 extern HRESULT Link(char *LinkedFile, char *LinkFname, char *DestPath);
 extern BOOL ContextMenu(HWND hWnd, char *path, char *entry, LPPOINT lppt, char *cmd);
 extern void ExecSendTo(PPC_APPINFO *cinfo, const TCHAR *cmd);
+extern void ForceDataObject(void);
 //----------------------------------------------------------------------------
 extern void MarkDragArea(PPC_APPINFO *cinfo, RECT *area, int mode);
 extern void DrawDragFrame(HWND hWnd, const RECT *area);
 extern void CalcDragTarget(PPC_APPINFO *cinfo, POINT *pos, RECT *area);
 
-extern BOOL AutoDD_UseDLL(PPC_APPINFO *cinfo, HWND hTargetWnd, const TCHAR *src, BOOL droptype);
+extern BOOL AutoDD_UseDLL(PPC_APPINFO *cinfo, HWND hTargetWnd, const TCHAR *src, DWORD droptype);
+extern HRESULT PPcCopyToDropTarget(IDataObject *DataObject, IDropTarget *DropTarget, DWORD droptype, HWND hTargetWnd, DWORD alloweffect);
 extern void * GetPathInterface(HWND hWnd, const TCHAR *name, REFIID riid, const TCHAR *path);
 extern BOOL CopyToShnPathFiles(PPC_APPINFO *cinfo, const TCHAR *destpath, DWORD alloweffect);
-extern HRESULT PPcCopyToDropTarget(IDataObject *DataObject, IDropTarget *DropTarget, BOOL droptype, HWND hTargetWnd, DWORD alloweffect);
 
 // C++ only ===================================================================
 #ifdef __cplusplus
@@ -82,6 +83,7 @@ class CImpIDataObject: public IDataObject{
 		STDMETHOD(EnumDAdvise)(LPENUMSTATDATA *ppenumAdvise);
 										// PPx's ----------------
 		void Init(PPC_APPINFO *cinfo);
+		void OnCache(void);
 };
 //-----------------------------------------------------------------------------
 class CEnumFormatEtc : public IEnumFORMATETC{
@@ -188,6 +190,7 @@ class CDropTarget:public IDropTarget, private PPcDropTargetBase{
 	private:
 		ULONG	mRef;		// ref counter
 		int		mEdge;		// 境界位置(挿入)なら !0
+		DWORD	mKeyState;	// ボタン状態の記憶
 		DROPTYPE mDDtype;
 #if FREEPOSMODE
 		POINT	mCellPos;	// 自D&D時に表示させるCellの影の位置
@@ -198,6 +201,7 @@ class CDropTarget:public IDropTarget, private PPcDropTargetBase{
 
 		BOOL DropDDFormat(LPDATAOBJECT pDataObj, POINTL *pt, DWORD pdwEffect);
 		BOOL DropEtcFormat(LPDATAOBJECT pDataObj, POINTL *pt, DWORD pdwEffect);
+		STDMETHODIMP DropPidlCopy(LPDATAOBJECT pDataObj, DWORD pdwEffect);
 		STDMETHODIMP DropPidlLink(LPDATAOBJECT pDataObj, DWORD pdwEffect);
 #if USE_URLDROP
 		STDMETHODIMP DropUrl(LPDATAOBJECT pDataObj);
@@ -245,6 +249,7 @@ extern BOOL ExecFileOperation(DWORD pdwEffect, const TCHAR *targetpath, TMS_stru
 extern void GetDropFormat(DROPTYPE &DDtype, LPDATAOBJECT pDataObj);
 extern void DDMenu(HWND hWnd, POINTL *pt, DWORD *pdwEffect, DWORD orgEffect, DWORD key, LPDATAOBJECT pDataObj, int Cell, DROPTYPE &DDtype, PPC_APPINFO *cinfo, const TCHAR *TargetPath, DWORD DropModeFlags);
 extern DWORD GetDDEffect(DWORD targetattr, DWORD keystate, DWORD *result, DWORD defaction);
+extern BOOL DragData_ChangedDir;
 
 #ifdef RELEASE
 	#define Debug_DispIID(mes, riid)

@@ -286,8 +286,8 @@ VFSDLL int PPXAPI VFSGetDibDelay(const TCHAR *filename, void *image, DWORD sizeL
 			// プレビューがあればプレビューで、プレビューでエラーなら通常で
 			if ( IsTrue(usepreview) && (sudll->GetPreview != NULL) &&
 				 (SUSIEERROR_NOERROR == sudll->GetPreview((LPSTR)image,
-						(LONG_PTR)sizeL, SUSIE_SOURCE_MEM,
-						Info, Bm, (FARPROC)SusieProgressCallback, 0)) ){
+					(LONG_PTR)sizeL, SUSIE_SOURCE_MEM,
+					Info, Bm, (FARPROC)SusieProgressCallback, 0)) ){
 				goto success;
 			}
 			susie_result = sudll->GetPicture((LPSTR)image, (LONG_PTR)sizeL,
@@ -297,15 +297,15 @@ VFSDLL int PPXAPI VFSGetDibDelay(const TCHAR *filename, void *image, DWORD sizeL
 #ifdef UNICODE
 				if ( sudll->GetPictureW != NULL ){
 					if ( SUSIEERROR_NOERROR == sudll->GetPictureW(filename, 0,
-								SUSIE_SOURCE_DISK, Info, Bm,
-								(FARPROC)SusieProgressCallback, 0) ){
+							SUSIE_SOURCE_DISK, Info, Bm,
+							(FARPROC)SusieProgressCallback, 0) ){
 						goto success;
 					}
 				}else
 #endif
 				if ( SUSIEERROR_NOERROR == sudll->GetPicture(TFILENAME, 0,
-							SUSIE_SOURCE_DISK, Info, Bm,
-							(FARPROC)SusieProgressCallback, 0) ){
+						SUSIE_SOURCE_DISK, Info, Bm,
+						(FARPROC)SusieProgressCallback, 0) ){
 					goto success;
 				}
 			}
@@ -313,11 +313,7 @@ VFSDLL int PPXAPI VFSGetDibDelay(const TCHAR *filename, void *image, DWORD sizeL
 		if ( ts != NULL ) ts->ThreadName = OldTname;
 		LeaveCriticalSection(&ArchiveSection[VFSAS_SUSIE]);
 	}
-#ifdef _WIN64
-	return 0;
-#else
-	return LoadOLEmode(image, sizeL, type, Info, Bm, AllReadProc);
-#endif
+	return ValueX3264(LoadOLEmode(image, sizeL, type, Info, Bm, AllReadProc), 0);
 success:
 	// 読み込み成功
 	if ( ts != NULL ) ts->ThreadName = OldTname;
