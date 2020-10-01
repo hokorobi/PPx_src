@@ -246,7 +246,7 @@ INT_PTR CALLBACK WindowDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam
 			LocalizeDialogText(hDlg, IDD_CWINDOW);
 			CheckDlgButton(hDlg, IDX_CWIN_DBL, cinfo->swin & SWIN_WBOOT);
 			CheckDlgButton(hDlg, IDX_CWIN_CLO, cinfo->swin & SWIN_WQUIT);
-			if ( X_combo ){
+			if ( X_combo != COMBO_OFF ){
 				CheckDlgButton(hDlg, IDX_CWIN_CMB, TRUE);
 				CheckDlgButtonGroup(hDlg, CWIN_CMB_GROUP, -1, FALSE);
 			}

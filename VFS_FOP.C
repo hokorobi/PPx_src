@@ -394,6 +394,7 @@ void CreateFWriteLogWindow(FOPSTRUCT *FS)
 	SendMessage(hWnd, WM_SETFONT, SendMessage(FS->hDlg, WM_GETFONT, 0, 0), TRUE);
 	*FS->hLogWnd = hWnd;
 	SetWindowY(FS, 0); // ‘å‚«‚³’²®••\Ž¦
+	ShowDlgWindow(FS->hDlg, IDB_FOP_LOG, SW_SHOWNOACTIVATE);
 	SetDlgFocus(FS->hDlg, IDOK);
 }
 void FWriteLog(HWND hEWnd, const TCHAR *message)

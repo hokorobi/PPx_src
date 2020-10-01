@@ -16,6 +16,7 @@ const TCHAR StrEqual[] = MES_FIXE;
 /*=============================================================================
 	WinMain
 =============================================================================*/
+#pragma warning(suppress:28251) // SDK ‚É‚æ‚Á‚Ä hPrevInstance ‚Ì‘®«‚ªˆÙ‚È‚é
 #pragma argsused
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {

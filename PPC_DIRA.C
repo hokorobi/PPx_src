@@ -13,15 +13,14 @@
 
 /*
 	dirty == TRUE なら自動廃棄される
-	hWnd == NULL なら未使用
 	result == NO_ERROR ならデータが有効
 */
 #define SAVE_REPORT RENTRYI_CACHE
 #define SAVE_DUMP RENTRYI_REFRESHCACHE
 
 #define FFASTATE_COMPLETE B0 // 読み込み完了
-#define FFASTATE_USED B1 // １度使用済み。キャッシュ用
-#define FFASTATE_ENABLEFREE B2 // FreeFfa で廃棄してもよい
+#define FFASTATE_CACHE B1 // １度使用済み。キャッシュ用
+#define FFASTATE_ENABLEFREE B2 // FreeFfa で廃棄してもよい(読み込み完了したら立つ)
 #define USEMEMCACHETIME 40 // メモリキャッシュに保存するときの判断に使うms
 
 const TCHAR FindFirstAsyncThreadName[] = T("Async dir read");
@@ -41,7 +40,7 @@ typedef struct tagFindFirstAsync{
 	TCHAR path[VFPS];		// 探すディレクトリ
 
 	HWND hWnd;				// 通知先 NULL == 対象がない
-	LPARAM lParam;			// 通知先メッセージ
+	LPARAM lParam;			// 通知先メッセージ(cinfo->LoadCounter相当)
 	DWORD LastTick;			// 読み込み完了時の時間(自動廃棄用)
 	DWORD ReadTick;			// 読み込みに掛かった時間(廃棄判断用)
 
@@ -77,14 +76,14 @@ void DirTaskCommand(PPC_APPINFO *cinfo)
 	EnterCriticalSection(&FindFirstAsyncSection);
 	sffa = FindFirstAsyncList;
 	while ( sffa != NULL ){
-		wsprintf(buf, T("%d %dentries %dms ref:%d%s%s%s%s %s"),
-			sffa->result,
-			sffa->count,
+		wsprintf(buf, T("%d:%d %dentries(%d) %dms ref:%d%s%s%s %s"),
+			sffa->LastTick, sffa->result, // ID: result
+			sffa->count, sffa->files.s, // entries (size)
 			sffa->ReadTick,
 			sffa->ref,
 			(sffa->state & FFASTATE_COMPLETE) ? NilStr : T("(read)"),
-			(sffa->state & FFASTATE_USED) ? T("(cache)") : NilStr,
-			(sffa->hWnd != NULL) ? T("(used)") : NilStr,
+			(sffa->state & FFASTATE_CACHE) ? T("(cache)") : NilStr,
+//			(sffa->hWnd != NULL) ? T("(used)") : NilStr,
 			IsTrue(sffa->dirty) ? T("(dirty)") : NilStr,
 			sffa->path);
 
@@ -230,31 +229,35 @@ void DumpCache(FINDFIRSTASYNC *ffa)
 void FreeFfa(FINDFIRSTASYNC *ffa)
 {
 	EnterCriticalSection(&FindFirstAsyncSection);
-	if ( FindFirstAsyncList != NULL ){ // リンクの調整
-		if ( FindFirstAsyncList == ffa ){
-			FindFirstAsyncList = ffa->next;
-		}else{
-			FINDFIRSTASYNC *ffalink;
 
-			ffalink = FindFirstAsyncList;
-			while ( ffalink->next != NULL ){
-				if ( ffalink->next == ffa ){
-					ffalink->next = ffa->next;
-					break;
+	if ( (ffa->state & FFASTATE_ENABLEFREE) && (ffa->ref <= 0) ){
+		if ( FindFirstAsyncList != NULL ){ // リンクの調整
+			if ( FindFirstAsyncList == ffa ){
+				FindFirstAsyncList = ffa->next;
+			}else{
+				FINDFIRSTASYNC *ffalink;
+
+				ffalink = FindFirstAsyncList;
+				for (;;){
+					if ( ffalink->next == NULL ) break; // リスト内に入っていないのでそのまま削除
+					if ( ffalink->next == ffa ){
+						ffalink->next = ffa->next; // 切り離し
+						break;
+					}
+					ffalink = ffalink->next;
 				}
-				ffalink = ffalink->next;
 			}
 		}
-	}
-	if ( (ffa->state & FFASTATE_ENABLEFREE) && (ffa->ref == 0) ){
 		if ( ffa->hFind != NULL ) VFSFindClose(ffa->hFind);
 		TM_kill(&ffa->files);
 		PPcHeapFree(ffa);
+
 	}else{ // スレッドがまだ生きているので廃棄指示をする
-		ffa->hWnd = NULL;
-		ffa->path[0] = '\0';
-		ffa->dirty = TRUE;
+		ffa->hWnd = NULL; // 通知停止
+		ffa->path[0] = '\0'; // 検索対象外
+		ffa->dirty = TRUE; // 廃棄指示
 	}
+
 	LeaveCriticalSection(&FindFirstAsyncSection);
 }
 
@@ -352,7 +355,7 @@ DWORD WINAPI FindFirstAsyncThread(FINDFIRSTASYNC *ffa)
 					newtick = GetTickCount();
 					if ( (newtick - tick) >= 100 ){		// 経過報告
 						tick = newtick;
-						if ( (ffa->save & SAVE_REPORT) && ffa->hWnd ){
+						if ( (ffa->save & SAVE_REPORT) && (ffa->hWnd != NULL) ){
 							PostMessage(ffa->hWnd, WM_PPXCOMMAND, TMAKELPARAM
 									(KC_RELOAD, min(ffa->count, 0xffff)),
 									ffa->lParam);
@@ -374,10 +377,8 @@ DWORD WINAPI FindFirstAsyncThread(FINDFIRSTASYNC *ffa)
 
 		if ( ffa->result == NO_ERROR ) ffa->ReadTick = ntick - ffa->LastTick;
 		ffa->LastTick = ntick;
-		if ( ffa->save & SAVE_REPORT ){
-			if ( ffa->hWnd ){
-				PostMessage(ffa->hWnd, WM_PPXCOMMAND, KC_RELOAD, ffa->lParam);
-			}
+		if ( (ffa->save & SAVE_REPORT) && (ffa->hWnd != NULL) ){
+			PostMessage(ffa->hWnd, WM_PPXCOMMAND, KC_RELOAD, ffa->lParam);
 		}
 		setflag(ffa->state, FFASTATE_COMPLETE | FFASTATE_ENABLEFREE);
 	}else{
@@ -400,29 +401,33 @@ void FindCloseAsync(HANDLE hFind, int flags)
 
 	ffa = ((FINDFIRSTASYNCHEAP *)hFind)->ffa;
 	if ( ffa->ReadTick < USEMEMCACHETIME ){
-		ffa->ref--;
+		EnterCriticalSection(&FindFirstAsyncSection);
+		if ( ffa->ref > 0 ) ffa->ref--;
+		LeaveCriticalSection(&FindFirstAsyncSection);
 		FreeFfa(ffa);
 	}else{
+		BOOL listed = FALSE;
+
 		EnterCriticalSection(&FindFirstAsyncSection);
-		if ( FindFirstAsyncList != NULL ){ // リンクの調整
+		if ( FindFirstAsyncList != NULL ){ // リストに登録されているかを確認
 			if ( FindFirstAsyncList == ffa ){
-				ffa->hWnd = NULL; // フリーにする
+				listed = TRUE;
 			}else{
 				FINDFIRSTASYNC *ffalink;
 
 				ffalink = FindFirstAsyncList;
 				while ( ffalink->next != NULL ){
 					if ( ffalink->next == ffa ){
-						ffa->hWnd = NULL; // フリーにする
+						listed = TRUE;
 						break;
 					}
 					ffalink = ffalink->next;
 				}
 			}
 		}
+		if ( ffa->ref > 0 ) ffa->ref--;
 		LeaveCriticalSection(&FindFirstAsyncSection);
-		ffa->ref--;
-		if ( ffa->hWnd != NULL ) FreeFfa(ffa);
+		if ( listed == FALSE ) FreeFfa(ffa); // リスト外なら解放
 	}
 
 	PPcHeapFree((FINDFIRSTASYNCHEAP *)hFind);
@@ -464,12 +469,11 @@ HANDLE FindFirstAsyncReadStart(FINDFIRSTASYNC *ffa, WIN32_FIND_DATA *ff, VFSDIRT
 		SetLastError(result);
 		return INVALID_HANDLE_VALUE;
 	}
-	ffa->ref++;
-	setflag(ffa->state, FFASTATE_USED);
+	setflag(ffa->state, FFASTATE_CACHE);
 
 	if ( Dtype != NULL ) *Dtype = ffa->Dtype;
 
-	if ( ffa->hFind != NULL ){
+	if ( ffa->hFind != NULL ){ // FindFirst を直接使用するため、ffa を解放
 		HANDLE hFind = ffa->hFind;
 
 		resetflag(*flags, RENTRYI_ASYNCREAD);
@@ -478,6 +482,7 @@ HANDLE FindFirstAsyncReadStart(FINDFIRSTASYNC *ffa, WIN32_FIND_DATA *ff, VFSDIRT
 		FreeFfa(ffa);
 		return hFind;
 	}
+	ffa->ref++;
 
 	ffah = PPcHeapAlloc( sizeof(FINDFIRSTASYNCHEAP) );
 	ffah->ffa = ffa;
@@ -505,10 +510,9 @@ HANDLE FindFirstAsyncReadStart(FINDFIRSTASYNC *ffa, WIN32_FIND_DATA *ff, VFSDIRT
 */
 HANDLE FindFirstAsync(HWND hWnd, LPARAM lParam, const TCHAR *path, WIN32_FIND_DATA *ff, VFSDIRTYPEINFO *Dtype, int *flags)
 {
-	FINDFIRSTASYNC *useffa = NULL, *sffa, *MemCacheFfa = NULL, *FreeDupFfa = NULL;
-	DWORD tick, drivesize;
+	FINDFIRSTASYNC *useffa = NULL, *sffa, *MemCacheFfa = NULL;
+	DWORD tick;
 	TCHAR name[VFPS];
-	DWORD dupreadcount = 0;
 	int sizecount = 0;
 
 	if ( !(*flags & RENTRYI_ASYNCREAD) ){ // 非同期処理を行わないので通常読込を行う
@@ -527,39 +531,20 @@ HANDLE FindFirstAsync(HWND hWnd, LPARAM lParam, const TCHAR *path, WIN32_FIND_DA
 		}
 		return hFind;
 	}
-	{
-		int mode;
-		TCHAR *p = VFSGetDriveType(path, &mode, NULL);
-
-		if ( p == NULL ){
-			drivesize = TSTROFF(1);
-		}else{
-			if ( mode == VFSPT_UNC ){
-				TCHAR *p2 = FindPathSeparator(p);
-				if ( p2 == NULL ) p2 = p + tstrlen(p);
-				p = p2;
-			}
-			drivesize = TSTROFF32(p - path);
-		}
-	}
 		// 処理中リストに該当パスがあるか調べる
 	EnterCriticalSection(&FindFirstAsyncSection);
 	sffa = FindFirstAsyncList;
 	tick = GetTickCount();
 	while ( sffa != NULL ){
 		if ( sffa->dirty != FALSE ){ // dirty のとき、廃棄可能なら廃棄
-			if ( (sffa->state & FFASTATE_ENABLEFREE) && (sffa->ref == 0) ){
-				FINDFIRSTASYNC *nextffa;
+			FINDFIRSTASYNC *nextffa;
 
-				nextffa = sffa->next;
-				FreeFfa(sffa);
-				sffa = nextffa;
-				continue;
-			}
-				 	// 自分に所属orフリー で、同じディレクトリ
-		}else if ( ((sffa->hWnd == hWnd) || (sffa->hWnd == NULL)) &&
-			 !tstrcmp(path, sffa->path) ){
-			if ( *flags & RENTRY_MODIFYUP ){	//	更新読込なら、廃棄する
+			nextffa = sffa->next;
+			FreeFfa(sffa);
+			sffa = nextffa;
+			continue;
+		}else if ( !tstrcmp(path, sffa->path) ){ // 同じディレクトリ
+			if ( *flags & RENTRY_MODIFYUP ){	// 更新読込なら、廃棄する
 				FINDFIRSTASYNC *nextffa;
 
 				nextffa = sffa->next;
@@ -567,85 +552,74 @@ HANDLE FindFirstAsync(HWND hWnd, LPARAM lParam, const TCHAR *path, WIN32_FIND_DA
 				sffa = nextffa;
 				continue;
 			}else{ // 通常読込中
-				// 占有
-				sffa->hWnd = hWnd;
-
-				if ( sffa->state & FFASTATE_USED ){	// メモリキャッシュ用を発見
-					// 同一パスの古いキャッシュを見つけたので廃棄
-					if ( MemCacheFfa != NULL ) FreeFfa(MemCacheFfa);
-
-					if ( *flags & RENTRY_UPDATE ){ // update時はキャッシュ不要
-						sffa->hWnd = NULL;
-						MemCacheFfa = NULL;
-					}else{ // キャッシュに確保
-						sffa->lParam = lParam;
-						MemCacheFfa = sffa;
-					}
-				}else if ( sffa->state & FFASTATE_COMPLETE ){ // 読込完了->利用
+				if ( sffa->state & FFASTATE_CACHE ){ // メモリキャッシュ用を発見
 					// 同一パスの古いキャッシュを見つけたので廃棄
 					if ( MemCacheFfa != NULL ){
+						MemCacheFfa->ref--;
+						FreeFfa(MemCacheFfa);
+					}
+					// キャッシュ利用可能として記憶
+					sffa->lParam = lParam;
+					MemCacheFfa = sffa;
+					MemCacheFfa->ref++;
+				}else if ( sffa->state & FFASTATE_COMPLETE ){ // 読込完了->利用
+					HANDLE hFF;
+					// 同一パスの古いキャッシュを見つけたので廃棄
+					if ( MemCacheFfa != NULL ){
+						MemCacheFfa->ref--;
 						FreeFfa(MemCacheFfa);
 //						MemCacheFfa = NULL;
 					}
+					setflag(sffa->state, FFASTATE_CACHE); // キャッシュ利用を有効
+					hFF = FindFirstAsyncReadStart(sffa, ff, Dtype, flags);
 					LeaveCriticalSection(&FindFirstAsyncSection);
-					return FindFirstAsyncReadStart(sffa, ff, Dtype, flags);
-				}else{
-					// 読み込み途中なのでキャッシュ読み込みへ
-					useffa = sffa;
+					return hFF;
+				}else{ // 読み込み中
+					// ●読み込み中なので、MemCache か重複読み込みにする
+					// ●できれば、複数に提供できるようにしたい
+					if ( sffa->hWnd == hWnd ){
+						useffa = sffa; // 自分の読込中なのでキャッシュ読み込みへ
+					}
 				}
-			}
-		// 読み込み中で、同じドライブ
-		}else if ( !(sffa->state & FFASTATE_COMPLETE ) &&
-			!memcmp(path, sffa->path, drivesize) ){
-			dupreadcount++;
-			// 最初の不要重複スレッドを記憶しておく
-			if ( (FreeDupFfa == NULL) &&
-				 ((sffa->hWnd == NULL) || !IsWindow(sffa->hWnd)) ){
-				FreeDupFfa = sffa;
 			}
 		}
 
 		// 読み込み中の内容が不要になったのでフリーにする
 		if ( (sffa->hWnd == hWnd) && (sffa->lParam != lParam) ){
-			setflag(sffa->state, FFASTATE_USED);
-			sffa->hWnd = NULL;
+			setflag(sffa->state, FFASTATE_CACHE);
+			sffa->hWnd = NULL; // 通知 off
 		}
 		sizecount += sffa->files.s;
 
 		sffa = sffa->next;
 	}
-	if ( (dupreadcount > 2) && (FreeDupFfa != NULL) ){
-		FreeFfa(FreeDupFfa); // 重複数が多いので、減らす
-	}
-	LeaveCriticalSection(&FindFirstAsyncSection);
-
+#if 1
 	if ( sizecount > X_ardir[1] ){ // キャッシュが増えたので、入らない物を廃棄
 		int usesize;
 
-		EnterCriticalSection(&FindFirstAsyncSection);
 		sffa = FindFirstAsyncList;
 		usesize = X_ardir[1] + (X_ardir[1] / 8);
 		while ( sffa != NULL ){
-			// フリーで破棄可能な物 / 無効なHWND を廃棄
-			if ( (sffa != useffa) && (sffa != MemCacheFfa) && (sffa->ref != 0) &&
-				 ((sffa->hWnd == NULL) ?
-				(sffa->state & FFASTATE_ENABLEFREE) : !IsWindow(sffa->hWnd)) ){
+			// フリーで破棄可能な物を廃棄
+			if ( (sffa != useffa) && (sffa != MemCacheFfa) &&
+				 (sffa->ref <= 0) && (sffa->state & FFASTATE_ENABLEFREE) ){
 				FINDFIRSTASYNC *targetffa;
 
 				sizecount -= sffa->files.s;
 				targetffa = sffa;
 				sffa = sffa->next;
-				FreeFfa(targetffa);
+				FreeFfa(targetffa); // dirty チェックをさせる
 				if ( sizecount < usesize ) break;
 			}else{
 				sffa = sffa->next;
 			}
 		}
-		LeaveCriticalSection(&FindFirstAsyncSection);
 #ifndef RELEASE
 		XMessage(NULL, NULL, XM_DbgLOG, T("Async FreeCache:%d"), sizecount);
 #endif
 	}
+#endif
+	LeaveCriticalSection(&FindFirstAsyncSection);
 
 		// 処理中リストに該当がないため、読み込みスレッドを新規作成
 	if ( useffa == NULL ){ // useffa != NULL ... 読み込み中スレッド有り
@@ -677,9 +651,8 @@ HANDLE FindFirstAsync(HWND hWnd, LPARAM lParam, const TCHAR *path, WIN32_FIND_DA
 		hComplete = CreateThread(NULL, 0,
 				(LPTHREAD_START_ROUTINE)FindFirstAsyncThread, useffa, 0, &tid);
 		if ( hComplete == NULL ) return INVALID_HANDLE_VALUE;
-
+#if 1
 		TimeOutCheck(path, T("ASync-CreateThread"), tick);
-
 		if ( X_ardir[0] >= 0 ){
 			DWORD result = WaitForSingleObject(hComplete,
 					((*flags & RENTRY_UPDATE) || (X_ardir[0] == 0)) ?
@@ -690,13 +663,19 @@ HANDLE FindFirstAsync(HWND hWnd, LPARAM lParam, const TCHAR *path, WIN32_FIND_DA
 			if ( result == WAIT_OBJECT_0 ){	// 読み込み成功した
 				CloseHandle(hComplete);
 				// 同一パスのキャッシュがあれば、廃棄する
-				if ( MemCacheFfa != NULL ) FreeFfa(MemCacheFfa);
+				if ( MemCacheFfa != NULL ){
+					EnterCriticalSection(&FindFirstAsyncSection);
+					MemCacheFfa->ref--;
+					FreeFfa(MemCacheFfa);
+					LeaveCriticalSection(&FindFirstAsyncSection);
+				}
 				return FindFirstAsyncReadStart(useffa, ff, Dtype, flags);
 			}
 
 			// 時間が経ったため、負担にならないようスレッド優先度を下げる
 			SetThreadPriority(hComplete, THREAD_PRIORITY_BELOW_NORMAL);
 		}
+#endif
 		CloseHandle(hComplete);
 
 		if ( *flags & RENTRYI_SAVECACHE ){
@@ -704,7 +683,6 @@ HANDLE FindFirstAsync(HWND hWnd, LPARAM lParam, const TCHAR *path, WIN32_FIND_DA
 		}else{
 			useffa->save = SAVE_REPORT; // 通知のみ
 		}
-
 										// FindFirstAsyncList に登録
 		EnterCriticalSection(&FindFirstAsyncSection);
 		if ( FindFirstAsyncList == NULL ){
@@ -722,13 +700,19 @@ HANDLE FindFirstAsync(HWND hWnd, LPARAM lParam, const TCHAR *path, WIN32_FIND_DA
 	if ( !(*flags & RENTRY_UPDATE) ){ // 時間が経ったためキャッシュを読み込む
 									 // ※更新モード時は、キャッシュを使わない
 		if ( MemCacheFfa != NULL ){
-			return FindFirstAsyncReadStart(MemCacheFfa, ff, Dtype, flags);
+			HANDLE hFF;
+
+			EnterCriticalSection(&FindFirstAsyncSection);
+			hFF = FindFirstAsyncReadStart(MemCacheFfa, ff, Dtype, flags);
+			MemCacheFfa->ref--; // 本関数内の参照を解除
+			LeaveCriticalSection(&FindFirstAsyncSection);
+			return hFF;
 		}
 
 		#if TIMEOUTCHECKSW
 			tick = GetTickCount();
 		#endif
-		if ( IsTrue(GetCache_Path(name, path, &Dtype->mode)) ){
+		if ( IsTrue(GetCache_Path(name, path, &Dtype->mode)) ){ // ファイルキャッシュ有り
 			HANDLE hFind;
 
 			resetflag(*flags, RENTRYI_ASYNCREAD);
@@ -740,9 +724,13 @@ HANDLE FindFirstAsync(HWND hWnd, LPARAM lParam, const TCHAR *path, WIN32_FIND_DA
 			TimeOutCheck(path, T("Cache read"), tick);
 			return hFind;
 		}
-	}else{ // 更新時
+		// メモリキャッシュもファイルキャッシュもないので busy
+
+	}else{ // 更新時、読み込み完了していないので busy
 		if ( MemCacheFfa != NULL ){ // メモリキャッシュがあれば占有解除
-			MemCacheFfa->hWnd = NULL;
+			EnterCriticalSection(&FindFirstAsyncSection);
+			MemCacheFfa->ref--; // 本関数内の参照を解除
+			LeaveCriticalSection(&FindFirstAsyncSection);
 		}
 	}
 

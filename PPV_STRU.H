@@ -210,8 +210,10 @@ enum {
 	VSHOW_INMAINWINDOW,	// 親ウィンドウが所属する主ウィンドウの子ウィンドウ
 };
 
-typedef struct {
+typedef struct { // -1:指定なし
 	DISPT dtype;	// 表示形式
+	int history;	// ヒストリ保存の有無
+	// テキスト関係
 	int T_code;		// テキスト表示形式
 	int T_siso;		// si/so 処理
 	int T_esc;		// esc 処理
@@ -222,10 +224,11 @@ typedef struct {
 	int T_tab;		// タブ桁数
 #define VIEWOPTIONS_WIDTHOFFSET 10
 	int T_width;	// 桁数
-	int I_animate;	// アニメーション表示
-	int I_CheckeredPattern;	// 格子表示
 	int linespace;	// 行間隔
 	int tailflags;
+	// 画像関係
+	int I_animate;	// アニメーション表示
+	int I_CheckeredPattern;	// 格子表示
 } VIEWOPTIONS;
 
 typedef struct X_prtsStruct {

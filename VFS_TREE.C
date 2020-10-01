@@ -683,7 +683,7 @@ void WMTreeCreate(HWND hWnd)
 	InitSysColors();
 
 	VTS->hTViewWnd = CreateWindowEx(WS_EX_CLIENTEDGE, WC_TREEVIEW, NilStr,
-			GetTreeWindowStyle(VTS), 0, 0, 100, 100, hWnd, NULL, DLLhInst, NULL);
+			GetTreeWindowStyle(VTS), 0, 0, 100, 100, hWnd, CHILDWNDID(IDT_TREECTL), DLLhInst, NULL);
 	if ( X_dss & DSS_COMCTRL ) SendMessage(VTS->hTViewWnd, CCM_DPISCALE, TRUE, 0);
 
 	InitTreeFont(VTS, GetMonitorDPI(hWnd));

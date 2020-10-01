@@ -320,8 +320,10 @@ BOOL InstallMain(HWND hWnd)
 		if ( XX_ppc_window >= IDR_PPC_COMBO ){
 			strcat(bufA,
 				"XC_page	= 1"NL
-				"XC_mvLR	= 4,1,4,B0100,0,B100"NL
-				"X_dsst	= 3,1"NL );
+				"XC_mvLR	= 4,1,4,B0100,0,B100"NL);
+			if ( XX_ppc_tab != IDR_PPC_TAB_NO ){
+				strcat(bufA, "X_dsst	= 3,1"NL );
+			}
 			strcat(bufA,
 				( XX_keytype == IDR_XPRKEY ) ?
 					"XC_celF	= {"NL

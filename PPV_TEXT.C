@@ -1176,9 +1176,9 @@ BOOL DecodeEUCJP(TEXTCODEINFO *tci)
 	return TRUE;
 }
 
-BOOL DecodeJIS(TEXTCODEINFO *tci)
+BOOL DecodeJIS(TEXTCODEINFO *tci, int corg)
 {
-	int c = *tci->text, d;
+	int c = corg, d;
 
 	if ( (c == 0x8b) || (c == 0x8c) ){	// ã/‰º•t‚«“Y‚¦Žš
 		tci->text++;
@@ -3062,7 +3062,7 @@ BYTE *MakeDispText(MAKETEXTINFO *mti, VT_TABLE *tbl)
 		}else
 										// JIS --------------------------------
 		if ( tci.dcode == VTYPE_JIS ){
-			if ( IsTrue(DecodeJIS(&tci)) ) continue;
+			if ( IsTrue(DecodeJIS(&tci, c)) ) continue;
 			break;
 		}
 		*tci.dest++ = (BYTE)c;

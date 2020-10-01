@@ -422,6 +422,48 @@ void WmSettingChange(HWND hWnd, LPARAM lParam)
 	}
 }
 */
+
+void PPxCleanup(void)
+{
+	NowExit = TRUE;
+	UsePPx();
+	if ( Sm->hhookCBT ){
+		UnhookWindowsHookEx(Sm->hhookCBT);
+		Sm->hhookCBT = NULL;
+	}
+	FreePPxModule();
+	FreeRMatch();
+	FreeMigemo();
+	// カスタマイズログが開いていたら閉じる。
+	// ※ログ窓が残留して異常終了することの対策
+	if ( hUpdateResultWnd != NULL ){
+		DestroyWindow(hUpdateResultWnd);
+		hUpdateResultWnd = NULL;
+	}
+	CleanUpVFS();
+	CleanUpEdit();
+	FreeSysColors();
+	if ( hComctl32 != NULL ){
+		FreeLibrary(hComctl32);
+		hComctl32 = NULL;
+	}
+	if ( ProcTempPath[0] != '\0' ){
+		TCHAR temppath[MAX_PATH];
+		size_t proclen;
+
+		GetTempPath(MAX_PATH, temppath);
+		proclen = tstrlen(ProcTempPath);
+		// c:\ とかを削除しないように
+		if ( (proclen <= 3) || ((tstrlen(temppath) + 1) >= proclen) ){
+			XMessage(NULL,NULL,XM_DbgLOG,T("temppath error: %s"), ProcTempPath);
+		}else{
+			DeleteDirectories(ProcTempPath, FALSE);
+		}
+		ProcTempPath[0] = '\0';
+	}
+	FreePPx();
+}
+
 /*-----------------------------------------------------------------------------
 	PPxCommand の共通部
 
@@ -463,33 +505,7 @@ PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd, LPARAM lParam, WORD key)
 			break;
 
 		case K_CLEANUP:					// Clean up -------------------------
-			NowExit = TRUE;
-			UsePPx();
-			if ( Sm->hhookCBT ){
-				UnhookWindowsHookEx(Sm->hhookCBT);
-				Sm->hhookCBT = NULL;
-			}
-			FreePPxModule();
-			FreeRMatch();
-			FreeMigemo();
-			// カスタマイズログが開いていたら閉じる。
-			// ※ログ窓が残留して異常終了することの対策
-			if ( hUpdateResultWnd != NULL ){
-				DestroyWindow(hUpdateResultWnd);
-				hUpdateResultWnd = NULL;
-			}
-			CleanUpVFS();
-			CleanUpEdit();
-			FreeSysColors();
-			if ( hComctl32 != NULL ){
-				FreeLibrary(hComctl32);
-				hComctl32 = NULL;
-			}
-			if ( ProcTempPath[0] != '\0' ){
-				DeleteDirectories(ProcTempPath, FALSE);
-				ProcTempPath[0] = '\0';
-			}
-			FreePPx();
+			PPxCleanup();
 			break;
 /*
 		case K_SETTINGCHANGE:

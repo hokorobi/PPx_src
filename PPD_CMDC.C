@@ -1047,7 +1047,11 @@ void CmdChopDirectory(EXECSTRUCT *Z, const TCHAR *param)
 
 #ifdef UNICODE
 	#ifndef _M_ARM64
-		#define UHNAME ValueX3264(T("ppw"), T("ppx64"))
+		#ifndef USEDIRECTWRITE
+			#define UHNAME ValueX3264(T("ppw"), T("ppx64"))
+		#else
+			#define UHNAME ValueX3264(T("ppxdw"), T("ppxdw64"))
+		#endif
 	#else
 		#define UHNAME T("ppxarm64")
 	#endif

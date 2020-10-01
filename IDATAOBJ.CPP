@@ -23,7 +23,7 @@ CImpIDataObject::CImpIDataObject()
 //------------------------------------- デコンストラクタ
 CImpIDataObject::~CImpIDataObject()
 {
-	if(m_cRefCount != 0) xmessage(XM_FaERRd, T("~CImpIDataObject"));
+	if ( m_cRefCount != 0 ) xmessage(XM_FaERRd, T("~CImpIDataObject"));
 }
 //------------------------------------- 初期化
 void CImpIDataObject::Init(PPC_APPINFO *cinfo)
@@ -67,8 +67,7 @@ void CImpIDataObject::OnCache(void)
 
 	// 未展開 && マウスボタンが離れていたら展開する
 	if ( (m_arcmode == TRUE) &&
-		!((::GetAsyncKeyState(VK_LBUTTON) |
-			::GetAsyncKeyState(VK_RBUTTON)) & KEYSTATE_PUSH) ){
+		!((::GetAsyncKeyState(VK_LBUTTON) | ::GetAsyncKeyState(VK_RBUTTON)) & KEYSTATE_PUSH) ){
 		m_arcmode = -1;
 		PPcUnpackForAction(m_cinfo, m_arctemp, UFA_EXTRACT);
 	}

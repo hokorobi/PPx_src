@@ -776,6 +776,15 @@ void ImageRealloc(DWORD reqsize)
 	}
 }
 
+void BadRp(BYTE *rp, BOOL readend)
+{
+	TCHAR buf[0x400];
+
+	wsprintf(buf, T("Rp:%p Size:%p/%p Type:%d End:%d"), rp - vo_.file.image, vo_.file.UseSize, vo_.file.ImageSize, ReadingStream, readend);
+	PPxCommonExtCommand(K_SENDREPORT, (WPARAM)buf);
+
+}
+
 BOOL ReadData(DWORD starttime)
 {
 	DWORD endtime = 0;
@@ -843,7 +852,11 @@ BOOL ReadData(DWORD starttime)
 	}
 	if ( rp != NULL ){
 		VOi->reading = TRUE;
-		memset(rp, 0, FILEBUFMARGIN);
+		if ( IsBadReadPtr(rp, FILEBUFMARGIN) ){
+			BadRp(rp, readend);
+		}else{
+			memset(rp, 0, FILEBUFMARGIN);
+		}
 		if ( ReadingStream != READ_STDIN ){	// ƒtƒ@ƒCƒ‹
 			endtime = (endtime >= starttime) ?
 					(endtime - starttime) : (starttime - endtime);
@@ -1838,6 +1851,7 @@ void PPVGetHist(void)
 
 void SetOpts(VIEWOPTIONS *viewopts)
 {
+	if ( viewopts->history >= 0 ) VO_history = viewopts->history;
 	if ( viewopts->dtype == DISPT_DOCUMENT ){
 		TCHAR cmd[CMDLINESIZE];
 		TCHAR tempfile[VFPS];
@@ -1898,8 +1912,8 @@ void SetOpts(VIEWOPTIONS *viewopts)
 	if ( viewopts->T_esc  >= 0 ) VO_Tesc = viewopts->T_esc;
 	if ( viewopts->T_mime >= 0 ) VO_Tmime = viewopts->T_mime;
 	if ( viewopts->T_tag  >= 0 ) VO_Ttag = viewopts->T_tag;
-	if ( viewopts->T_show_css  >= 0 ) VO_Tshow_css = viewopts->T_show_css;
-	if ( viewopts->T_show_script  >= 0 ) VO_Tshow_script = viewopts->T_show_script;
+	if ( viewopts->T_show_css >= 0 ) VO_Tshow_css = viewopts->T_show_css;
+	if ( viewopts->T_show_script >= 0 ) VO_Tshow_script = viewopts->T_show_script;
 	if ( viewopts->T_tab  >= 1 ) VOi->tab = viewopts->T_tab;
 	if ( viewopts->T_width >= 0 ){
 		VOi->defwidth = viewopts->T_width - VIEWOPTIONS_WIDTHOFFSET;
@@ -2147,7 +2161,7 @@ void InitViewObject(VIEWOPTIONS *viewopts, TCHAR *type)
 		viewopt_opentime.T_tab  = -1;
 		viewopt_opentime.T_width  = VOi->width;
 		viewopt_opentime.I_animate  = vo_.bitmap.page.animate;
-		viewopt_opentime.I_CheckeredPattern  = -1;
+		viewopt_opentime.I_CheckeredPattern = viewopt_def.I_CheckeredPattern;
 		viewopt_opentime.linespace  = -1;
 	}
 	if ( vo_.DModeBit == DOCMODE_TEXT ){

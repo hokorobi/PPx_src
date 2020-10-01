@@ -78,16 +78,18 @@ HANDLE hPropsys = NULL;
 
 #define PAGEMAX 20
 #define SYNCPROPPOSNAME T("SyncPrp")
+
 const TCHAR PHandlersKey[] = T("shellex\\PropertySheetHandlers");
 const TCHAR PAllKey[] = T("*");
-// const TCHAR PDirectoryKey[] = T("Directory");
-// const TCHAR PAllFileKey[] = T("AllFilesystemObjects");
+#if 1
+ const TCHAR PDirectoryKey[] = T("Directory");
+ const TCHAR PAllFileKey[] = T("AllFilesystemObjects");
+#endif
 const TCHAR PropThreadThreadName[] = T("Fit Prop");
 
 WNDPROC OldPropProc;
 HHOOK OldPropKeyProc;
-HWND hPPWnd;
-void AddExtProps(LPITEMIDLIST idlist, LPDATAOBJECT pDataObject, const TCHAR *tname, HPROPSHEETPAGE *page, int *pages);
+HWND hPropParentWnd;
 
 // カラム拡張関連 - XPまで ====================================================
 TCHAR *GetColumnExtTextInfo(PPC_APPINFO *cinfo, int cellcolumn, TCHAR *dst)
@@ -807,12 +809,24 @@ HRESULT GetLink(HWND hWnd, const TCHAR *LinkFile, TCHAR *Original)
 #endif
 // 同期プロパティ関連 =========================================================
 
-struct PROPOBJECT {
+typedef struct {
+	HPROPSHEETPAGE sheet[PAGEMAX];
+	struct {
+		IShellExtInit *pShellExt;
+		IShellPropSheetExt *pShellProp;
+	} COM[PAGEMAX];
+
+	int pages, FirstPage;
+	int use;
+
 	LPITEMIDLIST idlist;
 	LPSHELLFOLDER ShellFolder;
 	LPDATAOBJECT DataObject;
-};
-PROPOBJECT Props = {NULL, NULL, NULL};
+} PropInfoStruct;
+
+void AddExtProps(PropInfoStruct *propinfo, const TCHAR *tname);
+
+PropInfoStruct *pPropInfo;
 
 BOOL CALLBACK PropPageFunc(HPROPSHEETPAGE hPSP, LPARAM lParam)
 {
@@ -820,14 +834,21 @@ BOOL CALLBACK PropPageFunc(HPROPSHEETPAGE hPSP, LPARAM lParam)
 	return TRUE;
 }
 
-void FreePropCom(PROPOBJECT *po)
+void FreePropCom(PropInfoStruct *po)
 {
+	int i;
+
 	if ( po->DataObject != NULL )	po->DataObject->Release();
 	if ( po->ShellFolder != NULL )	po->ShellFolder->Release();
 	if ( po->idlist != NULL ) FreePIDL(po->idlist);
-	po->idlist = NULL;
-	po->ShellFolder = NULL;
-	po->DataObject = NULL;
+//	po->idlist = NULL;
+//	po->ShellFolder = NULL;
+//	po->DataObject = NULL;
+
+	for ( i = 1 ; i < po->pages ; i++ ){
+		po->COM[i].pShellProp->Release();
+		po->COM[i].pShellExt->Release();
+	}
 }
 
 void SavePropPos(HWND hWnd)
@@ -838,7 +859,7 @@ void SavePropPos(HWND hWnd)
 	SetCustTable(Str_WinPos, SYNCPROPPOSNAME, &wpos, sizeof(wpos));
 }
 
-INT_PTR CALLBACK PageDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK FirstPageDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg){
 		case WM_INITDIALOG: {
@@ -855,11 +876,10 @@ INT_PTR CALLBACK PageDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 			if ( attr == BADATTR ) attr = 0;
 			if ( OSver.dwMajorVersion >= 6 ){
 				GetWindowRect(GetDlgItem(hDlg, IDS_ICON), &box);
-				box.bottom -= box.top;
+				box.bottom = (box.bottom - box.top) & 0xfffc;
 			}else{
 				box.bottom = 32;
 			}
-
 			EnterCriticalSection(&SHGetFileInfoSection);
 			hFileIcon = LoadFileIcon(info->filename, attr, SHGFI_ICON,
 					box.bottom, NULL);
@@ -931,61 +951,62 @@ INT_PTR CALLBACK PageDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 	return TRUE;
 }
 
-int MakePropPages(SYNCPROPINFO *info, HPROPSHEETPAGE *page)
+int MakePropPages(PropInfoStruct *propinfo, SYNCPROPINFO *fileinfo)
 {
-	int pages = 1;
-	const TCHAR *p;
+	const TCHAR *extp;
 	TCHAR buf[VFPS];
-	PROPOBJECT NewProps;
+	PropInfoStruct NewProps;
 	PROPSHEETPAGE psp;
-//	DWORD attr;
+	DWORD attr;
 
-//	attr = GetFileAttributesL(info->filename);
+	attr = GetFileAttributesL(fileinfo->filename);
 
 // Page 0 の設定
 	psp.dwSize = sizeof(psp);
 	psp.dwFlags = 0;
 	psp.hInstance = hInst;
 	psp.pszTemplate = MAKEINTRESOURCE(IDD_PROPGENERAL);
-	psp.pfnDlgProc	= PageDlgProc;
-	psp.lParam		= (LPARAM)info;
-	page[0] = DCreatePropertySheetPage(&psp);
+	psp.pfnDlgProc	= FirstPageDlgProc;
+	psp.lParam		= (LPARAM)fileinfo;
+	NewProps.sheet[0] = DCreatePropertySheetPage(&psp);
+	NewProps.use = 0;
+	NewProps.pages = 1;
+	NewProps.idlist = NULL;
+	NewProps.ShellFolder = NULL;
+	NewProps.DataObject = NULL;
 
 // Page 1 以降（拡張）の設定
-	if ( FALSE == VFSMakeIDL(NilStr, &NewProps.ShellFolder, &NewProps.idlist, info->filename) ){
-		return pages;
+	if ( FALSE == VFSMakeIDL(NilStr, &NewProps.ShellFolder, &NewProps.idlist, fileinfo->filename) ){
+		return propinfo->pages;
 	}
 	if ( SUCCEEDED(NewProps.ShellFolder->GetUIObjectOf(NULL, 1,
-				(LPCITEMIDLIST *)&NewProps.idlist,
-				IID_IDataObject, NULL, (void **)&NewProps.DataObject) )){
+			(LPCITEMIDLIST *)&NewProps.idlist,
+			IID_IDataObject, NULL, (void **)&NewProps.DataObject) )){
 	}
 
 	// 拡張子に該当する拡張を取得
-	p = VFSFindLastEntry(info->filename);
-	p += FindExtSeparator(p);
-	if ( *p != '\0' ){
+	extp = VFSFindLastEntry(fileinfo->filename);
+	extp += FindExtSeparator(extp);
+	if ( *extp != '\0' ){
 										// 拡張子からキーを求める -------------
-		if ( GetRegString(HKEY_CLASSES_ROOT, p, NilStr, buf, TSIZEOF(buf)) ){
+		if ( GetRegString(HKEY_CLASSES_ROOT, extp, NilStr, buf, TSIZEOF(buf)) ){
 										// アプリケーションのシェル -----------
-			AddExtProps(NewProps.idlist, NewProps.DataObject, buf, page, &pages);
+			AddExtProps(&NewProps, buf);
 		}
 	}
 
 	// * の拡張を取得
-	AddExtProps(NewProps.idlist, NewProps.DataObject, PAllKey, page, &pages);
+	AddExtProps(&NewProps, PAllKey);
 
-/*  ● UNICODE 板で CoCreateInstance がデッドロック?を起こすことがあるので休止中 2016-7
+	// ファイル・ディレクトリの拡張を取得
 	if ( attr != BADATTR ){
-		AddExtProps(NewProps.idlist, NewProps.DataObject,
-			( attr & FILE_ATTRIBUTE_DIRECTORY ) ? PDirectoryKey : PAllFileKey,
-			page, &pages);
+		AddExtProps(&NewProps,
+			( attr & FILE_ATTRIBUTE_DIRECTORY ) ? PDirectoryKey : PAllFileKey);
 	}
-*/
 	// Props を更新
-	FreePropCom(&Props);
-	Props = NewProps;
-
-	return pages;
+	::FreePropCom(propinfo);
+	*propinfo = NewProps;
+	return NewProps.pages;
 }
 
 void InitProcWindow(HWND hWnd)
@@ -1008,8 +1029,8 @@ void InitProcWindow(HWND hWnd)
 	SetWindowLongPtr(hPropWnd, GWL_STYLE,
 		(GetWindowLongPtr(hPropWnd, GWL_STYLE) & ~(WS_OVERLAPPEDWINDOW | WS_POPUPWINDOW | WS_DLGFRAME)) | WS_CHILD  );
 
-	GetWindowRect(hPPWnd, &pbox);
-	SetForegroundWindow(hPPWnd);
+	GetWindowRect(hPropParentWnd, &pbox);
+	SetForegroundWindow(hPropParentWnd);
 #endif
 										// ボタンを追加
 	GetClientRect(hWnd, &pbox);
@@ -1038,7 +1059,7 @@ void InitProcWindow(HWND hWnd)
 			tabname[0] = '\0';
 			TabCtrl_GetItem(hTabWnd, i, &tie);
 			if ( !tstrcmp(tabname, PropTab) ){
-				SetProp(hWnd, PropThreadThreadName, (HANDLE)(INT_PTR)i);
+				pPropInfo->FirstPage = i;
 				SendMessage(hWnd, PSM_SETCURSEL, i, 0);
 			}
 		}
@@ -1047,18 +1068,21 @@ void InitProcWindow(HWND hWnd)
 
 void SetFileProcWindow(HWND hWnd, SYNCPROPINFO *info)
 {
-	int i, pages, newpages;
-	HPROPSHEETPAGE page[PAGEMAX];
+	int i, oldpages, newpages;
+	PropInfoStruct *propinfo;
 	TCHAR filename[VFPS], oldtitle[VFPS];
-	int OldPage, FirstPage;
+	int OldPage;
 	HWND hTabWnd;
 	TC_ITEM tie;
 
-	FirstPage = (int)(DWORD_PTR)GetProp(hWnd, PropThreadThreadName);
+	propinfo = pPropInfo;
+	if ( propinfo->use > 0 ) return; // 使用中
+	propinfo->use = 1;
+
 	hTabWnd = (HWND)SendMessage(hWnd, PSM_GETTABCONTROL, 0, 0);
 	OldPage = TabCtrl_GetCurSel(hTabWnd);
 	oldtitle[0] = '\0';
-	if ( FirstPage != OldPage ){ // ページ変更あり
+	if ( propinfo->FirstPage != OldPage ){ // ページ変更あり
 		tie.mask = TCIF_TEXT;
 		tie.pszText = oldtitle;
 		tie.cchTextMax = VFPS;
@@ -1069,17 +1093,17 @@ void SetFileProcWindow(HWND hWnd, SYNCPROPINFO *info)
 	}
 
 	tstrcpy(filename, info->filename);
-	pages = (int)SendMessage(hTabWnd, TCM_GETITEMCOUNT, 0, 0);
-	newpages = MakePropPages(info, page);
+	oldpages = (int)SendMessage(hTabWnd, TCM_GETITEMCOUNT, 0, 0);
+	newpages = MakePropPages(propinfo, info);
 	if ( newpages ){
 		SendMessage(hWnd, WM_SETREDRAW, FALSE, 0);
 
 		// 新しいページを末尾に追加
 		for ( i = 0 ; i < newpages ; i++ ){
-			SendMessage(hWnd, PSM_ADDPAGE, 0, (LPARAM)page[i]);
+			SendMessage(hWnd, PSM_ADDPAGE, 0, (LPARAM)propinfo->sheet[i]);
 		}
 		// 古いページを削除
-		for ( i = 0 ; i < pages ; i++ ){
+		for ( i = 0 ; i < oldpages ; i++ ){
 		// PropSheet_UnChanged(hWnd, hwndPage);
 			SendMessage(hWnd, PSM_REMOVEPAGE, 0, 0);
 		}
@@ -1094,11 +1118,13 @@ void SetFileProcWindow(HWND hWnd, SYNCPROPINFO *info)
 			if ( !tstrcmp(filename, oldtitle) ) break;
 		}
 		if ( i >= newpages ) i = 0;
-		SetProp(hWnd, PropThreadThreadName, (HANDLE)(INT_PTR)i);
+		propinfo->FirstPage = i;
 		SendMessage(hWnd, PSM_SETCURSEL, i, 0);
 		SendMessage(hWnd, WM_SETREDRAW, TRUE, 0);
 		InvalidateRect(hWnd, NULL, TRUE);
+		UpdateWindow(hWnd);
 	}
+	propinfo->use = 0;
 }
 
 LRESULT CALLBACK ProcHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -1110,10 +1136,10 @@ LRESULT CALLBACK ProcHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 		case WM_COMMAND:
 			if ( LOWORD(wParam) == K_up ){
-				PostMessage(hPPWnd, WM_KEYDOWN, VK_UP, lParam);
+				PostMessage(hPropParentWnd, WM_KEYDOWN, VK_UP, lParam);
 			}
 			if ( LOWORD(wParam) == K_dw ){
-				PostMessage(hPPWnd, WM_KEYDOWN, VK_DOWN, lParam);
+				PostMessage(hPropParentWnd, WM_KEYDOWN, VK_DOWN, lParam);
 			}
 			break;
 
@@ -1138,7 +1164,7 @@ LRESULT CALLBACK ProcKeyHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 		if ( !(DWORD)(lParam & B31) ){
 			if ( (wParam == VK_PRIOR) || (wParam == VK_NEXT) ){
 				if ( !(GetAsyncKeyState(VK_CONTROL) & KEYSTATE_PUSH) ){
-					PostMessage(hPPWnd, WM_KEYDOWN,
+					PostMessage(hPropParentWnd, WM_KEYDOWN,
 							(wParam == VK_PRIOR) ? VK_UP : VK_DOWN, lParam);
 					return 1;
 				}
@@ -1153,7 +1179,7 @@ int CALLBACK PropSheetProc(HWND hWnd, UINT uMsg, LPARAM lParam)
 	if ( uMsg == PSCB_PRECREATE ){
 		RECT pbox;
 
-		GetWindowRect(hPPWnd, &pbox);
+		GetWindowRect(hPropParentWnd, &pbox);
 
 		((LPDLGTEMPLATE)lParam)->style &= ~(DS_CONTEXTHELP | DS_CENTER);
 		// ↓効いていない？
@@ -1169,12 +1195,12 @@ int CALLBACK PropSheetProc(HWND hWnd, UINT uMsg, LPARAM lParam)
 	return 0;
 }
 
-void AddExtProps(LPITEMIDLIST idlist, LPDATAOBJECT pDataObject, const TCHAR *tname, HPROPSHEETPAGE *page, int *pages)
+void AddExtProps(PropInfoStruct *propinfo, const TCHAR *tname)
 {
-	IShellExtInit *pShellExt;
-	LPSHELLPROPSHEETEXT pShellProp;
+//	IShellExtInit *pShellExt;
+//	IShellPropSheetExt *pShellProp;
 	HKEY hKey, hFolderKey;
-	int enumno = 0;
+	int enumno = 0, page;
 
 	if ( ERROR_SUCCESS != ::RegOpenKeyEx(
 			HKEY_CLASSES_ROOT, tname, 0, KEY_READ, &hFolderKey) ){
@@ -1190,10 +1216,11 @@ void AddExtProps(LPITEMIDLIST idlist, LPDATAOBJECT pDataObject, const TCHAR *tna
 		FILETIME ft;
 		HRESULT hres;
 
+		page = propinfo->pages;
+		if ( page >= PAGEMAX ) break;
 		// IShellExtInit を取得
 		s = MAX_PATH;
-		if ( ::RegEnumKeyEx(hKey, enumno++, keyname, &s, NULL, NULL, NULL, &ft) !=
-				ERROR_SUCCESS ){
+		if ( ::RegEnumKeyEx(hKey, enumno++, keyname, &s, NULL, NULL, NULL, &ft) != ERROR_SUCCESS ){
 			break;
 		}
 		if ( keyname[0] == '{' ){
@@ -1217,22 +1244,25 @@ void AddExtProps(LPITEMIDLIST idlist, LPDATAOBJECT pDataObject, const TCHAR *tna
 		if ( FAILED(::CLSIDFromString(tidname, &hid)) ) continue;
 
 		hres = ::CoCreateInstance(hid, NULL,
-				CLSCTX_INPROC_SERVER, IID_IShellExtInit, (LPVOID *)&pShellExt);
+				CLSCTX_INPROC_SERVER, IID_IShellExtInit, (LPVOID *)&propinfo->COM[page].pShellExt);
 		if ( FAILED(hres) ) continue;
 		// IShellPropSheetExt を取得
-		if ( SUCCEEDED(pShellExt->Initialize(idlist, pDataObject, hFolderKey)) ){
+		if ( SUCCEEDED(propinfo->COM[page].pShellExt->Initialize(propinfo->idlist, propinfo->DataObject, hFolderKey)) ){
 			// ●この付近でハンドルが２つリークしているかも 2015-09
-			if ( SUCCEEDED(pShellExt->QueryInterface(
-						IID_IShellPropSheetExt, (LPVOID *)&pShellProp)) ){
-				page[*pages] = NULL;
-				pShellProp->AddPages(PropPageFunc, (LPARAM)&page[*pages]);
-				if ( page[*pages] != NULL ) (*pages)++;
-					//LPFNADDPROPSHEETPAGE
-				pShellProp->Release();
+			if ( SUCCEEDED(propinfo->COM[page].pShellExt->QueryInterface(
+						IID_IShellPropSheetExt, (LPVOID *)&propinfo->COM[page].pShellProp)) ){
+				propinfo->sheet[page] = NULL;
+				propinfo->COM[page].pShellProp->AddPages(PropPageFunc, (LPARAM)&propinfo->sheet[page]);
+				if ( propinfo->sheet[page] != NULL ){
+					propinfo->pages++;
+				}else{
+					propinfo->COM[page].pShellProp->Release();
+				}
 			}
 		}
-		pShellExt->Release();
-		if ( *pages >= PAGEMAX ) break;
+		if ( propinfo->sheet[page] == NULL ){
+			propinfo->COM[page].pShellExt->Release();
+		}
 	}
 	::RegCloseKey(hKey);
 	::RegCloseKey(hFolderKey);
@@ -1240,39 +1270,44 @@ void AddExtProps(LPITEMIDLIST idlist, LPDATAOBJECT pDataObject, const TCHAR *tna
 
 DWORD WINAPI PropThread(SYNCPROPINFO *infoparam)
 {
-	SYNCPROPINFO info;
 	THREADSTRUCT threadstruct = {PropThreadThreadName, XTHREAD_EXITENABLE | XTHREAD_TERMENABLE, NULL, 0, 0};
+	PropInfoStruct propinfo;
 	PROPSHEETHEADER head;
-	HPROPSHEETPAGE page[PAGEMAX];
-	int pages;
+	SYNCPROPINFO info;
 
 	PPxRegisterThread(&threadstruct);
 	info = *infoparam;
 	::PPcHeapFree((void *)infoparam);
+	propinfo.FirstPage = propinfo.pages = 0;
+	propinfo.idlist = NULL;
+	propinfo.ShellFolder = NULL;
+	propinfo.DataObject = NULL;
 
-	if( FAILED(::OleInitialize(NULL)) ) goto nooleend;
+	if ( FAILED(::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED)) ){
+		goto nooleend;
+	}
 
 	if ( LoadWinAPI(NULL, (HINSTANCE)LoadCommonControls(ICC_TAB_CLASSES), COMCTL32DLL, LOADWINAPI_HANDLE) == NULL ){
 		goto end;
 	}
 
 	// プロパティシートを表示
-	pages = MakePropPages(&info, page);
 	head.dwSize		= sizeof(PROPSHEETHEADER);
 	head.dwFlags	= PSH_USECALLBACK;
 	head.hwndParent	= NULL;
 	head.hInstance	= hInst;
-	head.nPages		= pages;
-	head.nStartPage = 0;
 	head.pszCaption = info.filename;
-	head.phpage = page;
+	head.nPages		= MakePropPages(&propinfo, &info);
+	head.nStartPage = 0;
+	head.phpage = propinfo.sheet;
 	head.pfnCallback = PropSheetProc;
+	pPropInfo = &propinfo;
 	DPropertySheet(&head);
 
-	::FreePropCom(&Props);
+	::FreePropCom(&propinfo);
 	hPropWnd = NULL;
 end:
-	::OleUninitialize();
+	::CoUninitialize();
 nooleend:
 	::PPxUnRegisterThread();
 	return 0;
@@ -1280,7 +1315,7 @@ nooleend:
 
 void SyncProperties(HWND hWnd, SYNCPROPINFO *info)
 {
-	hPPWnd = hWnd;
+	hPropParentWnd = hWnd;
 	if ( info == NULL ){	// Prop の廃棄
 		if ( hPropWnd != NULL ) PostMessage(hPropWnd, WM_CLOSE, 0, 0);
 		return;
@@ -1297,9 +1332,11 @@ void SyncProperties(HWND hWnd, SYNCPROPINFO *info)
 		DWORD tmp;
 
 		infoparam = (SYNCPROPINFO *)PPcHeapAlloc(sizeof(SYNCPROPINFO));
-		*infoparam = *info;
-		CloseHandle(CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)
-				  PropThread, (void *)infoparam, 0, &tmp));
+		if ( infoparam != NULL ){
+			*infoparam = *info;
+			CloseHandle(CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)
+					  PropThread, (void *)infoparam, 0, &tmp));
+		}
 	}
 }
 

@@ -57,6 +57,7 @@ const struct EtcLabelsStruct EtcLabels[] = {
 	{T("PPv種別オプション\0PPv option"), T("XV_opts"), T("(&I) 例) :HTML = -tag:off、txt = -unicode -esc:off\0&Item"), ETC_TEXT},
 	{T("PPv単語ハイライト\0PPv highlight text"), T("CV_hkey"), T("(&I)\0&I"), ETC_HKEY},
 	{T("ファイル操作アクションメニュー[;]\0*file actions"), T("X_fopt"), T("(&I) ※削除のみ可。追加はFile Operationダイアログで\0&I only delete"), ETC_NOPARAM},
+	{T("通知音／完了・表示時実行コマンド\0wavename / comp. commands"), T("X_jinfc"), T("(&I) type = wav name / commandline"), ETC_TEXT},
 	{T("ホスト,ID-パスワード\0id saved host"), T("_IDpwd"), T("(&I) ※削除のみ可。\0&I only delete"), ETC_NOPARAM},
 	{T("その他設定\0Other configs"), T("_others"), T("(&I) 項目名=内容\0&(&I) Item name = value"), ETC_TEXT},
 	{T("ユーザコマンド\0User command"), T("_Command"), T("(&I) コマンド名=内容(%*arg(n))\0&(&I) command name = value(%*arg(n)"), ETC_TEXT},
@@ -283,10 +284,10 @@ void CustNameEscape(TCHAR *label)
 
 void EnumEtcItem(HWND hDlg)
 {
-	int count = 0;
 	HWND hListWnd;
 	TCHAR label[CMDLINESIZE * 2], data[CMDLINESIZE * 2];
 	const TCHAR *key;
+	int count = 0;
 
 	hListWnd = GetDlgItem(hDlg, IDL_EXITEM);
 	SendMessage(hListWnd, WM_SETREDRAW, FALSE, 0);
@@ -311,6 +312,7 @@ void EnumEtcItem(HWND hDlg)
 		int csize;
 		size_t len;
 
+		data[0] = '\0';
 		csize = EnumCustTable(count, key, label, data, sizeof(data));
 		if ( 0 > csize ) break;
 

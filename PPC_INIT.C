@@ -88,6 +88,7 @@ PPXINMENU barEdit[] = {
 PPXINMENU barView[] = {
 	{(DWORD_PTR)T("?layoutmenu"), T("&Layout")},
 	{K_s | 'T',	T("&Tree window\tShift+T")},
+	{K_c | 'Y',	T("Sync Pat&h\tCtrl+Y")},
 	{K_s | 'Y',	T("S&ync View\tShift+Y")},
 	{K_c | K_s | 'I', T("Sync Info\tCtrl+Shift+I")},
 	{K_a | K_s | K_cr, T("Sync properties\tAlt+Shift+Enter")},
@@ -240,7 +241,7 @@ BOOL CallPPcParam(HWND hWnd, const TCHAR *param) // WinMain “à‚©‚çAg—p’†PPc‚Ö‘
 	PPCSTARTPARAM psp;
 
 	psp.show = SW_SHOW;
-	LoadParam(&psp, param);
+	LoadParam(&psp, param, FALSE);
 	return CallPPc(&psp, hWnd);
 }
 
@@ -449,7 +450,7 @@ void AddPspo(PPCSTARTPARAM *psp, OneInfoStruct *one)
 	InitPspo(one);
 }
 
-BOOL LoadParam(PPCSTARTPARAM *psp, const TCHAR *param)
+BOOL LoadParam(PPCSTARTPARAM *psp, const TCHAR *param, BOOL bootparam)
 {
 	OneInfoStruct one;
 	TCHAR buf[CMDLINESIZE];
@@ -528,7 +529,7 @@ BOOL LoadParam(PPCSTARTPARAM *psp, const TCHAR *param)
 		}
 									//	"alone"
 		if ( !tstrcmp( buf + 1, T("ALONE") )){
-			if ( X_combo == 0 ) X_combo = 1;
+			if ( bootparam && (X_combo == COMBO_OFF) ) X_combo = COMBO_ON;
 			if ( !one.pspo.combo.use ) one.pspo.combo.use = 1;
 			psp->ComboID = '@';
 			if ( Isalpha(*more) ) psp->ComboID = upper(*more);
@@ -537,8 +538,8 @@ BOOL LoadParam(PPCSTARTPARAM *psp, const TCHAR *param)
 		}
 									//	"combo"
 		if ( !tstrcmp( buf + 1, T("COMBO") )){
-			if ( X_combo == 0 ) X_combo = 1;
-			if ( !one.pspo.combo.use ) one.pspo.combo.use = 1;
+			if ( bootparam && (X_combo == COMBO_OFF) ) X_combo = COMBO_ON;
+			if ( one.pspo.combo.use == 0 ) one.pspo.combo.use = 1;
 			psp->ComboID = 'A';
 			if ( *more == '+' ) psp->ComboID = '@';
 			if ( Isalpha(*more) ) psp->ComboID = upper(*more);
@@ -553,14 +554,14 @@ BOOL LoadParam(PPCSTARTPARAM *psp, const TCHAR *param)
 									//	"tab"
 		if ( !tstrcmp( buf + 1, T("TAB") )){
 			modify = TRUE;
-			X_combo = 2;
-			if ( !one.pspo.combo.use ) one.pspo.combo.use = 2;
+			if ( bootparam ) X_combo = COMBO_TAB;
+			one.pspo.combo.use = 2;
 			continue;
 		}
 									//	"single"
 		if ( !tstrcmp( buf + 1, T("SINGLE") )){
 			modify = TRUE;
-			X_combo = 0;
+			if ( bootparam ) X_combo = COMBO_OFF;
 			one.pspo.combo.use = 0;
 			continue;
 		}
@@ -636,7 +637,7 @@ BOOL LoadParam(PPCSTARTPARAM *psp, const TCHAR *param)
 		if ( !tstrcmp( buf + 1, T("CHOOSE") )){
 			TCHAR *format;
 			one.pspo.combo.use = 0;
-			X_combo = 0;
+			if ( bootparam ) X_combo = COMBO_OFF;
 			format = tstrchr(more, ',');
 			if ( format != NULL ){
 				*format = '\0';
@@ -842,7 +843,7 @@ BOOL RegisterID(PPC_APPINFO *cinfo, PPCSTARTPARAM *psp, BOOL *usepath)
 	}
 newppc:		// V‹K PPc ‚ğ‹N“®
 	if ( (cinfo->RegID[2] == 'Z') && cinfo->combo ){
-		if ( cinfo->RegSubIDNo < 0 ) cinfo->RegSubIDNo = GetComboRegZID();
+		if ( cinfo->RegSubIDNo < 0 ) cinfo->RegSubIDNo = GetComboRegZID(psp);
 		MakeRegSubID(cinfo);
 	}else{
 		cinfo->RegSubCID[0] = 'C';
@@ -859,7 +860,7 @@ newppc:		// V‹K PPc ‚ğ‹N“®
 
 nextppc:	// ‰Šú‰»‚É¸”s‚µ‚½ê‡AŸ‚Ì PPc ‚ª‚ ‚ê‚Îˆ—‚·‚é
 	if ( (psp != NULL) && (psp->next != NULL) ){
-		if ( psp->next->id.RegID[0] ){	// Ÿ‚Ì‰Šú‰»‚Ö
+		if ( psp->next->id.RegID[0] != '\0' ){	// Ÿ‚Ì‰Šú‰»‚Ö
 			return RegisterID(cinfo, psp, usepath);
 		}else{ // I‚í‚è / cmd —p‚Ìƒƒ‚ƒŠ‚ğŠm•Û‚µ‚Ä‚È‚¯‚ê‚Î‚±‚±‚Å‰ğ•ú
 			int ComboID;
@@ -870,7 +871,7 @@ nextppc:	// ‰Šú‰»‚É¸”s‚µ‚½ê‡AŸ‚Ì PPc ‚ª‚ ‚ê‚Îˆ—‚·‚é
 				ThFree(&psp->th);
 			}
 			// combo‚Ìfocusfix
-			if ( X_combo ){
+			if ( X_combo != COMBO_OFF ){
 				// alone ‚ÅŠJ‚«‘«‚è‚È‚¢‚©‚ğƒ`ƒFƒbƒN
 				if ( (ComboID > 'A') && (Combo.BaseCount < X_mpane.first) ){
 					MorePPc(NULL, &cinfo->mws);
@@ -1167,6 +1168,7 @@ void PPcLoadCust(PPC_APPINFO *cinfo)
 	GetCustData(T("X_fles"), &X_fles, sizeof(X_fles));
 	GetCustData(T("X_alt"), &X_alt, sizeof(X_alt));
 	GetCustData(T("X_iacc"), &X_iacc, sizeof(X_iacc));
+	GetCustData(T("X_hisr"), &X_hisr, sizeof(X_hisr));
 	GetCustData(T("X_evoc"), &X_evoc, sizeof(X_evoc));
 	X_extl--;
 	GetCustData(T("X_extl"), &X_extl, sizeof(X_extl));
@@ -1214,7 +1216,7 @@ void PPcLoadCust(PPC_APPINFO *cinfo)
 
 	FreeCFMT(&cinfo->stat);
 	LoadCFMT(&cinfo->stat, T("XC_stat"), NULL, &CFMT_stat);
-	if ( !cinfo->stat.fmt[0] ){
+	if ( cinfo->stat.fmt[0] == '\0' ){
 		cinfo->stat.attr = DE_ATTR_STATIC | DE_ATTR_MARK | DE_ATTR_DIR;
 	}
 
@@ -1679,6 +1681,9 @@ void InitPPcWindow(PPC_APPINFO *cinfo, BOOL usepath)
 										// runas ó‘Ô‚Ìƒ`ƒFƒbƒN -------------
 	if ( runasstate == NULL ) runasstate = CheckRunAs();
 	if ( runasstate != NULL ){
+		if ( tstrlen(runasstate) > (TSIZEOF(cinfo->UserInfo) - 0x10) ){
+			runasstate = T("another");
+		}
 		wsprintf(cinfo->UserInfo, T("PPC[%s](%s)"), cinfo->RegSubCID + 1, runasstate);
 	}else{
 		wsprintf(cinfo->UserInfo, T("PPC[%s]"), cinfo->RegSubCID + 1);
@@ -1737,7 +1742,7 @@ void InitFont(PPC_APPINFO *cinfo)
 	if ( XC_ifix != 0 ){
 		cinfo->XC_ifix_size.cx = cinfo->XC_ifix_size.cy = XC_ifix * cinfo->X_textmag / 100;
 	}else{
-		int infoheight = cinfo->fontY * 2;
+		int infoheight = cinfo->fontY * (cinfo->inf1.height + cinfo->inf2.height);
 
 		cinfo->XC_ifix_size.cx = cinfo->XC_ifix_size.cy = 32;
 		if ( 32 > infoheight ){ // 32 ‚æ‚è’á‚¢‚Íc‚É’×‚·

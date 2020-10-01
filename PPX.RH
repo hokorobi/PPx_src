@@ -114,6 +114,7 @@
 #define IDB_INPUT_EXT	0x7005	// 拡張子用エディットボックス有効化
 #define IDE_INPUT_EXT	0x7006	// 拡張子用エディットボックス
 #define IDB_INPUT_OPT	0x7007	// 追加ボタン
+#define IDT_INPUT_TREE	0x7008	// 埋め込みツリー
 //-------------------------------------- 待ち
 //#define IDD_WAIT		0x7010	// ID 1.23廃止
 #define IDD_WAITPPB		0x7011	// ID
@@ -137,6 +138,7 @@
 #define IDB_FOP_OPTION	0x705a	// オプションタブ
 #define IDC_FOP_ACTION	0x703a	// 処理方法テンプレート簡易ドロップボックス
 #define IDC_FOP_MODE	0x7033	// 処理方法切り替え簡易ドロップボックス
+#define IDB_FOP_LOG		0x7079	// ログへのフォーカス / 表示切り替え
 
 #define IDS_FOP_PROGRESS	0x703b	// 処理経過表示
 #define IDS_FOP_SRCNAME		0x703c	// 処理経過表示
@@ -226,6 +228,12 @@
 //-------------------------------------- Message Button
 #define IDX_QDALL		0x7062
 #define IDB_QDADDLIST	0x7063
+//-------------------------------------- Tree
+#define IDT_TREECTL		0x70d0
+//-------------------------------------- Joblist
+#define IDL_JOBLIST		0x70e0
+//-------------------------------------- PPe
+#define IDE_PPEMAIN		0x70f0
 
 //============================================================== CUST 7400-77ff
 //								common	7400-740f
@@ -280,6 +288,7 @@
 #define IDB_FLOAT		0x74fe
 #define IDE_FIND		0x74fd
 #define IDB_FIND		0x74fc
+#define IDU_FLOATUPDOWN	0x74fb
 
 //------------------------------------------------------------- Ext,Key等共通
 //#define IDR_ALCKEY		0x74e0	// キー割当てラジオ
@@ -315,6 +324,7 @@
 #define IDE_ALCCMT		0x74eb	// コメント欄
 #define IDB_ALCCMT		0x74ec	// コメント登録
 #define IDB_ALCCMDLIST	0x74ed	// コマンド一覧表示
+#define IDT_ALCCMDLIST	0x74ee	// コマンド一覧表示ツリー
 
 #define IDX_ALCEXLIST	0x746e	// 既定の割当ても一覧に表示
 //------------------------------------------------------------- ファイル判別

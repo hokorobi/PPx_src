@@ -265,20 +265,20 @@ HWND *CreateDialogWindow(HANDLE hinst, LPCTSTR lpszTemplate, HWND hParentWnd)
 			CaptionName = GetDialogTemplateText(&dpitem);
 		}
 #else
-		ClassName = GetDialogTemplateText(&dpitem,ClassNameA);
+		ClassName = GetDialogTemplateText(&dpitem, ClassNameA);
 		CaptionName = GetCaptionText(dtp->id);
 		if ( CaptionName != NULL ){
-			GetDialogTemplateText(&dpitem,NULL);
+			GetDialogTemplateText(&dpitem, NULL);
 		}else{
-			CaptionName = GetDialogTemplateText(&dpitem,CaptionNameA);
+			CaptionName = GetDialogTemplateText(&dpitem, CaptionNameA);
 		}
 #endif
 		extrasize = *(WORD *)dpitem;
 
 		hCtrlWnd = CreateWindowEx(dtp->dwExtendedStyle | WS_EX_NOPARENTNOTIFY,
-				ClassName,CaptionName,dtp->style | WS_CHILD | WS_VISIBLE,
-				box.left,box.top,box.right,box.bottom,hParentWnd,
-				(HMENU)(DWORD_PTR)dtp->id,hinst,extrasize ? dpitem : NULL);
+				ClassName, CaptionName, dtp->style | WS_CHILD | WS_VISIBLE,
+				box.left, box.top, box.right, box.bottom, hParentWnd,
+				CHILDWNDID(dtp->id), hinst, extrasize ? dpitem : NULL);
 		if ( hCtrlWnd == NULL ){
 			PPErrorBox(hParentWnd,NULL,PPERROR_GETLASTERROR);
 			break;

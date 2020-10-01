@@ -27,8 +27,9 @@ typedef int (USECDECL *tagOldCommandModuleEntry)(PPXAPPINFOW *ppxa, DWORD cmdID,
 
 #define MODULE_NOLOAD 0
 typedef struct {
-	HMODULE hDLL;	// Dll handle
+	HMODULE hDLL;	// module handle
 	DWORD types;	// 内容(読み込み失敗しているときはMODULE_NOLOAD)
+	DWORD time;		// module のタイムスタンプ
 	int DllNameOffset; // DLL名
 	tagCommandModuleEntry ModuleEntry;
 #ifndef _WIN64
@@ -110,8 +111,10 @@ DWORD_PTR USECDECL CommandModuleInfoFunc(COMMANDMODULEINFOSTRUCT *ppxa, DWORD cm
 			ERRORCODE result;
 			BSTR sysstr;
 
-			hOleaut32DLL = LoadSystemWinAPI(SYSTEMDLL_OLEAUT32, OLEAUT32_SysStr);
-			if ( hOleaut32DLL == NULL ) return 0;
+			if ( hOleaut32DLL == NULL ){
+				hOleaut32DLL = LoadSystemWinAPI(SYSTEMDLL_OLEAUT32, OLEAUT32_SysStr);
+				if ( hOleaut32DLL == NULL ) return 0;
+			}
 			PP_InitLongParam(buf);
 
 			#ifdef UNICODE
@@ -334,6 +337,12 @@ DWORD_PTR USECDECL CommandModuleInfoFunc(COMMANDMODULEINFOSTRUCT *ppxa, DWORD cm
 #endif
 			return 1;
 		}
+		case PPXCMDID_PPLIBHANDLE:
+			return (DWORD_PTR)DLLhInst;
+		case PPXCMDID_PPLIBPATH:
+			strcpyToW(uptr->strW, DLLpath, MAX_PATH);
+			return 1;
+
 		default:
 			return PPxInfoFunc(ppxa->parent, cmdID, uptr);
 	}
@@ -389,7 +398,12 @@ void LoadModuleList(void)
 				if ( !tstricmp(ff.cFileName, T("PPXLIB32.DLL")) ) continue;
 				mdll.hDLL = NULL;
 				mdll.types = MAX32; // 仮に全部を読み込み可能に
-				GetCustTable(P_moduleStr, ff.cFileName, &mdll.types, sizeof(mdll.types));
+				mdll.time = 0;
+				GetCustTable(P_moduleStr, ff.cFileName, &mdll.types, sizeof(DWORD) * 2);
+				if ( mdll.time != ff.ftLastWriteTime.dwHighDateTime ){
+					mdll.types = MAX32; // 再取得
+				}
+				mdll.time = ff.ftLastWriteTime.dwHighDateTime;
 				mdll.DllNameOffset = Thmodule_str.top;
 				ThAddString(&Thmodule_str, ff.cFileName);
 				ThAppend(&Thmodule, &mdll, sizeof mdll);
@@ -415,7 +429,7 @@ BOOL LoadModuleFile(HWND hWnd, MODULESTRUCT *mdll, DWORD types)
 		return TRUE;
 	}
 
-	mdll->hDLL = LoadLibrary(
+	mdll->hDLL = LoadLibraryTry(
 			(TCHAR *)(Thmodule_str.bottom + mdll->DllNameOffset));
 	if ( mdll->hDLL == NULL ) goto loaderror;
 
@@ -443,7 +457,10 @@ BOOL LoadModuleFile(HWND hWnd, MODULESTRUCT *mdll, DWORD types)
 		pis.typeflags = MAX32;
 		module.info = &pis;
 		if ( mdll->ModuleEntry(NULL, PPXM_INFORMATION, module) != PPXMRESULT_SKIP ){
-			SetCustTable(P_moduleStr, (TCHAR *)(Thmodule_str.bottom + mdll->DllNameOffset), &pis.typeflags, sizeof(pis.typeflags));
+			if ( mdll->types != pis.typeflags ){
+				mdll->types = pis.typeflags;
+				SetCustTable(P_moduleStr, (TCHAR *)(Thmodule_str.bottom + mdll->DllNameOffset), &mdll->types, sizeof(DWORD) * 2);
+			}
 		}
 		LeaveCriticalSection(&ThreadSection);
 		return TRUE;
@@ -464,8 +481,9 @@ loaderror:
 	LeaveCriticalSection(&ThreadSection);
 
 	if ( (result != ERROR_BAD_EXE_FORMAT) && (result != ERROR_GEN_FAILURE) ){
-		XMessage(hWnd, NULL, XM_NsERRd, T("%s load error"),
-				(TCHAR *)(Thmodule_str.bottom + mdll->DllNameOffset));
+		XMessage(hWnd, NULL, XM_NsERRd, T("%s load error(%d)"),
+				(TCHAR *)(Thmodule_str.bottom + mdll->DllNameOffset),
+				result);
 	}
 	return FALSE;
 }

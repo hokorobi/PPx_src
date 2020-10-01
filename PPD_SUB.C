@@ -1468,6 +1468,7 @@ PPXDLL BOOL PPXAPI MakeTempEntry(DWORD bufsize, TCHAR *tempath, DWORD attribute)
 		if ( MakeTempEntry(MAX_PATH, ProcTempPath, FILE_ATTRIBUTE_DIRECTORY) == FALSE ){
 			tstrcpy(ProcTempPath, StrDummyTempPath); // ProcTempPath が生成できなかったので、決め打ちでディレクトリを決める
 		}
+		if ( tempath == NULL ) return TRUE; // ProcTempPath の作成のみ
 	}
 	// 2: "\\" と "\n" 8:filename 4:ext
 	if ( (tstrlen(ProcTempPath) + ( 2 + 8 + 4 )) >= (size_t)bufsize ){
@@ -1763,6 +1764,7 @@ BOOL CheckAjiParam(DWORD mode, const TCHAR *type, const TCHAR *name, TCHAR *para
 
 	wsprintf(keyword, T("%s%s%s"),
 			name, (mode == AJI_SHOW) ? T("show") : T("comp"), type);
+	param[0] = '\0';
 	GetCustTable(T("X_jinfc"), keyword, param, CMDLINESIZE);
 	if ( param[0] != '\0' ) return TRUE;
 	GetCustTable(T("X_jinfc"), keyword + tstrlen(name), param, CMDLINESIZE);
@@ -1778,7 +1780,7 @@ PPXDLL void PPXAPI ActionJobInfo(HWND hWnd, DWORD mode, const TCHAR *name)
 PPXDLL void PPXAPI ActionInfo(HWND hWnd, PPXAPPINFO *info, DWORD mode, const TCHAR *name)
 {
 	HWND hFWnd;
-	DWORD flash, command;
+	DWORD flash, play;
 	TCHAR param[CMDLINESIZE];
 
 	if ( AjiEnterCount > 5 ) return;
@@ -1793,15 +1795,14 @@ PPXDLL void PPXAPI ActionInfo(HWND hWnd, PPXAPPINFO *info, DWORD mode, const TCH
 	if ( (flash > 1) || ((flash == 1) && (hWnd != hFWnd)) ){
 		PPxFlashWindow(hWnd, PPXFLASH_NOFOCUS);
 	}
-	command = X_jinfo[mode * 2 + 1];
-	if ( (command > 1) || ((command == 1) && (hWnd != hFWnd)) ){
-		param[0] = '\0';
-		if ( IsTrue(CheckAjiParam(mode, T("cmd"), name, param)) ){
-			PP_ExtractMacro(hWnd, info, NULL, param, NULL, 0);
-		}else{
-			CheckAjiParam(mode, T("wav"), name, param);
-			if ( name[0] != '\0' ) PlayWave(param);
+	play = X_jinfo[mode * 2 + 1];
+	if ( (play > 1) || ((play == 1) && (hWnd != hFWnd)) ){
+		if ( IsTrue(CheckAjiParam(mode, T("wav"), name, param)) ){
+			PlayWave(param);
 		}
+	}
+	if ( IsTrue(CheckAjiParam(mode, T("cmd"), name, param)) ){
+		PP_ExtractMacro(hWnd, info, NULL, param, NULL, 0);
 	}
 	AjiEnterCount--;
 }
@@ -1894,7 +1895,7 @@ PPXDLL const TCHAR * PPXAPI CheckRunAs(void)
 			if ( WinType != WINTYPE_9x )
 			#endif
 			for ( ;; ) {
-				TCHAR tinfo[0x40], user[0x80], domain[0x80];
+				TCHAR tinfo[0x40], user[UNLEN + 1], domain[0x80];
 				DWORD pid, size, dsize;
 				SID_NAME_USE snu;
 				HWND hWnd;
@@ -1914,6 +1915,7 @@ PPXDLL const TCHAR * PPXAPI CheckRunAs(void)
 							sizeof tinfo, &size) == FALSE ){
 					break;
 				}
+				user[0] = '\0';
 				size = TSIZEOF(user);
 				dsize = TSIZEOF(domain);
 				if ( LookupAccountSid(NULL, ((PTOKEN_USER)tinfo)->User.Sid,
@@ -1965,12 +1967,54 @@ void LoadErrorWinAPI(const char *DLLname)
 	#endif
 }
 
+HMODULE LoadLibraryTry(const TCHAR *filepath)
+{
+	HMODULE hDLL;
+	int challenge = 10;
+	ERRORCODE result;
+
+	for ( ;; ){
+		hDLL = LoadLibrary(filepath);
+		if ( hDLL != NULL ) return hDLL;
+		if ( challenge-- == 0 ) return NULL;
+		result = GetLastError();
+		if ( (result != ERROR_ACCESS_DENIED) &&
+			 (result != ERROR_SHARING_VIOLATION) ){
+			SetLastError(result);
+			return NULL;
+		}
+		Sleep(200);
+	}
+}
+#ifdef UNICODE
+HMODULE LoadLibraryTryA(const char *filepath)
+{
+	HMODULE hDLL;
+	int challenge = 10;
+	ERRORCODE result;
+
+	for ( ;; ){
+		hDLL = LoadLibraryA(filepath);
+		if ( hDLL != NULL ) return hDLL;
+		if ( challenge-- == 0 ) return NULL;
+		result = GetLastError();
+		if ( (result != ERROR_ACCESS_DENIED) &&
+			 (result != ERROR_SHARING_VIOLATION) ){
+			SetLastError(result);
+			return NULL;
+		}
+		Sleep(200);
+	}
+}
+#endif
+
+
 PPXDLL HMODULE PPXAPI LoadWinAPI(const char *DLLname, HMODULE hDLL, LOADWINAPISTRUCT *apis, int mode)
 {
 	LOADWINAPISTRUCT *list;
 
 	if ( mode & LOADWINAPI_LOAD ){
-		hDLL = LoadLibraryA(DLLname);
+		hDLL = LoadLibraryTryA(DLLname);
 		if ( hDLL == NULL ){
 			if ( mode == LOADWINAPI_LOAD_ERRMSG ) LoadErrorWinAPI(DLLname);
 			return NULL;

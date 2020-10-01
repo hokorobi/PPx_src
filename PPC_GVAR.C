@@ -72,7 +72,8 @@ extern "C" {
 #define IDW_DOCKPPCINFO		(IDW_CONTROLMIN + 12) // Dock内情報窓
 #define IDW_DOCKPPCSTATUS	(IDW_CONTROLMIN + 13) // Dock内ステータス窓
 #define IDW_DOCKINPUT		(IDW_CONTROLMIN + 14) // Dock内汎用入力
-#define IDW_TIPTREE			(IDW_CONTROLMIN + 15) // チップで表示するツリー
+#define IDW_PVTREE			(IDW_CONTROLMIN + 15) // プレビューで表示するツリー
+#define IDW_PVOCX			(IDW_CONTROLMIN + 16) // プレビューで表示するActiveX
 #define IDW_ADRBCL			(IDW_CONTROLMIN + 0x0e00) // パン屑アドレスバー
 #define IDW_DRIVES			(IDW_CONTROLMIN + 0x0f60) // ドライブバー内ドライブ
 // TipText(TTN_NEEDTEXT) / ToolBar / TAB 識別用ID
@@ -398,6 +399,9 @@ GVAR const TCHAR StrWordMatchWildCard[6] GPARAM(T("o:ew,"));
 GVAR const TCHAR StrMaskDlalogWildCard[5] GPARAM(T("o:e,"));
 GVAR const TCHAR Str_others[] GPARAM(T("_others"));
 
+GVAR const TCHAR StrSyncPathThis[] GPARAM(T("SyncPathThis"));
+GVAR const TCHAR StrSyncPathPair[] GPARAM(T("SyncPathPair"));
+
 GVAR const EXECKEYCOMMANDSTRUCT PPcExecKey
 #ifndef GLOBALEXTERN
  = {(EXECKEYCOMMANDFUNCTION)PPcCommand, StrKC_main, NULL}
@@ -420,30 +424,34 @@ BYTE CFMT_celFfmt[] = {DE_MARK, DE_LFN, 14, 5, DE_SIZE2, 10, DE_SPC, 1, DE_TIME1
 
 GVAR const XC_CFMT CFMT_stat	//  XC_stat
 #ifndef GLOBALEXTERN
-= {C_AUTO, C_AUTO, 0, 0, 0, 1, 0, DE_ATTR_STATIC | DE_ATTR_MARK | DE_ATTR_DIR, CFMT_statfmt, NULL}
+= {C_AUTO, C_AUTO, 0, 0, 0, 0, 1, 0, DE_ATTR_STATIC | DE_ATTR_MARK | DE_ATTR_DIR, CFMT_statfmt, NULL}
 #endif
 ;
 
 GVAR const XC_CFMT CFMT_inf1	//  XC_inf1
 #ifndef GLOBALEXTERN
-= {C_DWHITE, C_BLACK, 0, 0, 0x200, 1, 0, DE_ATTR_ENTRY, CFMT_inf1fmt, NULL}
+= {C_DWHITE, C_BLACK, 0, 0, 0x200, 0x200, 1, 0, DE_ATTR_ENTRY, CFMT_inf1fmt, NULL}
 #endif
 ;
 
 GVAR const XC_CFMT CFMT_inf2	//  XC_inf2
 #ifndef GLOBALEXTERN
-= {C_AUTO, C_AUTO, 0, 0, 42, 1, 0, DE_ATTR_ENTRY, CFMT_inf2fmt, NULL}
+= {C_AUTO, C_AUTO, 0, 0, 42, 42, 1, 0, DE_ATTR_ENTRY, CFMT_inf2fmt, NULL}
 #endif
 ;
 
 GVAR const XC_CFMT CFMT_celF	//  XC_celF
 #ifndef GLOBALEXTERN
-= {C_AUTO, C_AUTO, 1, 5, 46, 1, 0, DE_ATTR_ENTRY, CFMT_celFfmt, NULL}
+= {C_AUTO, C_AUTO, 1, 5, 46, 46, 1, 0, DE_ATTR_ENTRY, CFMT_celFfmt, NULL}
 #endif
 ;
 // グローバル -----------------------------------------------------------------
 GVAR int X_sps GPARAM(0);
-GVAR int X_combo GPARAM(0);
+
+#define COMBO_OFF	0
+#define COMBO_ON	1
+#define COMBO_TAB	2
+GVAR int X_combo GPARAM(COMBO_OFF);
 DLLGVAR DWORD X_dss DLLGPARAM(DSS_NOLOAD);	// 画面自動スケーリング
 DLLGVAR DWORD X_log DLLGPARAM(0);
 DLLGVAR int X_pmc[4] DLLGPARAM({X_pmc_defvalue});
@@ -502,6 +510,7 @@ DLLGVAR int TouchMode DLLGPARAM(0);
 
 GVAR int X_combos[2] GPARAM2(CMBS_COMMONINFO | CMBS_TABSEPARATE | CMBS_TABCOLOR, 0);
 GVAR int X_iacc GPARAM(0);
+GVAR int X_hisr[2] GPARAM2(1, 1);
 GVAR int X_alt GPARAM(1);
 GVAR int X_ardir[2] GPARAM2(5, 5);
 GVAR int X_tray GPARAM(0);
@@ -561,11 +570,11 @@ GVAR DDEXSETTINGS X_ddex GPARAM({DDPAGEMODE_DIR_DEFWAIT});
 GVAR int XC_ifix GPARAM(0);
 GVAR int X_dsst[2] GPARAM2(DSMD_REGID, DSMD_TEMP);
 
-GVAR BOOL XC_fexc GPARAM(FALSE);
+GVAR BOOL XC_fexc GPARAM(0);
 GVAR int XC_cdc GPARAM(B3 | B4);
 
 #define TIP_LONG_TIME 0
-#define TIP_LONG_MODE 1
+#define TIP_LONG_reserved 1
 #define TIP_HOVER_TIME 2
 #define TIP_HOVER_MODE 3
 #define TIP_TAIL_WIDTH 4

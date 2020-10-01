@@ -314,9 +314,9 @@ BOOL LoadOcx(HWND hParentWnd, TCHAR *filename, int showmode)
 	}
 
 	WndName = (showmode == OCX_IE) ? FILENAMEW : WMPplayer4IID;
-	hOcxWnd = CreateWindowExW(0, AtlClass, WndName,
-			WS_CHILD | WS_CLIPCHILDREN, 0, 0, X_stip[TIP_PV_WIDTH], X_stip[TIP_PV_HEIGHT], hParentWnd,
-			NULL, hInst, NULL);
+	hOcxWnd = CreateWindowExW(0, AtlClass, WndName, WS_CHILD | WS_CLIPCHILDREN,
+			0, 0, X_stip[TIP_PV_WIDTH], X_stip[TIP_PV_HEIGHT],
+			hParentWnd, CHILDWNDID(IDW_PVOCX), hInst, NULL);
 	if ( hOcxWnd != NULL ){
 		IUnknown *pUnknown;
 
@@ -426,7 +426,7 @@ void WmPPcTipPos(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			hTreeWnd = CreateWindowEx(0, Str_TreeClass, Str_TreeClass,
 				WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
 				0, 0, w, h,
-				hWnd, CHILDWNDID(IDW_TIPTREE), hInst, 0);
+				hWnd, CHILDWNDID(IDW_PVTREE), hInst, 0);
 			SendMessage(hTreeWnd, VTM_SETFLAG, (WPARAM)hWnd, (LPARAM)(VFSTREE_PATHNOTIFY));
 			wsprintf(execpath, T("\"%s\""), filepath);
 			SendMessage(hTreeWnd, VTM_TREECOMMAND, 0, (LPARAM)execpath);
@@ -2230,7 +2230,7 @@ void ShowTimeFormat(DISPSTRUCT *disp, const BYTE **format)
 #endif
 }
 
-int DrawPathText(CTC_DXD HDC hDC, PPC_APPINFO *cinfo)
+void DrawPathText(CTC_DXD HDC hDC, PPC_APPINFO *cinfo)
 {
 	TCHAR buf[VFPS * 2];
 	int len;
@@ -2243,20 +2243,17 @@ int DrawPathText(CTC_DXD HDC hDC, PPC_APPINFO *cinfo)
 	if ( cinfo->UseArcPathMask && cinfo->ArcPathMask[0] ){
 		CatPath(NULL, buf, cinfo->ArcPathMask);
 	}
-	if ( XC_dpmk ) CatPath(NULL, buf, cinfo->mask.file);
+	if ( XC_dpmk ) CatPath(NULL, buf, (cinfo->DsetMask[0] == MASK_NOUSE) ? cinfo->mask.file : cinfo->DsetMask);
 
 	len = tstrlen32(buf);
 	DxTextOutRel(DxDraw, hDC, buf, len);
-	return len;
 }
 
-int DrawPathMaskText(CTC_DXD HDC hDC, PPC_APPINFO *cinfo)
+void DrawPathMaskText(CTC_DXD HDC hDC, PPC_APPINFO *cinfo)
 {
-	int len;
+	const TCHAR *mask = (cinfo->DsetMask[0] == MASK_NOUSE) ? cinfo->mask.file : cinfo->DsetMask;
 
-	len = tstrlen32(cinfo->mask.file);
-	DxTextOutRel(DxDraw, hDC, cinfo->mask.file, len);
-	return len;
+	DxTextOutRel(DxDraw, hDC, mask, tstrlen32(mask));
 }
 
 #ifdef UNICODE
@@ -2570,8 +2567,8 @@ void PaintFileSize(DISPSTRUCT *disp, int wid, int flags)
 
 void PaintDefaultTimeStamp(DISPSTRUCT *disp, int displen)
 {
-	FILETIME	lTime;
-	SYSTEMTIME	sTime;
+	FILETIME lTime;
+	SYSTEMTIME sTime;
 
 	if ( disp->cell->f.ftLastWriteTime.dwLowDateTime |
 		disp->cell->f.ftLastWriteTime.dwHighDateTime ){
@@ -3170,47 +3167,30 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 			(Check_BackColor == ECS_NOFOCUS) ? ECS_NOFOCUS : ECS_SELECT];
 		if ( cinfo->CursorColor != C_AUTO ) disp.bc = cinfo->CursorColor;
 	}
+	disp.textc = disp.fc;
+	if ( Check_Reverse ){				// 前背色反転 =========================
+		bkdraw = TRUE;
+		disp.fc = disp.bc;
+		disp.bc = disp.textc;
+	#if DRAWMODE == DRAWMODE_GDI
+		disp.DSetCellTextColor = SetBkColor;
+	#else
+		disp.DSetCellTextColor = DxSetBkColor;
+	#endif
+	}
 										// マウスホバ－ハイライト ============
 	if ( (EI_No >= 0) && (cellno == cinfo->e.cellPoint) ){
-		if ( cinfo->e.cellPointType >= PPCR_CELLMARK ){
+		if ( (cinfo->e.cellPointType >= PPCR_CELLMARK) && (X_poshl > 0) ){
 			COLORREF usecolor;
 
 			bkdraw = TRUE;
 			usecolor = (C_eInfo[ECS_HOVER] != C_AUTO) ? C_eInfo[ECS_HOVER] : disp.fc;
 			disp.bc = (X_poshl > 1) ? usecolor :
 				RGB(GetPointColor(GetRValue(disp.bc), GetRValue(usecolor)),
-					GetPointColor(GetRValue(disp.bc), GetGValue(usecolor)),
+					GetPointColor(GetGValue(disp.bc), GetGValue(usecolor)),
 					GetPointColor(GetBValue(disp.bc), GetBValue(usecolor)));
+			if ( Check_Reverse ) disp.textc = disp.bc; // 前背色反転中
 		}
-/*
-		if ( X_stip[TIP_POP_WIDTH] ){
-			HBRUSH hB;
-
-			tempbox.right = BaseBox->right;
-			tempbox.left = tempbox.right - X_stip[TIP_POP_WIDTH];
-			tempbox.top = BaseBox->top;
-			tempbox.bottom = BaseBox->bottom;
-
-			hB = CreateSolidBrush(C_eInfo[ECS_UDCSR]);
-			DxFillRectColor(disp.DxDraw, hDC, &tempbox, hB, color);
-			DeleteObject(hB);
-		}
-*/
-	}
-
-	disp.textc = disp.fc;
-	if ( Check_Reverse ){				// 前背色反転 =========================
-		COLORREF tmpc;
-
-		bkdraw = TRUE;
-		tmpc = disp.fc;
-		disp.fc = disp.bc;
-		disp.bc = tmpc;
-	#if DRAWMODE == DRAWMODE_GDI
-		disp.DSetCellTextColor = SetBkColor;
-	#else
-		disp.DSetCellTextColor = DxSetBkColor;
-	#endif
 	}
 	if ( Check_Negative ){				// ネガポジ反転 =======================
 		bkdraw = TRUE;
@@ -3334,8 +3314,10 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 		// 枠表示のための表示位置調整
 		disp.LineTopX += disp.fontX / 2;
 		disp.Xright -= disp.fontX / 2;
-	} else while ( *fmt ){
-		DxMoveToEx(disp.DxDraw, hDC, disp.Xd, disp.lbox.top); // ●1.61ここに必要？
+	} else {
+	while ( *fmt ){
+		DxMoveToEx(disp.DxDraw, hDC, disp.Xd, disp.lbox.top); // ●1.61ここに必要？→個別に移す必要がある
+
 		switch ( *fmt++ ){
 			case DE_NEWLINE: // 改行
 				fmt += DE_NEWLINE_SIZE - 1;
@@ -3549,6 +3531,10 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 			case DE_MEMOS:	// C コメント(コメント無しの時は幅が0) ------------
 				if ( disp.cell->comment == EC_NOCOMMENT ){
 					fmt++;
+					if ( cfmt->width > cfmt->org_width ){
+						disp.Xd += disp.fontX * (cfmt->width - cfmt->org_width);
+						break;
+					}
 					continue;
 				}
 				// DE_MEMO へ
@@ -3572,6 +3558,7 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 				}
 				DxGetCurrentPositionEx(disp.DxDraw, hDC, &disp.LP);
 				disp.Xd += (*fmt++) * disp.fontX;
+				if ( disp.Xd < disp.LP.x ) disp.Xd = disp.LP.x;
 				break;
 
 			case DE_MSKIP:	// c コメントスキップ -----------------------------
@@ -3649,10 +3636,11 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 				int len;
 
 				len = tstrlen32(cinfo->e.Dtype.Name);
-				if ( len ){
+				if ( len > 0 ){
 					DxTextOutRel(disp.DxDraw, hDC, cinfo->e.Dtype.Name, len - 1);
 					disp.Xd += disp.fontX * len - 1;
 					DxGetCurrentPositionEx(disp.DxDraw, hDC, &disp.LP);
+					if ( disp.Xd < disp.LP.x ) disp.Xd = disp.LP.x;
 				}
 				break;
 			}
@@ -3787,34 +3775,29 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 				break;
 
 			case DE_vlabel:{ // ボリュームラベル ------------------------------
-				int len, displen;
+				int len;
 
 				GetDriveVolumeName(cinfo);
 				len = (int)tstrlen(cinfo->VolumeLabel);
 				DxTextOutRel(disp.DxDraw, hDC, cinfo->VolumeLabel, len);
 				DxGetCurrentPositionEx(disp.DxDraw, hDC, &disp.LP);
-				displen = *fmt++;
-				disp.Xd += ((len > displen) ? len : displen) * disp.fontX;
+				disp.Xd += *fmt++ * disp.fontX;
+				if ( disp.Xd < disp.LP.x ) disp.Xd = disp.LP.x;
 				break;
 			}
-			case DE_path:{ // 現在のディレクトリ ------------------------------
-				int len, displen;
-
-				len = DrawPathText(CTC_DX hDC, cinfo);
+			case DE_path: // 現在のディレクトリ ------------------------------
+				DrawPathText(CTC_DX hDC, cinfo);
 				DxGetCurrentPositionEx(disp.DxDraw, hDC, &disp.LP);
-				displen = *fmt++;
-				disp.Xd += ((len > displen) ? len : displen) * disp.fontX;
+				disp.Xd += *fmt++ * disp.fontX;
+				if ( disp.Xd < disp.LP.x ) disp.Xd = disp.LP.x;
 				break;
-			}
-			case DE_pathmask:{ // 現在のディレクトリマスク --------------------
-				int len, displen;
 
-				len = DrawPathMaskText(CTC_DX hDC, cinfo);
+			case DE_pathmask: // 現在のディレクトリマスク --------------------
+				DrawPathMaskText(CTC_DX hDC, cinfo);
 				DxGetCurrentPositionEx(disp.DxDraw, hDC, &disp.LP);
-				displen = *fmt++;
-				disp.Xd += ((len > displen) ? len : displen) * disp.fontX;
+				disp.Xd += *fmt++ * disp.fontX;
+				if ( disp.Xd < disp.LP.x ) disp.Xd = disp.LP.x;
 				break;
-			}
 
 			case DE_COLUMN: // カラム拡張 --------------------
 				DrawColumn(&disp, (DISPFMT_COLUMN *)fmt);
@@ -3882,6 +3865,7 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 			}
 			break;
 		}
+	}
 	}
 	if ( (disp.LP.x < maxX) && (disp.hfbr != NULL) ){ // 右側に空間が残った場合の処理
 		disp.backbox.left = disp.LP.x;
@@ -3969,7 +3953,7 @@ int DispEntry(PPC_APPINFO *cinfo, HDC hDC, const XC_CFMT *cfmt, ENTRYINDEX EI_No
 			usecolor = C_eInfo[ECS_UDCSR];
 			hB = CreateSolidBrush( usecolor,
 				RGB(GetPointColor(GetRValue(disp.bc), GetRValue(usecolor)),
-					GetPointColor(GetRValue(disp.bc), GetGValue(usecolor)),
+					GetPointColor(GetGValue(disp.bc), GetGValue(usecolor)),
 					GetPointColor(GetBValue(disp.bc), GetBValue(usecolor))));
 			w = (Check_Focusbox || Check_Box) ? XC_ulh : 1;
 		}

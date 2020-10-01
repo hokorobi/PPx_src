@@ -385,14 +385,14 @@ BOOL CheckAndLoadSusiePlugin(SUSIE_DLL *sudll, const TCHAR *filename, THREADSTRU
 	#ifdef UNICODE
 	UnicodeToAnsi(dir, LIBDIRA, MAX_PATH);
 	#endif
-	hI = LoadLibraryA(LIBDIRA);
+	hI = LoadLibraryTryA(LIBDIRA);
 
 	if ( hI == NULL ){				// 読み込みできない
 		ERRORCODE errcode = GetLastError();
 		if ( errcode == ERROR_MOD_NOT_FOUND ){
 			if ( DSetDllDirectory != NULL ){
 				DSetDllDirectory(susiedir);
-				hI = LoadLibraryA(LIBDIRA);
+				hI = LoadLibraryTryA(LIBDIRA);
 				DSetDllDirectory(NilStr); // DLLの検索パスからカレントを除去する
 				errcode = GetLastError();
 			}
@@ -895,7 +895,7 @@ BOOL LoadUnDLL(UN_DLL *uD)
 #else
 	#define TDLLNAME uD->DllName
 #endif
-	sas.hModule = LoadLibraryA(TDLLNAME);	// DLL を読み込む -----------------
+	sas.hModule = LoadLibraryTryA(TDLLNAME);	// DLL を読み込む -------------
 	if ( sas.hModule == NULL ){				// 失敗→使えないように処置
 		uD->VUCheck = VFSVUCheckError;
 		return FALSE;

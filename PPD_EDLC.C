@@ -1402,7 +1402,7 @@ enumbreak:
 	return;
 }
 
-// ƒfƒBƒŒƒNƒgƒŠ‚©‚çˆê——ì¬
+// ƒfƒBƒŒƒNƒgƒŠ‚©‚çˆê——ì¬ ¦ spms ‚Ì first “à‚Ì•¶Žš—ñ‚Ì firstlen ˆÈ~‚ª”j‰ó‚³‚ê‚é
 void EntrySearch(PPxEDSTRUCT *PES, LISTADDINFO *list, SEARCHPARAMS *spms, int braket)
 {
 	int itemcount = 0;
@@ -1816,6 +1816,7 @@ DWORD WINAPI KeyStepFillMain(KEYSTEPFILLMAIN_INFO *ksfinfo)
 				TextSearch(&sublist, &filltext_cmd, &spms SMODEPARAM(SMODE_WORDPATH), 0);
 				spms.startTick = GetTickCount();
 				EntrySearch(PES, &mainlist, &spms, braket);
+				*(startP + len) = '\0'; // EntrySearch “à‚Å”j‰ó‚³‚ê‚é‚Ì‚ÅC•œ
 				histmask = (WORD)~PPXH_COMMAND;
 			}else{ // ‚QŒê–ÚˆÈ~‚Íƒpƒ‰ƒ[ƒ^ˆµ‚¢
 				spms2.first = firstWordPtr;
@@ -1828,6 +1829,7 @@ DWORD WINAPI KeyStepFillMain(KEYSTEPFILLMAIN_INFO *ksfinfo)
 
 				spms.startTick = GetTickCount();
 				EntrySearch(PES, &mainlist, &spms, braket);
+				*(startP + len) = '\0'; // EntrySearch “à‚Å”j‰ó‚³‚ê‚é‚Ì‚ÅC•œ
 				HistorySearch(&sublist, &spms, PPXH_DIR_R SMODEPARAM(SMODE_WORDPATH), braket);
 				TextSearch(&mainlist, &filltext_path, &spms SMODEPARAM(SMODE_PATH), braket);
 				AliasSearch(&sublist, &spms SMODEPARAM(SMODE_WORDPATH));
@@ -1863,6 +1865,7 @@ DWORD WINAPI KeyStepFillMain(KEYSTEPFILLMAIN_INFO *ksfinfo)
 			TextSearch(&sublist, &filltext_path, &spms SMODEPARAM(SMODE_PATH), 0);
 			spms.startTick = GetTickCount();
 			EntrySearch(PES, &mainlist, &spms, braket);
+			*(startP + len) = '\0'; // EntrySearch “à‚Å”j‰ó‚³‚ê‚é‚Ì‚ÅC•œ
 			ModuleSearch(PES, &mainlist, startP, len);
 			HistorySearch(&sublist, &spms, PES->list.RhistID & (WORD)~PES->list.WhistID SMODEPARAM(SMODE_PATH), 0);
 			if ( *startP == '%' ){

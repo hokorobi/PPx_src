@@ -140,7 +140,11 @@ INSTALLFILES InstallFiles[] = {
 	{T("iftgdip.spi"),	NULL},
 #else			// 64bit
 	{T("PPLIB64W.DLL"),	NULL},
-	{T("iftwic.sph"),	NULL},
+	#ifdef _M_ARM64
+		{T("iftwic.spha"),	NULL},
+	#else
+		{T("iftwic.sph"),	NULL},
+	#endif
 	{T("UNBYPASS.DLL"),	NULL},
 	{T("UNBYPASS.EXE"),	NULL},
 #endif
@@ -199,6 +203,7 @@ const TCHAR StrShell32[] = T("SHELL32.DLL");
 /*=============================================================================
 	WinMain
 =============================================================================*/
+#pragma warning(suppress:28251) // SDK Ç…ÇÊÇ¡Çƒ hPrevInstance ÇÃëÆê´Ç™àŸÇ»ÇÈ
 #pragma argsused
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {

@@ -75,6 +75,7 @@ extern void USEFASTCALL ResetMark(PPC_APPINFO *cinfo, ENTRYCELL *cell);
 extern BOOL MoveCellCsr(PPC_APPINFO *cinfo, ENTRYINDEX offset, const CURSORMOVER *cm);
 extern BOOL IsFileDir(PPC_APPINFO *cinfo, const TCHAR *filename, TCHAR *newpath, TCHAR *newjumpname, HMENU hPopupMenu);
 extern void GetCellRealFullName(PPC_APPINFO *cinfo, ENTRYCELL *cell, TCHAR *dest);
+extern void SyncPairEntry(PPC_APPINFO *cinfo);
 
 //------------------------------------------------------------------ ppc_cinf.c
 extern ENTRYINDEX USEFASTCALL GetCellIndexFromCellData(PPC_APPINFO *cinfo, ENTRYDATAOFFSET index);
@@ -173,10 +174,11 @@ extern ERRORCODE MarkEntry(PPC_APPINFO *cinfo, const TCHAR *wildcard, int mode);
 extern BOOL PathTrackingListMenu(PPC_APPINFO *cinfo, int dest);
 extern DWORD crc32(const BYTE *bin, DWORD size, DWORD r);
 extern void SetSyncView(PPC_APPINFO *cinfo, int mode);
+extern void SetSyncPath(PPC_APPINFO *cinfo, const TCHAR *param);
 extern void PPcReload(PPC_APPINFO *cinfo);
 extern void PPcPaste(PPC_APPINFO *cinfo, BOOL makeshortcut);
 extern void SaveLs(const TCHAR *path, LOADSETTINGS *ls);
-extern void LoadLs(const TCHAR *path, LOADSETTINGS *ls);
+extern int LoadLs(const TCHAR *path, LOADSETTINGS *ls);
 
 extern void PPcPopCell(PPC_APPINFO *cinfo);
 extern void PPcPushCell(PPC_APPINFO *cinfo);
@@ -383,7 +385,7 @@ extern void CloseGuiControl(PPC_APPINFO *cinfo);
 extern void PPcSaveCust(PPC_APPINFO *cinfo);
 extern BOOL CheckReady(PPC_APPINFO *cinfo);
 extern BOOL RegisterID(PPC_APPINFO *cinfo, PPCSTARTPARAM *psp, BOOL *usepath);
-extern BOOL LoadParam(PPCSTARTPARAM *psp, const TCHAR *param);
+extern BOOL LoadParam(PPCSTARTPARAM *psp, const TCHAR *param, BOOL bootparam);
 extern BOOL CallPPc(PPCSTARTPARAM *psp, HWND hWnd);
 extern BOOL CallPPcParam(HWND hWnd, const TCHAR *param);
 extern void MorePPc(const TCHAR *cmdline, MAINWINDOWSTRUCT *mws);
@@ -667,7 +669,7 @@ extern PPC_APPINFO *GetComboTarget(HWND hTargetWnd, POINT *pos);
 
 extern TCHAR *tstristr(const TCHAR *target, const TCHAR *findstr);
 extern void LoadCombos(void);
-extern int GetComboRegZID(void);
+extern int GetComboRegZID(PPCSTARTPARAM *psp);
 
 #ifdef __cplusplus
 }

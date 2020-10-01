@@ -1899,6 +1899,9 @@ void EjectPane(int baseindex)
 	if ( cinfo == NULL ) return;
 	tstrcpy(RegID, cinfo->RegID);
 	wsprintf(param, T("/single /show /bootid:%c"), RegID[2]);
+	if ( Combo.BaseCount == X_mpane.first ){
+		X_mpane.first--;
+	}
 	PostMessage(Combo.base[baseindex].hWnd, WM_CLOSE, 0, 0);
 	for ( i = 0 ; i < 20 ; i++ ){
 		PeekLoop();

@@ -303,6 +303,13 @@ _last
 				$_ =~ s/<jmpa:([^>:]*):([^>]*)>/\{\\uldb $1\}\{\\v $anchor{$2}\}/;
 			}
 		}
+		# <img:filepath> ‰æ‘œ
+		if ( $_ =~ /<img:([^>]*)>/ ){
+			if ( $html ){
+				print OUT "<img src=\"./$1\"><br>";
+			}
+			next;
+		}
 		# <myurl>
 		$_ =~ s/<myurl>/$myurl/g;
 		# <copyyear>

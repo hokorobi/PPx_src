@@ -270,7 +270,7 @@ void ComboCust(void)
 	}
 
 	GetCustData(T("XC_ifix"), &XC_ifix, sizeof(XC_ifix));
-	if ( X_combo == 2 ) X_combos[0] |= CMBS_TABALWAYS;
+	if ( X_combo == COMBO_TAB ) X_combos[0] |= CMBS_TABALWAYS;
 	GetCustData(T("X_lspc"), &X_lspc, sizeof(X_lspc));
 
 	GetCustData(T("C_capt"), &C_capt, sizeof(C_capt));
@@ -1480,7 +1480,7 @@ void CheckComboTable(const TCHAR *p1)
 	}
 }
 
-int GetComboRegZID(void)
+int GetComboRegZID(PPCSTARTPARAM *psp)
 {
 	PPC_APPINFO *cinfo;
 	int baseindex;
@@ -1490,6 +1490,22 @@ int GetComboRegZID(void)
 	regid = (RegSubIDcounter + 1) & 0x1ff;
 	for (;;){
 		retry = FALSE;
+		if ( psp != NULL ){
+			size_t size;
+			PSPONE *pspo;
+
+			pspo = psp->next;
+			if ( psp->next != NULL ) while ( pspo->id.RegID[0] != '\0' ){
+				size = PSPONE_size(pspo);
+				if ( regid == pspo->id.SubID ){
+					regid = (regid + 1) & 0x1ff;
+					retry = TRUE;
+					break;
+				}
+				pspo = (PSPONE *)(char *)((char *)pspo + size); // ŽŸ‚Ö
+			}
+			if ( retry != FALSE ) continue;
+		}
 		for ( baseindex = 0 ; baseindex < Combo.BaseCount ; baseindex++ ){
 			cinfo = Combo.base[baseindex].cinfo;
 			if ( cinfo == NULL ) continue;

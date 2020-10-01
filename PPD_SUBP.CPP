@@ -17,7 +17,7 @@ const CLSID XCLSID_IDATAOBJECT_AUTODD = CLSID_IDATAOBJECT_AUTODD;
 IDropTarget *DropTarget;
 DWORD regobjectID = 0;
 const TCHAR DROPTARGETPROPNAME[] = T("OleDropTargetInterface");
-HMODULE hOleaut32DLLHOOK;
+HMODULE hOleaut32DLLHOOK = NULL;
 
 class CddpIDropSource: public IDropSource{
 	private:
@@ -134,7 +134,10 @@ void AutoDDDLL_Revoke(void)
 	::CoLockObjectExternal(DropTarget, FALSE, TRUE);
 	DropTarget->Release();
 	::OleUninitialize();
-	FreeLibrary(hOleaut32DLLHOOK);
+	if ( hOleaut32DLLHOOK != NULL ){
+		FreeLibrary(hOleaut32DLLHOOK);
+		hOleaut32DLLHOOK = NULL;
+	}
 }
 
 LRESULT CALLBACK AutoDDDLLProc(int nCode, WPARAM, CWPSTRUCT *cwps)

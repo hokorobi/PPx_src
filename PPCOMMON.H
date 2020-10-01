@@ -293,7 +293,8 @@ typedef struct {
 #define PPXCMDID_GETWNDVARIABLEDATA 0x0c10  // 窓別特殊環境変数の値を取得
 #define PPXCMDID_SETWNDVARIABLEDATA 0x0c11  // 窓別特殊環境変数の値を設定
 #define PPXCMDID_LONG_RESULT		0x0c12  // CMDLINESIZE を越える結果の受付
-
+#define PPXCMDID_PPLIBHANDLE		0x0c13  // PPLIBxx.DLLのHMODULEを取得
+#define PPXCMDID_PPLIBPATH			0x0c14  // PPLIBxx.DLLのPATHを取得
 
 //## 0xff000～0xfffff:	内部用
 //-----------------------------------------------------------------------------
@@ -343,6 +344,7 @@ typedef union {
 
 typedef union {
 	WCHAR str[1];
+	WCHAR strW[1];
 	WORD key;
 	DWORD num;
 	DWORD nums[1];

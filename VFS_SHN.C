@@ -537,8 +537,10 @@ BOOL InvokeMenuError(HWND hWnd, HMENU hMenu, int idCmd, HRESULT hres)
 			return INVOKE_PINTOSTART;
 		}
 	}
+	// FACILITY_SHELL + NO_ERROR + E_FAIL、「削除」でキャンセルしたときに出る
+	if ( hres == 0x80270000 ) return TRUE;
 	PPErrorBox(hWnd, NULL, hres);
-	return TRUE;
+	return FALSE;
 }
 
 HRESULT InvokeMenu(CONTEXTMENUS *cms, CMINVOKECOMMANDINFO *cmi)
@@ -613,7 +615,30 @@ VFSDLL BOOL PPXAPI SHContextMenu(HWND hWnd, LPPOINT lppt, LPSHELLFOLDER lpsfPare
 			cmi.fMask	= CMIFLAG;
 			cmi.hwnd	= hWnd;
 			cmi.nShow	= SW_SHOWNORMAL;
+/*
+  LPCSTR  lpVerb;
+  LPCSTR  lpParameters;
+  LPCSTR  lpDirectory;
+  int     nShow;
+  DWORD   dwHotKey; // CMIC_MASK_HOTKEY
+  HANDLE  hIcon; // CMIC_MASK_ICON no use Vista
+  LPCSTR  lpTitle; // (CMIC_MASK_HASTITLE CMIC_MASK_HASLINKNAME no vista)
+  LPCWSTR lpVerbW; // CMIC_MASK_UNICODE
+  LPCWSTR lpParametersW; // CMIC_MASK_UNICODE
+  LPCWSTR lpDirectoryW; // lpDirectoryW
+  LPCWSTR lpTitleW; //  lpTitleW
+  POINT   ptInvoke; // CMIC_MASK_PTINVOKE
 
+CMIC_MASK_FLAG_NO_UI
+CMIC_MASK_NO_CONSOLE
+CMIC_MASK_FLAG_SEP_VDM
+CMIC_MASK_ASYNCOK
+CMIC_MASK_NOASYNC // Windows Vista and later
+CMIC_MASK_SHIFT_DOWN
+CMIC_MASK_CONTROL_DOWN
+CMIC_MASK_FLAG_LOG_USAGE // Recent documents" menu.
+CMIC_MASK_NOZONECHECKS // Do not perform a zone check.
+*/
 			if ( cmd > (const TCHAR *)(DWORD_PTR)0x10000 ){
 				if ( *cmd == '\0' ){ // NilStr-デフォルト実行
 					MENUITEMINFO minfo;

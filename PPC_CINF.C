@@ -734,7 +734,7 @@ int GetDirSettingOption(PPC_APPINFO *cinfo, const TCHAR **param, int type, TCHAR
 ERRORCODE ViewStyleCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 {
 	TCHAR buf[CMDLINESIZE], path[VFPS];
-	int mode = 0;
+	int mode = DSMD_NOMODE;
 
 	if ( SkipSpace(&param) == '-' ){
 		mode = GetDirSettingOption(cinfo, &param, ITEMSETTING_DISP, path);
@@ -766,7 +766,7 @@ ERRORCODE ViewStyleCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 	LoadCFMT(&cinfo->celF, T("MC_celS"), buf, &CFMT_celF);
 
 	if ( mode != CRID_VIEWFORMAT_TEMP ){
-		if ( (mode == 0) || (mode == CRID_VIEWFORMAT_NOMODE) || (mode == CRID_VIEWFORMAT_REGID) ){
+		if ( (mode == DSMD_NOMODE) || (mode == CRID_VIEWFORMAT_NOMODE) || (mode == CRID_VIEWFORMAT_REGID) ){
 			SetCustTable(T("XC_celF"), cinfo->RegCID + 1, cinfo->celF.fmtbase,
 					GetCustTableSize(T("MC_celS"), buf));
 			cinfo->FixcelF = FALSE;
@@ -904,7 +904,7 @@ void USEFASTCALL PPcInsertDir(PPC_APPINFO *cinfo, const TCHAR *param)
 
 int GetStringCommand(const TCHAR **param, const TCHAR *commands)
 {
-	TCHAR name[VFPS], *p, code;
+	TCHAR name[VFPS], *destp, code;
 	const TCHAR *oldparam;
 	int count;
 
@@ -913,11 +913,11 @@ int GetStringCommand(const TCHAR **param, const TCHAR *commands)
 	oldparam = *param;
 	count = GetIntNumber(param);
 	if ( oldparam != *param ) return count;
-	p = name;
+	destp = name;
 	while ( Isalnum(**param) ){
-		*p++ = upper(*(*param)++);
+		*destp++ = upper(*(*param)++);
 	}
-	*p = '\0';
+	*destp = '\0';
 	count = 0;
 	while ( *commands ){
 		if ( !tstrcmp(name, commands) ) return count;
@@ -1229,7 +1229,7 @@ void MakeListFileCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 	path[0] = '\0';
 	for (;;){
 		chr = SkipSpace(&param);
-		if ( (chr !='-') && (chr !='/') ){ // オプション以外
+		if ( (chr != '-') && (chr != '/') ){ // オプション以外
 			if ( path[0] == '\0' ){
 				GetCommandParameterDual(&param, path, TSIZEOF(path));
 				if ( path[0] == '\0' ){
@@ -2311,6 +2311,15 @@ ERRORCODE MaskEntryCommand(PPC_APPINFO *cinfo, const TCHAR *param, int mode)
 		if ( MaskEntryMain(cinfo, &mask, CEL(cinfo->e.cellN).f.cFileName) == FALSE ){
 			return ERROR_INVALID_PARAMETER;
 		}
+		tstrcpy(cinfo->DsetMask, mask.file);
+		if ( XC_dpmk != 0 ){
+			SetCaption(cinfo);
+			InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
+			if ( cinfo->combo ){
+				PostMessage(cinfo->hComboWnd, WM_PPXCOMMAND,
+						KCW_setpath, (LPARAM)cinfo->info.hWnd);
+			}
+		}
 	}else{
 		if ( (mode == DSMD_NOMODE) || (mode == DSMD_REGID) ){
 			cinfo->mask.attr = 0;
@@ -2428,16 +2437,6 @@ ERRORCODE PPcGetIInfo_Command(PPC_APPINFO *cinfo, PPXAPPINFOUNION *uptr)
 	if ( *uptr->str <= 'M' ){ //------------------------------------------- A-M
 		if ( !tstrcmp(uptr->str, T("AUTODRAGDROP")) ){
 			return AutoDragDropCommand(cinfo, param);
-/*
-		}else if ( !tstrcmp(uptr->str, T("AUX")) ){
-			int mode = GetStringCommand((const TCHAR **)&param, T("OFF\0") T("ON\0") );
-			if ( mode == -1 ){
-				cinfo->AuxiliaryOperation = !cinfo->AuxiliaryOperation;
-				SetPopMsg(cinfo, POPMSG_MSG, cinfo->AuxiliaryOperation ? T("AUX on") : T("AUX off"));
-			}else{
-				cinfo->AuxiliaryOperation = mode;
-			}
-*/
 		}else if ( !tstrcmp(uptr->str, T("CAPTUREWINDOW")) ){
 			return CaptureWindowCommand(cinfo, param);
 		}else if ( !tstrcmp(uptr->str, T("CACHE")) ){
@@ -2517,6 +2516,8 @@ ERRORCODE PPcGetIInfo_Command(PPC_APPINFO *cinfo, PPXAPPINFOUNION *uptr)
 			return SortEntryCommand(cinfo, param, DSMD_TEMP);
 		}else if ( !tstrcmp(uptr->str, T("SYNCPROP")) ){
 			PPcSyncProperties(cinfo, param);
+		}else if ( !tstrcmp(uptr->str, T("SYNCPATH")) ){
+			SetSyncPath(cinfo, param);
 		}else if ( !tstrcmp(uptr->str, T("SETENTRYIMAGE")) ){
 			SetEntryImage(cinfo, param);
 		}else if ( !tstrcmp(uptr->str, T("TREE")) ){
@@ -2543,7 +2544,7 @@ ERRORCODE PPcGetIInfo_Command(PPC_APPINFO *cinfo, PPXAPPINFOUNION *uptr)
 DWORD_PTR PPcGetIInfo_Function(PPC_APPINFO *cinfo, PPXAPPINFOUNION *uptr)
 {
 	if ( !tstrcmp(uptr->funcparam.param, T("MASKENTRY")) ){
-		tstrcpy(uptr->funcparam.dest, cinfo->mask.file);
+		tstrcpy(uptr->funcparam.dest, (cinfo->DsetMask[0] == MASK_NOUSE) ? cinfo->mask.file : cinfo->DsetMask);
 	}else if ( !tstrcmp(uptr->funcparam.param, T("DIRHISTORY")) ){
 		DirHistFunction(cinfo, &uptr->funcparam);
 	}else if ( !tstrcmp(uptr->funcparam.param, T("COMMENT")) ){

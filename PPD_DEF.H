@@ -521,13 +521,16 @@ extern void WriteEString(TCHAR *string, BYTE *ptr, DWORD size);
 extern WORD FixCharKeycode(WORD key);
 extern DWORD crc32(const BYTE *bin, DWORD size, DWORD r);
 extern UINT VTypeToCPlist[VTypeToCPlist_max];
+extern HMODULE LoadLibraryTry(const TCHAR *filepath);
 
 #ifdef UNICODE
 	#define WriteFileZTSIZE (VFPS * 3) // この長さまでの文字列に対応
 	extern BOOL WriteFileZT(HANDLE fileh, const WCHAR *str, DWORD *wrote);
 	extern LRESULT SendUTextMessage_U(HWND hWnd, UINT uMsg, WPARAM wParam, const TCHAR *text);
+	extern HMODULE LoadLibraryTryA(const char *filepath);
 #else
 	#define WriteFileZT(fileh, str, wrote) WriteFile(fileh, str, strlen(str), wrote, NULL)
+	#define LoadLibraryTryA(filepath) LoadLibraryTry(filepath)
 #endif
 #define K_mouse K_internal // マウスによる操作(メニュー位置判定用)
 extern void GetPopMenuPos(HWND hWnd, POINT *pos, WORD key);

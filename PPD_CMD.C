@@ -267,22 +267,20 @@ BOOL USEFASTCALL ZExecAndCheckError(EXECSTRUCT *Z) // %&
 	setflag(Z->flags, XEO_SEQUENTIAL);
 	if ( Z->flags & XEO_DISPONLY ){		// 表示のみ
 		*Z->dst++ = ':';
-		return TRUE;
+		return ZMC_CONTINUE;
 	}				// 実行
 	ZExec(Z);
 	if ( Z->result != NO_ERROR ){
 		ZErrorFix(Z); // *return xxx %& は対応していない
-		return FALSE;
+		return ZMC_BREAK;
 	}
 	if ( Z->ExitCode != 0 ){
 		Z->result = ERROR_CANCELLED;
-		return FALSE;
+		return ZMC_BREAK;
 	}
 	ZInitSentence(Z);
-	return TRUE; // 継続実行可能
+	return ZMC_CONTINUE;
 }
-
-
 
 void USEFASTCALL ZStringOnDir(EXECSTRUCT *Z) // %S
 {
@@ -1695,8 +1693,7 @@ void GetCursorFileName(EXECSTRUCT *Z) // %R, %Y, %t
 
 	GetValue(Z, *(Z->src - 1), Z->dst);
 								// カーソルエントリのファイルの属性を入手
-	if ( PPxEnumInfoFunc(Z->Info, PPXCMDID_CSRATTR, (TCHAR *)&attr, &Z->EnumInfo) &&
-			(attr & FILE_ATTRIBUTE_DIRECTORY) ){
+	if ( PPxEnumInfoFunc(Z->Info, PPXCMDID_CSRATTR, (TCHAR *)&attr, &Z->EnumInfo) && (attr & FILE_ATTRIBUTE_DIRECTORY) ){
 		setflag(Z->status, ST_SDIRREF | ST_CHKSDIRREF);
 	}else{
 		setflag(Z->status, ST_CHKSDIRREF);
@@ -1981,8 +1978,7 @@ BOOL ZMacroChartor(EXECSTRUCT *Z)	// マクロ % 解析
 			break;
 						//----- %&	終了コードで判断 ----------------
 		case '&':
-			if ( IsTrue(ZExecAndCheckError(Z)) ) return ZMC_BREAK;
-			break;
+			return ZExecAndCheckError(Z);
 						//----- %:		コマンド区切り ----------------
 		case ':':
 			if ( Z->flags & XEO_DISPONLY ){		// 表示のみ

@@ -40,6 +40,9 @@ const TCHAR StrDsetAsyncRead[] = MES_DSAR;
 const TCHAR StrDsetSaveDisk[] = MES_DSSD;
 const TCHAR StrDsetSaveEveryTime[] = MES_DSSE;
 
+const TCHAR StrAuxBase[] = T("base");
+const TCHAR StrAuxSep[] = T(" %; ");
+
 struct PopStringList {
 	UINT id;
 	const TCHAR *string;
@@ -413,7 +416,7 @@ BOOL USEFASTCALL CheckComma(const TCHAR **param)
 	return FALSE;
 }
 
-void LoadLs(const TCHAR *path, LOADSETTINGS *ls)
+int LoadLs(const TCHAR *path, LOADSETTINGS *ls)
 {
 	ls->dset.flags = ls->dset.deflags = 0;
 	ls->dset.infoicon = ls->dset.cellicon = DSETI_DEFAULT;
@@ -421,7 +424,7 @@ void LoadLs(const TCHAR *path, LOADSETTINGS *ls)
 	ls->dset.sort.atr = FILEATTRMASK_DIR_FILES;
 	ls->dset.sort.option = SORTE_DEFAULT_VALUE;
 	ls->disp[0] = '\0';
-	GetCustTable(StrXC_dset, path, ls, sizeof(LOADSETTINGS));
+	return GetCustTable(StrXC_dset, path, ls, sizeof(LOADSETTINGS));
 }
 
 void SaveLs(const TCHAR *path, LOADSETTINGS *ls)
@@ -1331,6 +1334,45 @@ HMENU MakeDriveJumpMenu(PPC_APPINFO *cinfo, HMENU hPopupMenu, DWORD *index, ThST
 			pSF->lpVtbl->Release(pSF);
 		}
 	}
+
+	{ // AUX: óÒãì
+		HMENU hAuxMenu = NULL;
+		int count = 0;
+		TCHAR key[MAX_PATH], param[CMDLINESIZE], *sepptr;
+
+		for( ; EnumCustData(count, key, NULL, 0) >= 0; count++ ){
+			if ( ((key[0] != 'M') && (key[0] != 'S')) ||
+				 (key[1] != '_') ||
+				 (key[2] != 'a') ||
+				 (key[3] != 'u') ||
+				 (key[4] != 'x') ){
+				continue;
+			}
+
+			param[0] = '\0';
+			GetCustTable(key, StrAuxBase, param, sizeof(param));
+			if ( param[0] == '\0' ) continue;
+			if ( hAuxMenu == NULL ){
+				hAuxMenu = CreatePopupMenu();
+				AppendMenu(hPopupMenu, MF_EPOP, (UINT_PTR)hAuxMenu, T("aux:"));
+			}
+			sepptr = tstrstr(param, StrAuxSep);
+			if ( sepptr != NULL ){
+				*sepptr = '\0';
+				sepptr += TSIZEOFSTR(StrAuxSep);
+			}else{
+				sepptr = param;
+			}
+			if ( TH == NULL ){
+				wsprintf(buf, T("%s\t%s"), key, sepptr);
+				AppendMenuString(hAuxMenu, *index, buf);
+			}else{
+				AppendMenuString(hAuxMenu, *index, sepptr);
+				ThAddString(TH, param);
+			}
+			(*index)++;
+		}
+	}
 	return hPopupMenu;
 	#undef DRIVEOFF
 }
@@ -1356,12 +1398,28 @@ void USEFASTCALL PPC_DriveJumpMain(PPC_APPINFO *cinfo, TCHAR *menubuf)
 			menubuf[2] = '\0';
 		}
 		VFSFixPath(NULL, menubuf, cinfo->path, VFSFIX_VFPS);
-	}else{ // mtp "mtpname"
+	}else{ // mtp: mtppath \t "mtpname" / aux: key \t comment
 		TCHAR *p;
 
 		p = tstrchr(menubuf, '\t');
 		if ( p != NULL ) *p = '\0';
-		wsprintf(newpath, T("#17:\\%s"), menubuf);
+		if ( ((menubuf[0] == 'M') || (menubuf[0] == 'S')) && (menubuf[1] == '_') ){
+			newpath[0] = '\0';
+			GetCustTable(menubuf, StrAuxBase, newpath, sizeof(newpath));
+			p = tstrstr(newpath, StrAuxSep);
+			if ( p != NULL ){
+				*p = '\0';
+				p += TSIZEOFSTR(StrAuxSep);
+			}else{
+				p = newpath;
+			}
+			if ( PPctInput(cinfo, p, newpath, TSIZEOF(newpath),
+					PPXH_PATH, PPXH_PATH) <= 0 ){
+				return;
+			}
+		}else{
+			wsprintf(newpath, T("#17:\\%s"), menubuf);
+		}
 		tstrcpy(menubuf, newpath);
 	}
 	tstrcpy(newpath, cinfo->path);
@@ -2688,12 +2746,13 @@ ERRORCODE SetCellDisplayFormat(PPC_APPINFO *cinfo, int selectindex, const TCHAR 
 	} else if ( ((index >= CRID_VIEWFORMAT) && (index < CRID_VIEWFORMATEX)) || (index == CRID_VIEWFORMAT_CANCEL) ){
 		DWORD size;
 
+		FreeCFMT(&cinfo->celF);
 		if ( index != CRID_VIEWFORMAT_CANCEL ){ //ñºëOéÊìæ
 			EnumCustTable(index - CRID_VIEWFORMAT, T("MC_celS"), sname, NULL, 0);
-			FreeCFMT(&cinfo->celF);
 			LoadCFMT(&cinfo->celF, T("MC_celS"), sname, &CFMT_celF);
 		} else{
 			sname[0] = '\0';
+			LoadCFMT(&cinfo->celF, T("XC_celF"), cinfo->RegCID + 1, &CFMT_celF);
 		}
 
 		if ( mode == CRID_VIEWFORMAT_REGID ){ // ëãï ê›íËÅEï€éù
@@ -2938,19 +2997,25 @@ void OpenFileWithPPe(PPC_APPINFO *cinfo)
 
 void OpenExplorer(PPC_APPINFO *cinfo)
 {
-	const TCHAR *cmd;
+	TCHAR cmdline[CMDLINESIZE], path[VFPS];
 
-	if ( (OSver.dwMajorVersion > 6) ||
-		((OSver.dwMajorVersion == 6) && (OSver.dwMinorVersion > 0)) ){
-		cmd = StrInvokeExplorer3; // Win7à»ç~
-	} else if ( (OSver.dwMajorVersion >= 5) ||
-		((OSver.dwMajorVersion == 4) && (OSver.dwMinorVersion >= 90)) ){
-		cmd = StrInvokeExplorer2; // 4.90à»ç~
-	} else{
-		cmd = StrInvokeExplorer1; // 98/NT4Ç‹Ç≈
+	if ( cinfo->e.Dtype.mode != VFSDT_PATH ){
+		const TCHAR *cmd;
+
+		if ( (OSver.dwMajorVersion > 6) ||
+			((OSver.dwMajorVersion == 6) && (OSver.dwMinorVersion > 0)) ){
+			cmd = StrInvokeExplorer3; // Win7à»ç~
+		} else if ( (OSver.dwMajorVersion >= 5) ||
+			((OSver.dwMajorVersion == 4) && (OSver.dwMinorVersion >= 90)) ){
+			cmd = StrInvokeExplorer2; // 4.90à»ç~
+		} else{
+			cmd = StrInvokeExplorer1; // 98/NT4Ç‹Ç≈
+		}
+		if ( IsTrue(PPcSHContextMenu(cinfo, StrThisDir, cmd)) ) return;
 	}
-	if ( IsTrue(PPcSHContextMenu(cinfo, StrThisDir, cmd)) ) return;
-	PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, T("EXPLORER /n,/e,%1"), NULL, 0);
+	VFSFullPath(path, (TCHAR *)GetCellFileName(cinfo, &CEL(cinfo->e.cellN), path), cinfo->path);
+	wsprintf(cmdline, T("explorer /n,/e,/select,%s"), path);
+	ComExec(cinfo->info.hWnd, cmdline, cinfo->path);
 }
 
 BOOL MaskEntryMain(PPC_APPINFO *cinfo, XC_MASK *maskorg, const TCHAR *filename)
@@ -3095,6 +3160,8 @@ ERRORCODE MaskEntry(PPC_APPINFO *cinfo, int mode, const TCHAR *defmask, const TC
 			if ( mode == DSMD_NOMODE ){
 				GetCustData(Str_X_dsst, &X_dsst, sizeof(X_dsst));
 				mode = X_dsst[0];
+			}else{
+				defmask = maskitem;
 			}
 		}else{
 			LOADSETTINGS ls;
@@ -3148,6 +3215,15 @@ ERRORCODE MaskEntry(PPC_APPINFO *cinfo, int mode, const TCHAR *defmask, const TC
 	if ( pfs.mode == DSMD_TEMP ){ // Temporarilymask(F)
 		if ( MaskEntryMain(cinfo, &mask, pfs.filename) == FALSE ){
 			return ERROR_INVALID_PARAMETER;
+		}
+		tstrcpy(cinfo->DsetMask, mask.file);
+		if ( XC_dpmk != 0 ){
+			SetCaption(cinfo);
+			InvalidateRect(cinfo->info.hWnd, NULL, FALSE);
+			if ( cinfo->combo ){
+				PostMessage(cinfo->hComboWnd, WM_PPXCOMMAND,
+						KCW_setpath, (LPARAM)cinfo->info.hWnd);
+			}
 		}
 	} else{		 // Holdmask(\F)
 		if ( (pfs.mode == DSMD_NOMODE) || (pfs.mode == DSMD_REGID) ){
@@ -3666,7 +3742,7 @@ void MakePathTrackingListMenuString(TCHAR *dest, int offset, TCHAR *itemname)
 #define TRACKINGMENUS 16
 BOOL PathTrackingListMenu(PPC_APPINFO *cinfo, int dest)
 {
-	int i = 1;
+	int index = 1;
 	HMENU hMenu;
 	TCHAR buf[VFPS + 8];
 	TCHAR *p;
@@ -3676,34 +3752,122 @@ BOOL PathTrackingListMenu(PPC_APPINFO *cinfo, int dest)
 		if ( dest > 0 ){
 			p = (TCHAR *)(cinfo->PathTrackingList.bottom +
 				cinfo->PathTrackingList.top);
-			for ( ; i < TRACKINGMENUS; i++ ){
+			for ( ; index < TRACKINGMENUS; index++ ){
 				if ( *p == '\0' ) break;
-				MakePathTrackingListMenuString(buf, i, p);
-				AppendMenuString(hMenu, i, buf);
+				MakePathTrackingListMenuString(buf, index, p);
+				AppendMenuString(hMenu, index, buf);
 				p += tstrlen(p) + 1;
 			}
 		} else{
 			DWORD top;
 
 			top = BackPathTrackingList(cinfo, cinfo->PathTrackingList.top);
-			if ( top ) while ( i < TRACKINGMENUS ){
+			if ( top ) while ( index < TRACKINGMENUS ){
 				top = BackPathTrackingList(cinfo, top);
-				MakePathTrackingListMenuString(buf, i,
+				MakePathTrackingListMenuString(buf, index,
 					(TCHAR *)(cinfo->PathTrackingList.bottom + top));
-				AppendMenuString(hMenu, -i, buf);
-				i++;
+				AppendMenuString(hMenu, -index, buf);
+				index++;
 				if ( !top ) break;
 			}
 		}
 	}
-	if ( i == 1 ) AppendMenu(hMenu, MF_GS, 0, T("none"));
+	if ( index == 1 ) AppendMenu(hMenu, MF_GS, 0, T("none"));
 
 	// Win9x Ç≈ÇÕñﬂÇËílÇ™16bitÇ»ÇÃÇ≈ÅAïÑçÜägí£Ç™ïKóv
-	i = S16TO32(PPcTrackPopupMenu(cinfo, hMenu));
+	index = S16TO32(PPcTrackPopupMenu(cinfo, hMenu));
 	DestroyMenu(hMenu);
-	if ( !i ) return FALSE;
-	JumpPathTrackingList(cinfo, i);
+	if ( index == 0 ) return FALSE;
+	JumpPathTrackingList(cinfo, index);
 	return TRUE;
+}
+
+void SetSyncPath(PPC_APPINFO *cinfo, const TCHAR *param)
+{
+	HWND hPairWnd;
+	int mode = -1;
+	BOOL pair = FALSE;
+
+	hPairWnd = GetPairWnd(cinfo);
+	if ( hPairWnd == NULL ) return;
+	if ( param != NULL ){
+		for (;;){
+			int type;
+
+			type = GetStringCommand(&param, T("OFF\0") T("ENTRY\0") T("ON\0") T("PAIR\0") T("SYNC\0") );
+			if ( type >= 3 ){
+				if ( type == 4 ) pair = TRUE;
+				if ( *param == ':' ) param++;
+				type = GetIntNumber(&param);
+				if ( type != 0 ) hPairWnd = (HWND)(LONG_PTR)type;
+				continue;
+			}
+			if ( type < 0 ) break;
+			mode = type;
+		}
+	}
+	if ( mode >= 0 ){
+		cinfo->SyncPathFlag = mode;
+	}else{
+		cinfo->SyncPathFlag = (cinfo->SyncPathFlag == SyncPath_off) ? SyncPath_dir : SyncPath_off;
+	}
+	if ( !pair ) {
+		COPYDATASTRUCT copydata;
+		TCHAR cmd[CMDLINESIZE];
+
+		wsprintf(cmd, T("*syncpath %d -sync:%d"), cinfo->SyncPathFlag, cinfo->info.hWnd);
+		copydata.dwData = 'H';
+		copydata.cbData = TSTRSIZE32(cmd);
+		copydata.lpData = (PVOID)cmd;
+		SendMessage(hPairWnd, WM_COPYDATA, 0, (LPARAM)&copydata);
+
+		SetPopMsg(cinfo, POPMSG_NOLOGMSG, cinfo->SyncPathFlag ? T("Sync path on") : T("Sync path off"));
+	}
+	if ( cinfo->SyncPathFlag == SyncPath_off ) return;
+	cinfo->hSyncViewPairWnd = hPairWnd;
+
+	if ( cinfo->SyncPathFlag == SyncPath_dir ){
+		TCHAR thispath[VFPS], pairpath[VFPS], *thistail, *pairtail, *pairsep;
+
+		tstrcpy(thispath, cinfo->path);
+		thistail = thispath + tstrlen(thispath);
+
+		GetPairPath(cinfo, pairpath);
+		pairtail = pairpath + tstrlen(pairpath);
+
+		// ññîˆÇ™ã§í ÇµÇƒÇ¢ÇÈïîï™ÇåüèoÇ∑ÇÈ
+		while ( (thistail > thispath) && (pairtail > pairpath) ){
+			if ( TinyCharLower(*(thistail - 1)) != TinyCharLower(*(pairtail - 1)) ){
+				break;
+			}
+			thistail--;
+			pairtail--;
+		}
+
+		pairsep = VFSGetDriveType(pairpath, NULL, NULL);
+		if ( pairsep >= pairtail ){
+			*pairsep = '\0';
+			*(thistail + (pairsep - pairtail)) = '\0';
+		}else for ( ;; ){
+			TCHAR *nextptr;
+
+			nextptr = FindPathSeparator(pairsep + 1);
+			if ( nextptr == NULL ) break; // ç≈èIÉGÉìÉgÉäÅ®ñ¢â¡çH
+			if ( nextptr < pairtail ){
+				pairsep = nextptr;
+				continue;
+			}
+			*nextptr = '\0';
+			*(thistail + (nextptr - pairtail)) = '\0';
+			break;
+		}
+
+		ThSetString(&cinfo->StringVariable, StrSyncPathThis, thispath);
+		ThSetString(&cinfo->StringVariable, StrSyncPathPair, pairpath);
+//		XMessage(NULL,NULL,XM_DbgDIA,T("%s\n%s\n%s"), thispath, pairpath,pairtail);
+	}
+
+	SyncPairEntry(cinfo);
 }
 
 void SetSyncView(PPC_APPINFO *cinfo, int mode)
@@ -4194,8 +4358,10 @@ HMENU DirOptionMenu(PPC_APPINFO *cinfo, HMENU hPopupMenu, DWORD *index, ThSTRUCT
 		LoadLs(T("listfile"), &ls);
 		DOMA.opttype = T("-listfile");
 	} else if ( nowmode == DSMD_PATH_BRANCH ){
-		wsprintf(buf, T("/%s"), path);
-		LoadLs(buf, &ls);
+		if ( LoadLs(path, &ls) != NO_ERROR ){
+			wsprintf(buf, T("/%s"), path);
+			LoadLs(buf, &ls);
+		}
 		wsprintf(optpath, T("-\"%s\""), path);
 		DOMA.opttype = optpath;
 	}
@@ -4222,9 +4388,10 @@ HMENU DirOptionMenu(PPC_APPINFO *cinfo, HMENU hPopupMenu, DWORD *index, ThSTRUCT
 	DirOption_Icon_Menu(&DOMA, &DirOptionMenuData_Entry, ls.dset.cellicon);
 
 	if ( nowmode == DSMD_TEMP ){
-		wsprintf(buf, T("%s(&M): %s"), MessageText(MES_TFEM), cinfo->mask.file);
+		wsprintf(buf, T("%s(&M): %s"), MessageText(MES_TFEM),
+				(cinfo->DsetMask[0] == MASK_NOUSE) ? cinfo->mask.file : cinfo->DsetMask);
 		AppendMenuString(hPopupMenu, (*index)++, buf);
-		ThAddString(TH, T("%K\"\\F"));
+		ThAddString(TH, T("%K\"@\\F"));
 	} else {
 		TCHAR *p;
 		const TCHAR *disp = NULL, *mask = NULL, *cmd = NULL, *sort = NULL;

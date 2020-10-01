@@ -270,13 +270,17 @@ case 'H':
 //----------------------------------------------- Execute
 case 'X':
 	return ExecuteEntry(cinfo);
-//----------------------------------------------- PPc(hold)
+//----------------------------------------------- PPv(hold)
 case 'Y':
 	ViewOnCursor(cinfo, PPV_NOFOREGROUND | cinfo->NormalViewFlag);
 	break;
-//----------------------------------------------- PPc(hold sw)
+//----------------------------------------------- Sync PPv view
 case K_s | 'Y':
 	SetSyncView(cinfo, cinfo->SyncViewFlag ? 0 : 1);
+	break;
+//----------------------------------------------- Sync path
+case K_c | 'Y':
+	SetSyncPath(cinfo, NULL);
 	break;
 //----------------------------------------------- exec
 case 'Z':

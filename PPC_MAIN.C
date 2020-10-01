@@ -434,8 +434,8 @@ void CALLBACK DDTimerProc(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 			InvalidateRect(cinfo->info.hWnd, &box, TRUE);
 			if ( (cinfo->DDpagemode == DDPAGEMODE_DIR_ENTER) &&
 				 (cinfo->DDpage > 0) ){
-				cinfo->e.cellN = cinfo->DDpage - 1;
 				ForceDataObject();
+				cinfo->e.cellN = cinfo->DDpage - 1;
 				PostMessage(cinfo->info.hWnd, WM_PPXCOMMAND, KC_Edir, 0);
 				cinfo->DDpagemode = DDPAGEMODE_DIR_NEXTWAIT;
 			}
@@ -805,6 +805,27 @@ LRESULT USEFASTCALL PPcNotify(PPC_APPINFO *cinfo, NMHDR *nmh)
 	return 0;
 }
 
+void RecieveSyncPath(PPC_APPINFO *cinfo, const TCHAR *path, WPARAM wParam)
+{
+	TCHAR entry[VFPS];
+	ENTRYINDEX jumpN;
+
+	tstrcpy(entry, path);
+	ReplyMessage(TRUE);
+
+	if ( wParam == 0 ){
+		for ( jumpN = 0 ; jumpN < cinfo->e.cellIMax ; jumpN++ ){
+			if ( !tstrcmp(CEL(jumpN).f.cFileName, entry) ){
+				MoveCellCsr(cinfo, jumpN - cinfo->e.cellN, NULL);
+				break;
+			}
+		}
+	}else{
+		tstrcpy(cinfo->path, entry);
+		read_entry(cinfo, RENTRY_READ | RENTRY_NOHIST | RENTRY_NOFIXDIR);
+	}
+}
+
 void SetCountedDirectorySize(PPC_APPINFO *cinfo, struct dirinfo *di)
 {
 	ENTRYCELL *cell;
@@ -964,6 +985,12 @@ BOOL USEFASTCALL WmCopyData(PPC_APPINFO *cinfo, COPYDATASTRUCT *copydata, WPARAM
 		case KC_StDS:
 			SetCountedDirectorySize(cinfo, (struct dirinfo *)copydata->lpData);
 			return TRUE;
+
+		case KC_SYNCPATH:
+			RecieveSyncPath(cinfo, (const TCHAR *)copydata->lpData, wParam);
+{
+		return TRUE;
+}
 
 //		dafault:
 	}
@@ -1317,32 +1344,33 @@ void WMMouseMove(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 
 		posType = GetItemTypeFromPoint(cinfo, &pos, &itemNo);
 
-		if ( X_poshl != 0 ){ // ※１ マウスカーソル上のエントリ背景色変更
-//			setflag(cinfo->Tip.mode, STIP_SHOWTAILAREA);
-			if ( (posType >= PPCR_CELLMARK) ){
-				pn = itemNo;
-			}else{
-				pn = -1;
-			}
-			if ( cinfo->e.cellPoint != pn ){
-				ENTRYINDEX oldn;
+//		setflag(cinfo->Tip.mode, STIP_SHOWTAILAREA);
+		if ( (posType >= PPCR_CELLMARK) ){
+			pn = itemNo;
+		}else{
+			pn = -1;
+		}
+		if ( cinfo->e.cellPoint != pn ){
+			ENTRYINDEX oldn;
 
-				oldn = cinfo->e.cellPoint;
-				cinfo->e.cellPoint = pn;
-				cinfo->e.cellPointType = posType;
+			oldn = cinfo->e.cellPoint;
+			cinfo->e.cellPoint = pn;
+			cinfo->e.cellPointType = posType;
 
+			if ( X_poshl != 0 ){ // ※１ マウスカーソル上のエントリ背景色変更
 				if ( pn >= 0 ) RefleshCell(cinfo, pn);
 				if ( oldn >= 0 ) RefleshCell(cinfo, oldn);
-				if ( X_stip[TIP_HOVER_TIME] ){
-					if ( cinfo->Tip.states & STIP_CMD_HOVER ){
-						HideEntryTip(cinfo);
-					}
-					if ( pn >= 0 ){
-						SetTimer(cinfo->info.hWnd, TIMERID_HOVERTIP, X_stip[TIP_HOVER_TIME], HoverTipTimerProc);
-					}
-				}
-				pn = -2;
 			}
+
+			if ( X_stip[TIP_HOVER_TIME] ){
+				if ( cinfo->Tip.states & STIP_CMD_HOVER ){
+					HideEntryTip(cinfo);
+				}
+				if ( pn >= 0 ){
+					SetTimer(cinfo->info.hWnd, TIMERID_HOVERTIP, X_stip[TIP_HOVER_TIME], HoverTipTimerProc);
+				}
+			}
+			pn = -2;
 		}
 								// 隠しメニュー処理(非ドラッグ時)
 		if ( cinfo->MouseStat.mode != MOUSEMODE_DRAG ){
@@ -2137,12 +2165,15 @@ void WmWindowPosChanged(PPC_APPINFO *cinfo)
 	if ( (wp.showCmd != SW_SHOWMINIMIZED) && (wp.showCmd != SW_HIDE) ){
 		cinfo->WinPos.show = (BYTE)wp.showCmd;
 		GetClientRect(hWnd, &box);
-		cinfo->wnd.Area.cx = box.right;
-		cinfo->wnd.Area.cy = box.bottom;
-	}
+		// SW_SHOWNORMAL and !IsWindowVisible のとき client size が 0 になる対策
+		if ( (box.right > 0) || IsWindowVisible(hWnd) ){
+			cinfo->wnd.Area.cx = box.right;
+			cinfo->wnd.Area.cy = box.bottom;
+		}
 										// 終了時の窓を保存
-	if ( wp.showCmd == SW_SHOWNORMAL ){
-		cinfo->WinPos.pos = cinfo->wnd.NCRect;
+		if ( wp.showCmd == SW_SHOWNORMAL ){
+			cinfo->WinPos.pos = cinfo->wnd.NCRect;
+		}
 	}
 
 //	if ( (cinfo->wnd.Area.cx == oldx) && (cinfo->wnd.Area.cy == oldy) ) return;

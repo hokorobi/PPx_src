@@ -559,16 +559,16 @@ void MakeFixMax(HWND hDlg, int *param, int flag)
 void ModifyDispFormat(HWND hDlg)
 {
 	int index, param;
-	TCHAR text[CMDLINESIZE], buf[CMDLINESIZE], *p;
+	TCHAR text[CMDLINESIZE], buf[CMDLINESIZE], *ptr;
 
 	index = (int)SendDlgItemMessage(hDlg, IDL_DFOMAT, LB_GETCURSEL, 0, 0);
 	if ( index == LB_ERR ) return;
 
 	SendDlgItemMessage(hDlg, IDL_DFOMAT, LB_GETTEXT, index, (LPARAM)text);
 	param = (int)SendDlgItemMessage(hDlg, IDL_DFOMAT, LB_GETITEMDATA, index, 0) & PARAMMASK;
-	p = tstrchr(text, ' ');
-	if ( p == NULL ) p = text + tstrlen(text);
-	*p++ = ' ';
+	ptr = tstrchr(text, ' ');
+	if ( ptr == NULL ) ptr = text + tstrlen(text);
+	*ptr++ = ' ';
 
 	if ( dfitem[param].param[0].type != DFP_NONE ){
 		GetDlgItemText(hDlg, IDC_DFPARAM1, buf, TSIZEOF(buf));
@@ -576,15 +576,15 @@ void ModifyDispFormat(HWND hDlg)
 			if ( buf[0] != '\"' ) return; // ãÊï™ñºÇÃà◊çXêVÇµÇ»Ç¢
 		}
 		DeleteComment(hDlg, IDC_DFPARAM1, buf);
-		tstrcpy(p, buf);
-		p += tstrlen(p);
+		tstrcpy(ptr, buf);
+		ptr += tstrlen(ptr);
 	}
 	if ( dfitem[param].param[1].type != DFP_NONE ){
 		GetDlgItemText(hDlg, IDC_DFPARAM2, buf, TSIZEOF(buf));
 		if ( buf[0] != '\0' ){
 			DeleteComment(hDlg, IDC_DFPARAM2, buf);
-			*p++ = ',';
-			tstrcpy(p, buf);
+			*ptr++ = ',';
+			tstrcpy(ptr, buf);
 		}
 	}
 	if ( IsDlgButtonChecked(hDlg, IDX_COMMENTHID) ) setflag(param, COMMENTHID);
@@ -644,12 +644,12 @@ BOOL ModifyDispColumnFormat(HWND hDlg, HWND hCBwnd)
 
 void FixSelectedItem(HWND hComboWnd)
 {
-	TCHAR buf[CMDLINESIZE], *p;
+	TCHAR buf[CMDLINESIZE], *ptr;
 
 	SendMessage(hComboWnd, WM_GETTEXT, CMDLINESIZE, (LPARAM)buf);
-	p = tstrstr(buf, T(" - "));
-	if ( p != NULL ){
-		*p = '\0';
+	ptr = tstrstr(buf, T(" - "));
+	if ( ptr != NULL ){
+		*ptr = '\0';
 		SendMessage(hComboWnd, WM_SETTEXT, 0, (LPARAM)buf);
 	}
 }

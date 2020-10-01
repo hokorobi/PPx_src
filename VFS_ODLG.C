@@ -1198,7 +1198,7 @@ void InitControlData(FOPSTRUCT *FS, int id)
 					}
 				#endif
 				if ( !(FS->opt.fopflags & VFSFOP_USEKEEPDIR) ){
-					ShowWindow(GetDlgItem(FS->hDlg, IDX_FOP_KEEPDIR), SW_HIDE);
+					ShowDlgWindow(FS->hDlg, IDX_FOP_KEEPDIR, SW_HIDE);
 				}
 				break;
 
@@ -1440,6 +1440,7 @@ void FopDialogInit(HWND hDlg, FILEOPERATIONDLGBOXINITPARAMS *fopip)
 		FuzzyCompareFileTime = X_fatim ?
 				FuzzyCompareFileTime2 : FuzzyCompareFileTime0;
 	}
+	ShowDlgWindow(hDlg, IDB_FOP_LOG, SW_HIDE);
 	SetWindowY(FS, WINY_SETT);	// Window を小型にする
 								// 各コントロールの設定 ===============
 	SetDlgItemText(hDlg, IDOK, MessageText(STR_FOPOK));
@@ -1563,6 +1564,7 @@ void TestButton(FOPSTRUCT *FS)
 	}
 	UnHideWindow(FS->hDlg);
 	SetTaskBarButtonProgress(FS->hDlg, TBPF_NOPROGRESS, 0);
+	ActionInfo(FS->hDlg, FS->info, AJI_COMPLETE, T("foptest")); // 通知
 }
 
 void OperationResult(FOPSTRUCT *FS, BOOL result)
@@ -1777,6 +1779,18 @@ void FopCommands(HWND hDlg, WPARAM wParam, LPARAM lParam)
 
 		case IDQ_GETDIALOGID:
 			SetWindowLongPtr(hDlg, DWLP_MSGRESULT, (LONG_PTR)DialogID[FS->page.showID]);
+			break;
+
+		case IDB_FOP_LOG:
+			if ( FS->hEWnd != NULL ){
+				if ( IsWindowVisible(FS->hEWnd) &&
+					 !((FS->state == FOP_READY) || (FS->state == FOP_END)) ){
+					SetWindowY(FS, WINY_FULL);
+				}else{
+					SetWindowY(FS, 0);
+					SetFocus(FS->hEWnd);
+				}
+			}
 			break;
 
 		case IDHELP:

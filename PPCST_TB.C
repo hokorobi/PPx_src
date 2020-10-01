@@ -208,8 +208,8 @@ const TCHAR *MenuMaskList[] = {
 	T("全て;\0All;"),
 	T("一般;!M_Ccr*,!M_menu*,!*_aux*\0General;!M_Ccr*,!M_menu*,!*_aux*"),
 	T("拡張子別メニュー;M_Ccr*\0Extention menus;M_Ccr*"),
-	T("その他設定;S_*\0etc. settings;S_"),
-	T("aux: 設定;*_aux*\0_aux aux: settings;*_aux*"),
+	T("その他設定;S_*\0etc. settings;S_*"),
+	T("aux: 設定;?_aux*\0_aux aux: settings;?_aux*"),
 	T("PPxメニューバー;M_menu*\0PPx menu bar;M_menu*"),
 	NULL
 };
@@ -694,7 +694,7 @@ void USEFASTCALL InitCmdList(HWND hDlg)
 		TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS,
 		box.left - 8, box.top - 8,
 		(box.right - box.left) / 3, ((box.bottom - box.top) * 2) / 3,
-		hDlg, NULL, hInst, NULL);
+		hDlg, CHILDWNDID(IDT_ALCCMDLIST), hInst, NULL);
 	if ( X_dss & DSS_COMCTRL ) SendMessage(hCmdListWnd, CCM_DPISCALE, TRUE, 0);
 	InitCommandTree();
 }
@@ -2034,7 +2034,7 @@ void EnumTypeList(HWND hDlg, TABLEINFO *tinfo)
 		sepptr = mask;
 	}
 	MakeFN_REGEXP(&fn, sepptr);
-	if ( sepptr[0] == 'S' ) typekey = 'S';
+	if ( (sepptr[0] == 'S') || (sepptr[0] == '?') ) typekey = sepptr[0];
 
 	SendMessage(hLVTypeWnd, WM_SETREDRAW, FALSE, 0);
 	SendMessage(hLVTypeWnd, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LVS_EX_FULLROWSELECT | LVS_EX_LABELTIP);
@@ -2048,7 +2048,9 @@ void EnumTypeList(HWND hDlg, TABLEINFO *tinfo)
 		size = EnumCustData(count, name, NULL, 0);
 		if ( 0 > size ) break;
 
-		if ( CheckTypeName(typekey, name) == FALSE ) continue;
+		if ( (typekey != '?') && (CheckTypeName(typekey, name) == FALSE) ){
+			continue;
+		}
 		if ( !FilenameRegularExpression(name, &fn) ) continue;
 
 		for ( list = TypeLists ; list->name ; list++ ){
@@ -2665,7 +2667,7 @@ void InitTablePage(HWND hDlg, TABLEINFO *tinfo)
 									}
 								}
 								PutKeyCode(buf, key);
-								if ( tstrcmp(buf, r) ){
+								if ( tstrcmp(buf, r) != 0 ){
 									err = T("InitTablePage Error - KeyUnmatch");
 								}
 							}
@@ -2677,7 +2679,7 @@ void InitTablePage(HWND hDlg, TABLEINFO *tinfo)
 					}
 				}
 				p += tstrlen(p) + 2;
-				if ( !*p ) break;
+				if ( *p == '\0' ) break;
 			}
 		}
 #endif

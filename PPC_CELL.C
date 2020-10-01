@@ -321,6 +321,25 @@ BOOL CellLook(PPC_APPINFO *cinfo, int IsFileRead)
 	return TRUE;
 }
 
+void SyncPairEntry(PPC_APPINFO *cinfo)
+{
+	TCHAR *entry;
+	COPYDATASTRUCT copydata;
+
+	if ( CEL(cinfo->e.cellN).type <= ECT_UPDIR ) return;
+	entry = CEL(cinfo->e.cellN).f.cFileName;
+	if ( *entry == '>' ){
+		TCHAR *longname = (TCHAR *)EntryExtData_GetDATAptr(cinfo, DFC_LONGNAME, &CEL(cinfo->e.cellN));
+		if ( longname != NULL ) entry = longname;
+	}
+	entry = FindLastEntryPoint(entry);
+
+	copydata.dwData = KC_SYNCPATH;
+	copydata.cbData = TSTRSIZE32(entry);
+	copydata.lpData = entry;
+	SendMessage(cinfo->hSyncViewPairWnd, WM_COPYDATA, 0, (LPARAM)&copydata);
+}
+
 //-----------------------------------------------------------------------------
 // ƒZƒ‹ˆÚ“®‚µ‚½Žž‚És‚¤ˆ—
 BOOL NewCellN(PPC_APPINFO *cinfo, int OcellN, BOOL fulldraw)
@@ -395,6 +414,10 @@ BOOL NewCellN(PPC_APPINFO *cinfo, int OcellN, BOOL fulldraw)
 				cinfo->hSyncInfoWnd = NULL;
 			}
 		}
+		if ( cinfo->SyncPathFlag != SyncPath_off ){	// ^[Y] ˆ—
+			if ( GetFocus() == cinfo->info.hWnd ) SyncPairEntry(cinfo);
+		}
+
 		if ( cinfo->SyncViewFlag ){	// \[Y] ˆ—
 			if (!(CEL(cinfo->e.cellN).attr&(ECA_THIS | ECA_PARENT | ECA_DIR)) &&
 					(CEL(cinfo->e.cellN).state >= ECS_NORMAL) ){

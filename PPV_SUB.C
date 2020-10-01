@@ -1312,15 +1312,22 @@ void CloseViewObject(void)
 		UsePPx();
 		vp = SearchHistory(PPXH_PPVNAME, vo_.file.name);
 		FreePPx();
-		if ( VOi->offX || VOi->offY ||
-			 (vo_.DModeType != (DWORD)viewopt_opentime.dtype ) ||
-			 (VOi->textC != viewopt_opentime.T_code) ||
-			 vo_.bitmap.rotate ||
-			 (vp != NULL) ||
-			 (OldTailLine > 0) ||
-			 (FileDivideMode == FDM_DIV2ND) ||
-			 (VOi->width != VOi->defwidth) ||
-			 (VOsel.cursor != FALSE) ){
+		if ( (VO_history != 0) &&
+			 ( (VO_history == 1) || (X_hisr[1] == 1) ||
+			   ( (X_hisr[1] == 2) && (
+				 (vp != NULL) || (VOi->offX != 0) || (VOi->offY != 0) ||
+				 (vo_.DModeType != (DWORD)viewopt_opentime.dtype ) ||
+				// text
+				 ( (vo_.DModeType != DISPT_IMAGE) &&
+				   ( (VOi->textC != viewopt_opentime.T_code) ||
+					 (OldTailLine > 0) ||
+					 (VOsel.cursor != FALSE) ||
+					 (VOi->width != VOi->defwidth) ) ) ||
+				// image
+				 ( (vo_.DModeType == DISPT_IMAGE) && vo_.bitmap.rotate ) ||
+				// etc
+				 (FileDivideMode == FDM_DIV2ND) ) ) )
+		){
 			DWORD optsize = 0;
 			int i;
 
@@ -1441,6 +1448,7 @@ void CloseViewObject(void)
 	vo_.DModeBit = DOCMODE_NONE;
 	vo_.DocmodeType = DOCMODE_NONE;
 	VOi = &VO_I[DISPT_NONE];
+	VO_history = -1;
 	VO_Tmodedef = 0;
 	VO_Tmode = 0;
 	VO_Tesc = 1;
@@ -1982,7 +1990,12 @@ void JumpToSelectedAddress(HWND hWnd)
 	}
 	*dest = '\0';
 	TM_kill(&text.tm);
-	OpenBrowser(hWnd, buf);
+
+	if ( GetShiftKey() & K_c ){
+		OpenAndFollowViewObject(&vinfo, buf, NULL, NULL, 0);
+	}else{
+		OpenBrowser(hWnd, buf);
+	}
 }
 
 void PPvEditFile(HWND hWnd)
@@ -2035,7 +2048,7 @@ DWORD USEFASTCALL PPvContextMenuAddSub(PPV_APPINFO *vinfo, HMENU hMenu, ThSTRUCT
 
 		menucount = GetMenuItemCount(hMenu);
 		if ( vo_.bitmap.transcolor >= 0 ){
-			AppendMenuString(hMenu, K_M | 'M', StrAICP);
+			AppendMenuCheckString(hMenu, K_M | 'M', StrAICP, (viewopt_def.I_CheckeredPattern > 0) );
 		}
 		if ( vo_.bitmap.page.max != 0 ){
 			if ( !memcmp(vo_.file.image, "GIF8", 4) || !memcmp(vo_.file.image, "\x89PNG", 4) ){
@@ -2148,7 +2161,9 @@ void PPvContextMenu(PPV_APPINFO *vinfo)
 
 		GetMenuString(hMenu, menuid, buf, TSIZEOF(buf), MF_BYCOMMAND);
 		if ( (menuid >= MENUID_URI) && (menuid < MENUID_USER) ){
-			if ( GetShiftKey() & K_s ){
+			DWORD shiftkey = GetShiftKey();
+
+			if ( shiftkey & K_s ){
 				HGLOBAL hm;
 
 				hm = GlobalAlloc(GMEM_MOVEABLE, TSTRSIZE(buf));
@@ -2159,6 +2174,8 @@ void PPvContextMenu(PPV_APPINFO *vinfo)
 				EmptyClipboard();
 				SetClipboardData(CF_TTEXT, hm);
 				CloseClipboard();
+			}else if ( shiftkey & K_c ){
+				OpenAndFollowViewObject(vinfo, buf, NULL, NULL, 0);
 			}else{
 				OpenBrowser(vinfo->info.hWnd, buf);
 			}

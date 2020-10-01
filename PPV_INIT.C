@@ -74,6 +74,7 @@ const TCHAR *OptionNames[] = {
 	T("SETPARENT"),
 	T("MIME"),
 	T("SHOWSTYLE"),
+	T("HISTORY"),
 	NULL
 };
 
@@ -198,6 +199,7 @@ void InitViewOptions(VIEWOPTIONS *viewopts)
 	memset(viewopts, 0xff, sizeof(VIEWOPTIONS));
 #else
 	viewopts->dtype = -1;
+	viewopts->history = -1;
 
 	viewopts->T_code = -1;
 	viewopts->T_siso = -1;
@@ -208,13 +210,11 @@ void InitViewOptions(VIEWOPTIONS *viewopts)
 	viewopts->T_show_script = -1;
 	viewopts->T_tab = -1;
 	viewopts->T_width = -1;
+	viewopts->linespace = -1;
+	viewopts->tailflags = -1;
 
 	viewopts->I_animate = -1;
 	viewopts->I_CheckeredPattern = -1;
-
-	viewopts->linespace = -1;
-
-	viewopts->tailflags = -1;
 #endif
 }
 
@@ -415,7 +415,10 @@ BOOL CheckParam(VIEWOPTIONS *viewopts, const TCHAR *param, TCHAR *filename)
 				viewopts->T_mime = CheckSubParam(more, OffOn, 1);
 				break;
 			case 52:			//	"showstyle:sdi/onwnd/onmainwnd/inwnd/inmainwnd",
-				ShowStyle = CheckSubParam(more, ListStyle, 1);
+				X_vpos = CheckSubParam(more, ListStyle, 1);
+				break;
+			case 53:			//	"history:OFF/ON"
+				viewopts->history = CheckSubParam(more, OffOn, 1);
 				break;
 			default:
 				XMessage(NULL, NULL, XM_GrERRld, MES_EUOP, buf);
@@ -446,6 +449,7 @@ BOOL InitializePPv(int *result)
 	const TCHAR *cmdptr;
 	const TCHAR *lpszCmdLine;
 	int viewflag;
+	DWORD X_iexo[2] = {0,0};
 
 	PPxCommonExtCommand(K_CHECKUPDATE, 0);
 	FixCharlengthTable(T_CHRTYPE);
@@ -453,10 +457,19 @@ BOOL InitializePPv(int *result)
 
 	GetModuleFileName(hInst, PPvPath, MAX_PATH);
 	*VFSFindLastEntry(PPvPath) = '\0';
+
 										// オプション解析 ---------------------
 	lpszCmdLine = GetCommandLine();
 	GetLineParam(&lpszCmdLine, name);
 	reuse = CheckParam(&viewopt_def, lpszCmdLine, name);
+
+	GetCustData(T("X_iexo"), &X_iexo, sizeof(X_iexo));
+	if ( viewopt_def.I_animate < 0 ){
+		viewopt_def.I_animate = X_iexo[0];
+	}
+	if ( viewopt_def.I_CheckeredPattern < 0 ){
+		viewopt_def.I_CheckeredPattern = X_iexo[1];
+	}
 										// -R 処理 ----------------------------
 	if ( reuse ){
 		viewflag = ((WinPos.show == SW_SHOWNOACTIVATE) ||
@@ -698,13 +711,14 @@ int GetCustTableCID(const TCHAR *str, const TCHAR *sub, void *bin, size_t b_size
 void PPvLoadCust(void)
 {
 	GetCustTable(T("X_win"),	T("V"), &X_win, sizeof(X_win));
-	GetCustData (T("X_alt"),	&X_alt, sizeof(X_alt));
-	GetCustData (T("X_iacc"),	&X_iacc, sizeof(X_iacc));
-	GetCustData (T("X_evoc"),	&X_evoc, sizeof(X_evoc));
-	GetCustData (T("X_scrm"),	&X_scrm, sizeof(X_scrm));
-	GetCustData (T("X_IME"),	&X_IME, sizeof(X_IME));
-	GetCustData (T("X_swmt"),	&X_swmt, sizeof(X_swmt));
-	GetCustData (T("X_vpos"),	&ShowStyle, sizeof(ShowStyle));
+	GetCustData(T("X_alt"),		&X_alt, sizeof(X_alt));
+	GetCustData(T("X_iacc"),	&X_iacc, sizeof(X_iacc));
+	GetCustData(T("X_hisr"), 	&X_hisr, sizeof(X_hisr));
+	GetCustData(T("X_evoc"),	&X_evoc, sizeof(X_evoc));
+	GetCustData(T("X_scrm"),	&X_scrm, sizeof(X_scrm));
+	GetCustData(T("X_IME"),		&X_IME, sizeof(X_IME));
+	GetCustData(T("X_swmt"),	&X_swmt, sizeof(X_swmt));
+	GetCustData(T("X_vpos"),	&X_vpos, sizeof(X_vpos));
 	AutoColor	(T("C_back"),	&C_back, COLOR_WINDOW);
 	GetCustData (T("C_line"),	&C_line, sizeof(C_line));
 	AutoColor	(T("C_mes"),	&C_mes, COLOR_WINDOWTEXT);
@@ -750,7 +764,6 @@ void PPvLoadCust(void)
 		if ( XV_bctl[1] > 2 ) XV_bctl[1] = 1;
 	}
 	GetCustData (T("XV_ctls")	, &XV_ctls, sizeof(XV_ctls));
-
 	GetCustData (T("XV_pctl")	, &XV_pctl, sizeof(XV_pctl));
 	GetCustData (T("XV_lnum")	, &XV_lnum, sizeof(XV_lnum));
 	GetCustData (T("XV_numt")	, &XV_numt, sizeof(XV_numt));
@@ -846,19 +859,19 @@ BOOL FixShowRectByShowStyle(RECT *openbox, HWND hParentTargetWnd)
 {
 	RECT wndbox, visiblebox;
 
-	if ( ShowStyle <= VSHOW_SDI ) return FALSE;
+	if ( X_vpos <= VSHOW_SDI ) return FALSE;
 	if ( hParentTargetWnd == NULL ){
 		if ( openbox != NULL ) return FALSE;
 		hParentTargetWnd = (hViewReqWnd != NULL) ? hViewReqWnd : hViewParentWnd;
 		if ( hParentTargetWnd == NULL ) return FALSE;
 	}
 
-	if ( (ShowStyle == VSHOW_ONPAIRWINDOW) || (ShowStyle == VSHOW_INPAIRWINDOW) ){
+	if ( (X_vpos == VSHOW_ONPAIRWINDOW) || (X_vpos == VSHOW_INPAIRWINDOW) ){
 		HWND hPairWnd;
 
 		hPairWnd = (HWND)SendMessage(hParentTargetWnd, WM_PPXCOMMAND, KC_GETSITEHWND, (LPARAM)KC_GETSITEHWND_PAIR);
 		if ( hPairWnd != NULL ) hParentTargetWnd = hPairWnd;
-	}else if ( (ShowStyle == VSHOW_ONMAINWINDOW) || (ShowStyle == VSHOW_INMAINWINDOW) ){
+	}if ( (X_vpos == VSHOW_ONMAINWINDOW) || (X_vpos == VSHOW_INMAINWINDOW) ){
 		for (;;){
 			HWND hParentWnd;
 
@@ -867,6 +880,23 @@ BOOL FixShowRectByShowStyle(RECT *openbox, HWND hParentTargetWnd)
 			hParentTargetWnd = hParentWnd;
 		}
 	}
+	// hParentTargetWnd が存在しない／非表示／最小化のときは重ねない
+	if ( IsWindow(hParentTargetWnd) == FALSE ) return FALSE;
+	{
+		HWND hCheckWnd;
+
+		hCheckWnd = hParentTargetWnd;
+		for (;;){
+			if ( (IsWindowVisible(hCheckWnd) == FALSE) ||
+				 (IsIconic(hCheckWnd) != FALSE) ){
+				return FALSE;
+			}
+			// 親Wndが非表示／最小化かを確認
+			hCheckWnd = GetParent(hCheckWnd);
+			if ( hCheckWnd == NULL ) break;
+		}
+	}
+
 	GetWindowRect(hParentTargetWnd, &wndbox);
 	if ( openbox != NULL ){
 		*openbox = wndbox;

@@ -864,7 +864,8 @@ void PPeTreeWindow(PPxEDSTRUCT *PES)
 		PES->hTreeWnd = CreateWindow(TreeClassStr, MessageText(MES_TSDR),
 				WS_CHILD | WS_VISIBLE | WS_TABSTOP,
 				0, box.bottom - (int)expand_height,
-				box.right - box.left, (int)expand_height, hParent, NULL, NULL, 0);
+				box.right - box.left, (int)expand_height,
+				hParent, CHILDWNDID(IDT_INPUT_TREE), NULL, 0);
 	}else{
 		PES->hTreeWnd = CreateWindow(TreeClassStr, MessageText(MES_TSDR),
 				WS_OVERLAPPEDWINDOW | WS_VISIBLE,

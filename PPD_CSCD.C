@@ -49,25 +49,25 @@ void WidthCheck(PPCUSTSTRUCT *PCS, int nowline, int maxws, int ws)
 // エントリ表示書式 -----------------------------------------------------------
 BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 {
-	BYTE *p;			// 格納内容の末尾
+	BYTE *destp;			// 格納内容の末尾
 	TCHAR *line;
 
 	int nowline = 1;	// 現在の行数
-	int ws = 0;			// 現在の桁数
-	int maxws = 0;		// 今までの最大桁数
-	int skipws = 0;		// c 指定によるコメント表示時の総桁数
+	int nowcols = 0;		// 現在の桁数
+	int maxcols = 0;		// 今までの最大桁数
+	int skipcols = 0;		// c 指定によるコメント表示時の総桁数
 	int leftmargin = 0; // 桁下げ量(アイコン表示時)
-	BYTE *widthsave;	// 幅書き込み先
+	BYTE *colsstore;		// 幅書き込み先
 	int useMemoSkip = -1;	// c 指定があった場所の桁数
 	BYTE *lineleft;
 	BYTE *lastFM = NULL;	// 最後の FM を示す
 
-	p = *binPtr;
+	destp = *binPtr;
 	line = *linePtr;
 
-	widthsave = p;
-	p += 4;
-	lineleft = p;
+	colsstore = destp;
+	destp += 4;
+	lineleft = destp;
 	*(WORD *)(lineleft - 2) = 0;
 	while ( *line != '\0' ){
 		SkipSPC(line);
@@ -75,52 +75,52 @@ BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 			case ',':
 				break;
 			case 'S':
-				*p++ = DE_SPC;
-				ws += *p++ = GetNumberWith((const TCHAR **)&line, 1, 255);
+				*destp++ = DE_SPC;
+				nowcols += *destp++ = GetNumberWith((const TCHAR **)&line, 1, 255);
 				break;
 			case 's':
-				*p++ = DE_BLANK;
-				ws += *p++ = GetNumberWith((const TCHAR **)&line, 1, 255);
+				*destp++ = DE_BLANK;
+				nowcols += *destp++ = GetNumberWith((const TCHAR **)&line, 1, 255);
 				break;
 			case 'M':
-				*p++ = DE_MARK;
-				ws++;
+				*destp++ = DE_MARK;
+				nowcols++;
 				break;
 			case 'b':
-				*p++ = DE_CHECK;
-				ws += 2;
+				*destp++ = DE_CHECK;
+				nowcols += 2;
 				break;
 			case 'B':
-				*p++ = DE_CHECKBOX;
-				ws += 2;
+				*destp++ = DE_CHECKBOX;
+				nowcols += 2;
 				break;
 			case 'N': {
 				BYTE iconsize;
 
 				iconsize = GetNumberWith((const TCHAR **)&line, 0, 255);
 				if ( iconsize != 0 ){
-					*p++ = DE_ICON2;
-					*p++ = iconsize;
+					*destp++ = DE_ICON2;
+					*destp++ = iconsize;
 					leftmargin = GetIcon2Len(iconsize);
 				} else{
-					*p++ = DE_ICON;
+					*destp++ = DE_ICON;
 					leftmargin = 2;
 				}
-				ws += leftmargin;
+				nowcols += leftmargin;
 				break;
 			}
 			case 'n': {
 				BYTE len;
 
-				*p++ = DE_IMAGE;
+				*destp++ = DE_IMAGE;
 				leftmargin = GetNumberWith((const TCHAR **)&line, 20, 255);
-				ws += *p++ = (BYTE)leftmargin;
+				nowcols += *destp++ = (BYTE)leftmargin;
 				len = 8;
 				if ( *line == ',' ){
 					line++;
 					len = (BYTE)GetDigitNumber((const TCHAR **)&line);
 				}
-				*p++ = len;
+				*destp++ = len;
 				break;
 			}
 			case 'F':
@@ -128,159 +128,164 @@ BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 				BYTE len;
 
 				if ( *line == 'E' ){
-					*p++ = (BYTE)((*(line - 1) == 'F') ? DE_LFN_EXT : DE_SFN_EXT);
+					*destp++ = (BYTE)((*(line - 1) == 'F') ? DE_LFN_EXT : DE_SFN_EXT);
 					line++;
 				}else if ( *line == 'M' ){
-					lastFM = p;
-					*p++ = (BYTE)DE_LFN_MUL;
+					lastFM = destp;
+					*destp++ = (BYTE)DE_LFN_MUL;
 					line++;
 				} else{
-					*p++ = (BYTE)((*(line - 1) == 'F') ? DE_LFN : DE_SFN);
+					*destp++ = (BYTE)((*(line - 1) == 'F') ? DE_LFN : DE_SFN);
 				}
 				len = GetNumberWith((const TCHAR **)&line, DE_FN_ALL_WIDTH, 255);
-				ws += *p++ = len;
+				nowcols += *destp++ = len;
 				len = DE_FN_WITH_EXT;
 				if ( *line == ',' ){
 					line++;
-					ws += len = (BYTE)GetDigitNumber((const TCHAR **)&line);
+					nowcols += len = (BYTE)GetDigitNumber((const TCHAR **)&line);
 				}
-				*p++ = len;
+				*destp++ = len;
 				break;
 			}
 			case 'w':
 			case 'W': {
-				TCHAR *q;
+				TCHAR *fmt2nd;
+				BYTE mincols;
 
-				if ( (p > lineleft) &&
+				if ( (destp > lineleft) &&
 					((*lineleft == DE_WIDEV) || (*lineleft == DE_WIDEW)) ){
 					ErrorMes(PCS, MES_ETMW);
 					return FALSE;
 				}
 
-				memmove(lineleft + 4, lineleft, p - lineleft);
-				p += 4;
+				memmove(lineleft + 4, lineleft, destp - lineleft);
+				destp += 4;
 				lineleft[0] =
 					(BYTE)((*(line - 1) == 'W') ? DE_WIDEV : DE_WIDEW);
 				lineleft[2] = GetNumberWith((const TCHAR **)&line, 255, 255);
-				lineleft[3] = (BYTE)(p - lineleft + 1);
+				lineleft[3] = (BYTE)(destp - lineleft + 1);
 				SkipSPC(line);
-				if ( (*line != 'F') && (*line != 'f') &&
-					//					(tstrchr(T("ACDHRSTUVXmZnsuz"), *line) != NULL)
-					!((lineleft[0] == DE_WIDEW) && (tstrchr(DE_ENABLE_FIXLENGTH, *line) != NULL)) ){
+				fmt2nd = line + 1;
+				if ( (*line == 'F') || (*line == 'f') ){
+					mincols = 16;
+					if ( (*fmt2nd == 'M') || (*fmt2nd == 'E') ) fmt2nd++;
+				}else if ( (lineleft[0] == DE_WIDEW) && (tstrchr(DE_ENABLE_FIXLENGTH, *line) != NULL) ){
+					mincols = 2;
+				}else{
 					ErrorMes(PCS, MES_EWFT);
 					return FALSE;
 				}
-				q = line + 1;
-				if ( (*q == 'M') || (*q == 'E') ) q++;
-				lineleft[1] = GetNumberWith((const TCHAR **)&q, 255, 255);
+				lineleft[1] = GetNumberWith((const TCHAR **)&fmt2nd, mincols, 255);
 				break;
 			}
 			case 'Z':
-				*p++ = DE_SIZE3;
-				ws += *p++ = GetNumberWith((const TCHAR **)&line, 7, 80);
+				*destp++ = DE_SIZE3;
+				nowcols += *destp++ = GetNumberWith((const TCHAR **)&line, 7, 80);
 				break;
 			case 'z':
 				if ( *line == 'K' ){
 					line++;
-					*p++ = DE_SIZE4;
+					*destp++ = DE_SIZE4;
 				} else{
-					*p++ = DE_SIZE2;
+					*destp++ = DE_SIZE2;
 				}
-				ws += *p++ = GetNumberWith((const TCHAR **)&line, 13, 80);
+				nowcols += *destp++ = GetNumberWith((const TCHAR **)&line, 13, 80);
 				break;
 			case 'T':
-				*p++ = DE_TIME1;
-				ws += *p++ = GetNumberWith((const TCHAR **)&line, 17, 17);
+				*destp++ = DE_TIME1;
+				nowcols += *destp++ = GetNumberWith((const TCHAR **)&line, 17, 17);
 				break;
 			case 'A':
-				*p++ = DE_ATTR1;
-				ws += *p++ = GetNumberWith((const TCHAR **)&line, 10, 10);
+				*destp++ = DE_ATTR1;
+				nowcols += *destp++ = GetNumberWith((const TCHAR **)&line, 10, 10);
 				break;
+
 			case 'C': {
 				int param;
 
 				param = GetNumberWith((const TCHAR **)&line, 255, 255);
-				if ( skipws ){	// スキップあり
-					*p++ = DE_MEMOS;
-					*p++ = (BYTE)min(skipws, 255);
-					skipws = 0;
+				if ( skipcols ){	// スキップあり
+					*destp++ = DE_MEMOS;
+					*destp++ = (BYTE)min(skipcols, 255);
+					skipcols = 0;
 				} else{			// スキップ無し
-					*p++ = DE_MEMO;
-					*p++ = (BYTE)param;
-					ws += param;
+					*destp++ = DE_MEMO;
+					*destp++ = (BYTE)param;
+					nowcols += param;
 				}
 				break;
 			}
+
 			case 'c':
-				useMemoSkip = ws;
-				*p++ = DE_MSKIP;
+				useMemoSkip = nowcols;
+				*destp++ = DE_MSKIP;
 				continue;
 
 			case 'u':
-				*p = DE_MEMOEX;
-				*(p + 2) = GetNumberWith((const TCHAR **)&line, 1, 255); // ID
+				*destp = DE_MEMOEX;
+				*(destp + 2) = GetNumberWith((const TCHAR **)&line, 1, 255); // ID
 				SkipSPC(line);
 				if ( *line == ',' ) line++;
-				ws += *(p + 1) = GetNumberWith((const TCHAR **)&line, 8, 255); // 幅
-				p += DE_MEMOEX_SIZE;
+				nowcols += *(destp + 1) = GetNumberWith((const TCHAR **)&line, 8, 255); // 幅
+				destp += DE_MEMOEX_SIZE;
 				break;
 
 			case 'L':
-				*p++ = DE_sepline;
-				ws++;
+				*destp++ = DE_sepline;
+				nowcols++;
 				break;
 
 			case 'H':
-				*p++ = DE_hline;
-				ws += *p++ = GetNumberWith((const TCHAR **)&line, 0, 255);
+				*destp++ = DE_hline;
+				nowcols += *destp++ = GetNumberWith((const TCHAR **)&line, 0, 255);
 				break;
 
 			case 'O':
 				if ( *line == 'd' ){
 					line++;
-					*p++ = DE_fc_def;
-					*p++ = GetNumberWith((const TCHAR **)&line, 0, 0);
+					*destp++ = DE_fc_def;
+					*destp++ = GetNumberWith((const TCHAR **)&line, 0, 0);
 					break;
 				} else if ( *line == 'g' ){
 					line++;
-					*p++ = DE_bc_def;
-					*p++ = GetNumberWith((const TCHAR **)&line, 0, 0);
+					*destp++ = DE_bc_def;
+					*destp++ = GetNumberWith((const TCHAR **)&line, 0, 0);
 					break;
 				} else if ( *line == 'b' ){
 					line++;
-					*p++ = DE_bcolor;
+					*destp++ = DE_bcolor;
 				} else{
-					*p++ = DE_fcolor;
+					*destp++ = DE_fcolor;
 				}
 				if ( *line == '\"' ) line++;
-				*(COLORREF *)p = CS_color(&line, 0);
-				p += sizeof(COLORREF);
+				*(COLORREF *)destp = CS_color(&line, 0);
+				destp += sizeof(COLORREF);
 				if ( *line == '\"' ) line++;
 				break;
 
 			case '/':
-				*p++ = DE_NEWLINE;
-				*p++ = 0;
-				*p++ = 0;
-				maxws = max(ws, maxws);
+				*destp++ = DE_NEWLINE;
+				*destp++ = 0;
+				*destp++ = 0;
+				maxcols = max(nowcols, maxcols);
 				nowline++;
-				ws = leftmargin;
-				skipws = 0;
+				nowcols = leftmargin;
+				skipcols = 0;
 
-				*(WORD *)(lineleft - 2) = (WORD)(p - lineleft);
-				lineleft = p;
+				*(WORD *)(lineleft - 2) = (WORD)(destp - lineleft);
+				lineleft = destp;
 				break;
 
 			case 'Y':
-				*p++ = DE_FStype;
-				ws += 3;
+				*destp++ = DE_FStype;
+				nowcols += 3;
 				break;
 			case 'v':
 			case 'i':
 			case 'I':
 				#ifdef UNICODE
-				if ( !((p - *binPtr) & 1) ){	// WORD境界合わせ
-					*p++ = DE_SKIP;
+				if ( !((destp - *binPtr) & 1) ){	// WORD境界合わせ
+					*destp++ = DE_SKIP;
 				}
 				#endif
 				{
@@ -298,7 +303,7 @@ BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 							vt = DE_itemname;
 							break;
 					}
-					*p++ = vt;
+					*destp++ = vt;
 				}
 				if ( *line != '\"' ){
 					ErrorMes(PCS, MES_ESEP);
@@ -309,29 +314,29 @@ BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 					#ifdef UNICODE
 					TCHAR chr;
 					chr = *line++;
-					*p++ = (BYTE)chr;
-					*p++ = (BYTE)(chr >> 8);
-					ws += 2;
+					*destp++ = (BYTE)chr;
+					*destp++ = (BYTE)(chr >> 8);
+					nowcols += 2;
 					#else
-					*p++ = *line++;
-					ws++;
+					*destp++ = *line++;
+					nowcols++;
 					#endif
 				}
 				if ( *line == '\"' ) line++;
 				#ifdef UNICODE
-				*(TCHAR *)p = '\0';
-				p += 2;
+				*(TCHAR *)destp = '\0';
+				destp += sizeof(TCHAR);
 				#else
-				*p++ = '\0';
+				*destp++ = '\0';
 				#endif
 				break;
 			case 'P':
-				*p++ = DE_ALLPAGE;
-				ws += 3;
+				*destp++ = DE_ALLPAGE;
+				nowcols += 3;
 				break;
 			case 'p':
-				*p++ = DE_NOWPAGE;
-				ws += 3;
+				*destp++ = DE_NOWPAGE;
+				nowcols += 3;
 				break;
 
 			case 'E':
@@ -348,11 +353,11 @@ BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 							return FALSE;
 						}
 					}
-					*p++ = d[n];
-					ws += 3;
+					*destp++ = d[n];
+					nowcols += 3;
 				} else{
-					*p++ = DE_ENTRYSET;
-					ws += 7;
+					*destp++ = DE_ENTRYSET;
+					nowcols += 7;
 				}
 				break;
 
@@ -370,8 +375,8 @@ BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 						return FALSE;
 					}
 				}
-				*p++ = d[n];
-				ws += 3;
+				*destp++ = d[n];
+				nowcols += 3;
 				break;
 			}
 			case 'm':{
@@ -379,20 +384,20 @@ BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 
 				switch ( *line ){
 					case 'n':
-						*p++ = DE_MNUMS;
+						*destp++ = DE_MNUMS;
 						deflen = 0;
-						ws += 3;
+						nowcols += 3;
 						break;
 					case 'S':
-						*p++ = DE_MSIZE1;
+						*destp++ = DE_MSIZE1;
 						deflen = 7;
 						break;
 					case 's':
-						*p++ = DE_MSIZE2;
+						*destp++ = DE_MSIZE2;
 						deflen = 13;
 						break;
 					case 'K':
-						*p++ = DE_MSIZE3;
+						*destp++ = DE_MSIZE3;
 						deflen = 13;
 						break;
 					default:
@@ -403,7 +408,7 @@ BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 				if ( deflen ){
 					deflen = GetNumberWith((const TCHAR **)&line, deflen, 40);
 					if ( deflen < 3 ) deflen = 3;
-					ws += *p++ = deflen;
+					nowcols += *destp++ = deflen;
 				}
 				break;
 			}
@@ -412,27 +417,27 @@ BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 
 				switch ( *line ){
 					case 'F':
-						*p++ = DE_DFREE1;
+						*destp++ = DE_DFREE1;
 						deflen = 7;
 						break;
 					case 'f':
-						*p++ = DE_DFREE2;
+						*destp++ = DE_DFREE2;
 						deflen = 13;
 						break;
 					case 'U':
-						*p++ = DE_DUSE1;
+						*destp++ = DE_DUSE1;
 						deflen = 7;
 						break;
 					case 'u':
-						*p++ = DE_DUSE2;
+						*destp++ = DE_DUSE2;
 						deflen = 13;
 						break;
 					case 'T':
-						*p++ = DE_DTOTAL1;
+						*destp++ = DE_DTOTAL1;
 						deflen = 7;
 						break;
 					case 't':
-						*p++ = DE_DTOTAL2;
+						*destp++ = DE_DTOTAL2;
 						deflen = 13;
 						break;
 					default:
@@ -440,20 +445,20 @@ BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 						return FALSE;
 				}
 				line++;
-				ws += *p++ = GetNumberWith((const TCHAR **)&line, deflen, 40);
+				nowcols += *destp++ = GetNumberWith((const TCHAR **)&line, deflen, 40);
 				break;
 			}
 			case 't':
-				*p++ = DE_TIME2;
+				*destp++ = DE_TIME2;
 				if ( *line == 'C' ){
 					line++;
-					*p++ = 0;
+					*destp++ = 0;
 				} else if ( *line == 'A' ){
 					line++;
-					*p++ = 1;
+					*destp++ = 1;
 				} else{
 					if ( *line == 'W' ) line++;
-					*p++ = 2;
+					*destp++ = 2;
 				}
 				if ( *line != '\"' ){
 					ErrorMes(PCS, MES_ESEP);
@@ -477,50 +482,50 @@ BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 						case 'u':
 						case 'U':
 						case 't':
-							ws += 2;
+							nowcols += 2;
 							break;
 						case 'I':
 						case 'g':
 						case 'w':
 						case 'a':
-							ws += 3;
+							nowcols += 3;
 							break;
 						case 'Y':
 						case 'T':
-							ws += 4;
+							nowcols += 4;
 							break;
 						case 'G':
-							ws += 6;
+							nowcols += 6;
 							break;
 						default:
-							ws++;
+							nowcols++;
 					}
-					*p++ = (BYTE)*line++;
+					*destp++ = (BYTE)*line++;
 				}
 				if ( *line == '\"' ) line++;
-				*p++ = '\0';
+				*destp++ = '\0';
 				break;
 
 			case 'V':
-				*p++ = DE_vlabel;
-				ws += *p++ = GetNumberWith((const TCHAR **)&line, 14, 255);
+				*destp++ = DE_vlabel;
+				nowcols += *destp++ = GetNumberWith((const TCHAR **)&line, 14, 255);
 				break;
 
 			case 'R':
 				if ( *line == 'M' ){
 					line++;
-					*p++ = DE_pathmask;
+					*destp++ = DE_pathmask;
 				} else{
-					*p++ = DE_path;
+					*destp++ = DE_path;
 				}
-				ws += *p++ = GetNumberWith((const TCHAR **)&line, 60, 255);
+				nowcols += *destp++ = GetNumberWith((const TCHAR **)&line, 60, 255);
 				break;
 
 			case 'U': {
 				TCHAR *dst;
 
-				*p++ = DE_COLUMN;
-				dst = ((DISPFMT_COLUMN *)p)->name;
+				*destp++ = DE_COLUMN;
+				dst = ((DISPFMT_COLUMN *)destp)->name;
 				if ( *line == '\"' ){
 					line++;
 					while ( *line ){
@@ -533,10 +538,10 @@ BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 				}
 				*dst++ = '\0';
 				if ( *line == ',' ) line++;
-				ws += ((DISPFMT_COLUMN *)p)->width = GetNumberWith((const TCHAR **)&line, 10, 255);
-				((DISPFMT_COLUMN *)p)->itemindex = DFC_UNDEF;
-				((DISPFMT_COLUMN *)p)->fmtsize = (BYTE)(((BYTE *)dst - p) + 1);
-				p = (BYTE *)dst;
+				nowcols += ((DISPFMT_COLUMN *)destp)->width = GetNumberWith((const TCHAR **)&line, 10, 255);
+				((DISPFMT_COLUMN *)destp)->itemindex = DFC_UNDEF;
+				((DISPFMT_COLUMN *)destp)->fmtsize = (BYTE)(((BYTE *)dst - destp) + 1);
+				destp = (BYTE *)dst;
 				break;
 			}
 
@@ -546,9 +551,9 @@ BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 				TCHAR c;
 				DWORD hash = 0;
 
-				*p++ = DE_MODULE;
+				*destp++ = DE_MODULE;
 				// 名前
-				dst = p + 2 + 4;
+				dst = destp + 2 + 4;
 				if ( *line == '\"' ){
 					line++;
 					while ( *line ){
@@ -561,21 +566,21 @@ BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 						hash = (DWORD)(hash << 6) | (DWORD)(hash >> (32 - 6)) | (DWORD)c;
 					}
 				}
-				*(p + 4 + 8) = '\0';
+				*(destp + 4 + 8) = '\0';
 				*dst = '\0';
 				// ハッシュ
-				*(DWORD *)(p + 2) = hash | B31;
+				*(DWORD *)(destp + 2) = hash | B31;
 				// 桁数
 				if ( *line == ',' ) line++;
-				ws += *p = GetNumberWith((const TCHAR **)&line, 4, 255);
+				nowcols += *destp = GetNumberWith((const TCHAR **)&line, 4, 255);
 				// 行数
 				lines = 1;
 				if ( *line == ',' ){
 					line++;
 					lines = (BYTE)GetDigitNumber((const TCHAR **)&line);
 				}
-				*(p + 1) = lines;
-				p += 4 + 8 + 2 + 1;
+				*(destp + 1) = lines;
+				destp += 4 + 8 + 2 + 1;
 				break;
 			}
 
@@ -583,21 +588,23 @@ BOOL CS_ppcdisp(PPCUSTSTRUCT *PCS, TCHAR **linePtr, BYTE **binPtr)
 				ErrorMes(PCS, MES_EUFM);
 				return FALSE;
 		}
-		if ( (size_t)(p - widthsave) > (0x10000 - 0x100) ){
+		if ( (size_t)(destp - colsstore) > (0x10000 - 0x100) ){
 			ErrorMes(PCS, MES_EFLW);
 			return FALSE;
 		}
 		if ( useMemoSkip >= 0 ){	// 直前が c ならスキップ幅算出
-			skipws += ws - useMemoSkip;
+			skipcols += nowcols - useMemoSkip;
 			useMemoSkip = -1;
 		}
 	}
-	*p++ = 0;
+	*destp++ = 0;
 
-	if ( maxws && (ws < maxws) ) WidthCheck(PCS, nowline, maxws, ws);
-	*(WORD *)widthsave = (WORD)max(ws, maxws);
+	if ( maxcols && (nowcols < maxcols) ){
+		WidthCheck(PCS, nowline, maxcols, nowcols);
+	}
+	*(WORD *)colsstore = (WORD)max(nowcols, maxcols);
 	if ( lastFM != NULL ) *lastFM = (BYTE)DE_LFN_LMUL;
-	*binPtr = p;
+	*binPtr = destp;
 	*linePtr = line;
 	return TRUE;
 }

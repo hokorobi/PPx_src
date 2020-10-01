@@ -105,7 +105,7 @@ BOOL OpenZipFolder(ZIPFOLDERSTRUCT *zfs, const TCHAR *fname, TCHAR *subdir, int 
 #endif
 	IClassFactory *pCF = NULL;
 										// DLL “Ç‚Ýž‚Ý
-	zfs->hDLL = ::LoadLibrary(FolderDlls[type].dllname);
+	zfs->hDLL = ::LoadLibraryTry(FolderDlls[type].dllname);
 	if ( zfs->hDLL == NULL ) return FALSE;
 
 	zfs->ComInitResult = ::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);

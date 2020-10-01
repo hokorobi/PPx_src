@@ -88,9 +88,7 @@ TZ	<i>—á) TZ=JST-9</i>
 .2:ƒCƒ“ƒXƒg[ƒ‹=install
 ESETUP.EXE ‚ðŽg—p‚·‚é‚±‚Æ‚ÅAƒtƒ@ƒCƒ‹‚ÌƒRƒs[‚Æ‰ŠúƒJƒXƒ^ƒ}ƒCƒYiƒL[Š„‚è“–‚ÄAPPc‚Ì‘‹Œ`‘Ô“™j‚ªƒEƒBƒU[ƒhŒ`Ž®‚Ås‚í‚ê‚Ü‚·B
 
-EŽè“®‚ÅƒCƒ“ƒXƒg[ƒ‹‚·‚éê‡‚ÍAƒA[ƒJƒCƒu’†‚Ìƒtƒ@ƒCƒ‹‚ð“K“–‚ÈêŠ‚É‚Ü‚Æ‚ß‚Ä“ü‚ê‚Ä‚­‚¾‚³‚¢B
-
-’A‚µAˆê”ÊŒü‚¯Ý’è‚Å‚Í‚È‚¢‚Ì‚ÅA<b>‰‚ß‚ÄŽg‚¤‚Æ‚«‚ÍSETUP.EXE‚ðŽg—p‚·‚é‚±‚Æ‚ð‚¨‘E‚ß‚µ‚Ü‚·B</b>
+EŽè“®‚ÅƒCƒ“ƒXƒg[ƒ‹‚·‚éê‡‚ÍAƒA[ƒJƒCƒu’†‚Ìƒtƒ@ƒCƒ‹‚ð“K“–‚ÈêŠ‚É‚Ü‚Æ‚ß‚Ä“ü‚ê‚Ä‚­‚¾‚³‚¢B’A‚µA–¢ƒJƒXƒ^ƒ}ƒCƒYó‘Ô‚Íˆê”ÊŒü‚¯Ý’è‚Å‚Í‚È‚¢‚Ì‚ÅA<b>‰‚ß‚ÄŽg‚¤‚Æ‚«‚ÍSETUP.EXE‚ðŽg—p‚·‚é‚±‚Æ‚ð‚¨‘E‚ß‚µ‚Ü‚·B</b>
 }\page
 .2:ƒAƒ“ƒCƒ“ƒXƒg[ƒ‹=uninstall
 SETUP.EXE ‚ðŽg—p‚·‚é‚±‚Æ‚ÅAƒtƒ@ƒCƒ‹‹y‚ÑƒŒƒWƒXƒgƒŠ‚Ìíœ‚ª‚Å‚«‚Ü‚·BŽè“®‚ÅƒCƒ“ƒXƒg[ƒ‹‚µ‚½ê‡‚ÍAƒCƒ“ƒXƒg[ƒ‹‚µ‚½êŠ‚ðŽw’è‚Å‚«‚é‚æ‚¤‚É‚È‚Á‚Ä‚¢‚Ü‚·‚Ì‚ÅAŽw’è‚µ‚Ä‚©‚çŠJŽn‚µ‚Ä‚­‚¾‚³‚¢B
@@ -98,17 +96,19 @@ SETUP.EXE ‚ðŽg—p‚·‚é‚±‚Æ‚ÅAƒtƒ@ƒCƒ‹‹y‚ÑƒŒƒWƒXƒgƒŠ‚Ìíœ‚ª‚Å‚«‚Ü‚·BŽè“®‚ÅƒCƒ“ƒX
 Žè“®‚ÅƒAƒ“ƒCƒ“ƒXƒg[ƒ‹‚·‚éŽž‚ÍAƒtƒ@ƒCƒ‹‚Ìíœ‚ðs‚Á‚Ä‚­‚¾‚³‚¢B
 ‚Ü‚½AƒŒƒWƒXƒgƒŠ‚ÌAHKEY_CURRENT_USER\\Software\\TOROid\\PPX ‚ª‚ ‚ê‚Îíœ‚µ‚Ä‰º‚³‚¢B
 
-Ý’è“à—e‚ÍA’Êíu`\Application Data\TOROID\PPxv‚É•Û‘¶‚³‚ê‚Ü‚·‚Ì‚ÅA‚±‚ê‚ç‚Ìíœ‚à•K—v‚Å‚·B
-‚±‚ÌƒfƒBƒŒƒNƒgƒŠ‚ÍAƒGƒNƒXƒvƒ[ƒ‰‚ÌƒAƒhƒŒƒXƒo[‚Éu%APPDATA%\TOROID\PPxv‚ð‹LÚ‚·‚ê‚ÎŠY“–ƒfƒBƒŒƒNƒgƒŠ‚ÉˆÚ“®‚Å‚«‚Ü‚·B(Win2000,XP“™)
+Ý’è“à—e‚ÍA’Êíu`\\AppData\\Roaming\\TOROID\\PPxv‚É•Û‘¶‚³‚ê‚Ü‚·‚Ì‚ÅA‚±‚ê‚ç‚Ìíœ‚à•K—v‚Å‚·B
+‚±‚ÌƒfƒBƒŒƒNƒgƒŠ‚ÍAƒGƒNƒXƒvƒ[ƒ‰‚ÌƒAƒhƒŒƒXƒo[‚Éu%APPDATA%\\TOROID\\PPxv‚ð‹LÚ‚·‚ê‚ÎŠY“–ƒfƒBƒŒƒNƒgƒŠ‚ÉˆÚ“®‚Å‚«‚Ü‚·B(Win2000,XP“™)
 }\page
 .2:ƒAƒbƒvƒf[ƒg=update
 <a:update>SETUP.EXE ‚ÌuÅV”Å‚ÌŠm”FE“üŽè‚ÆƒAƒbƒvƒf[ƒgv‚©APPc/PPv ‚Ìƒƒjƒ…[‚Ìuƒwƒ‹ƒvv-uÅV”Å‚ÌŠm”Fv‚ðŽg‚¤‚ÆAÅV”Å‚ª”z•z‚³‚ê‚Ä‚¢‚é‚©‚ðŠm”F‚µAƒAƒbƒvƒf[ƒg‚ðs‚¤‚±‚Æ‚ª‚Å‚«‚Ü‚·BƒRƒ}ƒ“ƒh(<jmpa:*checkupdate:checkupdate>)Œo—R‚à‰Â”\‚Å‚·B
 
 SETUP.EXE ‚ðŽg—p‚·‚é‚±‚Æ‚ÅAÅV”Å‚Ì”z•zƒtƒ@ƒCƒ‹‚ðŒ³‚ÉuPPx ‚ðI—¹¨ƒtƒ@ƒCƒ‹‚ÌXV¨PPc‚ðÄ‹N“®v‚Æ‚¢‚¤ˆê˜A‚Ì‘€ì‚ðˆêŠ‡‚Ås‚¤‚±‚Æ‚ª‚Å‚«‚Ü‚·B<jmpa:‘ŒÉƒtƒ@ƒCƒ‹‚âƒfƒBƒŒƒNƒgƒŠ‚ðŽw’è‚µ‚ÄƒAƒbƒvƒf[ƒg:setupoption>‚·‚é‚±‚Æ‚à‚Å‚«‚Ü‚·B
 
-‚Ü‚½AV‚µ‚¢³Ž®ŒöŠJ”Å(ƒÀ‚â+n‚Å‚Í‚È‚¢”Å)‚Éƒtƒ@ƒCƒ‹‚ðƒAƒbƒvƒf[ƒg‚µA‚»‚ÌŒã‹N“®‚µ‚½‚Æ‚«‚ÉƒJƒXƒ^ƒ}ƒCƒY“à—e‚ÌƒAƒbƒvƒf[ƒgˆ—‚ªs‚í‚ê‚Ü‚·BX‚ÉAƒAƒbƒvƒf[ƒg‘O‚ÉÝ’è“à—e‚ÌƒoƒbƒNƒAƒbƒv‚ðs‚¤‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+SETUP.EXE ‚ðŽg‚í‚¸‚ÉŽè“®‚ÅƒAƒbƒvƒf[ƒg‚ðs‚¤‚Æ‚«‚ÍA‘S‚Ä‚Ì PPx ‚ðI—¹‚µ‚Ä‚©‚çƒtƒ@ƒCƒ‹‚ðã‘‚«‚µ‚Ä‚­‚¾‚³‚¢B
 
-‚±‚ÌƒoƒbƒNƒAƒbƒv“®ì•û–@‚Í<jmpa:X_upm>‚ÅŽw’è‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+
+V‚µ‚¢³Ž®ŒöŠJ”Å(ƒÀ‚â+n‚Å‚Í‚È‚¢”Å)‚Éƒtƒ@ƒCƒ‹‚ðƒAƒbƒvƒf[ƒg‚µA‚»‚ÌŒã‹N“®‚µ‚½‚Æ‚«‚ÉƒJƒXƒ^ƒ}ƒCƒY“à—e‚ÌƒAƒbƒvƒf[ƒgˆ—‚ªs‚í‚ê‚Ü‚·BX‚ÉAƒAƒbƒvƒf[ƒg‘O‚ÉÝ’è“à—e‚ÌƒoƒbƒNƒAƒbƒv‚ðs‚¤‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+ƒoƒbƒNƒAƒbƒv“®ì‚Í<jmpa:X_upm>‚ÅŽw’è‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
 ƒoƒbƒNƒAƒbƒv‚·‚éÝ’èƒtƒ@ƒCƒ‹‚ÍA<jmpa:X_save>‚ÉŽw’è‚µ‚½êŠ‚ÉuPPX000_O.TXTv(u000v‚ÍÅŒã‚ÌƒJƒXƒ^ƒ}ƒCƒY‚É—p‚¢‚½”Å”Ô†)‚Ì–¼‘O‚Å•Û‘¶‚³‚ê‚Ü‚·B
 
  <b>Ý’è‚Íƒo[ƒWƒ‡ƒ“ƒAƒbƒv‚É”º‚Á‚ÄŽž•ÏX‚µ‚Ü‚·‚Ì‚ÅAFXƒJƒXƒ^ƒ}ƒCƒY‚ð‚¨‚±‚È‚Á‚Ä‚¢‚él‚ÍŒÃ‚¢Ý’è‚ð•Û‘¶‚µ‚Ä‚¨‚­‚±‚Æ‚ð‚¨‘E‚ß‚µ‚Ü‚·B
@@ -274,11 +274,11 @@ PPx ‚ÍAŠeŽíÝ’è‚ðƒJƒXƒ^ƒ}ƒCƒYƒtƒ@ƒCƒ‹‚É•Û‘¶‚µ‚Ü‚·B
 
 <b>Šeƒtƒ@ƒCƒ‹‚Ì¶¬E•Û‘¶æ</b>
 Šeƒtƒ@ƒCƒ‹‚Í’ÊíŠeƒ†[ƒU–ˆ‚Éì¬‚³‚êA1)¨2)¨3)‚Ì‡‚Éì¬‚µ‚æ‚¤‚Æ‚µ‚Ü‚·B
-1)uApplication Datav‚ª‚ ‚é‚È‚çAuApplication Data\TOROID\PPxv
+1)uAppData\\Roamingv‚ª‚ ‚é‚È‚çAuAppData\\Roaming\\TOROID\PPxv
 2) UNC ƒpƒXŽw’è‚Å PPx ‚ð‹N“®‚µ‚½‚È‚çA?:\\WINDOWS ‚Ü‚½‚Í ?:\\WINNT
 3) PPLIBxxx.DLL ‚ª‚ ‚éƒfƒBƒŒƒNƒgƒŠ
 
-¦uApplication Datav‚Í’ÊíAŽŸ‚ÌêŠ‚É‚ ‚è‚Ü‚·B‚Ü‚½A‚±‚ÌêŠ‚Íu‰B‚µƒtƒ@ƒCƒ‹v‘®«‚É‚È‚Á‚Ä‚¢‚Ü‚·B
+¦uAppData\\Roamingv‚Í’ÊíAŽŸ‚ÌêŠ‚É‚ ‚è‚Ü‚·B‚Ü‚½A‚±‚ÌêŠ‚Íu‰B‚µƒtƒ@ƒCƒ‹v‘®«‚É‚È‚Á‚Ä‚¢‚Ü‚·B
 <tb:300>
  Win95, 98, Me	C:\\Windows\\Application Data
  WinNT		C:\\WINNT\\Profiles\\<i>username</i>\\Application Data
@@ -287,7 +287,7 @@ PPx ‚ÍAŠeŽíÝ’è‚ðƒJƒXƒ^ƒ}ƒCƒYƒtƒ@ƒCƒ‹‚É•Û‘¶‚µ‚Ü‚·B
 ®APPc ‚Ì [L] ƒRƒ}ƒ“ƒh‚©AƒGƒNƒXƒvƒ[ƒ‰‚ÌƒAƒhƒŒƒXƒo[‚Éu%APPDATA%\\TOROID\\PPXv‚ð‹LÚ‚·‚ê‚ÎŠY“–ƒfƒBƒŒƒNƒgƒŠ‚ÉˆÚ“®‚Å‚«‚Ü‚·B(Win2000,XP“™)
 <tb:0>
 <b>ƒ|[ƒ^ƒuƒ‹Ý’è</b>
-  PPLIBxxx.DLL ‚ª‚ ‚éêŠ‚É PPXCDEF.DAT/PPXHDEF.DAT(Multltibyte”Å)APPWCDEF.DAT/PPWHDEF.DAT(UNICODE”Å) ‚ª‚ ‚é‚ÆAí‚É‚±‚Ìƒtƒ@ƒCƒ‹‚É•Û‘¶‚·‚é‚¢‚í‚ä‚éƒ|[ƒ^ƒuƒ‹—p‚ÌÝ’è‚É‚È‚è‚Ü‚·B
+  PPLIBxxx.DLL ‚ª‚ ‚éêŠ‚É PPXCDEF.DAT / PPXHDEF.DAT(Multltibyte”Å)APPWCDEF.DAT / PPWHDEF.DAT(UNICODE”Å) ‚ª‚ ‚é‚ÆAí‚É‚±‚Ìƒtƒ@ƒCƒ‹‚É•Û‘¶‚·‚é‚¢‚í‚ä‚éƒ|[ƒ^ƒuƒ‹—p‚ÌÝ’è‚É‚È‚è‚Ü‚·B
 SETUP.EXE ‚ÌƒJƒXƒ^ƒ€ƒCƒ“ƒXƒg[ƒ‹‚ÅÝ’è‚Å‚«‚Ü‚·B
 
   PPx ‚Æ‘O‹L‚Q‚Â‚Ìƒtƒ@ƒCƒ‹‚ðUSBƒƒ‚ƒŠ‚âƒtƒƒbƒs[ƒfƒBƒXƒN“™‚ÌƒŠƒ€[ƒoƒuƒ‹ƒƒfƒBƒA‚É“ü‚êA‚±‚ê‚©‚ç PPx ‚ð‹N“®‚·‚é‚±‚Æ‚ÅAŽ©•ª‚ÌÝ’è‚ð‚»‚Ì‚Ü‚ÜŽ‚¿‰^‚Ô‚±‚Æ‚ª‚Å‚«‚é‚æ‚¤‚É‚È‚è‚Ü‚·B
@@ -428,9 +428,9 @@ PC–¼‚ÍA—á‚¦‚ÎŽŸ‚ÌŒ`Ž®‚ªŽg—p‚Å‚«‚Ü‚·B
 2)ƒhƒ‰ƒCƒu•¶Žš‚ªŠ„‚è“–‚Ä‚ç‚ê‚½•¨—ƒhƒ‰ƒCƒuiA:`Z:j
 3)ƒqƒXƒgƒŠ‚É’~Ï‚³‚ê‚½ UNC ƒpƒX‚Ì root
 4)ƒqƒXƒgƒŠ‚É’~Ï‚³‚ê‚½‰ß‹Ž‚ÉˆÚ“®‚µ‚½ƒpƒX
-5)[0](M_pjump)‚É“o˜^‚³‚ê‚½ƒpƒX
+5)[0](M_pjump)‚©AM_drives‚É“o˜^‚³‚ê‚½ƒpƒX
 
-‚Ìˆê——‚ª—˜—p‚Å‚«‚Ü‚·B
+‚Ìˆê——‚ª—˜—p‚Å‚«‚Ü‚·B•\Ž¦€–Ú‚ÍÝ’è(<jmpa:X_dlf>)‚Å•ÏX‚Å‚«‚Ü‚·B
 <group:#ƒpƒXƒGƒCƒŠƒAƒX¦>
 
 u:keywordvu:keyword\\pathv
@@ -795,8 +795,10 @@ option:d,option:x ‚ÆŽw’è‚µ‚½‚Æ‚«‚ÍÅŒã‚Ìuxv‚Ì‚Ý—LŒø‚É‚È‚è‚Ü‚·B
 <a:ppxidinfo>Še PPx ‚ÍA‚»‚ê‚¼‚ê ID ‚ªŠ„‚èU‚ç‚ê‚Ä‚¨‚èAPPx ŠÔ‚âŠO•”‚©‚çƒRƒ}ƒ“ƒh‚ðŽÀs‚³‚¹‚½‚èî•ñ‚ðŽæ“¾‚µ‚½‚è‚Å‚«‚Ü‚·B
 
 EPPc
-CA`CZ ‚Ì 26 Ží‚Ì ID ‚ªŠ„‚è“–‚Ä‚ç‚ê‚Ü‚·Bˆê‘Ì‰»‘‹‚ÌŽž‚ÍAˆê‘Ì‰»‘‹Ž©‘Ì‚ðŽ¦‚· CBA#`CBZ# ‚Ì‘¼Aˆê‘Ì‰»‘‹“à‚ÌƒyƒCƒ“‚ðŽ¦‚· CZaa`CZzzz ‚Ì ID ‚ªŠ„‚è“–‚Ä‚ç‚ê‚Ü‚·B
-PPc ‚É‘Î‚·‚é‘€ì‚Í’Êí CA`CZACZaa`CZzzz ‚ð—p‚¢‚Ü‚·B
+“Æ—§‘‹‚É‚ÍACA`CZ ‚Ì 26 Ží‚Ì ID ‚ªŠ„‚è“–‚Ä‚ç‚ê‚Ü‚·B“Æ—§‘‹‚ð26–‡ˆÈãŽg—p‚µ‚½‚Æ‚«‚ÍAZ ‚ªd•¡‚µ‚ÄŽg—p‚³‚ê‚Ü‚·B
+ˆê‘Ì‰»‘‹‚ÌŽž‚ÍAˆê‘Ì‰»‘‹Ž©‘Ì‚É CBA#`CBZ# ‚ªŠ„‚è“–‚Ä‚ç‚ê‚Ü‚·B
+ˆê‘Ì‰»‘‹“à‚ÌƒyƒCƒ“‚É‚ÍACZaa`CZzzzi3•¶Žš–Ú‚ªˆê‘Ì‰»‘‹‚ÌID‘Š“–j‚ªŠ„‚è“–‚Ä‚ç‚ê‚Ü‚·B
+®AƒfƒtƒHƒ‹ƒg‚Ìˆê‘Ì‰»‘‹(CBA#)‚ÍACA`CZ‚àŠ„“–‚Ä‚É—p‚¢‚ç‚ê‚Ü‚·B
 
 EPPb
 BA`BZ ‚Ì ID ‚ªŠ„‚è“–‚Ä‚ç‚ê‚Ü‚·‚ªAŒ»Ý‚±‚ê‚ç‚ÌID‚ðŽg‚Á‚½‚â‚è‚Æ‚è‚Í—pˆÓ‚³‚ê‚Ä‚¢‚Ü‚¹‚ñB
@@ -1339,7 +1341,7 @@ PPc ‚ªŠù‚É‚ ‚éê‡‚Í‚»‚ê‚ð—˜—p‚µ‚ÄƒfƒBƒŒƒNƒgƒŠ‚ð•\Ž¦‚µ‚Ü‚·B‚Ü‚½AŠY“– PPc ‚ðƒAƒ
 ‘¼‚Ì -combo Žw’è‚ª‚³‚ê‚½PPc‚ÆAˆê‘Ì‚Ì‘‹‚É‚µ‚½<jmpa:ˆê‘Ì‰»:X_combo>ó‘Ô‚É‚µ‚Ü‚·B
 ID‚ðŽw’è‚µ‚È‚¢ê‡‚ÍAA (CBA)‚ðŽg—p‚µ‚Ü‚·B
 A`Z ‚Ì ID ‚ð•t‚¯‚½ê‡‚ÍA‚»‚Ì ID (CBA`CBZ)‚ðŽg—p‚µ‚Ü‚·B
-+ ‚ðŽw’è‚µ‚½ê‡‚ÍA–¢Žg—p‚ÌÅ‚àŽá‚¢ ID (<b>CBB</b>`CBZ)‚ðŽg—p‚µ‚Ü‚·B
++ ‚ðŽw’è‚µ‚½ê‡‚ÍA–¢Žg—p‚ÌBˆÈ~‚ÌÅ‚àŽá‚¢ ID (<b>CBB</b>`CBZ)‚ðŽg—p‚µ‚Ü‚·B
 
 <b>-lock</b>
 Žw’è‚µ‚½ID‚ÌƒJƒŒƒ“ƒgƒfƒBƒŒƒNƒgƒŠ‚Ì•ÏX‚ð‹ÖŽ~‚·‚éƒƒbƒNó‘Ô‚É‚µ‚Ü‚·B
@@ -1390,8 +1392,8 @@ bootid ƒIƒvƒVƒ‡ƒ“‚Ì’¼Œã‚ÉƒfƒBƒŒƒNƒgƒŠ‚ðŽw’è‚µ‚½ê‡‚ÍA‚»‚Ì bootid ‚Å‹N“®‚·‚é PP
 ucmdv‚ÍÅ‰‚ÉŽw’è‚µ‚½[?]‚ÅŽÀs‚³‚ê‚Ü‚·B
 
 <b>-bootmax:A`Z</b>
-Žw’è”Ô†‚Ü‚Å‹N“®‚µ‚Ä‚¢‚È‚¯‚ê‚ÎPPc‚ð‹N“®‚µ‚Ü‚·B
-Šù‚ÉŽw’è”Ô†‚Ü‚Å‹N“®‚µ‚Ä‚¢‚éŽž‚Í‹N“®‚µ‚Ü‚¹‚ñB
+A ‚©‚çŽw’è ID ‚Ü‚Å‚Ì‹ó‚« ID ‚ª‚ ‚ê‚ÎA‚»‚Ì ID ‚Å PPc ‚ð‹N“®‚µ‚Ü‚·B
+‹ó‚« ID ‚ª‚È‚¯‚ê‚Î‹N“®‚µ‚Ü‚¹‚ñB
 
 <b>-idl</b>
 ƒtƒHƒ‹ƒ_‚ÉŠÖ˜A‚Ã‚¯(ƒVƒFƒ‹ƒRƒ“ƒeƒLƒXƒgƒƒjƒ…[‚ÉPPc‚ð“o˜^)‚·‚é‚Æ‚«AƒtƒHƒ‹ƒ_‚ðŽw’è‚·‚é‚½‚ß‚ÉŽg—p‚·‚éƒIƒvƒVƒ‡ƒ“‚Å‚·BWindowsXP,2003 ˆÈ~‚ÅŽg—p‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·BPPcust‚Å“o˜^‚Å‚«‚Ü‚·‚Ì‚ÅA’Êí‚±‚ÌƒIƒvƒVƒ‡ƒ“‚ð–¾Ž¦‚·‚é•K—v‚Í‚ ‚è‚Ü‚¹‚ñB
@@ -2041,7 +2043,11 @@ PPv‚Å•\Ž¦•PPv‚ÉƒtƒH[ƒJƒX‚ð•Ï‚¦‚¸‚»‚Ì‚Ü‚ÜPPc‚Åì‹Æ‚µ‚Ü‚·B
 <group:\\[Y]::˜A“®ƒrƒ…[>
 PPx,KL,(FD):\\[Y]
 
-Sync View SwitchBƒJ[ƒ\ƒ‹ˆÊ’u‚Ìƒtƒ@ƒCƒ‹‚ðí‚ÉPPv‚Å•\Ž¦‚³‚¹‚éAƒvƒŒƒrƒ…[“®ì‚ðs‚¤‚©‚Ç‚¤‚©‚ÌŽw’è‚Å‚·B‚½‚¾‚µAˆê’è‚Ì‘å‚«‚³ˆÈã‚Ìƒtƒ@ƒCƒ‹‚Í”ñ•\Ž¦E•”•ª•\Ž¦‚ðs‚¢‚Ü‚·BiX_svsz ‚ÅŽw’è‰Â”\j
+ƒJ[ƒ\ƒ‹ˆÊ’u‚Ìƒtƒ@ƒCƒ‹‚ðí‚ÉPPv‚Å•\Ž¦‚³‚¹‚éAƒvƒŒƒrƒ…[“®ì‚ðs‚¤‚©‚Ç‚¤‚©‚ÌŽw’è‚Å‚·B‚½‚¾‚µAˆê’è‚Ì‘å‚«‚³ˆÈã‚Ìƒtƒ@ƒCƒ‹‚Í”ñ•\Ž¦E•”•ª•\Ž¦‚ðs‚¢‚Ü‚·BiX_svsz ‚ÅŽw’è‰Â”\j
+<groupa:^[Y]::˜A“®ƒpƒXE•\Ž¦ƒpƒX“¯Šú::syncpath>
+
+˜A“®ƒpƒXE•\Ž¦ƒpƒX“¯Šú‚ÍAƒJ[ƒ\ƒ‹ˆÊ’u‚ÌƒGƒ“ƒgƒŠ‚Æ“¯–¼‚ÌƒGƒ“ƒgƒŠ‚Ì”½‘Î‘‹‚ÌƒGƒ“ƒgƒŠ‚ÉƒJ[ƒ\ƒ‹ˆÚ“®‚³‚¹‚Ü‚·B‚Ü‚½A•\Ž¦ƒfƒBƒŒƒNƒgƒŠ‚ðˆÚ“®‚µ‚½‚Æ‚«‚àA”½‘Î‘‹‚ª’Ç]‚Å‚«‚é”ÍˆÍ‚Å’Ç]‚µ‚Ü‚·B
+ŠÖ˜A: *syncpath
 <group:^[D]::Ž©“®ƒhƒ‰ƒbƒO•ƒhƒƒbƒv(Auto D&D)>
 PPx:^[D]
 
@@ -2063,20 +2069,63 @@ Windows2000ˆÈ~&NTFS‚Ì‚Ý“®ì‚µ‚Ü‚·B
 <group:dump>
 }\page
 .2=‘€ì•û–@
-.3:PPc‰æ–Ê
+.3:PPc‰æ–Ê=ppcwindowlayout
  ‹N“®‚·‚é‚ÆAˆÈ‘OI—¹‚µ‚½êŠ‚Æ“¯‚¶ƒfƒBƒŒƒNƒgƒŠ‚ÅAƒGƒ“ƒgƒŠ‚Ìˆê——‚ð•\Ž¦‚µ‚Ü‚·B
-<b>ƒXƒe[ƒ^ƒXs</b>
-Åã’i‚ÍAƒfƒBƒŒƒNƒgƒŠ‚ÌŒ`‘ÔAƒ}[ƒN‚µ‚½ƒGƒ“ƒgƒŠ”^‘—e—ÊA•\Ž¦ƒGƒ“ƒgƒŠ”^‘SƒGƒ“ƒgƒŠ”A‹ó‚«—e—ÊAŽg—p—e—Êi•\Ž¦‚³‚ê‚È‚¢ê‡‚ ‚èjAƒhƒ‰ƒCƒu—e—Ê‚ª•\Ž¦‚³‚ê‚Ü‚·B
-<b>î•ñs</b>
-‚Q^‚R’i–Ú‚ÍA‘I‘ð’†‚ÌƒGƒ“ƒgƒŠ‚ÉŠÖ‚·‚éî•ñ‚Å‚ ‚èA¶’[‚ÌƒAƒCƒRƒ“•\Ž¦‚Ì‘¼A‚Q’i–Ú‚ÍAƒGƒ“ƒgƒŠ‚Ì’·‚¢‚Ù‚¤‚ÌƒGƒ“ƒgƒŠ–¼‚ª•\Ž¦‚³‚ê‚Ü‚·B
- ‚R’i–Ú‚ÍADOS—p‚ÌSFN(8.3)Œ`Ž®ƒGƒ“ƒgƒŠ–¼A‘å‚«‚³AÅIXV“ú•t^ŽžA‘®«‚ª•\Ž¦‚³‚ê‚Ü‚·B
+‚±‚Ì•\Ž¦‚ÍAƒƒjƒ…[ƒo[‚Ìu•\Ž¦v‚ÌuƒŒƒCƒAƒEƒgv‚ÆAƒJƒXƒ^ƒ}ƒCƒU‚Ì‘S”Êƒ^ƒuAPPc - ‰æ–Ê\¬Eƒ^ƒu‚Å•ÏX‚Å‚«‚Ü‚·B
 
-<b>ƒfƒBƒŒƒNƒgƒŠŒ`‘Ô</b>
-FS:ƒtƒ@ƒCƒ‹ƒVƒXƒeƒ€
-UNx:“‡ƒA[ƒJƒCƒo‚Ì‘ŒÉ“à
-SPI:Susie Plug-in
-SHN:Shell's Namespace/PIDLŒ`Ž®
-???:ƒLƒƒƒbƒVƒ…Žg—p’†
+E“Æ—§‘‹‚Ì—á
+<img:helpfig/ppc1.png>
+<jmpa:(1)ƒƒjƒ…[ƒo[:ppclayout1>
+<jmpa:(2)ƒXƒe[ƒ^ƒXs:ppclayout2>
+<jmpa:(3)î•ñs:ppclayout3>
+<jmpa:(4)ƒGƒ“ƒgƒŠˆê——:ppclayout4>
+
+Eˆê‘Ì‰»‘‹‚Ì—á
+<img:helpfig/ppc2.png>
+<jmpa:(1)ƒƒjƒ…[ƒo[:ppclayout1>
+<jmpa:(3)î•ñs:ppclayout3>
+<jmpa:(5)ƒ^ƒu:ppclayout5>
+<jmpa:(6)ƒyƒCƒ“ƒ^ƒCƒgƒ‹:ppclayout6>
+<jmpa:(2)ƒXƒe[ƒ^ƒXs:ppclayout2>
+<jmpa:(4)ƒGƒ“ƒgƒŠˆê——:ppclayout4>
+<jmpa:(7)¶ƒyƒCƒ“iŒ»Ý‘‹j:ppclayout7>
+<jmpa:(8)‰EƒyƒCƒ“i”½‘Î‘‹j:ppclayout8>
+
+<a:ppclayout1><b>(1)ƒƒjƒ…[ƒo[</b>
+ƒƒjƒ…[ƒo[‚ÍAƒƒjƒ…[ƒo[‚Ìƒ_ƒuƒ‹ƒNƒŠƒbƒN‚â[^]‚Å‰B‚·‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+
+<a:ppclayout2><b>(2)ƒXƒe[ƒ^ƒXs</b>
+ƒXƒe[ƒ^ƒXs‚ÍAƒfƒBƒŒƒNƒgƒŠ‚ÌŒ`‘ÔAƒ}[ƒN‚µ‚½ƒGƒ“ƒgƒŠ”^‘—e—ÊA•\Ž¦ƒGƒ“ƒgƒŠ”^‘SƒGƒ“ƒgƒŠ”A‹ó‚«—e—ÊAŽg—p—e—Êi•\Ž¦‚³‚ê‚È‚¢ê‡‚ ‚èjAƒhƒ‰ƒCƒu—e—Ê‚ª•\Ž¦‚³‚ê‚Ü‚·B•\Ž¦“à—e‚âs”‚ÍAƒJƒXƒ^ƒ}ƒCƒU‚Ì‚»‚Ì‘¼‚Å•ÒW‚Å‚«‚Ü‚·B
+
+<a:ppclayout3><b>(3)î•ñs</b>
+î•ñs‚ÍA‘I‘ð’†‚ÌƒGƒ“ƒgƒŠ‚ÉŠÖ‚·‚éî•ñ‚Å‚ ‚èA¶’[‚ÌƒAƒCƒRƒ“•\Ž¦‚Ì‘¼A1s–Ú‚ÍAƒGƒ“ƒgƒŠ‚Ì’·‚¢‚Ù‚¤‚ÌƒGƒ“ƒgƒŠ–¼‚ª•\Ž¦‚³‚ê‚Ü‚·B
+ ‚Qs–Ú‚ÍADOS—p‚ÌSFN(8.3)Œ`Ž®ƒGƒ“ƒgƒŠ–¼A‘å‚«‚³AÅIXV“ú•t^ŽžA‘®«‚ª•\Ž¦‚³‚ê‚Ü‚·B•\Ž¦“à—e‚âs”‚ÍAƒJƒXƒ^ƒ}ƒCƒU‚Ì‚»‚Ì‘¼‚Å•ÒW‚Å‚«‚Ü‚·B
+
+<a:ppclayout4><a:ppcentrylayout><b>(4)ƒGƒ“ƒgƒŠˆê——</b>
+<img:helpfig/ppc3.png>
+<b>(a)ƒJ[ƒ\ƒ‹ƒGƒ“ƒgƒŠ</b>
+ƒtƒH[ƒJƒX‚ª‚ ‚éƒGƒ“ƒgƒŠ‚ðŽ¦‚·ƒJ[ƒ\ƒ‹‚ÍAÝ’è‚É‚æ‚èu•¶ŽšFE”wŒiF‚Ì”½“]vAu˜gvAu‰ºüv“™AŠeŽí•ÏX‰Â”\‚Å‚·B
+
+<b>(b)ƒ}ƒEƒXƒJ[ƒ\ƒ‹ƒGƒ“ƒgƒŠ</b>
+ƒ}ƒEƒXƒJ[ƒ\ƒ‹‚ª‚ ‚éƒGƒ“ƒgƒŠ‚ÍA”wŒiF‚ð”–‚¢•¶ŽšF‚Å’…F‚µ‚Ü‚·B<jmpa:X_poshl>‚Å”ñ•\Ž¦‚É‚µ‚½‚è‚Å‚«‚Ü‚·B
+
+<b>(c)ƒ}[ƒN</b>
+‘I‘ð’†‚ÌƒGƒ“ƒgƒŠ‚ÍAs“ª‚Ìu*vA‘S‘Ì‚Ì”wŒiF‚Å•\‚µ‚Ü‚·BŠeŽí•ÏX‰Â”\‚Å‚·B
+
+<b>(d)ƒvƒŒƒrƒ…[˜g</b>
+ƒ}ƒEƒXƒJ[ƒ\ƒ‹‚ª‚ ‚éƒGƒ“ƒgƒŠ‚Ì‰E‘¤‚É‚ÍAã‰º‚É•À‚×‚ç‚ê‚½‰¡ü‚ª•\Ž¦‚³‚ê‚Ü‚·B
+ã‰º‚É•À‚×‚ç‚ê‚½‰¡ü‚ÌŠÔ‚ðƒNƒŠƒbƒNAƒ^ƒbƒv“™‚ð‚·‚é‚ÆA‚»‚ÌƒGƒ“ƒgƒŠ‚ÌƒvƒŒƒrƒ…[•\Ž¦‚ð PPcAMedia Player “™‚Ås‚¢‚Ü‚·B<jmpa:X_stip> ‚ÅA‰¡ü‚Ì•‚â‹@”\‚Ì—LŒø–³Œø‚ðÝ’è‚Å‚«‚Ü‚·B
+
+<a:ppclayout5><b>(5)ƒ^ƒu</b>
+Ý’è‚É‚æ‚èAƒ^ƒu‚É‚æ‚é‘‹Ø‚è‘Ö‚¦‚ª‰Â”\‚Å‚·B
+
+<a:ppclayout6><b>(6)ƒyƒCƒ“ƒ^ƒCƒgƒ‹</b>
+•\Ž¦‚µ‚Ä‚¢‚éƒfƒBƒŒƒNƒgƒŠ‚Å‚·BÝ’è‚É‚æ‚è•\Ž¦“à—e‚ð•Ï‚¦‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+
+<a:ppclayout7><b>(7)¶ƒyƒCƒ“iŒ»Ý‘‹j</b>
+<a:ppclayout8><b>(8)‰EƒyƒCƒ“i”½‘Î‘‹j</b>
+PPc ‚ÍAˆê”Ô¶ / ˆê”Ôã‚ÌƒyƒCƒ“‚ÆA¶^ã ‚©‚ç2”Ô–ÚˆÈ~‚ÅAÅŒã‚ÉƒAƒNƒeƒBƒu‚É‚È‚Á‚½ƒyƒCƒ“‚ð‚P‚Â‚ÌƒyƒA‚Æ‚µ‚Ä˜AŒg‚µ‚½‘€ì‚ðs‚¤‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+Œ»ÝƒAƒNƒeƒBƒu‚É‚È‚Á‚Ä‚¢‚éƒyƒCƒ“‚ðŒ»Ý‘‹A”ñƒAƒNƒeƒBƒu‚É‚È‚Á‚Ä‚¢‚éƒyƒCƒ“‚ð”½‘Î‘‹‚Æ‚µ‚Ä‚¢‚Ü‚·B
 }\page
 .3:ƒL[ƒ{[ƒh(PPx ‚Ì•W€ƒJƒXƒ^ƒ}ƒCƒY)
 PPx ‚Ì•W€ƒJƒXƒ^ƒ}ƒCƒY‚Ìê‡Aƒtƒ@ƒ“ƒNƒVƒ‡ƒ“ƒL[‚Í Explorer €‹’A‰p”ŽšƒL[‚ÍK-Launcher / FD €‹’‚Å‘€ì‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
@@ -2512,12 +2561,15 @@ html“™‚ÌTAGu< ` >v‚ð‰½‚à‚µ‚È‚¢^‰B‚·^’…F‚ÅŽw’è‚µ‚Ü‚·B
 <b>-checkeredpattern:off/on</b>
 32bitF‰æ‘œ‚ÌƒAƒ‹ƒtƒ@Žw’è‚Ì•”•ª‚ðŠiŽq–Í—l‚É<b>‘‚«Š·‚¦</b>‚Ü‚·B
 
+<b>-history:off/on</b>
+•\Ž¦‚µ‚½ƒtƒ@ƒCƒ‹‚ðƒqƒXƒgƒŠ‚É‹L‰¯‚·‚é‚©‚Ç‚¤‚©‚ðŽw’è‚µ‚Ü‚·B
+
 <b>-bootid:a`z</b>
 Žw’è”Ô†‚ÌPPv‚ð‹N“®‚µ‚Ü‚·BŠù‚É‹N“®‚µ‚Ä‚¢‚éŽž‚Í‹N“®‚µ‚Ü‚¹‚ñB
 
 <b>-bootmax:a`z</b>
-Žw’è”Ô†‚Ü‚Å‹N“®‚µ‚Ä‚¢‚È‚¯‚ê‚ÎPPv‚ð‹N“®‚µ‚Ü‚·B
-Šù‚ÉŽw’è”Ô†‚Ü‚Å‹N“®‚µ‚Ä‚¢‚éŽž‚Í‹N“®‚µ‚Ü‚¹‚ñ
+A ‚©‚çŽw’è ID ‚Ü‚Å‚Ì‹ó‚« ID ‚ª‚ ‚ê‚ÎA‚»‚Ì ID ‚Å PPv ‚ð‹N“®‚µ‚Ü‚·B
+‹ó‚« ID ‚ª‚È‚¯‚ê‚Î‹N“®‚µ‚Ü‚¹‚ñB
 
 <b>-k</b>
 ‹N“®ŒãAŽÀs‚·‚éƒRƒ}ƒ“ƒh‚ðŽw’è‚µ‚Ü‚·B‚±‚ÌƒIƒvƒVƒ‡ƒ“ˆÈ~‚Í‘S‚ÄŽÀs‚·‚éƒRƒ}ƒ“ƒh‚Æ‰ðŽß‚µ‚Ü‚·‚Ì‚ÅAÅŒã‚ÉŽw’è‚·‚é•K—v‚ª‚ ‚è‚Ü‚·B
@@ -2658,8 +2710,10 @@ ICON, CURSOR Œ`Ž®(.ICO/.CUR)
 <b>ƒVƒFƒ‹ƒƒjƒ…[/ShellContext</b>
 	ƒGƒNƒXƒvƒ[ƒ‰“™‚Ì‰EƒNƒŠƒbƒN‘Š“–ƒƒjƒ…[‚ð•\Ž¦‚µ‚Ü‚·
 	¦’¼Ú‚±‚Ìƒƒjƒ…[‚ª•\Ž¦‚³‚ê‚È‚¢‚Ì‚ÍAƒƒjƒ…[‚ð•\Ž¦‚·‚é‚½‚ß‚ÉŽžŠÔ‚ªŠ|‚©‚é‚Ì‚ð—}§‚·‚é‚½‚ß‚Å‚·B
-<b>url‚È‚Ç</b>
-	Žw’èurl‚ðŠJ‚«‚Ü‚·BShift‚ð‰Ÿ‚µ‚È‚ª‚ç‘I‘ð‚·‚é‚ÆAŽw’èurl‚ðƒNƒŠƒbƒvƒ{[ƒh‚ÉƒRƒs[‚µ‚Ü‚·B
+<b>urlA‘I‘ð‚µ‚½ƒAƒhƒŒƒX‚ÅŠJ‚­</b>
+	Žw’èurl‚ðŠJ‚«‚Ü‚·B
+	Shift‚ð‰Ÿ‚µ‚È‚ª‚ç‘I‘ð‚·‚é‚ÆAƒNƒŠƒbƒvƒ{[ƒh‚ÉƒRƒs[‚µ‚Ü‚·B
+	Ctrl‚ð‰Ÿ‚µ‚È‚ª‚ç‘I‘ð‚·‚é‚ÆA‚±‚ÌPPv‚ÅŠJ‚«‚Ü‚·B
 <b>ICC profile</b>
 	‰æ‘œƒtƒ@ƒCƒ‹‚É–„‚ßž‚Ü‚ê‚½ ICC ƒvƒƒtƒ@ƒCƒ‹‚É‚æ‚éF‚Ì’²®‚ðs‚¢‚Ü‚·BƒfƒoƒCƒX‚Ìƒvƒƒtƒ@ƒCƒ‹‚ÍAƒRƒ“ƒgƒ[ƒ‹ƒpƒlƒ‹‚ÌF‚ÌŠÇ—(colorcpl.exe)‚ÅÝ’è‚Å‚«‚Ü‚·B
 <b>“§–¾•”‚ðŠiŽq–Í—l‚É•ÏX</b>
@@ -3460,7 +3514,8 @@ PPx ‚ÍAŠÈˆÕƒeƒLƒXƒgƒGƒfƒBƒ^ PPe ‚ð“à‘ ‚µ‚Ä‚¢‚Ü‚·BPPe ‚Í <jmpa:*ppe:ppecommand>
 
 <group:[ESC]::(ˆês•ÒW)’†Ž~,(PPe)ƒtƒ@ƒCƒ‹‘€ìƒƒjƒ…[(¦)>
 <group:\\[ESC]::(PPe)Å¬‰»(¦)>
-<group:^[]] [F1]::(PPe)ƒtƒ@ƒCƒ‹‘€ìƒƒjƒ…[(¦)>
+<group:^[]] [F1]::ƒtƒ@ƒCƒ‹‘€ìƒƒjƒ…[(¦)>
+¦[F1]‚ÍPPe‚Ì‚Æ‚«‚Ì‚ÝŽg—p‰Â”\‚Å‚·Bˆês•ÒW‚Å‚Í^[]]‚Ì‚ÝŽg—p‰Â”\‚Å‚ ‚Á‚ÄA[F1]‚Íƒwƒ‹ƒv•\Ž¦‚É‚È‚è‚Ü‚·B
 Open File		Žw’è‚Ìƒtƒ@ƒCƒ‹‚ðV‚µ‚¢‘‹‚ÅŠJ‚­
 Close			“à—e‚ð•Û‘¶‚µ‚Ä•ÒW‚ðI—¹
 Save as		ƒtƒ@ƒCƒ‹–¼‚ðŽw’è‚µ‚Ä•Û‘¶
@@ -3780,6 +3835,7 @@ line2"
 <b>%si"HeaderSortD"</b> MC_click “à‚Ì R_HEAD (ƒJƒ‰ƒ€ƒwƒbƒ_‚ð‰EƒNƒŠƒbƒN) Žž‚ÉÝ’èBƒNƒŠƒbƒN‚µ‚½ƒJƒ‰ƒ€‚ð~‡ƒ\[ƒg‚·‚é‚Æ‚«‚É *sortentry ‚ÉŽw’è‚·‚é’l‚Å‚·B
 <b>%si"LoadCommand"</b> ƒfƒBƒŒƒNƒgƒŠ“Ç‚Ýž‚ÝŽž‚ÉŽg—p‚µ‚½ XC_dset ‚Ì cmd: (“Ç‚Ýž‚ÝŒãŽÀs‚·‚éƒRƒ}ƒ“ƒh) ‚Ì“à—e‚Å‚·B
 <b>%si"TipText"</b> *entrytip "text" ‚ÅŽw’è‚µ‚½utextv‚Ì•Û‘¶‚ÉŽg—p‚µ‚Ü‚·B
+<b>%si"SyncPathThis", %si"SyncPathPair"</b> ˜A“®ƒpƒX(^[Y])‚ÌŠî€‚Æ‚È‚éƒpƒX‚Å‚·B
 
 <b>PPv “à‚ÅŽg—p</b>
 <b>%si"Highlight"</b> ’PŒêƒnƒCƒ‰ƒCƒg(\\[F])‚Ì‘ÎÛ‚Æ‚È‚é’PŒê—ñ‚Å‚·B
@@ -4849,6 +4905,7 @@ dir1-+-dir2...  –”‚Í  dir1-+-dir2...
 Žw’è‚µ‚½entryname‚Ìƒtƒ@ƒCƒ‹‚Ü‚½‚ÍƒfƒBƒŒƒNƒgƒŠ‚ðíœ‚µ‚Ü‚·B
 íœ‚ÉŽ¸”s‚µ‚Ä‚àŽŸ‚ÌƒRƒ}ƒ“ƒh‚ðŽÀs‚µ‚Ü‚·B
 <group:#*file::ƒtƒ@ƒCƒ‹‘€ìƒRƒ}ƒ“ƒh>
+
 <jmpa:*fileƒRƒ}ƒ“ƒh:filecmd>‚ðŽQÆ‚µ‚Ä‚­‚¾‚³‚¢BPPcã‚ÅŽg‚¤‚È‚çA‚æ‚è‚“x‚È<jmpa:*ppcfile:ppcfile>‚àŽg‚¦‚Ü‚·B
 <group:#*httpget <i>"url","destname"</i>::http‚Åƒtƒ@ƒCƒ‹‚ðŽæ“¾>
 
@@ -5921,6 +5978,11 @@ point	ƒ}ƒEƒXƒJ[ƒ\ƒ‹‚ªŽ¦‚·ƒGƒ“ƒgƒŠ
 
 ¦ *trimmark %: echo %C ‚È‚Ç‚ÆA*trimmark ‚ÌŒã‚É %C “™‚ð‘‚­‚ÆA‚»‚Ì %C “™‚Ì’†g‚ª‹ó‚É‚È‚è‚Ü‚·B
 ¦ %# ‚Ì‚ ‚Æ‚É *trimmark ‚ð‘‚¢‚Ä‚à‹@”\‚µ‚Ü‚¹‚ñB
+<group:#*syncpath [on|off|entry]::˜A“®ƒpƒXE•\Ž¦ƒpƒX“¯Šú>
+
+off	<jmpa:˜A“®ƒpƒXE•\Ž¦ƒpƒX:syncpath>‚ð–³Œø‚É‚µ‚Ü‚·B
+on	ƒJ[ƒ\ƒ‹‚Ì“¯Šú(”½‘Î‘‹‚ÌƒJ[ƒ\ƒ‹‚ð“¯–¼ƒGƒ“ƒgƒŠ‚ÉˆÚ“®)‚ÆA•\Ž¦ƒpƒX‚Ì“¯Šú(Œ»Ý‘‹‚ÌƒfƒBƒŒƒNƒgƒŠˆÚ“®‚É‡‚í‚¹‚Ä”½‘Î‘‹‚àˆÚ“®)‚ð—LŒø‚É‚µ‚Ü‚·B
+entry	ƒJ[ƒ\ƒ‹‚Ì“¯Šú‚Ì‚Ý—LŒø‚É‚µ‚Ü‚·B
 <group:#*syncprop [on|off|focus]::˜A“®ƒvƒƒpƒeƒB•\Ž¦>
 
 Œ»Ý‘‹‚Ì‰E‘¤‚ÉƒvƒƒpƒeƒB‚ð˜A“®•\Ž¦‚µ‚Ü‚·B˜A“®Žž‚Í‚Å‚«‚é‚¾‚¯“¯‚¶ƒ^ƒu‚ð•\Ž¦‚·‚é‚æ‚¤‚É‚µ‚Ä‚¢‚Ü‚·B
@@ -6840,6 +6902,9 @@ PPx‚ÌƒL[‚ÉŠ„‚è“–‚Ä‚ç‚ê‚Ä‚¢‚È‚¢ƒRƒ}ƒ“ƒh‚Ìˆê•”‚ÍAŽŸ‚ÌƒL[•\‹L‚ðŽg‚¤‚±‚Æ‚ÅŽg‚¤‚±‚
 •\Ž¦‚ÉŽg‚¤Œ¾Œê‚ÌÝ’è‚Å‚·B‚±‚±‚ÅŽw’è‚µ‚½”’l‚Å•\Ž¦•¶Žš—ñ(Mes0411‚È‚Ç)‚ð•ÏX‚µ‚½‚èAPPcust‚Ì•\Ž¦Œ¾Œê‚ðØ‚è‘Ö‚¦‚½‚è‚µ‚Ü‚·B
 
 ‰pŒê”ÅWindows‚Å“ú–{Œê•\Ž¦‚³‚¹‚½‚è‚µ‚½‚¢‚Æ‚«‚È‚Ç‚É•ÏX‚µ‚Ä‚­‚¾‚³‚¢B
+
+X_LANG=1041	“ú–{Œê•\Ž¦(Mes0411 ‚ðŽg—p)
+X_LANG=1033	English(use Mes0409)
 <hr>
 <tk:X_mmon> ‹­§‚Åƒ}ƒ‹ƒ`ƒ‚ƒjƒ^‚Æ‚Ý‚È‚µ‚½“®ì‚ð‚·‚é
 
@@ -7004,6 +7069,18 @@ IAccessible ‚ðŽg‚Á‚½ƒXƒNƒŠ[ƒ“ƒŠ[ƒ_‘Î‰ž‚ð—LŒø‚É‚·‚é‚©‚Ç‚¤‚©‚ÌŽw’è‚Å‚·B—LŒø‚É‚·
 
 <b>’ˆÓ</b> ‚±‚ÌÝ’è‚ð—LŒø‚É‚·‚é‚ÆAƒƒjƒ…[‚âƒ_ƒCƒAƒƒO‚ð•\Ž¦‚·‚éƒ^ƒCƒ~ƒ“ƒO‚Å‰ž“š–³‚µó‘Ô‚É‚È‚é‚±‚Æ‚ª‚ ‚è‚Ü‚·B
 <hr>
+<atk:X_hisr> PPc,PPv‚Ì—š—ð‚ðƒqƒXƒgƒŠ‹L‰¯
+
+PPc‚Ì•\Ž¦ƒfƒBƒŒƒNƒgƒŠ‚Ì—š—ðAPPv‚Ì•\Ž¦ƒtƒ@ƒCƒ‹‚Ì—š—ð‚ðƒqƒXƒgƒŠ‚É‹L‰¯‚·‚é‚©‚Ç‚¤‚©‚ÌŽw’è‚Å‚·B
+EPPc‚Ì•\Ž¦ƒfƒBƒŒƒNƒgƒŠEƒJ[ƒ\ƒ‹ˆÊ’u‚Ì—š—ð
+0	‹L‰¯‚µ‚È‚¢
+1	í‚É‹L‰¯‚·‚éB‹L‰¯‚µ‚½—š—ð‚ð—p‚¢‚ÄƒJ[ƒ\ƒ‹ˆÊ’u‚ðÄŒ»‚·‚éB
+
+EPPv‚Ì•\Ž¦ƒtƒ@ƒCƒ‹EƒJ[ƒ\ƒ‹ˆÊ’uE•\Ž¦Ý’è‚Ì—š—ð
+0	‹L‰¯‚µ‚È‚¢
+1	í‚É‹L‰¯‚·‚éB‹L‰¯‚µ‚½—š—ð‚ð—p‚¢‚ÄƒJ[ƒ\ƒ‹ˆÊ’u‚â•\Ž¦Ý’è‚ðÄŒ»‚·‚éB
+2	•\Ž¦ˆÊ’u‚ð•Ï‚¦‚½‚èA•\Ž¦•û–@‚ð•Ï‚¦‚½‚è‚µ‚½‚ç‹L‰¯‚·‚é
+<hr>
 <atk:X_save> ƒJƒXƒ^ƒ}ƒCƒYƒoƒbƒNƒAƒbƒv•ƒƒO‚Ì•Û‘¶êŠ
 
 ˆÈ‰º‚Ì—p“r‚ÉŽg‚í‚ê‚éƒfƒBƒŒƒNƒgƒŠ‚Å‚·B
@@ -7094,7 +7171,8 @@ PPc
 <tk:X_jinfo> ƒ_ƒCƒAƒƒO•\Ž¦ŽžE‘I‘ð—v‹Žž‚Ì’Ê’m•û–@
 
 Šm”F‚â‘I‘ð‚Ì‚½‚ß‚Ìƒ_ƒCƒAƒƒO‚ª•\Ž¦‚³‚ê‚½‚Æ‚«A<jmpa:ƒtƒ@ƒCƒ‹‘€ìƒRƒ}ƒ“ƒh:filecmd>ŽÀs’†‚É“¯–¼ƒtƒ@ƒCƒ‹‚Ì‘Îˆ•û–@‚ð‘I‘ð‚·‚é•K—v‚ª‚ ‚é‚Æ‚«AŽžŠÔ‚ÌŠ|‚©‚éƒtƒ@ƒCƒ‹‘€ì‚ªŠ®—¹‚µ‚½‚Æ‚«‚ÉA’Ê’m‚ðs‚¤‚©‚Ç‚¤‚©‚ÌŽw’è‚Å‚·B
-ƒ_ƒCƒAƒƒO•\Ž¦^“¯–¼ƒtƒ@ƒCƒ‹‚Ì‘Îˆ•û–@‘I‘ðŽž‚ÆA‘€ìŠ®—¹Žž‚Ì‚Q‚Â‚Ìó‹µ‚É‚¨‚¢‚ÄA‚»‚ê‚¼‚êƒ^ƒCƒgƒ‹ƒo[“_–Å‚ÆAwavƒtƒ@ƒCƒ‹Ä¶^ƒRƒ}ƒ“ƒhŽÀs‚Ì‚QŽí—Þ‚Ì’Ê’m•û–@‚ª‚ ‚èAŽŸ‚ÌÝ’è‚ª‰Â”\‚Å‚·B
+
+ƒ_ƒCƒAƒƒO•\Ž¦^“¯–¼ƒtƒ@ƒCƒ‹‚Ì‘Îˆ•û–@‘I‘ðŽž‚ÆA‘€ìŠ®—¹Žž‚Ì‚Q‚Â‚Ìó‹µ‚É‚¨‚¢‚ÄA‚»‚ê‚¼‚êƒ^ƒCƒgƒ‹ƒo[“_–Å‚ÆAwavƒtƒ@ƒCƒ‹Ä¶‚Ì‚QŽí—Þ‚Ì’Ê’m•û–@‚ª‚ ‚èAŽŸ‚ÌÝ’è‚ª‰Â”\‚Å‚·B‚Ü‚½A“¯‚¶ƒ^ƒCƒ~ƒ“ƒO‚ÅƒRƒ}ƒ“ƒhŽÀs(X_jinfc:`cmd)‚ª‰Â”\‚Å‚·B
 
 0	í‚É’Ê’m‚µ‚È‚¢B
 1	ƒ_ƒCƒAƒƒO‚ªƒAƒNƒeƒBƒu‚É‚È‚Á‚Ä‚¨‚ç‚¸A‘¼‚Ì‘‹‚ªƒAƒNƒeƒBƒu‚É‚È‚Á‚Ä‚¢‚é‚Æ‚«‚Ì‚Ý’Ê’m‚·‚éB
@@ -7104,11 +7182,42 @@ PPc
 <hr>
 <atk:X_jinfc> ƒ_ƒCƒAƒƒO•\Ž¦ŽžE‘I‘ð—v‹Žž‚Ì‰¹^ƒRƒ}ƒ“ƒh
 
-X_jinfo ‚Åwavƒtƒ@ƒCƒ‹Ä¶^ƒRƒ}ƒ“ƒhŽÀs‚ðŽg‚¤‚æ‚¤‚ÉŽw’è‚µ‚½‚Æ‚«‚ÌÚ×‚ðŽw’è‚µ‚Ü‚·BŽw’è‚ª‚È‚¯‚ê‚ÎWindows‚ÌŠù’è‚ÌƒTƒEƒ“ƒh‚ªÄ¶‚³‚ê‚Ü‚·B
+<b>(1)’Ê’m‰¹</b>
+X_jinfo ‚Åwavƒtƒ@ƒCƒ‹Ä¶‚É‚æ‚é’Ê’m‚ð—LŒø‚É‚µ‚Ä‚¢‚é‚Æ‚«‚Ì‰¹‚ðŽw’è‚µ‚Ü‚·B
 
-E”Ä—pÝ’èBŒÂ•ÊÝ’è‚ª‚È‚¢‚Æ‚«‚ÉŽg‚í‚ê‚Ü‚·B
-showcmd/compcmd	•\Ž¦Žž/Š®—¹ŽžƒRƒ}ƒ“ƒhŽÀsB<jmpa:ƒ}ƒNƒ•¶Žš:macrodetail>“™‚ðŽg—p‚Å‚«‚Ü‚·B
+<b>E”Ä—pÝ’è</b>BŒÂ•ÊÝ’è‚ª‚È‚¢‚Æ‚«‚ÉŽg‚í‚ê‚Ü‚·B
 showwav/compwav	•\Ž¦Žž/Š®—¹ŽžÄ¶wavƒtƒ@ƒCƒ‹–¼BPPx‚ª‚ ‚éƒfƒBƒŒƒNƒgƒŠ‚©‚ç‚Ì‘Š‘ÎŽw’è‚ª‰Â”\‚Å‚·B‚Ü‚½Aƒ}ƒNƒ•¶Žš‚ÍŽg‚¦‚Ü‚¹‚ñB¦ showcmd/compcmd‚ª‚ ‚ê‚Î‚»‚ê‚Ì‚ÝŽÀs‚³‚ê‚Ü‚·B
+
+<b>EŒÂ•ÊÝ’è</b>
+msgshowwav  ŠeŽíŠm”Fƒ_ƒCƒAƒƒO‚Ì•\Ž¦ŽžB
+fopshowwav  <jmpa:ƒtƒ@ƒCƒ‹‘€ìƒRƒ}ƒ“ƒh:filecmd>‚Ì“¯–¼ƒtƒ@ƒCƒ‹‚Ì‘Îˆ•û–@‚Ì‘I‘ðŠJŽnŽžB
+fopcompwav <jmpa:ƒtƒ@ƒCƒ‹‘€ìƒRƒ}ƒ“ƒh:filecmd>‚ÌŠ®—¹ŽžB¦ƒ_ƒCƒAƒƒO“àƒƒO•\Ž¦–³‚µB
+foplogcompwav <jmpa:ƒtƒ@ƒCƒ‹‘€ìƒRƒ}ƒ“ƒh:filecmd>‚ÌŠ®—¹AŠŽ‚Âƒ_ƒCƒAƒƒO“àƒƒO•\Ž¦—L‚è‚ÌŽžB
+foptestcompwav <jmpa:ƒtƒ@ƒCƒ‹‘€ìƒRƒ}ƒ“ƒh:filecmd>‚ÌŽŽsŠ®—¹ŽžB
+attrcompwav  PPc‚Ì‘®«•ÏX [A] ‚ÌŠ®—¹ŽžB
+comparecompwav  PPc‚Ìƒtƒ@ƒCƒ‹”äŠr [O] ‚ÌŠ®—¹ŽžB
+deletecompwav  PPc‚Ìƒtƒ@ƒCƒ‹íœ \\[D] ‚ÌŠ®—¹ŽžB
+whereiscompwav  PPc‚Ìƒtƒ@ƒCƒ‹ŒŸõ ^[W] ‚ÌŠ®—¹ŽžB
+
+
+<b>(2)Š®—¹E•\Ž¦ƒRƒ}ƒ“ƒh</b>
+ˆ—‚ªŠ®—¹‚µ‚½‚Æ‚«‚âƒ_ƒCƒAƒƒO‚ª•\Ž¦‚µ‚½‚Æ‚«‚ÉŽÀs‚·‚éƒRƒ}ƒ“ƒh‚ðŽw’è‚µ‚Ü‚·B
+¦1.75 ˆÈ~‚Í X_jinfo ‚ÌŽw’è‚ÉŠÖŒW‚È‚­ŽÀs‚·‚é‚æ‚¤‚É‚È‚è‚Ü‚µ‚½B
+
+<b>E”Ä—pÝ’è</b>BŒÂ•ÊÝ’è‚ª‚È‚¢‚Æ‚«‚ÉŽg‚í‚ê‚Ü‚·B
+showcmd/compcmd	•\Ž¦Žž/Š®—¹ŽžƒRƒ}ƒ“ƒhŽÀsB<jmpa:ƒ}ƒNƒ•¶Žš:macrodetail>“™‚ðŽg—p‚Å‚«‚Ü‚·B
+
+<b>EŒÂ•ÊÝ’è</b>
+msgshowcmd  ŠeŽíŠm”Fƒ_ƒCƒAƒƒO‚Ì•\Ž¦ŽžB
+fopshowcmd  <jmpa:ƒtƒ@ƒCƒ‹‘€ìƒRƒ}ƒ“ƒh:filecmd>‚Ì“¯–¼ƒtƒ@ƒCƒ‹‚Ì‘Îˆ•û–@‚Ì‘I‘ðŠJŽnŽžB
+fopcompcmd <jmpa:ƒtƒ@ƒCƒ‹‘€ìƒRƒ}ƒ“ƒh:filecmd>‚ÌŠ®—¹ŽžB¦ƒ_ƒCƒAƒƒO“àƒƒO•\Ž¦–³‚µB
+foplogcompcmd <jmpa:ƒtƒ@ƒCƒ‹‘€ìƒRƒ}ƒ“ƒh:filecmd>‚ÌŠ®—¹AŠŽ‚Âƒ_ƒCƒAƒƒO“àƒƒO•\Ž¦—L‚è‚ÌŽžB
+foptestcompcmd <jmpa:ƒtƒ@ƒCƒ‹‘€ìƒRƒ}ƒ“ƒh:filecmd>‚ÌŽŽsŠ®—¹ŽžB
+attrcompcmd  PPc‚Ì‘®«•ÏX [A] ‚ÌŠ®—¹ŽžB
+comparecompcmd  PPc‚Ìƒtƒ@ƒCƒ‹”äŠr [O] ‚ÌŠ®—¹ŽžB
+deletecompcmd  PPc‚Ìƒtƒ@ƒCƒ‹íœ \\[D] ‚ÌŠ®—¹ŽžB
+whereiscompcmd  PPc‚Ìƒtƒ@ƒCƒ‹ŒŸõ ^[W] ‚ÌŠ®—¹ŽžB
+
 —á)
 X_jinfc = \{
 showwav = c:\\media\\ding.wav ; ding.wav ‚ðÄ¶
@@ -7116,18 +7225,6 @@ compcmd = *execute C,*logwindow "Š®—¹B" ; ƒƒO•\Ž¦
 compwav = c:\\media\\ding.wav ; compcmd ‚ªŽg‚í‚ê‚Ä‚¢‚é‚Ì‚ÅÄ¶‚µ‚È‚¢B
 \}
 ’ˆÓ : X_jinfc ‚ªŽg—p‚³‚ê‚é‚Æ‚«‚ÍAŠù‚ÉŽÀsŒ³‚Ì PPc “™‚ªI—¹‚µ‚Ä‚¢‚½‚èAƒJƒŒƒ“ƒgƒfƒBƒŒƒNƒgƒŠ‚ª•ÏX‚³‚ê‚Ä‚¢‚½‚è‚·‚é‚±‚Æ‚ª‚ ‚è‚Ü‚·BŠÖ˜A‚·‚éƒ}ƒNƒ•¶Žš“™‚ÌŽg—p‚ð”ð‚¯‚é•K—v‚ª‚ ‚è‚Ü‚·B
-
-EŒÂ•ÊÝ’è
-`cmd ‚ÍƒRƒ}ƒ“ƒhŽÀsA`wav ‚ÍÄ¶wavƒtƒ@ƒCƒ‹–¼‚Å‚·BŽg‚¢•û‚Í”Ä—pÝ’è‚Æ“¯‚¶‚Å‚·B
-
-msgshowcmd/msgshowwav  ŠeŽíŠm”Fƒ_ƒCƒAƒƒO‚Ì•\Ž¦ŽžB
-fopshowcmd/fopshowwav  <jmpa:ƒtƒ@ƒCƒ‹‘€ìƒRƒ}ƒ“ƒh:filecmd>‚Ì“¯–¼ƒtƒ@ƒCƒ‹‚Ì‘Îˆ•û–@‚Ì‘I‘ðŠJŽnŽžB
-fopcompcmd/fopcompwav <jmpa:ƒtƒ@ƒCƒ‹‘€ìƒRƒ}ƒ“ƒh:filecmd>‚ÌŠ®—¹ŽžB¦ƒ_ƒCƒAƒƒO“àƒƒO•\Ž¦–³‚µB
-foplogcompcmd/foplogcompwav <jmpa:ƒtƒ@ƒCƒ‹‘€ìƒRƒ}ƒ“ƒh:filecmd>‚ÌŠ®—¹AŠŽ‚Âƒ_ƒCƒAƒƒO“àƒƒO•\Ž¦—L‚è‚ÌŽžB
-attrcompcmd/attrcompwav  PPc‚Ì‘®«•ÏX [A] ‚ÌŠ®—¹ŽžB
-comparecompcmd/comparecompwav  PPc‚Ìƒtƒ@ƒCƒ‹”äŠr [O] ‚ÌŠ®—¹ŽžB
-deletecompcmd/deletecompwav  PPc‚Ìƒtƒ@ƒCƒ‹íœ \\[D] ‚ÌŠ®—¹ŽžB
-whereiscompcmd/whereiscompwav  PPc‚Ìƒtƒ@ƒCƒ‹ŒŸõ ^[W] ‚ÌŠ®—¹ŽžB
 <hr>
 <tk:X_log> ƒXƒe[ƒ^ƒXs‚È‚Ç‚ÌƒƒO‚ðƒtƒ@ƒCƒ‹‚É•Û‘¶‚·‚é
 ‹¤—pƒƒO‘‹‚ÌƒƒO‚ðƒtƒ@ƒCƒ‹‚É•Û‘¶‚·‚é
@@ -7863,6 +7960,7 @@ XC_page = 1 Žž‚È‚ÇAã‰ºƒXƒNƒ[ƒ‹•ûŽ®‚ÌƒJ[ƒ\ƒ‹ˆÚ“®‚ðs‚Á‚Ä‚¢‚é‚Æ‚«Aã‰º‚Ì’[‚Å
 
 ƒfƒBƒŒƒNƒgƒŠ–¼‚àƒtƒ@ƒCƒ‹‚Æ“¯‚¶‚æ‚¤‚ÉÅŒã‚Ìu.vˆÈ~‚ðŠg’£Žq‚Æ‚µ‚Äˆµ‚¤‚©‚Ç‚¤‚©‚ÌŽw’è‚Å‚·B
 Ý’è‚É‚æ‚Á‚ÄƒGƒ“ƒgƒŠ–¼•\Ž¦Aƒ\[ƒgAƒtƒ@ƒCƒ‹ƒ}ƒXƒN“™‚Ì‹““®‚ª•Ï‚í‚è‚Ü‚·B
+‚Ü‚½AŠg’£Žq•Ê‚ÌF(<jmpa:C_ext>)‚ªƒfƒBƒŒƒNƒgƒŠ–¼‚É‚à”½‰f‚³‚ê‚é‚æ‚¤‚É‚È‚è‚Ü‚·B
 
 ¦Ý’è‚ÍAƒfƒBƒŒƒNƒgƒŠ‚ÌÄ“ÇžŒã—LŒø‚É‚È‚è‚Ü‚·B
 <hr>
@@ -7937,12 +8035,12 @@ Windows7ˆÈ~‚Å—LŒø‚Å‚·B
 X_ardir = ‘Ò‹@ŽžŠÔ,ƒƒ‚ƒŠƒLƒƒƒbƒVƒ…ƒTƒCƒY
 
 ƒlƒbƒgƒ[ƒNƒhƒ‰ƒCƒu“™‚Ì“Ç‚Ýž‚ÝŽžŠÔ‚ªŠ|‚©‚éƒfƒBƒŒƒNƒgƒŠ‚ðŽèŒy‚ÉŽQÆ‚·‚é‚½‚ß‚ÌA”ñ“¯Šú“Ç‚Ýž‚Ýˆ—‚ðs‚¤‚©‚Ç‚¤‚©‚ÌŽw’è‚Å‚·B
-ƒfƒBƒŒƒNƒgƒŠ“Ç‚Ýž‚Ý‚ÉŽžŠÔ‚ªŠ|‚©‚é‚Æ‚«‚ÍƒLƒƒƒbƒVƒ…‚É‚æ‚é•\Ž¦‚ðs‚¤‚½‚ßA’P‚È‚éƒfƒBƒŒƒNƒgƒŠ‚ÌˆÚ“®‚È‚Ç‚É‚ÍŒø‰Ê“I‚Å‚·B
-‚±‚ÌX_ardir‚Å‘Ò‹@ŽžŠÔ‚ðŽw’è‚µA<jmpa:XC_dset>‚Å—LŒø‚É‚·‚éƒpƒX‚ðŽw’è‚·‚é‚±‚Æ‚É‚æ‚Á‚Ä“®ì‚µ‚Ü‚·B
+ƒfƒBƒŒƒNƒgƒŠ“Ç‚Ýž‚Ý‚ÉŽžŠÔ‚ªŠ|‚©‚é‚Æ‚«‚ÍAPPc “à‚Ìƒtƒ@ƒCƒ‹ƒLƒƒƒbƒVƒ…‚âƒƒ‚ƒŠƒLƒƒƒbƒVƒ…‚É‚æ‚é•\Ž¦‚ðs‚¤‚½‚ßA’P‚È‚éƒfƒBƒŒƒNƒgƒŠ‚ÌˆÚ“®‚È‚Ç‚É‚ÍŒø‰Ê“I‚Å‚·B
+‚±‚Ì X_ardir ‚Å‘Ò‹@ŽžŠÔ‚ðŽw’è‚µA<jmpa:XC_dset>‚Å—LŒø‚É‚·‚éƒpƒX‚ðŽw’è‚·‚é‚±‚Æ‚É‚æ‚Á‚Ä“®ì‚µ‚Ü‚·B
 
 ”ñ“¯Šú“Ç‚Ýž‚Ý‚Ì“®ì‚ÍA‘Ò‹@ŽžŠÔ‚ÉŽw’è‚µ‚½ŽžŠÔ‚¾‚¯“Ç‚Ýž‚Ý‚ð‘Ò‚¿A“Ç‚Ýž‚Ý‚ª
-I‚í‚ç‚È‚©‚Á‚½‚çƒLƒƒƒbƒVƒ…‚ðŽg‚Á‚Ä•\Ž¦‚·‚é‚©Au—v‹‚³‚ê‚½ƒŠƒ\[ƒX‚ÍŽg—p’†‚Å‚·Bv‚ÌƒGƒ‰[‚É‚È‚è‚Ü‚·B‚»‚ÌŒãA”ñ“¯Šú“Ç‚Ýž‚Ý‚ªŠ®—¹‚µ‚½‚ç“Ç‚Ýž‚ñ‚¾“à—e‚ÅXV‚³‚êAƒLƒƒƒbƒVƒ…‚Ì•Û‘¶‚às‚¢‚Ü‚·BƒLƒƒƒbƒVƒ…‚Ì•Û‘¶æ‚Í<jmpa:X_cache>‚Å‚·B
-®AƒGƒ‰[‚ªo‚½‚Æ‚«‚É Enter ‚ð‰Ÿ‚·‚ÆeƒfƒBƒŒƒNƒgƒŠ‚É–ß‚ê‚Ü‚·B
+I‚í‚ç‚È‚©‚Á‚½‚çƒLƒƒƒbƒVƒ…‚ðŽg‚Á‚Ä•\Ž¦‚·‚é‚©Au—v‹‚³‚ê‚½ƒŠƒ\[ƒX‚ÍŽg—p’†‚Å‚·Bv‚ÌƒGƒ‰[‚É‚È‚è‚Ü‚·B‚»‚ÌŒãA”ñ“¯Šú“Ç‚Ýž‚Ý‚ªŠ®—¹‚µ‚½‚ç“Ç‚Ýž‚ñ‚¾“à—e‚ÅXV‚³‚êAƒtƒ@ƒCƒ‹ƒLƒƒƒbƒVƒ…^ƒƒ‚ƒŠƒLƒƒƒbƒVƒ…‚Ì•Û‘¶‚às‚¢‚Ü‚·Bƒtƒ@ƒCƒ‹ƒLƒƒƒbƒVƒ…‚Ì•Û‘¶æ‚Í<jmpa:X_cache>‚Å‚·B
+®AƒGƒ‰[‚ªo‚½‚Æ‚«‚ÉƒGƒ‰[ƒƒbƒZ[ƒW‚ÌƒGƒ“ƒgƒŠ‚©‚çeƒfƒBƒŒƒNƒgƒŠ‚É–ß‚ê‚Ü‚·B
 
 <b>‘Ò‹@ŽžŠÔ</b>
 X_ardir‚ÅŽw’è‚µ‚½ŽžŠÔ‚¾‚¯“Ç‚Ýž‚ÝŠ®—¹‚Å‚«‚é‚©‘Ò‹@‚µA‚Å‚«‚È‚©‚Á‚½ê‡‚Í”ñ“¯Šú“Ç‚Ýž‚Ý‚ðs‚¢‚Ü‚·B
@@ -7952,8 +8050,9 @@ X_ardir‚ÅŽw’è‚µ‚½ŽžŠÔ‚¾‚¯“Ç‚Ýž‚ÝŠ®—¹‚Å‚«‚é‚©‘Ò‹@‚µA‚Å‚«‚È‚©‚Á‚½ê‡‚Í”ñ“¯Šú“Ç‚
 <b>ƒƒ‚ƒŠƒLƒƒƒbƒVƒ…ƒTƒCƒY</b>
 “Ç‚Ýž‚ñ‚¾ƒGƒ“ƒgƒŠ‚ðƒƒ‚ƒŠƒLƒƒƒbƒVƒ…‚Æ‚µ‚Ä•Û‘¶‚·‚é‘å‚«‚³‚ðŽw’è‚µ‚Ü‚·B
 ƒƒ‚ƒŠƒLƒƒƒbƒVƒ…‚Íƒtƒ@ƒCƒ‹ƒLƒƒƒbƒVƒ…‚æ‚è‘‚­Žg—p‚Å‚«‚Ü‚·B
-’PˆÊ‚ÍƒƒKƒoƒCƒg‚ÅA5`20 (5`20M)‚ ‚ê‚Î\•ª‚¾‚ÆŽv‚¢‚Ü‚·B‰Šú’l‚Í5(5M)‚Å‚·B
-1Mbytes ‚Å–ñ1500ƒGƒ“ƒgƒŠ•ª(System32‚Ì”¼•ªˆÈ‰º)‚ª•Û‘¶‚Å‚«‚Ü‚·(UNICODE/64bit”Å)B
+’PˆÊ‚ÍƒƒKƒoƒCƒg‚ÅA5`25 (5`25M)‚ ‚ê‚Î\•ª‚¾‚ÆŽv‚¢‚Ü‚·B‰Šú’l‚Í10(10M)‚Å‚·B
+1Mbytes ‚Å–ñ1500ƒGƒ“ƒgƒŠ•ª(System32 ‚Ì 1/4)‚ª•Û‘¶‚Å‚«‚Ü‚·(UNICODE/64bit”Å)B
+14 ‚É‚·‚é‚ÆA\\Windows\\WinSxS (–ñ17,000ƒGƒ“ƒgƒŠ)‚ªƒLƒƒƒbƒVƒ…‚ÉŽû‚Ü‚è‚Ü‚·B
 
 ŠÖ˜A:<jmpa:*cache:cachecmd>
 <hr>
@@ -8158,19 +8257,19 @@ XC_isea=2‚Ì‚Æ‚«‚Ìƒ[ƒ}Žš“Ç‚ÝƒCƒ“ƒNƒŠƒƒ“ƒ^ƒ‹ƒT[ƒ`‚ÅAŽn‚ß‚Ì”•¶Žš‚ð“ü—Í‚µ‚Ä‚¢‚
 
   ƒtƒH[ƒJƒX‚ª“–‚½‚Á‚Ä‚¢‚È‚¢‘‹‚ÌFÊ‚ðŒ¸‚ç‚µ‚ÄƒOƒŒ[’²‚É‚µ‚Ü‚·BƒfƒBƒXƒvƒŒƒC‚Ì•\Ž¦‰Â”\F‚ª256F/8bitˆÈ‰º‚ÌŽž‚Í³í‚É•\Ž¦‚Å‚«‚Ü‚¹‚ñB
 <hr>
-<tk:X_stip> (1)ƒtƒ@ƒCƒ‹–¼‚ª•\Ž¦‚µ‚«‚ê‚È‚¢‚Æ‚«ƒ`ƒbƒv•\Ž¦
+<atk:X_stip> (1)ƒtƒ@ƒCƒ‹–¼‚ª•\Ž¦‚µ‚«‚ê‚È‚¢‚Æ‚«ƒ`ƒbƒv•\Ž¦
 (2)ƒ}ƒEƒXƒJ[ƒ\ƒ‹‚ª‘ØÝ‚µ‚Ä‚¢‚éƒGƒ“ƒgƒŠ‚Ìî•ñ‚ðƒ`ƒbƒv•\Ž¦
 (3)ƒGƒ“ƒgƒŠ‰E’[ƒNƒŠƒbƒN‚ÅƒvƒŒƒrƒ…[•\Ž¦
 
-x_stip = (1)•\Ž¦ŽžŠÔ, (1)–¢Žg—p, (2)•\Ž¦ŽžŠÔ, (2)•\Ž¦•û–@, (3)ƒ{ƒ^ƒ“•, (3)•\Ž¦•û–@
+x_stip = (1)•\Ž¦ŽžŠÔ, –¢Žg—p, (2)•\Ž¦ŽžŠÔ, •\Ž¦•û–@, (3)ƒ{ƒ^ƒ“•, •\Ž¦•û–@
 
 (1)ƒtƒ@ƒCƒ‹–¼‚ª’·‚­‚ÄÈ—ª‚³‚ê‚éê‡Aƒtƒ@ƒCƒ‹–¼‚ðƒ`ƒbƒv•\Ž¦‚·‚é‚©‚Ç‚¤‚©‚ÌŽw’è‚Å‚·B
-(1)•\Ž¦ŽžŠÔ‚ª 0 ‚È‚çŽg—p‚³‚ê‚¸A1 ˆÈã‚È‚çA‘I‘ð‚µ‚Ä‚©‚ç•\Ž¦‚³‚ê‚é‚Ü‚Å‚ÌŽžŠÔ(ms)‚É‚È‚è‚Ü‚·B
+ •\Ž¦ŽžŠÔ‚ª 0 ‚È‚çŽg—p‚³‚ê‚¸A1 ˆÈã‚È‚çA‘I‘ð‚µ‚Ä‚©‚ç•\Ž¦‚³‚ê‚é‚Ü‚Å‚ÌŽžŠÔ(ms)‚É‚È‚è‚Ü‚·B
 
 
-(2)‚ ‚éƒGƒ“ƒgƒŠã‚Éƒ}ƒEƒXƒJ[ƒ\ƒ‹‚ªŽw’è‚µ‚½•\Ž¦ŽžŠÔˆÈã‘ØÝ‚µ‚Ä‚¢‚é‚Æ‚«A(2)•\Ž¦•û–@‚ÅŽw’è‚µ‚½ƒ`ƒbƒv•\Ž¦‚ðs‚¢‚Ü‚·B
+(2)‚ ‚éƒGƒ“ƒgƒŠã‚Éƒ}ƒEƒXƒJ[ƒ\ƒ‹‚ªŽw’è‚µ‚½•\Ž¦ŽžŠÔˆÈã‘ØÝ‚µ‚Ä‚¢‚é‚Æ‚«A•\Ž¦•û–@‚ÅŽw’è‚µ‚½ƒ`ƒbƒv•\Ž¦‚ðs‚¢‚Ü‚·B
 
-(3)ƒGƒ“ƒgƒŠ‰E’[•”•ª‚ðƒNƒŠƒbƒN‚·‚é‚ÆA(3)•\Ž¦•û–@‚ÅŽw’è‚µ‚½ƒ`ƒbƒv•\Ž¦‚ðs‚¢‚Ü‚·BƒNƒŠƒbƒN‰Â”\‚È‰E’[•”•ª‚Ì•‚ÍAƒsƒNƒZƒ‹’PˆÊ‚Å(3)ƒ{ƒ^ƒ“•‚ÉŽw’è‚µ‚Ü‚·B
+(3)ƒGƒ“ƒgƒŠ‰E’[•”•ª‚ðƒNƒŠƒbƒN‚·‚é‚ÆA•\Ž¦•û–@‚ÅŽw’è‚µ‚½ƒ`ƒbƒv•\Ž¦‚ðs‚¢‚Ü‚·BƒNƒŠƒbƒN‰Â”\‚È‰E’[•”•ª‚Ì•‚ÍAƒsƒNƒZƒ‹’PˆÊ‚Å(3)ƒ{ƒ^ƒ“•‚ÉŽw’è‚µ‚Ü‚·B
 
 (2)/(3)‚Ì•\Ž¦•û–@‚ÍŽŸ‚Ìˆê——‚©‚ç‘I‘ð‚Å‚«‚Ü‚·B
 0 ‰Šú’l
@@ -8198,7 +8297,7 @@ swf , *IE
 <hr>
 <atk:X_poshl> ƒ}ƒEƒXƒJ[ƒ\ƒ‹‰º‚ÌƒGƒ“ƒgƒŠ”wŒiF‚ð•Ï‰»‚³‚¹‚é
 
-  ƒ}ƒEƒX‚ð“®‚©‚µ‚½‚Æ‚«Aƒ}ƒEƒXƒJ[ƒ\ƒ‹ã‚ÌƒGƒ“ƒgƒŠ‚Ì”wŒiF‚ð•Ï‰»‚³‚¹‚é‚©‚Ç‚¤‚©‚ÌÝ’è‚Å‚·B
+  ƒ}ƒEƒX‚ð“®‚©‚µ‚½‚Æ‚«Aƒ}ƒEƒXƒJ[ƒ\ƒ‹‰º‚ÌƒGƒ“ƒgƒŠ‚Ì”wŒiF‚ð•Ï‰»‚³‚¹‚é‚©‚Ç‚¤‚©‚ÌÝ’è‚Å‚·B
 0 ‹@”\‚ð–³Œø‚É‚µ‚Ü‚·B
 1 <jmpa:C_eInfo>‚ÅŽw’è‚µ‚½ƒ}ƒEƒXƒJ[ƒ\ƒ‹‰ºF(Ž©“®‚È‚ç•¶ŽšF)‚ÆA”wŒiF‚Æ‚Ì‡¬F‚É•Ï‰»‚³‚¹‚Ü‚·B
 2 <jmpa:C_eInfo>‚ÅŽw’è‚µ‚½ƒ}ƒEƒXƒJ[ƒ\ƒ‹‰ºF‚É•Ï‰»‚³‚¹‚Ü‚·B
@@ -8355,7 +8454,16 @@ listfile	<jmpa:ListFile:listsubj>“à
 <b>(4)</b>SHNŽÀ‘ÌŽw’è(ŽŽì)
 ¦ _others:exdset ‚ª 1 ‚ÌŽž‚É‹@”\‚µ‚Ü‚·BƒJƒXƒ^ƒ}ƒCƒU‚Ì‚»‚Ì‘¼ƒ^ƒuA‚»‚Ì‘¼Ý’è‚Å exdset ‚É 1 ‚ðÝ’è‚µ‚½‚èA*customize _others:exdset=1 ‚ðŽÀs‚µ‚½‚è‚µ‚Ä‚­‚¾‚³‚¢B
 <jmpa:Shell's NamespaceŒ`Ž®:SHNpath>‚ðŽg‚Á‚½SHNŽÀ‘ÌŒ`Ž®‚ÌƒpƒX‚ªŽg—p‚Å‚«‚Ü‚·B‚½‚¾‚µAŽžŠÔ‚ªŠ|‚©‚éˆ—‚È‚Ì‚ÅÅ¬ŒÀ‚ÌŽg—p‚ªD‚Ü‚µ‚¢‚ÆŽv‚¢‚Ü‚·B
- —á) -#0:\\ / -shell:Desktop ¨ C:\\Users\\(user–¼)\\Desktop
+ —á) -#0: / -shell:Desktop ¨ C:\\Users\\(user–¼)\\Desktop
+     -#0:\\ / -shell:Desktop\\ ¨ C:\\Users\\(user–¼)\\Desktop ‚Æ‚»‚Ì‰ºˆÊŠK‘w
+     -#0:\\dir / -shell:Desktop\\dir ¨ C:\\Users\\(user–¼)\\Desktop\\dir
+
+<b>(5)</b>PPxŽw’è(ŽŽì)
+¦ _others:exdset ‚ª 1 ‚ÌŽž‚É‹@”\‚µ‚Ü‚·BƒJƒXƒ^ƒ}ƒCƒU‚Ì‚»‚Ì‘¼ƒ^ƒuA‚»‚Ì‘¼Ý’è‚Å exdset ‚É 1 ‚ðÝ’è‚µ‚½‚èA*customize _others:exdset=1 ‚ðŽÀs‚µ‚½‚è‚µ‚Ä‚­‚¾‚³‚¢B
+PPx‚ÌêŠ‚ðŠî€‚Æ‚·‚éƒpƒX‚ªŽg—p‚Å‚«‚Ü‚·B‚½‚¾‚µAŽžŠÔ‚ªŠ|‚©‚éˆ—‚È‚Ì‚ÅÅ¬ŒÀ‚ÌŽg—p‚ªD‚Ü‚µ‚¢‚ÆŽv‚¢‚Ü‚·B
+ —á) -ppx: ¨ PPx ‚ª‚ ‚éƒfƒBƒŒƒNƒgƒŠ
+     -ppx:\\ ¨ PPx ‚ª‚ ‚éƒfƒBƒŒƒNƒgƒŠ‚Æ‚»‚Ì‰ºˆÊŠK‘w
+     -ppx:\\dir ¨ (PPx ‚ª‚ ‚éƒfƒBƒŒƒNƒgƒŠ)\\dir
 
 
 <b>ƒtƒ‰ƒO</b>
@@ -8594,7 +8702,7 @@ An	ƒGƒ“ƒgƒŠ<jmpa:‘®«:fileattra>‚Æó‘Ô(––”ö‚P•¶Žš)(RHSPDATCnN)Bn:Œ…”(1-10)
 <tb:0>
 <group:ƒGƒ“ƒgƒŠ•\Ž¦-‚»‚Ì‘¼>
 <tb:1900>
-C[n]	ƒRƒƒ“ƒgBn:Œ…” n‚ðÈ—ª‚·‚é‚ÆŒ…”‚ªÅ‘å
+C[n]	ƒRƒƒ“ƒgBn:Œ…” n‚ðÈ—ª‚·‚é‚ÆŒ…”‚ªÅ‘åBŽŸ‚Ìucv‚ðŽg—p‚µ‚½ê‡‚ÍAucvŽw’è‚µ‚½•\Ž¦‚ÌŒ…”‚ð‘«‚µ‚½Œ…”‚É‚È‚è‚Ü‚·B‚±‚Ì‚½‚ßA‘½‚ß‚ÉŠm•Û‚µ‚½‚¢ê‡‚ÍucS5v“™‚Æ‹ó”’‚ð‘«‚µ‚Ä’²®‚µ‚Ä‚­‚¾‚³‚¢B
 c	ƒRƒƒ“ƒg‚ª‚ ‚é‚Æ‚«‚Í’¼Œã‚Ì‘Ž®‚ðƒXƒLƒbƒvBƒRƒƒ“ƒg‚ª‚ ‚é‚Æ‚«‚ÍA‘¼‚Ì•\Ž¦“à—e‚ð”ñ•\Ž¦‚É‚µ‚ÄAƒRƒƒ“ƒg‚ð’·‚­•\Ž¦‚·‚é‚½‚ß‚É—p‚¢‚Ü‚·B
 	 ¦cŽw’è‚ÍC‚æ‚è‚à‘O‘¤‚É‚­‚é‚æ‚¤‚É‚µ‚Ä‚­‚¾‚³‚¢B
 	 —á) <i>cZ8 cT10 C18</i>	ƒRƒƒ“ƒg‚ª‚È‚¯‚ê‚Îƒtƒ@ƒCƒ‹ƒTƒCƒY‚ÆXVŽžAƒRƒƒ“ƒg‚ª‚ ‚ê‚ÎƒRƒƒ“ƒg‚ð•\Ž¦
@@ -8726,6 +8834,10 @@ XV_bctl‚Åƒ^ƒu‚â‰üs‚Ì§Œä•¶Žš‚ð‚‘¬•\Ž¦‚·‚é‚Æ‚«‚ÉŽg—p‚·‚é•¶Žš(CRLF,LF,CR,HT,VT,F
 4	¶‰E“¯Žž
 5	‘æ4
 6	‘æ5
+<hr>
+<tk:X_iexo>	ƒAƒjƒ[ƒVƒ‡ƒ“•\Ž¦^“§‰ß•”•ª‚Ì‰ÁH‚Ì‰ŠúÝ’è
+
+‰æ‘œ‚ÌƒAƒjƒ[ƒVƒ‡ƒ“•\Ž¦([P], -animate)A“§‰ß•”•ª‚Ì‰ÁH([M], -checkeredpattern)‚ð—\‚ß—LŒø‚É‚·‚é‚©‚Ç‚¤‚©‚ÌÝ’è‚Å‚·BŒÂX‚ÌÝ’è‚ÍAPPv‚ÌÄ‹N“®Œã‚É”½‰f‚³‚ê‚Ü‚·B
 <hr>
 <tk:XV_imgD>
 
@@ -9454,8 +9566,9 @@ _auto ‚ðŽg—p‚·‚é‚ÆAWindows‚Ìƒ`ƒbƒv‚Æ“¯‚¶F‚É‚È‚è‚Ü‚·B
 PPc‚ÌŠg’£Žq‚ÌF•ª‚¯‚É—p‚¢‚éF‚Å‚·B<jmpa:FŽw’è•û–@:color>
 uTXT = _WHIv‚Ì‚æ‚¤‚ÉAƒsƒŠƒIƒhˆÈ~‚ÌŠg’£Žq‚ÆA‘Î‰ž‚·‚éF‚ð‹LÚ‚µ‚Ü‚·B
 u* = _WHIv‚Ì‚æ‚¤‚ÉŽw’è‚·‚é‚ÆA‘Î‰ž‚·‚éŠg’£Žq‚ª‚È‚¢‚Æ‚«‚ÌF‚ªŽw’è‚Å‚«‚Ü‚·B
-¦Šg’£Žq‚ÌŽw’è‚É <jmpa:ƒƒCƒ‹ƒhƒJ[ƒh:wildcard>(—á: .EXE,.COM,.BAT Asize:>10k)A³‹K•\Œ»(—á: /.jpe/)‚àŽg—p‚Å‚«‚Ü‚·‚ªAŽžŠÔ‚ªŠ|‚©‚éˆ—‚È‚Ì‚ÅÅ¬ŒÀ‚ÌŽg—p‚ªD‚Ü‚µ‚¢‚ÆŽv‚¢‚Ü‚·B
+¦ Šg’£Žq‚ÌŽw’è‚É <jmpa:ƒƒCƒ‹ƒhƒJ[ƒh:wildcard>(—á: .EXE,.COM,.BAT Asize:>10k)A³‹K•\Œ»(—á: /.jpe/)‚àŽg—p‚Å‚«‚Ü‚·‚ªAŽžŠÔ‚ªŠ|‚©‚éˆ—‚È‚Ì‚ÅÅ¬ŒÀ‚ÌŽg—p‚ªD‚Ü‚µ‚¢‚ÆŽv‚¢‚Ü‚·B
 ¦ ƒJƒXƒ^ƒ}ƒCƒU‚ÌuŽŽŒ±v‚âAÝ’èƒtƒ@ƒCƒ‹‚Ì“Ç‚Ýž‚Ý‚ðs‚Á‚Ä‚à‘¦À‚É”½‰f‚³‚ê‚Ü‚¹‚ñBƒfƒBƒŒƒNƒgƒŠ‚Ì“Ç‚Ýž‚Ý‚ðs‚¤‚Æ”½‰f‚³‚ê‚Ü‚·B
+¦ ƒfƒBƒŒƒNƒgƒŠ–¼‚É‚àF‚ð”½‰f‚³‚¹‚½‚¢ê‡‚ÍAƒfƒBƒŒƒNƒgƒŠ’†‚Ìu.vˆÈ~‚ðŠg’£Žq‚Æ‚µ‚Äˆµ‚¤(XC_sdir)‚ð—LŒø‚É‚·‚é•K—v‚ª‚ ‚è‚Ü‚·B
 
 <atk:C_entry> PPc ƒGƒ“ƒgƒŠ•¶ŽšF(‘®«F)
 

@@ -57,7 +57,7 @@ void TM_kill(TM_struct *TM)
 {
 	if ( TM->s != 0 ){
 		TM_off(TM);
-		if (GlobalFree(TM->h) != NULL){
+		if ( GlobalFree(TM->h) != NULL ){
 			PPErrorBox(NULL, T("TM_kill"), PPERROR_GETLASTERROR);
 		}
 		TM->s = 0;
@@ -68,7 +68,7 @@ BOOL TM_check(TM_struct *TM, DWORD size)
 {
 	if ( TM->s == 0 ){						// ‚Ü‚Á‚½‚­Šm•Û‚µ‚Ä‚¢‚È‚¢ê‡
 		TM->h = GlobalAlloc(GMEM_MOVEABLE, TM_step);
-		if (TM->h == NULL){
+		if ( TM->h == NULL ){
 			PPErrorBox(NULL, T("Alloc error"), PPERROR_GETLASTERROR);
 			return FALSE;
 		}else{

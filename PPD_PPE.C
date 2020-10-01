@@ -204,7 +204,7 @@ LRESULT PPeWmCreate(HWND hWnd)
 		WS_CHILD | /*WS_HSCROLL |*/ WS_VSCROLL |
 		/*ES_AUTOHSCROLL |*/ ES_AUTOVSCROLL | ES_NOHIDESEL |
 		ES_LEFT | ES_MULTILINE | ES_WANTRETURN,	// ウインドウの形式
-		0, 0, 0, 0, hWnd, NULL, DLLhInst, 0);
+		0, 0, 0, 0, hWnd, CHILDWNDID(IDE_PPEMAIN), DLLhInst, 0);
 
 	PES->dpi = GetMonitorDPI(hWnd);
 	PES->ShowModify = FALSE;

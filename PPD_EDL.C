@@ -498,6 +498,7 @@ void ChangeFontSize(PPxEDSTRUCT *PES, int delta)
 	InvalidateRect(hWnd, NULL, TRUE);
 }
 
+#define INMENU_BREAK B31
 PPXINMENU escmenu[] = {
 	{ K_c | 'O',	T("&Open File") },
 	{ KE_ec,		T("&Close") },
@@ -598,7 +599,7 @@ PPXINMENU amenu[] = {
 	{PPXINMENY_SEPARATE, NULL},
 	{ K_c | 'A',	T("%G\"JMAL|Select All\"(&A)\tCtrl+A")},
 
-	{ KE_defmenu | B31,	T("Default menu(&B)\tShift+F10")},
+	{ KE_defmenu | INMENU_BREAK,	T("Default menu(&B)\tShift+F10")},
 	{ K_c | ']',	T("File &menu\tCtrl+]")},
 	{ K_c | 'Q',	T("Edit menu\tCtrl+&Q")},
 	{ K_s | K_F2,	T("&Setting menu\tShift+F2")},
@@ -608,7 +609,7 @@ PPXINMENU amenu[] = {
 	{ KE_er,		T("&Run as admin\tESC-R")},
 //	{ KE_ee,		T("&Execute command\tESC-E")},
 
-	{ KE_qj | B31,	T("&Jump to Line\tCtrl+Q-J")},
+	{ KE_qj | INMENU_BREAK,	T("&Jump to Line\tCtrl+Q-J")},
 	{ K_c | 'F',	T("&Find\tCtrl+F")},
 	{PPXINMENY_SEPARATE, NULL},
 	{ K_raw | K_s | K_c | 'P', T("Path List(&N)\tCtrl+Shift+P")},
@@ -1408,8 +1409,8 @@ HMENU MakePopupMenus(PPXINMENU *menus, DWORD check)
 
 			AppendMenu(hMenu,
 					((menus->key == check) ? MF_CHECKED : 0) |
-					((menus->key & B31) ? MF_ES | MF_MENUBARBREAK : MF_ES),
-					menus->key & ~B31, str);
+					((menus->key & INMENU_BREAK) ? MF_ES | MF_MENUBARBREAK : MF_ES),
+					menus->key & ~INMENU_BREAK, str);
 		}else{
 			AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
 		}
@@ -1678,7 +1679,7 @@ int USEFASTCALL PPeShiftTab(PPxEDSTRUCT *PES)
 		HWND hWnd = PES->hWnd;
 
 		if ( PES->flags & PPXEDIT_LINE_MULTI ) return 1; // 複数行一行編集のとき
-		SetFocus(GetNextDlgTabItem(GetParentCaptionWindow(hWnd), hWnd, GW_HWNDPREV));
+		SetFocus(GetNextDlgTabItem(GetParentCaptionWindow(hWnd), hWnd, TRUE));
 		return 0;
 	}
 	if ( (PES->list.hWnd != NULL) && (PES->list.ListWindow == LISTU_FOCUSMAIN) ){
@@ -1703,7 +1704,7 @@ int USEFASTCALL PPeTab(PPxEDSTRUCT *PES)
 		HWND hWnd = PES->hWnd;
 
 		if ( PES->flags & PPXEDIT_LINE_MULTI ) return 1; // 複数行一行編集のとき
-		SetFocus(GetNextDlgTabItem(GetParentCaptionWindow(hWnd), hWnd, GW_HWNDNEXT));
+		SetFocus(GetNextDlgTabItem(GetParentCaptionWindow(hWnd), hWnd, FALSE));
 		return 0;
 	}
 	// 補完

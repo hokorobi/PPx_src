@@ -40,8 +40,8 @@ typedef struct tagcomparestruct {
 } COMPARESTRUCT;
 
 void SetDummyRelativeDir(PPC_APPINFO *cinfo, const TCHAR *name, BYTE attr, BYTE type);
-void LoadSettingGeneral(PPC_APPINFO *cinfo, int *flags, TCHAR *mask);
-void LoadSettingSecond(PPC_APPINFO *cinfo, const TCHAR *path, int *flags, TCHAR *mask);
+void LoadSettingGeneral(PPC_APPINFO *cinfo, int *flags);
+void LoadSettingSecond(PPC_APPINFO *cinfo, const TCHAR *path, int *flags);
 void PreExecuteSort(PPC_APPINFO *cinfo, BYTE sortid);
 BOOL InitSort(COMPARESTRUCT *cs, XC_SORT *xs);
 int SortCmp(ENTRYINDEX cellno, ENTRYINDEX cellmax, COMPARESTRUCT *cs);
@@ -1246,6 +1246,37 @@ void CellSort(PPC_APPINFO *cinfo, XC_SORT *xs)
 	}
 }
 
+void SyncPairPath(PPC_APPINFO *cinfo)
+{
+	int pathlen;
+	TCHAR path[VFPS], pathl, *pathbase;
+	TCHAR pairpath[VFPS];
+	COPYDATASTRUCT copydata;
+
+	if ( NULL == ThGetString(&cinfo->StringVariable, StrSyncPathThis, path, TSIZEOF(path)) ){
+		return;
+	}
+
+	pathlen = tstrlen32(path);
+	if ( tstrnicmp(path, cinfo->path, pathlen) != 0 ) return;
+
+	pathl = cinfo->path[pathlen];
+	if ( (pathl != '\0') && (pathl != '\\') && (pathl != '/') ) return;
+
+	if ( NULL == ThGetString(&cinfo->StringVariable, StrSyncPathPair, pairpath, TSIZEOF(pairpath)) ){
+		return;
+	}
+	pathbase = cinfo->path + pathlen;
+
+	if ( *pathbase != '\0' ) pathbase++;
+	CatPath(NULL, pairpath, pathbase);
+
+	copydata.dwData = KC_SYNCPATH;
+	copydata.cbData = TSTRSIZE32(pairpath);
+	copydata.lpData = pairpath;
+	SendMessage(cinfo->hSyncViewPairWnd, WM_COPYDATA, 1, (LPARAM)&copydata);
+}
+
 #if 0
 typedef struct {
 	PPXAPPINFO info;
@@ -1435,9 +1466,12 @@ void SetCellInfo(PPC_APPINFO *cinfo, ENTRYCELL *cell, BYTE *extcolor)
 		}
 		if ( atr & FILE_ATTRIBUTE_DIRECTORY ){
 			setflag(cell->attr, ECA_DIR);
-			cell->extC = C_entry[ECT_SUBDIR];
 			if ( cell->f.nFileSizeLow | cell->f.nFileSizeHigh ){
 				setflag(cell->attr, ECA_DIRC);
+			}
+			if ( XC_fexc > 0 ){
+				cell->extC = C_entry[(cell->type == ECT_NORMAL) ?
+						ECT_SUBDIR : cell->type];
 			}
 			if ( !XC_sdir ) return;
 		}
@@ -1456,9 +1490,8 @@ void SetCellInfo(PPC_APPINFO *cinfo, ENTRYCELL *cell, BYTE *extcolor)
 				extsp = src;
 			}else if ( type == '\0' ){
 				if ( extsp != NULL ) break;
-				return; // 拡張子なし ... 拡張子以外で色付けしたいので終わらせたくない
-//				extsp = src;
-//				break;
+				extsp = src;
+				break;
 			}
 #ifndef UNICODE
 			if ( Iskanji(type) ) src++;
@@ -1469,22 +1502,22 @@ void SetCellInfo(PPC_APPINFO *cinfo, ENTRYCELL *cell, BYTE *extcolor)
 
 	if ( (DWORD)(cell->ext - (extsp - cell->f.cFileName)) > X_extl ) return;
 	cell->ext = (WORD)(extsp - cell->f.cFileName);
-	extsp++; // '.' をスキップ
 												// 色 -------------------------
 	if ( extcolor != NULL ){
 		BYTE *ecptr;			// 現在の内容の先頭
 		DWORD ssize;		// 文字列部分の大きさ
-		DWORD w;			// (+0)次の内容へのオフセット
+		DWORD wd;			// (+0)次の内容へのオフセット
 		TCHAR ext[MAX_PATH];
 		FN_REGEXP fn;
 
-		ssize = TSTRSIZE32(extsp);
-		memcpy(ext, extsp, ssize);
+		if ( *extsp == '.' ) extsp++; // '.' をスキップ
+
+		ssize = (DWORD)(tstpcpy(ext, extsp) - ext + 1) * sizeof(TCHAR);
 		tstrupr(ext);
 		ecptr = extcolor;
 		for ( ; ; ){
-			w = *(WORD *)ecptr;
-			if ( w == 0 ) break;
+			wd = *(WORD *)ecptr;
+			if ( wd == 0 ) break;
 			if ( *(TCHAR *)(BYTE *)(ecptr + sizeof(WORD)) != '/' ){
 				if ( !memcmp( ecptr + sizeof(WORD), ext, ssize) ){
 					cell->extC = *(DWORD *)(ecptr + sizeof(WORD) + ssize);
@@ -1501,19 +1534,21 @@ void SetCellInfo(PPC_APPINFO *cinfo, ENTRYCELL *cell, BYTE *extcolor)
 					break;
 				}
 			}
-			ecptr += w;
+			ecptr += wd;
 		}
 	}
 }
 											// find 初期化 --------------------
-void InitMasks(struct masks *m, XC_MASK *mask, TCHAR *maskstr)
+void InitMasks(PPC_APPINFO *cinfo, struct masks *m)
 {
 	int size;
+	const TCHAR *maskstr;
 
-	if ( (maskstr[0] == '\1') && (maskstr[1] == '\0') ){
-		maskstr = mask->file;
-		m->Attr = LOWORD(mask->attr);
-		m->Dir  = (mask->attr & MASKEXTATTR_DIR) ? 0 : FILE_ATTRIBUTE_DIRECTORY;
+	maskstr = cinfo->DsetMask;
+	if ( (maskstr[0] == MASK_NOUSE) && (maskstr[1] == '\0') ){
+		maskstr = cinfo->mask.file;
+		m->Attr = LOWORD(cinfo->mask.attr);
+		m->Dir  = (cinfo->mask.attr & MASKEXTATTR_DIR) ? 0 : FILE_ATTRIBUTE_DIRECTORY;
 	}else{
 		m->Attr = 0;
 		m->Dir = FILE_ATTRIBUTE_DIRECTORY;
@@ -1633,7 +1668,7 @@ void USEFASTCALL UpdateEntry_Deleted(PPC_APPINFO *cinfo, ENTRYCELL *cell, struct
 	(cell->f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 
 									// ファイルの検索開始 -----(再読込み)
-void UpdateEntry(PPC_APPINFO *cinfo, TCHAR *readpath, int *flag, TCHAR *mask)
+void UpdateEntry(PPC_APPINFO *cinfo, TCHAR *readpath, int *flag)
 {
 	HANDLE hFF;
 	struct masks namemask;
@@ -1711,7 +1746,7 @@ void UpdateEntry(PPC_APPINFO *cinfo, TCHAR *readpath, int *flag, TCHAR *mask)
 		CELdata(cinfo->e.cellDataMax).f = CELdata(cinfo->e.cellDataMax + 1).f;	// 情報の移動
 	}
 	oldcellMax = cinfo->e.cellDataMax;
-	InitMasks(&namemask, &cinfo->mask, mask);
+	InitMasks(cinfo, &namemask);
 	flagdata = *flag;
 	do{
 		ENTRYCELL *cell, *chkcell, *chkcellmax;
@@ -1854,7 +1889,7 @@ next: ;
 	}
 }
 							// ファイルの検索開始 -----------（新規）
-void ReadEntryMain(PPC_APPINFO *cinfo, TCHAR *readpath, int *flags, TCHAR *mask)
+void ReadEntryMain(PPC_APPINFO *cinfo, TCHAR *readpath, int *flags)
 {
 	COMPARESTRUCT cs;
 	HANDLE hFF;
@@ -1960,10 +1995,10 @@ void ReadEntryMain(PPC_APPINFO *cinfo, TCHAR *readpath, int *flags, TCHAR *mask)
 		 (cinfo->e.Dtype.mode == VFSDT_CABFOLDER) ||
 		 (cinfo->e.Dtype.mode == VFSDT_LZHFOLDER) ||
 		 (cinfo->e.Dtype.mode == VFSDT_ZIPFOLDER) ){
-		LoadSettingSecond(cinfo, StrArchiveMode, flags, mask);
+		LoadSettingSecond(cinfo, StrArchiveMode, flags);
 	}
 	if ( cinfo->e.Dtype.mode == VFSDT_LFILE ){
-		LoadSettingSecond(cinfo, StrListfileMode, flags, mask);
+		LoadSettingSecond(cinfo, StrListfileMode, flags);
 	}
 	{									// sort 初期化 --------------------
 		XC_SORT *usexs;
@@ -2013,7 +2048,7 @@ void ReadEntryMain(PPC_APPINFO *cinfo, TCHAR *readpath, int *flags, TCHAR *mask)
 			}
 		}
 	}
-	InitMasks(&namemask, &cinfo->mask, mask);
+	InitMasks(cinfo, &namemask);
 
 	cinfo->e.cellIMax = 0;
 	cinfo->e.cellDataMax = 0;
@@ -2023,7 +2058,7 @@ void ReadEntryMain(PPC_APPINFO *cinfo, TCHAR *readpath, int *flags, TCHAR *mask)
 		cinfo->SlowMode = TRUE; // SetSlowMode() は使用しない。後で元に戻すから
 		cinfo->AcceptReload = flagdata;
 	}else{
-		cinfo->LoadCounter++; // 読み込めた。誤って更新が来ても良いようにカウントを変更
+//		cinfo->LoadCounter++; // 読み込めた。誤って更新が来ても良いようにカウントを変更 →こっちもキャッシュの時がある
 	}
 
 	DEBUGLOGC("ReadEntryMain loop start", 0);
@@ -2246,6 +2281,8 @@ void ReadEntryMain(PPC_APPINFO *cinfo, TCHAR *readpath, int *flags, TCHAR *mask)
 			CELdata(cinfo->e.AllRelativeDirs).attr & (ECA_PARENT | ECA_THIS) ;
 			cinfo->e.AllRelativeDirs++ );
 	DEBUGLOGC("ReadEntryMain end", 0);
+
+	if ( cinfo->SyncPathFlag == SyncPath_dir ) SyncPairPath(cinfo);
 }
 
 int StartCellEdit(PPC_APPINFO *cinfo)
@@ -2262,7 +2299,7 @@ int StartCellEdit(PPC_APPINFO *cinfo)
 -----------------------------------------------------------------------------*/
 void read_entry(PPC_APPINFO *cinfo, int flags)
 {
-	TCHAR buf[VFPS], mask[VFPS];
+	TCHAR buf[VFPS];
 	DWORD StartTime;
 	int WillCellN = 0, WillWinO = 0;
 
@@ -2281,7 +2318,7 @@ void read_entry(PPC_APPINFO *cinfo, int flags)
 	}
 	HideEntryTip(cinfo);
 	VFSGetDriveType(cinfo->path, &cinfo->e.Dtype.pathtype, NULL);
-	LoadSettingGeneral(cinfo, &flags, mask);
+	LoadSettingGeneral(cinfo, &flags);
 	if ( cinfo->dset.flags & DSET_ASYNCREAD ){ // 非同期読み込み+保存を有効
 		setflag(flags, RENTRYI_ASYNCREAD | RENTRYI_SAVECACHE);
 		if ( cinfo->dset.flags & DSET_REFRESH_ACACHE ){
@@ -2329,14 +2366,6 @@ void read_entry(PPC_APPINFO *cinfo, int flags)
 	cinfo->AcceptReload = RENTRY_READ;
 
 	tstrcpy(buf, cinfo->path);
-/*
-	if ( cinfo->AuxiliaryOperation ){
-		const TCHAR *auxcmd = ThGetString(&cinfo->StringVariable, T("AUXlist"), NULL, 0);
-		if ( auxcmd != NULL ){
-			PP_ExtractMacro(cinfo->info.hWnd, &cinfo->info, NULL, auxcmd, buf, XEO_EXTRACTEXEC);
-		}
-	}
-*/
 	SetLinebrush(cinfo, LINE_NORMAL);
 	// 始めからキャッシュを使用する場合
 	if ( (flags & RENTRY_USECACHE) ||
@@ -2355,7 +2384,7 @@ void read_entry(PPC_APPINFO *cinfo, int flags)
 	if ( flags & RENTRY_UPDATE ){
 		DEBUGLOGC("read_entry update start", 0);
 		cinfo->StateInfo.state = StateID_UpdateStart;
-		UpdateEntry(cinfo, buf, &flags, mask);
+		UpdateEntry(cinfo, buf, &flags);
 	}else{
 		DEBUGLOGC("read_entry read start", 0);
 
@@ -2364,7 +2393,7 @@ void read_entry(PPC_APPINFO *cinfo, int flags)
 			cinfo->DiskSizes.total.u.HighPart =
 			cinfo->DiskSizes.used.u.HighPart = MAX32;
 
-		ReadEntryMain(cinfo, buf, &flags, mask);
+		ReadEntryMain(cinfo, buf, &flags);
 		cinfo->UseArcPathMask = ARCPATHMASK_OFF;
 		cinfo->UseSplitPathName = FALSE;
 
@@ -2548,7 +2577,7 @@ void read_entry(PPC_APPINFO *cinfo, int flags)
 			cinfo->RealPath : cinfo->path);
 
 	DEBUGLOGC("read_entry fix d-h list", 0);
-	while ( cinfo->path[0] ){	// ディレクトリリストの更新
+	while ( cinfo->path[0] != '\0' ){	// ディレクトリリストの更新
 		if ( cinfo->PathTrackingList.top ){
 			DWORD top;
 
@@ -2647,7 +2676,9 @@ void SetCaption(PPC_APPINFO *cinfo)
 	}else if ( (cinfo->e.Dtype.mode == VFSDT_LFILE) &&
 			   (cinfo->e.Dtype.BasePath[0] != '\0') ){
 		tstrcpy(ptr, cinfo->e.Dtype.BasePath);
-		tstrcat(ptr, T(" - listfile"));
+		if ( (XC_dpmk == 0) && (cinfo->UseArcPathMask == ARCPATHMASK_OFF) ){
+			tstrcat(ptr, T(" - listfile"));
+		}
 	}else{
 		tstrcpy(ptr, cinfo->path);
 		if ( !((cinfo->e.cellIMax <= 1) && (CEL(0).type == ECT_SYSMSG)) ){
@@ -2670,13 +2701,15 @@ void SetCaption(PPC_APPINFO *cinfo)
 		SendMessage(cinfo->docks.b.hAddrWnd, EM_SETSEL, EC_LAST, EC_LAST);
 	}
 
-	if ( (cinfo->UseArcPathMask != ARCPATHMASK_OFF) && cinfo->ArcPathMask[0] ){
+	if ( (cinfo->UseArcPathMask != ARCPATHMASK_OFF) && (cinfo->ArcPathMask[0] != '\0') ){
 		const TCHAR *arcpath = cinfo->ArcPathMask;
 
 		if ( (*arcpath == '\\') || (*arcpath == '/') ) arcpath++;
 		AppendPath(ptr, arcpath, cinfo->PathSeparater);
 	}
-	if ( XC_dpmk ) CatPath(NULL, ptr, cinfo->mask.file);
+	if ( XC_dpmk != 0 ){
+		CatPath(NULL, ptr, (cinfo->DsetMask[0] == MASK_NOUSE) ? cinfo->mask.file : cinfo->DsetMask );
+	}
 	if ( cinfo->BoxStatus.top != cinfo->docks.t.client.bottom ){
 		tstrlimcpy(cinfo->Caption, buf, TSIZEOF(cinfo->Caption));
 	}
@@ -2777,7 +2810,7 @@ void SetDummyRelativeDir(PPC_APPINFO *cinfo, const TCHAR *name, BYTE attr, BYTE 
 void LoadSettingMain(LOADSETTINGS *ls, const TCHAR *path)
 {
 	LOADSETTINGS tmpls;
-	const TCHAR *p;
+	const TCHAR *ptr;
 
 	tmpls.disp[0] = '\0';
 	if ( NO_ERROR != GetCustTable(StrXC_dset, path, &tmpls, sizeof(tmpls)) ){
@@ -2793,24 +2826,24 @@ void LoadSettingMain(LOADSETTINGS *ls, const TCHAR *path)
 	}
 	if ( tmpls.dset.sort.mode.dat[0] >= 0 ) ls->dset.sort = tmpls.dset.sort;
 
-	p = tmpls.disp;
-	while ( SkipSpace(&p) ){
-		if ( !memcmp(p, LOADDISPSTR, SIZEOFTSTR(LOADDISPSTR)) ){
-			p += TSIZEOFSTR(LOADDISPSTR);
-			GetLineParam(&p, ls->disp);
+	ptr = tmpls.disp;
+	while ( SkipSpace(&ptr) ){
+		if ( !memcmp(ptr, LOADDISPSTR, SIZEOFTSTR(LOADDISPSTR)) ){
+			ptr += TSIZEOFSTR(LOADDISPSTR);
+			GetLineParam(&ptr, ls->disp);
 			continue;
 		}
-		if ( !memcmp(p, LOADMASKSTR, SIZEOFTSTR(LOADMASKSTR)) ){
-			p += TSIZEOFSTR(LOADMASKSTR);
-			GetLineParam(&p, ls->mask);
+		if ( !memcmp(ptr, LOADMASKSTR, SIZEOFTSTR(LOADMASKSTR)) ){
+			ptr += TSIZEOFSTR(LOADMASKSTR);
+			GetLineParam(&ptr, ls->mask);
 			continue;
 		}
-		if ( !memcmp(p, LOADCMDSTR, SIZEOFTSTR(LOADCMDSTR)) ){
-			p += TSIZEOFSTR(LOADCMDSTR);
-			GetLineParam(&p, ls->cmd);
+		if ( !memcmp(ptr, LOADCMDSTR, SIZEOFTSTR(LOADCMDSTR)) ){
+			ptr += TSIZEOFSTR(LOADCMDSTR);
+			GetLineParam(&ptr, ls->cmd);
 			continue;
 		}
-		XMessage(NULL, NULL, XM_NiERRld, T("XC_dset:%s load error:%s"), path, p);
+		XMessage(NULL, NULL, XM_NiERRld, T("XC_dset:%s load error:%s"), path, ptr);
 		return;
 	}
 }
@@ -2825,19 +2858,19 @@ void USEFASTCALL ReloadCellDispFormat(PPC_APPINFO *cinfo, const TCHAR *name)
 }
 
 // 現在パスの設定を取得する(書庫用)
-void LoadSettingSecond(PPC_APPINFO *cinfo, const TCHAR *path, int *flags, TCHAR *mask)
+void LoadSettingSecond(PPC_APPINFO *cinfo, const TCHAR *path, int *flags)
 {
 	LOADSETTINGS ls;
 
 	ls.dset = cinfo->dset;
 	ls.disp[0] = '\0';
-	ls.mask[0] = '\1';
+	ls.mask[0] = MASK_NOUSE;
 	ls.mask[1] = '\0';
 	ls.cmd[0] = '\0';
 	LoadSettingMain(&ls, path);
 
-	if ( ls.disp[0] ) ReloadCellDispFormat(cinfo, ls.disp);
-	if ( ls.mask[0] != '\1' ) tstrcpy(mask, ls.mask);
+	if ( ls.disp[0] != '\0' ) ReloadCellDispFormat(cinfo, ls.disp);
+	if ( ls.mask[0] != MASK_NOUSE ) tstrcpy(cinfo->DsetMask, ls.mask);
 	if ( ls.cmd[0] != '\0' ){
 		setflag(*flags, RENTRYI_EXECLOADCMD);
 		ThSetString(&cinfo->StringVariable, T("LoadCommand"), ls.cmd);
@@ -2847,15 +2880,35 @@ void LoadSettingSecond(PPC_APPINFO *cinfo, const TCHAR *path, int *flags, TCHAR 
 	cinfo->iconR = (ls.dset.infoicon != DSETI_NOSPACE) ? cinfo->XC_ifix_size.cx : 0;
 }
 
-int CheckPathHit(const TCHAR *target, const TCHAR *shortpath)
+BOOL CheckPathHit(const TCHAR *keyword, const TCHAR *path)
 {
-	size_t len = tstrlen(shortpath);
+	const TCHAR *sep;
+	const TCHAR *extpath = NULL;
+	TCHAR FixedPath[VFPS];
+	size_t len;
 
-	if ( (memicmp(target, shortpath, TSTROFF(len)) == 0) &&
-		 ((target[len] == '\0') || (target[len] == '\\')) ){
-		return TRUE;
+	sep = keyword; // keyword は "-...." 形式
+
+	if ( keyword[1] == 'p' ){ // -ppx
+		keyword += 2;
+		while ( (*keyword == 'p') || (*keyword == 'x') ) keyword++;
+		if ( *keyword == ':' ) keyword++;
+		if ( *keyword == '\\' ) keyword++;
+		extpath = PPcPath;
 	}
-	return FALSE;
+
+	for (;;){ // 末尾「\」を判定
+		sep = FindPathSeparator(sep + 1);
+		if ( sep == NULL ) break;
+		if ( *(sep + 1) == '\0' ) break;
+	}
+	VFSFullPath(FixedPath, (TCHAR *)keyword, extpath);
+
+	len = tstrlen(FixedPath);
+	if ( memicmp(FixedPath, path, TSTROFF(len)) != 0 ) return FALSE;
+	if ( path[len] == '\0' ) return TRUE;
+	if ( sep == NULL ) return FALSE;
+	return (path[len] == '\\'); // 末尾「\」
 }
 
 void LoadSettingWildcard(LOADSETTINGS *ls, const TCHAR *path)
@@ -2866,21 +2919,7 @@ void LoadSettingWildcard(LOADSETTINGS *ls, const TCHAR *path)
 
 	while( EnumCustTable(index, StrXC_dset, keyword, dummy, 0) >= 0 ){
 		index++;
-		if ( keyword[0] == '%' ){
-			if ( keyword[1] == '0' ){ // %0
-				TCHAR *kwptr = keyword + 2;
-
-				if ( *kwptr == '\\' ) kwptr++;
-				VFSFullPath(keyword, kwptr, PPcPath);
-				if ( CheckPathHit(keyword, path) ){
-					LoadSettingMain(ls, keyword);
-					return;
-				}
-			}
-			continue;
-		}
 		if ( keyword[0] == '-' ){
-			VFSFullPath(NULL, keyword, NULL);
 			if ( CheckPathHit(keyword, path) ){
 				LoadSettingMain(ls, keyword);
 				return;
@@ -2889,8 +2928,7 @@ void LoadSettingWildcard(LOADSETTINGS *ls, const TCHAR *path)
 		}
 		if ( keyword[0] != '/' ) continue;
 		if ( keyword[1] == '-' ){
-			VFSFullPath(keyword, keyword + 1, NULL);
-			if ( CheckPathHit(keyword, path) ){
+			if ( CheckPathHit(keyword + 1, path) ){
 				LoadSettingMain(ls, keyword);
 				return;
 			}
@@ -2908,9 +2946,9 @@ void LoadSettingWildcard(LOADSETTINGS *ls, const TCHAR *path)
 }
 
 // 現在パスの設定を取得する(一般)
-void LoadSettingGeneral(PPC_APPINFO *cinfo, int *flags, TCHAR *mask)
+void LoadSettingGeneral(PPC_APPINFO *cinfo, int *flags)
 {
-	TCHAR path[VFPS], *p;
+	TCHAR path[VFPS], *ptr;
 	LOADSETTINGS ls;
 	int drive;
 
@@ -2921,7 +2959,7 @@ void LoadSettingGeneral(PPC_APPINFO *cinfo, int *flags, TCHAR *mask)
 	ls.dset.sort.atr = FILEATTRMASK_DIR_FILES;
 	ls.dset.sort.option = SORTE_DEFAULT_VALUE;
 	ls.disp[0] = '\0';
-	ls.mask[0] = '\1';
+	ls.mask[0] = MASK_NOUSE;
 	ls.mask[1] = '\0';
 	ls.cmd[0] = '\0';
 
@@ -2930,13 +2968,13 @@ void LoadSettingGeneral(PPC_APPINFO *cinfo, int *flags, TCHAR *mask)
 
 	// ドライブ限定
 	tstrcpy(path, cinfo->path);
-	p = VFSGetDriveType(path, &drive, NULL);
-	if ( p != NULL ){
+	ptr = VFSGetDriveType(path, &drive, NULL);
+	if ( ptr != NULL ){
 		TCHAR backup;
 
-		if ( *p == '\\' ) p++;
-		backup = *p;
-		*p = '\0';
+		if ( *ptr == '\\' ) ptr++;
+		backup = *ptr;
+		*ptr = '\0';
 		if ( drive >= VFSPT_FILESCHEME ){ // VFSPT_FTP, VFSPT_SHELLSCHEME, VFSPT_HTTP
 			TCHAR *rootp = tstrchr(path, '/');
 			if ( rootp != NULL ){
@@ -2946,30 +2984,30 @@ void LoadSettingGeneral(PPC_APPINFO *cinfo, int *flags, TCHAR *mask)
 			}
 		}
 		LoadSettingMain(&ls, path);
-		*p = backup;
+		*ptr = backup;
 	}else{
-		p = path;
+		ptr = path;
 	}
 	// 下層パス
-	if ( *p != '\0' ){
+	if ( *ptr != '\0' ){
 		for ( ; ; ){	// 途中
-			TCHAR backup, *q;
+			TCHAR backup, *sepptr;
 
-			q = FindPathSeparator(p);
-			if ( q == NULL ) break;
-			p = q + 1;
-			backup = *p;
-			*p = '\0';
+			sepptr = FindPathSeparator(ptr);
+			if ( sepptr == NULL ) break;
+			ptr = sepptr + 1;
+			backup = *ptr;
+			*ptr = '\0';
 			LoadSettingMain(&ls, path);
-			*p = backup;
+			*ptr = backup;
 		}
 		// 最終層の更に下層指定
-		p += tstrlen(p);
-		*p = '\\';
-		*(p + 1) = '\0';
+		ptr += tstrlen(ptr);
+		*ptr = '\\';
+		*(ptr + 1) = '\0';
 		LoadSettingMain(&ls, path);
 		// 最終層
-		*p = '\0';
+		*ptr = '\0';
 		LoadSettingMain(&ls, path);
 	}else if ( path[0] == '\\' ){ // \\ のとき
 		LoadSettingMain(&ls, T("\\"));
@@ -2993,7 +3031,7 @@ void LoadSettingGeneral(PPC_APPINFO *cinfo, int *flags, TCHAR *mask)
 	}
 	cinfo->dset = ls.dset;
 	cinfo->iconR = (ls.dset.infoicon != DSETI_NOSPACE) ? cinfo->XC_ifix_size.cx : 0;
-	tstrcpy(mask, ls.mask);
+	tstrcpy(cinfo->DsetMask, ls.mask);
 	if ( ls.cmd[0] != '\0' ){
 		setflag(*flags, RENTRYI_EXECLOADCMD);
 		ThSetString(&cinfo->StringVariable, T("LoadCommand"), ls.cmd);

@@ -27,6 +27,7 @@ GESTURECONFIG H_GestureConfig[] = {
 	{ GID_PRESSANDTAP, GC_PRESSANDTAP, 0},
 };
 
+#pragma warning(suppress:28251) // SDK によって hPrevInstance の属性が異なる
 #pragma argsused
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
@@ -41,12 +42,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	InitPPcGlobal();
 	psp.show = nShowCmd;
 	#ifdef UNICODE
-	if ( LoadParam(&psp, NULL) == FALSE ){
+	if ( LoadParam(&psp, NULL, TRUE) == FALSE ){
 		result = EXIT_FAILURE;
 		goto fin;
 	}
 	#else
-	if ( LoadParam(&psp, lpCmdLine) == FALSE ){
+	if ( LoadParam(&psp, lpCmdLine, TRUE) == FALSE ){
 		result = EXIT_FAILURE;
 		goto fin;
 	}
@@ -73,7 +74,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	if ( X_ChooseMode != CHOOSEMODE_NONE ){
 		X_sps = psp.SingleProcess = FALSE;
 	}else{
-		if ( X_combo ){
+		if ( X_combo != COMBO_OFF ){
 			X_sps = psp.SingleProcess = TRUE;
 			if ( ComboFix(&psp) == FALSE ){
 				result = EXIT_SUCCESS;
@@ -652,7 +653,7 @@ void PPCui(HWND hWnd, const TCHAR *cmdline)
 	PROCESS_INFORMATION pi;
 
 	if ( cmdline != RunAlone ){
-		if ( X_sps || X_combo ){
+		if ( X_sps || (X_combo != COMBO_OFF) ){
 			MorePPc(cmdline, &MainWindows);
 			return;
 		}
@@ -693,7 +694,7 @@ void MorePPc(const TCHAR *cmdline, MAINWINDOWSTRUCT *mws)
 	PPCSTARTPARAM *psp = NULL, defpsp;
 	ThSTRUCT th;
 
-	if ( (cmdline == NULL) && X_combo && (X_combos[0] & CMBS_TABMAXALONE) && (Combo.ShowCount >= X_mpane.limit) ){
+	if ( (cmdline == NULL) && (X_combo != COMBO_OFF) && (X_combos[0] & CMBS_TABMAXALONE) && (Combo.ShowCount >= X_mpane.limit) ){
 		PPCui(NULL, RunAlone);
 		return;
 	}
@@ -701,7 +702,7 @@ void MorePPc(const TCHAR *cmdline, MAINWINDOWSTRUCT *mws)
 	if ( cmdline != NULL ){
 		defpsp.show = SW_SHOW;
 
-		LoadParam(&defpsp, cmdline);
+		LoadParam(&defpsp, cmdline, FALSE);
 
 //		if ( defpsp.alone ){ // 新規プロセスが必要なオプション
 //			return FALSE;

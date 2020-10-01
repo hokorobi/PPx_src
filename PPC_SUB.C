@@ -142,11 +142,10 @@ void SavePPcDir(PPC_APPINFO *cinfo, BOOL newdir)
 	}
 	if ( CEL(tmp[0]).attr & ECA_THIS ) tmp[0]++; // 「.」上にはしない
 
-	// 書庫内書庫
-	if ( cinfo->OrgPath[0] ){
-		path = cinfo->OrgPath;
-	}else{
+	if ( cinfo->OrgPath[0] == '\0' ){
 		path = cinfo->path;
+	}else{ // 書庫内書庫
+		path = cinfo->OrgPath;
 	}
 	// 書庫内dir
 	if ( cinfo->UseArcPathMask != ARCPATHMASK_OFF ){
@@ -163,6 +162,7 @@ void SavePPcDir(PPC_APPINFO *cinfo, BOOL newdir)
 	UsePPx();
 	hist = (BYTE *)SearchHistory(PPXH_PPCPATH, path);
 	if ( hist == NULL ){
+		if ( X_hisr[0] == 0 ) goto skip;
 		histdatasize = 0;
 	}else{
 		histdatasize = GetHistoryDataSize(hist);
@@ -178,6 +178,7 @@ void SavePPcDir(PPC_APPINFO *cinfo, BOOL newdir)
 		}
 		WriteHistory(PPXH_PPCPATH, path, histdatasize, &tmp);
 	}
+skip:
 	FreePPx();
 }
 
@@ -1812,7 +1813,7 @@ void LoadCFMT(XC_CFMT *cfmt, const TCHAR *name, const TCHAR *sub, const XC_CFMT 
 	if ( cfmt->csr > 7 ) cfmt->csr = 4;
 
 	cfmt->nextline = HIWORD(cfmt->width);
-	cfmt->width = LOWORD(cfmt->width);
+	cfmt->width = cfmt->org_width = LOWORD(cfmt->width);
 	cfmt->height = 1;
 	{	// 各行に DE_WIDEV / DE_WIDEW が無いか調べる
 		BYTE *fmt = cfmt->fmt;

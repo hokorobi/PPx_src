@@ -666,7 +666,7 @@ BOOL MenuMenu(EXECSTRUCT *Z)
 	int count = 0, index;
 	TCHAR key[CMDLINESIZE], comment[CMDLINESIZE], text[CMDLINESIZE * 2 + 8], *str;
 
-	while( EnumCustData(count, key, key, 0) != -1 ){
+	while( EnumCustData(count, key, key, 0) >= 0 ){
 		if ( (key[1] == '_') && (upper(key[0]) == 'M') ){
 			comment[0] = '\0';
 			GetCustTable(T("#Comment"), key, comment, sizeof(comment));
@@ -1021,6 +1021,7 @@ PPXDLL HMENU PPXAPI PP_AddMenu(PPXAPPINFO *ParentInfo, HWND hWnd, HMENU hMenu, D
 
 			if ( code == '?' ){	// Šg’£ ================
 				if ( (menuflag & MF_MENUBARBREAK) && (*(paramp + 1) == '?') ){
+					// Šg’£‚¾‚Æ‰üŒ…‚ð“o˜^‚Å‚«‚È‚­‚È‚é‚Ì‚Å‘ã—p•i‚ð‘}“ü
 					AppendMenu(hTmpMenu, MF_SEPARATOR | MF_MENUBARBREAK, 0, NULL);
 				}
 				if ( IsTrue(ExMenuAdd(ParentInfo, thMenuData, hTmpMenu,

@@ -1733,6 +1733,7 @@ void USEFASTCALL PPvWmVscroll(HWND hWnd, WORD scrollcode, WORD range) // êÇíºÉXÉ
 /*=============================================================================
 	WinMain
 =============================================================================*/
+#pragma warning(suppress:28251) // SDK Ç…ÇÊÇ¡Çƒ hPrevInstance ÇÃëÆê´Ç™àŸÇ»ÇÈ
 #pragma argsused
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {

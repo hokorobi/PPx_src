@@ -224,10 +224,13 @@ PPXDLL int PPXAPI PPxRegist(HWND hWnd, TCHAR *ID, int mode)
 	}
 	UsePPx();
 									// ID ŒŸõ‚ðŽn‚ß‚é
-	if ( (mode == PPXREGIST_NORMAL) || (mode == PPXREGIST_MAX) ){
-		if ( mode == PPXREGIST_MAX ) limit = ID[2];
+	if ( mode == PPXREGIST_NORMAL ){
 		if ( ID[2] == '\0' ) ID[2] = 'A';
+	}else if ( mode == PPXREGIST_MAX ){
+		limit = ID[2];
+		ID[2] = 'A';
 	}
+
 	ID[3] = '\0';
 
 	P = Sm->P;
@@ -246,7 +249,10 @@ PPXDLL int PPXAPI PPxRegist(HWND hWnd, TCHAR *ID, int mode)
 					goto notfound;
 
 				case PPXREGIST_IDASSIGN: // “¯–¼‚ ‚è¨“o˜^‚Å‚«‚È‚¢
-					goto notfound;
+					if ( ID[2] != 'Z' ) goto notfound;
+					RegNo = i;
+					i = X_Mtask;
+					break;
 
 				default:	// PPXREGIST_NORMAL / PPXREGIST_MAX
 					if ( ID[2] >= limit ){ // ÅŒã‚Ü‚ÅŒŸõ
@@ -1632,7 +1638,7 @@ void InitJobList(HWND hMainWnd)
 
 	Sm->JobList.hWnd = CreateWindowEx(0, LISTBOXstr, NilStr,
 			WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_HASSTRINGS | LBS_OWNERDRAWFIXED | LBS_NOINTEGRALHEIGHT,
-			0, 0, 200, 100, hParentWnd, NULL, DLLhInst, NULL);
+			0, 0, 200, 100, hParentWnd, CHILDWNDID(IDL_JOBLIST), DLLhInst, NULL);
 
 	if ( Sm->JobList.hWnd != NULL ){
 		HBRUSH hJobBackBrush = NULL;

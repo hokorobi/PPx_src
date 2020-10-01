@@ -859,7 +859,8 @@ void LoadList(HWND hDlg)	// チェックボックス等の画像を用意
 			UDS_SETBUDDYINT | UDS_AUTOBUDDY | UDS_ARROWKEYS |
 			UDS_NOTHOUSANDS |
 			WS_CHILD | WS_TABSTOP | ES_AUTOHSCROLL,
-			0, 0, FLOAT_WIDTH, FLOAT_HEIGHT, hDlg, NULL, hInst, NULL);
+			0, 0, FLOAT_WIDTH, FLOAT_HEIGHT, hDlg,
+			CHILDWNDID(IDU_FLOATUPDOWN), hInst, NULL);
 	SendMessage(hSpinWnd, UDM_SETRANGE, 0, TMAKELPARAM(0, 0x7fff));
 	SendMessage(hSpinWnd, UDM_SETRANGE32, 0, 0x7fffffff);
 	hButtonWnd = CreateWindow(BUTTON, GetCText(T("参照\0ref")),
@@ -1371,7 +1372,7 @@ void FindKeyword(HWND hDlg)
 	TCHAR findtext[VFPS];
 	TV_ITEM tvi;
 	int firstline = 1;
-	const TCHAR *p;
+	const TCHAR *posptr;
 
 	int line, indexline;
 	HTREEITEM hItem;
@@ -1400,32 +1401,35 @@ void FindKeyword(HWND hDlg)
 	}
 	// item の位置を求める
 	tvi.hItem = TreeView_GetSelection(hItemTreeWnd);
+	if ( tvi.hItem == NULL ){
+		tvi.hItem = TreeView_GetRoot(hItemTreeWnd);
+	}
 	if ( tvi.hItem != NULL ){
 		tvi.mask = TVIF_PARAM;
 		TreeView_GetItem(hItemTreeWnd, &tvi);
-		p = SearchList((int)tvi.lParam);
-		if ( (p != NULL) && (tstristr(p, findtext) != NULL) ){
+		posptr = SearchList((int)tvi.lParam);
+		if ( (posptr != NULL) /*&& (tstristr(posptr, findtext) != NULL)*/ ){
 			firstline = (int)tvi.lParam;
 		}
 	}
-	if ( firstline == 1 ) p = CustomList;
+	if ( firstline == 1 ) posptr = CustomList;
 	line = firstline;
 
 	// 全般タグ内
 	for ( ;; ){
-		p += tstrlen(p) + 1;
+		posptr += tstrlen(posptr) + 1;
 		line++;
 
-		if ( *p == '\0' ){
+		if ( *posptr == '\0' ){
 			line = 1;
-			p = CustomList;
+			posptr = CustomList;
 		}
 		if ( line == firstline ) break; // 一周した
 
-		if ( *p == '.' ){	// index だった
+		if ( *posptr == '.' ){	// index だった
 			indexline = line;
 		}else{ // item
-			if ( tstristr(p, findtext) ){
+			if ( tstristr(posptr, findtext) != NULL ){
 				// index の位置を求める
 				if ( IsTrue(FindItem(hIndexTreeWnd, TreeView_GetRoot(hIndexTreeWnd), indexline, &hItem)) ){
 					CustomItemListOffset = indexline + 1;

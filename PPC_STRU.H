@@ -368,11 +368,14 @@ typedef struct {
 ※ XC_celDは fc, bc, csr, mark, XC_celF/MC_celSはwidth, fmt が入る
 */
 typedef struct {
+	// ここは設定ファイル内と同一構成にする必要あり
 	COLORREF	fc;		// 前景色
 	COLORREF	bc;		// 背景色
 	int			csr;	// カーソルの表示方法
 	int			mark;	// マークの表示方法
 	int			width;	// 表示幅
+	// ここまで同一構成
+	int			org_width;	// 「w」加工前の表示幅
 	int			height;	// 表示丈
 	int			nextline; // 次の行へのオフセット
 	int			attr;	// 表示する属性(DE_ATTR_STATICなど)
@@ -766,7 +769,7 @@ typedef struct tagPPC_APPINFO {
 		#define MARKMASK_FILE 0xf
 		#define MARKMASK_DIRFILE 0x1f
 	int			MarkMask;			// マークする属性
-	TCHAR		UserInfo[0x60];		// タイトルバーに表示するユーザ名
+	TCHAR		UserInfo[0x80];		// タイトルバーに表示するユーザ名
 
 	int			KeyRepeats;
 	int			multicharkey;
@@ -789,7 +792,12 @@ typedef struct tagPPC_APPINFO {
 	TCHAR		Jfname[VFPS];	// readentry 時に移動する場所
 
 	int			NormalViewFlag;	// [N]
+	HWND		hSyncViewPairWnd;
 	int			SyncViewFlag;	// [Y]
+			#define SyncPath_off	0
+			#define SyncPath_entry	1
+			#define SyncPath_dir	2
+	int			SyncPathFlag;	// ^[Y]
 	CALLBACKMODULEENTRY KeyHookEntry;		// キー入力拡張モジュール
 
 	BOOL		IncSearchMode;
@@ -849,11 +857,11 @@ typedef struct tagPPC_APPINFO {
 #define DDPAGEMODE_DIR_FIRSTWAIT (DDPAGEMODE_DIR_ENTER + ((X_ddex.DDenterTime - 1) / TIMER_DRAGSCROLL))
 #define DDPAGEMODE_DIR_NEXTWAIT (DDPAGEMODE_DIR_FIRSTWAIT + (3000 / TIMER_DRAGSCROLL))
 
-	int			DDpagemode, DDpage;
+	int DDpagemode, DDpage;
 	UINT_PTR	ddtimer_id;
 
-	HIDDENMENUS	HiddenMenu;
-	int			swin;			//	b5:B4=1のとき、=0:大きさ =1:大きさ+位置
+	HIDDENMENUS HiddenMenu;
+	int swin;			//	b5:B4=1のとき、=0:大きさ =1:大きさ+位置
 	XC_MASK mask;			// 表示マスク
 	XC_CFMT stat;			// ステータス表示行
 	XC_CFMT inf1;			// 情報表示１行目
@@ -868,8 +876,8 @@ typedef struct tagPPC_APPINFO {
 
 	WHERESETTINGS WhereIsSettings;	// Where is の設定
 	volatile int FDirWrite;		// ディレクトリ更新要求管理
-	HGLOBAL		CLIPDATAS[CLIPTYPES];	// クリップボードにコピーする内容
-	DWORD		X_win;			// ウィンドウ関連のカスタマイズ
+	HGLOBAL CLIPDATAS[CLIPTYPES];	// クリップボードにコピーする内容
+	DWORD X_win;			// ウィンドウ関連のカスタマイズ
 	HWND hTrayWnd;		// PPTray Window
 	HWND hComboWnd;		// Combo Window
 	HWND hToolBarWnd;
@@ -883,11 +891,11 @@ typedef struct tagPPC_APPINFO {
 	int CellHashType;	// ENTRYCELL.hash の形式
 	int DownMPos;		// 押したHidden Menu
 	int Mpos;			// 選択中の Hidden Menu
-	XC_SORT		XC_sort;		// 保持ソート用
+	XC_SORT XC_sort;		// 保持ソート用
 	XC_SORT_MODE sort_nowmode;
-	DWORD		sort_columnindex;
+	DWORD sort_columnindex;
 
-	DWORD		UseCommentsFlag; // どのコメント領域を使用しているか(EVENT発生用 B0:通常コメント B1～B31:拡張コメント)
+	DWORD UseCommentsFlag; // どのコメント領域を使用しているか(EVENT発生用 B0:通常コメント B1～B31:拡張コメント)
 
 	int			X_inag;
 										// Tree 関連
@@ -909,6 +917,8 @@ typedef struct tagPPC_APPINFO {
 
 	BOOL RequestVolumeLabel;
 	TCHAR VolumeLabel[MAX_PATH];
+	TCHAR DsetMask[MAX_PATH]; // XC_dsetで決定されるマスク、cinfo->maskより優先
+	#define MASK_NOUSE '\1'
 
 	int AcceptReload;	// キャッシュ後再読込の動作(read_entryの値)
 	int AloadCount;		// 非同期読み込み量保存
@@ -921,7 +931,6 @@ typedef struct tagPPC_APPINFO {
 	struct {
 		volatile DWORD state;
 		volatile DWORD tick;
-//		volatile HWND hStateWnd;
 	} StateInfo;
 
 	DelayLoadMenuStruct *DelayMenus;

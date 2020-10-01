@@ -86,7 +86,7 @@ GVAR HMENU hDispTypeMenu GPARAM(NULL);
 GVAR int FontDPI GPARAM(DEFAULT_WIN_DPI);
 
 GVAR BOOL Embed GPARAM(FALSE); // ウィンドウ埋め込み
-GVAR int ShowStyle GPARAM(VSHOW_SDI); // VSHOW_
+GVAR int X_vpos GPARAM(VSHOW_SDI); // VSHOW_
 
 GVAR const TCHAR StrDocFilterCmd[] GPARAM(T("FilterCmd"));
 GVAR const TCHAR StrDocFilteredTextPath[] GPARAM(T("FilteredText"));
@@ -165,6 +165,7 @@ typedef enum {
 
 GVAR DISPT VO_dtype GPARAM(DISPT_NONE);	// 表示形式
 
+GVAR int VO_history;//	GPARAM(0);
 GVAR int VO_Tmodedef;//	GPARAM(0);
 GVAR int VO_Tmode;	//GPARAM(0);	// かなコードの扱い 0:自動判別 1:バイナリ 2:カナ使用
 GVAR int VO_Tesc;	//GPARAM(1);
@@ -400,6 +401,7 @@ GVAR WCHAR XV_ctls[6] // VCODE_RETURN で使用する文字
 // 全体:操作 ------------------------------------------------------------------
 GVAR int X_alt GPARAM(1);
 GVAR int X_iacc GPARAM(0);
+GVAR int X_hisr[2] GPARAM2(1, 1);
 
 GVAR int X_dds GPARAM(1);
 GVAR DWORD X_askp GPARAM(0);

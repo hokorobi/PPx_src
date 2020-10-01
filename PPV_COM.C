@@ -211,8 +211,16 @@ case 'T':
 case 'M':
 	if ( (vo_.memo.bottom == NULL) || (vo_.memo.top <= 1) ){
 		if ( ((vo_.DModeType == DISPT_IMAGE) || (vo_.DModeType == DISPT_RAWIMAGE)) && (vo_.bitmap.transcolor >= 0) ){
-			ModifyAlpha();
-			InvalidateRect(hWnd, NULL, TRUE);
+			if ( viewopt_def.I_CheckeredPattern > 0 ){
+				viewopt_def.I_CheckeredPattern = 0;
+				PPvReload(vinfo);
+				SetPopMsg(POPMSG_NOLOGMSG, T("Disabled modify"));
+			}else{
+				viewopt_def.I_CheckeredPattern = 1;
+				ModifyAlpha();
+				InvalidateRect(hWnd, NULL, TRUE);
+				SetPopMsg(POPMSG_NOLOGMSG, T("Modify transparent"));
+			}
 			break;
 		}
 		if ( (vo_.DModeType == DISPT_DOCUMENT) &&

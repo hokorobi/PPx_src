@@ -861,6 +861,7 @@ ERRORCODE WhereIsMain(PPC_APPINFO *cinfo, WHERESTRUCT *Pws)
 					}else{
 						result = WhereIsDirVFS(temp, Pws, &sts);
 					}
+					if ( result != NO_ERROR ) break;
 				}else{
 					if( FinddataRegularExpression(&cell->f, &Pws->fn1) &&
 						FinddataRegularExpression(&cell->f, &Pws->fn2) ){
@@ -871,6 +872,9 @@ ERRORCODE WhereIsMain(PPC_APPINFO *cinfo, WHERESTRUCT *Pws)
 							Pws->hitcount++;
 							WriteFF2(&sts, &cell->f, temp);
 						}
+					}
+					if ( (result = wjobinfo(Pws, cell->f.cFileName)) != NO_ERROR ){
+						break;
 					}
 				}
 			}
@@ -893,6 +897,7 @@ ERRORCODE WhereIsMain(PPC_APPINFO *cinfo, WHERESTRUCT *Pws)
 					result = WhereIsDirVFS(extractpath, Pws, &sts);
 				}
 				if ( pathnext == NULL ) break;
+				if ( result != NO_ERROR ) break;
 				pathsrc = pathnext + 1;
 			}
 		}

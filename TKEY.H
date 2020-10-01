@@ -252,6 +252,7 @@ typedef struct {
 #define KC_ENDCOMPARE	0xbe08		// 比較の完了
 #define KC_PRECLOSE	0xbe09			// CLOSE指示
 #define KC_COMMENTEVENT	0xbe0a		// COMMENTEVENT生成の指示 lParam:
+#define KC_SYNCPATH	0xbe0b			// dir・entryの追従(WM_COPYDATA内)
 #define KC_GETCRCHECK	0xbe38		// CRMENUSTACKCHECK取得
 //								AutoD&D用
 #define KC_REGISTADDPROC	0x0bebbeb0	// IFをOLE ROTに登録する

@@ -701,7 +701,9 @@ const TCHAR *FixCurrentDirPath(const TCHAR *path)
 				(path[0] == '/')
 			)
 		  ) ){
-		if ( ProcTempPath[0] == '\0' ) GetTempPath(MAX_PATH, ProcTempPath);
+		if ( ProcTempPath[0] == '\0' ){
+			MakeTempEntry(MAX_PATH, NULL, 0); // ProcTempPath ÇçÏê¨
+		}
 		path = ProcTempPath;
 	}
 	return path;

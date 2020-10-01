@@ -1115,8 +1115,8 @@ STDMETHODIMP CDropTarget::DragOver(DWORD grfKeyState, POINTL pt, LPDWORD pdwEffe
 			if ( GetItemTypeFromPoint(mCinfo, &pos, &cellno) == PPCR_CELLTEXT ){
 				if ( mCEL(cellno).f.dwFileAttributes & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTEX_FOLDER) ){
 					mCinfo->DDpagemode = DDPAGEMODE_NONE;
-					mCinfo->e.cellN = cellno;
 					ForceDataObject();
+					mCinfo->e.cellN = cellno;
 					PostMessage(mCinfo->info.hWnd, WM_PPXCOMMAND, KC_Edir, 0);
 				}
 			}
