@@ -5,19 +5,19 @@ extern "C" {
 #define TM_step 0x10000					// 確保単位
 
 typedef struct {							// メモリ管理構造体
-	void		*p;	// ポインタ
-	DWORD		s;	// 大きさ
-	HGLOBAL		h;	// ハンドル
+	void *p;	// ポインタ
+	ULONG_PTR s;	// 大きさ
+	HGLOBAL h;	// ハンドル
 } TM_struct;
 
 typedef struct {							// 文字列群管理構造体
-	TM_struct	tm;	// メモリ管理用
-	int			p;	// 次回の書き込み位置(offset)
+	TM_struct tm;	// メモリ管理用
+	LONG_PTR p;	// 次回の書き込み位置(offset)
 } TMS_struct;
 
 extern void TM_off(TM_struct *TM);
 extern void TM_kill(TM_struct *TM);
-extern BOOL TM_check(TM_struct *TM, DWORD size);
+extern BOOL TM_check(TM_struct *TM, ULONG_PTR size);
 
 #define TMS_off(TMS)	(TM_off(TMS.tm));
 #define TMS_kill(TMS)	(TM_kill(TMS.tm));

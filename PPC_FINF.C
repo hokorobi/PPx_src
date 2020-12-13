@@ -342,6 +342,10 @@ DWORD DumpAMask(TCHAR *dst, ACCESS_MASK am)
 #define IO_REPARSE_TAG_NFS		0x80000014
 #endif
 
+#ifndef IO_REPARSE_TAG_LX_SYMLINK
+#define IO_REPARSE_TAG_LX_SYMLINK	0xA000001D
+#endif
+
 DWORD DumpReparsePoint(TCHAR *dst, LPCTSTR lpFileName)
 {
 	TCHAR rpath[VFPS];
@@ -349,8 +353,20 @@ DWORD DumpReparsePoint(TCHAR *dst, LPCTSTR lpFileName)
 	DWORD tag = GetReparsePath(lpFileName, rpath);
 
 	switch ( tag ){
+		case 0x80000021: // IO_REPARSE_TAG_ONEDRIVE
+			tagname = T("onedrive");
+			break;
+
+		case 0x80000023: // IO_REPARSE_TAG_AF_UNIX
+			tagname = T("AF_UNIX");
+			break;
+
 		case IO_REPARSE_TAG_MOUNT_POINT:
 			tagname = T("Junction/Volume Mount Point");
+			break;
+
+		case IO_REPARSE_TAG_LX_SYMLINK:
+			tagname = T("WSL symbolic link");
 			break;
 
 		case IO_REPARSE_TAG_HSM:
@@ -388,14 +404,6 @@ DWORD DumpReparsePoint(TCHAR *dst, LPCTSTR lpFileName)
 
 		case IO_REPARSE_TAG_SYMLINK:
 			tagname = T("Symbolic link");
-			break;
-
-		case 0x80000021: // IO_REPARSE_TAG_ONEDRIVE
-			tagname = T("onedrive");
-			break;
-
-		case 0x80000023: // IO_REPARSE_TAG_AF_UNIX
-			tagname = T("AF_UNIX");
 			break;
 
 		default:

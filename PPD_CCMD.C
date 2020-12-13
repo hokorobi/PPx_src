@@ -703,6 +703,7 @@ PPXDLL int PPXAPI PPxCommonCommand(HWND hWnd, LPARAM lParam, WORD key)
 #define TBSTYLE_CUSTOMERASE 0x2000
 #define CDDS_PREERASE 0x00000003
 #define CDRF_SKIPDEFAULT 0x00000004
+#define CDRF_DODEFAULT 0x00000000
 #endif
 #ifndef NM_CUSTOMDRAW
 #define NM_CUSTOMDRAW (NM_FIRST-12)
@@ -718,6 +719,18 @@ typedef struct
 	LPARAM lItemlParam;
 } NMCUSTOMDRAW;
 #endif
+
+LRESULT DrawCCWndBack(NMCUSTOMDRAW *CSD)
+{
+	RECT box;
+
+	if ( hDialogBackBrush == NULL ) return CDRF_DODEFAULT;
+	if ( CSD->dwDrawStage != CDDS_PREERASE ) return CDRF_DODEFAULT;
+
+	GetClientRect(CSD->hdr.hwndFrom, &box);
+	FillBox(CSD->hdc, &box, hDialogBackBrush);
+	return CDRF_SKIPDEFAULT;
+}
 
 PPXDLL LRESULT PPXAPI PPxCommonExtCommand(WORD key, WPARAM wParam)
 {
@@ -805,19 +818,36 @@ PPXDLL LRESULT PPXAPI PPxCommonExtCommand(WORD key, WPARAM wParam)
 		case KC_GETCRCHECK:
 			return (LRESULT)&CrmenuCheck;
 
+		#define CSD ((NMCUSTOMDRAW *)wParam)
 		case K_DRAWCCBACK:
 			if ( wParam == 0 ){
 				InitSysColors();
 				return (LRESULT)hDialogBackBrush;
 			}else{
-				#define CSD ((NMCUSTOMDRAW *)wParam)
-				if ( hDialogBackBrush == NULL ) return 0;
-				if ( CSD->dwDrawStage != CDDS_PREERASE ) return 0;
-				FillRect(CSD->hdc, &CSD->rc, hDialogBackBrush);
+				if ( hDialogBackBrush == NULL ) return CDRF_DODEFAULT;
+				if ( CSD->dwDrawStage != CDDS_PREERASE ) return CDRF_DODEFAULT;
+				FillBox(CSD->hdc, &CSD->rc, hDialogBackBrush);
 				return CDRF_SKIPDEFAULT;
-				#undef CSD
 			}
+		#undef CSD
 
+		case K_DRAWCCWNDBACK:
+			return DrawCCWndBack((NMCUSTOMDRAW *)wParam);
+
+		case K_UxTheme:
+			switch (wParam) {
+				case KUT_WINDOW_TEXT_COLOR:
+					return C_WindowText;
+				case KUT_WINDOW_BACK_COLOR:
+					return C_WindowBack;
+				case KUT_DIALOG_BACK_COLOR:
+					return C_DialogBack;
+				case KUT_INIT:
+					if ( X_uxt == UXT_NA ) InitUnthemeCmd();
+					// default:
+				default:
+					return X_uxt;
+			}
 		default:
 			return ERROR_INVALID_FUNCTION;
 	}

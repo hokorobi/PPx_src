@@ -20,6 +20,22 @@
 #endif
 #define TListView_GetFocusedItem(hwnd) (int)SendMessage(hwnd, LVM_GETNEXTITEM, (WPARAM)-1, TMAKELPARAM(LVNI_FOCUSED, 0))
 
+#ifndef NM_CUSTOMDRAW
+#define NM_CUSTOMDRAW           (0-12)
+typedef struct tagNMCUSTOMDRAWINFO
+{
+	NMHDR hdr;
+	DWORD dwDrawStage;
+	HDC hdc;
+	RECT rc;
+	DWORD_PTR dwItemSpec;
+	UINT  uItemState;
+	LPARAM lItemlParam;
+} NMCUSTOMDRAW;
+#define CDRF_NOTIFYITEMDRAW     0x00000020
+#define CDRF_DODEFAULT          0x00000000
+#endif
+
 #define ID_COMMAND_ENUMTYPE IDW_INTERNALMIN
 
 // ListView の lParam に設定する値。PPcust内で共通＆クリアしないが、通常の
@@ -694,13 +710,15 @@ void USEFASTCALL InitCmdList(HWND hDlg)
 		TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS,
 		box.left - 8, box.top - 8,
 		(box.right - box.left) / 3, ((box.bottom - box.top) * 2) / 3,
-		hDlg, CHILDWNDID(IDT_ALCCMDLIST), hInst, NULL);
+		hDlg, NULL, hInst, NULL);
+	FixUxTheme(hCmdListWnd, WC_TREEVIEW);
 	if ( X_dss & DSS_COMCTRL ) SendMessage(hCmdListWnd, CCM_DPISCALE, TRUE, 0);
 	InitCommandTree();
 }
 
 void CommandTreeDlgBox_Init(HWND hDlg)
 {
+	LocalizeDialogText(hDlg, 0);
 	GetCustData(T("X_LANG"), &UseLcid, sizeof(UseLcid));
 	if ( UseLcid == 0 ) UseLcid = LOWORD(GetUserDefaultLCID());
 
@@ -708,9 +726,10 @@ void CommandTreeDlgBox_Init(HWND hDlg)
 	hCmdListWnd = GetDlgItem(hDlg, IDT_GENERAL);
 	if ( X_dss & DSS_COMCTRL ) SendMessage(hCmdListWnd, CCM_DPISCALE, TRUE, 0);
 	InitCommandTree();
+	FixUxTheme(hCmdListWnd, WC_TREEVIEW);
 }
 
-LRESULT CmdTreeNotify(HWND hDlg, NMHDR *nhdr/*, TABLEINFO *tinfo*/)
+LRESULT CmdTreeNotify(HWND hDlg, NMHDR *nhdr)
 {
 	if ( nhdr->code == TVN_SELCHANGED ){
 		TV_ITEM tvi;
@@ -724,6 +743,13 @@ LRESULT CmdTreeNotify(HWND hDlg, NMHDR *nhdr/*, TABLEINFO *tinfo*/)
 		TreeView_GetItem(hCmdListWnd, &tvi);
 		if ( *(const TCHAR *)tvi.lParam != GROUPCHAR ){
 			SetCommand(hDlg, (const TCHAR *)tvi.lParam/*, tinfo*/);
+		}
+	}else if ( nhdr->code == TVN_KEYDOWN ){
+		if ( (((TV_KEYDOWN *)nhdr)->wVKey == VK_ESCAPE) && (GetParent(hCmdListWnd) == NULL) ){
+			MSG msg;
+
+			PeekMessage(&msg, hCmdListWnd, WM_CHAR, WM_CHAR, PM_REMOVE);
+			PostMessage(hCmdListWnd, WM_CLOSE, 0, 0);
 		}
 	}
 	return 0;
@@ -2628,11 +2654,37 @@ void SetButtonCommand(HWND hDlg, WPARAM wParam, LPARAM lParam, TABLEINFO *tinfo)
 	SetDlgItemText(hDlg, IDE_ALCCMD, command);
 }
 
+WNDPROC hOldAlclistProc = NULL;
+
+LRESULT CALLBACK AlcListProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch (iMsg){
+		case WM_NOTIFY:
+			#define NHPTR ((NMHDR *)lParam)
+			if ( (NHPTR->idFrom == 0) && (NHPTR->code == NM_CUSTOMDRAW) ){
+				if ( ((NMCUSTOMDRAW *)lParam)->dwDrawStage == CDDS_PREPAINT ) {
+					return CDRF_NOTIFYITEMDRAW;
+				}
+				if ( ((NMCUSTOMDRAW *)lParam)->dwDrawStage == CDDS_ITEMPREPAINT ) {
+					SetTextColor(((NMCUSTOMDRAW *)lParam)->hdc, DARK_COLOR_INFOTEXT);
+				}
+				return CDRF_DODEFAULT;
+			}
+	}
+	return CallWindowProc(hOldAlclistProc, hWnd, iMsg, wParam, lParam);
+}
+
 void InitTablePage(HWND hDlg, TABLEINFO *tinfo)
 {
+	InitPropSheetsUxtheme(hDlg);
 	tinfo->hLVAlcWnd = GetDlgItem(hDlg, IDV_ALCLIST);
 	tinfo->hLVTypeWnd = GetDlgItem(hDlg, IDV_EXTYPE);
 	tinfo->ListViewLastSort = 0;
+
+	if ( X_uxt == UXT_DARK ){ // Lisrview の処理アドレスは同じなので、分けていない
+		hOldAlclistProc = (WNDPROC)SetWindowLongPtr(tinfo->hLVAlcWnd, GWLP_WNDPROC, (LONG_PTR)AlcListProc);
+	}
+
 	if ( KeyList == NULL ){
 		KeyList = LoadTextResource(hInst, MAKEINTRESOURCE(DEFKEYLIST));
 #if 0		// キーコードの正当性チェック
@@ -2960,7 +3012,6 @@ INT_PTR CALLBACK TablePage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam, TA
 			break;
 
 		case WM_NOTIFY:
-			#define NHPTR ((NMHDR *)lParam)
 			if ( wParam == IDV_ALCLIST ){
 				#define PNM ((NM_LISTVIEW *)lParam)
 				switch ( NHPTR->code ){
@@ -3036,12 +3087,12 @@ INT_PTR CALLBACK TablePage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam, TA
 			}
 
 			if ( (hCmdListWnd != NULL) && (NHPTR->hwndFrom == hCmdListWnd) ){
-				return CmdTreeNotify(hDlg, NHPTR/*, tinfo*/);
+				return CmdTreeNotify(hDlg, NHPTR);
 			}
-			return StyleDlgProc(hDlg, msg, tinfo->helpID, lParam);
+//			return DlgSheetProc(hDlg, msg, wParam, lParam, tinfo->helpID);
 			#undef NHPTR
 		default:
-			return StyleDlgProc(hDlg, msg, wParam, lParam);
+			return DlgSheetProc(hDlg, msg, wParam, lParam, tinfo->helpID);
 	}
 	return TRUE;
 }

@@ -175,9 +175,10 @@ void LineEscape(EXECSTRUCT *Z) // %b 行末エスケープ・文字挿入
 			break;
 
 		case 'n':
-			Z->src++;
 			*Z->dst++ = '\r';
+		case 'l':
 			*Z->dst++ = '\n';
+			Z->src++;
 			break;
 
 		case 't':
@@ -185,10 +186,14 @@ void LineEscape(EXECSTRUCT *Z) // %b 行末エスケープ・文字挿入
 			*Z->dst++ = '\t';
 			break;
 
+		case 'h':
 		case 'x':
 			Z->src++;
 			c = (TCHAR)GetHexNumber(&Z->src);
-			if ( c != 0 ) *Z->dst++ = c;
+			if ( c != 0 ){
+				*Z->dst++ = c;
+				if ( *Z->src == ';' ) Z->src++;
+			}
 			break;
 
 		case '\"':
@@ -226,7 +231,10 @@ void LineEscape(EXECSTRUCT *Z) // %b 行末エスケープ・文字挿入
 
 		default:
 			c = (TCHAR)GetNumber(&Z->src);
-			if ( c != 0 ) *Z->dst++ = c;
+			if ( c != 0 ){
+				*Z->dst++ = c;
+				if ( *Z->src == ';' ) Z->src++;
+			}
 			break;
 	}
 }

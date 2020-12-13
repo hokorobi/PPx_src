@@ -1083,6 +1083,8 @@ STDMETHODIMP CDropTarget::DragEnter(LPDATAOBJECT pDataObj, DWORD grfKeyState, PO
 		POINT pt				マウスの現在位置
 		LPDWORD pdwEffect		動作の指定（変更可）
 -----------------------------------------------------------------------------*/
+#undef MK_XBUTTON1	// MK_XBUTTON1 と MK_ALT が同じ値のため、使用禁止
+#define MK_XBUTTON1A 0x10000
 STDMETHODIMP CDropTarget::DragOver(DWORD grfKeyState, POINTL pt, LPDWORD pdwEffect)
 {
 	POINT pos;
@@ -1092,37 +1094,37 @@ STDMETHODIMP CDropTarget::DragOver(DWORD grfKeyState, POINTL pt, LPDWORD pdwEffe
 	::ScreenToClient(mCinfo->info.hWnd, &pos);
 	SetDDScroll(mCinfo, &pos);
 
-		if ( GetAsyncKeyState(VK_XBUTTON1) & KEYSTATE_PUSH ){
-			setflag(grfKeyState, MK_XBUTTON1);
+	if ( GetAsyncKeyState(VK_XBUTTON1) & KEYSTATE_PUSH ){
+		setflag(grfKeyState, MK_XBUTTON1A);
+	}
+	if ( GetAsyncKeyState(VK_XBUTTON2) & KEYSTATE_PUSH ){
+		setflag(grfKeyState, MK_XBUTTON2);
 		}
-		if ( GetAsyncKeyState(VK_XBUTTON2) & KEYSTATE_PUSH ){
-			setflag(grfKeyState, MK_XBUTTON2);
-		}
-		// 第4ボタンを放した→updir
-		if ( (mKeyState & MK_XBUTTON1) && !(grfKeyState & MK_XBUTTON1) ){
-			mKeyState = grfKeyState;
-			mCinfo->DDpagemode = DDPAGEMODE_NONE;
-			ForceDataObject();
-			PostMessage(mCinfo->info.hWnd, WM_PPXCOMMAND, K_raw | K_bs, 0);
-			return S_OK;
-		}
-		// 中/第5ボタンを放した
-		if ( ((mKeyState & MK_MBUTTON) && !(grfKeyState & MK_MBUTTON)) ||
-			 ((mKeyState & MK_XBUTTON2) && !(grfKeyState & MK_XBUTTON2)) ){
-			ENTRYINDEX cellno;
-
-			mKeyState = grfKeyState;
-			if ( GetItemTypeFromPoint(mCinfo, &pos, &cellno) == PPCR_CELLTEXT ){
-				if ( mCEL(cellno).f.dwFileAttributes & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTEX_FOLDER) ){
-					mCinfo->DDpagemode = DDPAGEMODE_NONE;
-					ForceDataObject();
-					mCinfo->e.cellN = cellno;
-					PostMessage(mCinfo->info.hWnd, WM_PPXCOMMAND, KC_Edir, 0);
-				}
-			}
-			return S_OK;
-		}
+	// 第4ボタンを放した→updir
+	if ( (mKeyState & MK_XBUTTON1A) && !(grfKeyState & MK_XBUTTON1A) ){
 		mKeyState = grfKeyState;
+		mCinfo->DDpagemode = DDPAGEMODE_NONE;
+		ForceDataObject();
+		PostMessage(mCinfo->info.hWnd, WM_PPXCOMMAND, K_raw | K_bs, 0);
+		return S_OK;
+	}
+	// 中/第5ボタンを放した
+	if ( ((mKeyState & MK_MBUTTON) && !(grfKeyState & MK_MBUTTON)) ||
+		 ((mKeyState & MK_XBUTTON2) && !(grfKeyState & MK_XBUTTON2)) ){
+		ENTRYINDEX cellno;
+
+		mKeyState = grfKeyState;
+		if ( GetItemTypeFromPoint(mCinfo, &pos, &cellno) == PPCR_CELLTEXT ){
+			if ( mCEL(cellno).f.dwFileAttributes & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTEX_FOLDER) ){
+				mCinfo->DDpagemode = DDPAGEMODE_NONE;
+				ForceDataObject();
+				mCinfo->e.cellN = cellno;
+				PostMessage(mCinfo->info.hWnd, WM_PPXCOMMAND, KC_Edir, 0);
+			}
+		}
+		return S_OK;
+	}
+	mKeyState = grfKeyState;
 
 	if ( mShnDropTarget != NULL ){
 		return mShnDropTarget->DragOver(grfKeyState, pt, pdwEffect);
@@ -1411,7 +1413,10 @@ void WriteMedium(STGMEDIUM *medium, HANDLE hFile)
 	}
 	if ( medium->tymed & TYMED_ISTREAM ){
 		char buf[0x1000];
+		LARGE_INTEGER pos;
 
+		pos.u.LowPart = pos.u.HighPart = 0;
+		medium->pstm->Seek(pos, STREAM_SEEK_SET, NULL);
 		for ( ; ; ){
 			size = 0;
 			medium->pstm->Read(&buf, sizeof(buf), &size);
@@ -1434,8 +1439,9 @@ BOOL CDropTarget::DropEtcFormat(LPDATAOBJECT pDataObj, POINTL *pt, DWORD pdwEffe
 	STGMEDIUM medium;
 
 	fmtetc.dwAspect = DVASPECT_CONTENT;
-	fmtetc.lindex   = -1;
-	fmtetc.ptd      = NULL;
+	fmtetc.lindex = -1;
+	fmtetc.ptd = NULL;
+	fmtetc.tymed = TYMED_HGLOBAL; // 仮
 
 	switch ( pdwEffect ){
 		case DROPEFFECT_FILECONTENTS:
@@ -1485,6 +1491,7 @@ BOOL CDropTarget::DropEtcFormat(LPDATAOBJECT pDataObj, POINTL *pt, DWORD pdwEffe
 
 		case DROPEFFECT_ETC: {
 			HMENU hMenu = CreatePopupMenu();
+			int index;
 
 			IEnumFORMATETC *IEF;
 			if ( SUCCEEDED(pDataObj->EnumFormatEtc(DATADIR_GET, &IEF)) ){
@@ -1497,31 +1504,77 @@ BOOL CDropTarget::DropEtcFormat(LPDATAOBJECT pDataObj, POINTL *pt, DWORD pdwEffe
 
 					if ( getsi == 0 ) break;
 					GetClipboardTypeName(type, fmt.cfFormat);
-
-					::AppendMenuString(hMenu, fmt.cfFormat, type);
+					if ( !(fmt.tymed & (TYMED_HGLOBAL | TYMED_ISTREAM | TYMED_ENHMF)) ){
+						wsprintf(type + tstrlen(type), T("(no support, %d)"), fmt.tymed);
+					}
+					::AppendMenuString(hMenu,
+							(fmt.cfFormat & 0xffff) | (fmt.tymed << 16),
+							type);
 				}
 				IEF->Release();
 			}
 
 			::AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
 			::AppendMenuString(hMenu, 0, MES_CCAN);
-			fmtetc.cfFormat = static_cast<WORD>(TrackPopupMenu(hMenu,
+			index = static_cast<int>(TrackPopupMenu(hMenu,
 					TPM_TDEFAULT, pt->x, pt->y, 0, mCinfo->info.hWnd, NULL));
+			fmtetc.tymed = index >> 16;
+			fmtetc.cfFormat = static_cast<CLIPFORMAT>(index & 0xffff);
+
 			::DestroyMenu(hMenu);
 			if ( fmtetc.cfFormat == 0 ) return FALSE;
+
 			if ( fmtetc.cfFormat == static_cast<CLIPFORMAT>(cfFileContents) ){
 				return DropEtcFormat(pDataObj, pt, DROPEFFECT_FILECONTENTS);
 			}
 			break;
 		}
 	}
-	fmtetc.tymed    = TYMED_HGLOBAL;
-	if ( SUCCEEDED(pDataObj->GetData(&fmtetc, &medium)) ){
-		SaveClipboardData(medium.hGlobal, fmtetc.cfFormat, mCinfo);
-		::ReleaseStgMedium(&medium);
+//	}else if ( fmtetc.tymed & TYMED_FILE ){
+//	}else if ( fmtetc.tymed & TYMED_ISTORAGE ){
+//	}else if ( fmtetc.tymed & TYMED_GDI ){
+//	}else if ( fmtetc.tymed & TYMED_MFPICT ){
+	if ( fmtetc.tymed & TYMED_ENHMF ){
+		fmtetc.tymed = TYMED_ENHMF;
+		if ( SUCCEEDED(pDataObj->GetData(&fmtetc, &medium)) ){
+			DWORD size;
+			HGLOBAL hEmData;
+
+			size = GetEnhMetaFileBits(medium.hEnhMetaFile, 0, NULL);
+			hEmData = GlobalAlloc(GMEM_MOVEABLE, size);
+			if ( hEmData != NULL ){
+				GetEnhMetaFileBits(medium.hEnhMetaFile, size,
+						static_cast<BYTE *>(GlobalLock(hEmData)));
+				GlobalUnlock(hEmData);
+				SaveClipboardData(hEmData, fmtetc.cfFormat, mCinfo);
+				GlobalFree(hEmData);
+				::ReleaseStgMedium(&medium);
+				return TRUE;
+			}else{
+				::ReleaseStgMedium(&medium);
+			}
+		}
 	}else{
-		SetPopMsg(mCinfo, POPMSG_MSG, StrDDrecvError);
+		fmtetc.tymed = TYMED_HGLOBAL | TYMED_ISTREAM;
+		if ( SUCCEEDED(pDataObj->GetData(&fmtetc, &medium)) ){
+			TCHAR name[VFPS], type[VFPS];
+			HANDLE hFile;
+
+			::MakeClipboardDataName(fmtetc.cfFormat, type, "", 0);
+			ExistCheck(name, mCinfo->RealPath, type);
+			hFile = CreateFileL(name, GENERIC_WRITE, 0, NULL, CREATE_NEW,
+					FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+			if ( hFile != INVALID_HANDLE_VALUE ){
+				WriteMedium(&medium, hFile);
+				CloseHandle(hFile);
+				::ReleaseStgMedium(&medium);
+				return TRUE;
+			}else{
+				::ReleaseStgMedium(&medium);
+			}
+		}
 	}
+	SetPopMsg(mCinfo, POPMSG_MSG, StrDDrecvError);
 	return TRUE;
 }
 

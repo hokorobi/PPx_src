@@ -70,13 +70,11 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"><html lang="ja">
 <head><meta http-equiv="Content-Type" content="text/html; charset=Shift_JIS">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<STYLE type="text/css">
-<!--
+<style type="text/css"><!--
 hr { border:solid 1px; }
 pre { font-size:100%; }
-}
--->
-</STYLE>
+img { max-width:100%; height:auto; }
+--></style>
 <title>PPx help</title></head>
 <body bgcolor="#eeee99" text="#000000" link="#0000CC" vlink="#8800cc" alink="#440088">
 _last

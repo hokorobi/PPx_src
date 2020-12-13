@@ -500,6 +500,14 @@ void TabMoveMouse(HWND hWnd, TABHOOKSTRUCT *THS)
 	SetCursor(LoadCursor(NULL, (THS->DDinfo.width >= 0 ) ? IDC_SIZEWE : (showindex < 0 ? IDC_NO : IDC_UPARROW) ) );
 }
 
+void EraseTabBkgnd(HWND hWnd, WPARAM wParam)
+{
+	RECT box;
+
+	GetClientRect(hWnd, &box);
+	FillBox((HDC)wParam, &box, UseCCDrawBrush);
+}
+
 LRESULT CALLBACK TabHookProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 	TABHOOKSTRUCT *THS;
@@ -519,6 +527,10 @@ LRESULT CALLBACK TabHookProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case WM_NCHITTEST:
 			return HTCLIENT;	// 非タブ領域上のマウス操作も取得可能にする
 
+		case WM_ERASEBKGND:
+			if ( UseCCDrawBack != 2 ) break;
+			EraseTabBkgnd(hWnd, wParam);
+			return 1;
 							// マウスのクライアント領域押下 ------
 		case WM_LBUTTONDOWN:
 		case WM_RBUTTONDOWN:
@@ -589,13 +601,16 @@ void NewTabBar(void)
 	THS = HeapAlloc(hProcessHeap, 0, sizeof(TABHOOKSTRUCT));
 	if ( THS == NULL ) return;
 
+	if ( UseCCDrawBack == 0 ) LoadCCDrawBack();
 	tabpane = Combo.Tabs;
 	if ( X_combos[0] & CMBS_TABFIXEDWIDTH ) setflag(style, TCS_FIXEDWIDTH);
 	if ( X_combos[0] & CMBS_TABMULTILINE )  setflag(style, TCS_MULTILINE);
 	if ( X_combos[0] & CMBS_TABBUTTON ){ // タブの行位置が変化しないようにする時の設定。但し、見た目が変わる
 		setflag(style, TCS_BUTTONS | TCS_FLATBUTTONS);
 	}
-	if ( (X_combos[0] & CMBS_TABCOLOR) || !(X_combos[1] & CMBS1_NOTABBUTTON) ){
+	if ( (X_combos[0] & CMBS_TABCOLOR) ||
+		 !(X_combos[1] & CMBS1_NOTABBUTTON) ||
+		 (X_uxt == UXT_DARK) ){
 		setflag(style, TCS_OWNERDRAWFIXED);
 	}
 	hTabWnd = CreateWindowEx(0, WC_TABCONTROL, NilStr, style, -10, -10,

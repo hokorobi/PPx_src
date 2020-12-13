@@ -14,26 +14,6 @@ const int jumpto[] = {
 const TCHAR UnbypassName[] = T("UNBYPASS.DLL");
 #endif
 typedef BOOL (PPXAPI *impGetImageByHttp)(const TCHAR *urladr, ThSTRUCT *th);
-typedef ERRORCODE (PPXAPI *impPP_ExtractMacro)(HWND hWnd, PPXAPPINFO *ParentInfo, POINT *pos, const TCHAR *param, TCHAR *extract, int flag);
-
-ERRORCODE Execute_ExtractMacro(const TCHAR *param)
-{
-	HMODULE hDLL;
-	impPP_ExtractMacro DPP_ExtractMacro;
-	ERRORCODE result;
-
-	hDLL = LoadLibrary(T(COMMONDLL));
-	if ( hDLL == NULL ){
-		SMessage(MessageStr[MSG_DLLLOADERROR]);
-		return 1;
-	}
-	GETDLLPROC(hDLL, PP_ExtractMacro);
-
-	result = DPP_ExtractMacro(GetActiveWindow(), NULL, NULL, param, NULL, 0);
-
-	FreeLibrary(hDLL);
-	return result;
-}
 
 /*-----------------------------------------------------------------------------
   page 1:ƒKƒCƒh
@@ -115,7 +95,7 @@ INT_PTR CALLBACK SetTypeDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam
 						if ( Execute_ExtractMacro(
 								IsDlgButtonChecked(hDlg, IDX_TESTVER) ?
 								T("*checkupdate p") :
-								T("*checkupdate")) != NO_ERROR ){
+								T("*checkupdate"), TRUE) != NO_ERROR ){
 							SetWindowLongPtr(hDlg, DWLP_MSGRESULT,
 									UsePageInfo[PAGE_SETTYPE].rID);
 							break;
@@ -814,7 +794,7 @@ ERRORCODE UnarcZipfolder(void)
 	if ( CreateSourceDirectory(dir) == FALSE ) return ERROR_ACCESS_DENIED;
 
 	wsprintf(buf, T("*checkupdate u \"%s\" \"%s\""), XX_setupedPPx, dir);
-	result = Execute_ExtractMacro(buf);
+	result = Execute_ExtractMacro(buf, TRUE);
 
 	if ( result == NO_ERROR ){
 		tstrcpy(XX_upsrc, dir);
@@ -888,8 +868,7 @@ BOOL DownLoadPPx(BOOL usebeta)
 		}
 	}
 	wsprintf(buf, T("*httpget \"") T(TOROsWEB) T("/%s\",\"%s\""), ARCHIVENAME, XX_setupedPPx);
-	Execute_ExtractMacro(buf);
-	dosetup = TRUE;
+	if ( Execute_ExtractMacro(buf, TRUE) == NO_ERROR ) dosetup = TRUE;
 fin:
 	FreeLibrary(hDLL);
 	return dosetup;
@@ -941,7 +920,7 @@ BOOL AutoSetup(const TCHAR *param)
 	}else{
 		if ( OSver.dwMajorVersion >= 6 ){
 			wsprintf(buf, T("*checksignature !\"%s\""), XX_setupedPPx);
-			if ( Execute_ExtractMacro(buf) == ERROR_INVALID_DATA ){
+			if ( Execute_ExtractMacro(buf, TRUE) == ERROR_INVALID_DATA ){
 				return AUTOSETUP_FIN;
 			}
 		}

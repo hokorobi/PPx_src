@@ -61,6 +61,9 @@ INT_PTR CALLBACK GetPasteTypeMain(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lP
 		case WM_CLOSE:
 			EndDialog(hDlg, 0);
 			break;
+
+		default:
+			return PPxDialogHelper(hDlg, iMsg, wParam, lParam);
 	}
 	return FALSE;
 }

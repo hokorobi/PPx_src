@@ -578,7 +578,9 @@ ERRORCODE FileDirectory(TCHAR *fname, VFSFINDFIRST *VFF, WIN32_FIND_DATA *findfi
 				#ifdef UNICODE
 					if ( sudll->GetArchiveInfoW != NULL ){
 						s = sudll->GetArchiveInfoW(fname, 0, SUSIE_SOURCE_DISK, (HLOCAL *)&VFF->v.SU.fiH);
-						if ( s != 0 ) continue;
+						if ( (s != SUSIEERROR_NOERROR) || (VFF->v.SU.fiH == NULL) ){
+							continue;
+						}
 
 						VFF->v.SU.finfo = NULL;
 						VFF->v.SU.finfoW = LocalLock(VFF->v.SU.fiH);
@@ -588,7 +590,10 @@ ERRORCODE FileDirectory(TCHAR *fname, VFSFINDFIRST *VFF, WIN32_FIND_DATA *findfi
 				#endif
 				{
 					s = sudll->GetArchiveInfo(TFILENAME, 0, SUSIE_SOURCE_DISK, (HLOCAL *)&VFF->v.SU.fiH);
-					if ( (s != 0) && (s != 2) ) continue; //2:LHASAD.SPI‚Å‚Ì³í’l
+					if ( (s != SUSIEERROR_NOERROR) && (s != SUSIEERROR_UNKNOWNFORMAT) ){
+						continue; //2:LHASAD.SPI‚Å‚Ì³í’l
+					}
+					if ( VFF->v.SU.fiH == NULL ) continue;
 					VFF->v.SU.finfo = LocalLock(VFF->v.SU.fiH);
 					if ( VFF->v.SU.finfo == NULL ) continue;
 					VFF->v.SU.finfomax = (SUSIE_FINFO *)(BYTE *)((BYTE *)VFF->v.SU.finfo + LocalSize(VFF->v.SU.fiH));

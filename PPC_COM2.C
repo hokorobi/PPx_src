@@ -2761,7 +2761,9 @@ ERRORCODE SetCellDisplayFormat(PPC_APPINFO *cinfo, int selectindex, const TCHAR 
 				SetCustTable(T("XC_celF"), cinfo->RegCID + 1, cinfo->celF.fmtbase, size);
 				cinfo->FixcelF = FALSE;
 			}
-		} else if ( mode != CRID_VIEWFORMAT_TEMP ) {	// パス指定設定
+		} else if ( mode == CRID_VIEWFORMAT_TEMP ) {
+			cinfo->FixcelF = TRUE;
+		} else {	// パス指定設定
 			TCHAR setpath[VFPS];
 
 			GetSetPath(cinfo, setpath, mode, CRID_VIEWFORMATEX, hMenu);

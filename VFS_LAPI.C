@@ -65,6 +65,10 @@ DefineWinAPI(DWORD, GetFileAttributesW, (LPCWSTR)) = INVALID_VALUE(impGetFileAtt
 DefineWinAPI(HANDLE, CreateFileW, (LPCWSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES, DWORD, DWORD, HANDLE)) = INVALID_VALUE(impCreateFileW);
 DefineWinAPI(HANDLE, FindFirstFileW, (LPCWSTR, LPWIN32_FIND_DATAW)) = INVALID_VALUE(impFindFirstFileW);
 
+#ifndef UNICODE
+DefineWinAPI(DWORD, GetFileAttributesExA, (LPCSTR, GET_FILEEX_INFO_LEVELS, LPVOID)) = INVALID_VALUE(impGetFileAttributesExA);
+#endif
+
 #define CheckWideFunctionMacro(funcname, filename, errresult) if ( FALSE == CheckWideFunctionA((void *)&(D ## funcname), #funcname, filename)){ return errresult; }
 
 BOOL CheckWideFunctionA(void **function, const char *funcname, const TCHAR *filename)
@@ -233,7 +237,10 @@ VFSDLL BOOL PPXAPI MoveFileWithProgressL(const TCHAR *ExistingFileName, const TC
 		if ( (errorcode != ERROR_ACCESS_DENIED) &&
 			 (errorcode != ERROR_FILE_NOT_FOUND) ){ // 末尾ピリオドの時に出る
 			if ( (tstrlen(ExistingFileName) < MAX_PATH) &&
-				 (tstrlen(NewFileName) < MAX_PATH) ) return result;
+				 (tstrlen(NewFileName) < MAX_PATH) ){
+				SetLastError(errorcode);
+				return result;
+			}
 		}
 	}
 #ifndef UNICODE
@@ -433,6 +440,7 @@ VFSDLL HANDLE PPXAPI FindFirstFileL(_In_z_ const TCHAR *dir,_Out_ WIN32_FIND_DAT
 	if ( (errorcode == ERROR_FILENAME_EXCED_RANGE) || (tstrlen(dir) >= MAX_PATH) ){
 		return FindFirstFileLs(dir, findfile);
 	}else{
+		SetLastError(errorcode);
 		return INVALID_HANDLE_VALUE;
 	}
 }
@@ -456,5 +464,66 @@ HANDLE WINAPI LoadFindFirstFile(const TCHAR *lpFileName, WIN32_FIND_DATA *FindFi
 		}
 	}
 	return DFindFirstFile(lpFileName, FindFileData);
+}
+
+
+// WIN32_FIND_DATA と WIN32_FILE_ATTRIBUTE_DATA は共通しているのでそのまま処理
+// C:\ を指定したとき、
+// Win10 FILE_ATTRIBUTE_VIRTUAL | FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN
+// NT4 SP6a FILE_ATTRIBUTE_ARCHIVE | FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN
+BOOL WINAPI GetFileSTAT(const TCHAR *lpFileName, FILE_STAT_DATA *FindFileData)
+{
+	BOOL result;
+	ERRORCODE errorcode;
+
+#ifdef UNICODE
+	WCHAR widename[EXTENDVFPS];
+
+	result = GetFileAttributesExW(lpFileName, GetFileExInfoStandard, FindFileData);
+	if ( IsTrue(result) ) return result;
+
+	errorcode = GetLastError();
+	if ( (errorcode != ERROR_ACCESS_DENIED) &&
+		 (errorcode != ERROR_FILENAME_EXCED_RANGE) &&
+		 (tstrlen(lpFileName) < MAX_PATH) ){
+		SetLastError(errorcode);
+		return FALSE;
+	}
+
+	if ( FALSE == ConvertWideFileName(widename, lpFileName) ){
+		return FALSE;
+	}
+	return GetFileAttributesExW(widename, GetFileExInfoStandard, FindFileData);
+#else
+	HANDLE hFF;
+
+	if ( DGetFileAttributesExA == INVALID_VALUE(impGetFileAttributesExA) ){
+		GETDLLPROC(hKernel32, GetFileAttributesExA);
+	}
+	if ( DGetFileAttributesExA != NULL ){
+		result = DGetFileAttributesExA(lpFileName, GetFileExInfoStandard, FindFileData);
+		if ( result == TRUE ) return result;
+
+		errorcode = GetLastError();
+		if ( (errorcode == ERROR_FILENAME_EXCED_RANGE) || (tstrlen(lpFileName) >= MAX_PATH) ){
+			hFF = FindFirstFileLs(lpFileName, FindFileData);
+			if ( hFF != INVALID_HANDLE_VALUE ){
+				FindClose(hFF);
+				return TRUE;
+			}
+			return FALSE;
+		}else{
+			SetLastError(errorcode);
+			return FALSE;
+		}
+	}
+	// Windows 95 の場合、GetFileAttributesEx がない。Ex は 98/NT4 以降
+	hFF = FindFirstFileL(lpFileName, FindFileData);
+	if ( hFF != INVALID_HANDLE_VALUE ){
+		FindClose(hFF);
+		return TRUE;
+	}
+	return FALSE;
+#endif
 }
 

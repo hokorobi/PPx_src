@@ -12,6 +12,7 @@ extern const TCHAR NilStr[1];
 extern TCHAR NilStrNC[1];
 extern HINSTANCE hInst;
 extern UINT WM_PPXCOMMAND;
+extern int X_uxt;
 
 extern void InfoDb(TCHAR *buf);
 #define DIALOG_KEYINPUT 0
@@ -26,9 +27,6 @@ extern int HistDump(const TCHAR *cmdptr, const TCHAR *filename);
 extern int HistInit(void);
 
 // GUI 関連 -------------------------------------------------------------------
-#define IC_CUST			1
-#define BUTTONIMAGE		2
-
 extern BOOL X_chidc; // コンソールを隠すか
 extern HWND hConsoleWnd; // コンソールウィンドウ
 extern LCID UseLcid;		// 表示言語
@@ -45,6 +43,10 @@ extern void InitWndIcon(HWND hDlg, UINT baseControlID);
 extern const TCHAR * (USEFASTCALL *GetCText)(const TCHAR *text);
 extern void MakeKeyDetailText(int key, TCHAR *dest, BOOL extype);
 extern void GetControlText(HWND hDlg, UINT ID, TCHAR *text, DWORD len);
+extern void GUILoadCust(void);
+
+extern COLORREF C_WindowText;
+extern COLORREF C_WindowBack;
 
 #ifdef UNICODE
 	#define GetCTextW GetCText
@@ -66,10 +68,12 @@ extern INT_PTR CALLBACK ColorPage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lPa
 extern INT_PTR CALLBACK AddonPage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 extern INT_PTR CALLBACK EtcPage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
-extern INT_PTR CALLBACK StyleDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
-
 extern INT_PTR CALLBACK TextCustomizeDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
 extern INT_PTR CALLBACK CommandTreeDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
+
+extern INT_PTR CALLBACK DlgSheetProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam, UINT id);
+extern void InitPropSheetsUxtheme(HWND hDlg);
+
 
 extern void FixWildItemName(TCHAR *item);
 

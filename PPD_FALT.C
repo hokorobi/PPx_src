@@ -788,16 +788,21 @@ DWORD WINAPI PPxUnhandledExceptionFilterMain(ExceptionData *EP)
 							(BYTE *)CustHeaderFromCustP + X_Csize);
 				}
 
-				// PPc main_2nd と思われるスレッド(PPxUnRegisterThread後)
-				if ( (tstrstr(addrstr, T("CriticalSection")) != NULL) &&
-					 (tstruct == NULL) &&
+				// PPc と思われるスレッド(PPxUnRegisterThread後)
+				if ( (tstruct == NULL) &&
 					 (tstrstr(threadname, T("(PPC")) != NULL) ){
-					stacks += 3;
-					if ( NowExit ) result = IDNO;
-					// スレッド共通化
-					GetCustData(T("X_combos"), &X_combos_, sizeof(X_combos_));
-					setflag(X_combos_[0], CMBS_THREAD);
-					SetCustData(T("X_combos"), &X_combos_, sizeof(X_combos_));
+					if ( tstrstr(addrstr, T("jscript")) != NULL ){
+						if ( NowExit ) result = IDNO;
+					}
+
+					if ( tstrstr(addrstr, T("CriticalSection")) != NULL ){
+						if ( NowExit ) result = IDNO;
+						stacks += 3;
+						// スレッド共通化
+						GetCustData(T("X_combos"), &X_combos_, sizeof(X_combos_));
+						setflag(X_combos_[0], CMBS_THREAD);
+						SetCustData(T("X_combos"), &X_combos_, sizeof(X_combos_));
+					}
 				}
 
 				// 送信用情報の用意

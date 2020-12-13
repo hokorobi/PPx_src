@@ -89,8 +89,8 @@ void MoveCursor(int *param)
 		// Y
 		case 1:
 			MoveCsr(0, param[1] * VO_stepY, FALSE);
-			// falls through to 0
-		case 0: // falls through to 3
+			// Fall through
+		case 0: // Fall through
 		case 3:
 			deltaY = param[1] * VO_stepY;
 			break;
@@ -100,8 +100,8 @@ void MoveCursor(int *param)
 		// X
 		case 5:
 			MoveCsr(param[1] * VO_stepX, 0, FALSE);
-			// falls through to 5
-		case 4: // falls through to 7
+			// Fall through
+		case 4: // Fall through
 		case 7:
 			deltaX = param[1] * VO_stepX;
 			break;
@@ -111,8 +111,8 @@ void MoveCursor(int *param)
 		// Y page
 		case 9:
 			MoveCsr(0, param[1] * (VO_sizeY-1), FALSE);
-			// falls through to 8
-		case 8: // falls through to 11
+			// Fall through
+		case 8: // Fall through
 		case 11:
 			deltaY = param[1] * (VO_sizeY-1);
 			break;
@@ -122,8 +122,8 @@ void MoveCursor(int *param)
 		// Y deci page
 		case 13:
 			MoveCsr(0, param[1] * (VO_sizeY-1) / 10, FALSE);
-			// falls through to 12
-		case 12: // falls through to 15
+			// Fall through
+		case 12: // Fall through
 		case 15:
 			deltaY = param[1] * (VO_sizeY-1) / 10;
 			break;
@@ -134,8 +134,8 @@ void MoveCursor(int *param)
 		// X page
 		case 17:
 			MoveCsr(param[1] * (VO_sizeX-1), 0, FALSE);
-			// falls through to 17
-		case 16: // falls through to 19
+			// Fall through
+		case 16: // Fall through
 		case 19:
 			deltaX = param[1] * (VO_sizeX-1);
 			break;
@@ -145,8 +145,8 @@ void MoveCursor(int *param)
 		// X deci page
 		case 21:
 			MoveCsr(param[1] * (VO_sizeX-1) / 10, 0, FALSE);
-			// falls through to 20
-		case 20: // falls through to 23
+			// Fall through
+		case 20: // Fall through
 		case 23:
 			deltaX = param[1] * (VO_sizeX-1) / 10;
 			break;
@@ -224,13 +224,13 @@ DWORD_PTR USECDECL PPxGetIInfo(PPV_APPINFO *vinfo, DWORD cmdID, PPXAPPINFOUNION 
 				if ( *uptr->enums.buffer != '\0' ) break;
 			}
 		}
-		// falls through to 'C'
+		// Fall through
 		case 'C': // %C
 			if ( uptr->enums.enumID == -1 ){
 				*uptr->enums.buffer = '\0';
 				break;
 			}
-		// falls through to 'R'
+		// Fall through
 		case 'R': { // %R
 			const TCHAR *p;
 
@@ -1067,7 +1067,8 @@ void SetScrollBar(void)
 			if ( (vo_.DModeType != DISPT_DOCUMENT) || (vo_.DocmodeType != DOCMODE_EMETA) ){
 				break;
 			}
-			// falls through to DISPT_IMAGE (DOCMODE_EMETAのときだけ)
+			// DISPT_IMAGE (DOCMODE_EMETAのときだけ)
+			// Fall through
 		case DISPT_IMAGE: // falls through to DISPT_RAWIMAGE
 		case DISPT_RAWIMAGE:
 			if ( vo_.DModeType != DISPT_RAWIMAGE ){
@@ -1077,6 +1078,7 @@ void SetScrollBar(void)
 					}
 				}
 			}else{ // DISPT_RAWIMAGE
+				XV.img.monomode = FALSE;
 				InitRawImageRectSize();
 			}
 			VO_maxX = vo_.bitmap.showsize.cx;
@@ -1290,6 +1292,143 @@ void USEFASTCALL MoveCsr(int x, int y, BOOL detailmode)
 }
 //----------------------------------------------------------------------------
 #define MAX_HISTOPT_SIZE 80
+
+void SaveHistory(BOOL ForceSave)
+{
+	const TCHAR *vp;
+
+	UsePPx();
+	vp = SearchHistory(PPXH_PPVNAME, vo_.file.name);
+	FreePPx();
+	if ( (vp != NULL) || ForceSave || // 一旦記憶したときは、常に有効
+		// ヒストリ記憶が有効の時の条件
+		 ((VO_history != 0) &&
+				// 常時保存の条件
+		  ( (VO_history == 1) || (X_hisr[1] == 1) ||
+				// 設定変更時保存の条件（表示位置、表示種の変更）
+		   ( (X_hisr[1] == 2) && (
+			 (VOi->offX != 0) || (VOi->offY != 0) ||
+			 (vo_.DModeType != (DWORD)viewopt_opentime.dtype ) ||
+			// text
+			 ( (vo_.DModeType != DISPT_IMAGE) &&
+			   ( (VOi->textC != viewopt_opentime.T_code) ||
+				 (OldTailLine > 0) ||
+				 (VOsel.cursor != FALSE) ||
+				 (VOi->width != VOi->defwidth) ) ) ||
+			// image
+			 ( (vo_.DModeType == DISPT_IMAGE) && vo_.bitmap.rotate ) ||
+			// etc
+			 (FileDivideMode == FDM_DIV2ND) ) ) ) )
+	){
+		DWORD optsize = 0;
+		int i;
+
+		#pragma pack(push, 4)
+		struct {
+			int info, x, y;
+			char opt[MAX_HISTOPT_SIZE];
+		} addbin;
+		#pragma pack(pop)
+
+		addbin.info = vo_.SupportTypeFlags | (vo_.DModeType << HISTOPT_VMODESHIFT);
+		if ( vo_.DModeType == DISPT_IMAGE ){
+			addbin.info |= (vo_.bitmap.rotate & 3) << HISTOPT_IMAGEOPT_FLAGSHIFT;
+		}else{
+			addbin.info |= VOi->textC << HISTOPT_TEXTOPT_CODESHIFT;
+			if ( VO_Tmime ) setflag(addbin.info, HISTOPT_TEXTOPT_MIME << HISTOPT_TEXTOPT_FLAGSHIFT);
+			if ( !VO_Tesc ) setflag(addbin.info, HISTOPT_TEXTOPT_ESC << HISTOPT_TEXTOPT_FLAGSHIFT);
+			setflag(addbin.info, (((VO_Ttag & 3) + 1) << (HISTOPT_TEXTOPT_TAGSHIFT + HISTOPT_TEXTOPT_FLAGSHIFT)));
+		}
+		addbin.x = VOi->offX;
+		addbin.y = VOi->offY;
+		// 読み込み中に中止したときは以前の値を再利用する
+		if ( (BackReader != FALSE) && (vp != NULL) ){
+			if ( GetHistoryDataSize(vp) >= 12 ){
+				const BYTE *bp;
+
+				bp = GetHistoryData(vp);
+				if ( *bp == (BYTE)vo_.SupportTypeFlags ){
+					addbin.x = *(int *)(bp + 4);
+					addbin.y = *(int *)(bp + 8);
+				}
+			}
+		}
+		// オプション項目の用意 --------------
+		// HISTOPTID_OLDTAIL ※要先頭、HISTOPTID_FileDIV より前
+		if ( ((vo_.DModeType == DISPT_TEXT) || (vo_.DModeType == DISPT_DOCUMENT)) && TailModeFlags ){
+			if ( (optsize + HISTOPTSIZE_OLDTAIL) < MAX_HISTOPT_SIZE ){
+				addbin.opt[optsize + 0] =  HISTOPTSIZE_OLDTAIL;
+				addbin.opt[optsize + 1] = (BYTE)HISTOPTID_OLDTAIL;
+				*(DWORD *)&addbin.opt[optsize + 2] = VO_maxY - 1;
+
+				if ( (FileDivideMode >= FDM_DIV) &&
+					 ((optsize + HISTOPTSIZE_Bookmark_L) < MAX_HISTOPT_SIZE) ){
+					addbin.opt[optsize + 0] = HISTOPTSIZE_OLDTAIL_L;
+					*(DDWORDST *)&addbin.opt[optsize + 6] = FileDividePointer;
+					GetDivMax((DDWORDST *)&addbin.opt[optsize + 6]);
+					optsize += HISTOPTSIZE_OLDTAIL_L - HISTOPTSIZE_OLDTAIL;
+				}
+				optsize += HISTOPTSIZE_OLDTAIL;
+			}
+		}
+		// HISTOPTID_FileDIV ※要先頭、HISTOPTID_OLDTAIL より後
+		if ( FileDivideMode == FDM_DIV2ND ){
+			if ( (optsize + HISTOPTSIZE_FileDIV) < MAX_HISTOPT_SIZE ){
+				addbin.opt[optsize + 0] = HISTOPTSIZE_FileDIV;
+				addbin.opt[optsize + 1] = (BYTE)HISTOPTID_FileDIV;
+				*(DDWORDST *)&addbin.opt[optsize + 2] = FileDividePointer;
+				optsize += HISTOPTSIZE_FileDIV;
+			}
+		}
+		if ( (vo_.DModeType == DISPT_TEXT) && VO_CodePage ){
+			if ( (optsize + HISTOPTSIZE_OTHERCP) < MAX_HISTOPT_SIZE ){
+				addbin.opt[optsize + 0] = HISTOPTSIZE_OTHERCP;
+				addbin.opt[optsize + 1] = (BYTE)HISTOPTID_OTHERCP;
+				*(WORD *)&addbin.opt[optsize + 2] = (WORD)VO_CodePage;
+				optsize += HISTOPTSIZE_OTHERCP;
+			}
+		}
+		if ( ((vo_.DModeType == DISPT_TEXT) || (vo_.DModeType == DISPT_DOCUMENT)) ){
+			if ( VOi->width != VOi->defwidth ){
+				if ( (optsize + HISTOPTSIZE_WIDTH) < MAX_HISTOPT_SIZE ){
+					addbin.opt[optsize + 0] = HISTOPTSIZE_WIDTH;
+					addbin.opt[optsize + 1] = (BYTE)HISTOPTID_WIDTH;
+					*(int *)&addbin.opt[optsize + 2] = VOi->width;
+					optsize += HISTOPTSIZE_WIDTH;
+				}
+			}
+			if ( VOsel.cursor != FALSE ){
+				if ( (optsize + HISTOPTSIZE_CARET) < MAX_HISTOPT_SIZE ){
+					addbin.opt[optsize + 0] = HISTOPTSIZE_CARET;
+					addbin.opt[optsize + 1] = (BYTE)HISTOPTID_CARET;
+					*(int *)&addbin.opt[optsize + 2] = VOsel.now.x.offset;
+					*(int *)&addbin.opt[optsize + 6] = VOsel.now.y.line;
+					optsize += HISTOPTSIZE_CARET;
+				}
+			}
+		}
+		for ( i = 0 ; i <= MaxBookmark ; i++ ){
+			if ( Bookmark[i].pos.x >= 0 ){
+				if ( FileDivideMode < FDM_NODIVMAX ){
+					if ( (optsize + HISTOPTSIZE_Bookmark) > MAX_HISTOPT_SIZE ) break;
+					addbin.opt[optsize + 0] = HISTOPTSIZE_Bookmark;
+					addbin.opt[optsize + 1] = (BYTE)(i + HISTOPTID_BookmarkMin);
+					*(POINT *)&addbin.opt[optsize + 2] = Bookmark[i].pos;
+					optsize += HISTOPTSIZE_Bookmark;
+				}else{
+					if ( (optsize + HISTOPTSIZE_Bookmark_L) > MAX_HISTOPT_SIZE ) break;
+					addbin.opt[optsize + 0] = HISTOPTSIZE_Bookmark_L;
+					addbin.opt[optsize + 1] = (BYTE)(i + HISTOPTID_BookmarkMin);
+					*(BookmarkInfo *)&addbin.opt[optsize + 2] = Bookmark[i];
+					optsize += HISTOPTSIZE_Bookmark_L;
+				}
+			}
+		}
+		WriteHistory(PPXH_PPVNAME, vo_.file.name, (WORD)(sizeof(int) * 3 + optsize), &addbin);
+	}
+}
+
+
 void CloseViewObject(void)
 {
 	VO_INFO *tmpVOi;
@@ -1298,7 +1437,8 @@ void CloseViewObject(void)
 		UsePlayWave = FALSE;
 		DsndPlaySound(NULL, 0);
 	}
-	if ( BackReader != FALSE ) KillTimer(vinfo.info.hWnd, TIMERID_READLINE);
+	mtinfo.MemSize = 0;
+	KillTimer(vinfo.info.hWnd, TIMERID_READLINE);
 	if ( hReadStream != NULL ){
 		CloseHandle(hReadStream);
 		hReadStream = NULL;
@@ -1307,133 +1447,7 @@ void CloseViewObject(void)
 	ThFree(&vo_.memo);
 								// 初期設定値と異なっていたらヒストリ書込
 	if ( (vo_.DModeBit != DOCMODE_NONE) && (vo_.file.memdata == FALSE) ){
-		const TCHAR *vp;
-
-		UsePPx();
-		vp = SearchHistory(PPXH_PPVNAME, vo_.file.name);
-		FreePPx();
-		if ( (VO_history != 0) &&
-			 ( (VO_history == 1) || (X_hisr[1] == 1) ||
-			   ( (X_hisr[1] == 2) && (
-				 (vp != NULL) || (VOi->offX != 0) || (VOi->offY != 0) ||
-				 (vo_.DModeType != (DWORD)viewopt_opentime.dtype ) ||
-				// text
-				 ( (vo_.DModeType != DISPT_IMAGE) &&
-				   ( (VOi->textC != viewopt_opentime.T_code) ||
-					 (OldTailLine > 0) ||
-					 (VOsel.cursor != FALSE) ||
-					 (VOi->width != VOi->defwidth) ) ) ||
-				// image
-				 ( (vo_.DModeType == DISPT_IMAGE) && vo_.bitmap.rotate ) ||
-				// etc
-				 (FileDivideMode == FDM_DIV2ND) ) ) )
-		){
-			DWORD optsize = 0;
-			int i;
-
-			#pragma pack(push, 4)
-			struct {
-				int info, x, y;
-				char opt[MAX_HISTOPT_SIZE];
-			} addbin;
-			#pragma pack(pop)
-
-			addbin.info = vo_.SupportTypeFlags | (vo_.DModeType << HISTOPT_VMODESHIFT);
-			if ( vo_.DModeType == DISPT_IMAGE ){
-				addbin.info |= (vo_.bitmap.rotate & 3) << HISTOPT_IMAGEOPT_FLAGSHIFT;
-			}else{
-				addbin.info |= VOi->textC << HISTOPT_TEXTOPT_CODESHIFT;
-				if ( VO_Tmime ) setflag(addbin.info, HISTOPT_TEXTOPT_MIME << HISTOPT_TEXTOPT_FLAGSHIFT);
-				if ( !VO_Tesc ) setflag(addbin.info, HISTOPT_TEXTOPT_ESC << HISTOPT_TEXTOPT_FLAGSHIFT);
-				setflag(addbin.info, (((VO_Ttag & 3) + 1) << (HISTOPT_TEXTOPT_TAGSHIFT + HISTOPT_TEXTOPT_FLAGSHIFT)));
-			}
-			addbin.x = VOi->offX;
-			addbin.y = VOi->offY;
-			// 読み込み中に中止したときは以前の値を再利用する
-			if ( (BackReader != FALSE) && (vp != NULL) ){
-				if ( GetHistoryDataSize(vp) >= 12 ){
-					const BYTE *bp;
-
-					bp = GetHistoryData(vp);
-					if ( *bp == (BYTE)vo_.SupportTypeFlags ){
-						addbin.x = *(int *)(bp + 4);
-						addbin.y = *(int *)(bp + 8);
-					}
-				}
-			}
-			// オプション項目の用意 --------------
-			// HISTOPTID_OLDTAIL ※要先頭、HISTOPTID_FileDIV より前
-			if ( ((vo_.DModeType == DISPT_TEXT) || (vo_.DModeType == DISPT_DOCUMENT)) && TailModeFlags ){
-				if ( (optsize + HISTOPTSIZE_OLDTAIL) < MAX_HISTOPT_SIZE ){
-					addbin.opt[optsize + 0] =  HISTOPTSIZE_OLDTAIL;
-					addbin.opt[optsize + 1] = (BYTE)HISTOPTID_OLDTAIL;
-					*(DWORD *)&addbin.opt[optsize + 2] = VO_maxY - 1;
-
-					if ( (FileDivideMode >= FDM_DIV) &&
-						 ((optsize + HISTOPTSIZE_Bookmark_L) < MAX_HISTOPT_SIZE) ){
-						addbin.opt[optsize + 0] = HISTOPTSIZE_OLDTAIL_L;
-						*(DDWORDST *)&addbin.opt[optsize + 6] = FileDividePointer;
-						GetDivMax((DDWORDST *)&addbin.opt[optsize + 6]);
-						optsize += HISTOPTSIZE_OLDTAIL_L - HISTOPTSIZE_OLDTAIL;
-					}
-					optsize += HISTOPTSIZE_OLDTAIL;
-				}
-			}
-			// HISTOPTID_FileDIV ※要先頭、HISTOPTID_OLDTAIL より後
-			if ( FileDivideMode == FDM_DIV2ND ){
-				if ( (optsize + HISTOPTSIZE_FileDIV) < MAX_HISTOPT_SIZE ){
-					addbin.opt[optsize + 0] = HISTOPTSIZE_FileDIV;
-					addbin.opt[optsize + 1] = (BYTE)HISTOPTID_FileDIV;
-					*(DDWORDST *)&addbin.opt[optsize + 2] = FileDividePointer;
-					optsize += HISTOPTSIZE_FileDIV;
-				}
-			}
-			if ( (vo_.DModeType == DISPT_TEXT) && VO_CodePage ){
-				if ( (optsize + HISTOPTSIZE_OTHERCP) < MAX_HISTOPT_SIZE ){
-					addbin.opt[optsize + 0] = HISTOPTSIZE_OTHERCP;
-					addbin.opt[optsize + 1] = (BYTE)HISTOPTID_OTHERCP;
-					*(WORD *)&addbin.opt[optsize + 2] = (WORD)VO_CodePage;
-					optsize += HISTOPTSIZE_OTHERCP;
-				}
-			}
-			if ( ((vo_.DModeType == DISPT_TEXT) || (vo_.DModeType == DISPT_DOCUMENT)) ){
-				if ( VOi->width != VOi->defwidth ){
-					if ( (optsize + HISTOPTSIZE_WIDTH) < MAX_HISTOPT_SIZE ){
-						addbin.opt[optsize + 0] = HISTOPTSIZE_WIDTH;
-						addbin.opt[optsize + 1] = (BYTE)HISTOPTID_WIDTH;
-						*(int *)&addbin.opt[optsize + 2] = VOi->width;
-						optsize += HISTOPTSIZE_WIDTH;
-					}
-				}
-				if ( VOsel.cursor != FALSE ){
-					if ( (optsize + HISTOPTSIZE_CARET) < MAX_HISTOPT_SIZE ){
-						addbin.opt[optsize + 0] = HISTOPTSIZE_CARET;
-						addbin.opt[optsize + 1] = (BYTE)HISTOPTID_CARET;
-						*(int *)&addbin.opt[optsize + 2] = VOsel.now.x.offset;
-						*(int *)&addbin.opt[optsize + 6] = VOsel.now.y.line;
-						optsize += HISTOPTSIZE_CARET;
-					}
-				}
-			}
-			for ( i = 0 ; i <= MaxBookmark ; i++ ){
-				if ( Bookmark[i].pos.x >= 0 ){
-					if ( FileDivideMode < FDM_NODIVMAX ){
-						if ( (optsize + HISTOPTSIZE_Bookmark) > MAX_HISTOPT_SIZE ) break;
-						addbin.opt[optsize + 0] = HISTOPTSIZE_Bookmark;
-						addbin.opt[optsize + 1] = (BYTE)(i + HISTOPTID_BookmarkMin);
-						*(POINT *)&addbin.opt[optsize + 2] = Bookmark[i].pos;
-						optsize += HISTOPTSIZE_Bookmark;
-					}else{
-						if ( (optsize + HISTOPTSIZE_Bookmark_L) > MAX_HISTOPT_SIZE ) break;
-						addbin.opt[optsize + 0] = HISTOPTSIZE_Bookmark_L;
-						addbin.opt[optsize + 1] = (BYTE)(i + HISTOPTID_BookmarkMin);
-						*(BookmarkInfo *)&addbin.opt[optsize + 2] = Bookmark[i];
-						optsize += HISTOPTSIZE_Bookmark_L;
-					}
-				}
-			}
-			WriteHistory(PPXH_PPVNAME, vo_.file.name, (WORD)(sizeof(int) * 3 + optsize), &addbin);
-		}
+		SaveHistory(FALSE);
 	}
 	BackReader = FALSE;
 	ReadingStream = READ_NONE;
@@ -2509,7 +2523,7 @@ void ConvertMain(void)
 
 			while ( *p != VCODE_END ) switch(*p){ // VCODE_SWITCH
 				case VCODE_CONTROL:
-					// falls through to VCODE_ASCII
+					// Fall through
 				case VCODE_ASCII:	// Text 表示 ---------------------
 					EucWrite(hF, p + 1);
 					p += strlen((const char *)p + 1) + 2;
@@ -2517,7 +2531,7 @@ void ConvertMain(void)
 
 				case VCODE_UNICODEF:
 					p++;
-					// falls through to VCODE_UNICODE
+					// Fall through
 				case VCODE_UNICODE:{	// Text 表示 -----------------
 					BYTE buf2[0x1000];
 
@@ -2535,7 +2549,7 @@ void ConvertMain(void)
 					break;
 
 				case VCODE_FCOLOR:			// F Color ---------------
-					// falls through to VCODE_BCOLOR
+					// Fall through
 				case VCODE_BCOLOR:			// B Color ---------------
 					p += 1 + sizeof(COLORREF);
 					break;
@@ -2551,8 +2565,8 @@ void ConvertMain(void)
 
 				case VCODE_RETURN:			// return -----------------
 					p++;
-					// falls through to VCODE_PAGE
-				case VCODE_PAGE: // falls through to VCODE_PARA
+					// Fall through
+				case VCODE_PAGE: // Fall through
 				case VCODE_PARA:
 					WriteFile(hF, "\r\n", 2, &size, NULL);
 					p++;
@@ -2814,6 +2828,14 @@ void DumpEmf(void)
 	ReleaseDC(vinfo.info.hWnd, hDC);
 }
 
+void ReverseForeground(HWND hWnd)
+{
+	C_info ^= 0x808080;
+//	C_mes ^= 0x808080;
+	CV_char[CV__deftext] ^= 0x808080;
+	InvalidateRect(hWnd, NULL, TRUE);
+}
+
 void ReverseBackground(HWND hWnd)
 {
 	COLORREF tmpc;
@@ -2963,6 +2985,7 @@ void SaveBookmark(int index)
 		Bookmark[index].pos.y = VOi->offY;
 	}
 	Bookmark[index].div = FileDividePointer;
+	SaveHistory(TRUE);
 	setflag(ShowTextLineFlags, SHOWTEXTLINE_BOOKMARK);
 }
 

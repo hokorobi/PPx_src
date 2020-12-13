@@ -454,6 +454,7 @@ GVAR int X_sps GPARAM(0);
 GVAR int X_combo GPARAM(COMBO_OFF);
 DLLGVAR DWORD X_dss DLLGPARAM(DSS_NOLOAD);	// 画面自動スケーリング
 DLLGVAR DWORD X_log DLLGPARAM(0);
+DLLGVAR DWORD X_uxt DLLGPARAM(UXT_NA);
 DLLGVAR int X_pmc[4] DLLGPARAM({X_pmc_defvalue});
 
 DLLGVAR int TouchMode DLLGPARAM(0);
@@ -762,6 +763,7 @@ GVAR BOOL Use_X_icnl GPARAM(FALSE);
 //-------------------------------------- 開発中
 GVAR BOOL exdset GPARAM(FALSE); // XC_dset で、ワイルドカードや SHN指定を有効に
 GVAR int UseCCDrawBack GPARAM(0); // ツールバー等のダークモード対応
+GVAR HBRUSH UseCCDrawBrush;
 
 #ifdef __cplusplus
 }

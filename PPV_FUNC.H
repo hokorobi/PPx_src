@@ -126,6 +126,7 @@ extern void PPvMinimize(HWND hWnd);
 extern char *SelColA(char *str, int col);
 extern void DumpEmf(void);
 extern void PPvLayoutCommand(void);
+extern void ReverseForeground(HWND hWnd);
 extern void ReverseBackground(HWND hWnd);
 extern void ViewfileContextMenu(HWND hWnd);
 extern void DivChange(int offset);

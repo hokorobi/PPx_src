@@ -63,6 +63,7 @@ void AddonListSusie(HWND hDlg)
 	int i;
 
 	susiedll_items = VFSGetSusieList(&susiedll_list, &sustrings);
+	SendDlgItemMessage(hDlg, IDL_AOSUSIE, LB_RESETCONTENT, 0, 0);
 	sudll = susiedll_list;
 	for ( i = 0 ; i < susiedll_items ; i++, sudll++ ){
 		TCHAR *p;
@@ -132,12 +133,16 @@ INT_PTR CALLBACK AddonPage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 	switch (msg){
 		case WM_DESTROY:
 			VFSOff();
-			return StyleDlgProc(hDlg, msg, IDD_ADDON, lParam);
+			return DlgSheetProc(hDlg, msg, wParam, lParam, IDD_ADDON);
 
 		case WM_INITDIALOG:
+			InitPropSheetsUxtheme(hDlg);
 			VFSOn(VFS_DIRECTORY | VFS_BMP | VFS_ALL);
 			SendDlgItemMessage(hDlg, IDE_AOSMASK, EM_LIMITTEXT, MAX_PATH - 1, 0);
-			AddonListSusie(hDlg);
+			SendDlgItemMessage(hDlg, IDL_AOSUSIE, LB_ADDSTRING, 0, (LPARAM)T("loading..."));
+			InvalidateRect(hDlg, NULL, TRUE);
+			UpdateWindow(hDlg);
+			PostMessage(hDlg, WM_COMMAND, K_FIRSTCMD, 0);
 			return FALSE;
 
 		case WM_COMMAND:
@@ -163,6 +168,9 @@ INT_PTR CALLBACK AddonPage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 				case IDX_AOSDETECT:
 					AddonSaveSusie(hDlg);
 					break;
+				case K_FIRSTCMD:
+					AddonListSusie(hDlg);
+					break;
 			}
 			break;
 
@@ -172,7 +180,7 @@ INT_PTR CALLBACK AddonPage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 			}
 		// default ‚Ö
 		default:
-			return StyleDlgProc(hDlg, msg, IDD_ADDON, lParam);
+			return DlgSheetProc(hDlg, msg, wParam, lParam, IDD_ADDON);
 	}
 	return TRUE;
 }

@@ -632,6 +632,7 @@ typedef enum TBPFLAG {
 extern void SetTaskBarButtonProgress(HWND hWnd, int nowcount, int maxcount);
 extern void InitTaskBarButtonIF(WPARAM wParam);
 extern void * GetPathInterface(HWND hWnd, const TCHAR *name, REFIID riid, const TCHAR *path);
+extern void SetTreeColor(HWND hTWnd);
 //=============================================================================
 #ifndef GLOBALDEFINE
 	#define GVAR extern

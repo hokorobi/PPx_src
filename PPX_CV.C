@@ -16,7 +16,11 @@ extern int X_fles;
 extern const TCHAR StrUser32DLL[];
 
 BOOL X_awhel = TRUE;
+#if NODLL
+extern HMODULE hDwmapi;
+#else
 HMODULE hDwmapi = NULL;
+#endif
 
 const TCHAR RegWallpaperName[] = T("Wallpaper");
 const TCHAR RegWallpaperTile[] = T("TileWallpaper");

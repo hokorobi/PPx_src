@@ -1257,7 +1257,7 @@ void SendToCommonLog(const TCHAR *text)
 	COPYDATASTRUCT copydata;
 
 	if ( Sm->hCommonLogWnd == NULL ) return;
-	copydata.dwData = K_WINDDOWLOG;
+	copydata.dwData = TMAKEWPARAM(K_WINDDOWLOG, PPLOG_REPORT);
 	copydata.cbData = TSTRSIZE32(text);
 	copydata.lpData = (PVOID)text;
 	SendMessage(Sm->hCommonLogWnd, WM_COPYDATA, 0, (LPARAM)&copydata);

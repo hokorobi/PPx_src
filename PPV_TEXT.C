@@ -32,7 +32,7 @@
 
 typedef struct {
 	BYTE *dest, *destmax, *extlast; // 書き込み位置と、書き込みバッファ末尾
-	BYTE *text, *srcmax;
+	BYTE *text, *textmax;
 	BYTE *destfirst; // 表示文字列先頭
 	BYTE *CalcTextPtr; // 文字列幅計算基準位置
 	int cnt, extcnt;
@@ -46,7 +46,7 @@ typedef struct {
 
 	struct {
 		BYTE *text, *textfirst;
-		BYTE *srcmax;
+		BYTE *textmax;
 		int dcode;
 		int type;
 		int offset;
@@ -660,7 +660,7 @@ BOOL MimeDecode(TEXTCODEINFO *tci)
 	//		if ( dest >= (BYTE *)destmax ) break;
 		}while( len == 3 );
 	}else if ( upper((char)*tp) == 'Q' ){	// quoted
-		while( (textp < tci->srcmax) && (l > 0) ){
+		while( (textp < tci->textmax) && (l > 0) ){
 			if ( *textp == '?' ) break;
 			if ( *textp != '=' ){
 				*dest++ = *(BYTE *)textp++;
@@ -698,12 +698,12 @@ BOOL MimeDecode(TEXTCODEINFO *tci)
 		}
 	}
 	tci->oldtext.text = textp;
-	tci->oldtext.srcmax = tci->srcmax;
+	tci->oldtext.textmax = tci->textmax;
 	tci->oldtext.dcode = tci->dcode;
 	tci->oldtext.type = DECODE_PROP;
 
 	tci->text = tci->oldtext.TextBuf;
-	tci->srcmax = dest;
+	tci->textmax = dest;
 	tci->dcode = codetype;
 	return TRUE;
 }
@@ -751,7 +751,7 @@ int B64DecodeBytes(BYTE **src, BYTE *dst)
 	return 3;
 }
 
-void DecodeMailLine(TEXTCODEINFO *tci/*, int tbl_attrs*/)
+void DecodeMailLine(TEXTCODEINFO *tci)
 {
 	BYTE *b64src, *b64src_first;
 	BYTE *textdest;
@@ -759,7 +759,7 @@ void DecodeMailLine(TEXTCODEINFO *tci/*, int tbl_attrs*/)
 
 	if ( tci->oldtext.type == DECODE_BASE64 ){ // 追加
 		// 残部を先頭に移動
-		leftsize = tci->srcmax - tci->text;
+		leftsize = tci->textmax - tci->text;
 		memmove(tci->oldtext.TextBuf, tci->text, leftsize);
 
 		b64src = tci->oldtext.text;
@@ -794,23 +794,25 @@ void DecodeMailLine(TEXTCODEINFO *tci/*, int tbl_attrs*/)
 				return;
 			}
 			tci->oldtext.textfirst = tci->text;
-			tci->oldtext.srcmax = tci->srcmax;
+			tci->oldtext.textmax = tci->textmax;
 			tci->oldtext.dcode = tci->dcode;
 			tci->oldtext.type = DECODE_BASE64;
 			tci->oldtext.offset = 0;
 
 			tci->text = tci->oldtext.TextBuf + (tci->attrs >> VTTF_BASEOFFSHIFT);
 			tci->dcode = VTYPE_UTF8;
-			tci->attrs = tci->attrs & ~VTTF_BASEOFFMASK;
+			tci->attrs = (tci->attrs & ~VTTF_BASEOFFMASK) | VTTF_USEBASE;
 		}
 		tci->oldtext.text = b64src;
-		tci->srcmax = textdest;
+		tci->textmax = textdest;
 	}else{
 		tci->attrs = tci->attrs & ~VTTF_BASEOFFMASK;
-
-		if ( tci->oldtext.type == DECODE_BASE64 ){ // 追加
-			if ( textdest > tci->text ){ // 残部が破損したので元に戻す
-				memmove(tci->text, tci->oldtext.TextBuf, leftsize);
+		if ( textdest != tci->oldtext.TextBuf ){
+			setflag(tci->attrs, VTTF_USEBASE);
+			if ( tci->oldtext.type == DECODE_BASE64 ){ // 追加
+				if ( textdest > tci->text ){ // 残部が破損したので元に戻す
+					memmove(tci->text, tci->oldtext.TextBuf, leftsize);
+				}
 			}
 		}
 	}
@@ -1186,7 +1188,7 @@ BOOL DecodeJIS(TEXTCODEINFO *tci, int corg)
 	}
 	if ( c == 0x9b ){	// 文字大きさ( CSI 0x9b, ESC [ 扱い)
 		tci->text++;
-		while( tci->text < tci->srcmax ){
+		while( tci->text < tci->textmax ){
 			c = (unsigned char)*tci->text;
 			if ( c < ' '  ) break;
 			if ( c >= 0x80 ) break;
@@ -1532,7 +1534,7 @@ BOOL DecodeHtmlTag(TEXTCODEINFO *tci)
 	tagend = tci->text;
 										// 本当にTAGかを確認
 	for ( ; len ; len-- ){
-		if ( ++tagend >= tci->srcmax ){
+		if ( ++tagend >= tci->textmax ){
 			len = 0;
 			break;
 		}
@@ -2417,12 +2419,10 @@ int MakeIndexTable(int mode, int param)
 	if ( of >= vmax ){
 		VOi->reading = FALSE;
 		mtinfo.PresetPos = 0;
-	}else{
-		if ( mode == MIT_REMAKE ){ // 再計算
-			VOi->reading = TRUE;
-			SetTimer(vinfo.info.hWnd, TIMERID_READLINE, TIMER_READLINE, BackReaderProc);
-			BackReader = TRUE;
-		}
+	}else if ( (mode == MIT_REMAKE) && (vo_.file.ImageSize > 0) ){ // 再計算
+		VOi->reading = TRUE;
+		SetTimer(vinfo.info.hWnd, TIMERID_READLINE, TIMER_READLINE, BackReaderProc);
+		BackReader = TRUE;
 	}
 
 	if ( line >= 0 ){
@@ -2656,22 +2656,26 @@ BYTE *MakeDispText(MAKETEXTINFO *mti, VT_TABLE *tbl)
 	tci.Bclr = tbl->Bclr;
 
 	tci.dcode = tbl->type;
-	tci.attrs = tbl->attrs & ~VTTF_TOP;
+	tci.attrs = tbl->attrs & ~(VTTF_TOP | VTTF_USEBASE);
 
-	tci.srcmax = mti->srcmax;
+	tci.textmax = mti->srcmax;
 	tci.oldtext.type = DECODE_NONE;
 
 	if ( tci.text == NULL ){
 		tci.cnt = 0;
 	}else{
-	if ( VO_Tmime ) DecodeMailLine(&tci/*, tbl->attrs*/);
+	if ( VO_Tmime ){
+		if ( tbl->attrs & (VTTF_TOP | VTTF_USEBASE) ){
+			DecodeMailLine(&tci);
+		}
+	}
 	while( (tci.cnt > 0) && (tci.dest < tci.destmax) ){
 		int c;
 
-		if ( tci.text >= tci.srcmax ){
+		if ( tci.text >= tci.textmax ){
 			if ( tci.oldtext.type != DECODE_NONE ){
 				tci.text = tci.oldtext.text;
-				tci.srcmax = tci.oldtext.srcmax;
+				tci.textmax = tci.oldtext.textmax;
 				tci.dcode = tci.oldtext.dcode;
 				tci.oldtext.type = DECODE_NONE;
 				continue;
@@ -2699,11 +2703,11 @@ BYTE *MakeDispText(MAKETEXTINFO *mti, VT_TABLE *tbl)
 					newdcode = UrlDecode(&tci.text, tci.oldtext.TextBuf, &size);
 					if ( np < tci.text ){
 						tci.oldtext.text = tci.text;
-						tci.oldtext.srcmax = tci.srcmax;
+						tci.oldtext.textmax = tci.textmax;
 						tci.oldtext.dcode = tci.dcode;
 						tci.oldtext.type = DECODE_URL;
 						tci.text = tci.oldtext.TextBuf;
-						tci.srcmax = tci.text + size;
+						tci.textmax = tci.oldtext.TextBuf + size;
 						tci.dcode = newdcode;
 						c = *tci.text;
 					}
@@ -2784,7 +2788,7 @@ BYTE *MakeDispText(MAKETEXTINFO *mti, VT_TABLE *tbl)
 						tagend = (WCHAR *)tci.text;
 												// 本当にTAGかを確認
 						for ( ; len ; len-- ){
-							if ( ++tagend >= (WORD *)tci.srcmax ){
+							if ( ++tagend >= (WORD *)tci.textmax ){
 								len = 0;
 								break;
 							}
@@ -2871,8 +2875,8 @@ BYTE *MakeDispText(MAKETEXTINFO *mti, VT_TABLE *tbl)
 					c = Utf8toWchar(&tci.text, c);
 				}else{
 					if ( (tci.oldtext.type == DECODE_BASE64) &&
-						 ((tci.srcmax - tci.text) < 4) ){
-						DecodeMailLine(&tci/*, 0*/);
+						 ((tci.textmax - tci.text) < 4) ){
+						DecodeMailLine(&tci);
 					}
 					c = MimeUtf8toWchar(&tci.text, c);
 				}
@@ -3100,7 +3104,7 @@ BYTE *MakeDispText(MAKETEXTINFO *mti, VT_TABLE *tbl)
 	if ( tci.oldtext.type != DECODE_NONE ){
 		// BASE64 の未使用分を戻す
 
-		if ( (tci.oldtext.type == DECODE_BASE64) && (tci.text < tci.srcmax) ){
+		if ( (tci.oldtext.type == DECODE_BASE64) && (tci.text < tci.textmax) ){
 			int usesize = tci.text - (tci.oldtext.TextBuf + tci.oldtext.offset);
 
 			if ( (usesize >= 3) ||

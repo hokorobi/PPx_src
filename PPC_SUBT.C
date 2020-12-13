@@ -194,7 +194,7 @@ void USEFASTCALL IntervalSubThread(PPC_APPINFO *cinfo, SUBTHREADSTRUCT *sts)
 
 				if ( state > StateID_MAX ) state = StateID_MAX;
 
-				cinfo->StateInfo.hStateWnd = CreateWindow(T("STATIC"),
+				cinfo->StateInfo.hStateWnd = CreateWindow(WC_STATIC,
 						StateText[state], WS_POPUPWINDOW | WS_CAPTION,
 						cinfo->wnd.NCRect.left, cinfo->wnd.NCRect.top,
 						cinfo->wnd.NCArea.cx / 2,

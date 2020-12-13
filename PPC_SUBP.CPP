@@ -1035,9 +1035,9 @@ void InitProcWindow(HWND hWnd)
 										// ƒ{ƒ^ƒ“‚ð’Ç‰Á
 	GetClientRect(hWnd, &pbox);
 	GetWindowRect(GetDlgItem(hWnd, IDOK), &bbox);
-	hBwnd = CreateWindow(T("BUTTON"), T("&<"), BS_CENTER | WS_CHILD | WS_VISIBLE | WS_TABSTOP, pbox.left + 10, pbox.bottom - (bbox.bottom-bbox.top) - 5, (bbox.bottom-bbox.top), (bbox.bottom-bbox.top), hWnd, (HMENU)K_up, hInst, NULL);
+	hBwnd = CreateWindow(WC_BUTTON, T("&<"), BS_CENTER | WS_CHILD | WS_VISIBLE | WS_TABSTOP, pbox.left + 10, pbox.bottom - (bbox.bottom-bbox.top) - 5, (bbox.bottom-bbox.top), (bbox.bottom-bbox.top), hWnd, (HMENU)K_up, hInst, NULL);
 	SendMessage(hBwnd, WM_SETFONT, lFont, 0);
-	hBwnd = CreateWindow(T("BUTTON"), T("&>"), BS_CENTER | WS_CHILD | WS_VISIBLE | WS_TABSTOP, pbox.left + 15+(bbox.bottom-bbox.top), pbox.bottom - (bbox.bottom-bbox.top) - 5, (bbox.bottom-bbox.top), (bbox.bottom-bbox.top), hWnd, (HMENU)K_dw, hInst, NULL);
+	hBwnd = CreateWindow(WC_BUTTON, T("&>"), BS_CENTER | WS_CHILD | WS_VISIBLE | WS_TABSTOP, pbox.left + 15+(bbox.bottom-bbox.top), pbox.bottom - (bbox.bottom-bbox.top) - 5, (bbox.bottom-bbox.top), (bbox.bottom-bbox.top), hWnd, (HMENU)K_dw, hInst, NULL);
 	SendMessage(hBwnd, WM_SETFONT, lFont, 0);
 
 	PropTab[0] = '\0';

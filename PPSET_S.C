@@ -40,6 +40,31 @@ void USEFASTCALL SMessage(const TCHAR *str)
 	MessageBox(GetFocus(), str, msgboxtitle, MB_OK);
 }
 
+typedef ERRORCODE (PPXAPI *impPP_ExtractMacro)(HWND hWnd, PPXAPPINFO *ParentInfo, POINT *pos, const TCHAR *param, TCHAR *extract, int flag);
+
+ERRORCODE Execute_ExtractMacro(const TCHAR *param, BOOL error_dialog)
+{
+	HMODULE hDLL;
+	impPP_ExtractMacro DPP_ExtractMacro;
+	ERRORCODE result;
+
+	hDLL = LoadLibrary(T(COMMONDLL));
+	if ( hDLL == NULL ){
+		if ( error_dialog ){
+			SMessage(MessageStr[MSG_DLLLOADERROR]);
+		}else{
+			WriteResult(MessageStr[MSG_DLLLOADERROR], RESULT_NORMAL);
+		}
+		return ERROR_FILE_NOT_FOUND;
+	}
+	GETDLLPROC(hDLL, PP_ExtractMacro);
+
+	result = DPP_ExtractMacro(GetActiveWindow(), NULL, NULL, param, NULL, 0);
+
+	FreeLibrary(hDLL);
+	return result;
+}
+
 void WriteResult(const TCHAR *str, int add)
 {
 	if ( (add == RESULT_ALLDONE) && (SetupResult != SRESULT_NOERROR) ){
@@ -530,7 +555,7 @@ BOOL CopyPPxFiles(HWND hWnd, const TCHAR *srcpath, const TCHAR *destpath)
 				wsprintf(path, T("%s\\%s"), srcpath, ip->filename);
 				if ( GetFileAttributes(path) != BADATTR ){
 					wsprintf(path, T("*checksignature !\"%s\\%s\""), srcpath, ip->filename);
-					if ( Execute_ExtractMacro(path) == ERROR_INVALID_DATA ){
+					if ( Execute_ExtractMacro(path, FALSE) == ERROR_INVALID_DATA ){
 						WriteResult(ip->filename, MSG_BADSIG);
 						SetupResult = SRESULT_FAULT;
 						return FALSE;

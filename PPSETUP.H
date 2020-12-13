@@ -177,8 +177,9 @@ extern int CALLBACK SelDirProc(HWND hWnd, UINT uMsg, LPARAM lParam, LPARAM lpDat
 extern int CALLBACK SelInstPPxProc(HWND hWnd, UINT uMsg, LPARAM lParam, LPARAM lpData);
 extern void SetExecuteFile(HWND hWnd, int ID, const TCHAR *title);
 extern void USEFASTCALL SMessage(const TCHAR *str);
-
 extern void WriteResult(const TCHAR *str, int add);
+extern ERRORCODE Execute_ExtractMacro(const TCHAR *param, BOOL error_dialog);
+
 extern BOOL DeleteDir(const TCHAR *path);
 extern BOOL GetWinAppDir(int csidl, TCHAR *path);
 
@@ -191,4 +192,3 @@ extern int AdminCheck(void);
 extern BOOL InstallMain(HWND hWnd);
 
 //------------------------------------------------------------------ PPSET_DG.C
-extern ERRORCODE Execute_ExtractMacro(const TCHAR *param);

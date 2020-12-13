@@ -203,7 +203,16 @@ typedef struct {
 #define K_INITROMA	0xbf48			// migemo.dllをロードする
 #define K_IMEOFF	0xbf49			// IME を offにする
 #define K_ENABLE_NC_SCALE	0xbf4a	// 非クライアント領域の拡大縮小を有効に
-#define K_DRAWCCBACK	0xbf4b		// ツールバー等の背景を描画 wParam:NMH
+#define K_DRAWCCBACK	0xbf4b		// ツールバー等の背景を描画(rc有効) wParam:NMH
+#define K_DRAWCCWNDBACK	0xbf4c		// ツールバー等の背景を描画(rc無効) wParam:NMH
+#define K_UxTheme	0xbf4d		// wParam: KUT_xxxx
+	#define KUT_INIT 0				// darkmode 初期化 / X_uxt 取得
+	#define KUT_WINDOW_TEXT_COLOR 1	// window 文字色
+	#define KUT_WINDOW_BACK_COLOR 2	// window 背景色
+	#define KUT_DIALOG_BACK_COLOR 3	// dialog 背景色
+//	#define KUT_WINDOW_BACK_BRUSH 1	// window 背景用ブラシ
+//	#define KUT_DIALOG_BACK_BRUSH 2	// dialog 背景用ブラシ
+
 
 #define K_COMMAND	0xbff0			// Command (lparam:hMap)
 #define K_EXTRACT	0xbff1			// Extract (lparam:hMap)
@@ -222,6 +231,10 @@ typedef struct {
 #define K_SETPOPMSG	0xbffc	// ステータス行に表示 (wparam:POPMSG_ lparam:text)
 #define K_SETPOPLINENOLOG	0xbffd	// ステータス行に表示 (lparam:text)
 #define K_WINDDOWLOG	0xbffe		// ログウィンドウにログを表示 (lparam:text)
+	#define PPLOG_REPORT 0	// (wparam)ステータス行に表示
+	#define PPLOG_LOG	 1	// (wparam)ログ窓に表示
+	#define PPLOG_SHOWLOG 2	// (wparam)ログ窓に未表示のものを表示させる
+	#define PPLOG_FASTLOG 3	// (wparam)ログ窓に表示、表示前にReplyMessage
 #define K_SENDREPORT	0xbfff		// 異常報告送信を行う
 
 //0x3exx	PPc 特殊機能	---------------------------------------------------

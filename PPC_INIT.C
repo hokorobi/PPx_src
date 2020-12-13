@@ -373,7 +373,7 @@ BOOL CALLBACK EnumChildFindEditProc(HWND hWnd, LPARAM lParam)
 	HWND *hFoundWnd;
 
 	if ( !GetClassName(hWnd, classname, TSIZEOF(classname)) ) return TRUE;
-	if ( tstricmp(classname, T("edit")) ) return TRUE;
+	if ( tstricmp(classname, WC_EDIT) ) return TRUE;
 	hFoundWnd = (HWND *)lParam;
 	if ( *hFoundWnd != NULL ){
 		*hFoundWnd = NULL;
@@ -925,8 +925,9 @@ void USEFASTCALL CreateScrollBar(PPC_APPINFO *cinfo)
 {
 	// ※ ScrollBarHV を SBS_HORZ / SBS_VERT として使用
 	cinfo->hScrollTargetWnd = cinfo->hScrollBarWnd =
-		CreateWindowEx(0, T("SCROLLBAR"), NilStr, WS_CHILD | cinfo->ScrollBarHV,
+		CreateWindowEx(0, WC_SCROLLBAR, NilStr, WS_CHILD | cinfo->ScrollBarHV,
 			0, 0, 10, 10, cinfo->info.hWnd, CHILDWNDID(IDW_SCROLLBAR), hInst, NULL);
+	FixUxTheme(cinfo->hScrollTargetWnd, WC_SCROLLBAR);
 	HideScrollBar(cinfo);
 }
 
@@ -950,6 +951,7 @@ void InitGuiControl(PPC_APPINFO *cinfo)
 			RECT hdrbox;
 			WINDOWPOS hdrwpos;
 
+			FixUxTheme(cinfo->hHeaderWnd, WC_HEADER);
 			SendMessage(cinfo->hHeaderWnd, WM_SETFONT, (WPARAM)GetControlFont(cinfo->FontDPI, &cinfo->cfs), 0);
 			ShowWindow(cinfo->hHeaderWnd, SW_SHOW);
 
@@ -979,9 +981,7 @@ void InitGuiControl(PPC_APPINFO *cinfo)
 	if ( cinfo->combo == 0 ){ // 非一体化時に設定する内容 ---------------------
 		// ツールバー
 		if ( cinfo->X_win & XWIN_TOOLBAR ){
-			if ( UseCCDrawBack == 0 ){
-				UseCCDrawBack = PPxCommonExtCommand(K_DRAWCCBACK, 0) ? 2 : 1;
-			}
+			if ( UseCCDrawBack == 0 ) LoadCCDrawBack();
 			cinfo->hToolBarWnd = CreateToolBar(&cinfo->thGuiWork, cinfo->info.hWnd, &ID, T("B_cdef"), PPcPath,
 					(UseCCDrawBack > 1) ? _TBSTYLE_CUSTOMERASE : 0);
 			if ( cinfo->hToolBarWnd != NULL ){
@@ -1048,6 +1048,7 @@ void InitGuiControl(PPC_APPINFO *cinfo)
 		cinfo->freeCell = TRUE;
 	#endif
 #endif
+	if ( UseCCDrawBrush != NULL ) LoadCCDrawBack();
 }
 
 void CloseGuiControl(PPC_APPINFO *cinfo)
@@ -1386,6 +1387,7 @@ void InitPPcGlobal(void)
 	WM_PPXCOMMAND = RegisterWindowMessageA(PPXCOMMAND_WM);
 	WM_TaskbarButtonCreated = RegisterWindowMessage(TaskbarButtonCreatedReg);
 	FixCharlengthTable(T_CHRTYPE);
+	X_uxt = PPxCommonExtCommand(K_UxTheme, KUT_INIT);
 	DefDriveList = GetLogicalDrives();
 
 	Combo.hWnd = Combo.Report.hWnd = NULL;
@@ -1663,6 +1665,7 @@ void InitPPcWindow(PPC_APPINFO *cinfo, BOOL usepath)
 				windowsize.x, windowsize.y,
 				(cinfo->hComboWnd != NULL) ? Combo.Panes.hWnd : cinfo->hTrayWnd,
 				hMenu, hInst, cinfo);
+		FixUxTheme(hWnd, NilStr);
 	}
 	if ( cinfo->combo == 0 ) InitSystemDynamicMenu(&cinfo->DynamicMenu, hWnd);
 	CreateDxDraw(&cinfo->DxDraw, hWnd);

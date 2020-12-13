@@ -1022,3 +1022,22 @@ typedef TOUCHINPUT const * PCTOUCHINPUT;
 	#define IS_INTRESOURCE(_r) (((ULONG_PTR)(_r) >> 16) == 0)
 #endif
 #define WNDCLASSBRUSH(id) ((HBRUSH)(LONG_PTR)(id)) // WNCLASS のブラシに定数使う時用
+
+#ifndef WC_BUTTON
+#define WC_BUTTON T("Button")
+#endif
+#ifndef WC_EDIT
+#define WC_EDIT T("Edit")
+#endif
+#ifndef WC_COMBOBOX
+#define WC_COMBOBOX T("ComboBox")
+#endif
+#ifndef WC_STATIC
+#define WC_STATIC T("Static")
+#endif
+#ifndef WC_LISTBOX
+#define WC_LISTBOX T("ListBox")
+#endif
+#ifndef WC_SCROLLBAR
+#define WC_SCROLLBAR T("ScrollBar")
+#endif

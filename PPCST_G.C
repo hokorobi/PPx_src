@@ -2,11 +2,14 @@
 	Paper Plane xUI	customizer						GUI 関係
 -----------------------------------------------------------------------------*/
 #include "WINAPI.H"
+#include <commctrl.h>
 #include <prsht.h>
 #include <wincon.h>
 #include "PPX.H"
 #include "PPCUST.H"
 #pragma hdrstop
+
+#define IDT_PROP_TAB 12320 // プロパティシートのタブ
 
 const TCHAR StrCustTitle[] = T("PPx Customizer");
 #if !NODLL
@@ -22,16 +25,22 @@ HWND hConsoleWnd;
 LCID UseLcid = 0;		// 表示言語
 #if NODLL
 extern DWORD X_dss;
+extern int X_uxt;
 #else
 DWORD X_dss = DSS_NOLOAD;	// 画面自動スケーリング
+int X_uxt = UXT_NA;
 #endif
 TCHAR *FirstTypeName = NULL;
 TCHAR *FirstItemName = NULL;
 
-TCHAR PPcustRegID[REGIDSIZE] = T(PPCUST_REGID) T("A");
+TCHAR PPcustRegID[REGIDSIZE] = T(PPCUST_REGID) T(" ");
 
 #define DIALOGMARGIN 4
 UINT PropMoveTarget[] = {IDOK, IDCANCEL, IDHELP, 12321, 0}; // プロパティシートの位置調整対象
+
+COLORREF C_WindowText;
+COLORREF C_WindowBack;
+
 
 #define EPFLAG_MOVEX B0 // 右に移動
 #define EPFLAG_WIDE B1 // 幅を拡げる
@@ -173,6 +182,13 @@ void GUILoadCust(void)
 		GetCText = GetCTextEng;
 		SubDialog = SubDialogEng;
 	}
+	if ( X_uxt == UXT_DARK ){
+		C_WindowText = DARK_COLOR_TEXT;
+		C_WindowBack = DARK_COLOR_BACK;
+	}else{
+		C_WindowText = GetSysColor(COLOR_WINDOWTEXT);
+		C_WindowBack = GetSysColor(COLOR_WINDOW);
+	}
 }
 
 void Changed(HWND hWnd)
@@ -217,6 +233,7 @@ INT_PTR CALLBACK KeyInputDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lPar
 {
 	switch (iMsg){
 		case WM_INITDIALOG:
+			if ( X_uxt == UXT_DARK ) LocalizeDialogText(hDlg, 0);
 			SetWindowLongPtr(hDlg, DWLP_USER, (LONG_PTR)lParam);
 			SetDlgItemText(hDlg, IDP_KEYINPUT_W, (TCHAR *)lParam);
 			return TRUE;
@@ -251,7 +268,7 @@ INT_PTR CALLBACK KeyInputDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lPar
 			break;
 
 		default:
-			return FALSE;
+			return PPxDialogHelper(hDlg, iMsg, wParam, lParam);
 	}
 	return TRUE;
 }
@@ -318,6 +335,14 @@ LRESULT CALLBACK KeyProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 		}
+		case WM_ERASEBKGND: {
+			RECT box;
+
+			if ( X_uxt != UXT_DARK ) break;
+			GetClientRect(hWnd, &box);
+			FillRect((HDC)wParam, &box, GetStockObject(BLACK_BRUSH));
+		}
+
 		case WM_PAINT: {
 			PAINTSTRUCT ps;
 			int size;
@@ -329,8 +354,8 @@ LRESULT CALLBACK KeyProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if ( size != 0 ){
 				hOldFont = SelectObject(ps.hdc,
 						(HFONT)SendMessage(GetParent(hWnd), WM_GETFONT, 0, 0));
-				SetTextColor(ps.hdc, GetSysColor(COLOR_WINDOWTEXT));
-				SetBkColor(ps.hdc, GetSysColor(COLOR_WINDOW));
+				SetTextColor(ps.hdc, C_WindowText);
+				SetBkColor(ps.hdc, C_WindowBack);
 				TextOut(ps.hdc, 4, 1, buf, size);
 				SelectObject(ps.hdc, hOldFont);
 			}
@@ -414,13 +439,13 @@ void MakeKeyDetailText(int key, TCHAR *dest, BOOL extype)
 }
 
 //-------------------------------------------------------------------
-INT_PTR CALLBACK StyleDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK DlgSheetProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam, UINT id)
 {
 	switch (msg){
 		case WM_CONTEXTMENU:
 			if ( (HWND)wParam == hDlg ) break;
 		case WM_HELP:
-			PPxHelp(hDlg, HELP_CONTEXT, wParam);
+			PPxHelp(hDlg, HELP_CONTEXT, id);
 			break;
 
 		case WM_NOTIFY:
@@ -436,7 +461,7 @@ INT_PTR CALLBACK StyleDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 					break;
 
 				case PSN_HELP:
-					PPxHelp(NHPTR->hwndFrom, HELP_CONTEXT, wParam);
+					PPxHelp(NHPTR->hwndFrom, HELP_CONTEXT, id);
 					break;
 
 				default:
@@ -446,10 +471,16 @@ INT_PTR CALLBACK StyleDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 			#undef NHPTR
 		case WM_CLOSE:	// ※PPxDialogHelper では WM_CLOSE で EndDialogするから
 			break;
+
 		default:	// 特になし
 			return PPxDialogHelper(hDlg, msg, wParam, lParam);
 	}
 	return TRUE;
+}
+
+INT_PTR CALLBACK DefSheetProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	return DlgSheetProc(hDlg, msg, wParam, lParam, 0);
 }
 
 void GUIcustomizer(int startpage, const TCHAR *param)
@@ -470,6 +501,7 @@ void GUIcustomizer(int startpage, const TCHAR *param)
 	LoadCommonControls(ICC_LISTVIEW_CLASSES | ICC_TREEVIEW_CLASSES);
 
 	hInst = GetModuleHandle(NULL);
+	X_uxt = PPxCommonExtCommand(K_UxTheme, KUT_INIT);
 	PPxCommonExtCommand(K_SETAPPID, 'c');
 
 	GUILoadCust();
@@ -549,7 +581,7 @@ void GUIcustomizer(int startpage, const TCHAR *param)
 			page[i].dwFlags		= PSP_HASHELP;
 			page[i].hInstance	= hInst;
 			UNIONNAME(page[i], pszTemplate) = MAKEINTRESOURCE(pinfo->rID);
-			page[i].pfnDlgProc	= pinfo->proc ? pinfo->proc : StyleDlgProc;
+			page[i].pfnDlgProc	= pinfo->proc ? pinfo->proc : DefSheetProc;
 			page[i].lParam		= (LPARAM)i;
 		}
 		MakeTempEntry(VFPS, Backup, FILE_ATTRIBUTE_NORMAL);
@@ -666,11 +698,14 @@ void InitWndIcon(HWND hDlg, UINT baseControlID)
 	hBaseWnd = GetDlgItem(hDlg, baseControlID);
 	if ( hBaseWnd == NULL ) return;
 
-	PPxRegist(hPropWnd, PPcustRegID, PPXREGIST_NORMAL);
+	if ( PPcustRegID[2] == ' ' ){
+		PPcustRegID[2] = 'A';
+		PPxRegist(hPropWnd, PPcustRegID, PPXREGIST_NORMAL);
 
 		// ウィンドウのアイコンを設定する
-	SetClassLongPtr(hPropWnd, GCLP_HICON,
-			(LONG_PTR)LoadIcon(hInst, MAKEINTRESOURCE(IC_CUST)));
+		SetClassLongPtr(hPropWnd, GCLP_HICON,
+				(LONG_PTR)LoadIcon(hInst, MAKEINTRESOURCE(IC_CUST)));
+	}
 
 	GetWindowRect(hDlg, &DialogBox);
 	GetWindowRect(hBaseWnd, &BaseBox);
@@ -820,6 +855,106 @@ void GetControlText(HWND hDlg, UINT ID, TCHAR *text, DWORD len)
 		*textlast = '\0';
 	}
 }
+
+WNDPROC hOldPropProc = NULL;
+WNDPROC hOldPropTabProc = NULL;
+
+void EraseTabBkgnd(HWND hWnd, WPARAM wParam)
+{
+	RECT box;
+
+	GetClientRect(hWnd, &box);
+	FillRect((HDC)wParam, &box, GetStockObject(BLACK_BRUSH));
+}
+
+// Tab control の拡張用 (タブの背景表示)
+LRESULT CALLBACK PropTabHookProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
+{
+	if ( iMsg != WM_ERASEBKGND ){
+		return CallWindowProc(hOldPropTabProc, hWnd, iMsg, wParam, lParam);
+	}
+	EraseTabBkgnd(hWnd, wParam);
+	return 1;
+}
+
+#if !NODLL
+void FillBox(HDC hDC, const RECT *box, HBRUSH hbr)
+{
+	HGDIOBJ hOldObj;
+
+	hOldObj = SelectObject(hDC, hbr);
+	PatBlt(hDC, box->left, box->top,
+			box->right - box->left, box->bottom - box->top,
+			PATCOPY);
+	SelectObject(hDC, hOldObj);
+}
+#endif
+
+void DrawTab(DRAWITEMSTRUCT *dis)
+{
+	TC_ITEM tie;
+	TCHAR buf[CMDLINESIZE];
+	RECT box;
+	COLORREF oldfc, oldbc;
+	HBRUSH hBack;
+	COLORREF col;
+
+	tie.mask = TCIF_TEXT | TCIF_PARAM;
+	tie.pszText = buf;
+	tie.cchTextMax = CMDLINESIZE;
+	if ( TabCtrl_GetItem(dis->hwndItem, dis->itemID, &tie) == FALSE ) return;
+
+	oldfc = SetTextColor(dis->hDC, DARK_COLOR_INFOTEXT);
+	col = (dis->itemState & ODS_SELECTED) ? DARK_COLOR_FOCUSBACK : DARK_COLOR_BACK;
+	hBack = CreateSolidBrush(col);
+	FillBox(dis->hDC, &dis->rcItem, hBack);
+	DeleteObject(hBack);
+	oldbc = SetBkColor(dis->hDC, col);
+
+	box = dis->rcItem; // TCM_GETITEMRECT で得られるRECTより左右上下2pixずつ小さい
+	box.left += 6;
+	box.top += 4;
+	#pragma warning(suppress: 6054) // TabCtrl_GetItem で取得
+	DrawText(dis->hDC, buf, tstrlen32(buf), &box, DT_LEFT | DT_NOPREFIX);
+	SetTextColor(dis->hDC, oldfc);
+	SetBkColor(dis->hDC, oldbc);
+}
+
+// Propperty sheet の Dialog proc の拡張用 (ダイアログ背景と、タブのアイテム表示)
+LRESULT CALLBACK DarkPropProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch ( iMsg ){
+		case WM_CTLCOLORDLG:
+			return PPxDialogHelper(hWnd, iMsg, wParam, lParam);
+
+		case WM_DRAWITEM:
+			if ( wParam == IDT_PROP_TAB ) DrawTab((DRAWITEMSTRUCT *)lParam);
+			return 1;
+	}
+	return CallWindowProc(hOldPropProc, hWnd, iMsg, wParam, lParam);
+}
+
+void InitPropSheetsUxtheme(HWND hDlg)
+{
+	if ( X_uxt != UXT_DARK ) return;
+
+	if ( hOldPropProc == NULL ){
+		HWND hPropWnd = GetParent(hDlg);
+		HWND hTabWnd = GetDlgItem(hPropWnd, IDT_PROP_TAB);
+
+		hOldPropProc = (WNDPROC)SetWindowLongPtr(hPropWnd, DWLP_DLGPROC, (LONG_PTR)DarkPropProc);
+		if ( hTabWnd != NULL ){
+			hOldPropTabProc = (WNDPROC)SetWindowLongPtr(hTabWnd, GWLP_WNDPROC, (LONG_PTR)PropTabHookProc);
+			SetWindowLongPtr(hTabWnd, GWL_STYLE,GetWindowLongPtr(hTabWnd, GWL_STYLE) | TCS_OWNERDRAWFIXED);
+		}
+		FixUxTheme(hPropWnd, NilStr);
+		LocalizeDialogText(hPropWnd, 0);
+	}else{
+		FixUxTheme(hDlg, NilStr);
+		LocalizeDialogText(hDlg, 0);
+	}
+}
+
 
 #if !NODLL
 #ifndef __BORLANDC__

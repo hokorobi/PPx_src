@@ -538,6 +538,7 @@ extern HMODULE LoadSystemWinAPI(DWORD dllID, LOADWINAPISTRUCT *apis);
 extern int GetNowTime(TCHAR *text, int mode);
 extern BOOL PPRecvExecuteByWMCopyData(PPXAPPINFO *info, COPYDATASTRUCT *copydata);
 extern BOOL PPWmCopyData(PPXAPPINFO *info, COPYDATASTRUCT *copydata);
+extern void RemoveCharKey(HWND hWnd);
 
 //------------------------------------------------------------------ ppd_task.c
 extern void FixTask(void);
@@ -605,11 +606,13 @@ extern HBRUSH GetFrameFaceBrush(void);
 extern HBRUSH GetFrameHighlightBrush(void);
 extern HBRUSH GetHighlightBackBrush(void);
 extern HBRUSH GetGrayBackBrush(void);
-extern HBRUSH GetWindowBackBrush(void);
 extern HBRUSH GetStaticBackBrush(void);
 extern void InitSysColors_main(void);
 #define InitSysColors() {if (C_FrameFace == C_AUTO) InitSysColors_main();}
 extern void FreeSysColors(void);
+extern BOOL InitUnthemeDLL(void);
+extern void InitUnthemeCmd(void);
+extern LRESULT ControlWindowColor(WPARAM wParam);
 
 //------------------------------------------------------------------ ppd_wild.c
 extern void FreeRMatch(void);

@@ -58,6 +58,8 @@ void USEFASTCALL InitFileDialog(HWND hDlg)
 {
 	TCHAR buf[VFPS + 0x100];
 
+	InitPropSheetsUxtheme(hDlg);
+
 	SendDlgItemMessage(hDlg, IDS_INFO,
 			WM_GETTEXT, (WPARAM)TSIZEOF(buf), (LPARAM)buf);
 	InfoDb(buf + tstrlen(buf));
@@ -97,6 +99,7 @@ INT_PTR CALLBACK TextCustomizeDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM
 		case WM_INITDIALOG: {
 			HWND hEdwnd;
 
+			if ( X_uxt == UXT_DARK ) LocalizeDialogText(hDlg, 0);
 			PPxSendMessage(WM_PPXCOMMAND, K_Scust, 0);
 			MakeTempEntry(VFPS, TextCustBackup, FILE_ATTRIBUTE_NORMAL);
 			CustDump(NilStr, TextCustBackup );
@@ -150,7 +153,7 @@ INT_PTR CALLBACK TextCustomizeDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM
 			break;
 
 		default:
-			return FALSE;
+			return PPxDialogHelper(hDlg, iMsg, wParam, lParam);
 	}
 	return TRUE;
 }
@@ -375,7 +378,7 @@ INT_PTR CALLBACK FilePage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 			}
 		// default ‚Ö
 		default:
-			return StyleDlgProc(hDlg, msg, IDD_INFO, lParam);
+			return DlgSheetProc(hDlg, msg, wParam, lParam, IDD_INFO);
 	}
 	return TRUE;
 }

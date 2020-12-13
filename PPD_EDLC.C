@@ -434,7 +434,7 @@ HWND CreateListWindowMain(PPxEDSTRUCT *PES, int direction)
 	}
 	hListWnd = CreateWindowEx(
 			(WinType >= WINTYPE_2000) ? WS_EX_NOACTIVATE : 0,
-			LISTBOXstr, NilStr,
+			ListBoxClassName, NilStr,
 /* «‘‹˜g‚ª‘¾‚­‚È‚é•ª¶‰EˆÊ’u‚ª‚¸‚ê‚é•ã‰ºƒTƒCƒY‚ð•Ï‚¦‚é‚Æ‚‚³‚ªk‚Þ‚Ì‚Å’†Ž~
 			(WinType >= WINTYPE_10) ?
 				(WS_THICKFRAME | WS_BORDER | WS_POPUP | WS_VSCROLL | WS_HSCROLL | LBS_NOTIFY) :
@@ -443,6 +443,7 @@ HWND CreateListWindowMain(PPxEDSTRUCT *PES, int direction)
 			WS_BORDER | WS_POPUP | WS_VSCROLL | WS_HSCROLL | LBS_NOTIFY,
 			box.left, box.bottom, box.right, ListHeight,
 			PES->hWnd, NULL, DLLhInst, NULL);
+	FixUxTheme(hListWnd, ListBoxClassName);
 	SetWindowLongPtr(hListWnd, GWLP_USERDATA, (LONG_PTR)PES);
 	SendMessage(hListWnd, WM_SETFONT, SendMessage(PES->hWnd, WM_GETFONT, 0, 0), 0);
 
@@ -1521,7 +1522,7 @@ void ModuleSearch(PPxEDSTRUCT *PES, LISTADDINFO *list, TCHAR *first, size_t firs
 	msearch.searchtype = PES->list.WhistID | PES->list.RhistID | PPXH_SEARCH_NAMEONLY;
 	msearch.maxresults = PPXMSEARCH_SHORTRESULT;
 	smca.info.Function = (PPXAPPINFOFUNCTION)SearchCReportModuleFunction;
-	smca.info.Name = T("Edit");
+	smca.info.Name = WC_EDIT;
 	smca.info.RegID = NilStr;
 	smca.info.hWnd = PES->hWnd;
 	smca.list = list;

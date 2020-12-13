@@ -36,12 +36,12 @@ GVAR const TCHAR PathJumpNameEx[] GPARAM(T("<%j>M_pjump"));
 #define PathJumpName (PathJumpNameEx + 4)
 GVAR const TCHAR StrMDrives[]	GPARAM(T("M_drives"));
 
-GVAR const TCHAR BUTTONstr[]	GPARAM(T("BUTTON"));
-GVAR const TCHAR EDITstr[]		GPARAM(T("EDIT"));
-GVAR const TCHAR STATICstr[]	GPARAM(T("STATIC"));
-GVAR const TCHAR LISTBOXstr[]	GPARAM(T("LISTBOX"));
-GVAR const TCHAR SCROLLBARstr[]	GPARAM(T("SCROLLBAR"));
-GVAR const TCHAR COMBOBOXstr[]	GPARAM(T("COMBOBOX"));
+GVAR const TCHAR ButtonClassName[]  GPARAM(WC_BUTTON);
+GVAR const TCHAR EditClassName[]    GPARAM(WC_EDIT);
+GVAR const TCHAR StaticClassName[]  GPARAM(WC_STATIC);
+GVAR const TCHAR ListBoxClassName[] GPARAM(WC_LISTBOX);
+GVAR const TCHAR ScrollBarClassName[] GPARAM(WC_SCROLLBAR);
+GVAR const TCHAR ComboBoxClassName[] GPARAM(WC_COMBOBOX);
 GVAR const TCHAR FullPathMacroStr[] GPARAM(T("NDC"));
 
 GVAR const TCHAR TreeClassStr[] GPARAM(T(VFSTREECLASS));
@@ -213,6 +213,7 @@ GVAR int X_execs GPARAM(-1);
 GVAR DWORD X_Keyra GPARAM(1);
 GVAR int X_jlst[2] GPARAM2(-1, 1);
 GVAR int X_prtg GPARAM(-1);
+GVAR int X_uxt GPARAM(UXT_NA);
 
 GVAR DWORD StartTick; // 実行開始時のTick
 GVAR DWORD CustTick GPARAM(0);
@@ -251,6 +252,7 @@ GVAR HMODULE hMigemoDLL GPARAM(NULL);
 GVAR HMODULE hComctl32 GPARAM(NULL);	// COMCTL32.DLL のハンドル
 GVAR HMODULE hShell32 GPARAM(NULL);
 GVAR HMODULE hKernel32 GPARAM(NULL);
+GVAR HMODULE hUxtheme GPARAM(NULL);
 GVAR ValueWinAPI(SHGetFolderPath) GPARAM(NULL);
 GVAR ValueWinAPI(OpenThread) GPARAM(INVALID_VALUE(impOpenThread));
 #ifdef _WIN64
@@ -287,6 +289,11 @@ GVAR WindowColorsList C_WindowColors
  = { C_AUTO, C_AUTO, C_AUTO,  C_AUTO, C_AUTO,  C_AUTO, C_AUTO,  C_AUTO, C_AUTO, C_AUTO }
 #endif
 ;
+GVAR WindowColorsList C_WindowDarkColors
+#ifndef GLOBALEXTERN
+ = { DARK_COLOR_FRAME_HIGH, DARK_COLOR_FRAME_FACE, DARK_COLOR_FRAME_SHADOW,  DARK_COLOR_BACK, DARK_COLOR_DIALOGBACK,  DARK_COLOR_TEXT, C_AUTO,  C_AUTO, DARK_COLOR_GRAY, C_AUTO }
+#endif
+;
 
 #define C_FrameHighlight (C_WindowColors._FrameHighlight) // オブジェクト明
 #define C_FrameFace (C_WindowColors._FrameFace) // オブジェクト表面（本来のダイアログ表面）
@@ -302,6 +309,11 @@ GVAR WindowColorsList C_WindowColors
 #define C_HighlightBack (C_WindowColors._HighlightBack) // 選択背景
 
 #define C_GrayState (C_WindowColors._GrayState) // 灰色文字・背景
+
+#define EDC_WINDOW_TEXT	B0
+#define EDC_WINDOW_BACK	B1
+#define EDC_DIALOG_BACK	B2
+GVAR int ExtraDrawColors GPARAM(0);
 
 GVAR HBRUSH hFrameHighlight GPARAM(NULL); // 左・上
 GVAR HBRUSH hFrameFace GPARAM(NULL); // 中央

@@ -121,7 +121,7 @@ INT_PTR CALLBACK FtpPassDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lPara
 			break;
 
 		default:
-			return FALSE;
+			return PPxDialogHelper(hDlg, iMsg, wParam, lParam);
 	}
 	return TRUE;
 }

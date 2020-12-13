@@ -319,7 +319,9 @@ BOOL DragData_ChangedDir = FALSE;
 
 void ForceDataObject(void)
 {
-	if ( DragDataObject.DataObject == NULL ) return;
+	if ( (DragDataObject.DataObject == NULL) || (DragDataObject.CDataObject == NULL) ){
+		return;
+	}
 
 	DragData_ChangedDir = TRUE;
 	DragDataObject.CDataObject->OnCache();

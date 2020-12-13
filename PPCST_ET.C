@@ -156,6 +156,7 @@ void InitEtcTree(HWND hDlg)
 	const struct EtcLabelsStruct *el;
 	TCHAR buf[0x60];
 
+	InitPropSheetsUxtheme(hDlg);
 	SendDlgItemMessage(hDlg, IDE_EXTYPE, EM_LIMITTEXT, (WPARAM)VFPS - 1, 0);
 	SendDlgItemMessage(hDlg, IDE_ALCCMD, EM_LIMITTEXT, (WPARAM)CMDLINESIZE - 1, 0);
 
@@ -530,7 +531,7 @@ BOOL EtcTreeNotify(HWND hDlg, NMHDR *nmh)
 
 		case PSN_APPLY:
 		case PSN_HELP:
-			StyleDlgProc(hDlg, WM_NOTIFY, IDD_ETCTREE, (LPARAM)nmh);
+			DlgSheetProc(hDlg, WM_NOTIFY, 0, (LPARAM)nmh, IDD_ETCTREE);
 			break;
 
 		case NM_DBLCLK:
@@ -599,7 +600,7 @@ INT_PTR CALLBACK EtcPage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 		default:
-			return StyleDlgProc(hDlg, msg, IDD_ETCTREE, lParam);
+			return DlgSheetProc(hDlg, msg, wParam, lParam, IDD_ETCTREE);
 	}
 	return TRUE;
 }

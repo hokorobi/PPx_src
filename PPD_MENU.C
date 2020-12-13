@@ -724,9 +724,7 @@ BOOL MenuCommand(EXECSTRUCT *Z, TCHAR *menuname, const TCHAR *def, int menuflag)
 
 	if ( IsTrue(PeekMessage(&WndMsg, Z->hWnd, WM_CHAR, WM_CHAR, PM_NOREMOVE)) ){
 		// Enter があるとビープ音が出るので廃棄
-		if ( WndMsg.wParam == VK_RETURN ){
-			PeekMessage(&WndMsg, Z->hWnd, WM_CHAR, WM_CHAR, PM_REMOVE);
-		}
+		if ( WndMsg.wParam == VK_RETURN ) RemoveCharKey(Z->hWnd);
 	}
 
 	if ( menuname[1] == ':' ){ // %M:M_xxxx / %M:?xxx

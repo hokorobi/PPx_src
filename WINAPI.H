@@ -63,3 +63,12 @@
 #define MIIM_STRING 0x40
 #define MIIM_FTYPE 0x100
 #endif
+
+#ifndef CDDS_PREPAINT
+#define CDDS_PREPAINT           0x00000001
+#define CDDS_POSTPAINT          0x00000002
+#define CDDS_PREERASE           0x00000003
+#define CDDS_POSTERASE          0x00000004
+#define CDDS_ITEM               0x00010000
+#define CDDS_ITEMPREPAINT       (CDDS_ITEM | CDDS_PREPAINT)
+#endif

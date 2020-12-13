@@ -200,7 +200,7 @@ LRESULT PPeWmCreate(HWND hWnd)
 	SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)PES);
 
 										// EditBox を作成 -------------
-	PES->hEWnd = CreateWindowEx(WS_EX_ACCEPTFILES, EDITstr, NilStr,
+	PES->hEWnd = CreateWindowEx(WS_EX_ACCEPTFILES, EditClassName, NilStr,
 		WS_CHILD | /*WS_HSCROLL |*/ WS_VSCROLL |
 		/*ES_AUTOHSCROLL |*/ ES_AUTOVSCROLL | ES_NOHIDESEL |
 		ES_LEFT | ES_MULTILINE | ES_WANTRETURN,	// ウインドウの形式
@@ -332,12 +332,10 @@ LRESULT CALLBACK PPeProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	PES = (PPeditSTRUCT *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 	switch (message){
 		case WM_CTLCOLOREDIT:
-			if ( hDialogBackBrush == NULL ){
+			if ( !(ExtraDrawColors & (EDC_WINDOW_TEXT | EDC_WINDOW_BACK)) ){
 				return DefWindowProc(hWnd, message, wParam, lParam);
 			}
-			SetTextColor((HDC)wParam, C_WindowText);
-			SetBkColor((HDC)wParam, C_WindowBack);
-			return (BOOL)(DWORD_PTR)GetWindowBackBrush();
+			return ControlWindowColor(wParam);
 
 		case WM_MENUCHAR:
 			return PPxMenuProc(hWnd, message, wParam, lParam);

@@ -732,18 +732,18 @@ typedef struct {
 DWORD GetTiffDWORD(BYTE *p, BOOL BE)
 {
 	if ( BE == FALSE ) return *(DWORD *)p;
-	return (*p * 0x1000000) + (*(p+1) * 0x10000) + (*(p+2) * 0x100) + *(p+3);
+	return (*p * 0x1000000) + (*(p + 1) * 0x10000) + (*(p + 2) * 0x100) + *(p + 3);
 }
 DWORD GetTiffWORD(BYTE *p, BOOL BE)
 {
 	if ( BE == FALSE ) return *(WORD *)p;
-	return (*p * 0x100) + *(p+1);
+	return (*p * 0x100) + *(p + 1);
 }
 
-char *GetTiffStr(BYTE *base, TIFFDIR *dir, BOOL BE)
+const char *GetTiffStr(BYTE *base, TIFFDIR *dir, BOOL BE)
 {
-	if ( GetTiffDWORD(dir->size, BE) <= 4 ) return (char *)dir->data;
-	return (char *)(base + GetTiffDWORD(dir->data, BE));
+	if ( GetTiffDWORD(dir->size, BE) <= 4 ) return (const char *)dir->data;
+	return (const char *)(base + GetTiffDWORD(dir->data, BE));
 }
 
 #ifdef UNICODE
@@ -780,16 +780,63 @@ void GetTiffRate(BYTE *base, TIFFDIR *dir, BOOL BE, TCHAR *buf)
 	if ( offset < 0x10000 ){
 		v1 = *(DWORD *)(base + offset);
 		v2 = *(DWORD *)(base + offset + 4);
-		if ( (v1 < 0x10000) && (v2 < 0x10000) && (v2 != 0) ){
-			if ( v2 == 1 ){
-				wsprintf(buf, T(" %u\r\n"), v1);
+		while ( (v1 >= 0x10000) || (v2 >= 0x10000) ){
+			if ( ((v1 | v2) & 0x3) == 0 ){
+				v1 >>= 2;
+				v2 >>= 2;
 			}else{
-				wsprintf(buf, T(" %u/%u\r\n"), v1, v2);
+				v1 /= 10;
+				v2 /= 10;
 			}
-			return;
 		}
+
+		if ( v2 <= 1 ){
+			wsprintf(buf, T(" /%u\r\n"), v1);
+		}else{
+			wsprintf(buf, T(" %u/%u\r\n"), v1, v2);
+		}
+		return;
 	}
 	tstrcpy(buf, T("?/?\r\n"));
+}
+
+void ThCatTiffData_String(ThSTRUCT *th, const char *str)
+{
+	BYTE *ptr = (BYTE *)str;
+	DWORD size = 0;
+	int cnt;
+#define TDS_SIZE 0x200
+	WCHAR buf[TDS_SIZE];
+
+	for ( ;; ){
+		BYTE c;
+
+		c = *ptr++;
+		if ( c == '\0' ) break;
+		size++;
+		if ( c < 0x80 ) continue;		// 00-7f
+		if ( c < 0xc0 ) goto noutf8;	// 80-bf 範囲外
+		if ( c < 0xe0 ){ cnt = 1;		// C0     80-     7ff
+		}else if ( c < 0xf0 ){ cnt = 2;	// E0    800-    ffff
+		}else if ( c < 0xf8 ){ cnt = 3; size++;	// F0  10000-  1fffff
+//		}else if ( c < 0xfc ){ cnt = 4;	// F8 200000- 3ffffff  *現在、規格で使
+//		}else if ( c < 0xfe ){ cnt = 5;	// FC 4000000-7fffffff *用されていない
+		}else goto noutf8;				// fe-ff 範囲外
+										// ２バイト以降のチェック
+		while ( cnt ){
+			if ( (*ptr < 0x80) || (*ptr >= 0xc0 ) ) goto noutf8; // 範囲外
+			ptr++;
+			cnt--;
+		}
+	}
+	if ( size >= TDS_SIZE ) size = TDS_SIZE - 1;
+	MultiByteToWideCharU8(CP_UTF8, 0, str, (const char *)ptr - str, buf, TDS_SIZE);
+	buf[size] = '\0';
+	ThCatStringTW(th, buf);
+	return;
+
+noutf8:
+	ThCatStringTA(th, str);
 }
 
 void ThCatTiffData(ThSTRUCT *th, const TCHAR *header, BYTE *base, TIFFDIR *dir, BOOL BE)
@@ -804,7 +851,7 @@ void ThCatTiffData(ThSTRUCT *th, const TCHAR *header, BYTE *base, TIFFDIR *dir, 
 
 		case 2:
 			ThCatString(th, T(" "));
-			ThCatStringTA(th, GetTiffStr(base, dir, BE));
+			ThCatTiffData_String(th, GetTiffStr(base, dir, BE));
 			ThCatString(th, T("\r\n"));
 			return;
 
@@ -944,11 +991,17 @@ void GetExifInfo(BYTE *base, BYTE *basemax, ThSTRUCT *th)
 				name = T("**PrintImageMatching:");
 				break;
 
+			case 0xea1c:
+				goto skip;
+//				name = T("**Padding:");
+//				break;
+
 			default:
 				wsprintf(namebuf, T("**%04d:"), tag);
 				name = namebuf;
 		}
 		ThCatTiffData(th, name, base, dir, BE);
+skip:
 		count--;
 		dir++;
 	}
@@ -1082,7 +1135,8 @@ ERRORCODE vfd_JPEG(const TCHAR *fname, const char *image, DWORD size, const char
 			case 0xC3:	// SOF3 lossless
 				wsprintf(buf, T("*SOF%d\r\n"), *(p + 1) - 0xc0);
 				ThCatString(&th, buf);
-				wsprintf(buf, T("*Size:%dx%d\r\n*colors %d\r\n"), BEWORDPTR(p+7), BEWORDPTR(p+5), *(p + 9));
+				wsprintf(buf, T("*Size:%dx%d\r\n*colors %d\r\n"),
+						BEWORDPTR(p + 7), BEWORDPTR(p + 5), *(p + 9));
 				ThCatString(&th, buf);
 				break;
 
@@ -1100,7 +1154,7 @@ ERRORCODE vfd_JPEG(const TCHAR *fname, const char *image, DWORD size, const char
 
 //			case 0xE0:	// APP0 JFIF 情報
 			case 0xE1:	// APP1 Exif 情報
-				if ( !memcmp(p+4, "Exif", 5) ) GetExifInfo(p + 10, imagemax, &th);
+				if ( !memcmp(p + 4, "Exif", 5) ) GetExifInfo(p + 10, imagemax, &th);
 				break;
 
 			case 0xE2:	// APP2 カラープロファイル
@@ -1847,20 +1901,17 @@ ERRORCODE vfd_EXE(const TCHAR *fname, const char *image, DWORD size, const char 
 				if ( result->flags & VFSFT_TYPETEXT ){
 					IMAGE_SECTION_HEADER *LastSection;
 					DWORD secsize;
-					HANDLE hFF;
-					WIN32_FIND_DATA ff;
+					FILE_STAT_DATA fsd;
 //					TCHAR *dst;
 
 					LastSection = IMAGE_FIRST_SECTION(xhdr) + xhdr->FileHeader.NumberOfSections - 1;
 					secsize = LastSection->PointerToRawData + LastSection->SizeOfRawData;
-					hFF = FindFirstFileL(fname, &ff);
-					if ( hFF != INVALID_HANDLE_VALUE ){
-						FindClose(hFF);
-						if ( ((ff.nFileSizeLow > secsize) || ff.nFileSizeHigh) &&
+					if ( IsTrue(GetFileSTAT(fname, &fsd)) ){
+						if ( ((fsd.nFileSizeLow > secsize) || fsd.nFileSizeHigh) &&
 							// EXEが1000h単位に揃えられているとき
-							 (ff.nFileSizeLow != ((secsize + 0xfff) & 0xfffff000)) &&
+							 (fsd.nFileSizeLow != ((secsize + 0xfff) & 0xfffff000)) &&
 							// EXEが200h単位に揃えられているとき
-							 (ff.nFileSizeLow != ((secsize + 0x1ff) & 0xfffffe00))
+							 (fsd.nFileSizeLow != ((secsize + 0x1ff) & 0xfffffe00))
 						){
 							TCHAR *ap;
 
@@ -2149,7 +2200,7 @@ AH(0, 6, "(DWF V", NULL,	":DWF",		"Drawing Web Format", "dwf", DT_scp),
 AH(0, 8, "WordPro", NULL,	":LWP",		"LotusWordPro", "LWP", DT_scp),
 AH(0, 6, "\x9\0\4\0\2", NULL, ":XLS",		"MS-Excel2", "xls", DT_scp),
 AH(0, 4, "EP*\0", NULL,		":MDI",		"Microsoft Document Imaging image", "mdi", DT_scp),
-AH(0, 8, "\x60\xe\x82\x1\x7\x80\x3", NULL,	":XDW",	"DocuWorks Document", "xdw", DT_scp),
+AH(0, 4, "\x60\xe\x82\x1", NULL,	":XDW",	"DocuWorks Document", "xdw", DT_scp), // 続いて \x7\x80\x38 か \xa\x80\x03\x00
 
 AH(0, 11, "BEGIN:VCARD", NULL, ":VCF",		"vCard", "vcf", DT_text),
 AH(0, 15, "BEGIN:VCALENDAR", NULL, ":VCS",	"vCalendar", "vcs", DT_text),
@@ -2279,7 +2330,10 @@ RH(0x4000, 3, "-pm", NULL,	":PMA",		"PMA archive", "PMA", DT_scp),
 RH(0x4000, 7, "**ACE**", NULL, ":ACE",	"ACE archive", "ACE", DT_scp),
 RH(0x4000, 8, "StuffIt ", NULL, ":SIT",	"StuffIt archive", "SIT", DT_scp),
 AH(8, 12, "NullsoftInst", NULL, ":NSIS", "Nullsoft Scriptable Install System", "EXE", DT_scp),
-AH(0, 4, "zlb\x1a", NULL,	":ZLIB",	"zlib archive", "zlib", DT_scp),
+AH(0, 4, "\x78\x01", NULL,	":ZLIB",	"zlib archive", "zlib", DT_scp),
+AH(0, 4, "\x78\x5e", NULL,	":ZLIB",	"zlib archive", "zlib", DT_scp),
+AH(0, 4, "\x78\x9c", NULL,	":ZLIB",	"zlib archive", "zlib", DT_scp),
+AH(0, 4, "\x78\xda", NULL,	":ZLIB",	"zlib archive", "zlib", DT_scp),
 										// Etc2 -------------------------------
 AH(0, 2, "MZ", vfd_EXE,		":EXE",	"", "EXE", DT_scp),
 AH(0, 4, "\x7f\x45LF", vfd_ELF, ":ELF",	"UNIX progarm", "", DT_scp),

@@ -466,6 +466,9 @@ void SortComboWindows(int fixshowindex)
 		Combo.Panes.box.top		= Combo.TopAreaHeight + TabHeight;
 		Combo.Panes.box.bottom	= ComboSize.cy - Combo.BottomAreaHeight - BottomDockHeight;
 	}
+	if ( (Combo.Panes.box.top + 16)  > Combo.Panes.box.bottom ){
+		Combo.Panes.box.bottom = Combo.Panes.box.top + 16;
+	}
 
 	if ( X_combos[0] & CMBS_TABFRAME ){
 		Combo.Panes.clientbox.left = 0;
@@ -853,7 +856,11 @@ LRESULT WmComboNotify(NMHDR *nmh)
 
 	if ( IsTrue(DocksNotify(&comboDocks, nmh)) ){
 		if ( (nmh->code == NM_CUSTOMDRAW) && (UseCCDrawBack > 1) ){
-			return PPxCommonExtCommand(K_DRAWCCBACK, (WPARAM)nmh);
+			if ( (nmh->hwndFrom != comboDocks.t.hWnd) && (nmh->hwndFrom != comboDocks.b.hWnd) ){ // toolbarに適用
+				return PPxCommonExtCommand(K_DRAWCCBACK, (WPARAM)nmh);
+			}else{
+				return PPxCommonExtCommand(K_DRAWCCWNDBACK, (WPARAM)nmh);
+			}
 		}
 		if ( nmh->code == RBN_HEIGHTCHANGE ){
 			SortComboWindows(SORTWIN_LAYOUTALL);
@@ -891,7 +898,7 @@ LRESULT WmComboNotify(NMHDR *nmh)
 
 int SplitHitTest(POINT *pos)
 {
-	if ( pos->y < InfoBottom ) return DMS_TOP;
+	if ( pos->y < Combo.Panes.box.top ) return DMS_TOP;
 	if ( pos->x < Combo.LeftAreaWidth ){
 		if ( pos->x >= (Combo.LeftAreaWidth - splitwide) ) return DMS_LEFT;
 	}else{
@@ -2219,9 +2226,10 @@ LRESULT WmComboCommand(HWND hWnd, WPARAM wParam, LPARAM lParam)
 
 		case K_WINDDOWLOG:
 			if ( lParam != 0 ) SetComboReportText((const TCHAR *)lParam);
+			// 遅延表示関連の処理
 			if ( HIWORD(wParam) && (Combo.Report.hWnd != NULL) &&
 				!(X_combos[0] & CMBS_DELAYLOGSHOW) ){
-				if ( HIWORD(wParam) == 2 ){ // 強制表示を行う
+				if ( HIWORD(wParam) == PPLOG_SHOWLOG ){ // 強制表示を行う
 					DelayLogShowProc(Combo.Report.hWnd,
 							WM_TIMER, TIMERID_DELAYLOGSHOW, 0);
 					break;
@@ -2508,8 +2516,8 @@ void DrawTab(DRAWITEMSTRUCT *dis)
 	TC_ITEM tie;
 	TCHAR buf[CMDLINESIZE];
 	int type, baseindex;
-	RECT box;
-	COLORREF oldc = C_AUTO, oldbc = C_AUTO;
+	RECT box, box2;
+	COLORREF oldfc = C_AUTO, oldbc = C_AUTO;
 
 	tie.mask = TCIF_TEXT | TCIF_PARAM;
 	tie.pszText = buf;
@@ -2531,7 +2539,9 @@ void DrawTab(DRAWITEMSTRUCT *dis)
 
 	// 文字色
 	if ( (baseindex >= 0) && (Combo.base[baseindex].tabtextcolor != C_AUTO) ){
-		oldc = SetTextColor(dis->hDC, Combo.base[baseindex].tabtextcolor);
+		oldfc = SetTextColor(dis->hDC, Combo.base[baseindex].tabtextcolor);
+	}else if ( X_uxt == UXT_DARK ){
+		oldfc = SetTextColor(dis->hDC, DARK_COLOR_INFOTEXT);
 	}
 
 	// 背景色
@@ -2542,6 +2552,19 @@ void DrawTab(DRAWITEMSTRUCT *dis)
 		FillBox(dis->hDC, &dis->rcItem, hBack);
 		DeleteObject(hBack);
 		oldbc = SetBkColor(dis->hDC, Combo.base[baseindex].tabbackcolor);
+	}else if ( X_uxt == UXT_DARK ){
+		HBRUSH hBack;
+		COLORREF col;
+
+		if ( (HWND)tie.lParam == hComboFocus ){
+			col = DARK_COLOR_FOCUSBACK;
+		}else{
+			col = DARK_COLOR_BACK;
+		}
+		hBack = CreateSolidBrush(col);
+		FillBox(dis->hDC, &dis->rcItem, hBack);
+		DeleteObject(hBack);
+		oldbc = SetBkColor(dis->hDC, col);
 	}else if ( dis->itemState & ODS_SELECTED ){
 		HBRUSH hBack;
 		COLORREF col;
@@ -2557,26 +2580,25 @@ void DrawTab(DRAWITEMSTRUCT *dis)
 		oldbc = SetBkColor(dis->hDC, col);
 	}
 
-	if ( type >= 0 ){ // フォーカスの印
-		HBRUSH hBack;
-
-		box = dis->rcItem;
-		box.bottom = box.top + 4;
-
-		hBack = CreateSolidBrush(C_capt[type]);
-		FillBox(dis->hDC, &box, hBack);
-		DeleteObject(hBack);
-	}
-
 	box = dis->rcItem; // TCM_GETITEMRECT で得られるRECTより左右上下2pixずつ小さい
 	box.left += 6;
 	box.top += 4;
 	#pragma warning(suppress: 6054) // TabCtrl_GetItem で取得
 	DrawText(dis->hDC, buf, tstrlen32(buf), &box, DT_LEFT | DT_NOPREFIX);
 
+	if ( type >= 0 ){ // フォーカスの印
+		HBRUSH hBack;
+
+		box2 = dis->rcItem;
+		box2.bottom = box2.top + 5 * Combo.FontDPI / DEFAULT_WIN_DPI;
+
+		hBack = CreateSolidBrush(C_capt[type]);
+		FillBox(dis->hDC, &box2, hBack);
+		DeleteObject(hBack);
+	}
+
 	//DT_END_ELLIPSIS DT_PATH_ELLIPSIS
-	if ( oldc != C_AUTO ) SetTextColor(dis->hDC, oldc);
-	if ( oldbc != C_AUTO ) SetBkColor(dis->hDC, oldbc);
+	if ( oldfc != C_AUTO ) SetTextColor(dis->hDC, oldfc);
 
 	if ( !(X_combos[1] & CMBS1_NOTABBUTTON) ){ // 閉じるボタン
 		HBRUSH hBack;
@@ -2585,14 +2607,17 @@ void DrawTab(DRAWITEMSTRUCT *dis)
 		hBack = CreateSolidBrush( (C_TabCloseCBack == C_AUTO) ? GetBkColor(dis->hDC) : C_TabCloseCBack);
 		FillBox(dis->hDC, &box, hBack);
 		if ( C_TabCloseCText != C_AUTO ){
-			oldc = SetTextColor(dis->hDC, C_TabCloseCText);
+			oldfc = SetTextColor(dis->hDC, C_TabCloseCText);
+		}else if ( X_uxt == UXT_DARK ){
+			oldfc = SetTextColor(dis->hDC, DARK_COLOR_INFOTEXT);
 		}
 		SetBkMode(dis->hDC, TRANSPARENT);
 		DrawText(dis->hDC, &CloseButtonChar, 1, &box, DT_CENTER | DT_NOPREFIX);
 		SetBkMode(dis->hDC, OPAQUE);
-		if ( C_TabCloseCText != C_AUTO ) SetTextColor(dis->hDC, oldc);
+		if ( C_TabCloseCText != C_AUTO ) SetTextColor(dis->hDC, oldfc);
 		DeleteObject(hBack);
 	}
+	if ( oldbc != C_AUTO ) SetBkColor(dis->hDC, oldbc);
 }
 
 LRESULT CALLBACK ComboProcMain(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -2705,7 +2730,8 @@ LRESULT CALLBACK ComboProcMain(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 				}
 				return DefWindowProc(hWnd, message, wParam, lParam);
 			}
-			// WM_COMMAND へ
+			// WM_COMMAND
+			// Fall through
 		case WM_COMMAND:
 			if ( lParam != 0 ){
 				if ( (HWND)lParam == Combo.hAddressWnd ){

@@ -358,8 +358,8 @@ void CreateTipWnd(PPC_APPINFO *cinfo)
 
 	if ( C_tip[0] == C_AUTO ){
 		GetCustData(T("C_tip"), &C_tip, sizeof(C_tip));
-		if ( C_tip[0] == C_AUTO ) C_tip[0] = GetSysColor(COLOR_INFOTEXT);
-		if ( C_tip[1] == C_AUTO ) C_tip[1] = GetSysColor(COLOR_INFOBK);
+		if ( C_tip[0] == C_AUTO ) C_tip[0] = (X_uxt == UXT_DARK) ? DARK_COLOR_INFOTEXT : GetSysColor(COLOR_INFOTEXT);
+		if ( C_tip[1] == C_AUTO ) C_tip[1] = (X_uxt == UXT_DARK) ? DARK_COLOR_DIALOGBACK : GetSysColor(COLOR_INFOBK);
 	}
 
 	if ( cinfo->Tip.X_stip_mode != stip_mode_preview ){
@@ -1036,7 +1036,7 @@ void USEFASTCALL ModuleDraw(DISPSTRUCT *disp, const BYTE *fmt, ENTRYINDEX cellno
 		pmp.draw = &fds;
 		SetTextColor(hDC, disp->fc);
 		hOldFont = SelectObject(hDC, cinfo->hBoxFont);
-		FillRect(hDC, &fds.DrawArea, disp->hback);
+		FillBox(hDC, &fds.DrawArea, disp->hback);
 
 		if ( PPXMRESULT_SKIP == CallModule(&cinfo->info, PPXMEVENT_FILEDRAW, pmp, NULL) ){
 			SelectObject(hDC, hOldBmp);

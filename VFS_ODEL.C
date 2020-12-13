@@ -87,7 +87,7 @@ void FDelLog(DELETESTATUS *dinfo, const TCHAR *path, ERRORCODE result)
 		*p = '\0';
 		PPErrorMsg(p, result);
 	}
-	SendMessage(dinfo->info->hWnd, WM_PPXCOMMAND, TMAKEWPARAM(K_WINDDOWLOG, 1), (LPARAM)buf);
+	SendMessage(dinfo->info->hWnd, WM_PPXCOMMAND, TMAKEWPARAM(K_WINDDOWLOG, PPLOG_FASTLOG), (LPARAM)buf);
 }
 
 // 指定ディレクトリ内を削除する

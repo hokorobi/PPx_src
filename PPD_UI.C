@@ -50,12 +50,16 @@ const UINT BeepType[BeepType_Max] = {
 };
 
 const TCHAR *MessageType[] = {
+// XM_FaERRld～
 	T("Err! Dlg"), T("Err  Dlg"), T("Err? Dlg"), T("Warn!Dlg"), T("Warn Dlg"),
 	T("Result D"), T("Info Dlg"), T("Etc  Dlg"),
+// XM_FaERRl～
 	T("Err! Mes"), T("Err  Mes"), T("Err? Mes"), T("Warn!Mes"), T("Warn Mes"),
-	T("Result M"), T("Info"), T("Etc  Mes"),
+	T("Info"), T("Info"), T("Etc"),
+// unuse, XM_FaERRd～
 	T("Fault by"), T("Break by"), T("Error by"), T("Unknown1"), T("Unknown2"),
 	T("Unknown3"), T("Unknown4"), T("Unknown5"),
+// XM_DbgDIA～
 	T("DebugDlg"), T("DebugSnd"), T("DebugLog"), T("Dump Dlg"), T("Dump Log"),
 	T("Unknown6"), T("Unknown7"), T("Unknown8")};
 
@@ -209,12 +213,18 @@ PPXDLL void USECDECL XMessage(HWND hWnd, const TCHAR *title, UINT type, const TC
 	//------------------------------------------------------ 表示内容を作成する
 	va_start(argptr, message);
 	if ( type <= XM_DbgLOG ){
-		message = MessageText(message);
-		if ( tstrlen(message) >= TSIZEOF(buf) ){
-			CriticalMessageBox(T("Internal error : Message flow!"));
-			return;
+		if ( (message[0] == '%') && (message[1] == 's') && (message[2] == '\0') ){ // %s の時は大きなデータが来ることがある
+			message = va_arg(argptr, TCHAR *);
+		}else{
+			message = MessageText(message);
+			if ( tstrlen(message) >= TSIZEOF(buf) ){
+				CriticalMessageBox(T("Internal error : Message flow!"));
+				return;
+			}
+			wvsprintf(buf, message, argptr);
+			buf[sizeof(buf) / sizeof(TCHAR) - 1] = '\0';
+			message = buf;
 		}
-		wvsprintf(buf, message, argptr);
 	}else if ( type <= XM_DUMPLOG ){
 		DWORD size;
 		TCHAR *destp;
@@ -222,8 +232,8 @@ PPXDLL void USECDECL XMessage(HWND hWnd, const TCHAR *title, UINT type, const TC
 		int i;
 
 		size = va_arg(argptr, DWORD);
-		destp = buf;
 		srcp = (const BYTE *)message;
+		message = destp = buf;
 		if ( type == XM_DUMPLOG ) destp += wsprintf(destp, T("%s\r\n"), title);
 		while( size ){
 			if ( destp >= (buf + TSIZEOF(buf) - (PTRLEN + 1 + 6)) ) break;
@@ -237,7 +247,7 @@ PPXDLL void USECDECL XMessage(HWND hWnd, const TCHAR *title, UINT type, const TC
 			destp += wsprintf(destp, T("\r\n"));
 		}
 	}else{
-		tstrcpy(buf, T("Unknown type"));
+		message = T("Unknown type");
 	}
 	va_end(argptr);
 	//----------------------------------------------------- アイコン設定 ------
@@ -283,11 +293,11 @@ PPXDLL void USECDECL XMessage(HWND hWnd, const TCHAR *title, UINT type, const TC
 			WriteFile(hFile, temp, TSTRLENGTH32(temp), &size, NULL);
 												// 内容を出力 -----------------
 			#pragma warning(suppress:6001) // XM_DUMPLOG, size = 0 の時に。無視
-			len = TSTRLENGTH32(buf);
-			if ( (len > 4) && (buf[(len / sizeof(TCHAR)) - 2] == '\r') ){
-				len -= sizeof(TCHAR) * 2;
+			len = TSTRLENGTH32(message);
+			if ( (len > 4) && (message[(len / sizeof(TCHAR)) - 2] == '\r') ){
+				len -= sizeof(TCHAR) * 2; // 末尾改行を除去
 			}
-			WriteFile(hFile, buf, len, &size, NULL);
+			WriteFile(hFile, message, len, &size, NULL);
 												// 改行 -------------------
 			WriteFile(hFile, T("\r\n"), TSTROFF(2), &size, NULL);
 			CloseHandle(hFile);
@@ -296,10 +306,10 @@ PPXDLL void USECDECL XMessage(HWND hWnd, const TCHAR *title, UINT type, const TC
 	//----------------------------------------------------- ダイアログ表示/Beep
 	/* 0000 1001 1111 1111 0000 0000 1111 1111 */
 	if ( 0x09ff00ff & flag ){
-		PMessageBox(hWnd, buf, (title != NULL) ? title : PPxName,
+		PMessageBox(hWnd, message, (title != NULL) ? title : PPxName,
 				MB_APPLMODAL | MB_OK | icon);
-	/* 0001 0010 1111 1111 1111 1111 0000 0000 */
-	}else if ( X_beep & flag & 0x12ffff00 ){
+	/* 0001 0110 0000 0000 1111 1111 0000 0000 ダイアログがない種類だけbeep */
+	}else if ( X_beep & flag & 0x1600ff00 ){
 		MessageBeep(icon);
 	}
 	return;
@@ -606,26 +616,46 @@ BOOL PPxDialogHelp(HWND hDlg)
 	return TRUE;
 }
 
+// window / dialog 兼用
+LRESULT ControlWindowColor(WPARAM wParam)
+{
+	SetTextColor((HDC)wParam, C_WindowText);
+	SetBkColor((HDC)wParam, C_WindowBack);
+	if ( hWindowBackBrush != NULL ) return (LRESULT)hWindowBackBrush;
+	InitSysColors();
+	hWindowBackBrush = CreateSolidBrush(C_WindowBack);
+	return (LRESULT)hWindowBackBrush;
+}
+
+// dialog 専用
+INT_PTR ControlDialogColor(WPARAM wParam)
+{
+	if ( !(ExtraDrawColors & (EDC_WINDOW_TEXT | EDC_DIALOG_BACK)) ){
+		return FALSE;
+	}
+	SetTextColor((HDC)wParam, C_WindowText);
+	SetBkColor((HDC)wParam, C_DialogBack);
+
+	return (LRESULT)hDialogBackBrush; // WM_CTLCOLORDLG は DWLP_MSGRESULT を使わなくてもよい
+}
+
 #pragma argsused
-PPXDLL BOOL PPXAPI PPxDialogHelper(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+PPXDLL INT_PTR PPXAPI PPxDialogHelper(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	UnUsedParam(wParam); UnUsedParam(lParam);
 
 	switch (message){
 		case WM_CTLCOLORLISTBOX:
 		case WM_CTLCOLOREDIT:
-			if ( hDialogBackBrush == NULL ) return FALSE;
-			SetTextColor((HDC)wParam, C_WindowText);
-			SetBkColor((HDC)wParam, C_WindowBack);
-			return (BOOL)(DWORD_PTR)GetWindowBackBrush(); // WM_CTLCOLORDLG は DWLP_MSGRESULT を使わなくてもよい
+			if ( !(ExtraDrawColors & (EDC_WINDOW_TEXT | EDC_WINDOW_BACK)) ){
+				return FALSE;
+			}
+			return ControlWindowColor(wParam);
 
 		case WM_CTLCOLORSTATIC:
 		case WM_CTLCOLORBTN:
 		case WM_CTLCOLORDLG:
-			if ( hDialogBackBrush == NULL ) return FALSE;
-			SetTextColor((HDC)wParam, C_WindowText);
-			SetBkColor((HDC)wParam, C_DialogBack);
-			return (BOOL)(DWORD_PTR)hDialogBackBrush; // WM_CTLCOLORDLG は DWLP_MSGRESULT を使わなくてもよい
+			return ControlDialogColor(wParam);
 
 		case WM_DESTROY:
 			SetIMEDefaultStatus(hDlg);
@@ -827,7 +857,7 @@ BOOL MessageBoxInitDialog(HWND hDlg, MESSAGEDATA *md)
 	if ( IconType ){ // アイコン
 		HWND hWnd;
 
-		hWnd = CreateWindowEx(WS_EX_NOPARENTNOTIFY, STATICstr, NilStr,
+		hWnd = CreateWindowEx(WS_EX_NOPARENTNOTIFY, StaticClassName, NilStr,
 				SS_ICON | WS_CHILD | WS_VISIBLE, TextAreaLeft, spaceH,
 				IconSize, IconSize, hDlg, CHILDWNDID(20), DLLhInst, 0);
 		if ( hWnd != NULL ){
@@ -845,7 +875,7 @@ BOOL MessageBoxInitDialog(HWND hDlg, MESSAGEDATA *md)
 #ifndef SS_EDITCONTROL
 #define SS_EDITCONTROL 0x2000
 #endif
-		hWnd = CreateWindowEx(WS_EX_NOPARENTNOTIFY, STATICstr, md->text,
+		hWnd = CreateWindowEx(WS_EX_NOPARENTNOTIFY, StaticClassName, md->text,
 				SS_LEFT | SS_NOPREFIX | WS_CHILD | WS_VISIBLE | SS_EDITCONTROL,
 				TextAreaLeft + IconWidth, (TextHeight - msgbox.bottom) / 2,
 				msgbox.right, msgbox.bottom, hDlg, CHILDWNDID(0xffff), DLLhInst, 0);
@@ -860,12 +890,13 @@ BOOL MessageBoxInitDialog(HWND hDlg, MESSAGEDATA *md)
 			caption = MessageText(MessageAllReactionStr);
 			DrawText(hDC, caption, -1, &tempbox, DT_CALCRECT |
 					DT_NOCLIP | DT_NOPREFIX | DT_LEFT | DT_EDITCONTROL);
-			hWnd = CreateWindowEx(WS_EX_NOPARENTNOTIFY, BUTTONstr, caption,
+			hWnd = CreateWindowEx(WS_EX_NOPARENTNOTIFY, ButtonClassName, caption,
 					BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP,
 					TextAreaLeft + IconWidth / 2, TextHeight,
 					tempbox.right + spaceH * 2, tempbox.bottom,
 					hDlg, CHILDWNDID(IDX_QDALL), DLLhInst, 0);
 			if ( hWnd != NULL ){
+				FixUxTheme(hWnd, ButtonClassName);
 				SendMessage(hWnd, WM_SETFONT, (WPARAM)md->hDlgFont, 0);
 					TextHeight += tempbox.bottom + spaceH;
 			}
@@ -891,11 +922,12 @@ BOOL MessageBoxInitDialog(HWND hDlg, MESSAGEDATA *md)
 			DWORD bstyle;
 
 			bstyle = focus ? BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE | WS_TABSTOP : BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON;
-			hWnd = CreateWindowEx(WS_EX_NOPARENTNOTIFY, BUTTONstr,
+			hWnd = CreateWindowEx(WS_EX_NOPARENTNOTIFY, ButtonClassName,
 					MessageText(mi->text), bstyle,
 					left, TextHeight, ButtonWidth, ButtonHeight, hDlg,
 					(HMENU)(LONG_PTR)(int)mi->ID, DLLhInst, 0);
 			if ( hWnd != NULL ){
+				FixUxTheme(hWnd, ButtonClassName);
 				SendMessage(hWnd, WM_SETFONT, (WPARAM)md->hDlgFont, 0);
 				if ( focus == 0 ) SetFocus(hWnd);
 			}
@@ -930,10 +962,7 @@ INT_PTR CALLBACK MessageBoxDxProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lP
 		case WM_CTLCOLORSTATIC:
 		case WM_CTLCOLORBTN:
 		case WM_CTLCOLORDLG:
-			if ( hDialogBackBrush == NULL ) return FALSE;
-			SetTextColor((HDC)wParam, C_WindowText);
-			SetBkColor((HDC)wParam, C_DialogBack);
-			return (BOOL)(DWORD_PTR)hDialogBackBrush; // WM_CTLCOLORDLG は DWLP_MSGRESULT を使わなくてもよい
+			return ControlDialogColor(wParam);
 
 		case WM_ACTIVATE: {
 			MESSAGEDATA *md;
@@ -1015,47 +1044,72 @@ int CriticalMessageBox(const TCHAR *text)
 	return MessageBox(NULL, text, CriticalTitle, MB_APPLMODAL | MB_OK | MB_ICONEXCLAMATION);
 }
 
-/*
-	WORD	TipHelpTextへのオフセット
-	BYTE[]	Executeデータ
-	TCHAR[]	TipHelpText
-*/
+BOOL LoadResBMP(HTBMP *hTbmp, HINSTANCE hInst, LPCTSTR name, int bright)
+{
+	DWORD size;
+	HRSRC hRsrc;
+
+	hTbmp->dibfile = NULL;
+	hTbmp->hPalette = NULL;
+	hTbmp->info = NULL;
+	hTbmp->bm = NULL;
+
+	hRsrc = FindResource(hInst, name, RT_RCDATA);
+	if ( hRsrc == NULL ) return FALSE;
+	size = SizeofResource(hInst, hRsrc);
+	hTbmp->dibfile = HeapAlloc(GetProcessHeap(), 0, size);
+	if ( hTbmp->dibfile == NULL ) return FALSE;
+	memcpy(hTbmp->dibfile, LockResource(LoadResource(hInst, hRsrc)), size);
+	return InitBMP(hTbmp, NilStr, size, bright);
+}
+
+void FixToolBarBitmap(HWND hWnd, HTBMP *hTbmp, TBADDBITMAP *tbab, SIZE *bmpsize, int IconSize)
+{
+	HPALETTE hOldPal C4701CHECK;
+	HBITMAP hBMP;
+	HDC hDC;
+	int sizedelta;
+
+	hDC = GetDC(hWnd);
+	if ( hTbmp->hPalette != NULL ){
+		hOldPal = SelectPalette(hDC, hTbmp->hPalette, FALSE);
+		RealizePalette(hDC);
+	}
+
+	hBMP = CreateDIBitmap(hDC, hTbmp->DIB, CBM_INIT,
+		hTbmp->bits, (BITMAPINFO *)hTbmp->DIB, DIB_RGB_COLORS);
+	if ( hTbmp->hPalette != NULL ){
+		SelectPalette(hDC, hOldPal, FALSE);  // C4701ok
+	}
+	ReleaseDC(hWnd, hDC);
+	tbab->hInst = NULL;
+	tbab->nID   = (UINT_PTR)hBMP;
+
+	// 必要とするサイズと大きく異なるなら、サイズ調整
+	sizedelta = (IconSize / 2) - hTbmp->size.cy;
+	if ( sizedelta < 0 ) sizedelta = -sizedelta;
+	if ( sizedelta > (hTbmp->size.cy / 3) ){
+		hTbmp->size.cx = (hTbmp->size.cx * IconSize) / (hTbmp->size.cy * 2);
+		hTbmp->size.cy = IconSize / 2;
+
+		tbab->nID = (UINT_PTR)CopyImage(hBMP, IMAGE_BITMAP, hTbmp->size.cx, hTbmp->size.cy, LR_COPYDELETEORG | LR_COPYRETURNORG);
+	}
+	*bmpsize = hTbmp->size;
+	FreeBMP(hTbmp);
+	return;
+}
+
 
 PPXDLL void PPXAPI LoadToolBarBitmap(HWND hWnd, const TCHAR *bmpname, TBADDBITMAP *tbab, SIZE *bmpsize)
 {
-	HBITMAP hBMP;
 	HDC hDC;
 	int videocolorbits;
-	int IconSize;
+	int IconSize; // デスクトップアイコンのサイズ(ツールバーサイズの２倍)
 	DWORD monitordpi;
+	HTBMP hTbmp;
 
-	if ( bmpname[0] != '\0' ){ // bmpファイル有り
-		HTBMP hTbmp;
-
-		if ( IsTrue(LoadBMP(&hTbmp, bmpname, BMPFIX_TOOLBAR)) ){
-			HPALETTE hOldPal C4701CHECK;
-
-			hDC = GetDC(hWnd);
-			if ( hTbmp.hPalette != NULL ){
-				hOldPal = SelectPalette(hDC, hTbmp.hPalette, FALSE);
-				RealizePalette(hDC);
-			}
-
-			hBMP = CreateDIBitmap(hDC, hTbmp.DIB, CBM_INIT,
-					hTbmp.bits, (BITMAPINFO *)hTbmp.DIB, DIB_RGB_COLORS);
-			if ( hTbmp.hPalette != NULL ) SelectPalette(hDC, hOldPal, FALSE);  // C4701ok
-			ReleaseDC(hWnd, hDC);
-
-			tbab->hInst = NULL;
-			tbab->nID   = (UINT_PTR)hBMP;
-			*bmpsize = hTbmp.size;
-			FreeBMP(&hTbmp);
-			return;
-		}
-	}
-	// リソースから取得する
+	// bitmap の高さを決定
 	bmpsize->cy = 16;
-
 	hDC = GetDC(hWnd);
 	videocolorbits = GetDeviceCaps(hDC, BITSPIXEL);
 	IconSize = GetSystemMetrics(SM_CXICON);
@@ -1067,9 +1121,20 @@ PPXDLL void PPXAPI LoadToolBarBitmap(HWND hWnd, const TCHAR *bmpname, TBADDBITMA
 		IconSize = (IconSize * (int)monitordpi) / DEFAULT_WIN_DPI;
 		if ( IconSize < minsize ) IconSize = minsize;
 	}
-
 	ReleaseDC(hWnd, hDC);
+
+	// bmpファイル有り
+	if ( bmpname[0] != '\0' ){
+		if ( IsTrue(LoadBMP(&hTbmp, bmpname, BMPFIX_TOOLBAR)) ){
+			FixToolBarBitmap(hWnd, &hTbmp, tbab, bmpsize, IconSize);
+			return;
+		}
+	}
+
+#if 1
+	// Windows から取得
 	if ( videocolorbits > 16 ){
+		HBITMAP hBMP;
 		if ( WinType <= WINTYPE_VISTA ){
 										// Windows XP
 			if ( WinType < WINTYPE_VISTA ){
@@ -1092,7 +1157,7 @@ PPXDLL void PPXAPI LoadToolBarBitmap(HWND hWnd, const TCHAR *bmpname, TBADDBITMA
 				}
 			}
 		}else{
-										// Windows 7, 8, 10
+										// Windows 7, 8, 10(20H2まで？)
 			if ( hIEframe == NULL ){
 				hIEframe = LoadLibraryEx(T("IEFRAME.DLL"), NULL, DONT_RESOLVE_DLL_REFERENCES | LOAD_LIBRARY_AS_DATAFILE);
 			}
@@ -1133,6 +1198,7 @@ PPXDLL void PPXAPI LoadToolBarBitmap(HWND hWnd, const TCHAR *bmpname, TBADDBITMA
 			}
 		}
 	}
+#endif
 #if 0 // PPLIB.DLL にビットマップを用意したので使う必要が無くなった
 										// Etc
 	if ( hBrowseui == NULL ){
@@ -1150,21 +1216,16 @@ PPXDLL void PPXAPI LoadToolBarBitmap(HWND hWnd, const TCHAR *bmpname, TBADDBITMA
 		FreeLibrary(hBrowseui);
 	}
 #endif
-						// 内蔵BMP
-	bmpsize->cx = 752;
+	// 内蔵BMP
+	if ( IsTrue(LoadResBMP(&hTbmp, DLLhInst, MAKEINTRESOURCE(TOOLBARIMAGE), BMPFIX_TOOLBAR)) ){
+		FixToolBarBitmap(hWnd, &hTbmp, tbab, bmpsize, IconSize);
+		return;
+	}
+
 	// ※tbab->nID に直接 HBITMAP を載せると、紫色の背景色変換が効かない
 	tbab->hInst = DLLhInst;
 	tbab->nID   = TOOLBARIMAGE;
-
-	if ( IconSize >= 4 ){ // マスク(紫)が表示されてしまうが小さいよりはまし。
-		hBMP = LoadBitmap(DLLhInst, MAKEINTRESOURCE(TOOLBARIMAGE));
-
-		bmpsize->cx = (752 * IconSize) / (16 * 2);
-		bmpsize->cy = IconSize / 2;
-		tbab->nID = (UINT_PTR)CopyImage(hBMP, IMAGE_BITMAP, bmpsize->cx, bmpsize->cy, LR_COPYDELETEORG |  LR_COPYRETURNORG);
-		tbab->hInst = NULL;
-	}
-	return;
+	bmpsize->cx = 752;
 }
 
 // style を追加可能に
@@ -1249,11 +1310,12 @@ PPXDLL HWND PPXAPI CreateToolBar(ThSTRUCT *thCmd, HWND hParentWnd, UINT *ID, con
 								// ツールバーウィンドウを作成する
 	LoadCommonControls(ICC_BAR_CLASSES);
 	// 編集可能にする : CCS_ADJUSTABLE | TBSTYLE_ALTDRAG
-	style |= WS_CHILD | CCS_NOPARENTALIGN | TBSTYLE_FLAT | TBSTYLE_TOOLTIPS;
+	style |= WS_CHILD | CCS_NOPARENTALIGN | TBSTYLE_FLAT | TBSTYLE_TOOLTIPS | CCS_NODIVIDER;
 	if ( textindex ) setflag(style, TBSTYLE_LIST);	// テキスト表示に必要
 	hTBWnd = CreateWindowEx(0, TOOLBARCLASSNAME, NULL, style,
 		0, 0, 0, 0, hParentWnd, CHILDWNDID(IDW_GENTOOLBAR), GetModuleHandle(NULL), NULL);
 	if ( hTBWnd != NULL ){
+		FixUxTheme(hTBWnd, TOOLBARCLASSNAME);
 //		if ( X_dss & DSS_COMCTRL ) SendMessage(hTBWnd, CCM_DPISCALE, TRUE, 0);
 
 		SendMessage(hTBWnd, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
@@ -1406,7 +1468,9 @@ PPXDLL int PPXAPI GetAccessApplications(const TCHAR *checkpath, TCHAR *text)
 							text += tstrlen(text);
 							if (text >= textmax) break;
 						}
-						if (infocount - i) wsprintf(text, MessageText(MES_ACET), infocount - i);
+						if ( infocount - i ){
+							wsprintf(text, MessageText(MES_ACET), infocount - i);
+						}
 					}
 					HeapFree(ProcHeap, 0, processInfo);
 				}
@@ -1418,20 +1482,52 @@ PPXDLL int PPXAPI GetAccessApplications(const TCHAR *checkpath, TCHAR *text)
 	return infocount;
 }
 
+#define DEFDARKCOLOR(Color, newcolor) if ( Color == C_AUTO ) Color = newcolor;
+#define DEFWINCOLOR(Color, Type) if ( Color == C_AUTO ) Color = GetSysColor(Type);
+
 void InitSysColors_main(void)
 {
+	ExtraDrawColors = 0;
 	GetCustData(T("C_win"), &C_WindowColors, sizeof(C_WindowColors));
-#define DEFWINCOLOR(Color, Type) if ( Color == C_AUTO ) Color = GetSysColor(Type);
-	DEFWINCOLOR(C_FrameHighlight, COLOR_BTNHIGHLIGHT);
-	DEFWINCOLOR(C_FrameFace, COLOR_BTNFACE);
-	DEFWINCOLOR(C_FrameShadow, COLOR_BTNSHADOW);
-	DEFWINCOLOR(C_WindowText, COLOR_WINDOWTEXT);
-	DEFWINCOLOR(C_WindowBack, COLOR_WINDOW);
+
+	if ( X_uxt == UXT_DARK ){
+		DEFDARKCOLOR(C_FrameHighlight, C_WindowDarkColors._FrameHighlight);
+		DEFDARKCOLOR(C_FrameFace, C_WindowDarkColors._FrameFace);
+		DEFDARKCOLOR(C_FrameShadow, C_WindowDarkColors._FrameShadow);
+		DEFDARKCOLOR(C_WindowBack, C_WindowDarkColors._WindowBack);
+		DEFDARKCOLOR(C_DialogBack, C_WindowDarkColors._DialogBack);
+		DEFDARKCOLOR(C_WindowText, C_WindowDarkColors._WindowText);
+		DEFDARKCOLOR(C_GrayState, C_WindowDarkColors._GrayState);
+		ExtraDrawColors = EDC_WINDOW_TEXT | EDC_WINDOW_BACK | EDC_DIALOG_BACK;
+	}else{
+		DEFWINCOLOR(C_FrameHighlight, COLOR_BTNHIGHLIGHT);
+		DEFWINCOLOR(C_FrameFace, COLOR_BTNFACE);
+		DEFWINCOLOR(C_FrameShadow, COLOR_BTNSHADOW);
+		if ( C_WindowText == C_AUTO ){
+			C_WindowText = GetSysColor(COLOR_WINDOWTEXT);
+		}else{
+			setflag(ExtraDrawColors, EDC_WINDOW_TEXT);
+		}
+		if ( C_WindowBack == C_AUTO ){
+			C_WindowBack = GetSysColor(COLOR_WINDOW);
+		}else{
+			setflag(ExtraDrawColors, EDC_WINDOW_BACK);
+		}
+		DEFWINCOLOR(C_GrayState, COLOR_GRAYTEXT);
+	}
 	DEFWINCOLOR(C_HighlightText, COLOR_HIGHLIGHTTEXT);
 	DEFWINCOLOR(C_HighlightBack, COLOR_HIGHLIGHT);
-	DEFWINCOLOR(C_GrayState, COLOR_GRAYTEXT);
 #undef DEFWINCOLOR
-	if ( C_DialogBack != C_AUTO ){
+#undef DEFDARKCOLOR
+	if ( C_DialogBack == C_AUTO ){
+		C_DialogBack = GetSysColor(COLOR_BTNFACE);
+		if ( X_uxt >= UXT_MINMODIFYTINY ){
+			setflag(ExtraDrawColors, EDC_DIALOG_BACK);
+		}
+	}else{
+		setflag(ExtraDrawColors, EDC_DIALOG_BACK);
+	}
+	if ( ExtraDrawColors & (EDC_WINDOW_TEXT | EDC_DIALOG_BACK) ){
 		hDialogBackBrush = CreateSolidBrush(C_DialogBack);
 		C_StaticBack = C_DialogBack;
 	}else{
@@ -1516,14 +1612,6 @@ HBRUSH GetGrayBackBrush(void)
 	return hGrayBack;
 }
 
-HBRUSH GetWindowBackBrush(void)
-{
-	if ( hWindowBackBrush != NULL ) return hWindowBackBrush;
-	InitSysColors();
-	hWindowBackBrush = CreateSolidBrush(C_WindowBack);
-	return hWindowBackBrush;
-}
-
 HBRUSH GetStaticBackBrush(void)
 {
 	if ( hStaticBackBrush != NULL ) return hStaticBackBrush;
@@ -1540,21 +1628,21 @@ PPXDLL void PPXAPI DrawSeparateLine(HDC hDC, const RECT *box, UINT flags)
 	edgebox = facebox = *box;
 	if ( flags & BF_TOP ){
 		edgebox.bottom = facebox.top = edgebox.top + 1;
-		FillRect(hDC, &edgebox, GetFrameHighlightBrush());
+		FillBox(hDC, &edgebox, GetFrameHighlightBrush());
 		edgebox.bottom = box->bottom;
 	}
 	if ( (flags & BF_BOTTOM) && ((facebox.bottom - facebox.top) >= 3) ){
 		edgebox.top = facebox.bottom = edgebox.bottom - 1;
-		FillRect(hDC, &edgebox, GetFrameShadowBrush());
+		FillBox(hDC, &edgebox, GetFrameShadowBrush());
 	}
 	if ( flags & BF_LEFT ){
 		edgebox.right = facebox.left = edgebox.left + 1;
-		FillRect(hDC, &edgebox, GetFrameHighlightBrush());
+		FillBox(hDC, &edgebox, GetFrameHighlightBrush());
 		edgebox.right = box->right;
 	}
 	if ( (flags & BF_RIGHT) && ((facebox.right - facebox.left) >= 3) ){
 		edgebox.left = facebox.right = edgebox.right - 1;
-		FillRect(hDC, &edgebox, GetFrameShadowBrush());
+		FillBox(hDC, &edgebox, GetFrameShadowBrush());
 	}
-	FillRect(hDC, &facebox, GetFrameFaceBrush());
+	FillBox(hDC, &facebox, GetFrameFaceBrush());
 }

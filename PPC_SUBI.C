@@ -846,23 +846,6 @@ HICON LoadFileIcon(const TCHAR *filename, DWORD attr, DWORD flags, UINT iconsize
 					iinfo.fIcon = TRUE;
 					iinfo.xHotspot = iinfo.yHotspot = 0;
 					iinfo.hbmMask = CreateBitmap(iconsize, iconsize, 1, 1, NULL); // 32bit bmp なので、適当なマスクで問題ない
-/*
-					{
-						struct {
-							BITMAPINFOHEADER h;
-							COLORREF bmiColors[2];
-						} bi;
-
-						bi.h.biSize = sizeof(BITMAPINFOHEADER);
-						bi.h.biWidth = bi.h.biHeight = iconsize;
-						bi.h.biPlanes = bi.h.biBitCount = 1;
-						bi.h.biCompression = 0;
-						bi.bmiColors[0] = C_BLACK;
-						bi.bmiColors[1] = C_WHITE;
-						iinfo.hbmMask = CreateDIBitmap(NULL, &bi.h, 0, (BITMAPINFO *)&bi, NULL, DIB_PAL_COLORS);
-mas
-					}
-*/
 					hIcon = CreateIconIndirect(&iinfo);
 					DeleteObject(iinfo.hbmMask);
 					DeleteObject(iinfo.hbmColor);

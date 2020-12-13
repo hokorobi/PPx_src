@@ -130,6 +130,10 @@ extern VFSDLL HANDLE PPXAPI FindFirstFileL(_In_z_ const TCHAR *dir, _Out_ WIN32_
 extern VFSDLL DWORD PPXAPI GetFileAttributesL(const TCHAR *FileName);
 extern VFSDLL BOOL PPXAPI SetFileAttributesL(const TCHAR *FileName, DWORD attributes);
 
+// WIN32_FIND_DATAのcFileName,cAlternateFileName以外の情報を取得する
+typedef WIN32_FIND_DATA FILE_STAT_DATA;
+BOOL WINAPI GetFileSTAT(const TCHAR *lpFileName, FILE_STAT_DATA *FindFileData);
+
 extern VFSDLL BOOL PPXAPI MoveFileWithProgressL(const TCHAR *ExistingFileName,
 		const TCHAR *NewFileName,
 		LPPROGRESS_ROUTINE ProgressRoutine, LPVOID Data, DWORD dwFlags);
@@ -329,7 +333,7 @@ extern VFSDLL void PPXAPI CatPath(_Out_writes_opt_z_(VFPS) TCHAR *dst, TCHAR *sr
 			(flag & VFSFIX_FULLPATH)	最下層のエントリを示すポインタ
 			!(flag & VFSFIX_FULLPATH)	変換されたパスの先頭
 -----------------------------------------------------------------------------*/
-// flag 用定数
+// flags 用定数
 #define VFSFIX_DRIVE		B0	// １文字ドライブ指定の補正（"A"→"A:"）
 #define VFSFIX_SEPARATOR	B1	// セパレータ"\", "/" の補正（"/"→"\"）
 // #define VFSFIX_CASE		B2	// 大文字化(1.12より無効化中)
@@ -338,10 +342,11 @@ extern VFSDLL void PPXAPI CatPath(_Out_writes_opt_z_(VFPS) TCHAR *dst, TCHAR *sr
 #define VFSFIX_NOBLANK		B5	// 空欄をエラーとする
 #define VFSFIX_NOFIXEDGE	B6	// 先頭・末端の加工をしない(整形済みを利用)
 #define VFSFIX_VREALPATH	B7	// 仮想パスの実体化(実体化できないときはそのまま)
+#define VFSFIX_KEEPLASTPERIOD	B8	// 末尾「.」を維持する
 
 #define VFSFIX_VFPS			(VFSFIX_DRIVE | VFSFIX_SEPARATOR | VFSFIX_FULLPATH)
 #define VFSFIX_PATH			(VFSFIX_VFPS | VFSFIX_REALPATH)
-extern VFSDLL TCHAR * PPXAPI VFSFixPath(TCHAR *dst, TCHAR *src, _In_opt_z_ const TCHAR *cur, int flag);
+extern VFSDLL TCHAR * PPXAPI VFSFixPath(TCHAR *dst, TCHAR *src, _In_opt_z_ const TCHAR *cur, int flags);
 
 /*-----------------------------------------------------------------------------
 	相対指定の src を絶対指定の cur より絶対指定に変換する
@@ -404,14 +409,14 @@ typedef struct {
 	const TCHAR *dest;		// IN コピー先準パス(NULL or "" : 使用せず)
 	const TCHAR *files;		// IN コピー元ﾌｧｲﾙ名 name1\0name2\0...namex\0\0 形式
 	const TCHAR *option;	// IN 追加パラメータ(NULL or "" : 使用せず)
-	int		dtype;			// IN コピー元のファイル形式(通常は VFSDT_UNKNOWN )
+	int dtype;				// IN コピー元のファイル形式(通常は VFSDT_UNKNOWN )
 	PPXAPPINFO *info;		// IN 参照用
-	HWND	hReturnWnd;		// IN 終了後、アクティブにするウィンドウ(NULL:未使用)
-	DWORD	flags;			// IN 追加指定 VFSFOP_
-	HWND	hLogWnd;		// OUT 結果ウィンドウ
+	HWND hReturnWnd;		// IN 終了後、アクティブにするウィンドウ(NULL:未使用)
+	DWORD flags;			// IN 追加指定 VFSFOP_
+	HWND hLogWnd; // unused 結果ウィンドウ ※現在未使用
 
-	HANDLE	hReadyEvent;	// IN 初期化完了/hDialogWnd有効を通知するイベント(VFSFOP_NOTIFYREADY指定時のみ設定が必要)
-	HWND	hDialogWnd;		// OUT 作成されたダイアログ
+	HANDLE hReadyEvent;		// IN 初期化完了/hDialogWnd有効を通知するイベント(VFSFOP_NOTIFYREADY指定時のみ設定が必要)
+	HWND hDialogWnd;		// OUT 作成されたダイアログ
 } VFSFILEOPERATION;
 
 extern VFSDLL BOOL PPXAPI PPxFileOperation(HWND hWnd, VFSFILEOPERATION *fileop);

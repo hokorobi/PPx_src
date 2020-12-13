@@ -2,9 +2,9 @@
 	Paper Plane xUI	 Virtual File System			ファイル操作/ *fileコマンド
 -----------------------------------------------------------------------------*/
 #define SECTORSIZE 2048
-#define RWSIZE (1 * 512 * SECTORSIZE)
-#define filebuffersize	0x8000		// デフォルトファイルバッファの大きさ
 #define MAXACTIONNAME 32
+
+#define WM_FOP_CREATE_LOGWINDOW (WM_APP + 106)
 
 // 削除するとき問題になる属性
 #define OPENERRORATTRIBUTES (FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM)
@@ -42,8 +42,9 @@ typedef struct {
 } DDWORDS;
 
 struct ProgressInfo {
-	DWORD mark, markall;		// 処理済マーク数、全マーク数
-	DWORD donefiles, filesall;	// 処理済ファイル数、全ファイル数
+	DWORD mark, markall;	// 処理済マーク数、全マーク数
+	DWORD donefiles;		// 処理済ファイル数。MAX32: SHN や Image
+	DWORD filesall;			// 全ファイル数。 0: 総数未計算
 	DDWORDS donesize, allsize;	// 処理済バイト数、全バイト数
 	DWORD LEskips, EXskips, errors; // 軽微エラー無視によるスキップ数、上書き無しスキップ数、エラー数
 	DWORD busybar;			// ワーキングカウンタ
@@ -59,6 +60,8 @@ struct _ProgressWndInfo {
 	HWND hProgressWnd; // IDS_FOP_PROGRESS の hWnd
 	const TCHAR *srcpath; // Source 欄に表示する文字列
 	struct tagFOPSTRUCT *FS;
+
+	LARGE_INTEGER FileTransSize, FileSize; // 1file copy の進捗状況
 
 	DWORD ProgTick; // プログレス表示計算用Tick(Source 欄表示兼用)
 	DWORD CapTick;  // キャプション更新用Tick
@@ -114,7 +117,6 @@ struct pageinfo {
 typedef struct tagFOPSTRUCT{
 	HWND hDlg;	// メインダイアログ
 	HWND hDstED;	// コピー先のテキストボックス
-	HWND hEWnd;	// エラーログ
 
 	UINT Command;	// 同名処理時のボタン操作に使用
 	int errorcount;
@@ -127,19 +129,26 @@ typedef struct tagFOPSTRUCT{
 	BOOL NoAutoClose; // ログ確認のため、終了後もダイアログを閉じない
 	BOOL hide; // 普段は隠れているか
 	BOOL DestroyWait; // WM_DESTROY で待機をするか(Fop_ShellNameSpaceで、メディアプレイヤーへ処理を行うとき、メッセージポンプをしばらく動かさないとうまく動作しないための対策)
+	DWORD UI_ThreadID;
 
 	int reparsemode; // リパースポイントの扱い
 
-	enum fop_states state;	// 動作状況
+	volatile enum fop_states state;	// 動作状況
 
 	struct FopOption opt;
 	struct _ProgressWndInfo progs;	// 状況表示関係
 	DELETESTATUS DelStat;
 	PPXAPPINFO DelInfo;
 
-	HWND *hLogWnd;
+	struct { // 結果ログ
+		HWND hWnd;
+		ThSTRUCT cache;
+		DWORD tick;
+	} log;
+
 	HANDLE hUndoLogFile; // UNDOログ
 	HANDLE hStartMutex; // コピー開始待機用のMutex
+	HANDLE hProgsEvent; // Operation thread の経過表示指示用
 	PPXAPPINFO *info;
 	struct pageinfo page;
 	TCHAR DestDir[VFPS];
@@ -169,7 +178,7 @@ enum foplogtypes {
 	LOG_COPY = 0, LOG_COPYOVERWRITE, LOG_MOVE, LOG_MOVEOVERWRITE,
 	LOG_APPEND, LOG_BACKUP, LOG_LINK, LOG_SKIP,
 	LOG_DIR, LOG_DIR_DELETE, LOG_DELETE, LOG_STRING,
-	LOG_MAKEDIR
+	LOG_MAKEDIR, LOG_COMPLETED
 };
 
 #define CreateFile_OpenSource(SRC, FILEMODE) CreateFileL(SRC, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN | FILEMODE, NULL)
@@ -178,24 +187,29 @@ void FopLog(FOPSTRUCT *FS, const TCHAR *src, const TCHAR *dst, enum foplogtypes 
 
 //----------------------------------------------------------------- vfs_fop.c
 extern BOOL OperationStart(FOPSTRUCT *FS);
+extern void FWriteLog(FOPSTRUCT *FS, const TCHAR *message);
+extern void CreateFWriteLogWindow(FOPSTRUCT *FS);
+extern void CreateFWriteLogWindowMain(FOPSTRUCT *FS);
 extern void FWriteLogMsg(FOPSTRUCT *FS, const TCHAR *mes);
+extern void FShowLog(FOPSTRUCT *FS);
 extern void FWriteErrorLogs(FOPSTRUCT *FS, const TCHAR *mes, const TCHAR *type, ERRORCODE error);
 extern void DisplaySrcNameNow(FOPSTRUCT *FS);
 extern void TinyDisplayProgress(FOPSTRUCT *FS);
-extern void FullDisplayProgress(struct _ProgressWndInfo *Progs, LARGE_INTEGER TotalTransSize, LARGE_INTEGER TotalSize);
+extern void SetTinyProgress(FOPSTRUCT *FS);
+extern void FullDisplayProgress(struct _ProgressWndInfo *Progs);
+extern void SetFullProgress(struct _ProgressWndInfo *Progs);
 
 #define ACTION_CREATE NO_ERROR
 #define ACTION_SKIP		MAX32
-#define ACTION_RETRY	(MAX32-1)
-#define ACTION_APPEND	(MAX32-2)
-#define ACTION_OVERWRITE (MAX32-3)
+#define ACTION_RETRY	(MAX32 - 1)
+#define ACTION_APPEND	(MAX32 - 2)
+#define ACTION_OVERWRITE (MAX32 - 3)
+#define ACTION_ERROR (MAX32 - 4)
 ERRORCODE SameNameAction(FOPSTRUCT *FS, HANDLE dstH, BY_HANDLE_FILE_INFORMATION *srcfinfo, BY_HANDLE_FILE_INFORMATION *dstfinfo, const TCHAR *src, TCHAR *dst);
 
 DWORD CALLBACK CopyProgress(LARGE_INTEGER TotalSize, LARGE_INTEGER TotalTransSize, LARGE_INTEGER StreamSize, LARGE_INTEGER StreamTransSize, DWORD StreamNumber, DWORD reason, HANDLE hSourceFile, HANDLE hDestinationFile, LPVOID lpData);
 
 extern ERRORCODE TestDest(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst);
-extern void FWriteLog(HWND hEWnd, const TCHAR *message);
-extern void CreateFWriteLogWindow(FOPSTRUCT *FS);
 extern void EndingOperation(FOPSTRUCT *FS);
 extern HWND FopGetMsgParentWnd(FOPSTRUCT *FS);
 extern void EndPreventSleep(HWND hWnd);
@@ -234,7 +248,7 @@ extern ValueWinAPI(SHCreateItemFromParsingName);
 extern ERRORCODE DlgCopyDir(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD srcatr);
 
 //----------------------------------------------------------------- vfs_ocf.c
-extern ERRORCODE DlgCopyFile(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD srcatr);
+extern ERRORCODE DlgCopyFile(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, FILE_STAT_DATA *srcStat);
 extern ERRORCODE CheckEntryMask(FOPSTRUCT *FS, const TCHAR *src, DWORD srcatr);
 
 //----------------------------------------------------------------- vfs_odel.c
@@ -252,7 +266,7 @@ extern void SetFopTab(FOPSTRUCT *FS, int id);
 extern void SetStateOnCaption(FOPSTRUCT *FS, const TCHAR *text);
 
 //----------------------------------------------------------------- vfs_oflt.c
-extern ERRORCODE LFNfilter(struct FopOption *opt, TCHAR *src);
+extern ERRORCODE LFNfilter(struct FopOption *opt, TCHAR *src, DWORD attributes);
 
 //----------------------------------------------------------------- vfs_oimg.c
 extern BOOL OperationStartListFile(FOPSTRUCT *FS, const TCHAR *srcDIR, TCHAR *dstDIR);

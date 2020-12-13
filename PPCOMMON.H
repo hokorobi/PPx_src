@@ -528,7 +528,7 @@ extern PPXDLL BOOL PPXAPI GetRegString(HKEY hKey, const TCHAR *path, const TCHAR
 extern PPXDLL void PPXAPI PPxHelp(HWND hWnd, UINT command, DWORD_PTR data);
 
 // ダイアログで Help 等の補助処理を行う
-extern PPXDLL BOOL PPXAPI PPxDialogHelper(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
+extern PPXDLL INT_PTR PPXAPI PPxDialogHelper(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
 
 // 同期オブジェクトに付加する文字列を返す（マルチユーザで同時実行するため）
 extern PPXDLL const TCHAR * PPXAPI PPxGetSyncTag(void);
@@ -964,6 +964,7 @@ extern PPXDLL void PPXAPI CenterWindow(HWND hWnd);
 extern PPXDLL void PPXAPI MoveCenterWindow(HWND hWnd, HWND hParentWnd);
 extern PPXDLL void PPXAPI MoveWindowByKey(HWND hWnd, int offx, int offy);
 extern PPXDLL void PPXAPI ForceSetForegroundWindow(HWND hWnd);
+extern PPXDLL int PPXAPI FixUxTheme(HWND hWnd, const TCHAR *classname);
 
 //==================================================================== メニュー
 /*-----------------------------------------------------------------------------
@@ -1296,7 +1297,8 @@ message:出力文字列, % 対応
 
 // ログ
 #define XM_FaERRl	8	// 致命的エラー
-#define XM_INFOlog	14	// 好意で出力する情報/作業完了
+#define XM_INFOLLog	13	// 好意で出力する情報/作業完了(ログのみ)
+#define XM_INFOlog	14	// 好意で出力する情報/作業完了(ログ窓＋ログ)
 #define XM_ETCl		15	// その他
 
 // ダイアログ表示
@@ -1308,7 +1310,7 @@ message:出力文字列, % 対応
 #define XM_BEEP		25	// Beep
 #define XM_DbgLOG	26	// ログのみ
 #define XM_DUMP		27	// Dumpダイアログ message:ダンプ先頭 1st:DWORD, dump size
-#define XM_DUMPLOG	28	// Dumpログ
+#define XM_DUMPLOG	28	// Dumpログのみ
 
 extern PPXDLL void USECDECL XMessage(HWND hWnd, const TCHAR *title, UINT type, const TCHAR *message, ...);
 #define xmessage(type, message) XMessage(NULL, NULL, type, message)

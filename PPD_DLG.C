@@ -8,7 +8,8 @@
 #pragma hdrstop
 
 const TCHAR *ClassAtomString[] = {
-	BUTTONstr, EDITstr, STATICstr, LISTBOXstr, SCROLLBARstr, COMBOBOXstr
+	ButtonClassName, EditClassName, StaticClassName, ListBoxClassName,
+	ScrollBarClassName, ComboBoxClassName
 };
 
 LPDLGTEMPLATE GetDialogTemplate(HWND hParentWnd, HANDLE hinst, LPCTSTR lpszTemplate)
@@ -148,9 +149,9 @@ PPXDLL INT_PTR PPXAPI PPxDialogBoxParam(HANDLE hinst, const TCHAR *lpszTemplate,
 }
 
 #ifdef UNICODE
-const TCHAR *GetDialogTemplateText(BYTE **dpitem)
+const TCHAR *GetDialogTemplateText(const BYTE **dpitem)
 #else
-const TCHAR *GetDialogTemplateText(BYTE **dpitem, char *text)
+const TCHAR *GetDialogTemplateText(const BYTE **dpitem, char *text)
 #endif
 {
 	if ( *((WORD *)*dpitem) == 0xffff ){ // atom
@@ -197,14 +198,15 @@ HWND *CreateDialogWindow(HANDLE hinst, LPCTSTR lpszTemplate, HWND hParentWnd)
 {
 	HRSRC hrDialog;
 	DWORD controls;
-	BYTE *dialog;
-	BYTE *dp, *dpitem;
+	const BYTE *dialog;
+	const BYTE *dp, *dpitem;
 	DLGITEMTEMPLATE *dtp;
 	RECT box;
 	int i;
 	HFONT hFont;
 	HWND *hCtrlWnds, *hCtrlWndDst;
 
+// InitSysColors();
 	hFont = (HFONT)SendMessage(hParentWnd, WM_GETFONT, 0, 0);
 	hrDialog = FindResource(hinst, lpszTemplate, RT_DIALOG);
 
@@ -238,7 +240,7 @@ HWND *CreateDialogWindow(HANDLE hinst, LPCTSTR lpszTemplate, HWND hParentWnd)
 		dpitem += sizeof(WORD);
 	}
 	for ( ; controls ; controls-- ){
-		const TCHAR *ClassName,*CaptionName;
+		const TCHAR *ClassName, *CaptionName;
 #ifndef UNICODE
 		char ClassNameA[MAX_PATH];
 		char CaptionNameA[MAX_PATH];
@@ -278,12 +280,13 @@ HWND *CreateDialogWindow(HANDLE hinst, LPCTSTR lpszTemplate, HWND hParentWnd)
 		hCtrlWnd = CreateWindowEx(dtp->dwExtendedStyle | WS_EX_NOPARENTNOTIFY,
 				ClassName, CaptionName, dtp->style | WS_CHILD | WS_VISIBLE,
 				box.left, box.top, box.right, box.bottom, hParentWnd,
-				CHILDWNDID(dtp->id), hinst, extrasize ? dpitem : NULL);
+				CHILDWNDID(dtp->id), hinst, extrasize ? (void *)dpitem : NULL);
 		if ( hCtrlWnd == NULL ){
 			PPErrorBox(hParentWnd,NULL,PPERROR_GETLASTERROR);
 			break;
 		}
-		SendMessage(hCtrlWnd,WM_SETFONT,(WPARAM)hFont,TMAKELPARAM(TRUE,0));
+		SendMessage(hCtrlWnd, WM_SETFONT, (WPARAM)hFont, TMAKELPARAM(TRUE,0));
+		FixUxTheme(hCtrlWnd, ClassName);
 		*hCtrlWndDst++ = hCtrlWnd;
 		dpitem += extrasize ? extrasize : sizeof(WORD);
 	}
@@ -298,12 +301,12 @@ void PaintPPxStatic(HWND hWnd)
 	TCHAR buf[0x800], *maxptr;
 	RECT rect;
 
-	BeginPaint(hWnd,&ps);
+	BeginPaint(hWnd, &ps);
 	maxptr = buf + GetWindowText(hWnd, buf, TSIZEOF(buf));
 
 	if ( maxptr != buf ){
 		TCHAR *first, *format;
-		POINT Draw = {0, 0};
+		POINT Draw = {1, 2};
 		int align = 0; // はみ出したときの揃え方
 		HGDIOBJ hOldFont;
 		TEXTMETRIC tm;
@@ -328,8 +331,18 @@ void PaintPPxStatic(HWND hWnd)
 		MapDialogRect(GetParent(hWnd), &rect);
 		baseW = rect.right;
 		GetClientRect(hWnd, &rect);
-		rect.left += 2;
 		InitSysColors();
+
+		// WS_BORDER の代わりに自前で枠を描画。
+		// ※ WS_BORDER がダイアログ作成時に WS_EX_CLIENTEDGE に置き換わり、
+		//    しかも、後で変更できないため
+		rect.right--;
+		rect.bottom--;
+		FrameRect(ps.hdc, &rect, GetGrayBackBrush());
+		rect.left += 2;
+		rect.right--;
+		rect.bottom--;
+
 		SetTextColor(ps.hdc, C_WindowText);
 		SetBkColor(ps.hdc, C_StaticBack);
 		hOldFont = SelectObject(ps.hdc,
@@ -383,7 +396,7 @@ void PaintPPxStatic(HWND hWnd)
 					break;
 				}
 				case '\n':			// 改行
-					Draw.x = 0;
+					Draw.x = 1;
 					Draw.y += baseH;
 					break;
 				case PXSC_PAR: {	// プログレス表示

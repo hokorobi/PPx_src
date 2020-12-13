@@ -20,9 +20,7 @@ void ComboCreateToolBar(HWND hWnd)
 	UINT ID = TOOLBAR_CMDID;
 	HWND hBarWnd;
 
-	if ( UseCCDrawBack == 0 ){
-		UseCCDrawBack = PPxCommonExtCommand(K_DRAWCCBACK, 0) ? 2 : 1;
-	}
+	if ( UseCCDrawBack == 0 ) LoadCCDrawBack();
 	hBarWnd = CreateToolBar(&thGuiWork, hWnd, &ID, T("B_cdef"), PPcPath,
 			(UseCCDrawBack > 1) ? _TBSTYLE_CUSTOMERASE : 0);
 	Combo.ToolBar.hWnd = hBarWnd;

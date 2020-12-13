@@ -147,14 +147,16 @@ void SetComboReportText(const TCHAR *text)
 		text = (Combo.Report.hWnd == NULL) ? NULL : REPORTTEXT_CLOSE;
 	}
 	if ( text == REPORTTEXT_FOCUS ){
-		SetFocus(Combo.Report.hWnd);
+		if ( Combo.Report.hWnd != NULL ) SetFocus(Combo.Report.hWnd);
 		return;
 	}
 	if ( text == REPORTTEXT_CLOSE ){
-		PPxCommonExtCommand(K_SETLOGWINDOW, 0);
-		PostMessage(Combo.Report.hWnd, WM_CLOSE, 0, 0);
-		Combo.Report.hWnd = NULL;
-		Combo.BottomAreaHeight = 0;
+		if ( Combo.Report.hWnd != NULL ){
+			PPxCommonExtCommand(K_SETLOGWINDOW, 0);
+			PostMessage(Combo.Report.hWnd, WM_CLOSE, 0, 0);
+			Combo.Report.hWnd = NULL;
+			Combo.BottomAreaHeight = 0;
+		}
 		resetflag(X_combos[0], CMBS_COMMONREPORT);
 		SortComboWindows(SORTWIN_LAYOUTALL);
 		return;
@@ -342,7 +344,7 @@ void CreateReportArea(void)
 	GetCustData(T("X_askp"), &X_askp, sizeof(X_askp));
 	CreateBottomArea();
 	InitEditColor();
-	Combo.Report.hWnd = CreateWindowEx(0, T("EDIT"), NilStr,
+	Combo.Report.hWnd = CreateWindowEx(0, WC_EDIT, NilStr,
 			WS_CHILD | WS_VSCROLL | ES_AUTOVSCROLL | ES_NOHIDESEL |
 			ES_LEFT | ES_MULTILINE | ES_WANTRETURN,
 			0, Combo.Report.box.y,
@@ -418,7 +420,7 @@ void CreateAddressBar(void)
 	LoadAddressBitmap();
 	if ( ADDRBMP_SIZE > AddrHeight ) AddrHeight = ADDRBMP_SIZE;
 	InitEditColor();
-	Combo.hAddressWnd = CreateWindowEx(WS_EX_CLIENTEDGE, T("EDIT"), NilStr,
+	Combo.hAddressWnd = CreateWindowEx(WS_EX_CLIENTEDGE, WC_EDIT, NilStr,
 			WS_CHILD | WS_VSCROLL | ES_AUTOHSCROLL | ES_NOHIDESEL | ES_LEFT,
 			-10, -10, 10, 10, Combo.hWnd, CHILDWNDID(IDW_ADDRESS), hInst, 0);
 												// EditBox ‚ÌŠg’£ -------------

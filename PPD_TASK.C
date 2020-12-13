@@ -1636,7 +1636,7 @@ void InitJobList(HWND hMainWnd)
 
 	GetCustData(T("CC_log"), &CJ_log, sizeof(CJ_log));
 
-	Sm->JobList.hWnd = CreateWindowEx(0, LISTBOXstr, NilStr,
+	Sm->JobList.hWnd = CreateWindowEx(0, ListBoxClassName, NilStr,
 			WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_HASSTRINGS | LBS_OWNERDRAWFIXED | LBS_NOINTEGRALHEIGHT,
 			0, 0, 200, 100, hParentWnd, CHILDWNDID(IDL_JOBLIST), DLLhInst, NULL);
 

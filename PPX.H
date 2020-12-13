@@ -123,6 +123,17 @@
 #define XDLF_DISPFREE	B8
 #define XDLF_ADMINDRIVE	B9
 
+// X_uxt 用定数
+#define UXT_NA  -4	// 設定未取得
+#define UXT_OFF -3	// 動作無し
+#define UXT_TINY -2	// デザインのみ変更
+#define UXT_AUTO -1	// レジストリにあわせる
+#define UXT_DARK 0	// dark mode
+#define UXT_LIGHT 1	// light mode
+
+#define UXT_MINMODIFY UXT_AUTO
+#define UXT_MINMODIFYTINY UXT_TINY
+
 typedef struct {
 	RECT pos;		//MoveWindow
 	BYTE show;		//ShowWindow
@@ -248,6 +259,18 @@ typedef struct {
 #define PPC_HIGHLIGHT_COLORS 7
 #define PPV_HIGHLIGHT_COLORS 8
 
+#define DARK_COLOR_FRAME_HIGH	0xFF2B2B2B
+#define DARK_COLOR_FRAME_FACE	0x404040
+#define DARK_COLOR_FRAME_SHADOW	0xFF191919
+
+#define DARK_COLOR_TEXT	0xd0d0d0
+#define DARK_COLOR_INFOTEXT	0xc0c0c0
+#define DARK_COLOR_BACK	0x202020
+#define DARK_COLOR_DIALOGBACK	0x282828
+#define DARK_COLOR_FOCUSBACK	0x404040
+#define DARK_COLOR_GRAY	0x606060
+
+
 //------------------------------------- *file 関連
 #pragma pack(push, 1)
 typedef struct {			// カスタマイズ内容(X_fopt)
@@ -296,6 +319,8 @@ enum { // mode の内容
 	FOPMODE_SYMLINK,
 	FOPMODE_MAX
 };
+#define FOPMODE_ISCOPYMOVE(FOPMODE) (FOPMODE <= FOPMODE_MIRROR)
+
 // flags の内容
 #define VFSFOP_OPTFLAG_SKIPERROR	B0	// 軽微エラーの無視
 #define VFSFOP_OPTFLAG_FLATMODE		B1	// 平坦化

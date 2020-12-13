@@ -5,11 +5,26 @@
 #include "WINAPI.H"
 #include "PPX.H"
 #include "VFS.H"
+#include "PPD_DEF.H"
 #pragma hdrstop
 
 #ifndef COLOR_BTNFACE
 #define COLOR_BTNFACE 15
 #endif
+
+typedef HANDLE DHTHEME;
+DefineWinAPI(BOOL, IsAppThemed, (void));
+DefineWinAPI(DHTHEME, OpenThemeData, (HWND hwnd, LPCWSTR pszClassList)) = NULL;
+DefineWinAPI(HRESULT, CloseThemeData, (DHTHEME hTheme));
+DefineWinAPI(HRESULT, GetThemeColor, (DHTHEME hTheme, int iPartId, int iStateId, int iPropId, COLORREF *pColor));
+
+LOADWINAPISTRUCT UxThemeDLL[] = {
+	LOADWINAPI1(IsAppThemed),
+	LOADWINAPI1(OpenThemeData),
+	LOADWINAPI1(CloseThemeData),
+	LOADWINAPI1(GetThemeColor),
+	{NULL, NULL}
+};
 
 /* DIBのヘッダからパレットを作成する */
 HPALETTE DIBtoPalette(HTBMP *hTbmp, int mode, int maxY)
@@ -41,7 +56,7 @@ HPALETTE DIBtoPalette(HTBMP *hTbmp, int mode, int maxY)
 		if ( VideoBits > 8 ) return NULL; // 画面が256超なのでそのまま表示可能
 
 		rgb = hTbmp->nb.rgb2;
-		lPal.palNumEntries = 6*6*6;
+		lPal.palNumEntries = 6 * 6 * 6;
 		for( b = 0 ; b <= 255 ; b += 51 ){
 			for(g = 0 ; g <= 255 ; g += 51){
 				for(r = 0 ; r <= 255 ; r += 51, ppal++){
@@ -61,10 +76,10 @@ HPALETTE DIBtoPalette(HTBMP *hTbmp, int mode, int maxY)
 			dib->biSizeImage = hTbmp->size.cx * maxY;
 			for ( y = 0; y < maxY ; y++ ){
 				for ( x = 0; x < dib->biWidth ; x++ ){
-					r = ((*(src++) +25)/ 51);	// red
-					g = ((*(src++) +25)/ 51);	// green
+					r = ((*(src++) + 25) / 51);	// red
+					g = ((*(src++) + 25) / 51);	// green
 												// blue
-					*dst++ = (BYTE)(r * 36 + g * 6 + ((*(src++) +25)/ 51));
+					*dst++ = (BYTE)(r * 36 + g * 6 + ((*(src++) +25) / 51));
 				}
 				src += (4 - ALIGNMENT_BITS(src)) & 3;
 				dst += (4 - ALIGNMENT_BITS(dst)) & 3;
@@ -78,20 +93,38 @@ HPALETTE DIBtoPalette(HTBMP *hTbmp, int mode, int maxY)
 		}
 	}else{
 		DWORD ci;
+		DWORD t_clr;
 
 		rgb = (LPRGBQUAD)((BYTE *)hTbmp->DIB + hTbmp->PaletteOffset);
 		if ( IsBadReadPtr(rgb, ClrUsed * sizeof(RGBQUAD)) ) return NULL;
+
+		if ( mode == BMPFIX_TOOLBAR ){
+			t_clr = GetSysColor(COLOR_BTNFACE);
+
+			if ( DOpenThemeData == NULL ){
+				if ( IsTrue(InitUnthemeDLL()) ){
+					LoadWinAPI(NULL, hUxtheme, UxThemeDLL, LOADWINAPI_HANDLE);
+				}
+			}
+			// ●DWMの有効チェックを省略中
+			if ( (DOpenThemeData != NULL) && (WinType >= WINTYPE_10) && DIsAppThemed() ){
+				DHTHEME hTheme = DOpenThemeData(NULL, L"REBAR");
+				#define RP_BACKGROUND 6 // TMT_DIBDATA, TMT_FONT, TMT_COLORIZATIONCOLOR, TMT_EDGELIGHTCOLOR 等が使用可能
+				#define TMT_GLOWCOLOR 3816
+				if ( hTheme != NULL ){
+					DGetThemeColor(hTheme, RP_BACKGROUND, 0, TMT_GLOWCOLOR, (COLORREF *)&t_clr);
+					DCloseThemeData(hTheme);
+				}
+			}
+		}
 
 		for ( ci = 0; ci < ClrUsed; ci++, rgb++, ppal++ ){
 			if ( mode == BMPFIX_TOOLBAR ){
 				if ( (rgb->rgbRed == 255) && (rgb->rgbGreen == 0) &&
 					(rgb->rgbBlue == 255) ){
-					DWORD clr;
-
-					clr = GetSysColor(COLOR_BTNFACE);
-					rgb->rgbRed = (BYTE)clr;
-					rgb->rgbGreen = (BYTE)(clr >> 8);
-					rgb->rgbBlue = (BYTE)(clr >> 16);
+					rgb->rgbRed = (BYTE)t_clr;
+					rgb->rgbGreen = (BYTE)(t_clr >> 8);
+					rgb->rgbBlue = (BYTE)(t_clr >> 16);
 				}
 			}
 			ppal->peRed = rgb->rgbRed;

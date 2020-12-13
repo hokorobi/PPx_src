@@ -48,8 +48,10 @@ label s_ekey[EKEY_MAX + 1] = {
 	{T("PAUSE"),	K_v | VK_PAUSE},
 	{T("CAPS"),		K_v | VK_CAPITAL},
 	{T("KANA"),		K_v | VK_KANA},
+//	{T("IMEON"),	K_v | VK_IMEON}, // 0x16(2020.10’Ç‰Á)
 //19
 	{T("KANJI"),	K_v | VK_KANJI},
+//	{T("IMEOFF"),	K_v | VK_IMEOFF}, // 0x1a(2020.10’Ç‰Á)
 //1b
 	{T("ESC"),		K_v | VK_ESCAPE},
 	{T("XFER"),		K_v | VK_CONVERT},

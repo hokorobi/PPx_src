@@ -9,9 +9,6 @@ UseBCC = 1	# 1 なら BCC32 , 0 なら CL
 !endif
 UseIlink = 0	# 1 なら ilink32(BCC 5.5以降) を使用 ※UseDebug=1だと多数の警告
 WineMode = 0	# 1 なら wine版
-!ifndef VCTOOLKIT
-VCTOOLKIT = 0	# VC TOOL KIT を使うなら1に、VS2008なら0に
-!endif
 !ifndef X64
 X64 = 0		# 1 なら x64版(常にUNICODE版)
 !endif
@@ -127,11 +124,6 @@ Copt	= /Gz /O2 /Os /Oy
 !if $(X64)
 X64Copt	= /wd4244 /wd4267
 # ↑サイズ違い警告を消す(※できるだけこの指定を使わないこと)
-!if $(VCTOOLKIT)
-LINK64	= /MACHINE:AMD64
-LIB64	= bufferoverflowu.lib
-RC64	= /d_WIN64 /dLEGACYICON
-!else # !VCTOOLKIT
 !if !$(ARM)
 LINK64	= /MACHINE:AMD64 /LARGEADDRESSAWARE
 !else # ARM
@@ -140,11 +132,7 @@ Copt	= /O2 /Os /Oy /DRELEASE
 X64Copt	= /wd4244 /wd4267
 !endif # ARM
 RC64	= /d_WIN64
-!endif # VCTOOLKIT
 !else # !$(X64)
-!if $(VCTOOLKIT)
-RC64	= /dLEGACYICON
-!endif # VCTOOLKIT
 !if $(ARM)
 LINK64	= /MACHINE:ARM /LARGEADDRESSAWARE
 !endif # ARM
@@ -158,7 +146,7 @@ cc	= @"cl" /GF /nologo /c /DWINVER=0x400 $(Dxopt) $(Copt) $(UnicodeCopt) $(WineC
 linkopt = @"link" /NOLOGO /INCREMENTAL:NO /MAP $(DebugLopt) $(LINK64)
 linkout = /OUT:
 C0DLL	= Kernel32.Lib AdvAPI32.Lib Ole32.Lib oleaut32.lib Imm32.Lib Gdi32.Lib\
-	  Shell32.Lib User32.Lib comctl32.lib Comdlg32.lib Version.lib $(LIB64)
+	  Shell32.Lib User32.Lib comctl32.lib Comdlg32.lib Version.lib
 C0GUI	= $(C0DLL) $(LIBDX) $(PPXLIB).lib
 C0CON	= $(C0DLL) $(PPXLIB).lib
 #-------------------------------------- リンカ(GUI)

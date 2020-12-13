@@ -464,7 +464,14 @@ void SetReportTextMain(HWND hLogWnd, const TCHAR *text)
 	DWORD lines;
 	DWORD lP, wP;
 
-	if ( X_log & B14 ) XMessage(NULL, NULL, XM_INFOlog, T("%s"), text);
+	if ( X_log & ((1 << XM_INFOLLog) | (1 << XM_INFOlog)) ){
+		if ( (X_log & ((1 << XM_INFOLLog) | (1 << XM_INFOlog))) == (1 << XM_INFOLLog) ){
+			XMessage(NULL, NULL, XM_INFOLLog, T("%s"), text);
+			return;
+		}else{
+			XMessage(NULL, NULL, XM_INFOlog, T("%s"), text);
+		}
+	}
 
 	lines = SendMessage(hLogWnd, EM_GETLINECOUNT, 0, 0);
 	if ( lines > LOGLINES_MAX ){
@@ -495,7 +502,7 @@ void SetReportText(const TCHAR *text)
 		}
 		if ( text != NULL ) SetReportTextMain(hCommonLog, text);
 	}else{
-		SendMessage(Combo.hWnd, WM_PPXCOMMAND, K_WINDDOWLOG, (LPARAM)text);
+		SendMessage(Combo.hWnd, WM_PPXCOMMAND, TMAKEWPARAM(K_WINDDOWLOG, PPLOG_REPORT), (LPARAM)text);
 	}
 }
 
@@ -1994,69 +2001,83 @@ void MakeClipboardDataName(UINT orgtype, TCHAR *name, const char *data, int size
 
 		while ( (ptr = tstrchr(ptr, '/')) != NULL ) *ptr = '-';
 	}
-	if ( orgtype == CF_TEXT ){
-		int left = MAXCLIPMEMO - 2;
-#ifdef UNICODE
-		char buf[MAXCLIPMEMO], *DEST = buf;
-#else
-#define DEST name
-#endif
-		ext = Ext_text;
 
-		name += tstrlen(name);
-		// テキストの一部をファイル名に付与する
-		*name++ = '-';
-		while ( size && left ){
-			if ( IskanjiA(*data) && ((BYTE)(*(data + 1)) >= 0x40) ){
-				if ( (size < 2) || (left < 2) ) break;
-				*DEST++ = *data++;
-				*DEST++ = *data;
+	switch (orgtype){
+		case CF_TEXT: {
+			int left = MAXCLIPMEMO - 2;
+#ifdef UNICODE
+			char buf[MAXCLIPMEMO], *DEST = buf;
+#else
+			#define DEST name
+#endif
+			ext = Ext_text;
+
+			name += tstrlen(name);
+			// テキストの一部をファイル名に付与する
+			*name++ = '-';
+			while ( size && left ){
+				if ( IskanjiA(*data) && ((BYTE)(*(data + 1)) >= 0x40) ){
+					if ( (size < 2) || (left < 2) ) break;
+					*DEST++ = *data++;
+					*DEST++ = *data;
+					size--;
+					left -= 2;
+				}else if ( IsalnumA(*data) ){
+					*DEST++ = *data;
+					left--;
+				}else if ( *data == '\0' ){
+					break;
+				}
+				data++;
 				size--;
-				left -= 2;
-			}else if ( IsalnumA(*data) ){
-				*DEST++ = *data;
-				left--;
-			}else if ( *data == '\0' ){
-				break;
 			}
-			data++;
-			size--;
-		}
-		*DEST = '\0';
+			*DEST = '\0';
 #ifdef UNICODE
-		AnsiToUnicode(buf, name, MAXCLIPMEMO);
+			AnsiToUnicode(buf, name, MAXCLIPMEMO);
 #endif
-	}
-#ifdef UNICODE
-	if ( orgtype == CF_UNICODETEXT ){
-		int left = MAXCLIPMEMO - 2;
-
-		ext = Ext_text;
-		name += tstrlen(name);
-		// テキストの一部をファイル名に付与する
-		*name++ = '-';
-		while ( size && left ){
-			UTCHAR chr;
-
-			chr = *(UTCHAR *)data;
-			if ( IsalnumW(chr) || (chr > 0x200) ){
-				*name++ = chr;
-				left--;
-			}else if ( chr == '\0' ){
-				break;
-			}
-			data += sizeof(TCHAR);
-			size -= sizeof(TCHAR);
+			break;
 		}
-		*name = '\0';
-	}
+
+		case CF_UNICODETEXT:
+#ifdef UNICODE
+		{
+			int left = MAXCLIPMEMO - 2;
+
+			ext = Ext_text;
+			name += tstrlen(name);
+			// テキストの一部をファイル名に付与する
+			*name++ = '-';
+			while ( size && left ){
+				UTCHAR chr;
+
+				chr = *(UTCHAR *)data;
+				if ( IsalnumW(chr) || (chr > 0x200) ){
+					*name++ = chr;
+					left--;
+				}else if ( chr == '\0' ){
+					break;
+				}
+				data += sizeof(TCHAR);
+				size -= sizeof(TCHAR);
+			}
+			*name = '\0';
+		}
 #else
-	if ( orgtype == CF_UNICODETEXT ) ext = Ext_text;
+			ext = Ext_text;
 #endif
-	if ( (orgtype == CF_DIB) || (orgtype == CF_DIBV5) ){
-		ext = T(".bmp");
-		if ( LoadImageSaveAPI() != FALSE ) ext = T(".png");
+			break;
+
+		case CF_DIB:
+		case CF_DIBV5:
+			ext = T(".bmp");
+			if ( LoadImageSaveAPI() != FALSE ) ext = T(".png");
+			break;
+
+		case CF_ENHMETAFILE:
+			ext = T(".emf");
+			break;
 	}
+
 	tstrcat(name, ext);
 }
 
@@ -2102,6 +2123,7 @@ void SaveClipboardData(HGLOBAL hGlobal, UINT cpdtype, PPC_APPINFO *cinfo)
 				entry = FindLastEntryPoint(name);
 				tstrcpy(cinfo->Jfname, entry);
 			}
+			GlobalUnlock(hGlobal);
 			return;
 		}
 	}
@@ -2276,7 +2298,7 @@ void PPcLayoutCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 			resetflag(X_combos[0], CMBS_COMMONREPORT);
 			if ( Combo.Report.hWnd == NULL ) setflag(X_combos[0], CMBS_COMMONREPORT);
 			SetCustData(T("X_combos"), &X_combos, sizeof X_combos);
-			SendMessage(Combo.hWnd, WM_PPXCOMMAND, K_WINDDOWLOG, (LPARAM)INVALID_HANDLE_VALUE);
+			SendMessage(Combo.hWnd, WM_PPXCOMMAND, TMAKEWPARAM(K_WINDDOWLOG, PPLOG_REPORT), (LPARAM)INVALID_HANDLE_VALUE);
 		}else{
 			if ( (hCommonLog == NULL) || (IsWindow(hCommonLog) == FALSE) ){
 				DockAddBar(cinfo->info.hWnd, &cinfo->docks.b, RMENUSTR_LOG);
@@ -2827,6 +2849,22 @@ void EndButtonMenu(void)
 	ButtonMenuTick = (GetAsyncKeyState(VK_LBUTTON) & KEYSTATE_PUSH) ? GetTickCount() : 0;
 }
 
+WCHAR *stpcpyW(WCHAR *deststr, const WCHAR *srcstr)
+{
+	WCHAR *destptr = deststr;
+	const WCHAR *srcptr = srcstr;
+
+	for(;;){
+		WCHAR code;
+
+		code = *srcptr;
+		*destptr = code;
+		if ( code == '\0' ) return destptr;
+		srcptr++;
+		destptr++;
+	}
+}
+
 #ifndef __BORLANDC__
 char *stpcpyA(char *deststr, const char *srcstr)
 {
@@ -2844,20 +2882,10 @@ char *stpcpyA(char *deststr, const char *srcstr)
 	}
 }
 #endif
-
-WCHAR *stpcpyW(WCHAR *deststr, const WCHAR *srcstr)
-{
-	WCHAR *destptr = deststr;
-	const WCHAR *srcptr = srcstr;
-
-	for(;;){
-		WCHAR code;
-
-		code = *srcptr;
-		*destptr = code;
-		if ( code == '\0' ) return destptr;
-		srcptr++;
-		destptr++;
-	}
-}
 #endif
+
+void LoadCCDrawBack(void)
+{
+	UseCCDrawBrush = (HBRUSH)PPxCommonExtCommand(K_DRAWCCBACK, 0);
+	UseCCDrawBack = (UseCCDrawBrush != NULL) ? 2 : 1;
+}

@@ -738,7 +738,7 @@ ERRORCODE SusieGetArchivefileImage(const TCHAR *arcfile, const TCHAR *EntryName,
 		if ( result != SUSIEERROR_NOERROR ) goto error;
 		result = su->GetFileW(TempW, (LONG_PTR)fiW.position,
 				(LPWSTR)hMap, SUSIE_SOURCE_DISK | SUSIE_DEST_MEM, NULL, 0);
-		if ( result != SUSIEERROR_NOERROR ) goto error;
+		if ( (result != SUSIEERROR_NOERROR) || (*hMap == NULL) ) goto error;
 		*sizeL = (SIZE32_T)LocalSize(*hMap);
 		if ( *sizeL > fiW.filesize ) *sizeL = (SIZE32_T)fiW.filesize;
 	}else
@@ -764,7 +764,7 @@ ERRORCODE SusieGetArchivefileImage(const TCHAR *arcfile, const TCHAR *EntryName,
 
 				result = su->GetArchiveInfo(ARCHIVENAME, 0,
 						SUSIE_SOURCE_DISK, &fiH);
-				if ( result != SUSIEERROR_NOERROR ) goto error;
+				if ( (result != SUSIEERROR_NOERROR) || (fiH == NULL) ) goto error;
 				nfi = LocalLock(fiH);
 				fimax = (SUSIE_FINFO *)(BYTE *)((BYTE *)nfi + LocalSize(fiH));
 				for ( ; (nfi < fimax) && (nfi->method[0] != 0) ; nfi++ ){
@@ -784,11 +784,12 @@ ERRORCODE SusieGetArchivefileImage(const TCHAR *arcfile, const TCHAR *EntryName,
 			}
 			if ( result != SUSIEERROR_NOERROR ) goto error;
 		}
-		if ( SUSIEERROR_NOERROR != ( result = su->GetFile(ARCHIVENAME,
+		if ( SUSIEERROR_NOERROR != (result = su->GetFile(ARCHIVENAME,
 				(LONG_PTR)fi.position, (LPSTR)hMap,
 				SUSIE_SOURCE_DISK | SUSIE_DEST_MEM, NULL, 0)) ){
 			goto error;
 		}
+		if ( *hMap == NULL ) goto error;
 		*sizeL = (SIZE32_T)LocalSize(*hMap);
 		if ( *sizeL > fi.filesize ) *sizeL = (SIZE32_T)fi.filesize;
 	}

@@ -310,10 +310,13 @@ case 'P':
 case K_c | 'P':
 	PPVPrint(hWnd);
 	break;
-//----------------------------------------------- Reverse background
+//----------------------------------------------- Reverse color
 case 'R':
 case K_s | 'R':
 	ReverseBackground(hWnd);
+	break;
+case K_c | 'R':
+	ReverseForeground(hWnd);
 	break;
 //----------------------------------------------- Paste
 case K_c | 'V':

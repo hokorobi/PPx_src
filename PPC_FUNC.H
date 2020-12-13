@@ -552,6 +552,7 @@ extern int CheckOffScreenMark(PPC_APPINFO *cinfo, const TCHAR *title);
 
 extern void BackupLog(void);
 extern void RestoreLog(void);
+extern void LoadCCDrawBack(void);
 extern ENTRYINDEX UpSearchMarkCell(PPC_APPINFO *cinfo, ENTRYINDEX cellindex);
 extern ENTRYINDEX DownSearchMarkCell(PPC_APPINFO *cinfo, ENTRYINDEX cellindex);
 
@@ -580,6 +581,7 @@ extern HRESULT GetLink(HWND hWnd, const TCHAR *LinkFile, TCHAR *Original);
 typedef void (WINAPI * GETINFOTIPCALLBACK)(void *data, const TCHAR *text);
 extern BOOL GetInfoTipText(const TCHAR *filename, int extlen, GETINFOTIPCALLBACK callbackfunc, void *data);
 extern void ExtGetData(ThSTRUCT *thEcdata, DWORD index, const TCHAR *filename, DWORD attributes, GETINFOTIPCALLBACK callbackfunc, void *data);
+extern void MakeClipboardDataName(UINT orgtype, TCHAR *name, const char *data, int size);
 extern void SaveClipboardData(HGLOBAL hGlobal, UINT cpdtype, PPC_APPINFO *cinfo);
 extern void ExistCheck(TCHAR *dst, const TCHAR *path, const TCHAR *name);
 extern LRESULT WmGetObject(PPC_APPINFO *cinfo, WPARAM wParam);

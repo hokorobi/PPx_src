@@ -96,7 +96,7 @@ int DeleteFootTag(TCHAR *name, const TCHAR *tag, size_t taglen)
 	return 1;
 }
 
-ERRORCODE LFNfilter(struct FopOption *opt, TCHAR *src)
+ERRORCODE LFNfilter(struct FopOption *opt, TCHAR *src, DWORD attributes)
 {
 	TCHAR *name, *extptr;
 	TCHAR orgname[MAX_PATH], orgext[MAX_PATH];
@@ -105,7 +105,11 @@ ERRORCODE LFNfilter(struct FopOption *opt, TCHAR *src)
 		BOOL UseRenum = FALSE;
 
 		name = FindLastEntryPoint(src);
-		extptr = name + FindExtSeparator(name);
+		if ( attributes & FILE_ATTRIBUTE_DIRECTORY ){
+			extptr = name + tstrlen(name);
+		}else{
+			extptr = name + FindExtSeparator(name);
+		}
 		tstrcpy(orgext, extptr);
 		// Rename
 		if ( opt->UseNameFilter & NameFilter_Rename ){
@@ -165,11 +169,18 @@ ERRORCODE LFNfilter(struct FopOption *opt, TCHAR *src)
 			while( *ptr != '\0' ){
 				switch( *ptr ){
 					case ' ':
-					case ',':
-					case '/':
-					case ';':
 					case '\"':
 					case '\'':
+					case '*':
+					case ',':
+					case '/':
+					case ':':
+					case ';':
+					case '<':
+					case '>':
+					case '?':
+					case '\\':
+					case '|':
 						break;
 					default:
 						*dest++ = *ptr;

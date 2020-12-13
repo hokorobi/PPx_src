@@ -470,7 +470,7 @@ ERRORCODE DoSusie_partW(PPC_APPINFO *cinfo, WCHAR *dstT, const SUSIE_DLL *sudll)
 	if ( VFSArchiveSection(VFSAS_ENTER | VFSAS_SUSIE, VAS_Name) < 0 ){
 		return ERROR_INVALID_HANDLE;
 	}
-	if ( SUSIEERROR_NOERROR != sudll->GetArchiveInfoW(srcpath, 0, SUSIE_SOURCE_DISK, (HLOCAL *)&fiH) ){
+	if ( (SUSIEERROR_NOERROR != sudll->GetArchiveInfoW(srcpath, 0, SUSIE_SOURCE_DISK, (HLOCAL *)&fiH)) || (fiH == NULL) ){
 		VFSArchiveSection_Leave();
 		return ERROR_INVALID_HANDLE;
 	}
@@ -592,7 +592,7 @@ ERRORCODE DoSusie_part(PPC_APPINFO *cinfo, const TCHAR *destpath)
 	#endif
 
 	VFSArchiveSection(VFSAS_ENTER | VFSAS_SUSIE, VAS_Name);
-	if ( SUSIEERROR_NOERROR != sudll->GetArchiveInfo(TPATH, 0, SUSIE_SOURCE_DISK, (HLOCAL *)&fiH) ){
+	if ( (SUSIEERROR_NOERROR != sudll->GetArchiveInfo(TPATH, 0, SUSIE_SOURCE_DISK, (HLOCAL *)&fiH)) || (fiH == NULL) ){
 		VFSArchiveSection_Leave();
 		return ERROR_INVALID_HANDLE;
 	}
@@ -725,7 +725,10 @@ ERRORCODE DoSusie_all(UNPACKINFOSTRUCT *info, const TCHAR *filename, void *dt_op
 		SUSIE_FINFOW *fiW, *fimaxW;
 
 		lastpath = param + strlenW(param);
-		sudll->GetArchiveInfoW(filename, 0, SUSIE_SOURCE_DISK, (HLOCAL *)&fiH);
+		if ( (SUSIEERROR_NOERROR != sudll->GetArchiveInfoW(filename, 0, SUSIE_SOURCE_DISK, (HLOCAL *)&fiH)) || (fiH == NULL) ){
+			VFSArchiveSection_Leave();
+			return ERROR_INVALID_HANDLE;
+		}
 		fiW = LocalLock(fiH);
 		fimaxW = (SUSIE_FINFOW *)(BYTE *)((BYTE *)fiW + LocalSize(fiH));
 		for ( ; (fiW < fimaxW) && (fiW->method[0] != 0) ; fiW++ ){
@@ -810,7 +813,10 @@ ERRORCODE DoSusie_all(UNPACKINFOSTRUCT *info, const TCHAR *filename, void *dt_op
 		#endif
 
 		lastpath = TDEST + strlen(TDEST);
-		sudll->GetArchiveInfo(TFILENAME2, 0, SUSIE_SOURCE_DISK, (HLOCAL *)&fiH);
+		if ( (SUSIEERROR_NOERROR != sudll->GetArchiveInfo(TFILENAME2, 0, SUSIE_SOURCE_DISK, (HLOCAL *)&fiH)) || (fiH == NULL) ){
+			VFSArchiveSection_Leave();
+			return ERROR_INVALID_HANDLE;
+		}
 		fi = LocalLock(fiH);
 		fimax = (SUSIE_FINFO *)(BYTE *)((BYTE *)fi + LocalSize(fiH));
 		for ( ; (fi < fimax) && (fi->method[0] != 0) ; fi++ ){

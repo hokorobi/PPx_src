@@ -1662,7 +1662,7 @@ void PPcDeleteFile(PPC_APPINFO *cinfo, DWORD *X_wdel)
 	}
 	PPxCommonCommand(NULL, 0, K_DELETEJOBTASK);
 	if ( Combo.hWnd != NULL ){
-		SendMessage(Combo.hWnd, WM_PPXCOMMAND, TMAKEWPARAM(K_WINDDOWLOG, 2), 0);
+		SendMessage(Combo.hWnd, WM_PPXCOMMAND, TMAKEWPARAM(K_WINDDOWLOG, PPLOG_SHOWLOG), 0);
 	}
 	StopPopMsg(cinfo, PMF_DISPLAYMASK);
 	PPxCommonExtCommand(K_TBB_STOPPROGRESS, (WPARAM)cinfo->info.hWnd);

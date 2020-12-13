@@ -671,6 +671,8 @@ void Enables(FOPSTRUCT *FS, int setting, int samesetting)
 			EnableDlgWindow(hDlg, *tbl, FALSE);
 		}
 	}
+	// EnableDlgWindow の直後は、WM_PAINT のオーバライトが効かないため
+	if ( X_uxt >= UXT_MINMODIFY ) InvalidateRect(hDlg, NULL, TRUE);
 }
 
 void USEFASTCALL PeekMessageLoopSub(FOPSTRUCT *FS)
@@ -714,7 +716,7 @@ void SetWindowY(FOPSTRUCT *FS, int y)
 	int newheight;
 
 	hDlg = FS->hDlg;
-	if ( FS->hEWnd != NULL ){
+	if ( FS->log.hWnd != NULL ){
 		int state;
 		int *ID;
 
@@ -725,7 +727,7 @@ void SetWindowY(FOPSTRUCT *FS, int y)
 			hControlWnd = GetDlgItem(hDlg, *ID);
 			if ( hControlWnd != NULL ) ShowWindow(hControlWnd, state);
 		}
-		ShowWindow(FS->hEWnd, (state == SW_HIDE) ? SW_SHOWNORMAL : SW_HIDE);
+		ShowWindow(FS->log.hWnd, (state == SW_HIDE) ? SW_SHOWNORMAL : SW_HIDE);
 		y = WINY_FULL;
 	}
 	box.top = y;
@@ -920,7 +922,9 @@ BOOL LoadOption(FOPSTRUCT *FS, const TCHAR *action, const TCHAR *option)
 	if ( FS->opt.renum[0] == '\0' ) tstrcpy(FS->opt.renum, T("001"));
 
 	if ( FOP->firstsheet > 2 ) FOP->firstsheet = 0;
-	InitControlData(FS, FOP->firstsheet);
+	if ( FOP->firstsheet != FS->page.showID ){
+		InitControlData(FS, FOP->firstsheet);
+	}
 	return result;
 }
 
@@ -1129,7 +1133,7 @@ void SaveControlData(FOPSTRUCT *FS)
 					 (tstrchr(buf, '%') != NULL) ){
 					*rendst++ = RENAME_EXTRACTNAME;
 				}
-				VFSFixPath(rendst, buf, NULL, 0);
+				VFSFixPath(rendst, buf, NULL, VFSFIX_KEEPLASTPERIOD);
 				if ( !(FS->opt.fopflags & VFSFOP_AUTOSTART) ){
 					WriteHistory(PPXH_FILENAME, FS->opt.rename, 0, NULL);
 				}
@@ -1389,9 +1393,10 @@ void FopDialogInit(HWND hDlg, FILEOPERATIONDLGBOXINITPARAMS *fopip)
 	FS = fopip->FS;
 	SetWindowLongPtr(hDlg, DWLP_USER, (LONG_PTR)FS);
 	FOPop = fopip->fileop;
-	FS->hLogWnd = &FOPop->hLogWnd;
+//	FS->hLogWnd = &FOPop->hLogWnd;
 	FS->hDlg = hDlg;
-	FS->hEWnd = NULL;
+	FS->log.hWnd = NULL;
+	FS->log.cache.bottom = NULL;
 	tstrcpy(FS->opt.source, (FOPop->src != NULL) ? FOPop->src : NilStr);
 	FS->opt.files = FOPop->files;
 	FS->opt.AllocFiles = FALSE;
@@ -1401,6 +1406,8 @@ void FopDialogInit(HWND hDlg, FILEOPERATIONDLGBOXINITPARAMS *fopip)
 	FS->NoAutoClose = FALSE;
 	FS->hide = FALSE;
 	FS->DestroyWait = FALSE;
+	FS->UI_ThreadID = GetCurrentThreadId();
+	FS->hProgsEvent = NULL;
 
 	FS->progs.hWnd = hDlg;
 	FS->progs.hSrcNameWnd  = GetDlgItem(hDlg, IDS_FOP_SRCNAME);
@@ -1431,8 +1438,8 @@ void FopDialogInit(HWND hDlg, FILEOPERATIONDLGBOXINITPARAMS *fopip)
 	FS->maskFnFlags = MakeFN_REGEXP(&FS->maskFn, NilStr);
 
 	MoveCenterWindow(hDlg, FOPop->hReturnWnd);
-	LocalizeDialogText(hDlg, IDD_FOP);
 	InitSysColors();
+	LocalizeDialogText(hDlg, IDD_FOP);
 	{
 		int X_fatim = 0;
 
@@ -1576,8 +1583,9 @@ void OperationResult(FOPSTRUCT *FS, BOOL result)
 		if ( FS->opt.fop.flags & VFSFOP_OPTFLAG_LOGWINDOW ){
 			TCHAR *p = buf, *mes;
 
-			if ( FS->progs.info.donefiles == MAX32 ){
+			if ( FS->progs.info.donefiles == MAX32 ){ // 外部委託(SHN, Image)
 				tstrcpy(buf, MessageText(MES_COMP));
+				FopLog(FS, buf, NULL, LOG_COMPLETED);
 			}else{
 				if ( IsTrue(FS->Cancel) ){
 					mes = MES_FLCA;
@@ -1610,15 +1618,15 @@ void OperationResult(FOPSTRUCT *FS, BOOL result)
 							FS->progs.info.errors);
 				}
 				tstrcpy(p, T("\r\n"));
+				FopLog(FS, buf, NULL, LOG_STRING);
 			}
-			FopLog(FS, buf, NULL, LOG_STRING);
 		}
 
 		if ( FS->opt.compcmd != NULL ){
 			PP_ExtractMacro(FS->info->hWnd, FS->info, NULL, FS->opt.compcmd, NULL, 0);
 		}
 
-		if ( (FS->hEWnd == NULL) &&
+		if ( (FS->log.hWnd == NULL) &&
 			 (FS->opt.hReturnWnd != NULL) &&
 			 IsParentFgWindow(FS->hDlg) ){
 			SetForegroundWindow(FS->opt.hReturnWnd);
@@ -1709,6 +1717,7 @@ void FopCommands(HWND hDlg, WPARAM wParam, LPARAM lParam)
 					SetStateOnCaption(FS, T("Pause"));
 					Enables(FS, TRUE, FALSE);
 					DisplaySrcNameNow(FS); // 処理ファイル名が未表示なら表示
+					FShowLog(FS); // 未表示のログを表示
 					SetTaskBarButtonProgress(hDlg, TBPF_PAUSED, 0);
 					SetJobTask(hDlg, JOBSTATE_PAUSE);
 					break;
@@ -1760,8 +1769,8 @@ void FopCommands(HWND hDlg, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case IDS_FOP_PROGRESS:
-			if ( (HIWORD(wParam) == WM_CONTEXTMENU) && (FS->hEWnd != NULL) ){
-				SetWindowY(FS, IsWindowVisible(FS->hEWnd) ? WINY_FULL : 0);
+			if ( (HIWORD(wParam) == WM_CONTEXTMENU) && (FS->log.hWnd != NULL) ){
+				SetWindowY(FS, IsWindowVisible(FS->log.hWnd) ? WINY_FULL : 0);
 			}
 			break;
 
@@ -1782,13 +1791,13 @@ void FopCommands(HWND hDlg, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case IDB_FOP_LOG:
-			if ( FS->hEWnd != NULL ){
-				if ( IsWindowVisible(FS->hEWnd) &&
+			if ( FS->log.hWnd != NULL ){
+				if ( IsWindowVisible(FS->log.hWnd) &&
 					 !((FS->state == FOP_READY) || (FS->state == FOP_END)) ){
 					SetWindowY(FS, WINY_FULL);
 				}else{
 					SetWindowY(FS, 0);
-					SetFocus(FS->hEWnd);
+					SetFocus(FS->log.hWnd);
 				}
 			}
 			break;
@@ -2006,7 +2015,6 @@ void FopCommands(HWND hDlg, WPARAM wParam, LPARAM lParam)
 			break;
 	}
 }
-
 /*-----------------------------------------------------------------------------
 	ダイアログボックス処理
 -----------------------------------------------------------------------------*/
@@ -2048,7 +2056,7 @@ INT_PTR CALLBACK FileOperationDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM
 
 			switch ( result ){
 				case HTBOTTOM:
-					if ( ((FOPSTRUCT *)GetWindowLongPtr(hDlg, DWLP_USER))->hEWnd != NULL ){
+					if ( ((FOPSTRUCT *)GetWindowLongPtr(hDlg, DWLP_USER))->log.hWnd != NULL ){
 						break; // Log があるときは、サイズ変更有り
 					}
 					// HTTOP へ(サイズ変更不可)
@@ -2057,7 +2065,7 @@ INT_PTR CALLBACK FileOperationDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM
 					break;
 
 				case HTBOTTOMLEFT:
-					if ( ((FOPSTRUCT *)GetWindowLongPtr(hDlg, DWLP_USER))->hEWnd != NULL ){
+					if ( ((FOPSTRUCT *)GetWindowLongPtr(hDlg, DWLP_USER))->log.hWnd != NULL ){
 						break; // Log があるとき
 					}
 				case HTTOPLEFT:
@@ -2065,7 +2073,7 @@ INT_PTR CALLBACK FileOperationDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM
 					break;
 
 				case HTBOTTOMRIGHT:
-					if ( ((FOPSTRUCT *)GetWindowLongPtr(hDlg, DWLP_USER))->hEWnd != NULL ){
+					if ( ((FOPSTRUCT *)GetWindowLongPtr(hDlg, DWLP_USER))->log.hWnd != NULL ){
 						break; // Log があるとき
 					}
 				case HTTOPRIGHT:
@@ -2075,6 +2083,10 @@ INT_PTR CALLBACK FileOperationDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM
 			SetWindowLongPtr(hDlg, DWLP_MSGRESULT, result);
 			break;
 		}
+
+		case WM_FOP_CREATE_LOGWINDOW:
+			CreateFWriteLogWindowMain((FOPSTRUCT *)GetWindowLongPtr(hDlg, DWLP_USER));
+			break;
 
 		case WM_SIZE:
 			if ( wParam != SIZE_MINIMIZED ){

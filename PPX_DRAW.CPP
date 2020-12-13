@@ -31,6 +31,7 @@
 
 #define DEFAULT_DPI 96.0f
 extern "C" UINT WM_PPXCOMMAND;
+extern "C" void FillBox(HDC hDC, const RECT *box, HBRUSH hbr);
 // Direct Write 版 ------------------------------------------------------------
 #if DRAWMODE == DRAWMODE_DW
 #include <wincodec.h>
@@ -884,7 +885,7 @@ void DxDrawText(DXDRAWSTRUCT *DxDraw, HDC hDC, const TCHAR *str, int len, RECT *
 					tmpbox = *box;
 					tmpbox.right = drawX;
 					hBackBrush = CreateSolidBrush(GetBkColor(hDC));
-					FillRect(hDC, &tmpbox, hBackBrush);
+					::FillBox(hDC, &tmpbox, hBackBrush);
 					DeleteObject(hBackBrush);
 				}
 				MoveToEx(hDC, drawX, box->top, NULL);
@@ -1025,6 +1026,8 @@ BOOL DxDrawDIB(DXDRAWSTRUCT *DxDraw, BITMAPINFOHEADER *bmiHeader, LPVOID lpBits,
 			// 再レンダリングを指示
 			PostMessage(DxDraw->hWnd, WM_PPXCOMMAND,
 				(LPARAM)(K_raw | K_c | 'L'), 0);
+		}else{
+			return FALSE;
 		}
 	}
 
@@ -1034,8 +1037,13 @@ BOOL DxDrawDIB(DXDRAWSTRUCT *DxDraw, BITMAPINFOHEADER *bmiHeader, LPVOID lpBits,
 		BOOL convert = FALSE;
 
 		bmpsize.width = bmiHeader->biWidth;
-		bmpsize.height = bmiHeader->biHeight;
-		if ( bmpsize.height < 0 ) bmpsize.height = -bmiHeader->biHeight;
+		bmpsize.height = (bmiHeader->biHeight >= 0) ? bmiHeader->biHeight : -bmiHeader->biHeight;
+
+		// bmp の大きさ確認
+		if ( (bmiHeader->biSizeImage > 0) &&
+			 (bmiHeader->biSizeImage < (bmpsize.height * DwordBitSize(bmpsize.width * bmiHeader->biBitCount))) ){
+			return FALSE;
+		}
 
 		if ( bmiHeader->biBitCount != 32 ){
 			convert = TRUE;

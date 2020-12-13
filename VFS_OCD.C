@@ -15,8 +15,7 @@
 BOOL GetDirFinfo(const TCHAR *dirpath, BY_HANDLE_FILE_INFORMATION *finfo)
 {
 	HANDLE hDir;
-	WIN32_FIND_DATA ff;
-	HANDLE hFF;
+	FILE_STAT_DATA fsd;
 
 	hDir = CreateFileL(dirpath, 0, FILE_SHARE_WRITE | FILE_SHARE_READ,
 				NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
@@ -27,15 +26,13 @@ BOOL GetDirFinfo(const TCHAR *dirpath, BY_HANDLE_FILE_INFORMATION *finfo)
 		}
 		CloseHandle(hDir);
 	}
-	memset(finfo, 0, sizeof(BY_HANDLE_FILE_INFORMATION));
 
-	hFF = FindFirstFileL(dirpath, &ff);
-	if ( hFF == INVALID_HANDLE_VALUE ) return FALSE;
-	finfo->dwFileAttributes = ff.dwFileAttributes;
-	finfo->ftCreationTime = ff.ftCreationTime;
-	finfo->ftLastAccessTime = ff.ftLastAccessTime;
-	finfo->ftLastWriteTime = ff.ftLastWriteTime;
-	FindClose(hFF);
+	memset(finfo, 0, sizeof(BY_HANDLE_FILE_INFORMATION));
+	if ( GetFileSTAT(dirpath, &fsd) == FALSE ) return FALSE;
+	finfo->dwFileAttributes = fsd.dwFileAttributes;
+	finfo->ftCreationTime = fsd.ftCreationTime;
+	finfo->ftLastAccessTime = fsd.ftLastAccessTime;
+	finfo->ftLastWriteTime = fsd.ftLastWriteTime;
 	return TRUE;
 }
 
@@ -377,11 +374,11 @@ ERRORCODE DlgCopyDir(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD srcattr)
 
 			if ( find.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ){
 				if ( !(FS->opt.fop.filter & VFSFOP_FILTER_NODIRFILTER) ){
-					result = LFNfilter(&FS->opt, dbuf);
+					result = LFNfilter(&FS->opt, dbuf, find.dwFileAttributes);
 					if ( result != NO_ERROR ) break;
 				}
 				if ( IsTrue(FS->flat) ) tstrcpy(dbuf, dst);
-				TinyDisplayProgress(FS);
+				SetTinyProgress(FS);
 
 				len = tstrlen32(dbuf);
 				if ( srclen < len ) len = srclen;
@@ -393,17 +390,25 @@ ERRORCODE DlgCopyDir(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD srcattr)
 					// 処理完了前に、コピーした物が混じってしまい、
 					// 再度処理する恐れがあるので後回しにする
 					// 例 \dir\dir\dir を \dir\dir に移動
-					delay_dest = HeapAlloc(DLLheap, 0, sizeof(DELAYINFO));
-					delay_dest->attr = find.dwFileAttributes;
-					tstrcpy(delay_dest->src, buf);
-					tstrcpy(delay_dest->dst, dbuf);
+					if ( delay_dest == NULL ){
+						delay_dest = HeapAlloc(DLLheap, 0, sizeof(DELAYINFO));
+						if ( delay_dest != NULL ){
+							delay_dest->attr = find.dwFileAttributes;
+							tstrcpy(delay_dest->src, buf);
+							tstrcpy(delay_dest->dst, dbuf);
+						}else{
+							result = GetLastError();
+						}
+					}else{
+						result = ERROR_ALREADY_EXISTS;
+					}
 				}else{
 					result = DlgCopyDir(FS, buf, dbuf, find.dwFileAttributes);
 					if ( result == NO_ERROR ) FopLog(FS, src, dst, LOG_DIR);
 				}
 			}else{
 				if ( !(FS->opt.fop.filter & VFSFOP_FILTER_NOFILEFILTER) ){
-					result = LFNfilter(&FS->opt, dbuf);
+					result = LFNfilter(&FS->opt, dbuf, find.dwFileAttributes);
 					if ( result != NO_ERROR ) break;
 				}else{
 					//名前変更モード && ファイル名変更無し なので処理をスキップ
@@ -412,7 +417,7 @@ ERRORCODE DlgCopyDir(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD srcattr)
 				if ( IsTrue(FS->testmode) ){
 					result = TestDest(FS, buf, dbuf);
 				}else{
-					result = DlgCopyFile(FS, buf, dbuf, find.dwFileAttributes);
+					result = DlgCopyFile(FS, buf, dbuf, &find);
 				}
 				skipfileaction: ;
 			}
@@ -464,6 +469,7 @@ ERRORCODE DlgCopyDir(FOPSTRUCT *FS, const TCHAR *src, TCHAR *dst, DWORD srcattr)
 	if ( (result == NO_ERROR) && (FS->opt.fop.mode == FOPMODE_MIRROR) ){
 		WIN32_FIND_DATA *ff, *ffmax;
 
+		#pragma warning(suppress:6001) // result = GetFFList(&thDestDirList, dst); で初期化済み
 		ffmax = (WIN32_FIND_DATA *)(thDestDirList.bottom + thDestDirList.top);
 		for ( ff = (WIN32_FIND_DATA *)thDestDirList.bottom ; ff < ffmax ; ff++ ){
 			if ( ff->cFileName[0] != '\0' ){

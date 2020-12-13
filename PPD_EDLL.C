@@ -411,6 +411,8 @@ void USEFASTCALL tInputInitDialog(HWND hDlg, TINPUTSTRUCT *ts)
 			}
 #endif
 		}
+	}else if ( X_uxt == UXT_DARK ){
+		LocalizeDialogText(hDlg, 0);
 	}
 	SetWindowText(hDlg, MessageText(tinput->title));
 	SetFocus(ts->hEdWnd);

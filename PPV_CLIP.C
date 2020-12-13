@@ -501,7 +501,7 @@ void URIDUMP(const char *bottom, const char *top, const TCHAR *title)
 
 void MakeURIs(HMENU hMenu, int index)
 {
-	char *p, *start = NULL;
+	char *ptr, *start = NULL;
 	char *textbottom, *texttop, *maxptr;
 	int use = URI_NO, top;
 
@@ -519,6 +519,7 @@ void MakeURIs(HMENU hMenu, int index)
 		textbottom = (char *)VOi->ti[VOsel.now.y.line].ptr;
 		texttop = (char *)VOi->ti[VOsel.now.y.line + 1].ptr;
 	}
+	if ( textbottom == NULL ) return;
 	maxptr = (char *)VOi->ti[VOi->cline].ptr;
 #if 0
 	if ( GetAsyncKeyState(0xF0 /*VK_CAPITAL*/) & KEYSTATE_PUSH ){
@@ -527,16 +528,16 @@ void MakeURIs(HMENU hMenu, int index)
 		URIDUMP(textbottom, texttop, T("max"));
 	}
 #endif
-	for ( p = textbottom ; p < maxptr ; ){
+	for ( ptr = textbottom ; ptr < maxptr ; ){
 		UCHAR code;
 
-		code = *p;
+		code = *ptr;
 		if ( (code == 0xd) || (code == 0xa) ){ // 改行後も連結する
 			char *skipp;
 
-			p++;
-			if ( (code == 0xd) || (code == 0xa) ) p++;
-			skipp = p;
+			ptr++;
+			if ( (code == 0xd) || (code == 0xa) ) ptr++;
+			skipp = ptr;
 			while ( skipp < maxptr ){
 				char c;
 
@@ -547,9 +548,9 @@ void MakeURIs(HMENU hMenu, int index)
 				}
 				break;
 			}
-			if ( skipp != p ){ // 改行後も連結可能
+			if ( skipp != ptr ){ // 改行後も連結可能
 				if ( use != URI_NO ){
-					MakeURIs2(hMenu, &index, textbottom, start, p, use);
+					MakeURIs2(hMenu, &index, textbottom, start, ptr, use);
 					if ( index > MENUID_URIMAX ) break;
 					MakeURIs2(hMenu, &index, textbottom, start, skipp, use);
 					use = URI_NO;
@@ -558,48 +559,48 @@ void MakeURIs(HMENU hMenu, int index)
 				}
 			}else{ // 改行で終わり
 				if ( use != URI_NO ){
-					MakeURIs2(hMenu, &index, textbottom, start, p, use);
+					MakeURIs2(hMenu, &index, textbottom, start, ptr, use);
 					use = URI_NO;
 					if ( index > MENUID_URIMAX ) break;
 				}
-				if ( p >= texttop ) break;
+				if ( ptr >= texttop ) break;
 				start = NULL;
 				use = URI_NO;
 			}
 			continue;
 		}
 		if ( (code > (UCHAR)' ') && (code < (UCHAR)0x7f ) &&
-			 (strchr("\"<>|", *p) == NULL) ){ // 該当文字( ASCII 内で "<>| 除く)
+			 (strchr("\"<>|", *ptr) == NULL) ){ // 該当文字( ASCII 内で "<>| 除く)
 			if ( start == NULL ){
-				if ( strchr("([{", *p) == NULL ){ // 括弧でなければ検索開始地点
-					start = p;
+				if ( strchr("([{", *ptr) == NULL ){ // 括弧でなければ検索開始地点
+					start = ptr;
 /*
-					if ( (p > textbottom) && (*(p - 1) == '\"') ){
+					if ( (ptr > textbottom) && (*(ptr - 1) == '\"') ){
 						use = URI_PATH;
 					}
 */
 				}
 			}else{
-				if ( *p == '\\' ) use = URI_PATH;
-				if ( *p == ':' ) use = URI_URL;
-				if ( *p == '/' ) use = URI_URL;
-				if ( (*p == '.') && Isalpha(*(p + 1)) ) use = URI_URL;
-				if ( *p == '@' ) use = URI_MAIL;
+				if ( *ptr == '\\' ) use = URI_PATH;
+				if ( *ptr == ':' ) use = URI_URL;
+				if ( *ptr == '/' ) use = URI_URL;
+				if ( (*ptr == '.') && Isalpha(*(ptr + 1)) ) use = URI_URL;
+				if ( *ptr == '@' ) use = URI_MAIL;
 			}
 		}else{
 			if ( use != URI_NO ){
-				MakeURIs2(hMenu, &index, textbottom, start, p, use);
+				MakeURIs2(hMenu, &index, textbottom, start, ptr, use);
 				use = URI_NO;
 				if ( index > MENUID_URIMAX ) break;
 			}
-			if ( p >= texttop ) break;
+			if ( ptr >= texttop ) break;
 			start = NULL;
 			use = URI_NO;
 #ifndef UNICODE
-			if ( IskanjiA(*p) && (*(p + 1) != '\0') ) p++;
+			if ( IskanjiA(*ptr) && (*(ptr + 1) != '\0') ) ptr++;
 #endif
 		}
-		p++;
+		ptr++;
 	}
-	if ( use != URI_NO ) MakeURIs2(hMenu, &index, textbottom, start, p, use);
+	if ( use != URI_NO ) MakeURIs2(hMenu, &index, textbottom, start, ptr, use);
 }

@@ -537,6 +537,11 @@ BOOL InvokeMenuError(HWND hWnd, HMENU hMenu, int idCmd, HRESULT hres)
 			return INVOKE_PINTOSTART;
 		}
 	}
+	if ( hres == HRESULT_FROM_WIN32(ERROR_INVALID_WINDOW_HANDLE) ) { // Exlorer専用？
+		XMessage(hWnd, NULL, XM_GrERRld, T("Explorer only"));
+		return FALSE;
+	}
+
 	// FACILITY_SHELL + NO_ERROR + E_FAIL、「削除」でキャンセルしたときに出る
 	if ( hres == 0x80270000 ) return TRUE;
 	PPErrorBox(hWnd, NULL, hres);

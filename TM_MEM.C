@@ -3,7 +3,7 @@
 
 --------------------------------------- 汎用版
 ・ポインタを参照・代入する時に
-	BOOL	TM_check(TM_struct *TM, DWORD size)
+	BOOL	TM_check(TM_struct *TM, SIZE_T size)
 		TM_struct *TM		メモリ管理構造体（通常は p のみでいいはず）
 		DWORD size			必要なメモリ
 
@@ -44,7 +44,7 @@
 //-----------------------------------------------------------------------------
 void TM_off(TM_struct *TM)
 {
-	if (TM->p != NULL){
+	if ( TM->p != NULL ){
 		if ( IsTrue(GlobalUnlock(TM->h)) ){
 			PPErrorBox(NULL, T("TM_off"), PPERROR_GETLASTERROR);
 		}
@@ -64,7 +64,7 @@ void TM_kill(TM_struct *TM)
 	}
 }
 //-----------------------------------------------------------------------------
-BOOL TM_check(TM_struct *TM, DWORD size)
+BOOL TM_check(TM_struct *TM, ULONG_PTR size)
 {
 	if ( TM->s == 0 ){						// まったく確保していない場合
 		TM->h = GlobalAlloc(GMEM_MOVEABLE, TM_step);
@@ -78,7 +78,7 @@ BOOL TM_check(TM_struct *TM, DWORD size)
 	}
 	if ( TM->s < size ){					// 確保済みのメモリで足りない場合
 		HGLOBAL hTmp;
-		DWORD addsize;
+		ULONG_PTR addsize;
 
 		TM_off(TM);
 		#define ADDPAR 8
@@ -98,7 +98,7 @@ BOOL TM_check(TM_struct *TM, DWORD size)
 			TM->s = size;
 		}
 	}
-	if (TM->p == NULL) TM->p = GlobalLock(TM->h);
+	if ( TM->p == NULL ) TM->p = GlobalLock(TM->h);
 	return TRUE;
 }
 //-----------------------------------------------------------------------------
@@ -110,9 +110,9 @@ void TMS_reset(TMS_struct *TMS)
 
 char *TMS_setA(TMS_struct *TMS, const char *string)
 {
-	SIZE32_T size;
+	ULONG_PTR size;
 
-	size = strlen32(string) + 1;
+	size = strlen(string) + 1;
 	TM_check(&TMS->tm, (TMS->p) + size);
 	memcpy((char *)TMS->tm.p + TMS->p, string, size);
 	TMS->p += size;
@@ -121,9 +121,9 @@ char *TMS_setA(TMS_struct *TMS, const char *string)
 #ifdef UNICODE
 char *TMS_setW(TMS_struct *TMS, const WCHAR *string)
 {
-	SIZE32_T size;
+	ULONG_PTR size;
 
-	size = (strlenW32(string) + 1) * sizeof(WCHAR);
+	size = (strlenW(string) + 1) * sizeof(WCHAR);
 	TM_check(&TMS->tm, (TMS->p) + size);
 	memcpy((char *)TMS->tm.p + TMS->p, string, size);
 	TMS->p += size;

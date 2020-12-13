@@ -804,7 +804,7 @@ LRESULT CALLBACK CBTProc(int nCode, WPARAM wParam, LPARAM lParam)
 		TCHAR buf[MAX_PATH];
 
 		GetClassName((HWND)wParam, buf, TSIZEOF(buf));
-		if( tstricmp(buf, T("Edit")) == 0 ){
+		if( tstricmp(buf, EditClassName) == 0 ){
 			PPxRegistExEdit(NULL, (HWND)wParam, 0, NULL, 0, 0, 0);
 		}
 	}
@@ -818,7 +818,7 @@ BOOL CALLBACK PPxUnHookEditChild(HWND hWnd, LPARAM lParam)
 	UnUsedParam(lParam);
 
 	if ( GetClassName((HWND)hWnd, buf, TSIZEOF(buf)) ){
-		if( tstricmp(buf, T("Edit")) == 0 ){
+		if( tstricmp(buf, EditClassName) == 0 ){
 			SendMessage(hWnd, WM_PPXCOMMAND, KE__FREE, 0);
 		}
 	}

@@ -397,6 +397,7 @@ void InitDispFormat(HWND hDlg, const TCHAR *key)
 	int index, param;
 	BOOL fromppc = FALSE;
 
+	if ( X_uxt == UXT_DARK ) LocalizeDialogText(hDlg, 0);
 	PPxRegist(hDlg, PPcustRegID, PPXREGIST_IDASSIGN);
 	if ( key == NULL ){ // PPc ÇÃíºê⁄ï“èWÉÇÅ[Éh
 		EtcEditFormat = ETC_CELLDISP;

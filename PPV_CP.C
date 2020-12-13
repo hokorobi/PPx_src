@@ -292,6 +292,7 @@ INT_PTR CALLBACK GetCodePageDialog(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM l
 			hCodePageWnd = hDlg;
 			CodePageIndex = 0;
 
+			LocalizeDialogText(hDlg, 0);
 			SetWindowLongPtr(hDlg, DWLP_USER, (LONG_PTR)lParam);
 			SetWindowText(hDlg, MessageText(StrSelCP));
 			SendDlgItemMessage(hCodePageWnd, IDL_PT_LIST, LB_ADDSTRING, 0,
@@ -330,6 +331,8 @@ INT_PTR CALLBACK GetCodePageDialog(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM l
 			EndDialog(hDlg, 0);
 			break;
 
+		default:
+			return PPxDialogHelper(hDlg, iMsg, wParam, lParam);
 	}
 	return FALSE;
 }

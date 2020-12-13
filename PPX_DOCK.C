@@ -102,7 +102,10 @@ int DriveBarIconSize = 16;
 
 void LoadAddressBitmap(void)
 {
-	if ( (hAddressBMP != NULL) || (OSver.dwMajorVersion != 5) ) return;
+	if ( (hAddressBMP != NULL) || (OSver.dwMajorVersion != 5) ){
+		if ( UseCCDrawBack == 0 ) LoadCCDrawBack();
+		return;
+	}
 
 	hAddressBMP = LoadBitmap(
 			GetModuleHandle(StrShell32DLL), MAKEINTRESOURCE(ADDRBMP_RESID));
@@ -448,12 +451,16 @@ LRESULT CALLBACK DockStatusProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 void InitEditColor(void)
 {
 	GetCustData(T("CC_log"), &CC_log, sizeof(CC_log));
-	if ( (CC_log[0] == C_AUTO) && (CC_log[1] == C_AUTO) ){
+	if ( (CC_log[0] == C_AUTO) && (CC_log[1] == C_AUTO) && (X_uxt != UXT_DARK) ){
 		Reportcolor = FALSE;
 	}else{
 		Reportcolor = TRUE;
-		if ( CC_log[0] == C_AUTO) CC_log[0] = GetSysColor(COLOR_WINDOWTEXT);
-		if ( CC_log[1] == C_AUTO) CC_log[1] = GetSysColor(COLOR_WINDOW);
+		if ( CC_log[0] == C_AUTO ){
+			CC_log[0] = (X_uxt == UXT_DARK) ? DARK_COLOR_TEXT : GetSysColor(COLOR_WINDOWTEXT);
+		}
+		if ( CC_log[1] == C_AUTO ){
+			CC_log[1] = (X_uxt == UXT_DARK) ? DARK_COLOR_BACK : GetSysColor(COLOR_WINDOW);
+		}
 
 		if ( Combo.Report.hBrush != NULL ) DeleteObject(Combo.Report.hBrush);
 		Combo.Report.hBrush = CreateSolidBrush(CC_log[1]);
@@ -476,14 +483,13 @@ void EnterRebarAddress(REBARADDRESS *ra)
 void DrawAddressButton(HDC hDC, RECT *box)
 {
 	HBRUSH hBr;
-
-	hBr = CreateSolidBrush(C_DGREEN);
-	FillBox(hDC, box, hBr);
-	DeleteObject(hBr);
-
 	if ( hAddressBMP != NULL ){ // WinXP
 		HDC hMemDC = CreateCompatibleDC(hDC);
 		HGDIOBJ hOldBMP;
+
+		hBr = CreateSolidBrush(C_DGREEN);
+		FillBox(hDC, box, hBr);
+		DeleteObject(hBr);
 
 		hOldBMP = SelectObject(hMemDC, hAddressBMP);
 		BitBlt(hDC,
@@ -496,9 +502,18 @@ void DrawAddressButton(HDC hDC, RECT *box)
 		COLORREF oldc;
 		HGDIOBJ hOldFont;
 
-		oldc = SetTextColor(hDC, C_WHITE);
+		if ( X_uxt == UXT_DARK ){
+			FillBox(hDC, box, UseCCDrawBrush);
+		}else{
+			hBr = CreateSolidBrush(GetSysColor(COLOR_BTNSHADOW));
+			FillBox(hDC, box, hBr);
+			DeleteObject(hBr);
+		}
+		oldc = SetTextColor(hDC, (X_uxt == UXT_DARK) ? DARK_COLOR_TEXT : GetSysColor(COLOR_WINDOWTEXT));
 		SetBkMode(hDC, TRANSPARENT);
-		if ( Combo.Font.size.cy > ADDRBMP_SIZE ) hOldFont = SelectObject(hDC, Combo.Font.handle);
+		if ( Combo.Font.size.cy > ADDRBMP_SIZE ){
+			hOldFont = SelectObject(hDC, Combo.Font.handle);
+		}
 		TextOutW(hDC, box->left, box->top, (const WCHAR *)&AllowStr, 1);
 		#pragma warning(suppress: 4701) // 同条件の２行前で初期化
 		if ( Combo.Font.size.cy > ADDRBMP_SIZE ) SelectObject(hDC, hOldFont);
@@ -536,7 +551,7 @@ LRESULT CALLBACK DockAddressBarProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 
 			ra->dockinfo.dock = (PPXDOCK *)((CREATESTRUCT *)lParam)->lpCreateParams;
 			ra->dockinfo.dock->hAddrWnd = ra->hEditWnd =
-				CreateWindowEx(WS_EX_CLIENTEDGE, T("EDIT"), NilStr,
+				CreateWindowEx(WS_EX_CLIENTEDGE, WC_EDIT, NilStr,
 				WS_CHILD | WS_VSCROLL | ES_AUTOHSCROLL | ES_NOHIDESEL | ES_LEFT,
 				0, 0, 100, GetBarHeight(ra->dockinfo.dock), hWnd, NULL, hInst, 0);
 												// EditBox の拡張 -------------
@@ -827,7 +842,7 @@ void InitDockInputBarProc(HWND hWnd, REBARINPUT *ri)
 	InitEditColor();
 
 	ri->hEditWnd =
-			CreateWindowEx(WS_EX_CLIENTEDGE, T("EDIT"), NilStr, WS_CHILD |
+			CreateWindowEx(WS_EX_CLIENTEDGE, WC_EDIT, NilStr, WS_CHILD |
 			WS_VISIBLE | WS_VSCROLL | ES_AUTOHSCROLL | ES_NOHIDESEL | ES_LEFT,
 			0, 0, 100, GetBarHeight(ri->dockinfo.dock), hWnd, NULL, hInst, 0);
 												// EditBox の拡張 -------------
@@ -1129,9 +1144,7 @@ void CreateDockToolBar(PPXDOCK *dock, const TCHAR *custname, UINT style, int cx)
 	HWND hToolBarWnd;
 	RECT box;
 
-	if ( UseCCDrawBack == 0 ){
-		UseCCDrawBack = PPxCommonExtCommand(K_DRAWCCBACK, 0) ? 2 : 1;
-	}
+	if ( UseCCDrawBack == 0 ) LoadCCDrawBack();
 
 	rbi.wID = dock->th->top;
 	ThAddString(dock->th, custname);
@@ -1249,7 +1262,7 @@ void CreateDockLogBar(PPXDOCK *dock, UINT style, int cx)
 	ThAddString(dock->th, RMENUSTR_LOG);
 
 	hCommonLog = hWnd = CreateWindowEx(WS_EX_TOOLWINDOW | WS_EX_ACCEPTFILES,
-			T("EDIT"), NilStr,
+			WC_EDIT, NilStr,
 			WS_CHILD | WS_VSCROLL | ES_AUTOVSCROLL | ES_NOHIDESEL |
 			ES_LEFT | ES_MULTILINE | ES_WANTRETURN,	// ウインドウの形式
 			0, 0, 100, 200, dock->hWnd, CHILDWNDID(IDW_REPORTLOG), hInst, 0);
@@ -1357,6 +1370,7 @@ void CreateDockAddressBreadCrumbListBar(PPXDOCK *dock, UINT style, int cx)
 		TOOLBARCLASSNAME, NULL, tstyle, 0, 0, iconsize, iconsize,
 		dock->hWnd, (HMENU)IDW_ADRBCL, hInst, NULL);
 	if ( hToolBarWnd == NULL ) return;
+	FixUxTheme(hToolBarWnd, TOOLBARCLASSNAME);
 
 	dock->hAddrWnd = hToolBarWnd;
 
@@ -1408,9 +1422,7 @@ void CreateDockDriveBar(PPXDOCK *dock, UINT style, int cx)
 	// 編集可能にする : CCS_ADJUSTABLE | TBSTYLE_ALTDRAG
 	tstyle = CCS_NODIVIDER | WS_CHILD | WS_VISIBLE | CCS_NOPARENTALIGN | TBSTYLE_FLAT | TBSTYLE_TOOLTIPS | TBSTYLE_LIST;
 
-	if ( UseCCDrawBack == 0 ){
-		UseCCDrawBack = PPxCommonExtCommand(K_DRAWCCBACK, 0) ? 2 : 1;
-	}
+	if ( UseCCDrawBack == 0 ) LoadCCDrawBack();
 	if ( UseCCDrawBack > 1 ) tstyle |= TBSTYLE_CUSTOMERASE;
 
 	hToolBarWnd = CreateWindowEx(0, TOOLBARCLASSNAME, NULL, tstyle,
@@ -1419,6 +1431,7 @@ void CreateDockDriveBar(PPXDOCK *dock, UINT style, int cx)
 	if ( hToolBarWnd == NULL ) return;
 
 	if ( X_dss & DSS_COMCTRL ) SendMessage(hToolBarWnd, CCM_DPISCALE, TRUE, 0);
+	FixUxTheme(hToolBarWnd, TOOLBARCLASSNAME);
 
 	SendMessage(hToolBarWnd, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
 
@@ -1543,14 +1556,14 @@ void InitDock(HWND hWnd, PPXDOCK *dock, BOOL forcecreate)
 
 	dock->hWnd = CreateWindowEx(WS_EX_TOOLWINDOW | WS_EX_ACCEPTFILES,
 			REBARCLASSNAME, NULL,
-			WS_CHILD | WS_VISIBLE | CCS_NOPARENTALIGN |
-			// WS_CLIPSIBLINGS | WS_CLIPCHILDREN |
-			RBS_BANDBORDERS | CCS_NORESIZE | CCS_NODIVIDER |
-			RBS_VARHEIGHT | RBS_DBLCLKTOGGLE /*| CCS_BOTTOM*/,
+			WS_CHILD | WS_VISIBLE | // WS_CLIPSIBLINGS | WS_CLIPCHILDREN |
+			RBS_BANDBORDERS | RBS_VARHEIGHT | RBS_DBLCLKTOGGLE |
+			CCS_NOPARENTALIGN | CCS_NORESIZE | CCS_NODIVIDER /*| CCS_BOTTOM*/,
 			0, 0, 0, 0, hWnd, CHILDWNDID(IDW_REBAR), hInst, NULL);
 	if ( dock->hWnd == NULL ) return; // 作成できなかった／未対応
 
 	if ( X_dss & DSS_COMCTRL ) SendMessage(dock->hWnd, CCM_DPISCALE, TRUE, 0);
+	FixUxTheme(dock->hWnd, REBARCLASSNAME);
 										// 使用する構造体を通知
 	rbi.cbSize = sizeof(REBARINFO);
 	rbi.fMask  = 0;
@@ -1558,7 +1571,7 @@ void InitDock(HWND hWnd, PPXDOCK *dock, BOOL forcecreate)
 	SendMessage(dock->hWnd, RB_SETBARINFO, 0, (LPARAM)&rbi);
 	ShowWindow(dock->hWnd, SW_SHOWNORMAL);
 										// バーを登録する
-	if ( cust[0] ){
+	if ( cust[0] != '\0' ){
 		TCHAR *linep, *lp;
 		UINT style;
 		int cx;

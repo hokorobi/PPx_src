@@ -443,7 +443,7 @@ INT_PTR CALLBACK PrintDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 			}
 			return TRUE;
 	}
-	return FALSE;
+	return PPxDialogHelper(hDlg, msg, wParam, lParam);
 }
 // "Printing.." dialog-message loop -------------------------------------------
 #pragma argsused

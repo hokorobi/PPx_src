@@ -384,13 +384,13 @@ BOOL CheckProtcol(TCHAR *path, int flag, const TCHAR *cur)
 /*-----------------------------------------------------------------------------
 	src を正規化したパスに変換する
 -----------------------------------------------------------------------------*/
-VFSDLL TCHAR * PPXAPI VFSFixPath(TCHAR *dst, TCHAR *src, _In_opt_z_ const TCHAR *cur, int flag)
+VFSDLL TCHAR * PPXAPI VFSFixPath(TCHAR *dst, TCHAR *src, _In_opt_z_ const TCHAR *cur, int flags)
 {
 	TCHAR buf[VFPS];
 	TCHAR buf2[VFPS];
 
 	if ( dst == NULL ) dst = src;
-	if ( flag & VFSFIX_NOFIXEDGE ){
+	if ( flags & VFSFIX_NOFIXEDGE ){
 		tstrcpy(buf, src);
 	}else{ // 前方の空白を削除
 		TCHAR *sptr, *dptr;
@@ -460,15 +460,18 @@ VFSDLL TCHAR * PPXAPI VFSFixPath(TCHAR *dst, TCHAR *src, _In_opt_z_ const TCHAR 
 				do {
 					cptr++;
 				} while ( *cptr == '.' );
+			}else if ( (flags & VFSFIX_KEEPLASTPERIOD) &&
+					((UTCHAR)*(cptr + 1) <= ' ') ){
+				cptr++; // 末尾「.」を維持する
 			}
 		}
 		*cptr = '\0';
 	}
 										// 空欄ならエラーに
-	if ( (flag & VFSFIX_NOBLANK) && (buf[0] == '\0') ) return NULL;
+	if ( (flags & VFSFIX_NOBLANK) && (buf[0] == '\0') ) return NULL;
 
 										// １文字ドライブ指定の補正
-	if ( (flag & VFSFIX_DRIVE) && Isalnum(buf[0]) && (buf[1] == '\0') ){
+	if ( (flags & VFSFIX_DRIVE) && Isalnum(buf[0]) && (buf[1] == '\0') ){
 		int drivename;
 		DWORD X_odrv;
 										// 指定文字のドライブが実在するか確認
@@ -509,7 +512,7 @@ VFSDLL TCHAR * PPXAPI VFSFixPath(TCHAR *dst, TCHAR *src, _In_opt_z_ const TCHAR 
 		}
 	}
 														// セパレータの補正
-	if ( flag & VFSFIX_SEPARATOR ){
+	if ( flags & VFSFIX_SEPARATOR ){
 		// file: の除去
 		if ( !memcmp(buf, StrFileScheme, SIZEOFTSTR(StrFileScheme)) ){
 			memmove(buf, buf + TSIZEOFSTR(StrFileScheme),
@@ -523,7 +526,7 @@ VFSDLL TCHAR * PPXAPI VFSFixPath(TCHAR *dst, TCHAR *src, _In_opt_z_ const TCHAR 
 				 memcmp(buf, StrHttps, SIZEOFTSTR(StrHttps) ) &&
 				 memcmp(buf, StrFtp , StrFtpSize) &&
 				 !(!memcmp(buf, StrAux, StrAuxSize) && (buf[4] == '/')) ){
-				if ( tstrchr(buf, '/') != NULL ) CheckProtcol(buf, flag, cur);
+				if ( tstrchr(buf, '/') != NULL ) CheckProtcol(buf, flags, cur);
 			}else{
 				TCHAR *bsptr;
 
@@ -538,7 +541,7 @@ VFSDLL TCHAR * PPXAPI VFSFixPath(TCHAR *dst, TCHAR *src, _In_opt_z_ const TCHAR 
 		TCHAR *result;
 
 		result = buf;
-		if ( flag & VFSFIX_FULLPATH ){	// 絶対化
+		if ( flags & VFSFIX_FULLPATH ){	// 絶対化
 			TCHAR srcbuf[VFPS];
 
 			tstrcpy(srcbuf, buf);
@@ -547,14 +550,14 @@ VFSDLL TCHAR * PPXAPI VFSFixPath(TCHAR *dst, TCHAR *src, _In_opt_z_ const TCHAR 
 			if ( result == NULL ) return NULL;
 		}
 														// 実体化
-		if ( flag & VFSFIX_REALPATH ){
+		if ( flags & VFSFIX_REALPATH ){
 			int mode;
 
 			if ( VFSGetDriveType(buf, &mode, NULL) != NULL ){
 				if ( (mode <= VFSPT_SHN_DESK) || (mode == VFSPT_SHELLSCHEME) ){
 					HRESULT ComInitResult;
 					ComInitResult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-					if ( flag & VFSFIX_VREALPATH ){
+					if ( flags & VFSFIX_VREALPATH ){
 						if ( IsTrue(VFSGetRealPath(NULL, buf2, buf)) ){
 							tstrcpy(buf, buf2);
 						}
@@ -569,7 +572,7 @@ VFSDLL TCHAR * PPXAPI VFSFixPath(TCHAR *dst, TCHAR *src, _In_opt_z_ const TCHAR 
 			}
 		}
 #if 0 // 現在使用していないため、1.12 より 無効化中
-		if ( flag & VFSFIX_CASE ) CharUpper(buf);			// 大文字化
+		if ( flags & VFSFIX_CASE ) CharUpper(buf);			// 大文字化
 #endif
 		tstrcpy(dst, buf);
 		return dst + (result - buf);
@@ -1122,7 +1125,7 @@ INT_PTR CALLBACK VFSChangeDirectoryDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, L
 			break;
 
 		default:
-			return FALSE;
+			return PPxDialogHelper(hDlg, iMsg, wParam, lParam);
 	}
 	return TRUE;
 }
@@ -1360,16 +1363,20 @@ VFSDLL BOOL PPXAPI GetUniqueEntryName(TCHAR *src)
 	int mulnum = 1;
 	int maxtry = 10000;	// 最大試行数
 	TCHAR *ptr;
-	DWORD (PPXAPI * GetAttr)(const TCHAR *name);
+	DWORD (PPXAPI * GetAttr)(const TCHAR *name), attr;
 
 	GetAttr = (SearchPipe(src) == NULL) ? GetFileAttributesL : GetSelAttr;
-	if ( GetAttr(src) == BADATTR ) return TRUE;
+	attr = GetAttr(src);
+	if ( attr == BADATTR ) return TRUE;
 	if ( tstrlen(src) >= (VFPS - 5) ) return TRUE; // 名前の変更保証ができない
-						// 拡張子を隔離 -----------------------
-	tstrcpy(name, src);
-	ptr = VFSFindLastEntry(name);
-	ptr += FindExtSeparator(ptr);
 
+	tstrcpy(name, src);
+	if ( attr & FILE_ATTRIBUTE_DIRECTORY ){
+		ptr = name + tstrlen(name);
+	}else{		// 拡張子を隔離
+		ptr = VFSFindLastEntry(name);
+		ptr += FindExtSeparator(ptr);
+	}
 #ifdef UNICODE
 	while ( (ptr > name) && (*(ptr - 1) == '|') ) ptr--;
 #else
@@ -1383,7 +1390,7 @@ VFSDLL BOOL PPXAPI GetUniqueEntryName(TCHAR *src)
 						// 以前の番号を抽出 -------------------
 	for ( ; name < ptr ; mulnum *= 10 ){
 		ptr--;
-		if ( *ptr == '-' ){
+		if ( (*ptr == '-') && (*(ptr + 1) != '0') ){
 			*ptr = '\0';
 			break;
 		}

@@ -128,17 +128,17 @@ void GetUndoLogFileName(TCHAR *name)
 BOOL DoDeleteUndo(FOPSTRUCT *FS, const TCHAR *type, const TCHAR *target)
 {
 	if ( target == NULL ){
-		FWriteLog(FS->hEWnd, T("Error no target\r\n"));
+		FWriteLog(FS, T("Error no target\r\n"));
 		return FALSE;
 	}
 
-	FWriteLog(FS->hEWnd, T("Delete("));
-	FWriteLog(FS->hEWnd, type);
-	FWriteLog(FS->hEWnd, T("):"));
-	FWriteLog(FS->hEWnd, target);
+	FWriteLog(FS, T("Delete("));
+	FWriteLog(FS, type);
+	FWriteLog(FS, T("):"));
+	FWriteLog(FS, target);
 	if ( FS->testmode == FALSE ){
 		if ( DeleteFileL(target) == FALSE ){
-			FWriteLog(FS->hEWnd, T(" - error"));
+			FWriteLog(FS, T(" - error"));
 		}
 	}
 	return TRUE;
@@ -149,13 +149,13 @@ BOOL DoMoveUndo(FOPSTRUCT *FS, const TCHAR *type, const TCHAR *target, const TCH
 	TCHAR name[VFPS];
 
 	if ( target == NULL ){
-		FWriteLog(FS->hEWnd, T("Error no target\r\n"));
+		FWriteLog(FS, T("Error no target\r\n"));
 		return FALSE;
 	}
-	FWriteLog(FS->hEWnd, T("Move("));
-	FWriteLog(FS->hEWnd, type);
-	FWriteLog(FS->hEWnd, T("):"));
-	FWriteLog(FS->hEWnd, target);
+	FWriteLog(FS, T("Move("));
+	FWriteLog(FS, type);
+	FWriteLog(FS, T("):"));
+	FWriteLog(FS, target);
 	while ( FS->testmode == FALSE ){
 		if ( MoveFileWithProgressL(target, org,
 				(LPPROGRESS_ROUTINE)CopyProgress,
@@ -175,7 +175,7 @@ BOOL DoMoveUndo(FOPSTRUCT *FS, const TCHAR *type, const TCHAR *target, const TCH
 				VFSFullPath(name, T(".."), org);
 				if ( MakeDirectories(name, NULL) == NO_ERROR ) continue;
 			}
-			FWriteLog(FS->hEWnd, T(" - error"));
+			FWriteLog(FS, T(" - error"));
 			return FALSE;
 		}
 		break;
@@ -195,7 +195,7 @@ BOOL UndoCommand(FOPSTRUCT *FS)
 	result = LoadTextImage(name, &mem, &text, &maxptr);
 	if ( result != NO_ERROR ){
 		if ( result == ERROR_FILE_NOT_FOUND ){
-			FWriteLog(FS->hEWnd, MessageText(StrMES_ECUD));
+			FWriteLog(FS, MessageText(StrMES_ECUD));
 		}else{
 			FWriteErrorLogs(FS, T("Undo"), NULL, result);
 		}
@@ -205,8 +205,8 @@ BOOL UndoCommand(FOPSTRUCT *FS)
 
 	{ // tab を10文字に
 		DWORD tabsize = 10 << 2;
-		SendMessage(FS->hEWnd, EM_SETTABSTOPS, 1, (LPARAM)&tabsize);
-		InvalidateRect(FS->hEWnd, NULL, FALSE);
+		SendMessage(FS->log.hWnd, EM_SETTABSTOPS, 1, (LPARAM)&tabsize);
+		InvalidateRect(FS->log.hWnd, NULL, FALSE);
 	}
 
 	// ログの検証
@@ -239,33 +239,33 @@ BOOL UndoCommand(FOPSTRUCT *FS)
 					if ( !tstrcmp(nowp, StrLogCopy) ||
 						 !tstrcmp(nowp, StrLogMove) ){
 						target++;
-						FWriteLog(FS->hEWnd, T("o "));
+						FWriteLog(FS, T("o "));
 					}else if ( !tstrcmp(nowp, StrLogOverwrite) ||
 						 !tstrcmp(nowp, StrLogReplace) ||
 						 !tstrcmp(nowp, STRLOGDELETE) ){
 						if ( havebackup ){
 							target++;
-							FWriteLog(FS->hEWnd, T("o "));
+							FWriteLog(FS, T("o "));
 						}else{
 							wrong++;
-							FWriteLog(FS->hEWnd, T("x "));
+							FWriteLog(FS, T("x "));
 						}
 					}else if ( !tstrcmp(nowp, StrLogAppend) ){
 						wrong++;
-						FWriteLog(FS->hEWnd, T("x "));
+						FWriteLog(FS, T("x "));
 					}else if ( !tstrcmp(nowp, StrLogTest) ||
 						!tstrcmp(nowp, STRLOGSKIP) ||
 						!tstrcmp(nowp, StrLogExist) ){
 						untarget++;
-						FWriteLog(FS->hEWnd, T("- "));
+						FWriteLog(FS, T("- "));
 					}else{
-						FWriteLog(FS->hEWnd, T("? "));
+						FWriteLog(FS, T("? "));
 						unknowntype++;
 					}
-					FWriteLog(FS->hEWnd, nowp);
-					FWriteLog(FS->hEWnd, T("\t"));
-					FWriteLog(FS->hEWnd, tab + 1);
-					FWriteLog(FS->hEWnd, T("\r\n"));
+					FWriteLog(FS, nowp);
+					FWriteLog(FS, T("\t"));
+					FWriteLog(FS, tab + 1);
+					FWriteLog(FS, T("\r\n"));
 					havebackup = FALSE;
 				}
 				*tab = '\t';
@@ -279,7 +279,7 @@ BOOL UndoCommand(FOPSTRUCT *FS)
 		wsprintf(buf,
 			T("Target:%d / Untarget:%d / Badtarget:%d / Unknown:%d\r\n"),
 			target, untarget, wrong, unknowntype);
-		FWriteLog(FS->hEWnd, buf);
+		FWriteLog(FS, buf);
 
 		if ( target && !wrong && !unknowntype ){
 			if ( IsTrue(FS->testmode) ||
@@ -287,7 +287,7 @@ BOOL UndoCommand(FOPSTRUCT *FS)
 						MB_ICONEXCLAMATION | MB_YESNO) == IDYES) ){
 				TCHAR *tab, *targetp = NULL;
 
-				FWriteLog(FS->hEWnd, T("\r\n***\r\n\r\n"));
+				FWriteLog(FS, T("\r\n***\r\n\r\n"));
 				// ログの最後から順番に実行する
 				while( nowp >= text ){
 					while( (nowp > text) && (*(nowp - 1) != '\0') ) nowp--;
@@ -310,9 +310,9 @@ BOOL UndoCommand(FOPSTRUCT *FS)
 								}else if ( !tstrcmp(nowp, STRLOGMAKEDIR) ){
 									RemoveDirectoryL(tab);
 								}else{
-									FWriteLog(FS->hEWnd, nowp);
+									FWriteLog(FS, nowp);
 								}
-								FWriteLog(FS->hEWnd, T("\r\n"));
+								FWriteLog(FS, T("\r\n"));
 							}
 						}
 					}
@@ -320,7 +320,7 @@ BOOL UndoCommand(FOPSTRUCT *FS)
 				}
 			}
 		}else{
-			FWriteLog(FS->hEWnd, MessageText(StrMES_ECUD));
+			FWriteLog(FS, MessageText(StrMES_ECUD));
 		}
 	}
 	HeapFree(ProcHeap, 0, mem);
@@ -378,6 +378,7 @@ int FopOperationMsgBox(FOPSTRUCT *FS, const TCHAR *msg, const TCHAR *title, UINT
 	int result;
 
 	DisplaySrcNameNow(FS); // 処理ファイル名が未表示なら表示
+	FShowLog(FS); // 未表示のログを表示
 	SetTaskBarButtonProgress(FS->hDlg, TBPF_PAUSED, 0);
 	SetJobTask(FS->hDlg, JOBSTATE_PAUSE);
 	result = PMessageBox(FopGetMsgParentWnd(FS), msg, title, flags);

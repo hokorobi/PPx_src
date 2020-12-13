@@ -474,20 +474,23 @@ void DrawBitmap(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 			box.top = ltop - VOi->offY;
 			box.right = lwidth;
 			box.bottom = lheight;
-			if ( FALSE == DxDrawDIB(DxDraw, vo->bitmap.ShowInfo, vo->bitmap.bits.ptr, &box, &pps->view, &vo->bitmap.DxCache) ){
+			if ( FALSE == DxDrawDIB(DxDraw, vo->bitmap.ShowInfo,
+					vo->bitmap.bits.ptr, &box, &pps->view,
+					&vo->bitmap.DxCache) ){
 				ShowBitmapErrorText(pps);
 			}
 		}else // GDIéûÇÕSetDIBitsToDevice Ç÷
 #endif
 		{
 			POINT oldpos;
-			int oldbm = SetStretchBltMode(pps->ps.hdc, XV.img.imgD[1]);
+			int oldbm = SetStretchBltMode(pps->ps.hdc,
+					XV.img.monomode ? BLACKONWHITE : XV.img.imgD[1]);
 
 			SetBrushOrgEx(pps->ps.hdc, 0, 0, &oldpos);
 			if ( FALSE == StretchDIBits(pps->ps.hdc,
 					lleft, ltop, lwidth, lheight, wx, wy,
 					vo->bitmap.rawsize.cx, vo->bitmap.rawsize.cy,
-					vo->bitmap.bits.ptr,(BITMAPINFO *)vo->bitmap.ShowInfo,
+					vo->bitmap.bits.ptr, (BITMAPINFO *)vo->bitmap.ShowInfo,
 					DIB_RGB_COLORS, SRCCOPY) ){
 				ShowBitmapErrorText(pps);
 			}
@@ -605,7 +608,11 @@ void DrawViewObject(PPVPAINTSTRUCT *pps, PPvViewObject *vo)
 	if ( X_swmt && (vo_.memo.bottom != NULL) && (vo_.memo.top > 0) ){
 		DxSetTextColor(DxDraw, pps->ps.hdc, C_info);
 		DxSetBkMode(DxDraw, pps->ps.hdc, TRANSPARENT);
+#ifdef USEDIRECTX
+		DxMoveToEx(DxDraw, pps->ps.hdc, pps->view.left, pps->view.top);
+#endif
 		DxDrawText(DxDraw, pps->ps.hdc,(const TCHAR *)vo_.memo.bottom, -1, &pps->view, DT_NOCLIP | DT_LEFT | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL);
+		if ( !pps->si.bgmode ) DxSetBkMode(DxDraw, pps->ps.hdc, OPAQUE);
 	}
 }
 
@@ -673,7 +680,10 @@ void Paint(HWND hWnd)
 		if ( PopMsgFlag & PMF_DISPLAYMASK ){
 			DxSetTextColor(DxDraw, pps.ps.hdc, C_res[0]);		// ï∂éöêF
 			DxSetBkColor(DxDraw, pps.ps.hdc, C_res[1]);
+
+			if ( pps.si.bgmode ) DxSetBkMode(DxDraw, pps.ps.hdc, OPAQUE);
 			DxTextOutBack(DxDraw, pps.ps.hdc, PopMsgStr, tstrlen32(PopMsgStr));
+			if ( pps.si.bgmode ) DxSetBkMode(DxDraw, pps.ps.hdc, TRANSPARENT);
 
 			DxGetCurrentPositionEx(DxDraw, pps.ps.hdc, &LP);
 			box.left  = LP.x;
@@ -876,8 +886,7 @@ void Paint(HWND hWnd)
 			DxSetBkColor(DxDraw, pps.ps.hdc, C_back);
 			DxTextOutBack(DxDraw, pps.ps.hdc, StrLoading, StrLoadingLength);
 		}
-
-		if ( pps.ps.fErase != FALSE ){
+		if ( LP.x < pps.ps.rcPaint.right ){
 			DxGetCurrentPositionEx(DxDraw, pps.ps.hdc, &LP);
 			if ( LineY > fontY ){
 				box.left   = pps.ps.rcPaint.left;

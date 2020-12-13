@@ -47,17 +47,17 @@ const TCHAR *GCtheme[] = {
 const TCHAR *GCline[] = {T("通常\0normal"), T("未確定\0gray"), NULL};
 const TCHAR *GCCdisp[] = {T("文字\0text"), T("背景\0back"), NULL};
 const TCHAR *GCwin[] = {
-	T("窓枠明\0Frame light"),
-	T("窓枠表面\0Frame face"),
-	T("窓枠影\0Frame shadow"),
+	T("区切枠 明\0Frame light"),
+	T("区切枠 表面\0Frame face"),
+	T("区切枠 影\0Frame shadow"),
 
-	T("(試)窓背景\0Window face"),
-	T("(試)ダイアログ背景\0(test)Dialog face"),
+	T("(高負荷)窓背景\0(heavy)Window face"),
+	T("(高負荷)ダイアログ背景\0(heavy)Dialog face"),
 
-	T("(試)窓文字\0(test)Window Text"),
+	T("(高負荷)窓文字\0(heavy)Window Text"),
 
-	T("(試)選択背景\0(test)Highligh back"),
-	T("(試)選択文字\0(test)Highlight text"),
+	T("選択背景\0(test)Highligh back"),
+	T("選択文字\0(test)Highlight text"),
 
 	T("灰色\0gray"), NULL};
 const TCHAR *GCcapt[] = {
@@ -111,7 +111,7 @@ const TCHAR *GCbedit[] = {
 	T("参照選択文字\0log selected text"), T("参照選択背景\0log selected back"), NULL};
 
 const LISTS GClist[] = {
-	{T("配色テーマ\0Colors theme"), T(""),	GC_theme | GC_nocolor | GC_haveItem, GCtheme, 5},
+	{T("配色テーマ※一部PPxの再起動が必要\0Colors theme(Some colors, restart PPx req. .)"), T(""),	GC_theme | GC_nocolor | GC_haveItem, GCtheme, 5},
 	{T("背景色\0back ground"), T("C_back"), GC_single | GC_auto, NULL, 0},
 	{T("文字 項目名\0message text"), T("C_mes"), GC_single | GC_auto, NULL, 0},
 	{T("文字 内容\0value text"), T("C_info"), GC_single | GC_auto, NULL, 0},
@@ -127,7 +127,7 @@ const LISTS GClist[] = {
 	{T("PPc 情報行2\0PPc info2"), T("XC_inf2"), GC_list | GC_haveItem, GCCdisp, 2},
 //	{T("PPc エントリ"),	T("XC_celD"),	GC_list | GC_haveItem, GCCdisp, 2},
 	{T("ペインタイトル・タブ\0caption, tab"), T("C_capt"),	GC_list | GC_haveItem, GCcapt, 8},
-	{T("ログ、アドレスバー\0log"), T("CC_log"), GC_list | GC_haveItem, GCCdisp, 2},
+	{T("ログ、アドレスバー、処理中一覧\0log, addr., job"), T("CC_log"), GC_list | GC_haveItem, GCCdisp, 2},
 	{T("PPv 文字・背景\0PPv text, back"), T("CV_char"), GC_list | GC_haveItem, GCchar, 16},
 	{T("PPv 特殊行背景\0PPv ex. line back"), T("CV_lbak"), GC_list | GC_haveItem | GC_aoff, GClbak, 3},
 	{T("PPv 末端線\0PPv bound"),	T("CV_boun"),		GC_single,	NULL, 0},
@@ -221,7 +221,7 @@ int WinColors[WINDOWSCOLOR] = {
 	COLOR_BTNFACE, COLOR_INACTIVECAPTION
 };
 
-const TCHAR OldColorWildcard[] = T("&C*,&!C_ext,&!CV_hkey");
+const TCHAR OldColorWildcard[] = T("&C*,&!CV_hkey");
 TCHAR *OldColorTheme = NULL;
 
 typedef struct {
@@ -275,6 +275,46 @@ void SetColorList(HWND hDlg, COLORREF c)
 	SendDlgItemMessage(hDlg, IDL_GCOLOR, LB_SETCURSEL, (WPARAM)i, 0);
 }
 
+void ThemeCust(TCHAR *mem, DWORD size)
+{
+	TCHAR *Have_C_ext;
+
+	Have_C_ext = tstrstr(mem, T("\nC_ext"));
+	PPcustCStore(mem, mem + size, PPXCUSTMODE_STORE, NULL, NULL);
+	HeapFree(GetProcessHeap(), 0, mem);
+
+	if ( Have_C_ext == NULL ){ // C_ext がない場合は簡易明度調整を行う
+		COLORREF C_back = C_AUTO, color;
+		DWORD blight, tmpblight;
+		TCHAR ext[MAX_PATH];
+		int i;
+
+		GetCustData(T("C_back"), &C_back, sizeof(COLORREF));
+		if ( C_back == C_AUTO ) C_back = GetSysColor(COLOR_WINDOW);
+
+		// C_back の明るさを求める
+		blight = GetRValue(C_back);
+		blight = blight * blight * 2;
+		tmpblight = GetGValue(C_back);
+		blight += tmpblight * tmpblight * 4;
+		tmpblight = GetBValue(C_back);
+		blight += tmpblight * tmpblight * 3;
+		// 基準値を決定
+		blight = (blight >= (0xff * 0xff * 5)) ? 0x808080 : 0;
+
+		for ( i = 0; ;i++ ){
+			if ( 0 > EnumCustTable(i, T("C_ext"), ext, &color, sizeof(color)) ){
+				break;
+			}
+			if ( (color & 0xff808080) != blight ) continue;
+			// 基準値に該当するなら調整
+			color ^= 0x808080; // 明度を 0.5 あげるか下げる
+			SetCustTable(T("C_ext"), ext, &color, sizeof(color));
+		}
+	}
+	Test();
+}
+
 void ResCust(int id)
 {
 	TCHAR *mem;				// カスタマイズ解析/終了位置
@@ -294,17 +334,14 @@ void ResCust(int id)
 		size = MultiByteToWideChar(cp, 0, rc, rsize, NULL, 0);
 		mem = HeapAlloc(GetProcessHeap(), 0, TSTROFF(size) + 16);
 		size = MultiByteToWideChar(cp, 0, rc, rsize, mem, size);
-		mem[size] = '\0';
 	}
 	#else
 		size = SizeofResource(hInst, hres);
 		mem = HeapAlloc(GetProcessHeap(), 0, size + 16);
 		memcpy(mem, LockResource(LoadResource(hInst, hres)), size);
-		mem[size] = '\0';
 	#endif
-	PPcustCStore(mem, mem + size, PPXCUSTMODE_STORE, NULL, NULL);
-	HeapFree(GetProcessHeap(), 0, mem);
-	Test();
+	mem[size] = '\0';
+	ThemeCust(mem, size);
 }
 
 void CSelectType2(HWND hDlg)
@@ -345,16 +382,14 @@ void CSelectType2(HWND hDlg)
 
 					mem = HeapAlloc(GetProcessHeap(), 0, TSTRSIZE(OldColorTheme));
 					tstrcpy(mem, OldColorTheme);
-					PPcustCStore(mem, mem + tstrlen(mem), PPXCUSTMODE_APPEND, NULL, NULL);
-					HeapFree(GetProcessHeap(), 0, mem);
-					Test();
+					ThemeCust(mem, tstrlen(mem));
 					Changed(hDlg);
 				}
 			}else{
 				if ( OldColorTheme == NULL ){
 					OldColorTheme = PPcust(PPXCUSTMODE_DUMP_PART_NOBOM, OldColorWildcard);
 				}
-				ResCust( (edit_sgc - 1) + COLOR_THEME_1);
+				ResCust((edit_sgc - 1) + COLOR_THEME_1);
 				Changed(hDlg);
 			}
 			break;
@@ -404,7 +439,7 @@ void CSelectType(HWND hDlg)
 			int i;
 
 			if ( (flags & GC_mask) == GC_theme ){
-				memset(buf, 254, 32 * sizeof(COLORREF));
+				memset(buf, (char)C_WindowBack , 32 * sizeof(COLORREF));
 			}else{
 				memset(buf, 0, 32 * sizeof(COLORREF));
 				GetCustData(gcl->item, buf, sizeof(buf));
@@ -639,7 +674,7 @@ void ColorSampleDraw(DRAWITEMSTRUCT *lpdis)
 
 		OldBkMode = SetBkMode(lpdis->hDC, OPAQUE);
 		showcolor = (lpdis->itemID == CL_auto) ?
-				GetSysColor(COLOR_WINDOW) : G_Colors[lpdis->itemID];
+				C_WindowBack : G_Colors[lpdis->itemID];
 
 		if ( GClist[edit_gc].flags & GC_ppbItem ){
 			showcolor = ConColorConvert(showcolor);
@@ -697,9 +732,17 @@ void ColorItemDraw(DRAWITEMSTRUCT *lpdis)
 	OldBkMode = SetBkMode(lpdis->hDC, OPAQUE);
 	box = lpdis->rcItem;
 	if ( (lpdis->itemAction & ODA_FOCUS) && !(lpdis->itemState & ODS_FOCUS) ){
-		hB = CreateSolidBrush(GetSysColor(COLOR_WINDOW));
+		hB = CreateSolidBrush(C_WindowBack);
 		FillRect(lpdis->hDC, &lpdis->rcItem, hB);
 		DeleteObject(hB);
+	}
+
+	if ( lpdis->itemState & ODS_SELECTED ){
+		OldText = SetTextColor(lpdis->hDC, GetSysColor(COLOR_HIGHLIGHTTEXT));
+		OldBack = SetBkColor(lpdis->hDC, GetSysColor(COLOR_HIGHLIGHT));
+	}else if ( X_uxt == UXT_DARK ){
+		OldText = SetTextColor(lpdis->hDC, DARK_COLOR_TEXT);
+		OldBack = SetBkColor(lpdis->hDC, DARK_COLOR_BACK);
 	}
 
 	box.right = box.left + (box.bottom - box.top);
@@ -713,13 +756,9 @@ void ColorItemDraw(DRAWITEMSTRUCT *lpdis)
 		DeleteObject(hB);
 	}
 
-	if ( lpdis->itemState & ODS_SELECTED ){
-		OldText = SetTextColor(lpdis->hDC, GetSysColor(COLOR_HIGHLIGHTTEXT));
-		OldBack = SetBkColor(lpdis->hDC, GetSysColor(COLOR_HIGHLIGHT));
-	}
 	len = (int)SendMessage(lpdis->hwndItem, LB_GETTEXT, lpdis->itemID, (LPARAM)buf);
 	TextOut(lpdis->hDC, box.right, box.top, buf, len);
-	if ( lpdis->itemState & ODS_SELECTED ){
+	if ( (lpdis->itemState & ODS_SELECTED) || (X_uxt == UXT_DARK) ){
 		SetTextColor(lpdis->hDC, OldText);
 		SetBkColor(lpdis->hDC, OldBack);
 	}
@@ -762,6 +801,7 @@ INT_PTR CALLBACK ColorPage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case WM_INITDIALOG:
+			InitPropSheetsUxtheme(hDlg);
 			InitColorPage(hDlg);
 			CSelectType(hDlg);
 			return FALSE;
@@ -861,7 +901,7 @@ INT_PTR CALLBACK ColorPage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 			}
 		// default へ
 		default:
-			return StyleDlgProc(hDlg, msg, IDD_COLOR, lParam);
+			return DlgSheetProc(hDlg, msg, wParam, lParam, IDD_COLOR);
 	}
 	return TRUE;
 }
@@ -871,6 +911,7 @@ INT_PTR CALLBACK HideMenuColorDlgBox(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM
 {
 	switch(iMsg){
 		case WM_INITDIALOG:
+			if ( X_uxt == UXT_DARK ) LocalizeDialogText(hDlg, 0);
 			SetWindowLongPtr(hDlg, DWLP_USER, (LONG_PTR)lParam);
 			InitColorPage(hDlg);
 			SetColorList(hDlg, *(COLORREF *)lParam);
@@ -919,6 +960,7 @@ void InitHighlightDialogBox(HWND hDlg, TCHAR *subkey)
 	TCHAR text[VFPS], data[0x10000], *line, *next;
 	HWND hListWnd;
 
+	if ( X_uxt == UXT_DARK ) LocalizeDialogText(hDlg, 0);
 	wsprintf(text, GetCText(T("ハイライト (拡張子:%s)\0Highlight (%s)")), subkey);
 	SetWindowText(hDlg, text);
 

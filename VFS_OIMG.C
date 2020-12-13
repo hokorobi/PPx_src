@@ -255,10 +255,9 @@ BOOL ImgExtractImage(FOPSTRUCT *FS, HANDLE hFile, const TCHAR *srcPath, const TC
 	HANDLE hDstFile;
 	BYTE buff[0x10000];
 	ERRORCODE result_error = FALSE;
-	LARGE_INTEGER TotalTransSize, TotalSize;
 
-	TotalTransSize.u.LowPart = 0;
-	TotalTransSize.u.HighPart = 0;
+	FS->progs.FileTransSize.u.LowPart = 0;
+	FS->progs.FileTransSize.u.HighPart = 0;
 
 	wsprintf(path, T("%s.img"), srcPath);
 	while( (p = tstrchr(path, ':')) != NULL ) *p = '-';
@@ -280,15 +279,15 @@ BOOL ImgExtractImage(FOPSTRUCT *FS, HANDLE hFile, const TCHAR *srcPath, const TC
 				diskinfo.SectorsPerTrack * diskinfo.BytesPerSector;
 
 			DDmul(tracksize, diskinfo.Cylinders.u.LowPart,
-					&TotalSize.u.LowPart, (DWORD *)&TotalSize.u.HighPart);
+					&FS->progs.FileSize.u.LowPart, (DWORD *)&FS->progs.FileSize.u.HighPart);
 			DDmul(tracksize, diskinfo.Cylinders.u.HighPart, &tmpL, &tmpH);
-			TotalSize.u.HighPart += tmpL;
+			FS->progs.FileSize.u.HighPart += tmpL;
 		}else{
-			TotalSize.u.LowPart = 200 * MB;
-			TotalSize.u.HighPart = 0;
+			FS->progs.FileSize.u.LowPart = 200 * MB;
+			FS->progs.FileSize.u.HighPart = 0;
 		}
 	}else{
-		TotalSize.u.LowPart = GetFileSize(hFile, (DWORD *)&TotalSize.u.HighPart);
+		FS->progs.FileSize.u.LowPart = GetFileSize(hFile, (DWORD *)&FS->progs.FileSize.u.HighPart);
 	}
 	for ( ; ; ){
 		ERRORCODE error;
@@ -333,8 +332,8 @@ BOOL ImgExtractImage(FOPSTRUCT *FS, HANDLE hFile, const TCHAR *srcPath, const TC
 		DeleteFileL(path);
 	}
 
-	sizeL = TotalSize.u.LowPart;
-	sizeH = TotalSize.u.HighPart;
+	sizeL = FS->progs.FileSize.u.LowPart;
+	sizeH = FS->progs.FileSize.u.HighPart;
 	NotifyFileSize(hDstFile, sizeL, sizeH);
 	size = 0;
 	SetFilePointer(hFile, 0, (PLONG)&size, FILE_BEGIN);
@@ -346,15 +345,14 @@ BOOL ImgExtractImage(FOPSTRUCT *FS, HANDLE hFile, const TCHAR *srcPath, const TC
 			result_error = TRUE;
 			break;
 		}
-		if ( !size ) break;
+		if ( size == 0 ) break;
 		if ( WriteFile(hDstFile, buff, size, &size, NULL) == FALSE ){
 			result_error = TRUE;
 			break;
 		}
 		SubDD(sizeL, sizeH, size, 0);
-		AddDD(TotalTransSize.u.LowPart, TotalTransSize.u.HighPart, size, 0);
-		FullDisplayProgress(&FS->progs, TotalTransSize, TotalSize);
-		PeekMessageLoop(FS);
+		AddDD(FS->progs.FileTransSize.u.LowPart, FS->progs.FileTransSize.u.HighPart, size, 0);
+		SetFullProgress(&FS->progs);
 		if ( FS->state == FOP_TOBREAK ){
 			result_error = TRUE;
 			break;
@@ -420,7 +418,9 @@ BOOL ImgExtractFile(FOPSTRUCT *FS, HANDLE hFile, const TCHAR *srcDir, const TCHA
 		FWriteErrorLogs(FS, exinfo.dest, T("Destpath"), PPERROR_GETLASTERROR);
 		return FALSE;
 	}
-	if ( LFNfilter(&FS->opt, exinfo.dest) > ERROR_NO_MORE_FILES ) return FALSE;
+	if ( LFNfilter(&FS->opt, exinfo.dest, 0) > ERROR_NO_MORE_FILES ){
+		return FALSE;
+	}
 	FS->progs.srcpath = srcPath;
 
 	exinfo.Progress = (LPPROGRESS_ROUTINE)CopyProgress;
@@ -440,10 +440,8 @@ BOOL ImgExtractFile(FOPSTRUCT *FS, HANDLE hFile, const TCHAR *srcDir, const TCHA
 		if ( result == MAX32 ){
 			FS->progs.info.donefiles++;
 
-			if ( FS->progs.info.filesall ){
-				AddDD(FS->progs.info.donesize.l,
-					  FS->progs.info.donesize.h, sizeL, sizeH);
-			}
+			AddDD(FS->progs.info.donesize.l, FS->progs.info.donesize.h,
+					sizeL, sizeH);
 			return TRUE; // VFSGetArchivefileImage “à‚Åˆ—Ï‚Ý
 		}
 
@@ -458,10 +456,8 @@ BOOL ImgExtractFile(FOPSTRUCT *FS, HANDLE hFile, const TCHAR *srcDir, const TCHA
 				GlobalUnlock(hMap);
 				GlobalFree(hMap);
 				FS->progs.info.donefiles++;
-				if ( FS->progs.info.filesall ){
-					AddDD(FS->progs.info.donesize.l, FS->progs.info.donesize.h,
+				AddDD(FS->progs.info.donesize.l, FS->progs.info.donesize.h,
 						sizeL, 0);
-				}
 				return TRUE;
 			}
 			result = GetLastError();

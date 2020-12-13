@@ -14,6 +14,16 @@
 #include "CALC.H"
 #pragma hdrstop
 
+#ifndef REBARCLASSNAME
+#define REBARCLASSNAME T("ReBarWindow32")
+#endif
+
+#ifdef UNICODE
+	#define NilStrW NilStr
+#else
+	const WCHAR NilStrW[1] = L"";
+#endif
+
 BOOL LoadedCharlengthTable = FALSE; // 文字列長テーブルを初期化を行ったかどうか
 
 int ExecKeyStack = 0; // MAXEXECKEYSTACK まで
@@ -73,7 +83,7 @@ PPXDLL BOOL PPXAPI GetRegString(HKEY hKey, const TCHAR *path, const TCHAR *name,
 
 	if ( RegOpenKeyEx(hKey, path, 0, KEY_READ, &HK) == ERROR_SUCCESS ){
 		siz = destlen * sizeof(TCHAR);
-		if ( RegQueryValueEx(HK, name, NULL, &typ, (LPBYTE)dest, &siz) == ERROR_SUCCESS){
+		if ( RegQueryValueEx(HK, name, NULL, &typ, (LPBYTE)dest, &siz) == ERROR_SUCCESS ){
 			if ( (typ == REG_EXPAND_SZ) && (siz < sizeof(buf)) ){
 
 				tstrcpy(buf, dest);
@@ -87,6 +97,21 @@ PPXDLL BOOL PPXAPI GetRegString(HKEY hKey, const TCHAR *path, const TCHAR *name,
 	return FALSE;
 }
 
+BOOL GetRegDword(HKEY hKey, const TCHAR *path, const TCHAR *name, DWORD *value)
+{
+	HKEY HK;
+	DWORD typ, siz;
+
+	if ( RegOpenKeyEx(hKey, path, 0, KEY_READ, &HK) == ERROR_SUCCESS ){
+		siz = sizeof(DWORD);
+		if ( RegQueryValueEx(HK, name, NULL, &typ, (LPBYTE)value, &siz) == ERROR_SUCCESS ){
+			RegCloseKey(HK);
+			return TRUE;
+		}
+		RegCloseKey(HK);
+	}
+	return FALSE;
+}
 
 //======================================================================== 同期
 /*-----------------------------------------------------------------------------
@@ -1723,15 +1748,38 @@ PPXDLL HANDLE PPXAPI LoadCommonControls(DWORD usecontrol)
 }
 
 #pragma argsused
-BOOL CALLBACK EnumChildTextFixProc(HWND hWnd, LPARAM lParam)
+BOOL CALLBACK EnumChildControlFixProc(HWND hWnd, LPARAM lParam)
 {
-	TCHAR name[8];
-	const TCHAR *findtext;
+	TCHAR name[16];
 	UnUsedParam(lParam);
 
-	wsprintf(name, T("%04X"), GetWindowLongPtr(hWnd, GWLP_ID));
-	findtext = SearchMessageText(name);
-	if ( findtext != NULL ) SetWindowText(hWnd, findtext);
+	if ( ExtraDrawColors & EDC_WINDOW_TEXT ){
+		if ( 0 < GetClassName(hWnd, name, TSIZEOF(name)) ){
+			FixUxTheme(hWnd, name);
+		}
+	}
+	return TRUE;
+}
+
+#pragma argsused
+BOOL CALLBACK EnumChildTextFixProc(HWND hWnd, LPARAM lParam)
+{
+	TCHAR name[16];
+	const TCHAR *findtext;
+	DWORD ctrlID;
+	UnUsedParam(lParam);
+
+	if ( ExtraDrawColors & EDC_WINDOW_TEXT ){
+		if ( 0 < GetClassName(hWnd, name, TSIZEOF(name)) ){
+			FixUxTheme(hWnd, name);
+		}
+	}
+	ctrlID = (DWORD)GetWindowLongPtr(hWnd, GWLP_ID);
+	if ( ctrlID < 0xffff ){
+		wsprintf(name, T("%04X"), ctrlID);
+		findtext = SearchMessageText(name);
+		if ( findtext != NULL ) SetWindowText(hWnd, findtext);
+	}
 	return TRUE;
 }
 
@@ -1748,6 +1796,10 @@ PPXDLL void PPXAPI LocalizeDialogText(HWND hDlg, DWORD titleID)
 			if ( findtext != NULL ) SetWindowText(hDlg, findtext);
 		}
 		EnumChildWindows(hDlg, EnumChildTextFixProc, 0);
+	}else{
+		if ( X_uxt >= UXT_MINMODIFY ){
+			EnumChildWindows(hDlg, EnumChildControlFixProc, 0);
+		}
 	}
 }
 
@@ -1841,6 +1893,276 @@ PPXDLL BOOL PPXAPI GetCalc(const TCHAR *param, TCHAR *resultstr, int *resultnum)
 		wsprintf(resultstr, T("D:%ld X:%x U:%lu %s"), num, num, num, usestr);
 	}
 	return TRUE;
+}
+
+const TCHAR ThemesPersonalize[] = T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize");
+const TCHAR ThemesAppsUseLightTheme[] = T("AppsUseLightTheme");
+HANDLE hDwmapi = NULL;
+
+#define GETDLLPROCN(handle, name, id) D ## name = (imp ## name)GetProcAddress(handle, MAKEINTRESOURCEA(id));
+
+DefineWinAPI(HRESULT, DwmSetWindowAttribute, (HWND, DWORD, LPCVOID, DWORD));
+DefineWinAPI(HRESULT, SetWindowTheme, (HWND, LPCWSTR name, LPCWSTR idlist)) = NULL;
+//DefineWinAPI(BOOL, ShouldAppsUseDarkMode, (void)); // 132
+DefineWinAPI(BOOL, AllowDarkModeForWindow, (HWND, BOOL)); // 133
+DefineWinAPI(BOOL, SetPreferredAppMode, (DWORD)); // 135 メニューdark化
+//DefineWinAPI(void, FlushMenuTheme, (void)); // 136
+DefineWinAPI(void, RefreshImmersiveColorPolicyState , (void)); // 104
+
+// C:\Windows\Resources\Themes\aero\aero.msstyles を参照
+const WCHAR TN_GENERAL[] = L"DarkMode_Explorer"; // Button / Edit / ScrollBar
+const WCHAR TN_COMBOBOX[] = L"DarkMode_CFD"; // Combobox / Edit?
+const WCHAR TN_LISTVIEW[] = L"DarkMode_ItemsView"; // Header / ListView
+const WCHAR TN_TOOLBAR[] = L"DarkMode_InfoPaneToolbar"; // Toolbar
+const WCHAR TN_REBAR[] = L"DarkModeNavbar"; // Rebar
+
+typedef struct {
+	const WCHAR *general;
+	const WCHAR *ComboBox;
+	const WCHAR *ListView;
+	const WCHAR *toolbar;
+	const WCHAR *rebar;
+} THEME_LIST;
+
+THEME_LIST Theme_Dark = {TN_GENERAL, TN_COMBOBOX, TN_LISTVIEW, TN_TOOLBAR, TN_REBAR};
+THEME_LIST Theme_Light = {TN_GENERAL + 9, TN_COMBOBOX + 9, TN_LISTVIEW + 9, TN_TOOLBAR + 9, TN_REBAR + 8};
+
+void InitUxThemeMain(void)
+{
+	if ( (WinType < WINTYPE_10) || (OSver.dwBuildNumber < WINTYPE_10_BUILD_19H1) ){
+		X_uxt = UXT_OFF;
+		InitSysColors();
+		return;
+	}
+	if ( X_uxt == UXT_AUTO ){
+		GetRegDword(HKEY_CURRENT_USER, ThemesPersonalize, ThemesAppsUseLightTheme, (DWORD *)&X_uxt);
+	}
+	InitSysColors();
+
+	if ( hDwmapi == NULL ) hDwmapi = LoadLibrary(T("DWMAPI.DLL"));
+	if ( hDwmapi != NULL ) GETDLLPROC(hDwmapi, DwmSetWindowAttribute);
+//	GETDLLPROCN(hUxtheme, ShouldAppsUseDarkMode, 132);
+	GETDLLPROCN(hUxtheme, AllowDarkModeForWindow, 133);
+	GETDLLPROCN(hUxtheme, SetPreferredAppMode, 135);
+//	GETDLLPROCN(hUxtheme, FlushMenuTheme, 136);
+	GETDLLPROCN(hUxtheme, RefreshImmersiveColorPolicyState, 104);
+
+//	DShouldAppsUseDarkMode();
+	if ( X_uxt == UXT_LIGHT ){ // Dark から切り替えようとすると失敗する対策
+		DSetPreferredAppMode(3);
+		DRefreshImmersiveColorPolicyState();
+	}
+	DSetPreferredAppMode( (X_uxt == UXT_DARK) ? 2 : 3);
+	DRefreshImmersiveColorPolicyState();
+}
+
+BOOL InitUnthemeDLL(void)
+{
+	if ( hUxtheme != NULL ) return TRUE;
+	hUxtheme = LoadLibrary(T("uxtheme.dll"));
+	if ( hUxtheme != NULL ) return TRUE;
+	return FALSE;
+}
+
+void InitUnthemeCmd(void)
+{
+	X_uxt = UXT_OFF;
+	if ( IsTrue(InitUnthemeDLL()) ){
+		GETDLLPROC(hUxtheme, SetWindowTheme);
+		if ( DSetWindowTheme != NULL ){
+			X_uxt = GetCustDword(T("X_uxt"), UXT_OFF);
+			if ( X_uxt > UXT_OFF ) InitUxThemeMain();
+		}
+	}
+	InitSysColors();
+}
+
+#ifndef BS_TYPEMASK
+#define BS_TYPEMASK 0xf
+#endif
+
+const TCHAR Button_prop_name[] = T("xUxTx");
+
+const TCHAR CheckButtonStates[4] = T("O*-");
+const TCHAR RadioButtonStates[4] = T("o@*");
+
+void PaintGroupButton(HWND hWnd)
+{
+	PAINTSTRUCT ps;
+	TCHAR buf[0x80];
+	int length;
+	COLORREF oldcolor, oldback;
+	RECT textbox, framebox = {0, 0, 1, 7};
+	HGDIOBJ hOldFont;
+
+	MapDialogRect(hWnd, &framebox);
+	BeginPaint(hWnd, &ps);
+	length = GetWindowText(hWnd, buf, TSIZEOF(buf) - 2);
+	GetClientRect(hWnd, &textbox);
+
+	framebox.left = textbox.left + framebox.right;
+	framebox.right = textbox.right - framebox.right;
+	framebox.top = textbox.top + framebox.bottom;
+	framebox.bottom = textbox.bottom - 2;
+	FrameRect(ps.hdc, &framebox, GetGrayBackBrush());
+
+	textbox.left = framebox.left * 8 - textbox.left;
+//	oldcolor = SetTextColor(ps.hdc, C_GrayState);
+	oldcolor = SetTextColor(ps.hdc, C_WindowText);
+	oldback = SetBkColor(ps.hdc, C_DialogBack);
+	hOldFont = SelectObject(ps.hdc, (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0));
+	DrawText(ps.hdc, buf, length, &textbox, 0);
+	SelectObject(ps.hdc, hOldFont);
+	SetBkColor(ps.hdc, oldback);
+	SetTextColor(ps.hdc, oldcolor);
+	EndPaint(hWnd, &ps);
+}
+
+LRESULT CALLBACK DarkGroupProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	if ( uMsg == WM_PAINT ){
+		PaintGroupButton(hWnd);
+		return 0;
+	}
+	return CallWindowProc((WNDPROC)GetProp(hWnd, Button_prop_name), hWnd, uMsg, wParam, lParam);
+}
+
+void PaintStateButton(HWND hWnd)
+{
+	PAINTSTRUCT ps;
+	TCHAR buf[0x80];
+	int length;
+	COLORREF oldcolor, oldback;
+	RECT box;
+	HGDIOBJ hOldFont;
+	DWORD w_style, b_state;
+	const TCHAR *ButtonImage;
+
+	w_style = GetWindowLongPtr(hWnd, GWL_STYLE);
+	b_state = (DWORD)SendMessage(hWnd, BM_GETSTATE, 0, 0);
+	BeginPaint(hWnd, &ps);
+
+	ButtonImage = ((w_style & BS_TYPEMASK) == BS_AUTORADIOBUTTON) ?
+			RadioButtonStates : CheckButtonStates;
+	buf[0] = ButtonImage[b_state & (BST_CHECKED | BST_INDETERMINATE)];
+	buf[1] = ' ';
+
+	length = GetWindowText(hWnd, buf + 2, TSIZEOF(buf) - 2) + 2;
+	GetClientRect(hWnd, &box);
+	FillBox(ps.hdc, &box, hDialogBackBrush);
+
+	oldcolor = SetTextColor(ps.hdc, (w_style & WS_DISABLED) ? C_GrayState : C_WindowText);
+	oldback = SetBkColor(ps.hdc, (b_state & BST_PUSHED) ? C_GrayState : C_DialogBack);
+	hOldFont = SelectObject(ps.hdc, (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0));
+	DrawText(ps.hdc, buf, length, &box, 0);
+	if ( b_state & BST_FOCUS ){
+		box.right--;
+		box.bottom--;
+		DrawFocusRect(ps.hdc, &box);
+	}
+	SelectObject(ps.hdc, hOldFont);
+	SetBkColor(ps.hdc, oldback);
+	SetTextColor(ps.hdc, oldcolor);
+	EndPaint(hWnd, &ps);
+}
+
+LRESULT CALLBACK DarkButtonProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	if ( uMsg == WM_PAINT ){
+		PaintStateButton(hWnd);
+		return 0;
+	}
+	return CallWindowProc((WNDPROC)GetProp(hWnd, Button_prop_name), hWnd, uMsg, wParam, lParam);
+}
+
+void FixButtonTheme(HWND hWnd, THEME_LIST *tl)
+{
+	DWORD style;
+
+	style = GetWindowLongPtr(hWnd, GWL_STYLE);
+	// CHECKBOX(0x2) / RADIOBUTTON(0x4) / GROUPBOX(0x7) / AUTORADIOBUTTON(0x9)
+	// の新しいスタイルは、ダークモード＆文字色変更に対応していない
+	if ( style & (BS_CHECKBOX | BS_RADIOBUTTON | 0x8) ){
+		DSetWindowTheme(hWnd, NilStrW, NilStrW); // Clasic style
+		if ( GetProp(hWnd, Button_prop_name) == 0 ){
+			LONG_PTR oldprop;
+			WNDPROC newprop;
+
+			if ( (style & BS_TYPEMASK) == BS_GROUPBOX ){
+				newprop = DarkGroupProc;
+			}else{
+#if 0
+				newprop = DarkButtonProc;
+#else
+				return;
+#endif
+			}
+			oldprop = SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)newprop);
+			SetProp(hWnd, Button_prop_name, (HANDLE)oldprop);
+		}
+	}else{ // Push Button / Def Push Button
+		if ( X_uxt >= UXT_MINMODIFY ){
+			DSetWindowTheme(hWnd, tl->general, NULL);
+		}
+	}
+}
+
+PPXDLL int PPXAPI FixUxTheme(HWND hWnd, const TCHAR *classname)
+{
+	BOOL mode = TRUE;
+
+	if ( X_uxt < UXT_MINMODIFY ){
+		if ( (ExtraDrawColors & EDC_WINDOW_TEXT) && (classname != NULL) && (DSetWindowTheme != NULL)){
+			if ( tstricmp(classname, ButtonClassName) == 0 ){
+				FixButtonTheme(hWnd, NULL);
+			}
+		}
+		return UXT_OFF;
+	}
+	DAllowDarkModeForWindow(hWnd, TRUE);
+	if ( X_uxt >= UXT_MINMODIFY ){
+		THEME_LIST *tl;
+
+		tl = (X_uxt == UXT_DARK) ? &Theme_Dark : &Theme_Light;
+		if ( classname != NULL ){
+			if ( tstrcmp(classname, REBARCLASSNAME) == 0 ){
+				DSetWindowTheme(hWnd, tl->rebar, NULL);
+			}else if ( tstrcmp(classname, TOOLBARCLASSNAME) == 0 ){
+				DSetWindowTheme(hWnd, tl->toolbar, NULL);
+			}else if ( tstricmp(classname, T("ComboBox")) == 0 ){
+				DSetWindowTheme(hWnd, tl->ComboBox, NULL);
+			}else if ( tstrcmp(classname, WC_HEADER) == 0 ){
+				DSetWindowTheme(hWnd, tl->ListView, NULL);
+			}else if ( tstrcmp(classname, WC_LISTVIEW) == 0 ){
+				DSetWindowTheme(hWnd, tl->ListView, NULL);
+				ListView_SetBkColor(hWnd, C_WindowBack);
+				ListView_SetTextBkColor(hWnd, C_WindowBack);
+				ListView_SetTextColor(hWnd, C_WindowText);
+			}else if ( tstricmp(classname, ButtonClassName) == 0 ){
+				FixButtonTheme(hWnd, tl);
+			}else{
+				if ( tstricmp(classname, WC_TREEVIEW) == 0 ){
+					SetTreeColor(hWnd);
+				}else if ( tstricmp(classname, WC_EDIT) == 0 ){
+					DWORD exstyle;
+
+					exstyle = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
+					if ( exstyle & WS_EX_CLIENTEDGE ){
+						SetWindowLongPtr(hWnd, GWL_EXSTYLE,
+							exstyle & ~WS_EX_CLIENTEDGE);
+						SetWindowLongPtr(hWnd, GWL_STYLE,
+							GetWindowLongPtr(hWnd, GWL_STYLE) | WS_BORDER);
+					}
+					SetTreeColor(hWnd);
+				}
+				DSetWindowTheme(hWnd, tl->general, NULL);
+			}
+		}else{
+			DSetWindowTheme(hWnd, tl->general, NULL);
+		}
+	}
+	DDwmSetWindowAttribute(hWnd, 19, &mode, sizeof(mode));
+	return X_uxt;
 }
 
 PPXDLL void PPXAPI FixCharlengthTable(char *table)
@@ -2284,4 +2606,11 @@ BOOL PPWmCopyData(PPXAPPINFO *info, COPYDATASTRUCT *copydata)
 		return PPRecvExecuteByWMCopyData(info, copydata);
 	}
 	return FALSE;
+}
+
+void RemoveCharKey(HWND hWnd)
+{
+	MSG msg;
+
+	PeekMessage(&msg, hWnd, WM_CHAR, WM_CHAR, PM_REMOVE);
 }

@@ -3016,7 +3016,7 @@ void LoadSettingGeneral(PPC_APPINFO *cinfo, int *flags)
 	if ( exdset ) LoadSettingWildcard(&ls, path);
 
 	if ( !(*flags & RENTRY_UPDATE) ){ // •\Ž¦‘Ž®‚Ì”½‰f(V‹K“Ç‚Ýž‚ÝŽž‚Ì‚Ý)
-		if ( ls.disp[0] ){
+		if ( ls.disp[0] != 0 ){
 			ReloadCellDispFormat(cinfo, ls.disp);
 		}else{
 			if ( IsTrue(cinfo->FixcelF) ){

@@ -276,7 +276,7 @@ DWORD WINAPI FindFirstAsyncThread(FINDFIRSTASYNC *ffa)
 {
 	THREADSTRUCT threadstruct = {FindFirstAsyncThreadName, XTHREAD_EXITENABLE | XTHREAD_TERMENABLE, NULL, 0, 0};
 	HANDLE hFind = NULL;
-	DWORD structsize;
+	ULONG_PTR structsize;
 	TCHAR dirpath[VFPS];
 
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
@@ -469,7 +469,7 @@ HANDLE FindFirstAsyncReadStart(FINDFIRSTASYNC *ffa, WIN32_FIND_DATA *ff, VFSDIRT
 		SetLastError(result);
 		return INVALID_HANDLE_VALUE;
 	}
-	setflag(ffa->state, FFASTATE_CACHE);
+	setflag(ffa->state, FFASTATE_CACHE); // キャッシュ利用を有効
 
 	if ( Dtype != NULL ) *Dtype = ffa->Dtype;
 
@@ -551,7 +551,8 @@ HANDLE FindFirstAsync(HWND hWnd, LPARAM lParam, const TCHAR *path, WIN32_FIND_DA
 				FreeFfa(sffa);
 				sffa = nextffa;
 				continue;
-			}else{ // 通常読込中
+												 // 通常読込中
+			}else if ( sffa->state & FFASTATE_COMPLETE ){ // 読込完了->利用
 				if ( sffa->state & FFASTATE_CACHE ){ // メモリキャッシュ用を発見
 					// 同一パスの古いキャッシュを見つけたので廃棄
 					if ( MemCacheFfa != NULL ){
@@ -562,7 +563,7 @@ HANDLE FindFirstAsync(HWND hWnd, LPARAM lParam, const TCHAR *path, WIN32_FIND_DA
 					sffa->lParam = lParam;
 					MemCacheFfa = sffa;
 					MemCacheFfa->ref++;
-				}else if ( sffa->state & FFASTATE_COMPLETE ){ // 読込完了->利用
+				}else{
 					HANDLE hFF;
 					// 同一パスの古いキャッシュを見つけたので廃棄
 					if ( MemCacheFfa != NULL ){
@@ -570,16 +571,15 @@ HANDLE FindFirstAsync(HWND hWnd, LPARAM lParam, const TCHAR *path, WIN32_FIND_DA
 						FreeFfa(MemCacheFfa);
 //						MemCacheFfa = NULL;
 					}
-					setflag(sffa->state, FFASTATE_CACHE); // キャッシュ利用を有効
 					hFF = FindFirstAsyncReadStart(sffa, ff, Dtype, flags);
 					LeaveCriticalSection(&FindFirstAsyncSection);
 					return hFF;
-				}else{ // 読み込み中
-					// ●読み込み中なので、MemCache か重複読み込みにする
-					// ●できれば、複数に提供できるようにしたい
-					if ( sffa->hWnd == hWnd ){
-						useffa = sffa; // 自分の読込中なのでキャッシュ読み込みへ
-					}
+				}
+			}else{ // 読み込み中
+				// ●読み込み中なので、MemCache か重複読み込みにする
+				// ●できれば、複数に提供できるようにしたい
+				if ( sffa->hWnd == hWnd ){
+					useffa = sffa; // 自分の読込中なのでキャッシュ読み込みへ
 				}
 			}
 		}

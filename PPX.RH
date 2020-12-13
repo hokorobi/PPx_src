@@ -236,11 +236,13 @@
 #define IDE_PPEMAIN		0x70f0
 
 //============================================================== CUST 7400-77ff
+#define IC_CUST 1
 //								common	7400-740f
 #define IDB_TEST		0x7400
 //#define IDB_INSMAC	0x7401
 //#define IDD_BLANK		0x7402
 #define IDD_CMDTREE		0x7402
+#define BUTTONIMAGE		0x7403
 //								config text
 #define DEFKEYLIST		0x740e	// CUSTKEY.CFG
 #define DEFCUSTLIST		0x740f	// CUSTLIST.CFG

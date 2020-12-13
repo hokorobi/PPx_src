@@ -116,6 +116,13 @@ void CreateDIBtoPalette(PPvViewObject *vo)
 
 		rgb = (LPRGBQUAD)((LPSTR)dib + sizeof(BITMAPINFOHEADER));
 		if ( IsBadReadPtr(rgb, ClrUsed * sizeof(RGBQUAD)) ) return;
+
+		if ( (ClrUsed == 2) &&
+			(*(COLORREF *)rgb == C_BLACK) &&
+			(*(COLORREF *)(rgb + 1) == C_WHITE) ){
+			XV.img.monomode = TRUE;
+		}
+
 		for ( i = 0 ; i < ClrUsed ; i++, rgb++, ppal++ ){
 			ppal->peRed   = rgb->rgbRed;
 			ppal->peGreen = rgb->rgbGreen;

@@ -405,6 +405,17 @@ void HeaderClick(PPC_APPINFO *cinfo, HWND hHeaderWnd, int index, int button)
 	}
 }
 
+LRESULT HeaderDarkDraw(NMCUSTOMDRAW *cd)
+{
+	if ( cd->dwDrawStage == CDDS_PREPAINT ) {
+		return CDRF_NOTIFYITEMDRAW;
+	}
+	if ( cd->dwDrawStage == CDDS_ITEMPREPAINT ) {
+		SetTextColor(cd->hdc, C_info);
+	}
+	return CDRF_DODEFAULT;
+}
+
 void SetCaptionCombo(PPC_APPINFO *cinfo, HWND hWnd)
 {
 	TCHAR buf[VFPS + 80];
@@ -730,8 +741,6 @@ void USEFASTCALL PPcMinMaxJoinFix(PPC_APPINFO *cinfo, MINMAXINFO *minfo)
 	}
 }
 
-#define _NM_CUSTOMDRAW (NM_FIRST-12)
-
 LRESULT USEFASTCALL PPcNotify(PPC_APPINFO *cinfo, NMHDR *nmh)
 {
 	if ( nmh->hwndFrom == NULL ) return 0;
@@ -757,7 +766,11 @@ LRESULT USEFASTCALL PPcNotify(PPC_APPINFO *cinfo, NMHDR *nmh)
 	}
 	if ( IsTrue(DocksNotify(&cinfo->docks, nmh)) ){
 		if ( (nmh->code == NM_CUSTOMDRAW) && (UseCCDrawBack > 1) ){
-			return PPxCommonExtCommand(K_DRAWCCBACK, (WPARAM)nmh);
+			if ( (nmh->hwndFrom != cinfo->docks.t.hWnd) && (nmh->hwndFrom != cinfo->docks.b.hWnd) ){ // toolbarに適用
+				return PPxCommonExtCommand(K_DRAWCCBACK, (WPARAM)nmh);
+			}else{
+				return PPxCommonExtCommand(K_DRAWCCWNDBACK, (WPARAM)nmh);
+			}
 		}
 		if ( nmh->code == RBN_HEIGHTCHANGE ){
 			WmWindowPosChanged(cinfo);
@@ -771,6 +784,10 @@ LRESULT USEFASTCALL PPcNotify(PPC_APPINFO *cinfo, NMHDR *nmh)
 	}
 	if ( nmh->hwndFrom == cinfo->hHeaderWnd ){
 		switch (nmh->code){
+			case NM_CUSTOMDRAW:
+				if ( X_uxt != UXT_DARK ) break;
+				return HeaderDarkDraw((LPNMCUSTOMDRAW)nmh);
+
 			case NM_RCLICK:
 				HeaderRClick(cinfo);
 				return 0;
@@ -908,7 +925,7 @@ BOOL USEFASTCALL WmCopyData(PPC_APPINFO *cinfo, COPYDATASTRUCT *copydata, WPARAM
 			return TRUE;
 
 		case K_WINDDOWLOG:
-			WmPPxCommand(NULL, K_WINDDOWLOG, (LPARAM)copydata->lpData);
+			WmPPxCommand(NULL, (WPARAM)copydata->dwData, (LPARAM)copydata->lpData);
 			return TRUE;
 
 		case 0x100 + 'O': // (比較マーク)指定エントリにマークをする
@@ -1829,6 +1846,72 @@ void ResizeGuiParts(PPC_APPINFO *cinfo)
 	}
 }
 
+void PPcMouseCMD(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
+{
+	int ppcr, mpos;
+	TCHAR cmd[3];
+
+	ppcr = LOWORD(lParam);
+	mpos = HIWORD(lParam);
+	cmd[0] = (BYTE)(wParam >> 16);
+	cmd[1] = (BYTE)(wParam >> 24);
+	cmd[2] = '\0';
+
+	cinfo->PopupPosType = PPT_MOUSE;
+	if ( ppcr == PPCR_MENU ){
+		if ( (wParam == (KC_MOUSECMD + ('L' << 16))) ){
+			if ( cinfo->DownMPos == mpos ){
+				TCHAR *p;
+
+				p = HiddenMenu_cmd(cinfo->HiddenMenu.data[mpos]);
+				ExecDualParam(cinfo, p);
+			}
+			return;
+		}else{
+			ppcr = PPCR_INFOTEXT;
+		}
+	}
+	PPcMouseCommand(cinfo, cmd, (const TCHAR *)(LONG_PTR)ppcr);
+}
+
+void PPcWinddowLog(WPARAM wParam, const TCHAR *message)
+{
+	TCHAR *allocptr = NULL;
+
+	if ( (HIWORD(wParam) == PPLOG_FASTLOG) && (message != NULL) ){
+		// ログ窓が用意されているなら、すぐに返事。無いときは順番が変わることがある
+		if ( (Combo.hWnd != NULL) ? (Combo.Report.hWnd != NULL) : (hCommonLog != NULL) ){
+			allocptr = PPcStrDup(message);
+			if ( allocptr != NULL ){
+				ReplyMessage(1);
+				message = allocptr;
+			}
+		}
+	}
+
+	if ( Combo.hWnd != NULL ){
+		SendMessage(Combo.hWnd, WM_PPXCOMMAND, wParam, (LPARAM)message);
+	}else{
+		if ( message != NULL ) SetReportText(message); // 表示
+		// 遅延表示関連の処理
+		if ( (HIWORD(wParam) != PPLOG_REPORT) &&
+			 (hCommonLog != NULL) &&
+			 !(X_combos[0] & CMBS_DELAYLOGSHOW) ){
+			if ( HIWORD(wParam) == PPLOG_SHOWLOG ){ // 強制表示を行う
+				DelayLogShowProc(hCommonLog, WM_TIMER, TIMERID_DELAYLOGSHOW, 0);
+			}else{
+				if ( GetWindowLongPtr(hCommonLog, GWL_STYLE) & WS_VISIBLE ){
+					// ログの遅延表示を開始／画面描画を止める
+					SendMessage(hCommonLog, WM_SETREDRAW, FALSE, 0);
+					SetTimer(hCommonLog, TIMERID_DELAYLOGSHOW,
+							TIMER_DELAYLOGSHOW, DelayLogShowProc);
+				}
+			}
+		}
+	}
+	if ( allocptr != NULL ) PPcHeapFree(allocptr);
+}
+
 LRESULT WmPPxCommand(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 {
 	DEBUGLOGC("WmPPxCommand %4x", wParam);
@@ -1897,44 +1980,22 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 			cinfo->NowJoint = TRUE;
 			break;
 
-		case KC_MOUSECMD: {
-			int ppcr, mpos;
-			TCHAR cmd[3];
-
-			ppcr = LOWORD(lParam);
-			mpos = HIWORD(lParam);
-			cmd[0] = (BYTE)(wParam >> 16);
-			cmd[1] = (BYTE)(wParam >> 24);
-			cmd[2] = '\0';
-
-			cinfo->PopupPosType = PPT_MOUSE;
-			if ( ppcr == PPCR_MENU ){
-				if ( (wParam == (KC_MOUSECMD + ('L' << 16))) ){
-					if ( cinfo->DownMPos == mpos ){
-						TCHAR *p;
-
-						p = HiddenMenu_cmd(cinfo->HiddenMenu.data[mpos]);
-						ExecDualParam(cinfo, p);
-					}
-					break;
-				}else{
-					ppcr = PPCR_INFOTEXT;
-				}
-			}
-			PPcMouseCommand(cinfo, cmd, (const TCHAR *)(LONG_PTR)ppcr);
+		case KC_MOUSECMD:
+			PPcMouseCMD(cinfo, wParam, lParam);
 			break;
-		}
 
 		case K_ENDATTR:
 			if ( cinfo->RealPath[0] == (TCHAR)lParam ){
 				RefreshAfterList(cinfo, ALST_ATTRIBUTES);
 			}
 			break;
+
 		case K_ENDCOPY:
 			if ( cinfo->RealPath[0] == (TCHAR)lParam ){
 				RefreshAfterList(cinfo, ALST_COPYMOVE);
 			}
 			break;
+
 		case K_ENDDEL:
 			if ( cinfo->RealPath[0] == (TCHAR)lParam ){
 				RefreshAfterList(cinfo, ALST_DELETE);
@@ -1984,25 +2045,7 @@ LRESULT WmPPxCommand(PPC_APPINFO *cinfo, WPARAM wParam, LPARAM lParam)
 			return 1;
 
 		case K_WINDDOWLOG:
-			if ( Combo.hWnd != NULL ){
-				SendMessage(Combo.hWnd, WM_PPXCOMMAND, wParam, lParam);
-			}else{
-				if ( lParam != 0 ) SetReportText((const TCHAR *)lParam);
-				if ( HIWORD(wParam) && (hCommonLog != NULL) &&
-						!(X_combos[0] & CMBS_DELAYLOGSHOW) ){
-					if ( HIWORD(wParam) == 2 ){ // 強制表示を行う
-						DelayLogShowProc(hCommonLog,
-								WM_TIMER, TIMERID_DELAYLOGSHOW, 0);
-						break;
-					}
-					if ( GetWindowLongPtr(hCommonLog, GWL_STYLE) & WS_VISIBLE ){
-						// ログの遅延表示を開始／画面描画を止める
-						SendMessage(hCommonLog, WM_SETREDRAW, FALSE, 0);
-						SetTimer(hCommonLog, TIMERID_DELAYLOGSHOW,
-								TIMER_DELAYLOGSHOW, DelayLogShowProc);
-					}
-				}
-			}
+			PPcWinddowLog(wParam, (const TCHAR *)lParam);
 			return 1;
 
 		case K_POPOPS:
@@ -2295,7 +2338,7 @@ void SetSHNClipboardData(PPC_APPINFO *cinfo)
 			HWND hTargetWnd;
 			hTargetWnd = guiinfo.hwndFocus ? guiinfo.hwndFocus : guiinfo.hwndActive;
 			if ( GetClassName(hTargetWnd, classname, VFPS) ){
-				if ( !tstricmp(classname, T("edit")) || (tstrstr(classname, T(".EDIT.")) != NULL) ){
+				if ( !tstricmp(classname, WC_EDIT) || (tstrstr(classname, T(".EDIT.")) != NULL) ){
 					return;
 				}
 			}

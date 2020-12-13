@@ -683,8 +683,11 @@ void WMTreeCreate(HWND hWnd)
 	InitSysColors();
 
 	VTS->hTViewWnd = CreateWindowEx(WS_EX_CLIENTEDGE, WC_TREEVIEW, NilStr,
-			GetTreeWindowStyle(VTS), 0, 0, 100, 100, hWnd, CHILDWNDID(IDT_TREECTL), DLLhInst, NULL);
+			GetTreeWindowStyle(VTS), 0, 0, 100, 100, hWnd,
+			CHILDWNDID(IDT_TREECTL), DLLhInst, NULL);
 	if ( X_dss & DSS_COMCTRL ) SendMessage(VTS->hTViewWnd, CCM_DPISCALE, TRUE, 0);
+	FixUxTheme(hWnd, NULL);
+	FixUxTheme(VTS->hTViewWnd, WC_TREEVIEW);
 
 	InitTreeFont(VTS, GetMonitorDPI(hWnd));
 
@@ -710,7 +713,7 @@ void WMTreeCreate(HWND hWnd)
 	}
 }
 
-void SetPPcColor(HWND hTWnd)
+void SetTreeColor(HWND hTWnd)
 {
 	COLORREF CC_tree[2] = {C_AUTO, C_AUTO};
 
@@ -718,7 +721,10 @@ void SetPPcColor(HWND hTWnd)
 		return;
 	}
 	if ( CC_tree[0] == C_AUTO ){
-		if ( (CC_tree[1] == C_AUTO) && (FixColor == FALSE) ) return;
+		if ( (CC_tree[1] == C_AUTO) && (FixColor == FALSE) &&
+			 !(ExtraDrawColors & EDC_WINDOW_BACK) ){
+			return;
+		}
 		CC_tree[0] = C_WindowText;
 	}
 	if ( CC_tree[1] == C_AUTO ) CC_tree[1] = C_WindowBack;
@@ -1208,7 +1214,7 @@ void VfsTreeSetFlagFix(VFSTREESTRUCT *VTS)
 			FixTreeSize(VTS); // *entrytip ‚Å‘å‚«‚³’²®‚³‚ê‚È‚¢‚±‚Æ‚ ‚é
 	}
 
-	if ( VTS->flags & VFSTREE_PPC ) SetPPcColor(VTS->hTViewWnd);
+	SetTreeColor(VTS->hTViewWnd);
 	if ( VTS->flags & VFSTREE_SPLITR ) FixTreeSize(VTS);
 
 	if ( IsExistCustData( (VTS->flags & VFSTREE_PPC) ?
@@ -1932,13 +1938,6 @@ void TreeSendKey(VFSTREESTRUCT *VTS, WORD key)
 	CallWindowProc(VTS->OldTreeWndProc, VTS->hTViewWnd, WM_KEYUP, key & 0xff, 0);
 }
 
-void RemoveSendKey(void)
-{
-	MSG msg;
-
-	PeekMessage(&msg, NULL, WM_CHAR, WM_CHAR, PM_REMOVE);
-}
-
 //-------------------------------------- ƒL[‘€ìˆ—ƒƒCƒ“
 ERRORCODE TreeKeyCommand(VFSTREESTRUCT *VTS, WORD key)
 {
@@ -2012,14 +2011,15 @@ ERRORCODE TreeKeyCommand(VFSTREESTRUCT *VTS, WORD key)
 				SendMessage(VTS->hNotifyWnd, WM_PPXCOMMAND, KTN_escape, 0);
 			}
 			if ( VTS->flags & VFSTREE_MENU ){
+				RemoveCharKey(VTS->hTViewWnd); // [ESC] ‚Ì WM_CHAR ‚ðœ‹Ž
 				PostMessage(VTS->vtinfo.hWnd, WM_CLOSE, 0, 0);
 			}
 			break;
 
 		case VK_TAB:
 			if ( VTS->hNotifyWnd != NULL ){
+				RemoveCharKey(VTS->hTViewWnd); // [tab] ‚Ì WM_CHAR ‚ðœ‹Ž
 				SendMessage(VTS->hNotifyWnd, WM_PPXCOMMAND, KTN_focus, 0);
-				PeekMessage((MSG *)path, VTS->hTViewWnd, WM_CHAR, WM_CHAR, PM_REMOVE); // [tab] ‚Ì WM_CHAR ‚ðœ‹Ž
 			}
 			break;
 
@@ -2044,7 +2044,7 @@ ERRORCODE TreeKeyCommand(VFSTREESTRUCT *VTS, WORD key)
 			break;
 
 		case K_c | 'T':
-			RemoveSendKey();
+			RemoveCharKey(VTS->vtinfo.hWnd);
 			TreeTypeMenu(VTS, INVALID_HANDLE_VALUE, key);
 			break;
 
@@ -2082,7 +2082,7 @@ ERRORCODE TreeKeyCommand(VFSTREESTRUCT *VTS, WORD key)
 				if ( GetSelectedTreePath(VTS, path) == FALSE ) break;
 				SendMessage(VTS->hNotifyWnd,
 						WM_PPXCOMMAND, KTN_selected, (LPARAM)path);
-				PeekMessage((MSG *)path, VTS->hTViewWnd, WM_CHAR, WM_CHAR, PM_REMOVE); // [enter] ‚Ì WM_CHAR ‚ðœ‹Ž
+				RemoveCharKey(VTS->hTViewWnd); // [enter] ‚Ì WM_CHAR ‚ðœ‹Ž
 			}
 			if ( VTS->resultStrPtr != NULL ){
 				if ( GetSelectedTreePath(VTS, path) == FALSE ) break;
@@ -2470,7 +2470,7 @@ LRESULT CALLBACK TreeProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 						NMCUSTOMDRAW *csd = (NMCUSTOMDRAW *)lParam;
 
 						if ( csd->dwDrawStage == CDDS_PREERASE ){
-							FillRect(csd->hdc, &csd->rc, hDialogBackBrush);
+							FillBox(csd->hdc, &csd->rc, hDialogBackBrush);
 							return CDRF_SKIPDEFAULT;
 						}
 					}

@@ -765,15 +765,15 @@ ERRORCODE ViewStyleCommand(PPC_APPINFO *cinfo, const TCHAR *param)
 	FreeCFMT(&cinfo->celF);
 	LoadCFMT(&cinfo->celF, T("MC_celS"), buf, &CFMT_celF);
 
-	if ( mode != CRID_VIEWFORMAT_TEMP ){
-		if ( (mode == DSMD_NOMODE) || (mode == CRID_VIEWFORMAT_NOMODE) || (mode == CRID_VIEWFORMAT_REGID) ){
-			SetCustTable(T("XC_celF"), cinfo->RegCID + 1, cinfo->celF.fmtbase,
-					GetCustTableSize(T("MC_celS"), buf));
-			cinfo->FixcelF = FALSE;
-		}else{ // DSMD_THIS_PATH, DSMD_THIS_BRANCH, DSMD_PATH_BRANCH, DSMD_ARCHIVE
-			SetNewXdir(path, LOADDISPSTR, buf);
-			cinfo->FixcelF = TRUE;
-		}
+	if ( (mode == DSMD_NOMODE) || (mode == CRID_VIEWFORMAT_NOMODE) || (mode == CRID_VIEWFORMAT_REGID) ){
+		SetCustTable(T("XC_celF"), cinfo->RegCID + 1, cinfo->celF.fmtbase,
+				GetCustTableSize(T("MC_celS"), buf));
+		cinfo->FixcelF = FALSE;
+	}else if ( mode == CRID_VIEWFORMAT_TEMP ){
+		cinfo->FixcelF = TRUE;
+	}else{ // DSMD_THIS_PATH, DSMD_THIS_BRANCH, DSMD_PATH_BRANCH, DSMD_ARCHIVE
+		SetNewXdir(path, LOADDISPSTR, buf);
+		cinfo->FixcelF = TRUE;
 	}
 	FixCellDisplayFormat(cinfo);
 	return NO_ERROR;
@@ -1574,7 +1574,7 @@ void LogwindowCommand(const TCHAR *param)
 				p = mode ? REPORTTEXT_OPEN : REPORTTEXT_CLOSE;
 			}
 		}
-		SendMessage(Combo.hWnd, WM_PPXCOMMAND, K_WINDDOWLOG, (LPARAM)p);
+		SendMessage(Combo.hWnd, WM_PPXCOMMAND, TMAKEWPARAM(K_WINDDOWLOG, PPLOG_REPORT), (LPARAM)p);
 		return;
 	}
 	if ( mode < 0 ){ // toggle

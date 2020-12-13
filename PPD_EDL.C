@@ -634,9 +634,9 @@ PPXINMENU amenu2[] = {
 };
 
 PPXINMENU returnmenu[] = {
-	{ VTYPE_CRLF + 1,	T("C&RLF")},
+	{ VTYPE_CRLF + 1,	T("C&RLF(Windows)")},
 	{ VTYPE_CR + 1,		T("&CR")},
-	{ VTYPE_LF + 1,		T("&LF")},
+	{ VTYPE_LF + 1,		T("&LF(Unix)")},
 	{ 0, NULL }
 };
 
@@ -663,7 +663,7 @@ typedef struct {
 	PPXAPPINFO info;
 	PPxEDSTRUCT *PES;
 } EDITMODULEINFOSTRUCT;
-const TCHAR EditInfoName[] = T("Edit");
+const TCHAR EditInfoName[] = WC_EDIT;
 const TCHAR GetFileExtsStr[] = T("All Files\0*.*\0\0");
 
 LRESULT EdPPxWmCommand(PPxEDSTRUCT *PES, HWND hWnd, WPARAM wParam, LPARAM lParam);
@@ -2316,7 +2316,7 @@ void USEFASTCALL EnterFix(PPxEDSTRUCT *PES)
 	WriteHistory(PES->list.WhistID, buf, 0, NULL);
 	CloseLineList(PES);
 	// WM_CHAR の 13 (Enter) を廃棄
-	PeekMessage((MSG *)buf, PES->hWnd, WM_CHAR, WM_CHAR, PM_REMOVE);
+	RemoveCharKey(PES->hWnd);
 }
 
 /*-----------------------------------------------------------------------------
@@ -2766,16 +2766,14 @@ case K_cr:
 	if ( PES->flags & PPXEDIT_WANTENTER ){
 		CloseLineList(PES);
 		PostMessage(GetParent(PES->hWnd), WM_COMMAND, TMAKELPARAM(0, VK_RETURN), (LPARAM)PES->hWnd);
-		// WM_CHAR の 13 (Enter) を廃棄
-		PeekMessage((MSG *)buf, PES->hWnd, WM_CHAR, WM_CHAR, PM_REMOVE);
+		RemoveCharKey(PES->hWnd); // WM_CHAR の 13 (Enter) を廃棄
 		break;
 	}
 	// 再度 enter を入力し、閉じたりさせる(WM_GETDLGCODEを一旦通過しているので、ダイアログを閉じたりすることは現時点ではもうできないため)
 	if ( CloseLineList(PES) == CLOSELIST_AUTOLIST ){
 		if ( !( PES->flags & PPXEDIT_TEXTEDIT ) ){
 			PostMessage(PES->hWnd, WM_KEYDOWN, VK_RETURN, 0);
-			// WM_CHAR の 13 (Enter) を廃棄
-			PeekMessage((MSG *)buf, PES->hWnd, WM_CHAR, WM_CHAR, PM_REMOVE);
+			RemoveCharKey(PES->hWnd); // WM_CHAR の 13 (Enter) を廃棄
 		}
 		break;
 	}
@@ -2895,12 +2893,10 @@ LRESULT CALLBACK EDsHell(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	if ( PES == NULL ) return DefWindowProc(hWnd, iMsg, wParam, lParam);
 	switch (iMsg){
 		case WM_CTLCOLORLISTBOX:
-			if ( hDialogBackBrush == NULL ){
+			if ( !(ExtraDrawColors & (EDC_WINDOW_TEXT | EDC_WINDOW_BACK)) ){
 				return DefWindowProc(hWnd, iMsg, wParam, lParam);
 			}
-			SetTextColor((HDC)wParam, C_WindowText);
-			SetBkColor((HDC)wParam, C_WindowBack);
-			return (BOOL)(DWORD_PTR)GetWindowBackBrush();
+			return ControlWindowColor(wParam);
 
 		case WM_NCLBUTTONDOWN:
 			if ( (PES->flags & PPXEDIT_LINE_MULTI) && (wParam == HTVSCROLL) ){
@@ -3557,6 +3553,7 @@ PPXDLL HWND PPXAPI PPxRegistExEdit(PPXAPPINFO *info, HWND hEditWnd, int maxlen, 
 			PES->ED.cmdsearch = CMDSEARCH_WILDCARD;
 			if ( X_ltab[1] == 6 ) PES->ED.cmdsearch = CMDSEARCH_WILDCARD | CMDSEARCH_ROMA;
 		}
+		FixUxTheme(hRealED, EditClassName);
 	}	// PES != NULL ... 登録済み→設定の変更のみ行う
 
 										// プロージャを設定 -------------------
@@ -3593,5 +3590,6 @@ PPXDLL HWND PPXAPI PPxRegistExEdit(PPXAPPINFO *info, HWND hEditWnd, int maxlen, 
 			}
 		}
 	}
+
 	return hRealED;
 }

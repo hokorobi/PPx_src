@@ -14,6 +14,15 @@
 #include "FATTIME.H"
 #pragma hdrstop
 
+#define LOGDELAYTIME 120
+#define HIDE_FLOG_COMPLETED		B0
+#define HIDE_FLOG_SOURCE		B1
+#define HIDE_FLOG_DESTINATION	B2
+#define HIDE_FLOG_BACKUP		B3
+#define HIDE_FLOG_SKIP			B4
+#define HIDE_FLOG_MAKR_DIR		B5
+DWORD X_flogh = 0; // 非表示にする処理結果ログの項目
+
 const TCHAR STR_FOP[] = T("File operation");
 const TCHAR STR_FOPWARN[] = T("File operation warning");
 const TCHAR STR_FOPUNDOLOG[] = T("Undo log file");
@@ -374,34 +383,75 @@ TCHAR *GetDriveEnd(TCHAR *p, int mode)
 	return p;
 }
 
-void CreateFWriteLogWindow(FOPSTRUCT *FS)
+void CreateFWriteLogWindowMain(FOPSTRUCT *FS)
 {
 	HWND hWnd;
 	RECT box = {3, 135, 249, 50};
 
-	if ( FS->hEWnd != NULL ){
-		if ( IsTrue(IsWindow(FS->hEWnd)) ) return;
-		FS->hEWnd = NULL;
-	}
-
 	MapDialogRect(FS->hDlg, &box);
-	hWnd = FS->hEWnd = CreateWindow(EDITstr, NilStr, WS_CHILD | WS_VSCROLL |
-			ES_AUTOVSCROLL | ES_NOHIDESEL | ES_LEFT | ES_MULTILINE,
+	hWnd = FS->log.hWnd = CreateWindow(EditClassName, NilStr,
+			WS_CHILD | WS_VSCROLL | ES_AUTOVSCROLL | ES_NOHIDESEL | ES_LEFT | ES_MULTILINE,
 			box.left, box.top, box.right, box.bottom, FS->hDlg,
 			CHILDWNDID(IDE_FOP_LOG), DLLhInst, 0);
 	PPxRegistExEdit(NULL, hWnd, 0x100000, NULL, 0, 0,
 			PPXEDIT_NOWORDBREAK | PPXEDIT_ENABLE_SIZE_CHANGE);
 	SendMessage(hWnd, WM_SETFONT, SendMessage(FS->hDlg, WM_GETFONT, 0, 0), TRUE);
-	*FS->hLogWnd = hWnd;
+//	*FS->hLogWnd = hWnd;
 	SetWindowY(FS, 0); // 大きさ調整＆表示
 	ShowDlgWindow(FS->hDlg, IDB_FOP_LOG, SW_SHOWNOACTIVATE);
 	SetDlgFocus(FS->hDlg, IDOK);
 }
-void FWriteLog(HWND hEWnd, const TCHAR *message)
+
+void CreateFWriteLogWindow(FOPSTRUCT *FS)
 {
-	SendMessage(hEWnd, EM_SETSEL, EC_LAST, EC_LAST);
-	SendMessage(hEWnd, EM_REPLACESEL, 0, (LPARAM)message);
-	SendMessage(hEWnd, EM_SCROLL, SB_LINEDOWN, 0);
+	if ( FS->log.hWnd != NULL ){
+		if ( IsTrue(IsWindow(FS->log.hWnd)) ) return;
+		FS->log.hWnd = NULL;
+	}
+	if ( FS->UI_ThreadID == GetCurrentThreadId() ){
+		CreateFWriteLogWindowMain(FS);
+	}else{
+		SendMessage(FS->hDlg, WM_FOP_CREATE_LOGWINDOW, 0, 0);
+	}
+}
+
+void FWriteLog(FOPSTRUCT *FS, const TCHAR *message)
+{
+	HWND hWnd = FS->log.hWnd;
+
+	FShowLog(FS);
+
+	SendMessage(hWnd, EM_SETSEL, EC_LAST, EC_LAST);
+	SendMessage(hWnd, EM_REPLACESEL, 0, (LPARAM)message);
+	SendMessage(hWnd, EM_SCROLL, SB_LINEDOWN, 0);
+}
+
+void FShowLog(FOPSTRUCT *FS)
+{
+	if ( FS->log.cache.top == 0 ) return;
+
+	if ( (X_log & ((1 << XM_INFOLLog) | (1 << XM_INFOlog))) == (1 << XM_INFOLLog) ){
+		XMessage(NULL, NULL, XM_INFOLLog, T("%s"), FS->log.cache.bottom);
+		goto fin;
+	}
+
+	if ( (FS->opt.hReturnWnd != NULL) &&
+		 IsWindow(FS->opt.hReturnWnd) &&
+		 (SendMessage(FS->opt.hReturnWnd, WM_PPXCOMMAND, TMAKEWPARAM(K_WINDDOWLOG, PPLOG_FASTLOG), (LPARAM)FS->log.cache.bottom) != 0) ){ // 共用ログ
+
+	}else{ // 共用ログがつかえないので自前で表示
+		HWND hWnd = FS->log.hWnd;
+
+		CreateFWriteLogWindow(FS);
+		if ( hWnd != NULL ){
+			SendMessage(hWnd, EM_SETSEL, EC_LAST, EC_LAST);
+			SendMessage(hWnd, EM_REPLACESEL, 0, (LPARAM)FS->log.cache.bottom);
+			SendMessage(hWnd, EM_SCROLL, SB_LINEDOWN, 0);
+		}
+	}
+fin:
+	FS->log.cache.top = 0;
+	FS->log.tick = GetTickCount();
 }
 
 void FWriteErrorLogs(FOPSTRUCT *FS, const TCHAR *mes, const TCHAR *type, ERRORCODE error)
@@ -417,14 +467,14 @@ void FWriteErrorLogs(FOPSTRUCT *FS, const TCHAR *mes, const TCHAR *type, ERRORCO
 	}
 	FS->NoAutoClose = TRUE;
 	CreateFWriteLogWindow(FS);
-	FWriteLog(FS->hEWnd, mes);
-	FWriteLog(FS->hEWnd, T(":\t"));
-	FWriteLog(FS->hEWnd, errormsg);
+	FWriteLog(FS, mes);
+	FWriteLog(FS, T(":\t"));
+	FWriteLog(FS, errormsg);
 	if ( type != NULL ){
-		FWriteLog(FS->hEWnd, T(" - "));
-		FWriteLog(FS->hEWnd, type);
+		FWriteLog(FS, T(" - "));
+		FWriteLog(FS, type);
 	}
-	FWriteLog(FS->hEWnd, T("\r\n"));
+	FWriteLog(FS, T("\r\n"));
 }
 
 void FWriteLogMsg(FOPSTRUCT *FS, const TCHAR *mes)
@@ -435,7 +485,7 @@ void FWriteLogMsg(FOPSTRUCT *FS, const TCHAR *mes)
 	}
 //	FS->NoAutoClose = TRUE;
 	CreateFWriteLogWindow(FS);
-	FWriteLog(FS->hEWnd, mes);
+	FWriteLog(FS, mes);
 }
 
 void FopLog(FOPSTRUCT *FS, const TCHAR *src, const TCHAR *dst, enum foplogtypes type)
@@ -444,31 +494,43 @@ void FopLog(FOPSTRUCT *FS, const TCHAR *src, const TCHAR *dst, enum foplogtypes 
 
 	if ( FS->opt.fop.flags & VFSFOP_OPTFLAG_UNDOLOG ){
 		DWORD size;
+		int len;
 
 		switch ( type ){
 			case LOG_SKIP:
-				wsprintf(buf, STRLOGSKIP T("\t%s\r\n"), src);
+				len = wsprintf(buf, STRLOGSKIP T("\t%s\r\n"), src);
 				break;
 			case LOG_DIR:
 			case LOG_DIR_DELETE:
 				return;
 			case LOG_DELETE:
-				wsprintf(buf, STRLOGDELETE T("\t%s\r\n"), src);
+				len = wsprintf(buf, STRLOGDELETE T("\t%s\r\n"), src);
 				break;
 			case LOG_MAKEDIR:
-				wsprintf(buf, STRLOGMAKEDIR T("\t%s\r\n"), src);
+				len = wsprintf(buf, STRLOGMAKEDIR T("\t%s\r\n"), src);
 				break;
 			case LOG_STRING:
-				tstrcpy(buf, src);
+				len = tstpcpy(buf, src) - buf;
 				break;
+			case LOG_COMPLETED:
+				goto undologskip;
 			default:
-				wsprintf(buf, T("%s\t%s\r\n") STRLOGDEST T("\t%s\r\n"), loghead[type], src, dst);
+				len = wsprintf(buf, T("%s\t%s\r\n"), loghead[type], src);
+				// 1024文字制限の回避
+				len += wsprintf(buf + len, STRLOGDEST T("\t%s\r\n"), dst);
 		}
 												// 内容を出力 -----------------
-		WriteFile(FS->hUndoLogFile, buf, TSTRLENGTH32(buf), &size, NULL);
+		WriteFile(FS->hUndoLogFile, buf, len * sizeof(TCHAR), &size, NULL);
+undologskip: ;
 	}
 
 	if ( FS->opt.fop.flags & VFSFOP_OPTFLAG_LOGWINDOW ){
+		if ( FS->log.cache.bottom == NULL ){
+			ThInit(&FS->log.cache);
+			FS->log.tick = 0; // GetTickCount() は大抵 LOGDELAYTIME 以上だから、すぐに表示できない確率は低い。できなくても問題ない
+			GetCustData(T("X_flogh"), &X_flogh, sizeof(X_flogh));
+		}
+
 		dstp = NilStrNC;
 		srcp = FindLastEntryPoint(src);
 		if ( dst != NULL ){
@@ -477,39 +539,63 @@ void FopLog(FOPSTRUCT *FS, const TCHAR *src, const TCHAR *dst, enum foplogtypes 
 
 		switch ( type ){
 			case LOG_SKIP:
+				if ( X_flogh & HIDE_FLOG_SKIP ) return;
 				wsprintf(buf, T("Skip\t%s\r\n"), srcp);
 				break;
+
 			case LOG_DELETE:
 				wsprintf(buf, T("Delete\t%s\r\n"), srcp);
 				break;
+
+			case LOG_COMPLETED:
+				if ( X_flogh & HIDE_FLOG_COMPLETED ) return;
+			// LOG_STRING へ
 			case LOG_STRING:
 				tstrcpy(buf, src);
 				break;
-			case LOG_DIR:
-				wsprintf(buf, T("Source\t%s\r\nDestination %s\r\n"), src, dst);
+
+			case LOG_DIR: {
+				int len;
+
+				if ( X_flogh & HIDE_FLOG_SOURCE ){
+					if ( X_flogh & HIDE_FLOG_DESTINATION ) return;
+					len = 0;
+					buf[0] = '\0';
+				}else{
+					len = wsprintf(buf, T("Source\t%s\r\n"), src);
+				}
+				if ( !(X_flogh & HIDE_FLOG_DESTINATION) ){
+					wsprintf(buf + len, T("Destination %s\r\n"), dst);
+				}
 				break;
+			}
+
 			case LOG_DIR_DELETE:
-				wsprintf(buf, T("Source\t%s\r\n"), src);
+				wsprintf(buf, T("Delete\t%s\r\n"), src);
 				break;
+
 			case LOG_MAKEDIR:
+				if ( X_flogh & HIDE_FLOG_MAKR_DIR ) return;
 				wsprintf(buf, STRLOGMAKEDIR T("\t%s\r\n"), src);
 				break;
-			default:
-				if ( tstrcmp(srcp, dstp) ){
-					wsprintf(buf, T("%s\t%s\r\n") STRLOGDEST T("\t%s\r\n"), loghead[type], srcp, dstp);
-				}else{
-					wsprintf(buf, T("%s\t%s\r\n"), loghead[type], srcp);
-				}
-		}
 
-		if ( (FS->opt.hReturnWnd != NULL) && IsWindow(FS->opt.hReturnWnd) ){
-			if ( SendMessage(FS->opt.hReturnWnd, WM_PPXCOMMAND, TMAKEWPARAM(K_WINDDOWLOG, 1), (LPARAM)buf) != 0 ){
-				return;
+			default: {
+				int len;
+
+				if ( (type == LOG_BACKUP) && (X_flogh & HIDE_FLOG_BACKUP) ){
+					return;
+				}
+				len = wsprintf(buf, T("%s\t%s\r\n"), loghead[type], srcp);
+				if ( tstrcmp(srcp, dstp) != 0 ){
+					wsprintf(buf + len, STRLOGDEST T("\t%s\r\n"), dstp);
+				}
 			}
 		}
-		// 共用ログがつかえないので自前で表示
-		CreateFWriteLogWindow(FS);
-		FWriteLog(FS->hEWnd, buf);
+
+		ThCatString(&FS->log.cache, buf);
+		if ( (GetTickCount() - FS->log.tick) > LOGDELAYTIME ){ // overflow は考慮しなくても大丈夫
+			FShowLog(FS);
+		}
 	}
 }
 
@@ -550,11 +636,16 @@ void TinyDisplayProgress(FOPSTRUCT *FS)
 	WindowsVista-10 : 4M未満 0.5M  4M以上 1M
 	WindowsXP : 64k
 */
-void FullDisplayProgress(struct _ProgressWndInfo *Progs, LARGE_INTEGER TotalTransSize, LARGE_INTEGER TotalSize)
+void FullDisplayProgress(struct _ProgressWndInfo *Progs)
 {
 	DWORD tick;
 	TCHAR buf[VFPS + 256], pbuf[VFPS + 256];
 	int off;
+
+	if ( Progs->FileSize.u.HighPart == FFD ){
+		TinyDisplayProgress(Progs->FS);
+		return;
+	}
 
 	tick = GetTickCount();
 				// over flow 問題は考慮せず
@@ -566,25 +657,25 @@ void FullDisplayProgress(struct _ProgressWndInfo *Progs, LARGE_INTEGER TotalTran
 		}
 		Progs->ProgTick = tick;
 
-		if ( TotalSize.u.HighPart || (TotalSize.u.LowPart & 0xfe000000) ){
+		if ( Progs->FileSize.u.HighPart || (Progs->FileSize.u.LowPart & 0xfe000000) ){
 						// 0x0200 0000 0000(2TB) ～ 0x1ff ffff ffff ffff(128P)
-			if ( TotalSize.u.HighPart >= 0x200 ){
-				per = (TotalTransSize.u.HighPart * 100) / TotalSize.u.HighPart;
+			if ( Progs->FileSize.u.HighPart >= 0x200 ){
+				per = (Progs->FileTransSize.u.HighPart * 100) / Progs->FileSize.u.HighPart;
 			}else{		// 0x0200 0000(32M) ～ 0x1ff ffff ffff(2TB)
-				per = ( ((((DWORD)TotalTransSize.u.HighPart) << 16) |
-						(TotalTransSize.u.LowPart >> 16)) * 100) /
-					  ( ((((DWORD)TotalSize.u.HighPart) << 16) |
-						(TotalSize.u.LowPart >> 16)) );
+				per = ( ((((DWORD)Progs->FileTransSize.u.HighPart) << 16) |
+						(Progs->FileTransSize.u.LowPart >> 16)) * 100) /
+					  ( ((((DWORD)Progs->FileSize.u.HighPart) << 16) |
+						(Progs->FileSize.u.LowPart >> 16)) );
 			}
 		}else{				// 0x0000 0001      ～  0x01ff ffff(32M)
-			if ( TotalSize.u.LowPart ){
-				per = (TotalTransSize.u.LowPart * 100) / TotalSize.u.LowPart;
+			if ( Progs->FileSize.u.LowPart ){
+				per = (Progs->FileTransSize.u.LowPart * 100) / Progs->FileSize.u.LowPart;
 			}else{							// 0x0000 0000
 				per = 100;
 			}
 		}
 
-		off = wsprintf(buf, T("\x1b%c%c%2d/%d marks  %d/%d files"),
+		off = wsprintf(buf, T("\x1b%c%c\x1d%2d/%d marks  %d/%d files"),
 				per + 1,
 				Progs->info.busybar,
 				Progs->info.mark, Progs->info.markall,
@@ -596,10 +687,11 @@ void FullDisplayProgress(struct _ProgressWndInfo *Progs, LARGE_INTEGER TotalTran
 				sizeL = Progs->info.donesize.l;
 				sizeH = Progs->info.donesize.h;
 				AddDD(sizeL, sizeH,
-						TotalTransSize.u.LowPart, TotalTransSize.u.HighPart);
+						Progs->FileTransSize.u.LowPart,
+						Progs->FileTransSize.u.HighPart);
 
 				buf[off++] = ' ';
-				FormatNumber(buf + off, XFN_DECIMALPOINT, 7, sizeL, sizeH);
+				FormatNumber(buf + off, XFN_DECIMALPOINT | XFN_MINKILO, 7, sizeL, sizeH);
 				tstrcat(buf + off, T(" done"));
 				break;
 			}
@@ -627,7 +719,8 @@ void FullDisplayProgress(struct _ProgressWndInfo *Progs, LARGE_INTEGER TotalTran
 			sizeL = Progs->info.donesize.l;
 			sizeH = Progs->info.donesize.h;
 			AddDD(sizeL, sizeH,
-					TotalTransSize.u.LowPart, TotalTransSize.u.HighPart);
+					Progs->FileTransSize.u.LowPart,
+					Progs->FileTransSize.u.HighPart);
 
 			if ( (Progs->info.allsize.l & 0xfe000000) || Progs->info.allsize.h ){
 				if ( Progs->info.allsize.h >= 0x200 ){
@@ -675,15 +768,55 @@ void FullDisplayProgress(struct _ProgressWndInfo *Progs, LARGE_INTEGER TotalTran
 	}
 }
 
+void SetFullProgress(struct _ProgressWndInfo *Progs)
+{
+	if ( Progs->FS->hProgsEvent != NULL ){
+		SetEvent(Progs->FS->hProgsEvent);
+	}else{
+		FullDisplayProgress(Progs);
+		PeekMessageLoop(Progs->FS);
+	}
+}
+
+void SetTinyProgress(FOPSTRUCT *FS)
+{
+	if ( FS->hProgsEvent != NULL ){
+		FS->progs.FileSize.u.HighPart = FFD;
+		SetEvent(FS->hProgsEvent);
+	}else{
+		TinyDisplayProgress(FS);
+	}
+}
+
 #pragma argsused
 DWORD CALLBACK CopyProgress(LARGE_INTEGER TotalSize, LARGE_INTEGER TotalTransSize, LARGE_INTEGER StreamSize, LARGE_INTEGER StreamTransSize, DWORD StreamNumber, DWORD reason, HANDLE hSourceFile, HANDLE hDestinationFile, LPVOID lpData)
 {
 	UnUsedParam(StreamSize);UnUsedParam(StreamTransSize);UnUsedParam(StreamNumber);UnUsedParam(hSourceFile);UnUsedParam(hDestinationFile);
+	#define PWI ((struct _ProgressWndInfo *)lpData)
 
 	if ( reason == CALLBACK_CHUNK_FINISHED ){
-		FullDisplayProgress((struct _ProgressWndInfo *)lpData, TotalTransSize, TotalSize);
-		PeekMessageLoop(((struct _ProgressWndInfo *)lpData)->FS);
+		FOPSTRUCT *FS;
+
+		PWI->FileTransSize = TotalTransSize;
+		PWI->FileSize = TotalSize;
+		FS = PWI->FS;
+		if ( FS->hProgsEvent != NULL ){
+			DWORD tick;
+
+			tick = GetTickCount();
+			if ( (tick - PWI->ProgTick) >= PROGRESS_INTERVAL_TICK ){
+				SetEvent(FS->hProgsEvent);
+			}
+			if ( FS->state == FOP_TOPAUSE ) FS->state = FOP_PAUSE;
+			while ( FS->state == FOP_PAUSE ){
+				Sleep(50);
+			}
+		}else{
+			FullDisplayProgress(PWI);
+			PeekMessageLoop(FS);
+		}
 	}
+	#undef PWI
 	return PROGRESS_CONTINUE;
 }
 
@@ -850,27 +983,30 @@ ERRORCODE SameNameAction(FOPSTRUCT *FS, HANDLE dstH, BY_HANDLE_FILE_INFORMATION 
 	struct FopOption *opt = &FS->opt;
 	ERRORCODE result;	// 負の時はスキップ
 	TCHAR pathbuf[VFPS];
-	DWORD dstattr;
+	DWORD dstattr = BADATTR;
 
 										// 処理先情報の取得 -------------------
 	if ( dstH != NULL ){ // 処理先ファイル有り／存在しない
-		if( GetFileInformationByHandle(dstH, dstfinfo) == FALSE ){
-			memset(dstfinfo, 0, sizeof(BY_HANDLE_FILE_INFORMATION));
-//			dstfinfo->dwFileAttributes = 0;
+		if ( IsTrue(GetFileInformationByHandle(dstH, dstfinfo)) ){
+			dstattr = dstfinfo->dwFileAttributes;
 		}
 		CloseHandle(dstH);
 	}
-	// 処理先ファイルの属性（リパースポイント属性を取得）
-	dstattr = GetFileAttributesL(dst);
-	if ( dstattr == BADATTR ) dstattr = dstfinfo->dwFileAttributes;
-
-	// 処理先ファイルがあるが、開けなかった
-	if ( (dstH == NULL)
-	#ifndef UNICODE
-		|| (WinType == WINTYPE_9x)
-	#endif
-	){
-		dstfinfo->dwFileAttributes = dstattr;
+	if ( dstattr == BADATTR ){
+		memset(dstfinfo, 0, sizeof(BY_HANDLE_FILE_INFORMATION));
+		// FILE_STAT_DATA と BY_HANDLE_FILE_INFORMATION の共通部分(dwFileAttributes～nFileSizeLow)を利用して読み込み
+		if ( IsTrue(GetFileSTAT(dst, (FILE_STAT_DATA *)dstfinfo)) ){
+				// 構造体の補正
+			dstfinfo->nFileSizeLow = ((FILE_STAT_DATA *)dstfinfo)->nFileSizeLow;
+			dstfinfo->nFileSizeHigh = ((FILE_STAT_DATA *)dstfinfo)->nFileSizeHigh;
+		}else{
+			dstattr = 0;
+//			dstfinfo->dwFileAttributes = 0;
+			dstfinfo->ftCreationTime.dwHighDateTime =
+			dstfinfo->ftLastAccessTime.dwHighDateTime =
+			dstfinfo->ftLastWriteTime.dwHighDateTime = 0x24c800cb;
+			dstfinfo->nFileSizeHigh = 0x6fffffff;
+		}
 	}
 										// 同一ファイルなら名前変更に切替 -----
 	if ( (srcfinfo->dwVolumeSerialNumber == dstfinfo->dwVolumeSerialNumber) &&
@@ -907,7 +1043,15 @@ ERRORCODE SameNameAction(FOPSTRUCT *FS, HANDLE dstH, BY_HANDLE_FILE_INFORMATION 
 			FS->state = FOP_PAUSE;			// 準備
 			FS->Command = 0;
 
-			SetFopTab(FS, FOPTAB_GENERAL);
+			if ( (FS->hProgsEvent != NULL) && (FS->UI_ThreadID != GetCurrentThreadId()) ){
+				if ( FS->page.showID != FOPTAB_GENERAL ){
+					// コントロールの削除・作成で問題が起きるので UI thread で。
+					SendMessage(hDlg, WM_COMMAND, TMAKEWPARAM(IDB_FOP_GENERAL, BN_CLICKED), 0);
+				}
+			}else{
+				SetFopTab(FS, FOPTAB_GENERAL);
+			}
+
 			if ( samefile == FALSE ){
 				Enables(FS, TRUE, FALSE);
 			}else{
@@ -916,6 +1060,7 @@ ERRORCODE SameNameAction(FOPSTRUCT *FS, HANDLE dstH, BY_HANDLE_FILE_INFORMATION 
 			SetDlgItemText(hDlg, IDOK, MessageText(STR_FOPCONTINUE));
 			SetDlgItemText(hDlg, IDB_TEST, MessageText(MES_FOFC));
 			DisplaySrcNameNow(FS); // 処理ファイル名が未表示なら表示
+			FShowLog(FS); // 未表示のログを表示
 
 			DispAttr(hDlg, IDS_FOP_SRCINFO, srcfinfo, dstfinfo);
 			DispAttr(hDlg, IDS_FOP_DESTINFO, dstfinfo, srcfinfo);
@@ -953,21 +1098,33 @@ ERRORCODE SameNameAction(FOPSTRUCT *FS, HANDLE dstH, BY_HANDLE_FILE_INFORMATION 
 			SetDlgFocus(hDlg, opt->fop.same + IDR_FOP_NEWDATE);
 										// 選択
 			for ( ; ; ){
-				MSG msg;
-
 				if ( (now_same != opt->fop.same) || (FS->opt.fop.flags != now_flags) ){
 					now_same = opt->fop.same;
 					now_flags = FS->opt.fop.flags;
 					ChangeEntryActionHelp(FS, srcfinfo, dstfinfo, dstattr);
 				}
-				if( (int)GetMessage(&msg, NULL, 0, 0) <= 0 ){
-					FS->state = FOP_TOBREAK;
-					break;
+				if ( (FS->hProgsEvent != NULL) && (FS->UI_ThreadID != GetCurrentThreadId()) ){
+
+					Sleep(50);
+					/*
+					if ( (INT_PTR)SendMessage(hDlg, WM_FOP_WAIT_INPUT, 0, 0) < 0 ){
+						FS->state = FOP_TOBREAK;
+						break;
+					}
+					*/
+				}else{
+					MSG msg;
+
+					if( (int)GetMessage(&msg, NULL, 0, 0) <= 0 ){
+						FS->state = FOP_TOBREAK;
+						break;
+					}
+					if ( IsDialogMessage(hDlg, &msg) == FALSE ){
+						TranslateMessage(&msg);
+						DispatchMessage(&msg);
+					}
 				}
-				if ( IsDialogMessage(hDlg, &msg) == FALSE ){
-					TranslateMessage(&msg);
-					DispatchMessage(&msg);
-				}
+
 				if ( FS->Command != 0 ){
 					if ( FS->Command == IDB_TEST ){
 						FopCompareFile(hDlg, src, dst);
@@ -996,6 +1153,7 @@ ERRORCODE SameNameAction(FOPSTRUCT *FS, HANDLE dstH, BY_HANDLE_FILE_INFORMATION 
 			if ( (tick - FS->progs.ProgTick) >= PROGRESS_INTERVAL_TICK ){ // 1file進捗状況更新
 				FS->progs.ProgTick = tick;
 				DisplaySrcNameNow(FS); // 処理ファイル名が未表示なら表示
+				FShowLog(FS); // 未表示のログを表示
 			}
 		}
 									// 対処する -----------------------
@@ -1031,7 +1189,7 @@ ERRORCODE SameNameAction(FOPSTRUCT *FS, HANDLE dstH, BY_HANDLE_FILE_INFORMATION 
 
 				if ( (srcfinfo->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) &&
 					!GetCustDword(T("XC_sdir"), 0) ){
-					setflag(tinput.flag, TIEX_USESELECT);
+					tinput.flag = (tinput.flag & ~TIEX_REFEXT) | TIEX_USESELECT;
 					tinput.firstC = 0;
 					tinput.lastC = EC_LAST;
 				}
@@ -1117,7 +1275,7 @@ typedef struct {
 } COUNTWORKSTRUCT;
 
 #define CountSrcFF  CountFF[0]
-#define CountDestFF CountFF[1]
+#define CountDestStat CountFF[1]
 
 const TCHAR *StrExist[4] = {MES_EXNW, MES_EXEX, MES_EXOL, MES_EXNF};
 
@@ -1134,9 +1292,8 @@ ERRORCODE ShowExistsList(FOPSTRUCT *FS, COUNTWORKSTRUCT *cws)
 		MessageText(StrExist[0]), FS->progs.info.exists[0],
 		MessageText(StrExist[3]), FS->progs.info.filesall - FS->progs.info.count_exists
 	);
-	SendMessage(FS->hEWnd, EM_SETSEL, 0, 0);
-	SendMessage(FS->hEWnd, EM_REPLACESEL, 0, (LPARAM)buf);
-	SendMessage(FS->hEWnd, WM_VSCROLL, SB_TOP, 0);
+	FWriteLog(FS, buf);
+	SendMessage(FS->log.hWnd, WM_VSCROLL, SB_TOP, 0);
 
 	hSrcFile = CreateFile_OpenSource(cws->SrcPath, 0);
 	if ( hSrcFile != INVALID_HANDLE_VALUE ){
@@ -1158,10 +1315,10 @@ void Count_Exists(FOPSTRUCT *FS, COUNTWORKSTRUCT *cws, WIN32_FIND_DATA *CountFF,
 	int compare;
 
 	CreateFWriteLogWindow(FS);
-	compare = FuzzyCompareFileTime(&CountSrcFF.ftLastWriteTime, &CountDestFF.ftLastWriteTime) + 1;
+	compare = FuzzyCompareFileTime(&CountSrcFF.ftLastWriteTime, &CountDestStat.ftLastWriteTime) + 1;
 	FS->progs.info.exists[compare]++;
 	wsprintf(buf, T("%s\t%s\r\n"), MessageText(StrExist[compare]), filename);
-	FWriteLog(FS->hEWnd, buf);
+	FWriteLog(FS, buf);
 
 	tick = GetTickCount();
 	if ( FS->progs.info.count_exists++ == 0 ){
@@ -1170,13 +1327,13 @@ void Count_Exists(FOPSTRUCT *FS, COUNTWORKSTRUCT *cws, WIN32_FIND_DATA *CountFF,
 		tstrcpy(cws->SrcPath, SrcPath);
 		tstrcpy(cws->DestPath, DestPath);
 
-		SendMessage(FS->hEWnd, WM_SETREDRAW, FALSE, 0);
+		SendMessage(FS->log.hWnd, WM_SETREDRAW, FALSE, 0);
 	}else if ( (tick - cws->LogDrawTick) > 100 ){
 		cws->LogDrawTick = tick;
-		SendMessage(FS->hEWnd, WM_SETREDRAW, TRUE, 0);
-		InvalidateRect(FS->hEWnd, NULL, TRUE);
-		UpdateWindow(FS->hEWnd);
-		SendMessage(FS->hEWnd, WM_SETREDRAW, FALSE, 0);
+		SendMessage(FS->log.hWnd, WM_SETREDRAW, TRUE, 0);
+		InvalidateRect(FS->log.hWnd, NULL, TRUE);
+		UpdateWindow(FS->log.hWnd);
+		SendMessage(FS->log.hWnd, WM_SETREDRAW, FALSE, 0);
 	}
 }
 
@@ -1224,10 +1381,7 @@ void CountSub(FOPSTRUCT *FS, COUNTWORKSTRUCT *cws, TCHAR *dir, TCHAR *dest)
 						CountSrcFF.nFileSizeLow, CountSrcFF.nFileSizeHigh);
 				FS->progs.info.filesall++;
 				if ( dest[0] != '\0' ){
-					HANDLE hDestFF;
-
-					if ( (hDestFF = FindFirstFileL(dest, &CountDestFF)) != INVALID_HANDLE_VALUE ){
-						FindClose(hDestFF);
+					if ( IsTrue(GetFileSTAT(dest, &CountDestStat)) ){
 						*dirsep = '\0';
 						CatPath(NULL, dir, CountSrcFF.cFileName);
 						Count_Exists(FS, cws, CountFF, dest, dir, dest);
@@ -1309,10 +1463,7 @@ BOOL CountMain(FOPSTRUCT *FS, const TCHAR *current, const TCHAR *destdir)
 						CountSrcFF.nFileSizeLow, CountSrcFF.nFileSizeHigh);
 				FS->progs.info.filesall++;
 				if ( dest[0] != '\0' ){
-					HANDLE hDestFF;
-
-					if ( (hDestFF = FindFirstFileL(dest, &CountDestFF)) != INVALID_HANDLE_VALUE ){
-						FindClose(hDestFF);
+					if ( IsTrue(GetFileSTAT(dest, &CountDestStat)) ){
 						Count_Exists(FS, &cws, CountFF, CountSrcFF.cFileName, src, dest);
 					}
 				}
@@ -1322,8 +1473,8 @@ BOOL CountMain(FOPSTRUCT *FS, const TCHAR *current, const TCHAR *destdir)
 	if ( FS->state == FOP_TOBREAK ) return FALSE;
 
 	if ( FS->progs.info.count_exists != 0 ){
-		SendMessage(FS->hEWnd, WM_SETREDRAW, TRUE, 0);
-		InvalidateRect(FS->hEWnd, NULL, TRUE);
+		SendMessage(FS->log.hWnd, WM_SETREDRAW, TRUE, 0);
+		InvalidateRect(FS->log.hWnd, NULL, TRUE);
 		if ( FS->progs.info.count_exists >= 2 ){
 			if ( ShowExistsList(FS, &cws) != NO_ERROR ) return FALSE;
 		}
@@ -1346,10 +1497,11 @@ void USEFASTCALL EndOperation(FOPSTRUCT *FS)
 {
 	if ( FS->ifo != NULL ) FreeIfo(FS);
 	DisplaySrcNameNow(FS); // 処理ファイル名が未表示なら表示
+	FShowLog(FS); // 未表示のログを表示
 	if ( FS->hUndoLogFile != NULL ) CloseHandle(FS->hUndoLogFile);
 	if ( FS->opt.fop.flags & VFSFOP_OPTFLAG_LOGWINDOW ){
 		if ( (FS->opt.hReturnWnd != NULL) && IsWindow(FS->opt.hReturnWnd) ){
-			SendMessage(FS->opt.hReturnWnd, WM_PPXCOMMAND, TMAKEWPARAM(K_WINDDOWLOG, 2), 0);
+			SendMessage(FS->opt.hReturnWnd, WM_PPXCOMMAND, TMAKEWPARAM(K_WINDDOWLOG, PPLOG_SHOWLOG), 0);
 		}
 	}
 	SetJobTask(FS->hDlg, JOBSTATE_ENDJOB);
@@ -1446,6 +1598,7 @@ void JobErrorBox(FOPSTRUCT *FS, const TCHAR *msg, ERRORCODE err)
 	HWND hWnd = FS->hDlg;
 
 	DisplaySrcNameNow(FS); // 処理ファイル名が未表示なら表示
+	FShowLog(FS);
 	SetTaskBarButtonProgress(hWnd, TBPF_ERROR, 0);
 	SetJobTask(hWnd, JOBSTATE_ERROR);
 	PPErrorBox(hWnd, msg, err);
@@ -1640,7 +1793,7 @@ HRESULT InitFopClasses(void)
 	wcClass.hInstance		= DLLhInst;
 	wcClass.hIcon			= NULL;
 	wcClass.hCursor			= LoadCursor(NULL, IDC_ARROW);
-	wcClass.hbrBackground	= WNDCLASSBRUSH(COLOR_3DFACE + 1);
+	wcClass.hbrBackground	= (hDialogBackBrush == NULL) ? WNDCLASSBRUSH(COLOR_3DFACE + 1) : hDialogBackBrush;
 	wcClass.lpszMenuName	= NULL;
 	wcClass.lpszClassName	= T(PPXSTATICCLASS);
 	RegisterClass(&wcClass);
@@ -1671,7 +1824,7 @@ VFSDLL BOOL PPXAPI PPxFileOperation(HWND hWnd, VFSFILEOPERATION *fileop)
 	BOOL result;
 	HRESULT ComInitResult;
 
-	fileop->hLogWnd = NULL;
+//	fileop->hLogWnd = NULL;
 	ComInitResult = InitFopClasses();
 
 	fopip.fileop = fileop;
@@ -1686,6 +1839,10 @@ VFSDLL BOOL PPXAPI PPxFileOperation(HWND hWnd, VFSFILEOPERATION *fileop)
 		}
 		if ( fopip.FS->opt.compcmd != NULL ){
 			HeapFree(DLLheap, 0, (void *)fopip.FS->opt.compcmd);
+		}
+		if ( fopip.FS->log.cache.bottom != NULL ){
+			// ThFree(fopip.FS->opt.files) 相当
+			ThFree(&fopip.FS->log.cache);
 		}
 		HeapFree(DLLheap, 0, fopip.FS->page.hWnds);
 		FreeFN_REGEXP(&fopip.FS->maskFn);
@@ -1870,16 +2027,151 @@ HWND FopGetMsgParentWnd(FOPSTRUCT *FS)
 	return hWnd;
 }
 
+typedef struct {
+	HINTERNET hFTP[2];
+	int srctype, dsttype;
+	TCHAR srcPath[VFPS], dstPath[VFPS];
+	TCHAR srcDIR[VFPS] , dstDIR[VFPS];
+} ODVALS;
+
+void Operation_Drive(FOPSTRUCT *FS, ODVALS *odv)
+{
+	const TCHAR *fileptr;
+	DWORD mainresult = NO_ERROR;
+
+	for ( fileptr = FS->opt.files;
+		 *fileptr != '\0';
+		 fileptr = fileptr + tstrlen(fileptr) + 1, FS->progs.info.mark++ ){
+
+		if ( IsParentDirectory(fileptr) ) continue;
+		if ( FS->opt.SrcDtype == VFSDT_SHN ){
+			tstrcpy(odv->srcPath, fileptr);
+		}else{
+			if ( VFSFullPath(odv->srcPath, (TCHAR *)fileptr, odv->srcDIR) == NULL ){
+				FWriteErrorLogs(FS, odv->srcPath, T("Srcpath"), PPERROR_GETLASTERROR);
+				continue;
+			}
+		}
+		if ( FS->renamemode == FALSE ){
+			const TCHAR *entry;
+
+			if ( FS->opt.fop.flags & VFSFOP_OPTFLAG_KEEPDIR ){
+				entry = fileptr;
+			}else{
+				entry = VFSFindLastEntry(fileptr);
+			}
+			if ( *entry == '\\' ) entry++;
+			if ( VFSFullPath(odv->dstPath, (TCHAR *)entry, odv->dstDIR) == NULL ){
+				FWriteErrorLogs(FS, odv->dstPath, T("Dstpath"), PPERROR_GETLASTERROR);
+				continue;
+			}
+			if ( (FS->opt.fop.flags & VFSFOP_OPTFLAG_KEEPDIR) &&
+				 (FS->testmode == FALSE) ){
+				TCHAR *lastentry;
+
+				lastentry = VFSFindLastEntry(odv->dstPath);
+				*lastentry = '\0';
+				if ( BADATTR == GetFileAttributesL(odv->dstPath) ){
+					MakeDirectories(odv->dstPath, NULL);
+				}
+				*lastentry = '\\';
+			}
+		}else{
+			tstrcpy(odv->dstPath, odv->srcPath);
+		}
+		FS->progs.srcpath = odv->srcPath;
+
+		if ( odv->srctype == VFSPT_FTP ){
+			mainresult = FileOperationSourceFtp(FS, odv->hFTP, fileptr, odv->dstPath);
+		}else if ( odv->dsttype == VFSPT_FTP ){
+			mainresult = FileOperationDestinationFtp(FS, odv->hFTP, odv->srcPath, fileptr);
+		}else if ( odv->srctype == VFSPT_AUXOP ){
+			mainresult = FileOperationAux(T("get"), odv->srcDIR, fileptr, odv->dstPath);
+			if ( mainresult == NO_ERROR ) FS->progs.info.donefiles++;
+		}else if ( odv->dsttype == VFSPT_AUXOP ){
+			mainresult = FileOperationAux(T("store"), odv->dstDIR, odv->srcPath, fileptr);
+			if ( mainresult == NO_ERROR ) FS->progs.info.donefiles++;
+		}else{
+			FILE_STAT_DATA fdata; // ※cFileName無効
+
+			if ( GetFileSTAT(odv->srcPath, &fdata) == FALSE ){
+				int mode;
+
+				fdata.dwFileAttributes = 0;
+				if ( VFSGetDriveType(odv->srcPath, &mode, NULL) != NULL ){
+					if ( (mode <= VFSPT_SHN_DESK) || (mode == VFSPT_SHELLSCHEME) ){
+						VFSGetRealPath(NULL, odv->srcPath, odv->srcPath);
+						if ( GetFileSTAT(odv->srcPath, &fdata) == FALSE ){
+							fdata.dwFileAttributes = 0;
+						}
+					}
+				}
+			}
+			if ( fdata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ){
+				if ( !(FS->opt.fop.filter & VFSFOP_FILTER_NODIRFILTER) ){
+					if ( LFNfilter(&FS->opt, odv->dstPath, fdata.dwFileAttributes) > ERROR_NO_MORE_FILES ){
+						break;
+					}
+				}
+				if ( IsTrue(FS->flat) ) tstrcpy(odv->dstPath, odv->dstDIR);
+				SetTinyProgress(FS);
+				mainresult = DlgCopyDir(FS, odv->srcPath, odv->dstPath, fdata.dwFileAttributes);
+				if ( mainresult == NO_ERROR ) FopLog(FS, odv->srcDIR, odv->dstDIR, LOG_DIR);
+			}else{
+				if ( !(FS->opt.fop.filter & VFSFOP_FILTER_NOFILEFILTER) ){
+					if ( LFNfilter(&FS->opt, odv->dstPath, fdata.dwFileAttributes) != NO_ERROR ) break;
+				}else{
+				//名前変更モード && ファイル名変更無し なので処理をスキップ
+					if ( IsTrue(FS->renamemode) ) continue;
+				}
+				if ( IsTrue(FS->testmode) ){
+					mainresult = TestDest(FS, odv->srcPath, odv->dstPath);
+				}else{
+					mainresult = DlgCopyFile(FS, odv->srcPath, odv->dstPath, &fdata);
+				}
+			}
+		}
+
+		if ( FS->state == FOP_TOBREAK ) break;
+
+		if ( mainresult != NO_ERROR ){
+			if ( mainresult != ERROR_CANCELLED ){
+				JobErrorBox(FS, STR_FOP, mainresult);
+			}
+			break;
+		}
+	}
+	if ( FS->opt.fop.mode == FOPMODE_DELETE ){
+		if ( !mainresult && FS->DelStat.noempty ){
+			JobErrorBox(FS, STR_FOP, ERROR_DIR_NOT_EMPTY);
+		}
+	}
+}
+
+typedef struct {
+	FOPSTRUCT *FS;
+	ODVALS *odv;
+} ODSTRUCT;
+
+DWORD WINAPI Operation_Drive_Thread(ODSTRUCT *ods)
+{
+	THREADSTRUCT threadstruct = {T("FileOp.Main"), XTHREAD_EXITENABLE | XTHREAD_TERMENABLE, NULL, 0, 0};
+
+	PPxRegisterThread(&threadstruct);
+	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+
+	Operation_Drive(ods->FS, ods->odv);
+
+	CoUninitialize();
+	PPxUnRegisterThread();
+	return 0;
+}
 
 BOOL OperationStart(FOPSTRUCT *FS)
 {
-	TCHAR srcPath[VFPS], dstPath[VFPS];
-	TCHAR srcDIR[VFPS], dstDIR[VFPS], *srcdir, *dstdir;
-	int srctype, dsttype; // 各パスの種類
+	ODVALS odv;
+	TCHAR *srcdir, *dstdir;
 	DWORD dstattr;
-	DWORD mainresult = NO_ERROR;
-	HINTERNET hFTP[2];
-	const TCHAR *fileptr;
 	HWND hDlg = FS->hDlg;
 
 	CheckAndInitIfo(FS);
@@ -1983,30 +2275,30 @@ BOOL OperationStart(FOPSTRUCT *FS)
 	SetWindowY(FS, WINY_STAT);
 										// コピー元のパス形成
 	if ( FS->opt.SrcDtype != VFSDT_SHN ){
-		VFSFixPath(srcDIR, FS->opt.source, NULL, VFSFIX_SEPARATOR | VFSFIX_FULLPATH | VFSFIX_NOFIXEDGE);
-		srcdir = VFSGetDriveType(srcDIR, &srctype, NULL);
+		VFSFixPath(odv.srcDIR, FS->opt.source, NULL, VFSFIX_SEPARATOR | VFSFIX_FULLPATH | VFSFIX_NOFIXEDGE);
+		srcdir = VFSGetDriveType(odv.srcDIR, &odv.srctype, NULL);
 		if ( srcdir == NULL ){
 			XMessage(hDlg, NULL, XM_GrERRld, T("Bad source path"));
 			return FALSE;
 		}
-		if ( srctype < 0 ){
-			srcDIR[0] = '?';
-			srcDIR[1] = '\0';
-			srcdir = srcDIR;
+		if ( odv.srctype < 0 ){
+			odv.srcDIR[0] = '?';
+			odv.srcDIR[1] = '\0';
+			srcdir = odv.srcDIR;
 		}
 	}else{
-		srcDIR[0] = '?';
-		srcDIR[1] = '\0';
-		srcdir = srcDIR;
-		srctype = VFSPT_SHN_DESK;
+		odv.srcDIR[0] = '?';
+		odv.srcDIR[1] = '\0';
+		srcdir = odv.srcDIR;
+		odv.srctype = VFSPT_SHN_DESK;
 	}
 										// コピー先のパス形成
-	VFSFixPath(dstDIR, FS->DestDir, FS->opt.source, VFSFIX_VFPS | VFSFIX_REALPATH | VFSFIX_NOFIXEDGE);
-	dstdir = VFSGetDriveType(dstDIR, &dsttype, NULL);
-	if ( (dsttype < 0) || (dstdir == NULL) ){
-		VFSFixPath(dstDIR, FS->DestDir, FS->opt.source, VFSFIX_VFPS | VFSFIX_NOFIXEDGE);
-		dstdir = VFSGetDriveType(dstDIR, &dsttype, NULL);
-		if ( (dsttype >= 0) || (dstdir == NULL) ){
+	VFSFixPath(odv.dstDIR, FS->DestDir, FS->opt.source, VFSFIX_VFPS | VFSFIX_REALPATH | VFSFIX_NOFIXEDGE);
+	dstdir = VFSGetDriveType(odv.dstDIR, &odv.dsttype, NULL);
+	if ( (odv.dsttype < 0) || (dstdir == NULL) ){
+		VFSFixPath(odv.dstDIR, FS->DestDir, FS->opt.source, VFSFIX_VFPS | VFSFIX_NOFIXEDGE);
+		dstdir = VFSGetDriveType(odv.dstDIR, &odv.dsttype, NULL);
+		if ( (odv.dsttype >= 0) || (dstdir == NULL) ){
 			XMessage(hDlg, NULL, XM_GrERRld, T("Bad dest. path"));
 			return FALSE;
 		}
@@ -2015,8 +2307,8 @@ BOOL OperationStart(FOPSTRUCT *FS)
 		TCHAR *lastp = NULL;
 
 		// ヒストリ登録内容を必ず末尾「\」にする
-		if ( (dsttype == VFSPT_DRIVE) || (dsttype == VFSPT_UNC) ){
-			lastp = VFSFindLastEntry(dstDIR);
+		if ( (odv.dsttype == VFSPT_DRIVE) || (odv.dsttype == VFSPT_UNC) ){
+			lastp = VFSFindLastEntry(odv.dstDIR);
 			if ( *lastp == '\\' ) lastp++;
 			if ( *lastp != '\0' ){
 				lastp += tstrlen(lastp);
@@ -2024,16 +2316,16 @@ BOOL OperationStart(FOPSTRUCT *FS)
 				*(lastp + 1) = '\0';
 			}
 		}
-		WriteHistory(PPXH_DIR, dstDIR, 0, NULL);
+		WriteHistory(PPXH_DIR, odv.dstDIR, 0, NULL);
 		if ( lastp != NULL ) *lastp = '\0';
 	}
 
-	SetWindowText(hDlg, dstDIR);
+	SetWindowText(hDlg, odv.dstDIR);
 										// コントロール変更 -----------
 	Enables(FS, FALSE, FALSE);
 
-	dstdir = GetDriveEnd(dstdir, dsttype);
-	srcdir = GetDriveEnd(srcdir, srctype);
+	dstdir = GetDriveEnd(dstdir, odv.dsttype);
+	srcdir = GetDriveEnd(srcdir, odv.srctype);
 
 	if ( FS->opt.fop.mode == FOPMODE_UNDO ) return UndoCommand(FS);
 	{	// 待機 ===============================================================
@@ -2064,7 +2356,7 @@ BOOL OperationStart(FOPSTRUCT *FS)
 					MSG msg;
 
 					while( (int)GetMessage(&msg, NULL, 0, 0) > 0 ){
-						if (IsDialogMessage(FS->hDlg, &msg) == FALSE){
+						if ( IsDialogMessage(FS->hDlg, &msg) == FALSE ){
 							TranslateMessage(&msg);
 							DispatchMessage(&msg);
 						}
@@ -2088,8 +2380,8 @@ BOOL OperationStart(FOPSTRUCT *FS)
 	}
 	// ========================================================================
 
-	if ( dsttype < 0 ){ // shell name space
-		return Fop_ShellNameSpace(FS, srcDIR, dstDIR);
+	if ( odv.dsttype < 0 ){ // shell name space
+		return Fop_ShellNameSpace(FS, odv.srcDIR, odv.dstDIR);
 	}
 
 	if ( FS->opt.fop.flags & VFSFOP_OPTFLAG_UNDOLOG ){
@@ -2098,34 +2390,34 @@ BOOL OperationStart(FOPSTRUCT *FS)
 
 	// ========================================================================
 	// src が FTP なら、サイズ算出ができない
-	if ( srctype == VFSPT_FTP ){
+	if ( odv.srctype == VFSPT_FTP ){
 		setflag(FS->opt.fop.flags, VFSFOP_OPTFLAG_NOCOUNT);
 	// dst の調査。先がFTPだったり削除モードなら調査できない
-	}else if ( (dsttype != VFSPT_FTP) && (dsttype != VFSPT_AUXOP) && (FS->opt.fop.mode != FOPMODE_DELETE) ){
+	}else if ( (odv.dsttype != VFSPT_FTP) && (odv.dsttype != VFSPT_AUXOP) && (FS->opt.fop.mode != FOPMODE_DELETE) ){
 //		TCHAR *sptr = tstrstr(dstDIR, T("::"));
 
 //		if ( sptr != NULL ) *sptr = '\0';
-		dstattr = GetFileAttributesL(dstDIR);
+		dstattr = GetFileAttributesL(odv.dstDIR);
 //		if ( sptr != NULL ) *sptr = ':';
 		if ( (FS->testmode == FALSE) && (dstattr == BADATTR) ){
 			DWORD result;
 
 			result = GetLastError();
 			// dstDIR が "\\.\Volume{…}" とかの場合、この状態になる
-			if ( (result == ERROR_INVALID_PARAMETER) && (dstDIR[0] == '\\') ){
+			if ( (result == ERROR_INVALID_PARAMETER) && (odv.dstDIR[0] == '\\') ){
 				result = NO_ERROR;
 			}
 
 			if ( (result != ERROR_NOT_READY) && (result != NO_ERROR) ){
 			// 実際は ERROR_PATH_NOT_FOUND が多いらしい…TT
-				TCHAR *p;
+				TCHAR *ptr;
 
-				p = tstrstr(dstDIR, StrListFileid);
-				if ( p != NULL ){
+				ptr = tstrstr(odv.dstDIR, StrListFileid);
+				if ( ptr != NULL ){
 					BOOL listresult;
 
-					*p = '\0';
-					listresult = OperationStartListFile(FS, srcDIR, dstDIR);
+					*ptr = '\0';
+					listresult = OperationStartListFile(FS, odv.srcDIR, odv.dstDIR);
 					ReleaseStartMutex(FS);
 					EndOperation(FS);
 					return listresult;
@@ -2137,13 +2429,13 @@ BOOL OperationStart(FOPSTRUCT *FS)
 					EndOperation(FS);
 					return FALSE;
 				}
-				result = MakeDirectories(dstDIR, NULL);
+				result = MakeDirectories(odv.dstDIR, NULL);
 				if ( result == NO_ERROR ){
-					FopLog(FS, dstDIR, NULL, LOG_MAKEDIR);
+					FopLog(FS, odv.dstDIR, NULL, LOG_MAKEDIR);
 				}
 			}
 			if ( result != NO_ERROR ){
-				JobErrorBox(FS, dstDIR, result);
+				JobErrorBox(FS, odv.dstDIR, result);
 				ReleaseStartMutex(FS);
 				EndOperation(FS);
 				return FALSE;
@@ -2158,7 +2450,7 @@ BOOL OperationStart(FOPSTRUCT *FS)
 				return FALSE;
 			}
 
-			result = OperationStartToFile(FS, srcDIR, dstDIR);
+			result = OperationStartToFile(FS, odv.srcDIR, odv.dstDIR);
 			if ( result >= 0 ){
 				ReleaseStartMutex(FS);
 				EndOperation(FS);
@@ -2184,7 +2476,7 @@ BOOL OperationStart(FOPSTRUCT *FS)
 		 (FS->opt.fop.mode != FOPMODE_SYMLINK) &&
 		 !(FS->opt.fop.flags & VFSFOP_OPTFLAG_NOCOUNT) &&
 		 (FS->testmode == FALSE) &&
-		 (CountMain(FS, srcDIR, (dsttype == VFSPT_FTP) ? NULL : dstDIR) == FALSE) ){
+		 (CountMain(FS, odv.srcDIR, (odv.dsttype == VFSPT_FTP) ? NULL : odv.dstDIR) == FALSE) ){
 		ReleaseStartMutex(FS);
 		EndOperation(FS);
 		return FALSE;
@@ -2197,8 +2489,8 @@ BOOL OperationStart(FOPSTRUCT *FS)
 							// (複写&削除)か移動かを判断
 	FS->opt.OnDriveMove =
 			(FS->opt.fop.mode == FOPMODE_MOVE) &&
-			( ((srcdir - srcDIR) == (dstdir - dstDIR)) &&
-					!memcmp(srcDIR, dstDIR, TSTROFF(srcdir - srcDIR)) );
+			( ((srcdir - odv.srcDIR) == (dstdir - odv.dstDIR)) &&
+					!memcmp(odv.srcDIR, odv.dstDIR, TSTROFF(srcdir - odv.srcDIR)) );
 
 	// 名前加工を行うかを確認する
 	FS->opt.UseNameFilter = 0;
@@ -2234,21 +2526,21 @@ BOOL OperationStart(FOPSTRUCT *FS)
 		 (FS->opt.SrcDtype == VFSDT_CDIMG) ||
 		 (FS->opt.SrcDtype == VFSDT_FATDISK) ||
 		 (FS->opt.SrcDtype == VFSDT_CDDISK) ){
-		ImgExtract(FS, srcDIR, dstDIR);
+		ImgExtract(FS, odv.srcDIR, odv.dstDIR);
 		EndOperation(FS);
 		ReleaseStartMutex(FS);
 		return TRUE;
 	}
 
-	if ( srctype == VFSPT_FTP ){
-		ERRORCODE result = OpenFtp(srcDIR, hFTP);
+	if ( odv.srctype == VFSPT_FTP ){
+		ERRORCODE result = OpenFtp(odv.srcDIR, odv.hFTP);
 		if ( result != NO_ERROR ){
 			ReleaseStartMutex(FS);
 			EndOperation(FS);
 			return FALSE;
 		}
-	}else if ( dsttype == VFSPT_FTP ){
-		ERRORCODE result = OpenFtp(dstDIR, hFTP);
+	}else if ( odv.dsttype == VFSPT_FTP ){
+		ERRORCODE result = OpenFtp(odv.dstDIR, odv.hFTP);
 		if ( result != NO_ERROR ){
 			ReleaseStartMutex(FS);
 			EndOperation(FS);
@@ -2258,143 +2550,97 @@ BOOL OperationStart(FOPSTRUCT *FS)
 										// メインループ ---------------
 	if ( (FS->opt.fop.flags & VFSFOP_OPTFLAG_AUTOROFF) &&
 		 (FS->opt.fop.AtrMask & FILE_ATTRIBUTE_READONLY) ){
-		VFSFullPath(dstPath, (TCHAR *)FS->opt.files, srcDIR);
-		GetDriveName(srcPath, dstPath);
-		if ( GetDriveType(srcPath) == DRIVE_CDROM ){
+		VFSFullPath(odv.dstPath, (TCHAR *)FS->opt.files, odv.srcDIR);
+		GetDriveName(odv.srcPath, odv.dstPath);
+		if ( GetDriveType(odv.srcPath) == DRIVE_CDROM ){
 			resetflag(FS->opt.fop.AtrMask, FILE_ATTRIBUTE_READONLY);
 			resetflag(FS->opt.fop.AtrFlag, FILE_ATTRIBUTE_READONLY);
 		}
 	}
-	FopLog(FS, srcDIR, dstDIR, LOG_DIR);
+	FopLog(FS, odv.srcDIR, odv.dstDIR, LOG_DIR);
 
 	// srcDIR が書庫ファイルの時の展開処理
 	if ( (FS->opt.SrcDtype != VFSDT_SHN) &&
 		 (FS->opt.SrcDtype != VFSDT_LFILE) ){
 		DWORD srcdirattr;
 
-		srcdirattr = GetFileAttributesL(srcDIR);
+		srcdirattr = GetFileAttributesL(odv.srcDIR);
 		if ( (srcdirattr != BADATTR) && !(srcdirattr & FILE_ATTRIBUTE_DIRECTORY) ){
 			BOOL result;
 
-			result = FileImageOperation(FS, srcDIR, dstDIR);
+			result = FileImageOperation(FS, odv.srcDIR, odv.dstDIR);
 			if ( IsTrue(result) ) return result;
 		}
 	}
-	for ( fileptr = FS->opt.files;
-		 *fileptr != '\0';
-		 fileptr = fileptr + tstrlen(fileptr) + 1, FS->progs.info.mark++ ){
 
-		if ( IsParentDirectory(fileptr) ) continue;
-		if ( FS->opt.SrcDtype == VFSDT_SHN ){
-			tstrcpy(srcPath, fileptr);
-		}else{
-			if ( VFSFullPath(srcPath, (TCHAR *)fileptr, srcDIR) == NULL ){
-				FWriteErrorLogs(FS, srcPath, T("Srcpath"), PPERROR_GETLASTERROR);
-				continue;
-			}
-		}
-		if ( FS->renamemode == FALSE ){
-			const TCHAR *entry;
+	{
+		TCHAR a[8];
 
-			if ( FS->opt.fop.flags & VFSFOP_OPTFLAG_KEEPDIR ){
-				entry = fileptr;
-			}else{
-				entry = VFSFindLastEntry(fileptr);
-			}
-			if ( *entry == '\\' ) entry++;
-			if ( VFSFullPath(dstPath, (TCHAR *)entry, dstDIR) == NULL ){
-				FWriteErrorLogs(FS, dstPath, T("Dstpath"), PPERROR_GETLASTERROR);
-				continue;
-			}
-			if ( (FS->opt.fop.flags & VFSFOP_OPTFLAG_KEEPDIR) &&
-				 (FS->testmode == FALSE) ){
-				TCHAR *lastentry;
+		a[0] = 0;
+		GetCustTable(T("_others"), T("fopt"), &a, sizeof(a));
 
-				lastentry = VFSFindLastEntry(dstPath);
-				*lastentry = '\0';
-				if ( BADATTR == GetFileAttributesL(dstPath) ){
-					MakeDirectories(dstPath, NULL);
-				}
-				*lastentry = '\\';
-			}
-		}else{
-			tstrcpy(dstPath, srcPath);
-		}
-		FS->progs.srcpath = srcPath;
+#if 0
+	if ( (FS->ifo == NULL) && (WinType >= WINTYPE_VISTA) )
+#else
+	if ( (FS->ifo == NULL) && (a[0] == '1') )
+#endif
 
-		if ( srctype == VFSPT_FTP ){
-			mainresult = FileOperationSourceFtp(FS, hFTP, fileptr, dstPath);
-		}else if ( dsttype == VFSPT_FTP ){
-			mainresult = FileOperationDestinationFtp(FS, hFTP, srcPath, fileptr);
-		}else if ( srctype == VFSPT_AUXOP ){
-			mainresult = FileOperationAux(/*FS, */T("get"), srcDIR, fileptr, dstPath);
-			if ( mainresult == NO_ERROR ) FS->progs.info.donefiles++;
-		}else if ( dsttype == VFSPT_AUXOP ){
-			mainresult = FileOperationAux(/*FS, */T("store"), dstDIR, srcPath, fileptr);
-			if ( mainresult == NO_ERROR ) FS->progs.info.donefiles++;
-		}else{
-			DWORD attr;
+	{
+		#define OH_Handles 2
+		#define OH_Event 0
+		#define OH_Thread 1
 
-			attr = GetFileAttributesL(srcPath);
-			if ( attr == BADATTR ){
-				int mode;
+		ODSTRUCT ods;
+		DWORD tmp;
+		HANDLE hHandle[OH_Handles];
 
-				attr = 0;
-				if ( VFSGetDriveType(srcPath, &mode, NULL) != NULL ){
-					if ( (mode <= VFSPT_SHN_DESK) || (mode == VFSPT_SHELLSCHEME) ){
-						VFSGetRealPath(NULL, srcPath, srcPath);
-						attr = GetFileAttributesL(srcPath);
-						if ( attr == BADATTR ) attr = 0;
+		ods.FS = FS;
+		ods.odv = &odv;
+
+		hHandle[OH_Event] = FS->hProgsEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+		hHandle[OH_Thread] = CreateThread(NULL, 0,(LPTHREAD_START_ROUTINE)Operation_Drive_Thread, &ods, 0, &tmp);
+		if ( hHandle[OH_Thread] != NULL ){
+			for (;;){
+				DWORD result;
+
+				result = MsgWaitForMultipleObjects(OH_Handles, hHandle, FALSE, INFINITE, QS_ALLEVENTS | QS_SENDMESSAGE);
+				if ( result == WAIT_OBJECT_0 + OH_Handles ){ // Message
+					MSG msg;
+
+					while ( PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) ){
+						if ( msg.message == WM_QUIT ) break;
+						if ( IsDialogMessage(hDlg, &msg) == FALSE ){
+							TranslateMessage(&msg);
+							DispatchMessage(&msg);
+						}
 					}
+				}else if ( result == (WAIT_OBJECT_0 + OH_Event) ){ // OH_Event
+					FullDisplayProgress(&FS->progs);
+				}else{ // OH_Thread / Error
+					FS->state = FOP_TOBREAK;
+					break;
 				}
 			}
-			if ( attr & FILE_ATTRIBUTE_DIRECTORY ){
-				if ( !(FS->opt.fop.filter & VFSFOP_FILTER_NODIRFILTER) ){
-					if ( LFNfilter(&FS->opt, dstPath) > ERROR_NO_MORE_FILES ) break;
-				}
-				if ( IsTrue(FS->flat) ) tstrcpy(dstPath, dstDIR);
-				TinyDisplayProgress(FS);
-				mainresult = DlgCopyDir(FS, srcPath, dstPath, attr);
-				if ( mainresult == NO_ERROR ) FopLog(FS, srcDIR, dstDIR, LOG_DIR);
-			}else{
-				if ( !(FS->opt.fop.filter & VFSFOP_FILTER_NOFILEFILTER) ){
-					if ( LFNfilter(&FS->opt, dstPath) != NO_ERROR ) break;
-				}else{
-				//名前変更モード && ファイル名変更無し なので処理をスキップ
-					if ( IsTrue(FS->renamemode) ) continue;
-				}
-				if ( IsTrue(FS->testmode) ){
-					mainresult = TestDest(FS, srcPath, dstPath);
-				}else{
-					mainresult = DlgCopyFile(FS, srcPath, dstPath, attr);
-				}
-			}
+			CloseHandle(hHandle[OH_Thread]);
+		}else{
+			Operation_Drive(FS, &odv);
 		}
-
-		if ( FS->state == FOP_TOBREAK ) break;
-
-		if ( mainresult != NO_ERROR ){
-			if ( mainresult != ERROR_CANCELLED ){
-				JobErrorBox(FS, STR_FOP, mainresult);
-			}
-			break;
-		}
+		CloseHandle(hHandle[OH_Event]);
+		FS->hProgsEvent = NULL;
+	}else{
+		Operation_Drive(FS, &odv);
 	}
-	if ( FS->opt.fop.mode == FOPMODE_DELETE ){
-		if ( !mainresult && FS->DelStat.noempty ){
-			JobErrorBox(FS, STR_FOP, ERROR_DIR_NOT_EMPTY);
-		}
 	}
 
-	if ( (srctype == VFSPT_FTP) || (dsttype == VFSPT_FTP) ){
-		DInternetCloseHandle(hFTP[FTPHOST]);
-		DInternetCloseHandle(hFTP[FTPINET]);
+	if ( (odv.srctype == VFSPT_FTP) || (odv.dsttype == VFSPT_FTP) ){
+		DInternetCloseHandle(odv.hFTP[FTPHOST]);
+		DInternetCloseHandle(odv.hFTP[FTPINET]);
 	}
 	ReleaseStartMutex(FS);
 	if ( FS->testmode == FALSE ){
-		PPxPostMessage(WM_PPXCOMMAND, K_ENDCOPY, dstPath[0]);
-		if ( (FS->opt.fop.mode == FOPMODE_MOVE) && (dstPath[0] != srcPath[0]) ){
-			PPxPostMessage(WM_PPXCOMMAND, K_ENDCOPY, srcPath[0]);
+		PPxPostMessage(WM_PPXCOMMAND, K_ENDCOPY, odv.dstPath[0]);
+		if ( (FS->opt.fop.mode == FOPMODE_MOVE) && (odv.dstPath[0] != odv.srcPath[0]) ){
+			PPxPostMessage(WM_PPXCOMMAND, K_ENDCOPY, odv.srcPath[0]);
 		}
 	}
 	EndOperation(FS);
@@ -2403,6 +2649,7 @@ BOOL OperationStart(FOPSTRUCT *FS)
 
 void EndingOperation(FOPSTRUCT *FS)
 {
+	FShowLog(FS);
 	SetFopLowPriority(NULL);
 	if ( FS->opt.fop.flags & VFSFOP_OPTFLAG_PREVENTSLEEP ){
 		EndPreventSleep(FS->hDlg);

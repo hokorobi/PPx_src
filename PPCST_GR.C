@@ -31,7 +31,7 @@ typedef enum {
 typedef enum {
 	EDIT_NONE,	// 表示用文字列
 	EDIT_CHECK,	// チェックボックス		?[itemtype][B]check[/def]:uncheck
-	EDIT_RADIO,	// ラジオボタン			@[itemtype]hit/def
+	EDIT_RADIO,	// ラジオボタン			@[L][itemtype]hit/def
 	EDIT_EDIT,	// エディットボックス	<def
 	EDIT_KEY,	// キー					K
 	EDIT_FILE,	// ファイル名			N
@@ -43,6 +43,7 @@ typedef enum {
 typedef enum {
 	ITEMOPTION_NONE,
 	ITEMOPTION_NOMACROSTR, // %0 等は使えない
+	ITEMOPTION_LANGCHANGE, // 言語変更
 } ITEMOPTION;
 
 typedef struct {
@@ -88,8 +89,8 @@ LOGFONT DefaultFont = {							// フォント構造体
 };
 const TCHAR DefaultFaceName[] = T("(未設定)\0(blank)");
 
-const TCHAR EDIT[] = T("EDIT");
-const TCHAR BUTTON[] = T("BUTTON");
+const TCHAR EDIT[] = WC_EDIT;
+const TCHAR BUTTON[] = WC_BUTTON;
 WNDPROC OldFindBoxProc, OldIndexTreeProc, OldItemTreeProc;
 
 const TCHAR *CustomList, *CustomItemList;
@@ -136,7 +137,7 @@ typedef enum {
 } LABELICONS;
 
 #define TreeImageCharCount 9
-const WCHAR TreeImageChars[TreeImageCharCount] = {L' ', L'・', 0x2610, 0x2611, 0x25cb, 0x25ce, 0x270e, 0x229e, 0x229f};
+const TCHAR TreeImageChars[TreeImageCharCount + 1] = {' ', 0xa7, 0xa8, 0xa8, 0xa1, 0xa4, 0x6e, 0xb0, 0x6f, 0xfc};
 
 void SearchPPcHotKey(ITEMSTRUCT *item)
 {
@@ -392,6 +393,10 @@ void GetCustItem(ITEMSTRUCT *item, const TCHAR *line, BOOL getdata)
 		case '@':
 			item->edittype = EDIT_RADIO;
 			item->itemtype = ITEM_DWORD;
+			if ( *param == 'L' ){
+				param++;
+				item->option = ITEMOPTION_LANGCHANGE;
+			}
 			GetCustItemType(item, &param);
 			GetCustItemData(item, &param);
 			break;
@@ -511,8 +516,8 @@ int MakeDisplayText(TCHAR *dest, ITEMSTRUCT *item, TV_ITEM *tvi)
 
 		case EDIT_RADIO:
 			switch ( item->itemtype ){
-				case ITEM_INT:
 				case ITEM_DWORD:
+				case ITEM_INT:
 				case ITEM_WORD:
 				case ITEM_BYTE:
 					state = ( item->d.num.data == item->d.num.truedata ) ?
@@ -725,10 +730,9 @@ void LoadCustomList(void)
 	CustomList = list;
 }
 
-void LoadList(HWND hDlg)	// チェックボックス等の画像を用意
+void LoadList(HWND hDlg)
 {
 	HIMAGELIST hImage;
-	int IconSize;
 
 	LoadCustomList();
 	hIndexTreeWnd = GetDlgItem(hDlg, IDT_GENERAL);
@@ -745,100 +749,81 @@ void LoadList(HWND hDlg)	// チェックボックス等の画像を用意
 					IDT_GENERALITEM), GWLP_WNDPROC, (LONG_PTR)ItemTreeProc);
 		}
 	}
-
-	IconSize = GetSystemMetrics(SM_CXICON) / 2;
-	if ( (IconSize >= 24) && (OSver.dwMajorVersion >= 6) ){
-	#if 0
-		// 画像の拡縮で対応する案
-		HBITMAP hOrgBMP, hBigBMP;
-		HDC hDC, hOrgMemDC, hBigMemDC;
-		HGDIOBJ hOldOrgBmp, hOldBigBmp, hOldFont;
-		#define bitcolor 4
-		int i;
-		NONCLIENTMETRICS ncm;
-		HFONT hControlFont;
-		TEXTMETRIC tm;
-
-		ncm.cbSize = sizeof(ncm);
-		SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
-
-		hDC = GetDC(hDlg);
-		hOrgMemDC = CreateCompatibleDC(hDC);
-		hBigMemDC = CreateCompatibleDC(hDC);
-
-		hControlFont = CreateFontIndirect(&ncm.lfStatusFont);
-		hOldFont = SelectObject(hOrgMemDC, hControlFont);
-		GetTextMetrics(hOrgMemDC, &tm);
-		SelectObject(hOrgMemDC, hOldFont);
-		DeleteObject(hControlFont);
-//		tm.tmHeight = 32;
-
-		hImage = ImageList_Create(tm.tmHeight, tm.tmHeight, bitcolor, TreeImageCharCount, TreeImageCharCount);
-
-		hOrgBMP = LoadBitmap(hInst, MAKEINTRESOURCE(BUTTONIMAGE));
-		hBigBMP = CreateCompatibleBitmap(hDC, tm.tmHeight, tm.tmHeight);
-
-		hOldOrgBmp = SelectObject(hOrgMemDC, hOrgBMP);
-
-		for ( i = 0 ; i < TreeImageCharCount ; i++ ){
-			hOldBigBmp = SelectObject(hBigMemDC, hBigBMP);
-			StretchBlt(hBigMemDC, 0, 0, tm.tmHeight, tm.tmHeight,
-					   hOrgMemDC, 16 * i, 0, 16, 16, SRCCOPY);
-			SelectObject(hBigMemDC, hOldBigBmp);
-			ImageList_AddMasked(hImage, hBigBMP, RGB(255, 0, 255));
-		}
-		SelectObject(hOrgMemDC, hOldOrgBmp);
-
-		DeleteObject(hBigBMP);
-		DeleteObject(hOrgBMP);
-
-		DeleteDC(hBigMemDC);
-		DeleteDC(hOrgMemDC);
-		ReleaseDC(hDlg, hDC);
-	#else
-		// 文字で対応する案
+	// チェックボックス等の画像を用意
+	if ( (X_uxt == UXT_DARK) || (GetSystemMetrics(SM_CXICON) > 32) ){
 		HBITMAP hBMP;
 		HDC hDC, hMemDC;
 		RECT box;
 		HGDIOBJ hOldBmp, hOldFont;
-		#define bitcolor 4
 		int i;
 		NONCLIENTMETRICS ncm;
 		HFONT hControlFont;
 		TEXTMETRIC tm;
-
-		ncm.cbSize = sizeof(ncm);
-		SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
+		SIZE chrsize;
+		HBRUSH hBackBrush;
+		COLORREF backcolor;
+		BITMAPINFO bmi;
+		LPVOID lpBits;
 
 		hDC = GetDC(hDlg);
 		hMemDC = CreateCompatibleDC(hDC);
 
+		ncm.cbSize = sizeof(ncm);
+		SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
+		tstrcpy(ncm.lfStatusFont.lfFaceName, T("Wingdings"));
+		ncm.lfStatusFont.lfCharSet = SYMBOL_CHARSET;
+		ncm.lfStatusFont.lfHeight += (ncm.lfStatusFont.lfHeight > 0) ? +4 : -4;
+		ncm.lfStatusFont.lfWidth = 0;
 		hControlFont = CreateFontIndirect(&ncm.lfStatusFont);
+
 		hOldFont = SelectObject(hMemDC, hControlFont);
 		GetTextMetrics(hMemDC, &tm);
 		if ( tm.tmHeight == 0 ){
 			tm.tmHeight = GetSystemMetrics(SM_CYMENU) - 5;
 		}
 
-		hImage = ImageList_Create(tm.tmHeight, tm.tmHeight, bitcolor, TreeImageCharCount, TreeImageCharCount);
+		memset(&bmi.bmiHeader, 0, sizeof(BITMAPINFOHEADER));
+		bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+		bmi.bmiHeader.biWidth = bmi.bmiHeader.biHeight = tm.tmHeight - tm.tmInternalLeading;
+		bmi.bmiHeader.biPlanes = 1;
+		bmi.bmiHeader.biBitCount = (WORD)((OSver.dwMajorVersion < 6) ? 24 : 32);
+		hBMP = CreateDIBSection(NULL, &bmi, DIB_RGB_COLORS, &lpBits, NULL, 0);
 
-		hBMP = CreateCompatibleBitmap(hMemDC, tm.tmHeight, tm.tmHeight);
+		hImage = ImageList_Create(bmi.bmiHeader.biWidth, bmi.bmiHeader.biWidth, bmi.bmiHeader.biBitCount, TreeImageCharCount, TreeImageCharCount);
+
 		box.left = box.top = 0;
-		box.right = box.bottom = tm.tmHeight;
+		box.right = box.bottom = bmi.bmiHeader.biWidth;
+		SetTextColor(hMemDC, PPxCommonExtCommand(K_UxTheme, KUT_WINDOW_TEXT_COLOR));
+
+		backcolor = PPxCommonExtCommand(K_UxTheme, KUT_WINDOW_BACK_COLOR);
+		hBackBrush = CreateSolidBrush(backcolor);
+		SetBkColor(hMemDC, backcolor);
 
 		for ( i = 0 ; i < TreeImageCharCount ; i++ ){
 			hOldBmp = SelectObject(hMemDC, hBMP);
-			FillRect(hMemDC, &box, GetStockObject(WHITE_BRUSH));
-			TextOutW(hMemDC, 0, 0, &TreeImageChars[i], 1);
+
+			FillRect(hMemDC, &box, hBackBrush);
+			GetTextExtentPoint32(hMemDC, TreeImageChars + i, 1, &chrsize);
+			TextOut(hMemDC,
+					(tm.tmHeight - chrsize.cx) / 2, -tm.tmInternalLeading,
+					TreeImageChars + i, 1);
+
+			if ( i == 3 ){ // チェックボックスのチェックを別個描画
+				SetBkMode(hMemDC, TRANSPARENT);
+				GetTextExtentPoint32(hMemDC, TreeImageChars + TreeImageCharCount, 1, &chrsize);
+				TextOut(hMemDC,
+						(tm.tmHeight - chrsize.cx) / 2 + 1, -tm.tmInternalLeading,
+						TreeImageChars + TreeImageCharCount, 1);
+			}
 			SelectObject(hMemDC, hOldBmp);
 			ImageList_Add(hImage, hBMP, NULL);
 		}
+		DeleteObject(hBackBrush);
 		DeleteObject(hBMP);
 		SelectObject(hMemDC, hOldFont);
 		DeleteObject(hControlFont);
 		DeleteDC(hMemDC);
 		ReleaseDC(hDlg, hDC);
-	#endif
 	}else{ // 内蔵画像を使用する
 		hImage = ImageList_LoadImage(hInst, MAKEINTRESOURCE(BUTTONIMAGE),
 				16, 0, RGB(255, 0, 255), IMAGE_BITMAP, LR_DEFAULTCOLOR);
@@ -846,11 +831,12 @@ void LoadList(HWND hDlg)	// チェックボックス等の画像を用意
 	SendMessage(hItemTreeWnd, TVM_SETIMAGELIST, (WPARAM)TVSIL_NORMAL, (LPARAM)hImage);
 
 	LoadListTree(FALSE);
-/*  ↑で右側も表示されるので不要
+#ifdef WINEGCC // Windows では↑で右側も表示されるので不要
 	CustomItemListOffset = 2;
 	CustomItemList = SearchList(2);
 	LoadListTree(TRUE);
-*/
+#endif
+	// 編集関係を用意
 	hEditWnd = CreateWindow(EDIT, NilStr,
 			WS_BORDER | WS_CHILD | WS_TABSTOP | ES_AUTOHSCROLL,
 			0, 0, FLOAT_WIDTH, FLOAT_HEIGHT, hDlg,
@@ -867,6 +853,7 @@ void LoadList(HWND hDlg)	// チェックボックス等の画像を用意
 			WS_BORDER | WS_CHILD | WS_TABSTOP | BS_PUSHBUTTON,
 			0, 0, FLOAT_BUTTONWIDTH, FLOAT_HEIGHT, hDlg,
 			CHILDWNDID(IDB_FLOAT), hInst, NULL);
+	FixUxTheme(hButtonWnd, BUTTON);
 }
 
 void DispFix(HWND hTwnd, HTREEITEM titem, ITEMSTRUCT *item)
@@ -1082,7 +1069,14 @@ BOOL SelectItem(HWND hDlg, HWND hTwnd, HTREEITEM titem, int linenumber)
 					break;
 //				default:
 			}
-			RefreshItems(hTwnd, &item, titem);
+			if ( item.option == ITEMOPTION_LANGCHANGE ){
+				GUILoadCust();
+				TreeView_DeleteAllItems(hIndexTreeWnd);
+				LoadListTree(FALSE);
+				LoadListTree(TRUE);
+			}else{
+				RefreshItems(hTwnd, &item, titem);
+			}
 			break;
 		case EDIT_FILE:			// ファイル名ボックス／編集開始
 		case EDIT_DIR:			// ディレクトリ／編集開始
@@ -1226,7 +1220,7 @@ BOOL TreeNotify(HWND hDlg, NMHDR *nmh)
 			CloseEdit(hDlg, hItemTreeWnd);
 		// PSN_HELP へ
 		case PSN_HELP:
-			StyleDlgProc(hDlg, WM_NOTIFY, IDD_GENERAL, (LPARAM)nmh);
+			DlgSheetProc(hDlg, WM_NOTIFY, 0, (LPARAM)nmh, IDD_GENERAL);
 			break;
 
 		case NM_CLICK:
@@ -1239,7 +1233,7 @@ BOOL TreeNotify(HWND hDlg, NMHDR *nmh)
 
 		case NM_RCLICK:
 			TreeHelp(hDlg, nmh->hwndFrom);
-			break;
+			return 1;
 
 		case NM_DBLCLK:
 			ModifyItem2(hDlg, nmh->hwndFrom);
@@ -1478,6 +1472,7 @@ INT_PTR CALLBACK GeneralPage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg){
 		case WM_INITDIALOG:
+			InitPropSheetsUxtheme(hDlg);
 			SendDlgItemMessage(hDlg, IDE_FIND, EM_LIMITTEXT, MAX_PATH - 1, 0);
 			SendDlgItemMessage(hDlg, IDE_FIND, EM_SETCUEBANNER, 0, (LPARAM)GetCTextW(StrFindInfo));
 			OldFindBoxProc =(WNDPROC)SetWindowLongPtr(GetDlgItem(hDlg,
@@ -1538,12 +1533,13 @@ INT_PTR CALLBACK GeneralPage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 
-		case WM_DESTROY:
-			return StyleDlgProc(hDlg, msg, wParam, lParam);
+//		case WM_DESTROY:
+		case WM_CONTEXTMENU:
+			if ( (HWND)wParam == GetDlgItem(hDlg,IDT_GENERALITEM) ) break;
+			// default へ
 
 		default:
-			return FALSE;
-//			return StyleDlgProc(hDlg, msg, wParam, lParam); // とりあえず使用せず
+			return DlgSheetProc(hDlg, msg, wParam, lParam, IDD_GENERAL);
 	}
 	return TRUE;
 }

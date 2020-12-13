@@ -214,7 +214,7 @@ ERRORCODE StartAutoDD(PPC_APPINFO *cinfo, HWND hTargetWnd, const TCHAR *src, DWO
 	GetClassName(hTargetWnd, buf, TSIZEOF(buf));
 
 	// エディットボックスにテキスト貼り付け
-	if ( tstricmp(buf, T("EDIT")) == 0 ){
+	if ( tstricmp(buf, WC_EDIT) == 0 ){
 		VFSFullPath(buf,
 			CellFileNameIndex(cinfo, cinfo->e.markC ? cinfo->e.markTop : cinfo->e.cellN),
 			cinfo->RealPath);
@@ -368,7 +368,7 @@ void SetListItem(HWND hWnd, struct ddwndstruct *dds, SETLISTSTRUCT *parent)
 		((GetProp(hWnd, OLDDnDPropName) != NULL) ||
 		 (GetWindowLongPtr(hWnd, GWL_EXSTYLE) & WS_EX_ACCEPTFILES) ||
 //		 (tstricmp(classname, T("ApplicationFrameWindow")) == 0) || // UWP用。しかし、その後の DLL注入 / mouse_event / SendInput が使用できない。
-		 (!(style & ES_READONLY) && (tstricmp(classname, T("EDIT")) == 0)) ) ){
+		 (!(style & ES_READONLY) && (tstricmp(classname, WC_EDIT) == 0)) ) ){
 		if ( (parent != NULL) && (parent->hParent == NULL) ){ // 親未作成
 			parent->tvi.lParam = (LPARAM)hWnd; // ウィンドウハンドル無し→子使用
 			parent->tvi.iImage = parent->tvi.iSelectedImage = 1;
@@ -527,6 +527,7 @@ LRESULT WmWndTreeCreate(HWND hWnd, PPC_APPINFO *cinfo)
 	if ( X_dss & DSS_COMCTRL ){
 		SendMessage(cinfo->dds.hTreeViewWnd, CCM_DPISCALE, TRUE, 0);
 	}
+	FixUxTheme(cinfo->dds.hTreeViewWnd, WC_TREEVIEW);
 	cinfo->dds.hTreeImage = DImageList_Create(16, 16, 24/* | ILC_MASK*/, 32, 32);
 
 	bkcolor = (OSver.dwMajorVersion >= 5) ? TreeView_GetBkColor(cinfo->dds.hTreeViewWnd) : 0xffffffff;

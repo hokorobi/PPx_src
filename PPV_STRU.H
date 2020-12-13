@@ -71,6 +71,7 @@ typedef struct {
 #define VTTF_TAG B2 // タグ表示の途中
 #define VTTF_LINK B3 // リンク表示の途中
 #define VTTF_HIGHLIGHT B4 // ハイライト有り
+#define VTTF_USEBASE B5 // base64有り
 #define VTTF_BASEOFFMASK (B6 | B7) // base64 のスキップ数
 #define VTTF_BASEOFFSHIFT 6 // base64 のスキップ数
 
@@ -196,6 +197,7 @@ typedef struct {
 		int MagMode;	// IMGD_MM_xx
 		int AspectRate;	// アスペクト比 0:無効
 		int AspectW, AspectH;
+		BOOL monomode;	// 白黒表示モード
 	} img;
 } PPVVAR;
 typedef BOOL (APIENTRY *impPPRINTDLG)(LPPRINTDLG);

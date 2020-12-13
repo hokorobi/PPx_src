@@ -453,6 +453,7 @@ BOOL InitializePPv(int *result)
 
 	PPxCommonExtCommand(K_CHECKUPDATE, 0);
 	FixCharlengthTable(T_CHRTYPE);
+	PPxCommonExtCommand(K_UxTheme, KUT_INIT);
 	if ( GetACP() != CP__SJIS ) VO_textS[VTYPE_SYSTEMCP] = textcp_systemcp;
 
 	GetModuleFileName(hInst, PPvPath, MAX_PATH);

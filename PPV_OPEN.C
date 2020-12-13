@@ -588,7 +588,7 @@ BOOL AddHighlight(ThSTRUCT *mem, const TCHAR *keyword, COLORREF color, int exten
 
 BOOL LoadDefaultHighlight(ThSTRUCT *mem, const TCHAR *filename, const TCHAR *ext)
 {
-	TCHAR tmp[0x400];
+	TCHAR tmp[0x1000];
 	const TCHAR *tmpp;
 	int count = 0;
 	int check = 0;
@@ -918,7 +918,7 @@ void CALLBACK BackReaderProc(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTim
 		}
 	}
 
-	if ( VOi->reading != FALSE ){ // s”ŒvŽZ
+	if ( (VOi->reading != FALSE) && (vo_.file.UseSize > 0) ){ // s”ŒvŽZ
 		ReadDisp++;
 		if ( vo_.DModeBit != DOCMODE_TEXT ){
 			VOi->reading = FALSE;
@@ -2178,7 +2178,9 @@ void InitViewObject(VIEWOPTIONS *viewopts, TCHAR *type)
 
 	if ( (ReadingStream != READ_NONE) ||
 		 ( (vo_.DModeBit & VO_dmode_ENABLEBACKREAD) && (VOi->reading != FALSE) ) ){
-		SetTimer(vinfo.info.hWnd, TIMERID_READLINE, TIMER_READLINE, BackReaderProc);
+		if ( vo_.file.ImageSize > 0 ){
+			SetTimer(vinfo.info.hWnd, TIMERID_READLINE, TIMER_READLINE, BackReaderProc);
+		}
 		BackReader = TRUE;
 	}else{
 		mtinfo.OpenFlags = 0;
@@ -2206,6 +2208,7 @@ void SetTitle(const TCHAR *title, const TCHAR *ext)
 }
 BOOL USEFASTCALL FixOpenBmp(BITMAPINFOHEADER *bih, VIEWOPTIONS *viewopt, DWORD bits_size)
 {
+	XV.img.monomode = FALSE;
 	vo_.bitmap.rawsize.cx = bih->biWidth;
 	vo_.bitmap.rawsize.cy = bih->biHeight;
 	FixBitmapShowSize(&vo_);
@@ -2573,8 +2576,12 @@ BOOL OpenViewObject(const TCHAR *filename, HGLOBAL memblock, VIEWOPTIONS *viewop
 			OpenEntryNow = 0;
 			return OpenViewObject(filename, memblock, viewopt, flags | PPV__reload);
 		}
-
 		if ( rr ){
+			if ( vo_.bitmap.bits.mapH == NULL ){
+				VO_error(ERROR_INVALID_DATA);
+				goto error;
+			}
+
 			if ( convert ){
 				VO_error(PPERROR_GETLASTERROR);
 				goto error;
